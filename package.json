@@ -1,0 +1,9 @@
+{
+  "name": "pilot-homefirst",
+  "private": true,
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev": "npm --workspace backend run dev",
+    "dev:frontend": "npm --workspace frontend run dev"
+  }
+}
