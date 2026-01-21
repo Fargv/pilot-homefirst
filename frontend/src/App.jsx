@@ -1,8 +1,10 @@
-import React, { useState } from "react";
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider } from "./kitchen/auth";
 import KitchenLayout from "./kitchen/Layout.jsx";
 import RequireAuth from "./kitchen/RequireAuth.jsx";
+import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
+import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
 import LoginPage from "./kitchen/pages/LoginPage.jsx";
 import WeekPage from "./kitchen/pages/WeekPage.jsx";
 import DishesPage from "./kitchen/pages/DishesPage.jsx";
@@ -41,12 +43,44 @@ function HomePage() {
   );
 }
 
+function BootstrapRedirect() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    let active = true;
+    const checkBootstrap = async () => {
+      try {
+        const response = await fetch(`${API}/api/users/bootstrap-needed`);
+        const data = await response.json().catch(() => ({}));
+        if (!active || !response.ok) return;
+        if (data.needed && location.pathname !== "/bootstrap") {
+          navigate("/bootstrap", { replace: true });
+        }
+        if (!data.needed && location.pathname === "/bootstrap") {
+          navigate("/kitchen/login", { replace: true });
+        }
+      } catch {
+        // Sin bloqueo si el backend no responde.
+      }
+    };
+    checkBootstrap();
+    return () => {
+      active = false;
+    };
+  }, [location.pathname, navigate]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <BootstrapRedirect />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/bootstrap" element={<BootstrapPage />} />
           <Route path="/kitchen/login" element={<LoginPage />} />
           <Route
             path="/kitchen/semana"
@@ -77,6 +111,14 @@ export default function App() {
             element={(
               <RequireAuth>
                 <SwapsPage />
+              </RequireAuth>
+            )}
+          />
+          <Route
+            path="/admin/usuarios"
+            element={(
+              <RequireAuth roles={["admin"]}>
+                <AdminUsersPage />
               </RequireAuth>
             )}
           />

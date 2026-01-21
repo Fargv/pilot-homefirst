@@ -112,6 +112,34 @@
   margin-top: 12px;
 }
 
+.kitchen-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.kitchen-alert {
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.kitchen-alert.success {
+  background: #ecfdf3;
+  color: #027a48;
+  border: 1px solid #a6f4c5;
+}
+
+.kitchen-alert.error {
+  background: #fef3f2;
+  color: #b42318;
+  border: 1px solid #fecdca;
+}
+
 .kitchen-table {
   width: 100%;
   border-collapse: collapse;

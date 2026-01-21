@@ -2,17 +2,19 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { createToken, requireAuth } from "../middleware.js";
+import { normalizeEmail } from "../../users/utils.js";
 
 const router = express.Router();
 
 router.post("/login", async (req, res) => {
   try {
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ ok: false, error: "Usuario y contraseña son obligatorios." });
+    const { email, password, username } = req.body;
+    const loginValue = normalizeEmail(email || username);
+    if (!loginValue || !password) {
+      return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
     }
 
-    const user = await KitchenUser.findOne({ username: String(username).trim() });
+    const user = await KitchenUser.findOne({ email: loginValue });
     if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
 
     const ok = await bcrypt.compare(password, user.passwordHash);

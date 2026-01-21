@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { requireAuth, requireRole } from "../middleware.js";
+import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "../../users/utils.js";
 
 const router = express.Router();
 
@@ -17,19 +18,34 @@ router.get("/members", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
   try {
-    const { username, password, displayName, role } = req.body;
-    if (!username || !password || !displayName) {
-      return res.status(400).json({ ok: false, error: "Faltan datos obligatorios." });
+    const { email, password, firstName, lastName, name, displayName } = req.body;
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail || !password) {
+      return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
+    }
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ ok: false, error: "El email no es válido." });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
     }
 
-    const exists = await KitchenUser.findOne({ username: String(username).trim() });
-    if (exists) return res.status(409).json({ ok: false, error: "El usuario ya existe." });
+    const exists = await KitchenUser.findOne({ email: normalizedEmail });
+    if (exists) return res.status(409).json({ ok: false, error: "El email ya está registrado." });
+
+    const safeDisplayName = buildDisplayName({ firstName, lastName, name, displayName });
+    if (!safeDisplayName) {
+      return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
+    }
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await KitchenUser.create({
-      username: String(username).trim(),
-      displayName: String(displayName).trim(),
-      role: role === "admin" ? "admin" : "user",
+      username: normalizedEmail,
+      email: normalizedEmail,
+      firstName: firstName ? String(firstName).trim() : undefined,
+      lastName: lastName ? String(lastName).trim() : undefined,
+      displayName: safeDisplayName,
+      role: normalizeRole(req.body.role),
       passwordHash
     });
 

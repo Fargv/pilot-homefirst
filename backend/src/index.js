@@ -4,6 +4,7 @@ import { config } from "./config.js";
 import { connectDb } from "./db.js";
 import { sendTestEmail } from "./mailer.js";
 import kitchenRouter from "./kitchen/index.js";
+import usersRouter from "./users/index.js";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.post("/api/email/test", async (req, res) => {
 });
 
 app.use("/api/kitchen", kitchenRouter);
+app.use("/api/users", usersRouter);
 
 connectDb()
   .then(() => {

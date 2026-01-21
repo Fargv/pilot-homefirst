@@ -27,10 +27,10 @@ export function AuthProvider({ children }) {
     }
   }, [fetchMe]);
 
-  const login = async (username, password) => {
+  const login = async (email, password) => {
     const data = await apiRequest("/api/kitchen/auth/login", {
       method: "POST",
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ email, password })
     });
     setToken(data.token);
     setUser(data.user);

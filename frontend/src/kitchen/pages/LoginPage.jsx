@@ -5,7 +5,7 @@ import { useAuth } from "../auth";
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -14,7 +14,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await login(form.username, form.password);
+      await login(form.email, form.password);
       navigate("/kitchen/semana");
     } catch (err) {
       setError(err.message || "No se pudo iniciar sesión.");
@@ -31,12 +31,13 @@ export default function LoginPage() {
           <p className="kitchen-muted">Usa tus credenciales familiares para entrar.</p>
           <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
             <label>
-              <span className="kitchen-label">Usuario</span>
+              <span className="kitchen-label">Email</span>
               <input
                 className="kitchen-input"
-                value={form.username}
-                onChange={(event) => setForm({ ...form, username: event.target.value })}
-                placeholder="Ej: ana"
+                type="email"
+                value={form.email}
+                onChange={(event) => setForm({ ...form, email: event.target.value })}
+                placeholder="Ej: ana@email.com"
                 required
               />
             </label>

@@ -26,6 +26,7 @@ export default function KitchenLayout({ children }) {
             <NavLink to="/kitchen/platos">Platos</NavLink>
             <NavLink to="/kitchen/compra">Compra</NavLink>
             <NavLink to="/kitchen/cambios">Cambios</NavLink>
+            {user?.role === "admin" ? <NavLink to="/admin/usuarios">Usuarios</NavLink> : null}
           </nav>
           {user ? (
             <div>
