@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { apiRequest } from "../api.js";
 import KitchenLayout from "../Layout.jsx";
-import { useAuth } from "../auth.js";
+import { useAuth } from "../auth";
 
 export default function DishesPage() {
   const { user } = useAuth();

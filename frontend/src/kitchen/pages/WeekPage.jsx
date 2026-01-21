@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../api.js";
-import { useAuth } from "../auth.js";
+import { useAuth } from "../auth";
 import KitchenLayout from "../Layout.jsx";
 
 function getMondayISO(date = new Date()) {

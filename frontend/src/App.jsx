@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
-import { AuthProvider } from "./kitchen/auth.js";
+import { AuthProvider } from "./kitchen/auth";
 import KitchenLayout from "./kitchen/Layout.jsx";
 import RequireAuth from "./kitchen/RequireAuth.jsx";
 import LoginPage from "./kitchen/pages/LoginPage.jsx";
