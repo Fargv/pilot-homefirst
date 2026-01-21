@@ -1,0 +1,137 @@
+:root {
+  color-scheme: light;
+}
+
+.kitchen-app {
+  font-family: "Inter", system-ui, sans-serif;
+  background: #f6f7fb;
+  min-height: 100vh;
+  color: #101828;
+}
+
+.kitchen-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.kitchen-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kitchen-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.kitchen-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.kitchen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.kitchen-button {
+  background: #2563eb;
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.kitchen-button.secondary {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.kitchen-button.ghost {
+  background: transparent;
+  border: 1px solid #cbd5f5;
+  color: #1e293b;
+}
+
+.kitchen-input,
+.kitchen-select,
+.kitchen-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d0d5dd;
+  background: white;
+  font-size: 14px;
+}
+
+.kitchen-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #344054;
+}
+
+.kitchen-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.kitchen-empty {
+  text-align: center;
+  padding: 32px;
+  color: #475467;
+}
+
+.kitchen-muted {
+  color: #667085;
+  font-size: 14px;
+}
+
+.kitchen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.kitchen-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.kitchen-table th,
+.kitchen-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #eef2f6;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .kitchen-container {
+    padding: 16px;
+  }
+
+  .kitchen-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

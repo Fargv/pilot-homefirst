@@ -1,0 +1,99 @@
+import express from "express";
+import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
+import { KitchenDish } from "../models/KitchenDish.js";
+import { requireAuth, requireRole } from "../middleware.js";
+import { formatDateISO, getWeekDates, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
+
+const router = express.Router();
+
+async function ensureWeekPlan(weekStartDate) {
+  const existing = await KitchenWeekPlan.findOne({ weekStart: weekStartDate });
+  if (existing) return existing;
+
+  const days = getWeekDates(weekStartDate).map((date) => ({
+    date,
+    cookTiming: "previous_day",
+    servings: 4,
+    ingredientOverrides: []
+  }));
+
+  return KitchenWeekPlan.create({ weekStart: weekStartDate, days });
+}
+
+router.get("/:weekStart", requireAuth, async (req, res) => {
+  const weekStart = parseISODate(req.params.weekStart);
+  if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
+
+  const monday = getWeekStart(weekStart);
+  const plan = await ensureWeekPlan(monday);
+
+  res.json({
+    ok: true,
+    weekStart: formatDateISO(monday),
+    plan
+  });
+});
+
+router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
+  const weekStart = parseISODate(req.params.weekStart);
+  const date = parseISODate(req.params.date);
+  if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+  const monday = getWeekStart(weekStart);
+  const plan = await ensureWeekPlan(monday);
+
+  const day = plan.days.find((item) => isSameDay(item.date, date));
+  if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
+
+  const { cookUserId, cookTiming, servings, mainDishId, sideDishId, ingredientOverrides } = req.body;
+  if (cookUserId !== undefined) day.cookUserId = cookUserId || null;
+  if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
+  if (servings) day.servings = Number(servings) || 4;
+  if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
+  if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
+  if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
+
+  await plan.save();
+  return res.json({ ok: true, plan });
+});
+
+router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("admin"), async (req, res) => {
+  const weekStart = parseISODate(req.params.weekStart);
+  const otherWeekStart = parseISODate(req.params.otherWeekStart);
+  if (!weekStart || !otherWeekStart) {
+    return res.status(400).json({ ok: false, error: "Fecha inválida." });
+  }
+
+  const monday = getWeekStart(weekStart);
+  const sourceMonday = getWeekStart(otherWeekStart);
+
+  const sourcePlan = await ensureWeekPlan(sourceMonday);
+  const targetPlan = await ensureWeekPlan(monday);
+
+  targetPlan.days = sourcePlan.days.map((day) => ({
+    date: new Date(day.date),
+    cookUserId: day.cookUserId,
+    cookTiming: day.cookTiming,
+    servings: day.servings,
+    mainDishId: day.mainDishId,
+    sideDishId: day.sideDishId,
+    ingredientOverrides: day.ingredientOverrides
+  }));
+
+  await targetPlan.save();
+  return res.json({ ok: true, plan: targetPlan });
+});
+
+router.get("/:weekStart/summary", requireAuth, async (req, res) => {
+  const weekStart = parseISODate(req.params.weekStart);
+  if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+  const monday = getWeekStart(weekStart);
+  const plan = await ensureWeekPlan(monday);
+  const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
+  const dishes = await KitchenDish.find({ _id: { $in: dishIds } });
+
+  res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
+});
+
+export default router;

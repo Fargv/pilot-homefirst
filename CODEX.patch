@@ -1,0 +1,129 @@
+diff --git a/frontend/package.json b/frontend/package.json
+index 07cffe968a6fdc4665f800c7608d3f2274b1a23f..7567d2fa85b4b69d2d7668476c8bab24d429cc75 100644
+--- a/frontend/package.json
++++ b/frontend/package.json
+@@ -1,19 +1,20 @@
+ {
+   "name": "pilot-frontend",
+   "version": "1.0.0",
+   "private": true,
+   "type": "module",
+   "scripts": {
+     "dev": "vite",
+     "build": "vite build",
+     "preview": "vite preview --port 5173"
+   },
+   "dependencies": {
+     "react": "^18.3.1",
+-    "react-dom": "^18.3.1"
++    "react-dom": "^18.3.1",
++    "react-router-dom": "^6.26.2"
+   },
+   "devDependencies": {
+     "@vitejs/plugin-react": "^4.3.1",
+     "vite": "^5.4.2"
+   }
+ }
+diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
+index 66f84d85f4672fa77bf7f82618821118b94b640f..2e93158b940f58fb0cb91d3db1609a8f418929a3 100644
+--- a/frontend/src/App.jsx
++++ b/frontend/src/App.jsx
+@@ -1,29 +1,97 @@
+ import React, { useState } from "react";
++import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
++import { AuthProvider } from "./kitchen/auth.js";
++import KitchenLayout from "./kitchen/Layout.jsx";
++import RequireAuth from "./kitchen/RequireAuth.jsx";
++import LoginPage from "./kitchen/pages/LoginPage.jsx";
++import WeekPage from "./kitchen/pages/WeekPage.jsx";
++import DishesPage from "./kitchen/pages/DishesPage.jsx";
++import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
++import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
++import "./kitchen/kitchen.css";
+ 
+ const API = import.meta.env.VITE_API_URL;
+ 
+-export default function App() {
++function HomePage() {
+   const [msg, setMsg] = useState("—");
+ 
+   async function ping() {
+     setMsg("Llamando al backend...");
+     const r = await fetch(`${API}/health`);
+     const data = await r.json();
+     setMsg(JSON.stringify(data, null, 2));
+   }
+ 
+   return (
+     <div style={{ fontFamily: "system-ui", padding: 24, maxWidth: 900 }}>
+       <h1>Piloto HomeFirst 🧪</h1>
+       <p>Backend: <code>{API}</code></p>
++      <div style={{ marginBottom: 16 }}>
++        <Link to="/kitchen/semana">Ir a Kitchen</Link>
++      </div>
+ 
+       <button onClick={ping} style={{ padding: "10px 14px", cursor: "pointer" }}>
+         Probar /health
+       </button>
+ 
+       <pre style={{ marginTop: 16, background: "#111", color: "#0f0", padding: 12, borderRadius: 8 }}>
+         {msg}
+       </pre>
+     </div>
+   );
+ }
++
++export default function App() {
++  return (
++    <BrowserRouter>
++      <AuthProvider>
++        <Routes>
++          <Route path="/" element={<HomePage />} />
++          <Route path="/kitchen/login" element={<LoginPage />} />
++          <Route
++            path="/kitchen/semana"
++            element={(
++              <RequireAuth>
++                <WeekPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/platos"
++            element={(
++              <RequireAuth>
++                <DishesPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/compra"
++            element={(
++              <RequireAuth>
++                <ShoppingPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/cambios"
++            element={(
++              <RequireAuth>
++                <SwapsPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen"
++            element={(
++              <RequireAuth>
++                <KitchenLayout>
++                  <div className="kitchen-card">Selecciona una sección.</div>
++                </KitchenLayout>
++              </RequireAuth>
++            )}
++          />
++        </Routes>
++      </AuthProvider>
++    </BrowserRouter>
++  );
++}

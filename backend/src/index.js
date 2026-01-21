@@ -3,6 +3,7 @@ import cors from "cors";
 import { config } from "./config.js";
 import { connectDb } from "./db.js";
 import { sendTestEmail } from "./mailer.js";
+import kitchenRouter from "./kitchen/index.js";
 
 const app = express();
 
@@ -24,6 +25,8 @@ app.post("/api/email/test", async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
+
+app.use("/api/kitchen", kitchenRouter);
 
 connectDb()
   .then(() => {
