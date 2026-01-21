@@ -1,4 +1,10 @@
-const API = import.meta.env.VITE_API_URL;
+const API = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+
+export function buildApiUrl(path = "") {
+  if (!path) return API;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${API}${normalizedPath}`;
+}
 
 export function getToken() {
   return localStorage.getItem("kitchen_token");
@@ -18,7 +24,7 @@ export async function apiRequest(path, options = {}) {
 
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${API}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     ...options,
     headers
   });

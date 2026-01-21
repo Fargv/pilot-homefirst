@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider } from "./kitchen/auth";
+import { buildApiUrl } from "./kitchen/api.js";
 import KitchenLayout from "./kitchen/Layout.jsx";
 import RequireAuth from "./kitchen/RequireAuth.jsx";
 import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
@@ -19,7 +20,7 @@ function HomePage() {
 
   async function ping() {
     setMsg("Llamando al backend...");
-    const r = await fetch(`${API}/health`);
+    const r = await fetch(buildApiUrl("/health"));
     const data = await r.json();
     setMsg(JSON.stringify(data, null, 2));
   }
@@ -51,7 +52,7 @@ function BootstrapRedirect() {
     let active = true;
     const checkBootstrap = async () => {
       try {
-        const response = await fetch(`${API}/api/users/bootstrap-needed`);
+        const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
         const data = await response.json().catch(() => ({}));
         if (!active || !response.ok) return;
         if (data.needed && location.pathname !== "/bootstrap") {
