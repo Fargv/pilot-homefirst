@@ -1,232 +1,375 @@
-diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
-index 4e03361362eacc03b863baf41cd21a43c7e67407..a8b6f8ce5a38113d7d208e6fa11ba6fd63458973 100644
---- a/frontend/src/App.jsx
-+++ b/frontend/src/App.jsx
-@@ -1,110 +1,103 @@
--import React, { useEffect, useState } from "react";
--import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
--import { AuthProvider } from "./kitchen/auth";
--import { buildApiUrl } from "./kitchen/api.js";
--import KitchenLayout from "./kitchen/Layout.jsx";
--import RequireAuth from "./kitchen/RequireAuth.jsx";
-+import React, { useEffect } from "react";
-+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-+import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
-+import { buildApiUrl } from "./kitchen/api.js";
-+import KitchenLayout from "./kitchen/Layout.jsx";
-+import RequireAuth from "./kitchen/RequireAuth.jsx";
- import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
- import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
- import LoginPage from "./kitchen/pages/LoginPage.jsx";
- import WeekPage from "./kitchen/pages/WeekPage.jsx";
- import DishesPage from "./kitchen/pages/DishesPage.jsx";
- import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
--import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
--import "./kitchen/kitchen.css";
--
--const API = import.meta.env.VITE_API_URL;
--
--function HomePage() {
--  const [msg, setMsg] = useState("—");
--
--  async function ping() {
--    setMsg("Llamando al backend...");
--    const r = await fetch(buildApiUrl("/health"));
--    const data = await r.json();
--    setMsg(JSON.stringify(data, null, 2));
--  }
--
--  return (
--    <div style={{ fontFamily: "system-ui", padding: 24, maxWidth: 900 }}>
--      <h1>Piloto HomeFirst 🧪</h1>
--      <p>Backend: <code>{API}</code></p>
--      <div style={{ marginBottom: 16 }}>
--        <Link to="/kitchen/semana">Ir a Kitchen</Link>
--      </div>
--
--      <button onClick={ping} style={{ padding: "10px 14px", cursor: "pointer" }}>
--        Probar /health
--      </button>
--
--      <pre style={{ marginTop: 16, background: "#111", color: "#0f0", padding: 12, borderRadius: 8 }}>
--        {msg}
--      </pre>
--    </div>
--  );
--}
-+import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
-+import "./kitchen/kitchen.css";
-+
-+function HomeRedirect() {
-+  const { user, loading } = useAuth();
-+  const navigate = useNavigate();
-+
-+  useEffect(() => {
-+    if (loading) return;
-+    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/kitchen/login";
-+    navigate(destination, { replace: true });
-+  }, [loading, navigate, user]);
-+
-+  return (
-+    <div className="kitchen-app">
-+      <div className="kitchen-container" style={{ maxWidth: 520 }}>
-+        <div className="kitchen-card">
-+          <h2>Cargando HomeFirst...</h2>
-+          <p className="kitchen-muted">
-+            Estamos preparando tu acceso a Kitchen. En unos segundos te redirigimos.
-+          </p>
-+        </div>
-+      </div>
-+    </div>
-+  );
-+}
+diff --git a/frontend/src/kitchen/Layout.jsx b/frontend/src/kitchen/Layout.jsx
+index d2b35b52cd15703da9b53e97e454f1a5c3699f33..bcd8deeda0467e73e94bed54c3ce2f4fe792bc7b 100644
+--- a/frontend/src/kitchen/Layout.jsx
++++ b/frontend/src/kitchen/Layout.jsx
+@@ -1,44 +1,112 @@
+-import React from "react";
++import React, { useMemo, useState } from "react";
+ import { Link, NavLink, useNavigate } from "react-router-dom";
+ import { useAuth } from "./auth";
  
- function BootstrapRedirect() {
+ export default function KitchenLayout({ children }) {
+   const { user, logout } = useAuth();
    const navigate = useNavigate();
-   const location = useLocation();
++  const [drawerOpen, setDrawerOpen] = useState(false);
++
++  const navLinks = useMemo(() => {
++    const links = [
++      { to: "/kitchen/semana", label: "Semana" },
++      { to: "/kitchen/platos", label: "Platos" },
++      { to: "/kitchen/compra", label: "Ingredientes" },
++    ];
++
++    if (user?.role === "admin") {
++      links.push({ to: "/admin/usuarios", label: "Usuarios" });
++    }
++
++    return links;
++  }, [user?.role]);
  
-   useEffect(() => {
-     let active = true;
-     const checkBootstrap = async () => {
-       try {
-         const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
-         const data = await response.json().catch(() => ({}));
-         if (!active || !response.ok) return;
-         if (data.needed && location.pathname !== "/bootstrap") {
-           navigate("/bootstrap", { replace: true });
-         }
-         if (!data.needed && location.pathname === "/bootstrap") {
-           navigate("/kitchen/login", { replace: true });
-         }
-       } catch {
-         // Sin bloqueo si el backend no responde.
-       }
-     };
-     checkBootstrap();
-     return () => {
-       active = false;
-     };
-   }, [location.pathname, navigate]);
- 
-   return null;
- }
- 
- export default function App() {
-   return (
-     <BrowserRouter>
-       <AuthProvider>
--        <BootstrapRedirect />
--        <Routes>
--          <Route path="/" element={<HomePage />} />
--          <Route path="/bootstrap" element={<BootstrapPage />} />
--          <Route path="/kitchen/login" element={<LoginPage />} />
-+        <BootstrapRedirect />
-+        <Routes>
-+          <Route path="/" element={<HomeRedirect />} />
-+          <Route path="/bootstrap" element={<BootstrapPage />} />
-+          <Route path="/kitchen/login" element={<LoginPage />} />
-           <Route
-             path="/kitchen/semana"
-             element={(
-               <RequireAuth>
-                 <WeekPage />
-               </RequireAuth>
-             )}
-           />
-           <Route
-             path="/kitchen/platos"
-             element={(
-               <RequireAuth>
-                 <DishesPage />
-               </RequireAuth>
-             )}
-           />
-           <Route
-             path="/kitchen/compra"
-             element={(
-               <RequireAuth>
-                 <ShoppingPage />
-               </RequireAuth>
-             )}
-           />
-           <Route
-diff --git a/frontend/src/kitchen/RequireAuth.jsx b/frontend/src/kitchen/RequireAuth.jsx
-index cc8580e6172dd721803008173987f98cfec12f5c..fe75a96a9881c028866dc9db6e66591b9e9c9be6 100644
---- a/frontend/src/kitchen/RequireAuth.jsx
-+++ b/frontend/src/kitchen/RequireAuth.jsx
-@@ -1,25 +1,25 @@
- import React from "react";
- import { Navigate } from "react-router-dom";
- import { isUserAuthenticated, useAuth } from "./auth";
- 
- export default function RequireAuth({ children, roles }) {
-   const { user, loading } = useAuth();
-   const isAuthenticated = isUserAuthenticated(user);
- 
-   if (loading) {
-     return (
-       <div className="kitchen-card">
-         <h3>Cargando sesión...</h3>
-         <p className="kitchen-muted">Estamos preparando tu módulo Kitchen.</p>
-       </div>
-     );
-   }
- 
--  if (!isAuthenticated) return <Navigate to="/login" replace />;
-+  if (!isAuthenticated) return <Navigate to="/kitchen/login" replace />;
- 
-   if (roles && !roles.includes(user.role)) {
-     return <Navigate to="/kitchen/semana" replace />;
-   }
- 
-   return children;
- }
-diff --git a/frontend/src/kitchen/pages/LoginPage.jsx b/frontend/src/kitchen/pages/LoginPage.jsx
-index 21cddb93f3ffddb04f4c33bf0abbfa2ee63b2298..e9bf39c2b52d9b8d01495cf766964eef582c17fa 100644
---- a/frontend/src/kitchen/pages/LoginPage.jsx
-+++ b/frontend/src/kitchen/pages/LoginPage.jsx
-@@ -1,43 +1,43 @@
- import React, { useState } from "react";
- import { useNavigate } from "react-router-dom";
- import { useAuth } from "../auth";
- 
- export default function LoginPage() {
-   const { login } = useAuth();
-   const navigate = useNavigate();
-   const [form, setForm] = useState({ email: "", password: "" });
-   const [error, setError] = useState("");
-   const [loading, setLoading] = useState(false);
- 
-   const onSubmit = async (event) => {
-     event.preventDefault();
-     setError("");
-     setLoading(true);
-     try {
-       await login(form.email, form.password);
--      navigate("/dashboard");
-+      navigate("/kitchen/semana");
-     } catch (err) {
-       setError(err.message || "No se pudo iniciar sesión.");
-     } finally {
-       setLoading(false);
-     }
+   const onLogout = async () => {
+     await logout();
+-    navigate("/login");
++    navigate("/login");
++    setDrawerOpen(false);
++  };
++
++  const onNavigate = () => {
++    setDrawerOpen(false);
    };
  
    return (
      <div className="kitchen-app">
-       <div className="kitchen-container" style={{ maxWidth: 480 }}>
-         <div className="kitchen-card">
-           <h2>Acceso a HomeFirst</h2>
-           <p className="kitchen-muted">Usa tus credenciales familiares para entrar.</p>
-           <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
-             <label>
-               <span className="kitchen-label">Email</span>
-               <input
-                 className="kitchen-input"
-                 type="email"
-                 value={form.email}
-                 onChange={(event) => setForm({ ...form, email: event.target.value })}
-                 placeholder="Ej: ana@email.com"
-                 required
-               />
-             </label>
+-      <div className="kitchen-container">
+-        <header className="kitchen-header">
+-          <div>
+-            <Link to="/kitchen/semana" style={{ textDecoration: "none", color: "inherit" }}>
+-              <h2 style={{ margin: 0 }}>Kitchen</h2>
++      <header className="kitchen-topbar">
++        <div className="kitchen-topbar-inner">
++          <div className="kitchen-brand">
++            <button
++              className="kitchen-nav-toggle"
++              type="button"
++              onClick={() => setDrawerOpen((open) => !open)}
++              aria-label="Abrir menú"
++              aria-expanded={drawerOpen}
++            >
++              <span />
++              <span />
++              <span />
++            </button>
++            <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
++              HomeFirst
+             </Link>
+-            <div className="kitchen-muted">Plan familiar de comidas y compras.</div>
+           </div>
+-          <nav className="kitchen-nav">
+-            <NavLink to="/kitchen/semana">Semana</NavLink>
+-            <NavLink to="/kitchen/platos">Platos</NavLink>
+-            <NavLink to="/kitchen/compra">Compra</NavLink>
+-            <NavLink to="/kitchen/cambios">Cambios</NavLink>
+-            {user?.role === "admin" ? <NavLink to="/admin/usuarios">Usuarios</NavLink> : null}
++          <nav className="kitchen-nav-desktop">
++            {navLinks.map((link) => (
++              <NavLink key={link.to} to={link.to} onClick={onNavigate}>
++                {link.label}
++              </NavLink>
++            ))}
+           </nav>
+           {user ? (
+-            <div>
+-              <div className="kitchen-pill">{user.displayName}</div>
+-              <button className="kitchen-button secondary" style={{ marginLeft: 8 }} onClick={onLogout}>
++            <div className="kitchen-user">
++              <div>
++                <div className="kitchen-pill">{user.displayName}</div>
++                <div className="kitchen-muted kitchen-user-role">{user.role}</div>
++              </div>
++              <button className="kitchen-button secondary" type="button" onClick={onLogout}>
+                 Cerrar sesión
+               </button>
+             </div>
+-          ) : null}
+-        </header>
++          ) : (
++            <div className="kitchen-user-placeholder" />
++          )}
++        </div>
++      </header>
++      <div className="kitchen-container">
++        {drawerOpen ? (
++          <>
++            <button className="kitchen-drawer-backdrop" type="button" onClick={onNavigate} aria-label="Cerrar menú" />
++            <aside className="kitchen-drawer" aria-hidden={!drawerOpen}>
++              <div className="kitchen-drawer-header">
++                <span>Menú</span>
++                <button className="kitchen-drawer-close" type="button" onClick={onNavigate}>
++                  Cerrar
++                </button>
++              </div>
++              <nav className="kitchen-nav-mobile">
++                {navLinks.map((link) => (
++                  <NavLink key={link.to} to={link.to} onClick={onNavigate}>
++                    {link.label}
++                  </NavLink>
++                ))}
++              </nav>
++              {user ? (
++                <div className="kitchen-drawer-user">
++                  <div>
++                    <div className="kitchen-pill">{user.displayName}</div>
++                    <div className="kitchen-muted kitchen-user-role">{user.role}</div>
++                  </div>
++                  <button className="kitchen-button secondary" type="button" onClick={onLogout}>
++                    Cerrar sesión
++                  </button>
++                </div>
++              ) : null}
++            </aside>
++          </>
++        ) : null}
+         {children}
+       </div>
+     </div>
+   );
+ }
+diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
+index 4f286af7a1d6c1e42d59b10f88e911f52730b49b..33b7347b678907463bb36a1f3bac76be2d128b1f 100644
+--- a/frontend/src/kitchen/kitchen.css
++++ b/frontend/src/kitchen/kitchen.css
+@@ -1,54 +1,179 @@
+ :root {
+   color-scheme: light;
+ }
+ 
+ .kitchen-app {
+   font-family: "Inter", system-ui, sans-serif;
+   background: #f6f7fb;
+   min-height: 100vh;
+   color: #101828;
+ }
+ 
+ .kitchen-container {
+   max-width: 1100px;
+   margin: 0 auto;
+   padding: 24px;
+ }
+ 
+-.kitchen-header {
++.kitchen-topbar {
++  position: sticky;
++  top: 0;
++  z-index: 20;
++  background: white;
++  border-bottom: 1px solid #e4e7ec;
++}
++
++.kitchen-topbar-inner {
++  max-width: 1100px;
++  margin: 0 auto;
++  padding: 16px 24px;
+   display: flex;
+-  flex-wrap: wrap;
+   align-items: center;
+   justify-content: space-between;
+   gap: 16px;
+-  margin-bottom: 24px;
++  min-height: 72px;
+ }
+ 
+-.kitchen-nav {
++.kitchen-brand {
+   display: flex;
+-  flex-wrap: wrap;
++  align-items: center;
++  gap: 12px;
++}
++
++.kitchen-brand-link {
++  font-weight: 700;
++  font-size: 20px;
++  color: #101828;
++  text-decoration: none;
++}
++
++.kitchen-nav-desktop,
++.kitchen-nav-mobile {
++  display: flex;
++  gap: 16px;
++}
++
++.kitchen-nav-desktop a,
++.kitchen-nav-mobile a {
++  text-decoration: none;
++  color: #1d2939;
++  font-weight: 600;
++  font-size: 14px;
++  padding: 6px 8px;
++  border-radius: 8px;
++}
++
++.kitchen-nav-desktop a.active,
++.kitchen-nav-mobile a.active {
++  background: #eef2ff;
++  color: #3730a3;
++}
++
++.kitchen-user {
++  display: flex;
++  align-items: center;
++  gap: 12px;
++}
++
++.kitchen-user-role {
++  font-size: 12px;
++  margin-top: 2px;
++}
++
++.kitchen-user-placeholder {
++  width: 160px;
++  min-height: 40px;
++}
++
++.kitchen-nav-toggle {
++  display: none;
++  flex-direction: column;
++  justify-content: center;
++  gap: 4px;
++  width: 36px;
++  height: 36px;
++  border-radius: 10px;
++  border: 1px solid #d0d5dd;
++  background: white;
++  cursor: pointer;
++  padding: 8px;
++}
++
++.kitchen-nav-toggle span {
++  display: block;
++  height: 2px;
++  background: #1d2939;
++  border-radius: 999px;
++}
++
++.kitchen-drawer-backdrop {
++  position: fixed;
++  inset: 0;
++  background: rgba(16, 24, 40, 0.4);
++  border: none;
++  z-index: 30;
++}
++
++.kitchen-drawer {
++  position: fixed;
++  top: 0;
++  left: 0;
++  width: min(300px, 80vw);
++  height: 100%;
++  background: white;
++  z-index: 31;
++  padding: 20px;
++  display: flex;
++  flex-direction: column;
++  gap: 16px;
++  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
++}
++
++.kitchen-drawer-header {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  font-weight: 600;
++}
++
++.kitchen-drawer-close {
++  border: none;
++  background: transparent;
++  color: #1d2939;
++  font-weight: 600;
++  cursor: pointer;
++}
++
++.kitchen-nav-mobile {
++  flex-direction: column;
++  gap: 8px;
++}
++
++.kitchen-drawer-user {
++  display: flex;
++  flex-direction: column;
+   gap: 12px;
+ }
+ 
+ .kitchen-card {
+   background: white;
+   border-radius: 16px;
+   padding: 20px;
+   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+ }
+ 
+ .kitchen-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+   gap: 16px;
+ }
+ 
+ .kitchen-button {
+   background: #2563eb;
+   border: none;
+   color: white;
+   padding: 10px 16px;
+   border-radius: 10px;
+   cursor: pointer;
+   font-weight: 600;
+ }
+@@ -136,30 +261,46 @@
+ 
+ .kitchen-alert.error {
+   background: #fef3f2;
+   color: #b42318;
+   border: 1px solid #fecdca;
+ }
+ 
+ .kitchen-table {
+   width: 100%;
+   border-collapse: collapse;
+ }
+ 
+ .kitchen-table th,
+ .kitchen-table td {
+   text-align: left;
+   padding: 10px 8px;
+   border-bottom: 1px solid #eef2f6;
+   font-size: 14px;
+ }
+ 
+ @media (max-width: 600px) {
+   .kitchen-container {
+     padding: 16px;
+   }
+ 
+-  .kitchen-header {
+-    flex-direction: column;
+-    align-items: flex-start;
++  .kitchen-topbar-inner {
++    padding: 12px 16px;
++    min-height: 72px;
++  }
++
++  .kitchen-nav-desktop {
++    display: none;
++  }
++
++  .kitchen-user {
++    display: none;
++  }
++
++  .kitchen-user-placeholder {
++    display: none;
++  }
++
++  .kitchen-nav-toggle {
++    display: flex;
+   }
+ }
