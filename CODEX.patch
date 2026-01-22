@@ -1,145 +1,250 @@
-diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
-index fdec1cf36d1ca06439b7ee54ad10aa00112e8258..a79a23fe100874df9c3bdcf4064aec2a982e530b 100644
---- a/frontend/src/App.jsx
-+++ b/frontend/src/App.jsx
-@@ -1,81 +1,82 @@
- import React, { useEffect, useState } from "react";
- import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
--import { AuthProvider } from "./kitchen/auth";
-+import { AuthProvider } from "./kitchen/auth";
-+import { buildApiUrl } from "./kitchen/api.js";
- import KitchenLayout from "./kitchen/Layout.jsx";
- import RequireAuth from "./kitchen/RequireAuth.jsx";
- import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
- import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
- import LoginPage from "./kitchen/pages/LoginPage.jsx";
- import WeekPage from "./kitchen/pages/WeekPage.jsx";
- import DishesPage from "./kitchen/pages/DishesPage.jsx";
- import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
- import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
- import "./kitchen/kitchen.css";
+diff --git a/frontend/src/kitchen/Layout.jsx b/frontend/src/kitchen/Layout.jsx
+index 48efa502ead790afc863a0f1eb0b6938e22a44a3..772c1d76748e8c8222e9a7b708ba8fd913eb2b06 100644
+--- a/frontend/src/kitchen/Layout.jsx
++++ b/frontend/src/kitchen/Layout.jsx
+@@ -1,36 +1,36 @@
+ import React from "react";
+ import { Link, NavLink, useNavigate } from "react-router-dom";
+ import { useAuth } from "./auth";
  
- const API = import.meta.env.VITE_API_URL;
+ export default function KitchenLayout({ children }) {
+   const { user, logout } = useAuth();
+   const navigate = useNavigate();
  
- function HomePage() {
-   const [msg, setMsg] = useState("—");
- 
--  async function ping() {
--    setMsg("Llamando al backend...");
--    const r = await fetch(`${API}/health`);
--    const data = await r.json();
--    setMsg(JSON.stringify(data, null, 2));
--  }
-+  async function ping() {
-+    setMsg("Llamando al backend...");
-+    const r = await fetch(buildApiUrl("/health"));
-+    const data = await r.json();
-+    setMsg(JSON.stringify(data, null, 2));
-+  }
+   const onLogout = async () => {
+     await logout();
+-    navigate("/kitchen/login");
++    navigate("/login");
+   };
  
    return (
-     <div style={{ fontFamily: "system-ui", padding: 24, maxWidth: 900 }}>
-       <h1>Piloto HomeFirst 🧪</h1>
-       <p>Backend: <code>{API}</code></p>
-       <div style={{ marginBottom: 16 }}>
-         <Link to="/kitchen/semana">Ir a Kitchen</Link>
+     <div className="kitchen-app">
+       <div className="kitchen-container">
+         <header className="kitchen-header">
+           <div>
+             <Link to="/kitchen/semana" style={{ textDecoration: "none", color: "inherit" }}>
+               <h2 style={{ margin: 0 }}>Kitchen</h2>
+             </Link>
+             <div className="kitchen-muted">Plan familiar de comidas y compras.</div>
+           </div>
+           <nav className="kitchen-nav">
+             <NavLink to="/kitchen/semana">Semana</NavLink>
+             <NavLink to="/kitchen/platos">Platos</NavLink>
+             <NavLink to="/kitchen/compra">Compra</NavLink>
+             <NavLink to="/kitchen/cambios">Cambios</NavLink>
+             {user?.role === "admin" ? <NavLink to="/admin/usuarios">Usuarios</NavLink> : null}
+           </nav>
+           {user ? (
+             <div>
+               <div className="kitchen-pill">{user.displayName}</div>
+               <button className="kitchen-button secondary" style={{ marginLeft: 8 }} onClick={onLogout}>
+                 Cerrar sesión
+               </button>
+diff --git a/frontend/src/kitchen/RequireAuth.jsx b/frontend/src/kitchen/RequireAuth.jsx
+index edc1098dee223b797a6a1241d69da5f09c6fa9e0..de038bf57da1f212c2661a5d68d314b6afeba1cf 100644
+--- a/frontend/src/kitchen/RequireAuth.jsx
++++ b/frontend/src/kitchen/RequireAuth.jsx
+@@ -1,24 +1,25 @@
+ import React from "react";
+ import { Navigate } from "react-router-dom";
+-import { useAuth } from "./auth";
++import { isUserAuthenticated, useAuth } from "./auth";
+ 
+ export default function RequireAuth({ children, roles }) {
+   const { user, loading } = useAuth();
++  const isAuthenticated = isUserAuthenticated(user);
+ 
+   if (loading) {
+     return (
+       <div className="kitchen-card">
+         <h3>Cargando sesión...</h3>
+         <p className="kitchen-muted">Estamos preparando tu módulo Kitchen.</p>
        </div>
+     );
+   }
  
-       <button onClick={ping} style={{ padding: "10px 14px", cursor: "pointer" }}>
-         Probar /health
-       </button>
+-  if (!user) return <Navigate to="/kitchen/login" replace />;
++  if (!isAuthenticated) return <Navigate to="/login" replace />;
  
-       <pre style={{ marginTop: 16, background: "#111", color: "#0f0", padding: 12, borderRadius: 8 }}>
-         {msg}
-       </pre>
-     </div>
-   );
+-  if (roles && !roles.includes(user.role)) {
+-    return <Navigate to="/kitchen/semana" replace />;
+-  }
++  if (roles && !roles.includes(user.role)) {
++    return <Navigate to="/kitchen/semana" replace />;
++  }
+ 
+   return children;
  }
+diff --git a/frontend/src/kitchen/auth.jsx b/frontend/src/kitchen/auth.jsx
+index 35bd08961cdb8949168c7c1f2639f0bd00d591c3..f1382bf0d83ffd086d6b4a623184e6e2eb306adf 100644
+--- a/frontend/src/kitchen/auth.jsx
++++ b/frontend/src/kitchen/auth.jsx
+@@ -1,30 +1,34 @@
+ import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+ import { apiRequest, getToken, setToken } from "./api.js";
  
- function BootstrapRedirect() {
+ const AuthContext = createContext(null);
+ 
++export function isUserAuthenticated(user) {
++  return Boolean(user);
++}
++
+ export function AuthProvider({ children }) {
+   const [user, setUser] = useState(null);
+   const [loading, setLoading] = useState(true);
+ 
+   const fetchMe = useCallback(async () => {
+     try {
+       const data = await apiRequest("/api/kitchen/auth/me");
+       setUser(data.user);
+     } catch {
+       setUser(null);
+       setToken(null);
+     } finally {
+       setLoading(false);
+     }
+   }, []);
+ 
+   useEffect(() => {
+     if (getToken()) {
+       fetchMe();
+     } else {
+       setLoading(false);
+     }
+   }, [fetchMe]);
+ 
+   const login = async (email, password) => {
+diff --git a/frontend/src/kitchen/pages/BootstrapPage.jsx b/frontend/src/kitchen/pages/BootstrapPage.jsx
+index 198a14a5aa71e7ee6584fecb5698c6e90f0a05c6..12b30ad3805878eb8f254791f175d8b4d2407e20 100644
+--- a/frontend/src/kitchen/pages/BootstrapPage.jsx
++++ b/frontend/src/kitchen/pages/BootstrapPage.jsx
+@@ -3,51 +3,51 @@ import { useNavigate } from "react-router-dom";
+ import { apiRequest } from "../api.js";
+ import { useAuth } from "../auth";
+ 
+ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+ 
+ export default function BootstrapPage() {
    const navigate = useNavigate();
-   const location = useLocation();
+   const { login } = useAuth();
+   const [checking, setChecking] = useState(true);
+   const [form, setForm] = useState({
+     firstName: "",
+     lastName: "",
+     email: "",
+     password: ""
+   });
+   const [error, setError] = useState("");
+   const [success, setSuccess] = useState("");
+   const [loading, setLoading] = useState(false);
  
    useEffect(() => {
      let active = true;
--    const checkBootstrap = async () => {
--      try {
--        const response = await fetch(`${API}/api/users/bootstrap-needed`);
--        const data = await response.json().catch(() => ({}));
--        if (!active || !response.ok) return;
-+    const checkBootstrap = async () => {
-+      try {
-+        const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
-+        const data = await response.json().catch(() => ({}));
-+        if (!active || !response.ok) return;
-         if (data.needed && location.pathname !== "/bootstrap") {
-           navigate("/bootstrap", { replace: true });
-         }
-         if (!data.needed && location.pathname === "/bootstrap") {
-           navigate("/kitchen/login", { replace: true });
+     const checkBootstrap = async () => {
+       try {
+         const data = await apiRequest("/api/users/bootstrap-needed");
+         if (active && !data.needed) {
+-          navigate("/kitchen/login", { replace: true });
++          navigate("/login", { replace: true });
          }
        } catch {
-         // Sin bloqueo si el backend no responde.
+         // Si falla la comprobación, dejamos el formulario visible para no bloquear.
+       } finally {
+         if (active) setChecking(false);
        }
      };
      checkBootstrap();
      return () => {
        active = false;
      };
-   }, [location.pathname, navigate]);
+   }, [navigate]);
  
-   return null;
- }
+   const onSubmit = async (event) => {
+     event.preventDefault();
+     setError("");
+     setSuccess("");
+     const trimmedEmail = form.email.trim().toLowerCase();
+     if (!form.firstName.trim()) {
+       setError("El nombre es obligatorio.");
+       return;
+     }
+     if (!emailRegex.test(trimmedEmail)) {
+       setError("El email no es válido.");
+       return;
+diff --git a/frontend/src/kitchen/pages/LoginPage.jsx b/frontend/src/kitchen/pages/LoginPage.jsx
+index ebc352c9fed84792000eb16fdc7123ed15e25293..7aedc0604541d77de9ac031af1350290a426a58d 100644
+--- a/frontend/src/kitchen/pages/LoginPage.jsx
++++ b/frontend/src/kitchen/pages/LoginPage.jsx
+@@ -1,55 +1,55 @@
+ import React, { useState } from "react";
+ import { useNavigate } from "react-router-dom";
+ import { useAuth } from "../auth";
  
- export default function App() {
-   return (
-     <BrowserRouter>
-       <AuthProvider>
-         <BootstrapRedirect />
-         <Routes>
-diff --git a/frontend/src/kitchen/api.js b/frontend/src/kitchen/api.js
-index fcc0906f9b1b820899b0cc6f6945f8f937354612..e68ff0c33ec8cdd78fa767ea9c321f0208486018 100644
---- a/frontend/src/kitchen/api.js
-+++ b/frontend/src/kitchen/api.js
-@@ -1,33 +1,39 @@
--const API = import.meta.env.VITE_API_URL;
-+const API = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
-+
-+export function buildApiUrl(path = "") {
-+  if (!path) return API;
-+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-+  return `${API}${normalizedPath}`;
-+}
+ export default function LoginPage() {
+   const { login } = useAuth();
+   const navigate = useNavigate();
+   const [form, setForm] = useState({ email: "", password: "" });
+   const [error, setError] = useState("");
+   const [loading, setLoading] = useState(false);
  
- export function getToken() {
-   return localStorage.getItem("kitchen_token");
- }
- 
- export function setToken(token) {
-   if (token) localStorage.setItem("kitchen_token", token);
-   else localStorage.removeItem("kitchen_token");
- }
- 
- export async function apiRequest(path, options = {}) {
-   const token = getToken();
-   const headers = {
-     "Content-Type": "application/json",
-     ...(options.headers || {})
+   const onSubmit = async (event) => {
+     event.preventDefault();
+     setError("");
+     setLoading(true);
+     try {
+-      await login(form.email, form.password);
+-      navigate("/kitchen/semana");
++      await login(form.email, form.password);
++      navigate("/dashboard");
+     } catch (err) {
+       setError(err.message || "No se pudo iniciar sesión.");
+     } finally {
+       setLoading(false);
+     }
    };
  
-   if (token) headers.Authorization = `Bearer ${token}`;
- 
--  const response = await fetch(`${API}${path}`, {
-+  const response = await fetch(buildApiUrl(path), {
-     ...options,
-     headers
-   });
- 
-   const data = await response.json().catch(() => ({}));
-   if (!response.ok) {
-     const message = data?.error || "Error inesperado";
-     throw new Error(message);
-   }
- 
-   return data;
- }
+   return (
+     <div className="kitchen-app">
+       <div className="kitchen-container" style={{ maxWidth: 480 }}>
+         <div className="kitchen-card">
+-          <h2>Acceso a Kitchen</h2>
++          <h2>Acceso a HomeFirst</h2>
+           <p className="kitchen-muted">Usa tus credenciales familiares para entrar.</p>
+           <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
+             <label>
+               <span className="kitchen-label">Email</span>
+               <input
+                 className="kitchen-input"
+                 type="email"
+                 value={form.email}
+                 onChange={(event) => setForm({ ...form, email: event.target.value })}
+                 placeholder="Ej: ana@email.com"
+                 required
+               />
+             </label>
+             <label>
+               <span className="kitchen-label">Contraseña</span>
+               <input
+                 className="kitchen-input"
+                 type="password"
+                 value={form.password}
+                 onChange={(event) => setForm({ ...form, password: event.target.value })}
+                 placeholder="••••••••"
+                 required
+               />
+             </label>
+             {error ? <div style={{ color: "#b42318" }}>{error}</div> : null}
+diff --git a/netlify.toml b/netlify.toml
+index e3c4c4a99bec26388006ee19e42c3b178df1b5a7..f4196f30328364cb633b6e0040ef1fb06980ee5a 100644
+--- a/netlify.toml
++++ b/netlify.toml
+@@ -1,4 +1,9 @@
+ [build]
+   base = "frontend"
+   command = "npm run build"
+   publish = "dist"
++
++[[redirects]]
++  from = "/*"
++  to = "/index.html"
++  status = 200
