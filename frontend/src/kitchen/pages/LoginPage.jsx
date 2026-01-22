@@ -15,7 +15,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(form.email, form.password);
-      navigate("/kitchen/semana");
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message || "No se pudo iniciar sesión.");
     } finally {
@@ -27,7 +27,7 @@ export default function LoginPage() {
     <div className="kitchen-app">
       <div className="kitchen-container" style={{ maxWidth: 480 }}>
         <div className="kitchen-card">
-          <h2>Acceso a Kitchen</h2>
+          <h2>Acceso a HomeFirst</h2>
           <p className="kitchen-muted">Usa tus credenciales familiares para entrar.</p>
           <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
             <label>

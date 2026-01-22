@@ -25,7 +25,7 @@ export default function BootstrapPage() {
       try {
         const data = await apiRequest("/api/users/bootstrap-needed");
         if (active && !data.needed) {
-          navigate("/kitchen/login", { replace: true });
+          navigate("/login", { replace: true });
         }
       } catch {
         // Si falla la comprobación, dejamos el formulario visible para no bloquear.

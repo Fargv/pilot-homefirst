@@ -3,6 +3,10 @@ import { apiRequest, getToken, setToken } from "./api.js";
 
 const AuthContext = createContext(null);
 
+export function isUserAuthenticated(user) {
+  return Boolean(user);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);

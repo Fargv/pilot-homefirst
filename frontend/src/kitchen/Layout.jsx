@@ -8,7 +8,7 @@ export default function KitchenLayout({ children }) {
 
   const onLogout = async () => {
     await logout();
-    navigate("/kitchen/login");
+    navigate("/login");
   };
 
   return (
