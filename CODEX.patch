@@ -1,303 +1,25 @@
-diff --git a/frontend/src/kitchen/Layout.jsx b/frontend/src/kitchen/Layout.jsx
-index d2b35b52cd15703da9b53e97e454f1a5c3699f33..bcd8deeda0467e73e94bed54c3ce2f4fe792bc7b 100644
---- a/frontend/src/kitchen/Layout.jsx
-+++ b/frontend/src/kitchen/Layout.jsx
-@@ -1,44 +1,112 @@
--import React from "react";
-+import React, { useMemo, useState } from "react";
- import { Link, NavLink, useNavigate } from "react-router-dom";
- import { useAuth } from "./auth";
- 
- export default function KitchenLayout({ children }) {
-   const { user, logout } = useAuth();
-   const navigate = useNavigate();
-+  const [drawerOpen, setDrawerOpen] = useState(false);
-+
-+  const navLinks = useMemo(() => {
-+    const links = [
-+      { to: "/kitchen/semana", label: "Semana" },
-+      { to: "/kitchen/platos", label: "Platos" },
-+      { to: "/kitchen/compra", label: "Ingredientes" },
-+    ];
-+
-+    if (user?.role === "admin") {
-+      links.push({ to: "/admin/usuarios", label: "Usuarios" });
-+    }
-+
-+    return links;
-+  }, [user?.role]);
- 
-   const onLogout = async () => {
-     await logout();
--    navigate("/login");
-+    navigate("/login");
-+    setDrawerOpen(false);
-+  };
-+
-+  const onNavigate = () => {
-+    setDrawerOpen(false);
-   };
- 
-   return (
-     <div className="kitchen-app">
--      <div className="kitchen-container">
--        <header className="kitchen-header">
--          <div>
--            <Link to="/kitchen/semana" style={{ textDecoration: "none", color: "inherit" }}>
--              <h2 style={{ margin: 0 }}>Kitchen</h2>
-+      <header className="kitchen-topbar">
-+        <div className="kitchen-topbar-inner">
-+          <div className="kitchen-brand">
-+            <button
-+              className="kitchen-nav-toggle"
-+              type="button"
-+              onClick={() => setDrawerOpen((open) => !open)}
-+              aria-label="Abrir menú"
-+              aria-expanded={drawerOpen}
-+            >
-+              <span />
-+              <span />
-+              <span />
-+            </button>
-+            <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
-+              HomeFirst
-             </Link>
--            <div className="kitchen-muted">Plan familiar de comidas y compras.</div>
-           </div>
--          <nav className="kitchen-nav">
--            <NavLink to="/kitchen/semana">Semana</NavLink>
--            <NavLink to="/kitchen/platos">Platos</NavLink>
--            <NavLink to="/kitchen/compra">Compra</NavLink>
--            <NavLink to="/kitchen/cambios">Cambios</NavLink>
--            {user?.role === "admin" ? <NavLink to="/admin/usuarios">Usuarios</NavLink> : null}
-+          <nav className="kitchen-nav-desktop">
-+            {navLinks.map((link) => (
-+              <NavLink key={link.to} to={link.to} onClick={onNavigate}>
-+                {link.label}
-+              </NavLink>
-+            ))}
-           </nav>
-           {user ? (
--            <div>
--              <div className="kitchen-pill">{user.displayName}</div>
--              <button className="kitchen-button secondary" style={{ marginLeft: 8 }} onClick={onLogout}>
-+            <div className="kitchen-user">
-+              <div>
-+                <div className="kitchen-pill">{user.displayName}</div>
-+                <div className="kitchen-muted kitchen-user-role">{user.role}</div>
-+              </div>
-+              <button className="kitchen-button secondary" type="button" onClick={onLogout}>
-                 Cerrar sesión
-               </button>
-             </div>
--          ) : null}
--        </header>
-+          ) : (
-+            <div className="kitchen-user-placeholder" />
-+          )}
-+        </div>
-+      </header>
-+      <div className="kitchen-container">
-+        {drawerOpen ? (
-+          <>
-+            <button className="kitchen-drawer-backdrop" type="button" onClick={onNavigate} aria-label="Cerrar menú" />
-+            <aside className="kitchen-drawer" aria-hidden={!drawerOpen}>
-+              <div className="kitchen-drawer-header">
-+                <span>Menú</span>
-+                <button className="kitchen-drawer-close" type="button" onClick={onNavigate}>
-+                  Cerrar
-+                </button>
-+              </div>
-+              <nav className="kitchen-nav-mobile">
-+                {navLinks.map((link) => (
-+                  <NavLink key={link.to} to={link.to} onClick={onNavigate}>
-+                    {link.label}
-+                  </NavLink>
-+                ))}
-+              </nav>
-+              {user ? (
-+                <div className="kitchen-drawer-user">
-+                  <div>
-+                    <div className="kitchen-pill">{user.displayName}</div>
-+                    <div className="kitchen-muted kitchen-user-role">{user.role}</div>
-+                  </div>
-+                  <button className="kitchen-button secondary" type="button" onClick={onLogout}>
-+                    Cerrar sesión
-+                  </button>
-+                </div>
-+              ) : null}
-+            </aside>
-+          </>
-+        ) : null}
-         {children}
-       </div>
-     </div>
-   );
- }
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 4f286af7a1d6c1e42d59b10f88e911f52730b49b..33b7347b678907463bb36a1f3bac76be2d128b1f 100644
+index 6825e04c63d7b519d569f0117945c2372291f403..8ac0e3ae04665590d02a385e8ff54c8b365ee6cf 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -1,54 +1,179 @@
- :root {
-   color-scheme: light;
+@@ -138,169 +138,259 @@
+ 
+ .kitchen-drawer-close {
+   border: none;
+   background: transparent;
+   color: #1d2939;
+   font-weight: 600;
+   cursor: pointer;
  }
  
- .kitchen-app {
-   font-family: "Inter", system-ui, sans-serif;
-   background: #f6f7fb;
-   min-height: 100vh;
-   color: #101828;
+ .kitchen-nav-mobile {
+   flex-direction: column;
+   gap: 8px;
  }
  
- .kitchen-container {
-   max-width: 1100px;
-   margin: 0 auto;
-   padding: 24px;
- }
- 
--.kitchen-header {
-+.kitchen-topbar {
-+  position: sticky;
-+  top: 0;
-+  z-index: 20;
-+  background: white;
-+  border-bottom: 1px solid #e4e7ec;
-+}
-+
-+.kitchen-topbar-inner {
-+  max-width: 1100px;
-+  margin: 0 auto;
-+  padding: 16px 24px;
+ .kitchen-drawer-user {
    display: flex;
--  flex-wrap: wrap;
-   align-items: center;
-   justify-content: space-between;
-   gap: 16px;
--  margin-bottom: 24px;
-+  min-height: 72px;
- }
- 
--.kitchen-nav {
-+.kitchen-brand {
-   display: flex;
--  flex-wrap: wrap;
-+  align-items: center;
-+  gap: 12px;
-+}
-+
-+.kitchen-brand-link {
-+  font-weight: 700;
-+  font-size: 20px;
-+  color: #101828;
-+  text-decoration: none;
-+}
-+
-+.kitchen-nav-desktop,
-+.kitchen-nav-mobile {
-+  display: flex;
-+  gap: 16px;
-+}
-+
-+.kitchen-nav-desktop a,
-+.kitchen-nav-mobile a {
-+  text-decoration: none;
-+  color: #1d2939;
-+  font-weight: 600;
-+  font-size: 14px;
-+  padding: 6px 8px;
-+  border-radius: 8px;
-+}
-+
-+.kitchen-nav-desktop a.active,
-+.kitchen-nav-mobile a.active {
-+  background: #eef2ff;
-+  color: #3730a3;
-+}
-+
-+.kitchen-user {
-+  display: flex;
-+  align-items: center;
-+  gap: 12px;
-+}
-+
-+.kitchen-user-role {
-+  font-size: 12px;
-+  margin-top: 2px;
-+}
-+
-+.kitchen-user-placeholder {
-+  width: 160px;
-+  min-height: 40px;
-+}
-+
-+.kitchen-nav-toggle {
-+  display: none;
-+  flex-direction: column;
-+  justify-content: center;
-+  gap: 4px;
-+  width: 36px;
-+  height: 36px;
-+  border-radius: 10px;
-+  border: 1px solid #d0d5dd;
-+  background: white;
-+  cursor: pointer;
-+  padding: 8px;
-+}
-+
-+.kitchen-nav-toggle span {
-+  display: block;
-+  height: 2px;
-+  background: #1d2939;
-+  border-radius: 999px;
-+}
-+
-+.kitchen-drawer-backdrop {
-+  position: fixed;
-+  inset: 0;
-+  background: rgba(16, 24, 40, 0.4);
-+  border: none;
-+  z-index: 30;
-+}
-+
-+.kitchen-drawer {
-+  position: fixed;
-+  top: 0;
-+  left: 0;
-+  width: min(300px, 80vw);
-+  height: 100%;
-+  background: white;
-+  z-index: 31;
-+  padding: 20px;
-+  display: flex;
-+  flex-direction: column;
-+  gap: 16px;
-+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
-+}
-+
-+.kitchen-drawer-header {
-+  display: flex;
-+  align-items: center;
-+  justify-content: space-between;
-+  font-weight: 600;
-+}
-+
-+.kitchen-drawer-close {
-+  border: none;
-+  background: transparent;
-+  color: #1d2939;
-+  font-weight: 600;
-+  cursor: pointer;
-+}
-+
-+.kitchen-nav-mobile {
-+  flex-direction: column;
-+  gap: 8px;
-+}
-+
-+.kitchen-drawer-user {
-+  display: flex;
-+  flex-direction: column;
+   flex-direction: column;
    gap: 12px;
  }
  
@@ -306,12 +28,20 @@ index 4f286af7a1d6c1e42d59b10f88e911f52730b49b..33b7347b678907463bb36a1f3bac76be
    border-radius: 16px;
    padding: 20px;
    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
++  display: flex;
++  flex-direction: column;
++  gap: 16px;
++  box-sizing: border-box;
++  min-width: 0;
  }
  
  .kitchen-grid {
    display: grid;
-   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-   gap: 16px;
+-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+-  gap: 16px;
++  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
++  gap: 20px;
++  align-items: stretch;
  }
  
  .kitchen-button {
@@ -323,7 +53,159 @@ index 4f286af7a1d6c1e42d59b10f88e911f52730b49b..33b7347b678907463bb36a1f3bac76be
    cursor: pointer;
    font-weight: 600;
  }
-@@ -136,30 +261,46 @@
+ 
+ .kitchen-button.secondary {
+   background: #e2e8f0;
+   color: #0f172a;
+ }
+ 
+ .kitchen-button.ghost {
+   background: transparent;
+   border: 1px solid #cbd5f5;
+   color: #1e293b;
+ }
+ 
+ .kitchen-input,
+ .kitchen-select,
+ .kitchen-textarea {
+   width: 100%;
+   padding: 10px 12px;
+   border-radius: 10px;
+   border: 1px solid #d0d5dd;
+   background: white;
+   font-size: 14px;
++  box-sizing: border-box;
++  min-width: 0;
+ }
+ 
+ .kitchen-label {
+   display: block;
+   font-weight: 600;
+   margin-bottom: 6px;
+   color: #344054;
+ }
+ 
++.kitchen-field {
++  display: flex;
++  flex-direction: column;
++  gap: 6px;
++}
++
+ .kitchen-pill {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   padding: 4px 10px;
+   border-radius: 999px;
+   background: #eef2ff;
+   color: #4338ca;
+   font-size: 12px;
+   font-weight: 600;
+ }
+ 
+ .kitchen-empty {
+   text-align: center;
+   padding: 32px;
+   color: #475467;
+ }
+ 
+ .kitchen-muted {
+   color: #667085;
+   font-size: 14px;
+ }
+ 
+ .kitchen-actions {
+   display: flex;
+-  flex-wrap: wrap;
++  flex-direction: column;
+   gap: 10px;
+-  margin-top: 12px;
++  margin-top: auto;
++  width: 100%;
++}
++
++.kitchen-week-header {
++  display: flex;
++  align-items: flex-start;
++  justify-content: space-between;
++  gap: 24px;
++  margin-bottom: 24px;
++}
++
++.kitchen-week-header-main {
++  display: flex;
++  flex-direction: column;
++  gap: 8px;
++}
++
++.kitchen-week-header-actions {
++  display: flex;
++  flex-direction: column;
++  gap: 12px;
++  width: min(320px, 100%);
++}
++
++.kitchen-eyebrow {
++  text-transform: uppercase;
++  letter-spacing: 0.12em;
++  font-size: 11px;
++  font-weight: 700;
++  color: #7c3aed;
++}
++
++.kitchen-title {
++  margin: 0;
++  font-size: 28px;
++  font-weight: 700;
++  color: #0f172a;
++}
++
++.kitchen-day-card {
++  min-height: 100%;
++}
++
++.kitchen-day-header {
++  display: flex;
++  flex-direction: column;
++  gap: 6px;
++}
++
++.kitchen-day-title {
++  margin: 0;
++  font-size: 18px;
++  font-weight: 700;
++  text-transform: capitalize;
++}
++
++.kitchen-day-meta {
++  display: flex;
++  flex-direction: column;
++  gap: 4px;
++  font-size: 13px;
++  color: #667085;
+ }
+ 
+ .kitchen-toolbar {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 12px;
+   align-items: center;
+   justify-content: space-between;
+   margin-top: 16px;
+ }
+ 
+ .kitchen-alert {
+   border-radius: 12px;
+   padding: 10px 12px;
+   font-weight: 600;
+   font-size: 14px;
+ }
+ 
+ .kitchen-alert.success {
+   background: #ecfdf3;
+   color: #027a48;
+   border: 1px solid #a6f4c5;
+ }
  
  .kitchen-alert.error {
    background: #fef3f2;
@@ -349,27 +231,266 @@ index 4f286af7a1d6c1e42d59b10f88e911f52730b49b..33b7347b678907463bb36a1f3bac76be
      padding: 16px;
    }
  
--  .kitchen-header {
--    flex-direction: column;
--    align-items: flex-start;
+-  .kitchen-topbar-inner {
+-    padding: 12px 16px;
+-    min-height: 72px;
++  .kitchen-grid {
++    grid-template-columns: 1fr;
++    gap: 16px;
++  }
++
++  .kitchen-week-header {
++    flex-direction: column;
++    margin-bottom: 16px;
++  }
++
++  .kitchen-week-header-actions {
++    width: 100%;
++  }
++
 +  .kitchen-topbar-inner {
 +    padding: 12px 16px;
 +    min-height: 72px;
-+  }
-+
-+  .kitchen-nav-desktop {
-+    display: none;
-+  }
-+
-+  .kitchen-user {
-+    display: none;
-+  }
-+
-+  .kitchen-user-placeholder {
-+    display: none;
-+  }
-+
-+  .kitchen-nav-toggle {
-+    display: flex;
    }
+ 
+   .kitchen-nav-desktop {
+     display: none;
+   }
+ 
+   .kitchen-user {
+     display: none;
+   }
+ 
+   .kitchen-user-placeholder {
+     display: none;
+   }
+ 
+   .kitchen-nav-toggle {
+     display: flex;
+   }
+ }
+diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
+index 25cbd92752d96d6387a761f5222fc727f708b53f..3138bb0e4de46575b9cef7c17fa7c8b30e10e37f 100644
+--- a/frontend/src/kitchen/pages/WeekPage.jsx
++++ b/frontend/src/kitchen/pages/WeekPage.jsx
+@@ -36,171 +36,189 @@ export default function WeekPage() {
+       setPlan(planData.plan);
+       setDishes(dishesData.dishes || []);
+       if (user?.role === "admin") {
+         const usersData = await apiRequest("/api/kitchen/users");
+         setUsers(usersData.users || []);
+       }
+     } catch (err) {
+       setError(err.message || "No se pudo cargar la semana.");
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   useEffect(() => {
+     loadData();
+   }, [weekStart]);
+ 
+   const userMap = useMemo(() => {
+     const map = new Map();
+     users.forEach((u) => map.set(u.id, u));
+     return map;
+   }, [users]);
+ 
+   const updateDay = async (day, updates) => {
+     try {
+-      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}` , {
++      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
+         method: "PUT",
+         body: JSON.stringify(updates)
+       });
+       setPlan(data.plan);
+     } catch (err) {
+       setError(err.message || "No se pudo actualizar el día.");
+     }
+   };
+ 
+   const onAssignSelf = (day) => {
+     updateDay(day, { cookUserId: user?.id || user?._id });
+   };
+ 
+   if (loading) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card">Cargando semana...</div>
+       </KitchenLayout>
+     );
+   }
+ 
+   if (error) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card" style={{ color: "#b42318" }}>{error}</div>
+       </KitchenLayout>
+     );
+   }
+ 
+   if (!plan) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card kitchen-empty">
+           <h3>No hay planificación todavía</h3>
+           <p>Cuando guardes un día aparecerá aquí.</p>
+         </div>
+       </KitchenLayout>
+     );
+   }
+ 
++  const weekLabel = new Date(weekStart).toLocaleDateString("es-ES", {
++    day: "numeric",
++    month: "long",
++    year: "numeric"
++  });
++
+   return (
+     <KitchenLayout>
+-      <div className="kitchen-card" style={{ marginBottom: 16 }}>
+-        <h3>Semana del {weekStart}</h3>
+-        <p className="kitchen-muted">Planifica de lunes a viernes, con cocina por defecto el día anterior.</p>
+-        <label style={{ marginTop: 8, display: "block", maxWidth: 240 }}>
+-          <span className="kitchen-label">Cambiar semana (lunes)</span>
+-          <input
+-            className="kitchen-input"
+-            type="date"
+-            value={weekStart}
+-            onChange={(event) => setWeekStart(event.target.value)}
+-          />
+-        </label>
+-      </div>
++      <section className="kitchen-week-header">
++        <div className="kitchen-week-header-main">
++          <span className="kitchen-eyebrow">Plan semanal</span>
++          <h1 className="kitchen-title">Semana del {weekLabel}</h1>
++          <p className="kitchen-muted">
++            Planifica de lunes a viernes, con cocina por defecto el día anterior.
++          </p>
++        </div>
++        <div className="kitchen-week-header-actions">
++          <a className="kitchen-button" href="#week-grid">Planificar semana</a>
++          <label className="kitchen-field">
++            <span className="kitchen-label">Cambiar semana (lunes)</span>
++            <input
++              className="kitchen-input"
++              type="date"
++              value={weekStart}
++              onChange={(event) => setWeekStart(event.target.value)}
++            />
++          </label>
++        </div>
++      </section>
+ 
+-      <div className="kitchen-grid">
++      <div className="kitchen-grid" id="week-grid">
+         {plan.days.map((day) => {
+           const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
+           return (
+-            <div key={day.date} className="kitchen-card">
+-              <h4 style={{ marginTop: 0 }}>{formatDateLabel(day.date)}</h4>
+-              <div className="kitchen-muted">Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</div>
+-              <div className="kitchen-muted">Cocinero: {cookUser?.displayName || "Sin asignar"}</div>
++            <div key={day.date} className="kitchen-card kitchen-day-card">
++              <div className="kitchen-day-header">
++                <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
++                <div className="kitchen-day-meta">
++                  <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
++                  <span>Cocinero: {cookUser?.displayName || "Sin asignar"}</span>
++                </div>
++              </div>
+ 
+-              <div style={{ marginTop: 12 }}>
+-                <label className="kitchen-label">Plato principal</label>
++              <label className="kitchen-field">
++                <span className="kitchen-label">Plato principal</span>
+                 <select
+                   className="kitchen-select"
+                   value={day.mainDishId || ""}
+                   onChange={(event) => updateDay(day, { mainDishId: event.target.value || null })}
+                 >
+                   <option value="">Sin plato</option>
+                   {dishes.map((dish) => (
+                     <option key={dish._id} value={dish._id}>{dish.name}</option>
+                   ))}
+                 </select>
+-              </div>
++              </label>
+ 
+-              <div style={{ marginTop: 12 }}>
+-                <label className="kitchen-label">Guarnición (opcional)</label>
++              <label className="kitchen-field">
++                <span className="kitchen-label">Guarnición (opcional)</span>
+                 <select
+                   className="kitchen-select"
+                   value={day.sideDishId || ""}
+                   onChange={(event) => updateDay(day, { sideDishId: event.target.value || null })}
+                 >
+                   <option value="">Sin guarnición</option>
+                   {dishes.map((dish) => (
+                     <option key={dish._id} value={dish._id}>{dish.name}</option>
+                   ))}
+                 </select>
+-              </div>
++              </label>
+ 
+-              <div style={{ marginTop: 12 }}>
+-                <label className="kitchen-label">Cuándo se cocina</label>
++              <label className="kitchen-field">
++                <span className="kitchen-label">Cuándo se cocina</span>
+                 <select
+                   className="kitchen-select"
+                   value={day.cookTiming}
+                   onChange={(event) => updateDay(day, { cookTiming: event.target.value })}
+                 >
+                   <option value="previous_day">Día anterior</option>
+                   <option value="same_day">Mismo día</option>
+                 </select>
+-              </div>
++              </label>
+ 
+-              <div style={{ marginTop: 12 }}>
+-                <label className="kitchen-label">Ingredientes extra (separados por coma)</label>
++              <label className="kitchen-field">
++                <span className="kitchen-label">Ingredientes extra (separados por coma)</span>
+                 <textarea
+                   className="kitchen-textarea"
+                   rows="2"
+                   defaultValue={(day.ingredientOverrides || []).map((item) => item.displayName).join(", ")}
+                   onBlur={(event) => {
+                     const list = event.target.value
+                       .split(",")
+                       .map((value) => ({ displayName: value.trim() }))
+                       .filter((item) => item.displayName);
+                     updateDay(day, { ingredientOverrides: list });
+                   }}
+                 />
+-              </div>
++              </label>
+ 
+               <div className="kitchen-actions">
+                 <button className="kitchen-button" onClick={() => onAssignSelf(day)}>
+                   Me lo asigno
+                 </button>
+                 {user?.role === "admin" ? (
+                   <select
+                     className="kitchen-select"
+                     value={day.cookUserId || ""}
+                     onChange={(event) => updateDay(day, { cookUserId: event.target.value || null })}
+                   >
+                     <option value="">Sin asignar</option>
+                     {users.map((u) => (
+                       <option key={u.id} value={u.id}>{u.displayName}</option>
+                     ))}
+                   </select>
+                 ) : null}
+               </div>
+             </div>
+           );
+         })}
+       </div>
+     </KitchenLayout>
+   );
  }

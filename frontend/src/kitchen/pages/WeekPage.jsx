@@ -58,7 +58,7 @@ export default function WeekPage() {
 
   const updateDay = async (day, updates) => {
     try {
-      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}` , {
+      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
         method: "PUT",
         body: JSON.stringify(updates)
       });
@@ -99,33 +99,51 @@ export default function WeekPage() {
     );
   }
 
+  const weekLabel = new Date(weekStart).toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+
   return (
     <KitchenLayout>
-      <div className="kitchen-card" style={{ marginBottom: 16 }}>
-        <h3>Semana del {weekStart}</h3>
-        <p className="kitchen-muted">Planifica de lunes a viernes, con cocina por defecto el día anterior.</p>
-        <label style={{ marginTop: 8, display: "block", maxWidth: 240 }}>
-          <span className="kitchen-label">Cambiar semana (lunes)</span>
-          <input
-            className="kitchen-input"
-            type="date"
-            value={weekStart}
-            onChange={(event) => setWeekStart(event.target.value)}
-          />
-        </label>
-      </div>
+      <section className="kitchen-week-header">
+        <div className="kitchen-week-header-main">
+          <span className="kitchen-eyebrow">Plan semanal</span>
+          <h1 className="kitchen-title">Semana del {weekLabel}</h1>
+          <p className="kitchen-muted">
+            Planifica de lunes a viernes, con cocina por defecto el día anterior.
+          </p>
+        </div>
+        <div className="kitchen-week-header-actions">
+          <a className="kitchen-button" href="#week-grid">Planificar semana</a>
+          <label className="kitchen-field">
+            <span className="kitchen-label">Cambiar semana (lunes)</span>
+            <input
+              className="kitchen-input"
+              type="date"
+              value={weekStart}
+              onChange={(event) => setWeekStart(event.target.value)}
+            />
+          </label>
+        </div>
+      </section>
 
-      <div className="kitchen-grid">
+      <div className="kitchen-grid" id="week-grid">
         {plan.days.map((day) => {
           const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
           return (
-            <div key={day.date} className="kitchen-card">
-              <h4 style={{ marginTop: 0 }}>{formatDateLabel(day.date)}</h4>
-              <div className="kitchen-muted">Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</div>
-              <div className="kitchen-muted">Cocinero: {cookUser?.displayName || "Sin asignar"}</div>
+            <div key={day.date} className="kitchen-card kitchen-day-card">
+              <div className="kitchen-day-header">
+                <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
+                <div className="kitchen-day-meta">
+                  <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
+                  <span>Cocinero: {cookUser?.displayName || "Sin asignar"}</span>
+                </div>
+              </div>
 
-              <div style={{ marginTop: 12 }}>
-                <label className="kitchen-label">Plato principal</label>
+              <label className="kitchen-field">
+                <span className="kitchen-label">Plato principal</span>
                 <select
                   className="kitchen-select"
                   value={day.mainDishId || ""}
@@ -136,10 +154,10 @@ export default function WeekPage() {
                     <option key={dish._id} value={dish._id}>{dish.name}</option>
                   ))}
                 </select>
-              </div>
+              </label>
 
-              <div style={{ marginTop: 12 }}>
-                <label className="kitchen-label">Guarnición (opcional)</label>
+              <label className="kitchen-field">
+                <span className="kitchen-label">Guarnición (opcional)</span>
                 <select
                   className="kitchen-select"
                   value={day.sideDishId || ""}
@@ -150,10 +168,10 @@ export default function WeekPage() {
                     <option key={dish._id} value={dish._id}>{dish.name}</option>
                   ))}
                 </select>
-              </div>
+              </label>
 
-              <div style={{ marginTop: 12 }}>
-                <label className="kitchen-label">Cuándo se cocina</label>
+              <label className="kitchen-field">
+                <span className="kitchen-label">Cuándo se cocina</span>
                 <select
                   className="kitchen-select"
                   value={day.cookTiming}
@@ -162,10 +180,10 @@ export default function WeekPage() {
                   <option value="previous_day">Día anterior</option>
                   <option value="same_day">Mismo día</option>
                 </select>
-              </div>
+              </label>
 
-              <div style={{ marginTop: 12 }}>
-                <label className="kitchen-label">Ingredientes extra (separados por coma)</label>
+              <label className="kitchen-field">
+                <span className="kitchen-label">Ingredientes extra (separados por coma)</span>
                 <textarea
                   className="kitchen-textarea"
                   rows="2"
@@ -178,7 +196,7 @@ export default function WeekPage() {
                     updateDay(day, { ingredientOverrides: list });
                   }}
                 />
-              </div>
+              </label>
 
               <div className="kitchen-actions">
                 <button className="kitchen-button" onClick={() => onAssignSelf(day)}>

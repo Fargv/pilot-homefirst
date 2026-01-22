@@ -160,12 +160,18 @@
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .kitchen-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  align-items: stretch;
 }
 
 .kitchen-button {
@@ -198,6 +204,8 @@
   border: 1px solid #d0d5dd;
   background: white;
   font-size: 14px;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .kitchen-label {
@@ -205,6 +213,12 @@
   font-weight: 600;
   margin-bottom: 6px;
   color: #344054;
+}
+
+.kitchen-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .kitchen-pill {
@@ -232,9 +246,71 @@
 
 .kitchen-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: auto;
+  width: 100%;
+}
+
+.kitchen-week-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.kitchen-week-header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kitchen-week-header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(320px, 100%);
+}
+
+.kitchen-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7c3aed;
+}
+
+.kitchen-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.kitchen-day-card {
+  min-height: 100%;
+}
+
+.kitchen-day-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kitchen-day-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.kitchen-day-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #667085;
 }
 
 .kitchen-toolbar {
@@ -281,6 +357,20 @@
 @media (max-width: 600px) {
   .kitchen-container {
     padding: 16px;
+  }
+
+  .kitchen-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .kitchen-week-header {
+    flex-direction: column;
+    margin-bottom: 16px;
+  }
+
+  .kitchen-week-header-actions {
+    width: 100%;
   }
 
   .kitchen-topbar-inner {
