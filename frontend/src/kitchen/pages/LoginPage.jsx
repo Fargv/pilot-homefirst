@@ -15,7 +15,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(form.email, form.password);
-      navigate("/dashboard");
+      navigate("/kitchen/semana");
     } catch (err) {
       setError(err.message || "No se pudo iniciar sesión.");
     } finally {

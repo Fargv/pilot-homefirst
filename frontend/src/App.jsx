@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { AuthProvider } from "./kitchen/auth";
+import React, { useEffect } from "react";
+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
 import { buildApiUrl } from "./kitchen/api.js";
 import KitchenLayout from "./kitchen/Layout.jsx";
 import RequireAuth from "./kitchen/RequireAuth.jsx";
@@ -13,33 +13,26 @@ import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
 import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
 import "./kitchen/kitchen.css";
 
-const API = import.meta.env.VITE_API_URL;
+function HomeRedirect() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
-function HomePage() {
-  const [msg, setMsg] = useState("—");
-
-  async function ping() {
-    setMsg("Llamando al backend...");
-    const r = await fetch(buildApiUrl("/health"));
-    const data = await r.json();
-    setMsg(JSON.stringify(data, null, 2));
-  }
+  useEffect(() => {
+    if (loading) return;
+    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/kitchen/login";
+    navigate(destination, { replace: true });
+  }, [loading, navigate, user]);
 
   return (
-    <div style={{ fontFamily: "system-ui", padding: 24, maxWidth: 900 }}>
-      <h1>Piloto HomeFirst 🧪</h1>
-      <p>Backend: <code>{API}</code></p>
-      <div style={{ marginBottom: 16 }}>
-        <Link to="/kitchen/semana">Ir a Kitchen</Link>
+    <div className="kitchen-app">
+      <div className="kitchen-container" style={{ maxWidth: 520 }}>
+        <div className="kitchen-card">
+          <h2>Cargando HomeFirst...</h2>
+          <p className="kitchen-muted">
+            Estamos preparando tu acceso a Kitchen. En unos segundos te redirigimos.
+          </p>
+        </div>
       </div>
-
-      <button onClick={ping} style={{ padding: "10px 14px", cursor: "pointer" }}>
-        Probar /health
-      </button>
-
-      <pre style={{ marginTop: 16, background: "#111", color: "#0f0", padding: 12, borderRadius: 8 }}>
-        {msg}
-      </pre>
     </div>
   );
 }
@@ -80,7 +73,7 @@ export default function App() {
       <AuthProvider>
         <BootstrapRedirect />
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<HomeRedirect />} />
           <Route path="/bootstrap" element={<BootstrapPage />} />
           <Route path="/kitchen/login" element={<LoginPage />} />
           <Route

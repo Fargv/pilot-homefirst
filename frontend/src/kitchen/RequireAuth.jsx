@@ -15,7 +15,7 @@ export default function RequireAuth({ children, roles }) {
     );
   }
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/kitchen/login" replace />;
 
   if (roles && !roles.includes(user.role)) {
     return <Navigate to="/kitchen/semana" replace />;
