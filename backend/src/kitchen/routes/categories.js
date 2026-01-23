@@ -4,8 +4,8 @@ import { requireAuth } from "../middleware.js";
 
 const router = express.Router();
 
-const DEFAULT_COLOR_BG = "#eef2ff";
-const DEFAULT_COLOR_TEXT = "#4338ca";
+const DEFAULT_COLOR_BG = "#E8F1FF";
+const DEFAULT_COLOR_TEXT = "#1D4ED8";
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 

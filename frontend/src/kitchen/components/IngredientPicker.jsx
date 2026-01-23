@@ -3,9 +3,40 @@ import { apiRequest } from "../api.js";
 import CategoryChip from "./CategoryChip.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
-const emptyCategory = { _id: "", name: "", colorBg: "#eef2ff", colorText: "#4338ca" };
+const emptyCategory = { _id: "", name: "", colorBg: "#E8F1FF", colorText: "#1D4ED8" };
+const PASTEL_PALETTE = [
+  { colorBg: "#E8F1FF", colorText: "#1D4ED8" },
+  { colorBg: "#FFE8E5", colorText: "#B42318" },
+  { colorBg: "#E7F8EE", colorText: "#027A48" },
+  { colorBg: "#FFF4D6", colorText: "#8A6A00" },
+  { colorBg: "#F3E8FF", colorText: "#6D28D9" },
+  { colorBg: "#FFE8F1", colorText: "#BE185D" },
+  { colorBg: "#E0F2FE", colorText: "#0369A1" },
+  { colorBg: "#F2F4F7", colorText: "#344054" }
+];
 
-export default function IngredientPicker({ value = [], onChange, categories = [], onCategoryCreated }) {
+const resolveCategoryColors = (category) => {
+  if (!category) return emptyCategory;
+  const seed = `${category.name || ""}${category._id || ""}`;
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash << 5) - hash + seed.charCodeAt(index);
+    hash |= 0;
+  }
+  const palette = PASTEL_PALETTE[Math.abs(hash) % PASTEL_PALETTE.length];
+  return {
+    colorBg: palette.colorBg,
+    colorText: palette.colorText
+  };
+};
+
+export default function IngredientPicker({
+  value = [],
+  onChange,
+  categories = [],
+  onCategoryCreated,
+  onCreateStateChange
+}) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -19,6 +50,12 @@ export default function IngredientPicker({ value = [], onChange, categories = []
   const [lastUsedCategory, setLastUsedCategory] = useState(null);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [replaceItem, setReplaceItem] = useState(null);
+
+  useEffect(() => {
+    if (onCreateStateChange) {
+      onCreateStateChange(showCreate);
+    }
+  }, [onCreateStateChange, showCreate]);
 
   useEffect(() => {
     if (!query) {
@@ -54,11 +91,20 @@ export default function IngredientPicker({ value = [], onChange, categories = []
     };
   }, [query]);
 
+  const normalizedQuery = useMemo(() => normalizeIngredientName(query), [query]);
+
   const filteredCategories = useMemo(() => {
     if (!categoryQuery) return categories;
     const lower = categoryQuery.toLowerCase();
     return categories.filter((category) => category.name.toLowerCase().includes(lower));
   }, [categories, categoryQuery]);
+
+  const visibleSuggestions = useMemo(() => {
+    if (!normalizedQuery) return suggestions;
+    return suggestions.filter((item) =>
+      normalizeIngredientName(item.name || "").includes(normalizedQuery)
+    );
+  }, [normalizedQuery, suggestions]);
 
   const addIngredient = (ingredient, displayNameOverride, targetToReplace = null) => {
     const canonicalName = ingredient.canonicalName || normalizeIngredientName(displayNameOverride || ingredient.name);
@@ -149,34 +195,7 @@ export default function IngredientPicker({ value = [], onChange, categories = []
 
   return (
     <div className="kitchen-ingredient-picker">
-      <div className="kitchen-chip-list">
-        {value.length === 0 ? (
-          <span className="kitchen-muted">Sin ingredientes todavía.</span>
-        ) : (
-          value.map((item) => (
-            <div className="kitchen-chip-row" key={`${item.ingredientId || item.canonicalName}`}>
-              <CategoryChip
-                label={item.displayName}
-                colorBg={item.category?.colorBg}
-                colorText={item.category?.colorText}
-                status={item.status === "pending" ? "pending" : ""}
-                onRemove={() => onChange(value.filter((entry) => entry !== item))}
-              />
-              {item.status === "pending" ? (
-                <button
-                  className="kitchen-chip-action"
-                  type="button"
-                  onClick={() => openCreateFlow(item.displayName, item)}
-                >
-                  Completar
-                </button>
-              ) : null}
-            </div>
-          ))
-        )}
-      </div>
-
-      <div className="kitchen-field">
+      <div className="kitchen-field kitchen-ingredient-search">
         <input
           className="kitchen-input"
           placeholder="Busca y añade ingredientes…"
@@ -187,41 +206,64 @@ export default function IngredientPicker({ value = [], onChange, categories = []
           }}
         />
         {searchError ? <span className="kitchen-inline-error">{searchError}</span> : null}
+        {query ? (
+          <div className="kitchen-suggestion-list">
+            {searching ? <div className="kitchen-muted">Buscando...</div> : null}
+            {!searching && visibleSuggestions.length === 0 ? (
+              <button className="kitchen-button ghost" type="button" onClick={() => openCreateFlow(query)}>
+                Crear “{query}”
+              </button>
+            ) : (
+              visibleSuggestions.map((item) => (
+                <button
+                  className="kitchen-suggestion"
+                  key={item._id}
+                  type="button"
+                  onClick={() => handleSelectSuggestion(item)}
+                >
+                  <span className="kitchen-suggestion-name">{item.name}</span>
+                </button>
+              ))
+            )}
+          </div>
+        ) : null}
       </div>
 
-      {query ? (
-        <div className="kitchen-suggestion-list">
-          {searching ? <div className="kitchen-muted">Buscando...</div> : null}
-          {!searching && suggestions.length === 0 ? (
-            <button className="kitchen-button ghost" type="button" onClick={() => openCreateFlow(query)}>
-              Crear “{query}”
-            </button>
-          ) : (
-            suggestions.map((item) => (
-              <button
-                className="kitchen-suggestion"
-                key={item._id}
-                type="button"
-                onClick={() => handleSelectSuggestion(item)}
-              >
-                <span className="kitchen-suggestion-name">{item.name}</span>
-                <span
-                  className="kitchen-suggestion-meta"
-                  style={{ color: item.categoryId?.colorText || "#475467" }}
+      <div className="kitchen-chip-list">
+        {value.length === 0 ? (
+          <span className="kitchen-muted">Sin ingredientes todavía.</span>
+        ) : (
+          value.map((item) => {
+            const colors = resolveCategoryColors(item.category);
+            return (
+              <div className="kitchen-chip-item" key={`${item.ingredientId || item.canonicalName}`}>
+                <CategoryChip
+                  label={item.displayName}
+                  colorBg={colors.colorBg}
+                  colorText={colors.colorText}
+                  status={item.status === "pending" ? "pending" : ""}
+                  onRemove={() => onChange(value.filter((entry) => entry !== item))}
+                />
+              {item.status === "pending" ? (
+                <button
+                  className="kitchen-chip-action"
+                  type="button"
+                  onClick={() => openCreateFlow(item.displayName, item)}
                 >
-                  {item.categoryId?.name}
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      ) : null}
+                  Completar
+                </button>
+              ) : null}
+              </div>
+            );
+          })
+        )}
+      </div>
 
       {showCreate ? (
         <div className="kitchen-inline-panel">
           <div className="kitchen-inline-header">
             <strong>Crear ingrediente</strong>
-            <span className="kitchen-muted">Añade categoría antes de guardar.</span>
+            <span className="kitchen-muted">Elige categoría antes de guardar.</span>
           </div>
           <label className="kitchen-field">
             <span className="kitchen-label">Nombre del ingrediente</span>
@@ -240,22 +282,30 @@ export default function IngredientPicker({ value = [], onChange, categories = []
               onChange={(event) => setCategoryQuery(event.target.value)}
             />
             <div className="kitchen-category-list">
-              {filteredCategories.map((category) => (
-                <button
-                  key={category._id}
-                  className={`kitchen-category-option ${
-                    selectedCategory?._id === category._id ? "selected" : ""
-                  }`}
-                  type="button"
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  <CategoryChip
-                    label={category.name}
-                    colorBg={category.colorBg}
-                    colorText={category.colorText}
-                  />
-                </button>
-              ))}
+              {filteredCategories.map((category) => {
+                const colors = resolveCategoryColors(category);
+                return (
+                  <button
+                    key={category._id}
+                    className={`kitchen-category-option ${
+                      selectedCategory?._id === category._id ? "selected" : ""
+                    }`}
+                    type="button"
+                    onClick={() => setSelectedCategory(category)}
+                  >
+                    <CategoryChip
+                      label={category.name}
+                      colorBg={colors.colorBg}
+                      colorText={colors.colorText}
+                    />
+                    {selectedCategory?._id === category._id ? (
+                      <span className="kitchen-category-check" aria-hidden="true">
+                        ✓
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
               {!filteredCategories.length && categoryQuery ? (
                 <button
                   className="kitchen-button ghost"

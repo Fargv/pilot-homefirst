@@ -15,6 +15,7 @@ export default function DishesPage() {
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
+  const [isCreatingIngredient, setIsCreatingIngredient] = useState(false);
   const ingredientCache = useRef(new Map());
 
   const loadDishes = async () => {
@@ -181,6 +182,7 @@ export default function DishesPage() {
                 onChange={(ingredients) => setForm({ ...form, ingredients })}
                 categories={categories}
                 onCategoryCreated={onCategoryCreated}
+                onCreateStateChange={setIsCreatingIngredient}
               />
               {pendingCount ? (
                 <p className="kitchen-inline-warning">
@@ -192,9 +194,15 @@ export default function DishesPage() {
             {notice ? <div className="kitchen-alert success">{notice}</div> : null}
             {error ? <div className="kitchen-alert error">{error}</div> : null}
             <div className="kitchen-actions">
-              <button className="kitchen-button" type="submit" disabled={saving}>
-                {saving ? "Guardando..." : "Guardar plato"}
-              </button>
+              {isCreatingIngredient ? (
+                <div className="kitchen-inline-warning">
+                  Termina de crear el ingrediente para guardar el plato.
+                </div>
+              ) : (
+                <button className="kitchen-button" type="submit" disabled={saving}>
+                  {saving ? "Guardando..." : "Guardar plato"}
+                </button>
+              )}
               {editingId ? (
                 <button className="kitchen-button ghost" type="button" onClick={resetForm}>
                   Cancelar edición
