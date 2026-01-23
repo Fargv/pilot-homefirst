@@ -1,464 +1,185 @@
-diff --git a/backend/src/kitchen/routes/categories.js b/backend/src/kitchen/routes/categories.js
-index ee8684ae4ac18415e3c9c3ed80f845e00d87c6c5..246f1e9310dd80bd9a026ff98ec985080f0359ef 100644
---- a/backend/src/kitchen/routes/categories.js
-+++ b/backend/src/kitchen/routes/categories.js
-@@ -1,33 +1,33 @@
- import express from "express";
- import { Category } from "../models/Category.js";
- import { requireAuth } from "../middleware.js";
- 
- const router = express.Router();
- 
--const DEFAULT_COLOR_BG = "#eef2ff";
--const DEFAULT_COLOR_TEXT = "#4338ca";
-+const DEFAULT_COLOR_BG = "#E8F1FF";
-+const DEFAULT_COLOR_TEXT = "#1D4ED8";
- 
- const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
- 
- const slugifyCategory = (value = "") => {
-   const trimmed = value.trim().toLowerCase();
-   if (!trimmed) return "";
- 
-   const noAccents = trimmed.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-   const noPunctuation = noAccents.replace(/[^\w\s-]/g, "");
-   return noPunctuation.replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
- };
- 
- router.get("/", requireAuth, async (req, res) => {
-   const categories = await Category.find({ active: true }).sort({ order: 1, name: 1 });
-   return res.json({ ok: true, categories });
- });
- 
- router.post("/", requireAuth, async (req, res) => {
-   try {
-     const { name, colorBg, colorText } = req.body;
-     if (!name) return res.status(400).json({ ok: false, error: "El nombre de la categoría es obligatorio." });
- 
-     const trimmedName = String(name).trim();
-     const slug = slugifyCategory(trimmedName);
-     if (!slug) return res.status(400).json({ ok: false, error: "El nombre de la categoría no es válido." });
-diff --git a/frontend/src/kitchen/components/CategoryChip.jsx b/frontend/src/kitchen/components/CategoryChip.jsx
-index 41f53e5a7d1487ee0d79b0f840c96f8da780005b..968380679d827c12ea292728059b1f33e2b196d5 100644
---- a/frontend/src/kitchen/components/CategoryChip.jsx
-+++ b/frontend/src/kitchen/components/CategoryChip.jsx
-@@ -1,20 +1,20 @@
- import React from "react";
- 
- export default function CategoryChip({ label, colorBg, colorText, onRemove, status }) {
-   return (
-     <span
-       className={`kitchen-chip ${status ? `is-${status}` : ""}`}
-       style={{
--        background: colorBg || "#eef2ff",
--        color: colorText || "#4338ca"
-+        background: colorBg || "#E8F1FF",
-+        color: colorText || "#1D4ED8"
-       }}
-     >
--      <span>{label}</span>
-+      <span className="kitchen-chip-label">{label}</span>
-       {onRemove ? (
-         <button className="kitchen-chip-remove" type="button" onClick={onRemove} aria-label={`Eliminar ${label}`}>
--          ×
-+          ✕
-         </button>
-       ) : null}
-     </span>
-   );
- }
-diff --git a/frontend/src/kitchen/components/IngredientPicker.jsx b/frontend/src/kitchen/components/IngredientPicker.jsx
-index f9e2b0ebb2599685d7b3b7cd5f579a4c36b75477..f2c56a59da9bbd7aaed051ae4d77afe7d665d5dc 100644
---- a/frontend/src/kitchen/components/IngredientPicker.jsx
-+++ b/frontend/src/kitchen/components/IngredientPicker.jsx
-@@ -1,87 +1,133 @@
- import React, { useEffect, useMemo, useState } from "react";
- import { apiRequest } from "../api.js";
- import CategoryChip from "./CategoryChip.jsx";
- import { normalizeIngredientName } from "../utils/normalize.js";
- 
--const emptyCategory = { _id: "", name: "", colorBg: "#eef2ff", colorText: "#4338ca" };
-+const emptyCategory = { _id: "", name: "", colorBg: "#E8F1FF", colorText: "#1D4ED8" };
-+const PASTEL_PALETTE = [
-+  { colorBg: "#E8F1FF", colorText: "#1D4ED8" },
-+  { colorBg: "#FFE8E5", colorText: "#B42318" },
-+  { colorBg: "#E7F8EE", colorText: "#027A48" },
-+  { colorBg: "#FFF4D6", colorText: "#8A6A00" },
-+  { colorBg: "#F3E8FF", colorText: "#6D28D9" },
-+  { colorBg: "#FFE8F1", colorText: "#BE185D" },
-+  { colorBg: "#E0F2FE", colorText: "#0369A1" },
-+  { colorBg: "#F2F4F7", colorText: "#344054" }
-+];
- 
--export default function IngredientPicker({ value = [], onChange, categories = [], onCategoryCreated }) {
-+const resolveCategoryColors = (category) => {
-+  if (!category) return emptyCategory;
-+  const seed = `${category.name || ""}${category._id || ""}`;
-+  let hash = 0;
-+  for (let index = 0; index < seed.length; index += 1) {
-+    hash = (hash << 5) - hash + seed.charCodeAt(index);
-+    hash |= 0;
-+  }
-+  const palette = PASTEL_PALETTE[Math.abs(hash) % PASTEL_PALETTE.length];
-+  return {
-+    colorBg: palette.colorBg,
-+    colorText: palette.colorText
-+  };
-+};
-+
-+export default function IngredientPicker({
-+  value = [],
-+  onChange,
-+  categories = [],
-+  onCategoryCreated,
-+  onCreateStateChange
-+}) {
-   const [query, setQuery] = useState("");
-   const [suggestions, setSuggestions] = useState([]);
-   const [searching, setSearching] = useState(false);
-   const [searchError, setSearchError] = useState("");
-   const [showCreate, setShowCreate] = useState(false);
-   const [createName, setCreateName] = useState("");
-   const [createError, setCreateError] = useState("");
-   const [saving, setSaving] = useState(false);
-   const [categoryQuery, setCategoryQuery] = useState("");
-   const [selectedCategory, setSelectedCategory] = useState(null);
-   const [lastUsedCategory, setLastUsedCategory] = useState(null);
-   const [creatingCategory, setCreatingCategory] = useState(false);
-   const [replaceItem, setReplaceItem] = useState(null);
- 
-+  useEffect(() => {
-+    if (onCreateStateChange) {
-+      onCreateStateChange(showCreate);
-+    }
-+  }, [onCreateStateChange, showCreate]);
-+
-   useEffect(() => {
-     if (!query) {
-       setSuggestions([]);
-       setSearchError("");
-       setSearching(false);
-       return;
-     }
- 
-     let active = true;
-     setSearching(true);
-     setSearchError("");
- 
-     const timeout = setTimeout(async () => {
-       try {
-         if (import.meta.env.DEV) {
-           console.debug("[IngredientPicker] buscando", { query });
-         }
-         const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(query)}`);
-         if (!active) return;
-         setSuggestions(data.ingredients || []);
-       } catch (err) {
-         if (!active) return;
-         setSearchError(err.message || "No se pudieron buscar ingredientes.");
-       } finally {
-         if (active) setSearching(false);
-       }
-     }, 250);
- 
-     return () => {
-       active = false;
-       clearTimeout(timeout);
-     };
-   }, [query]);
- 
-+  const normalizedQuery = useMemo(() => normalizeIngredientName(query), [query]);
-+
-   const filteredCategories = useMemo(() => {
-     if (!categoryQuery) return categories;
-     const lower = categoryQuery.toLowerCase();
-     return categories.filter((category) => category.name.toLowerCase().includes(lower));
-   }, [categories, categoryQuery]);
- 
-+  const visibleSuggestions = useMemo(() => {
-+    if (!normalizedQuery) return suggestions;
-+    return suggestions.filter((item) =>
-+      normalizeIngredientName(item.name || "").includes(normalizedQuery)
-+    );
-+  }, [normalizedQuery, suggestions]);
-+
-   const addIngredient = (ingredient, displayNameOverride, targetToReplace = null) => {
-     const canonicalName = ingredient.canonicalName || normalizeIngredientName(displayNameOverride || ingredient.name);
-     const ingredientId = ingredient._id || ingredient.ingredientId;
-     const nextBase = targetToReplace ? value.filter((item) => item !== targetToReplace) : value;
-     if (
-       nextBase.some((item) => item.ingredientId === ingredientId || item.canonicalName === canonicalName)
-     ) {
-       return;
-     }
-     const next = [
-       ...nextBase,
-       {
-         ingredientId,
-         displayName: displayNameOverride || ingredient.name,
-         canonicalName,
-         category: ingredient.categoryId || ingredient.category || emptyCategory,
-         status: "resolved"
-       }
-     ];
-     onChange(next);
-     setReplaceItem(null);
-   };
- 
-   const handleSelectSuggestion = (ingredient) => {
-     addIngredient(ingredient, ingredient.name);
-@@ -127,157 +173,161 @@ export default function IngredientPicker({ value = [], onChange, categories = []
-       setQuery("");
-     } catch (err) {
-       setCreateError(err.message || "No se pudo crear el ingrediente.");
-     } finally {
-       setSaving(false);
-     }
-   };
- 
-   const handleCreateCategory = async () => {
-     if (!onCategoryCreated) return;
-     if (!categoryQuery.trim()) return;
-     setCreatingCategory(true);
-     try {
-       const category = await onCategoryCreated(categoryQuery.trim());
-       setSelectedCategory(category);
-       setCategoryQuery("");
-     } catch (err) {
-       setCreateError(err.message || "No se pudo crear la categoría.");
-     } finally {
-       setCreatingCategory(false);
-     }
-   };
- 
-   return (
-     <div className="kitchen-ingredient-picker">
-+      <div className="kitchen-field kitchen-ingredient-search">
-+        <input
-+          className="kitchen-input"
-+          placeholder="Busca y añade ingredientes…"
-+          value={query}
-+          onChange={(event) => {
-+            setQuery(event.target.value);
-+            setShowCreate(false);
-+          }}
-+        />
-+        {searchError ? <span className="kitchen-inline-error">{searchError}</span> : null}
-+        {query ? (
-+          <div className="kitchen-suggestion-list">
-+            {searching ? <div className="kitchen-muted">Buscando...</div> : null}
-+            {!searching && visibleSuggestions.length === 0 ? (
-+              <button className="kitchen-button ghost" type="button" onClick={() => openCreateFlow(query)}>
-+                Crear “{query}”
-+              </button>
-+            ) : (
-+              visibleSuggestions.map((item) => (
-+                <button
-+                  className="kitchen-suggestion"
-+                  key={item._id}
-+                  type="button"
-+                  onClick={() => handleSelectSuggestion(item)}
-+                >
-+                  <span className="kitchen-suggestion-name">{item.name}</span>
-+                </button>
-+              ))
-+            )}
-+          </div>
-+        ) : null}
-+      </div>
-+
-       <div className="kitchen-chip-list">
-         {value.length === 0 ? (
-           <span className="kitchen-muted">Sin ingredientes todavía.</span>
-         ) : (
--          value.map((item) => (
--            <div className="kitchen-chip-row" key={`${item.ingredientId || item.canonicalName}`}>
--              <CategoryChip
--                label={item.displayName}
--                colorBg={item.category?.colorBg}
--                colorText={item.category?.colorText}
--                status={item.status === "pending" ? "pending" : ""}
--                onRemove={() => onChange(value.filter((entry) => entry !== item))}
--              />
-+          value.map((item) => {
-+            const colors = resolveCategoryColors(item.category);
-+            return (
-+              <div className="kitchen-chip-item" key={`${item.ingredientId || item.canonicalName}`}>
-+                <CategoryChip
-+                  label={item.displayName}
-+                  colorBg={colors.colorBg}
-+                  colorText={colors.colorText}
-+                  status={item.status === "pending" ? "pending" : ""}
-+                  onRemove={() => onChange(value.filter((entry) => entry !== item))}
-+                />
-               {item.status === "pending" ? (
-                 <button
-                   className="kitchen-chip-action"
-                   type="button"
-                   onClick={() => openCreateFlow(item.displayName, item)}
-                 >
-                   Completar
-                 </button>
-               ) : null}
--            </div>
--          ))
-+              </div>
-+            );
-+          })
-         )}
-       </div>
- 
--      <div className="kitchen-field">
--        <input
--          className="kitchen-input"
--          placeholder="Busca y añade ingredientes…"
--          value={query}
--          onChange={(event) => {
--            setQuery(event.target.value);
--            setShowCreate(false);
--          }}
--        />
--        {searchError ? <span className="kitchen-inline-error">{searchError}</span> : null}
--      </div>
--
--      {query ? (
--        <div className="kitchen-suggestion-list">
--          {searching ? <div className="kitchen-muted">Buscando...</div> : null}
--          {!searching && suggestions.length === 0 ? (
--            <button className="kitchen-button ghost" type="button" onClick={() => openCreateFlow(query)}>
--              Crear “{query}”
--            </button>
--          ) : (
--            suggestions.map((item) => (
--              <button
--                className="kitchen-suggestion"
--                key={item._id}
--                type="button"
--                onClick={() => handleSelectSuggestion(item)}
--              >
--                <span className="kitchen-suggestion-name">{item.name}</span>
--                <span
--                  className="kitchen-suggestion-meta"
--                  style={{ color: item.categoryId?.colorText || "#475467" }}
--                >
--                  {item.categoryId?.name}
--                </span>
--              </button>
--            ))
--          )}
--        </div>
--      ) : null}
--
-       {showCreate ? (
-         <div className="kitchen-inline-panel">
-           <div className="kitchen-inline-header">
-             <strong>Crear ingrediente</strong>
--            <span className="kitchen-muted">Añade categoría antes de guardar.</span>
-+            <span className="kitchen-muted">Elige categoría antes de guardar.</span>
-           </div>
-           <label className="kitchen-field">
-             <span className="kitchen-label">Nombre del ingrediente</span>
-             <input
-               className="kitchen-input"
-               value={createName}
-               onChange={(event) => setCreateName(event.target.value)}
-             />
-           </label>
-           <div className="kitchen-field">
-             <span className="kitchen-label">Categoría</span>
-             <input
-               className="kitchen-input"
-               placeholder="Busca una categoría…"
-               value={categoryQuery}
-               onChange={(event) => setCategoryQuery(event.target.value)}
-             />
-             <div className="kitchen-category-list">
--              {filteredCategories.map((category) => (
--                <button
--                  key={category._id}
--                  className={`kitchen-category-option ${
--                    selectedCategory?._id === category._id ? "selected" : ""
--                  }`}
--                  type="button"
--                  onClick={() => setSelectedCategory(category)}
--                >
--                  <CategoryChip
--                    label={category.name}
--                    colorBg={category.colorBg}
--                    colorText={category.colorText}
--                  />
--                </button>
--              ))}
-+              {filteredCategories.map((category) => {
-+                const colors = resolveCategoryColors(category);
-+                return (
-+                  <button
-+                    key={category._id}
-+                    className={`kitchen-category-option ${
-+                      selectedCategory?._id === category._id ? "selected" : ""
-+                    }`}
-+                    type="button"
-+                    onClick={() => setSelectedCategory(category)}
-+                  >
-+                    <CategoryChip
-+                      label={category.name}
-+                      colorBg={colors.colorBg}
-+                      colorText={colors.colorText}
-+                    />
-+                    {selectedCategory?._id === category._id ? (
-+                      <span className="kitchen-category-check" aria-hidden="true">
-+                        ✓
-+                      </span>
-+                    ) : null}
-+                  </button>
-+                );
-+              })}
-               {!filteredCategories.length && categoryQuery ? (
-                 <button
-                   className="kitchen-button ghost"
-                   type="button"
-                   onClick={handleCreateCategory}
-                   disabled={creatingCategory}
-                 >
-                   {creatingCategory ? "Creando..." : `Crear categoría “${categoryQuery}”`}
-                 </button>
-               ) : null}
-             </div>
-           </div>
-           {createError ? <div className="kitchen-inline-error">{createError}</div> : null}
-           <div className="kitchen-inline-actions">
-             <button className="kitchen-button" type="button" onClick={handleCreateIngredient} disabled={saving}>
-               {saving ? "Guardando..." : "Añadir ingrediente"}
-             </button>
-             <button
-               className="kitchen-button ghost"
-               type="button"
-               onClick={() => {
-                 setShowCreate(false);
-                 setCreateName("");
-                 setCreateError("");
-                 setReplaceItem(null);
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 67844ede820e7fb45c775af36eceea02c5c1219d..0df1ac7130d81562b188ef3df8ee8e8ef2be7da4 100644
+index 56c6202cbf65730474396b1166233eaff57bb5b3..3b66fab3db4a9e398296d5f7f54d5faa62e6d405 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -322,56 +322,236 @@
- .kitchen-status-pill {
-   display: inline-flex;
-   align-items: center;
-   padding: 2px 8px;
-   border-radius: 999px;
-   font-size: 11px;
+@@ -136,143 +136,159 @@
    font-weight: 600;
-   letter-spacing: 0.01em;
-   border: 1px solid transparent;
-   color: #344054;
-   background: #f2f4f7;
  }
  
- .kitchen-status-pill.assigned {
-   color: #1d4ed8;
-   background: #eff6ff;
+ .kitchen-drawer-close {
+   border: none;
+   background: transparent;
+   color: #1d2939;
+   font-weight: 600;
+   cursor: pointer;
+ }
+ 
+ .kitchen-nav-mobile {
+   flex-direction: column;
+   gap: 8px;
+ }
+ 
+ .kitchen-drawer-user {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+ }
+ 
+ .kitchen-card {
+   background: white;
+   border-radius: 16px;
+-  padding: 20px;
++  padding: 24px;
+   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+-  display: flex;
+-  flex-direction: column;
+-  gap: 16px;
+-  box-sizing: border-box;
++  display: flex;
++  flex-direction: column;
++  gap: 16px;
++  box-sizing: border-box;
+   min-width: 0;
+ }
+ 
+ .kitchen-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+   gap: 20px;
+   align-items: stretch;
+ }
+ 
+ .kitchen-button {
+-  background: #2563eb;
++  background: #4f46e5;
+   border: none;
+   color: white;
+-  padding: 10px 16px;
++  padding: 12px 18px;
+   border-radius: 10px;
+   cursor: pointer;
+   font-weight: 600;
++  font-size: 15px;
++  min-height: 48px;
++  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
++}
++
++.kitchen-button:hover {
++  background: #4338ca;
++}
++
++.kitchen-button:active {
++  transform: translateY(1px);
++}
++
++.kitchen-button:focus-visible {
++  outline: 3px solid rgba(79, 70, 229, 0.35);
++  outline-offset: 2px;
+ }
+ 
+ .kitchen-button.secondary {
+   background: #e2e8f0;
+   color: #0f172a;
+ }
+ 
+ .kitchen-button.ghost {
+   background: transparent;
+   border: 1px solid #cbd5f5;
+   color: #1e293b;
+ }
+ 
+ .kitchen-input,
+ .kitchen-select,
+ .kitchen-textarea {
+   width: 100%;
+   padding: 10px 12px;
+   border-radius: 10px;
+   border: 1px solid #d0d5dd;
+   background: white;
+   font-size: 14px;
+   box-sizing: border-box;
+   min-width: 0;
+ }
+ 
+ .kitchen-label {
+   display: block;
+   font-weight: 600;
+   margin-bottom: 6px;
+   color: #344054;
+ }
+ 
+-.kitchen-field {
+-  display: flex;
+-  flex-direction: column;
+-  gap: 6px;
+-}
++.kitchen-field {
++  display: flex;
++  flex-direction: column;
++  gap: 6px;
++}
+ 
+ .kitchen-pill {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   padding: 4px 10px;
+   border-radius: 999px;
+   background: #eef2ff;
+   color: #4338ca;
+   font-size: 12px;
+   font-weight: 600;
+ }
+ 
+ .kitchen-empty {
+   text-align: center;
+   padding: 32px;
+   color: #475467;
+ }
+ 
+ .kitchen-muted {
+   color: #667085;
+   font-size: 14px;
+ }
+ 
+ .kitchen-actions {
+   display: flex;
+-  flex-direction: column;
+-  gap: 10px;
+-  margin-top: auto;
+-  width: 100%;
+-}
++  flex-direction: column;
++  gap: 12px;
++  margin-top: 20px;
++  width: 100%;
++}
+ 
+ .kitchen-week-header {
+   display: flex;
+   align-items: flex-start;
+   justify-content: space-between;
+   gap: 24px;
+   margin-bottom: 24px;
+ }
+ 
+ .kitchen-week-header-main {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+ }
+ 
+ .kitchen-week-header-actions {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+   width: min(320px, 100%);
+ }
+ 
+ .kitchen-eyebrow {
+   text-transform: uppercase;
+   letter-spacing: 0.12em;
+@@ -338,72 +354,73 @@
    border-color: #dbeafe;
  }
  
@@ -468,216 +189,82 @@ index 67844ede820e7fb45c775af36eceea02c5c1219d..0df1ac7130d81562b188ef3df8ee8e8e
    border-color: #e2e8f0;
  }
  
--.kitchen-inline-error {
--  margin: 4px 0 0;
--  font-size: 13px;
--  color: #b42318;
+ .kitchen-inline-error {
+   margin: 4px 0 0;
+   font-size: 13px;
+   color: #b42318;
+ }
+ 
+ .kitchen-inline-warning {
+   padding: 10px 12px;
+   border-radius: 12px;
+   border: 1px solid #f9dbaf;
+   background: #fff7ed;
+   color: #9a3412;
+   font-weight: 600;
+   font-size: 14px;
+ }
+ 
+-.kitchen-ingredient-picker {
+-  display: flex;
+-  flex-direction: column;
+-  gap: 16px;
 -}
--
-+.kitchen-inline-error {
-+  margin: 4px 0 0;
-+  font-size: 13px;
-+  color: #b42318;
-+}
-+
-+.kitchen-inline-warning {
-+  padding: 10px 12px;
-+  border-radius: 12px;
-+  border: 1px solid #f9dbaf;
-+  background: #fff7ed;
-+  color: #9a3412;
-+  font-weight: 600;
-+  font-size: 14px;
-+}
-+
 +.kitchen-ingredient-picker {
 +  display: flex;
 +  flex-direction: column;
 +  gap: 16px;
 +}
-+
-+.kitchen-ingredient-picker .kitchen-input {
-+  font-size: 16px;
-+  padding: 12px 14px;
-+  border-radius: 14px;
-+}
-+
-+.kitchen-ingredient-search {
-+  gap: 8px;
-+}
-+
+ 
+ .kitchen-ingredient-picker .kitchen-input {
+   font-size: 16px;
+   padding: 12px 14px;
+   border-radius: 14px;
+ }
+ 
+ .kitchen-ingredient-search {
+   gap: 8px;
+ }
+ 
+-.kitchen-chip-list {
+-  display: flex;
+-  flex-wrap: wrap;
+-  gap: 10px 12px;
+-  align-items: center;
+-}
 +.kitchen-chip-list {
 +  display: flex;
 +  flex-wrap: wrap;
 +  gap: 10px 12px;
 +  align-items: center;
++  margin-bottom: 8px;
 +}
-+
-+.kitchen-chip-item {
-+  display: inline-flex;
-+  align-items: center;
-+  gap: 8px;
-+}
-+
-+.kitchen-chip {
-+  display: inline-flex;
-+  align-items: center;
-+  gap: 8px;
-+  padding: 8px 12px;
-+  border-radius: 999px;
-+  font-size: 15px;
-+  font-weight: 600;
-+  border: 1px solid transparent;
-+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-+}
-+
-+.kitchen-chip-label {
-+  line-height: 1.2;
-+}
-+
-+.kitchen-chip.is-pending {
-+  border-color: rgba(15, 23, 42, 0.12);
-+}
-+
-+.kitchen-chip-remove {
-+  border: none;
-+  background: rgba(255, 255, 255, 0.6);
-+  color: inherit;
-+  width: 22px;
-+  height: 22px;
-+  border-radius: 999px;
-+  display: inline-flex;
-+  align-items: center;
-+  justify-content: center;
-+  cursor: pointer;
-+  font-size: 12px;
-+  line-height: 1;
-+}
-+
-+.kitchen-chip-action {
-+  border: none;
-+  background: #ffffff;
-+  color: #1d2939;
-+  padding: 6px 10px;
-+  border-radius: 999px;
-+  font-size: 13px;
-+  font-weight: 600;
-+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-+  cursor: pointer;
-+}
-+
-+.kitchen-suggestion-list {
-+  margin-top: 6px;
-+  background: white;
-+  border-radius: 16px;
-+  border: 1px solid #e4e7ec;
-+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-+  padding: 6px;
-+  display: flex;
-+  flex-direction: column;
-+  gap: 4px;
-+}
-+
-+.kitchen-suggestion {
-+  border: none;
-+  background: transparent;
-+  text-align: left;
-+  padding: 10px 12px;
-+  border-radius: 12px;
-+  font-size: 15px;
-+  font-weight: 600;
-+  color: #101828;
-+  cursor: pointer;
-+}
-+
-+.kitchen-suggestion:hover,
-+.kitchen-suggestion:focus-visible {
-+  background: #f2f4f7;
-+  outline: none;
-+}
-+
-+.kitchen-inline-panel {
-+  margin-top: 8px;
-+  border-radius: 16px;
-+  border: 1px solid #e4e7ec;
-+  background: #ffffff;
-+  padding: 16px;
-+  display: flex;
-+  flex-direction: column;
-+  gap: 16px;
-+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-+}
-+
-+.kitchen-inline-header {
-+  display: flex;
-+  flex-direction: column;
-+  gap: 4px;
-+  font-size: 16px;
-+}
-+
-+.kitchen-category-list {
-+  display: flex;
-+  flex-wrap: wrap;
-+  gap: 10px;
-+  margin-top: 6px;
-+}
-+
-+.kitchen-category-option {
-+  border: none;
-+  background: transparent;
-+  padding: 0;
-+  position: relative;
-+  cursor: pointer;
-+}
-+
-+.kitchen-category-option .kitchen-chip {
-+  padding-right: 26px;
-+}
-+
-+.kitchen-category-option.selected .kitchen-chip {
-+  border-color: rgba(15, 23, 42, 0.25);
-+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
-+}
-+
-+.kitchen-category-check {
-+  position: absolute;
-+  top: -6px;
-+  right: -4px;
-+  width: 18px;
-+  height: 18px;
-+  border-radius: 999px;
-+  background: #0f172a;
-+  color: white;
-+  font-size: 11px;
-+  display: inline-flex;
-+  align-items: center;
-+  justify-content: center;
-+}
-+
-+.kitchen-inline-actions {
-+  display: flex;
-+  flex-wrap: wrap;
-+  gap: 10px;
-+}
-+
- .kitchen-day-feedback {
-   display: flex;
-   flex-direction: column;
-   gap: 4px;
-   margin-top: 12px;
-   font-size: 13px;
-   color: #667085;
+ 
+ .kitchen-chip-item {
+   display: inline-flex;
+   align-items: center;
+   gap: 8px;
  }
  
- .kitchen-day-feedback-text.saving {
-   color: #475467;
+ .kitchen-chip {
+   display: inline-flex;
+   align-items: center;
+   gap: 8px;
+   padding: 8px 12px;
+   border-radius: 999px;
+   font-size: 15px;
+   font-weight: 600;
+   border: 1px solid transparent;
+   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
  }
  
- .kitchen-day-feedback-text.saved {
-   color: #027a48;
+ .kitchen-chip-label {
+   line-height: 1.2;
  }
  
- .kitchen-day-feedback-text.error {
+ .kitchen-chip.is-pending {
+   border-color: rgba(15, 23, 42, 0.12);
+@@ -551,84 +568,115 @@
    color: #b42318;
  }
  
@@ -685,60 +272,145 @@ index 67844ede820e7fb45c775af36eceea02c5c1219d..0df1ac7130d81562b188ef3df8ee8e8e
    display: flex;
    flex-wrap: wrap;
    gap: 12px;
+   align-items: center;
+   justify-content: space-between;
+   margin-top: 16px;
+ }
+ 
+ .kitchen-alert {
+   border-radius: 12px;
+   padding: 10px 12px;
+   font-weight: 600;
+   font-size: 14px;
+ }
+ 
+ .kitchen-alert.success {
+   background: #ecfdf3;
+   color: #027a48;
+   border: 1px solid #a6f4c5;
+ }
+ 
+-.kitchen-alert.error {
+-  background: #fef3f2;
+-  color: #b42318;
+-  border: 1px solid #fecdca;
+-}
+-
++.kitchen-alert.error {
++  background: #fef3f2;
++  color: #b42318;
++  border: 1px solid #fecdca;
++}
++
++.kitchen-form {
++  display: flex;
++  flex-direction: column;
++  gap: 20px;
++}
++
++.kitchen-dish-form-card {
++  width: 100%;
++  max-width: 560px;
++  margin: 0 auto;
++}
++
++.kitchen-dish-ingredients {
++  gap: 10px;
++}
++
++.kitchen-dish-actions .kitchen-button {
++  width: 100%;
++}
++
+ .kitchen-table {
+   width: 100%;
+   border-collapse: collapse;
+ }
+ 
+ .kitchen-table th,
+ .kitchen-table td {
+   text-align: left;
+   padding: 10px 8px;
+   border-bottom: 1px solid #eef2f6;
+   font-size: 14px;
+ }
+ 
+ @media (max-width: 600px) {
+   .kitchen-container {
+     padding: 16px;
+   }
+ 
+   .kitchen-grid {
+     grid-template-columns: 1fr;
+     gap: 16px;
+   }
+ 
+   .kitchen-week-header {
+     flex-direction: column;
+     margin-bottom: 16px;
+   }
+ 
+   .kitchen-week-header-actions {
+     width: 100%;
+   }
+ 
+   .kitchen-topbar-inner {
+     padding: 12px 16px;
+     min-height: 72px;
+   }
+ 
+   .kitchen-nav-desktop {
+     display: none;
+   }
+ 
+   .kitchen-user {
+     display: none;
+   }
+ 
+   .kitchen-user-placeholder {
+     display: none;
+   }
+ 
+-  .kitchen-nav-toggle {
+-    display: flex;
++  .kitchen-nav-toggle {
++    display: flex;
++  }
++}
++
++@media (min-width: 900px) {
++  .kitchen-dish-actions {
++    flex-direction: row;
++    justify-content: flex-start;
++  }
++
++  .kitchen-dish-actions .kitchen-button {
++    width: auto;
+   }
+ }
 diff --git a/frontend/src/kitchen/pages/DishesPage.jsx b/frontend/src/kitchen/pages/DishesPage.jsx
-index 14e9d20dc1385a57ff0c3a670d1239759b40f4b8..681ad96ec941d531a59a4ac3af3165ce9f823f74 100644
+index 3a78aeec65d2a1d7b9fc22deed228441387786a1..b07ba21241f3ef624ae7875686391889d6e4c906 100644
 --- a/frontend/src/kitchen/pages/DishesPage.jsx
 +++ b/frontend/src/kitchen/pages/DishesPage.jsx
-@@ -1,43 +1,44 @@
- import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
- import { apiRequest } from "../api.js";
- import KitchenLayout from "../Layout.jsx";
- import { useAuth } from "../auth";
- import IngredientPicker from "../components/IngredientPicker.jsx";
- import { normalizeIngredientName } from "../utils/normalize.js";
- 
- export default function DishesPage() {
-   const { user } = useAuth();
-   const [dishes, setDishes] = useState([]);
-   const [categories, setCategories] = useState([]);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState("");
-   const [form, setForm] = useState({ name: "", ingredients: [] });
--  const [editingId, setEditingId] = useState(null);
--  const [saving, setSaving] = useState(false);
--  const [notice, setNotice] = useState("");
--  const ingredientCache = useRef(new Map());
-+  const [editingId, setEditingId] = useState(null);
-+  const [saving, setSaving] = useState(false);
-+  const [notice, setNotice] = useState("");
-+  const [isCreatingIngredient, setIsCreatingIngredient] = useState(false);
-+  const ingredientCache = useRef(new Map());
- 
-   const loadDishes = async () => {
-     setLoading(true);
-     setError("");
-     try {
-       const data = await apiRequest("/api/kitchen/dishes");
-       setDishes(data.dishes || []);
-     } catch (err) {
-       setError(err.message || "No se pudieron cargar los platos.");
-     } finally {
-       setLoading(false);
+@@ -137,89 +137,89 @@ export default function DishesPage() {
      }
    };
  
-   useEffect(() => {
-     loadDishes();
-   }, []);
+   const onCategoryCreated = async (name) => {
+     const data = await apiRequest("/api/categories", {
+       method: "POST",
+       body: JSON.stringify({ name })
+     });
+     const category = data.category;
+     setCategories((prev) => {
+       const exists = prev.find((item) => item._id === category._id);
+       if (exists) return prev;
+       return [...prev, category];
+     });
+     return category;
+   };
  
-   const loadCategories = async () => {
-     try {
-       const data = await apiRequest("/api/categories");
-       setCategories(data.categories || []);
-     } catch (err) {
-       setError(err.message || "No se pudieron cargar las categorías.");
-     }
-@@ -154,73 +155,80 @@ export default function DishesPage() {
+   const pendingCount = useMemo(
      () => (form.ingredients || []).filter((item) => item.status === "pending").length,
      [form.ingredients]
    );
@@ -746,12 +418,18 @@ index 14e9d20dc1385a57ff0c3a670d1239759b40f4b8..681ad96ec941d531a59a4ac3af3165ce
    return (
      <KitchenLayout>
        <div className="kitchen-grid">
-         <div className="kitchen-card">
-           <div>
-             <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
-             <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
-           </div>
-           <form onSubmit={onSave} className="kitchen-form">
+-        <div className="kitchen-card">
+-          <div>
+-            <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
+-            <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
+-          </div>
+-          <form onSubmit={onSave} className="kitchen-form">
++        <div className="kitchen-card kitchen-dish-form-card">
++          <div>
++            <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
++            <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
++          </div>
++          <form onSubmit={onSave} className="kitchen-form">
              <label className="kitchen-field">
                <span className="kitchen-label">Nombre del plato</span>
                <input
@@ -762,55 +440,48 @@ index 14e9d20dc1385a57ff0c3a670d1239759b40f4b8..681ad96ec941d531a59a4ac3af3165ce
                  placeholder="Ej. Pollo al horno"
                />
              </label>
-             <div className="kitchen-field">
-               <span className="kitchen-label">Ingredientes</span>
+-            <div className="kitchen-field">
+-              <span className="kitchen-label">Ingredientes</span>
 -              <IngredientPicker
++            <div className="kitchen-field kitchen-dish-ingredients">
++              <span className="kitchen-label">Ingredientes</span>
 +              <IngredientPicker
                  value={form.ingredients}
 -                onChange={(ingredients) => setForm({ ...form, ingredients })}
 -                categories={categories}
--                onCategoryCreated={onCategoryCreated}
 +                onChange={(ingredients) => setForm({ ...form, ingredients })}
 +                categories={categories}
-+                onCategoryCreated={onCategoryCreated}
-+                onCreateStateChange={setIsCreatingIngredient}
+                 onCategoryCreated={onCategoryCreated}
+                 onCreateStateChange={setIsCreatingIngredient}
                />
--              {pendingCount ? (
--                <p className="kitchen-inline-warning">
--                  Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente{pendingCount > 1 ? "s" : ""} de
-+              {pendingCount ? (
-+                <p className="kitchen-inline-warning">
-+                  Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente{pendingCount > 1 ? "s" : ""} de
+               {pendingCount ? (
+                 <p className="kitchen-inline-warning">
+                   Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente{pendingCount > 1 ? "s" : ""} de
                    vincular con el catálogo global.
                  </p>
                ) : null}
              </div>
--            {notice ? <div className="kitchen-alert success">{notice}</div> : null}
--            {error ? <div className="kitchen-alert error">{error}</div> : null}
+             {notice ? <div className="kitchen-alert success">{notice}</div> : null}
+             {error ? <div className="kitchen-alert error">{error}</div> : null}
 -            <div className="kitchen-actions">
--              <button className="kitchen-button" type="submit" disabled={saving}>
--                {saving ? "Guardando..." : "Guardar plato"}
--              </button>
--              {editingId ? (
--                <button className="kitchen-button ghost" type="button" onClick={resetForm}>
--                  Cancelar edición
--                </button>
-+            {notice ? <div className="kitchen-alert success">{notice}</div> : null}
-+            {error ? <div className="kitchen-alert error">{error}</div> : null}
-+            <div className="kitchen-actions">
+-              {isCreatingIngredient ? (
+-                <div className="kitchen-inline-warning">
+-                  Termina de crear el ingrediente para guardar el plato.
+-                </div>
++            <div className="kitchen-actions kitchen-dish-actions">
 +              {isCreatingIngredient ? (
 +                <div className="kitchen-inline-warning">
 +                  Termina de crear el ingrediente para guardar el plato.
 +                </div>
-+              ) : (
-+                <button className="kitchen-button" type="submit" disabled={saving}>
-+                  {saving ? "Guardando..." : "Guardar plato"}
-+                </button>
-+              )}
-+              {editingId ? (
-+                <button className="kitchen-button ghost" type="button" onClick={resetForm}>
-+                  Cancelar edición
-+                </button>
+               ) : (
+                 <button className="kitchen-button" type="submit" disabled={saving}>
+                   {saving ? "Guardando..." : "Guardar plato"}
+                 </button>
+               )}
+               {editingId ? (
+                 <button className="kitchen-button ghost" type="button" onClick={resetForm}>
+                   Cancelar edición
+                 </button>
                ) : null}
              </div>
            </form>
@@ -827,12 +498,3 @@ index 14e9d20dc1385a57ff0c3a670d1239759b40f4b8..681ad96ec941d531a59a4ac3af3165ce
            ) : (
              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                {dishes.map((dish) => (
-                 <li key={dish._id} style={{ marginBottom: 12 }}>
-                   <div className="kitchen-dish-row">
-                     <div>
-                       <strong>{dish.name}</strong>
-                       <div className="kitchen-muted">
-                         {(dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes"}
-                       </div>
-                     </div>
-                     <div className="kitchen-dish-actions">
