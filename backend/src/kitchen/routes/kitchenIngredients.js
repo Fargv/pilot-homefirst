@@ -6,6 +6,30 @@ import { normalizeIngredientName } from "../utils/normalize.js";
 const router = express.Router();
 const MAX_RESULTS = 15;
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const ACCENT_CHAR_MAP = {
+  a: "aàáâäãå",
+  e: "eèéêë",
+  i: "iìíîï",
+  o: "oòóôöõ",
+  u: "uùúûü",
+  n: "nñ",
+  c: "cç"
+};
+
+const buildAccentInsensitiveRegex = (value) => {
+  const escaped = escapeRegex(value);
+  const pattern = escaped
+    .split("")
+    .map((char) => {
+      const lower = char.toLowerCase();
+      if (ACCENT_CHAR_MAP[lower]) {
+        return `[${ACCENT_CHAR_MAP[lower]}]`;
+      }
+      return char;
+    })
+    .join("");
+  return new RegExp(pattern, "i");
+};
 
 router.get("/", requireAuth, async (req, res) => {
   const { q } = req.query;
@@ -18,9 +42,12 @@ router.get("/", requireAuth, async (req, res) => {
     const trimmed = String(q).trim();
     const normalized = normalizeIngredientName(trimmed);
     const normalizedRegex = normalized ? new RegExp(escapeRegex(normalized), "i") : null;
-    const nameRegex = trimmed ? new RegExp(escapeRegex(trimmed), "i") : null;
+    const normalizedFallback =
+      normalized && normalized.length > 4 ? new RegExp(escapeRegex(normalized.slice(0, -1)), "i") : null;
+    const nameRegex = trimmed ? buildAccentInsensitiveRegex(trimmed) : null;
     const orFilters = [];
     if (normalizedRegex) orFilters.push({ canonicalName: normalizedRegex });
+    if (normalizedFallback) orFilters.push({ canonicalName: normalizedFallback });
     if (nameRegex) orFilters.push({ name: nameRegex });
     if (orFilters.length) filters.$or = orFilters;
   }

@@ -1,8 +1,89 @@
+diff --git a/backend/src/kitchen/routes/kitchenIngredients.js b/backend/src/kitchen/routes/kitchenIngredients.js
+index 5b2d83b0ce2c3ad067216d3e4e9e5d8acf8b9e84..420207a64c0abe6334cb9f35f000e3a9cf4621c3 100644
+--- a/backend/src/kitchen/routes/kitchenIngredients.js
++++ b/backend/src/kitchen/routes/kitchenIngredients.js
+@@ -1,48 +1,75 @@
+ import express from "express";
+ import { KitchenIngredient } from "../models/KitchenIngredient.js";
+ import { requireAuth } from "../middleware.js";
+ import { normalizeIngredientName } from "../utils/normalize.js";
+ 
+ const router = express.Router();
+ const MAX_RESULTS = 15;
+ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
++const ACCENT_CHAR_MAP = {
++  a: "aàáâäãå",
++  e: "eèéêë",
++  i: "iìíîï",
++  o: "oòóôöõ",
++  u: "uùúûü",
++  n: "nñ",
++  c: "cç"
++};
++
++const buildAccentInsensitiveRegex = (value) => {
++  const escaped = escapeRegex(value);
++  const pattern = escaped
++    .split("")
++    .map((char) => {
++      const lower = char.toLowerCase();
++      if (ACCENT_CHAR_MAP[lower]) {
++        return `[${ACCENT_CHAR_MAP[lower]}]`;
++      }
++      return char;
++    })
++    .join("");
++  return new RegExp(pattern, "i");
++};
+ 
+ router.get("/", requireAuth, async (req, res) => {
+   const { q } = req.query;
+   const filters = { active: true };
+   if (process.env.NODE_ENV === "development") {
+     console.log("🔎 [kitchenIngredients] search", { q });
+   }
+ 
+   if (q) {
+     const trimmed = String(q).trim();
+     const normalized = normalizeIngredientName(trimmed);
+     const normalizedRegex = normalized ? new RegExp(escapeRegex(normalized), "i") : null;
+-    const nameRegex = trimmed ? new RegExp(escapeRegex(trimmed), "i") : null;
++    const normalizedFallback =
++      normalized && normalized.length > 4 ? new RegExp(escapeRegex(normalized.slice(0, -1)), "i") : null;
++    const nameRegex = trimmed ? buildAccentInsensitiveRegex(trimmed) : null;
+     const orFilters = [];
+     if (normalizedRegex) orFilters.push({ canonicalName: normalizedRegex });
++    if (normalizedFallback) orFilters.push({ canonicalName: normalizedFallback });
+     if (nameRegex) orFilters.push({ name: nameRegex });
+     if (orFilters.length) filters.$or = orFilters;
+   }
+ 
+   const ingredients = await KitchenIngredient.find(filters)
+     .populate("categoryId", "name colorBg colorText")
+     .sort({ name: 1 })
+     .limit(MAX_RESULTS);
+ 
+   return res.json({ ok: true, ingredients });
+ });
+ 
+ router.post("/", requireAuth, async (req, res) => {
+   try {
+     const { name, categoryId } = req.body;
+     if (process.env.NODE_ENV === "development") {
+       console.log("🧪 [kitchenIngredients] create", { name, categoryId });
+     }
+     if (!name) return res.status(400).json({ ok: false, error: "El nombre del ingrediente es obligatorio." });
+     if (!categoryId)
+       return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
+ 
+     const trimmedName = String(name).trim();
+     const canonicalName = normalizeIngredientName(trimmedName);
+     if (!canonicalName)
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 56c6202cbf65730474396b1166233eaff57bb5b3..3b66fab3db4a9e398296d5f7f54d5faa62e6d405 100644
+index 7335d739c64724afe29306309b69389ebd1eb190..a8672bcc60e501b8fa3966265db708f9f05f15ff 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -136,143 +136,159 @@
+@@ -136,64 +136,217 @@
    font-weight: 600;
  }
  
@@ -28,255 +109,208 @@ index 56c6202cbf65730474396b1166233eaff57bb5b3..3b66fab3db4a9e398296d5f7f54d5faa
  .kitchen-card {
    background: white;
    border-radius: 16px;
--  padding: 20px;
+-  padding: 24px;
 +  padding: 24px;
    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 -  display: flex;
 -  flex-direction: column;
 -  gap: 16px;
 -  box-sizing: border-box;
+-  min-width: 0;
 +  display: flex;
 +  flex-direction: column;
 +  gap: 16px;
 +  box-sizing: border-box;
-   min-width: 0;
++  min-width: 0;
  }
  
  .kitchen-grid {
    display: grid;
-   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-   gap: 20px;
-   align-items: stretch;
+-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+-  gap: 20px;
+-  align-items: stretch;
++  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
++  gap: 20px;
++  align-items: stretch;
++}
++
++.kitchen-dishes-page {
++  display: flex;
++  flex-direction: column;
++  gap: 20px;
++}
++
++.kitchen-dishes-header {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 16px;
++  align-items: center;
++  justify-content: space-between;
++}
++
++.kitchen-dishes-header h2 {
++  margin: 0;
++  font-size: 24px;
++}
++
++.kitchen-dishes-header .kitchen-muted {
++  margin-top: 4px;
++}
++
++.kitchen-dishes-search {
++  display: flex;
++}
++
++.kitchen-dishes-grid {
++  display: grid;
++  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
++  gap: 16px;
++}
++
++.kitchen-dish-card {
++  background: white;
++  border-radius: 14px;
++  padding: 16px;
++  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
++  display: flex;
++  align-items: flex-start;
++  justify-content: space-between;
++  gap: 16px;
++  min-height: 96px;
++}
++
++.kitchen-dish-name {
++  margin: 0 0 6px;
++  font-size: 16px;
++}
++
++.kitchen-dish-ingredients-text {
++  margin: 0;
++  color: #667085;
++  font-size: 13px;
++  line-height: 1.4;
++  display: -webkit-box;
++  -webkit-line-clamp: 2;
++  -webkit-box-orient: vertical;
++  overflow: hidden;
++}
++
++.kitchen-dish-actions {
++  display: flex;
++  gap: 8px;
++  align-items: center;
++}
++
++.kitchen-icon-button {
++  border: 1px solid #e2e8f0;
++  background: white;
++  width: 44px;
++  height: 44px;
++  border-radius: 12px;
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++  color: #344054;
++  cursor: pointer;
++  transition: border 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
++}
++
++.kitchen-icon-button svg {
++  width: 20px;
++  height: 20px;
++}
++
++.kitchen-icon-button:hover {
++  border-color: #c7d2fe;
++  color: #4f46e5;
++  box-shadow: 0 6px 12px rgba(79, 70, 229, 0.15);
++}
++
++.kitchen-icon-button.danger:hover {
++  border-color: #fecaca;
++  color: #b42318;
++  box-shadow: 0 6px 12px rgba(180, 35, 24, 0.15);
++}
++
++.kitchen-modal-backdrop {
++  position: fixed;
++  inset: 0;
++  background: rgba(15, 23, 42, 0.4);
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  padding: 20px;
++  z-index: 40;
++}
++
++.kitchen-modal {
++  width: min(640px, 100%);
++  max-height: min(90vh, 780px);
++  background: white;
++  border-radius: 18px;
++  padding: 24px;
++  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
++  display: flex;
++  flex-direction: column;
++  gap: 20px;
++  overflow: hidden;
++}
++
++.kitchen-modal .kitchen-form {
++  overflow-y: auto;
++  padding-right: 4px;
++}
++
++.kitchen-modal-header {
++  display: flex;
++  align-items: flex-start;
++  justify-content: space-between;
++  gap: 12px;
++}
++
++.kitchen-modal-header h3 {
++  margin: 0;
++  font-size: 20px;
++}
++
++.kitchen-modal-actions {
++  display: flex;
++  flex-direction: column;
++  gap: 12px;
++  align-items: center;
++  justify-content: center;
++  padding-top: 4px;
++}
++
++.kitchen-dishes-loading {
++  font-weight: 600;
++  text-align: center;
  }
  
  .kitchen-button {
--  background: #2563eb;
-+  background: #4f46e5;
+   background: #4f46e5;
    border: none;
    color: white;
--  padding: 10px 16px;
-+  padding: 12px 18px;
+   padding: 12px 18px;
    border-radius: 10px;
    cursor: pointer;
    font-weight: 600;
-+  font-size: 15px;
-+  min-height: 48px;
-+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-+}
-+
-+.kitchen-button:hover {
-+  background: #4338ca;
-+}
-+
-+.kitchen-button:active {
-+  transform: translateY(1px);
-+}
-+
-+.kitchen-button:focus-visible {
-+  outline: 3px solid rgba(79, 70, 229, 0.35);
-+  outline-offset: 2px;
- }
- 
- .kitchen-button.secondary {
-   background: #e2e8f0;
-   color: #0f172a;
- }
- 
- .kitchen-button.ghost {
-   background: transparent;
-   border: 1px solid #cbd5f5;
-   color: #1e293b;
- }
- 
- .kitchen-input,
- .kitchen-select,
- .kitchen-textarea {
-   width: 100%;
-   padding: 10px 12px;
-   border-radius: 10px;
-   border: 1px solid #d0d5dd;
-   background: white;
-   font-size: 14px;
-   box-sizing: border-box;
-   min-width: 0;
- }
- 
- .kitchen-label {
-   display: block;
-   font-weight: 600;
-   margin-bottom: 6px;
-   color: #344054;
- }
- 
--.kitchen-field {
--  display: flex;
--  flex-direction: column;
--  gap: 6px;
--}
-+.kitchen-field {
-+  display: flex;
-+  flex-direction: column;
-+  gap: 6px;
-+}
- 
- .kitchen-pill {
-   display: inline-flex;
-   align-items: center;
-   gap: 6px;
-   padding: 4px 10px;
-   border-radius: 999px;
-   background: #eef2ff;
-   color: #4338ca;
-   font-size: 12px;
-   font-weight: 600;
- }
- 
- .kitchen-empty {
-   text-align: center;
-   padding: 32px;
-   color: #475467;
- }
- 
- .kitchen-muted {
-   color: #667085;
-   font-size: 14px;
- }
- 
- .kitchen-actions {
-   display: flex;
--  flex-direction: column;
--  gap: 10px;
--  margin-top: auto;
--  width: 100%;
--}
-+  flex-direction: column;
-+  gap: 12px;
-+  margin-top: 20px;
-+  width: 100%;
-+}
- 
- .kitchen-week-header {
-   display: flex;
-   align-items: flex-start;
-   justify-content: space-between;
-   gap: 24px;
-   margin-bottom: 24px;
- }
- 
- .kitchen-week-header-main {
-   display: flex;
-   flex-direction: column;
-   gap: 8px;
- }
- 
- .kitchen-week-header-actions {
-   display: flex;
-   flex-direction: column;
-   gap: 12px;
-   width: min(320px, 100%);
- }
- 
- .kitchen-eyebrow {
-   text-transform: uppercase;
-   letter-spacing: 0.12em;
-@@ -338,72 +354,73 @@
-   border-color: #dbeafe;
- }
- 
- .kitchen-status-pill.planned {
-   color: #1f2937;
-   background: #f8fafc;
-   border-color: #e2e8f0;
- }
- 
- .kitchen-inline-error {
-   margin: 4px 0 0;
-   font-size: 13px;
-   color: #b42318;
- }
- 
- .kitchen-inline-warning {
-   padding: 10px 12px;
-   border-radius: 12px;
-   border: 1px solid #f9dbaf;
-   background: #fff7ed;
-   color: #9a3412;
-   font-weight: 600;
-   font-size: 14px;
- }
- 
--.kitchen-ingredient-picker {
--  display: flex;
--  flex-direction: column;
--  gap: 16px;
--}
-+.kitchen-ingredient-picker {
-+  display: flex;
-+  flex-direction: column;
-+  gap: 16px;
-+}
- 
- .kitchen-ingredient-picker .kitchen-input {
-   font-size: 16px;
-   padding: 12px 14px;
-   border-radius: 14px;
- }
- 
- .kitchen-ingredient-search {
-   gap: 8px;
- }
- 
--.kitchen-chip-list {
--  display: flex;
--  flex-wrap: wrap;
--  gap: 10px 12px;
--  align-items: center;
--}
-+.kitchen-chip-list {
-+  display: flex;
-+  flex-wrap: wrap;
-+  gap: 10px 12px;
-+  align-items: center;
-+  margin-bottom: 8px;
-+}
- 
- .kitchen-chip-item {
-   display: inline-flex;
-   align-items: center;
-   gap: 8px;
- }
- 
- .kitchen-chip {
-   display: inline-flex;
-   align-items: center;
-   gap: 8px;
-   padding: 8px 12px;
-   border-radius: 999px;
    font-size: 15px;
-   font-weight: 600;
-   border: 1px solid transparent;
-   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+   min-height: 48px;
+   transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
  }
  
- .kitchen-chip-label {
-   line-height: 1.2;
+ .kitchen-button:hover {
+   background: #4338ca;
  }
  
- .kitchen-chip.is-pending {
-   border-color: rgba(15, 23, 42, 0.12);
-@@ -551,84 +568,115 @@
-   color: #b42318;
+ .kitchen-button:active {
+   transform: translateY(1px);
  }
  
- .kitchen-toolbar {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 12px;
-   align-items: center;
-   justify-content: space-between;
-   margin-top: 16px;
- }
- 
+ .kitchen-button:focus-visible {
+   outline: 3px solid rgba(79, 70, 229, 0.35);
+@@ -580,103 +733,117 @@
  .kitchen-alert {
    border-radius: 12px;
    padding: 10px 12px;
@@ -290,24 +324,32 @@ index 56c6202cbf65730474396b1166233eaff57bb5b3..3b66fab3db4a9e398296d5f7f54d5faa
    border: 1px solid #a6f4c5;
  }
  
--.kitchen-alert.error {
--  background: #fef3f2;
--  color: #b42318;
--  border: 1px solid #fecdca;
+ .kitchen-alert.error {
+   background: #fef3f2;
+   color: #b42318;
+   border: 1px solid #fecdca;
+ }
+ 
+ .kitchen-form {
+   display: flex;
+   flex-direction: column;
+   gap: 20px;
+ }
+ 
+-.kitchen-dish-form-card {
+-  width: 100%;
+-  max-width: 560px;
+-  margin: 0 auto;
 -}
 -
-+.kitchen-alert.error {
-+  background: #fef3f2;
-+  color: #b42318;
-+  border: 1px solid #fecdca;
-+}
-+
-+.kitchen-form {
-+  display: flex;
-+  flex-direction: column;
-+  gap: 20px;
-+}
-+
+-.kitchen-dish-ingredients {
+-  gap: 10px;
+-}
+-
+-.kitchen-dish-actions .kitchen-button {
+-  width: 100%;
+-}
+-
 +.kitchen-dish-form-card {
 +  width: 100%;
 +  max-width: 560px;
@@ -316,10 +358,6 @@ index 56c6202cbf65730474396b1166233eaff57bb5b3..3b66fab3db4a9e398296d5f7f54d5faa
 +
 +.kitchen-dish-ingredients {
 +  gap: 10px;
-+}
-+
-+.kitchen-dish-actions .kitchen-button {
-+  width: 100%;
 +}
 +
  .kitchen-table {
@@ -373,26 +411,227 @@ index 56c6202cbf65730474396b1166233eaff57bb5b3..3b66fab3db4a9e398296d5f7f54d5faa
  
 -  .kitchen-nav-toggle {
 -    display: flex;
+-  }
+-}
+-
+-@media (min-width: 900px) {
+-  .kitchen-dish-actions {
+-    flex-direction: row;
+-    justify-content: flex-start;
+-  }
+-
+-  .kitchen-dish-actions .kitchen-button {
+-    width: auto;
 +  .kitchen-nav-toggle {
 +    display: flex;
++  }
++
++  .kitchen-dishes-header {
++    align-items: flex-start;
++  }
++
++  .kitchen-dishes-header .kitchen-button {
++    width: 100%;
++  }
++
++  .kitchen-dish-card {
++    flex-direction: column;
++    align-items: flex-start;
++  }
++
++  .kitchen-dish-actions {
++    width: 100%;
++    justify-content: flex-end;
++  }
++
++  .kitchen-modal {
++    padding: 20px;
++    max-height: 92vh;
 +  }
 +}
 +
 +@media (min-width: 900px) {
-+  .kitchen-dish-actions {
++  .kitchen-modal-actions {
 +    flex-direction: row;
-+    justify-content: flex-start;
-+  }
-+
-+  .kitchen-dish-actions .kitchen-button {
-+    width: auto;
    }
  }
 diff --git a/frontend/src/kitchen/pages/DishesPage.jsx b/frontend/src/kitchen/pages/DishesPage.jsx
-index 3a78aeec65d2a1d7b9fc22deed228441387786a1..b07ba21241f3ef624ae7875686391889d6e4c906 100644
+index b264effd513d30964c98eab8aa0c9672538ae76b..63a5ce46a56d686ab4b3050d0d61be8330d79d91 100644
 --- a/frontend/src/kitchen/pages/DishesPage.jsx
 +++ b/frontend/src/kitchen/pages/DishesPage.jsx
-@@ -137,89 +137,89 @@ export default function DishesPage() {
+@@ -1,44 +1,46 @@
+ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+ import { apiRequest } from "../api.js";
+ import KitchenLayout from "../Layout.jsx";
+ import { useAuth } from "../auth";
+ import IngredientPicker from "../components/IngredientPicker.jsx";
+ import { normalizeIngredientName } from "../utils/normalize.js";
+ 
+ export default function DishesPage() {
+   const { user } = useAuth();
+   const [dishes, setDishes] = useState([]);
+-  const [categories, setCategories] = useState([]);
++  const [categories, setCategories] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState("");
+-  const [form, setForm] = useState({ name: "", ingredients: [] });
+-  const [editingId, setEditingId] = useState(null);
+-  const [saving, setSaving] = useState(false);
+-  const [notice, setNotice] = useState("");
+-  const [isCreatingIngredient, setIsCreatingIngredient] = useState(false);
+-  const ingredientCache = useRef(new Map());
++  const [form, setForm] = useState({ name: "", ingredients: [] });
++  const [editingId, setEditingId] = useState(null);
++  const [isModalOpen, setIsModalOpen] = useState(false);
++  const [saving, setSaving] = useState(false);
++  const [notice, setNotice] = useState("");
++  const [isCreatingIngredient, setIsCreatingIngredient] = useState(false);
++  const [searchTerm, setSearchTerm] = useState("");
++  const ingredientCache = useRef(new Map());
+ 
+   const loadDishes = async () => {
+     setLoading(true);
+     setError("");
+     try {
+       const data = await apiRequest("/api/kitchen/dishes");
+       setDishes(data.dishes || []);
+     } catch (err) {
+       setError(err.message || "No se pudieron cargar los platos.");
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   useEffect(() => {
+     loadDishes();
+   }, []);
+ 
+   const loadCategories = async () => {
+     try {
+       const data = await apiRequest("/api/categories");
+       setCategories(data.categories || []);
+     } catch (err) {
+       setError(err.message || "No se pudieron cargar las categorías.");
+     }
+@@ -63,199 +65,306 @@ export default function DishesPage() {
+     }
+   }, []);
+ 
+   const resolveIngredients = useCallback(
+     async (ingredients = []) => {
+       const resolved = await Promise.all(
+         ingredients.map(async (item) => {
+           const displayName = String(item?.displayName || "").trim();
+           const canonicalName = String(item?.canonicalName || normalizeIngredientName(displayName)).trim();
+           const match = await fetchIngredientMatch(canonicalName);
+           const ingredientId = item?.ingredientId || match?._id;
+           return {
+             ingredientId,
+             displayName,
+             canonicalName,
+             category: match?.categoryId || null,
+             status: ingredientId ? "resolved" : "pending"
+           };
+         })
+       );
+       return resolved.filter((item) => item.displayName);
+     },
+     [fetchIngredientMatch]
+   );
+ 
+-  const startEdit = useCallback(
+-    async (dish) => {
+-      setNotice("");
+-      const ingredients = await resolveIngredients(dish.ingredients || []);
+-      setForm({ name: dish.name || "", ingredients });
+-      setEditingId(dish._id);
+-    },
+-    [resolveIngredients]
+-  );
+-
+-  const resetForm = () => {
+-    setForm({ name: "", ingredients: [] });
+-    setEditingId(null);
+-    setNotice("");
+-  };
++  const startEdit = useCallback(
++    async (dish) => {
++      setNotice("");
++      setError("");
++      setIsModalOpen(true);
++      const ingredients = await resolveIngredients(dish.ingredients || []);
++      setForm({ name: dish.name || "", ingredients });
++      setEditingId(dish._id);
++    },
++    [resolveIngredients]
++  );
++
++  const resetForm = () => {
++    setForm({ name: "", ingredients: [] });
++    setEditingId(null);
++    setNotice("");
++    setError("");
++  };
++
++  const startCreate = () => {
++    resetForm();
++    setIsModalOpen(true);
++  };
++
++  const closeModal = () => {
++    resetForm();
++    setIsModalOpen(false);
++  };
+ 
+   const onSave = async (event) => {
+     event.preventDefault();
+     setError("");
+     setNotice("");
+     setSaving(true);
+     try {
+       const payload = {
+         name: form.name,
+         ingredients: (form.ingredients || []).map((item) => ({
+           ingredientId: item.ingredientId,
+           displayName: item.displayName,
+           canonicalName: item.canonicalName || normalizeIngredientName(item.displayName)
+         }))
+       };
+-      if (editingId) {
+-        await apiRequest(`/api/kitchen/dishes/${editingId}`, {
+-          method: "PUT",
+-          body: JSON.stringify(payload)
+-        });
+-        setNotice("Plato actualizado.");
+-      } else {
+-        await apiRequest("/api/kitchen/dishes", {
+-          method: "POST",
+-          body: JSON.stringify(payload)
+-        });
+-        setNotice("Plato creado.");
+-      }
+-      resetForm();
++      if (editingId) {
++        await apiRequest(`/api/kitchen/dishes/${editingId}`, {
++          method: "PUT",
++          body: JSON.stringify(payload)
++        });
++        setNotice("Plato actualizado.");
++      } else {
++        await apiRequest("/api/kitchen/dishes", {
++          method: "POST",
++          body: JSON.stringify(payload)
++        });
++        setNotice("Plato creado.");
++      }
++      closeModal();
+       loadDishes();
+     } catch (err) {
+-      setError(err.message || "No se pudo guardar el plato.");
+-    } finally {
++      setError(err.message || "No se pudo guardar el plato.");
++    } finally {
+       setSaving(false);
      }
    };
  
@@ -410,91 +649,303 @@ index 3a78aeec65d2a1d7b9fc22deed228441387786a1..b07ba21241f3ef624ae7875686391889
      return category;
    };
  
-   const pendingCount = useMemo(
-     () => (form.ingredients || []).filter((item) => item.status === "pending").length,
-     [form.ingredients]
-   );
- 
+-  const pendingCount = useMemo(
+-    () => (form.ingredients || []).filter((item) => item.status === "pending").length,
+-    [form.ingredients]
+-  );
+-
++  const pendingCount = useMemo(
++    () => (form.ingredients || []).filter((item) => item.status === "pending").length,
++    [form.ingredients]
++  );
++
++  const normalizedSearch = useMemo(() => normalizeIngredientName(searchTerm), [searchTerm]);
++  const visibleDishes = useMemo(() => {
++    if (!normalizedSearch) return dishes;
++    return dishes.filter((dish) => {
++      const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
++      if (nameMatch) return true;
++      return (dish.ingredients || []).some((item) => {
++        const displayName = normalizeIngredientName(item.displayName || "");
++        const canonicalName = normalizeIngredientName(item.canonicalName || "");
++        return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
++      });
++    });
++  }, [dishes, normalizedSearch]);
++
    return (
      <KitchenLayout>
-       <div className="kitchen-grid">
--        <div className="kitchen-card">
+-      <div className="kitchen-grid">
+-        <div className="kitchen-card kitchen-dish-form-card">
 -          <div>
 -            <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
 -            <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
 -          </div>
 -          <form onSubmit={onSave} className="kitchen-form">
-+        <div className="kitchen-card kitchen-dish-form-card">
-+          <div>
-+            <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
-+            <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
-+          </div>
-+          <form onSubmit={onSave} className="kitchen-form">
-             <label className="kitchen-field">
-               <span className="kitchen-label">Nombre del plato</span>
-               <input
-                 className="kitchen-input"
-                 value={form.name}
-                 onChange={(event) => setForm({ ...form, name: event.target.value })}
-                 required
-                 placeholder="Ej. Pollo al horno"
-               />
-             </label>
--            <div className="kitchen-field">
+-            <label className="kitchen-field">
+-              <span className="kitchen-label">Nombre del plato</span>
+-              <input
+-                className="kitchen-input"
+-                value={form.name}
+-                onChange={(event) => setForm({ ...form, name: event.target.value })}
+-                required
+-                placeholder="Ej. Pollo al horno"
+-              />
+-            </label>
+-            <div className="kitchen-field kitchen-dish-ingredients">
 -              <span className="kitchen-label">Ingredientes</span>
 -              <IngredientPicker
-+            <div className="kitchen-field kitchen-dish-ingredients">
-+              <span className="kitchen-label">Ingredientes</span>
-+              <IngredientPicker
-                 value={form.ingredients}
+-                value={form.ingredients}
 -                onChange={(ingredients) => setForm({ ...form, ingredients })}
 -                categories={categories}
-+                onChange={(ingredients) => setForm({ ...form, ingredients })}
-+                categories={categories}
-                 onCategoryCreated={onCategoryCreated}
-                 onCreateStateChange={setIsCreatingIngredient}
-               />
-               {pendingCount ? (
-                 <p className="kitchen-inline-warning">
-                   Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente{pendingCount > 1 ? "s" : ""} de
-                   vincular con el catálogo global.
-                 </p>
-               ) : null}
-             </div>
-             {notice ? <div className="kitchen-alert success">{notice}</div> : null}
-             {error ? <div className="kitchen-alert error">{error}</div> : null}
--            <div className="kitchen-actions">
+-                onCategoryCreated={onCategoryCreated}
+-                onCreateStateChange={setIsCreatingIngredient}
+-              />
+-              {pendingCount ? (
+-                <p className="kitchen-inline-warning">
+-                  Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente{pendingCount > 1 ? "s" : ""} de
+-                  vincular con el catálogo global.
+-                </p>
+-              ) : null}
+-            </div>
+-            {notice ? <div className="kitchen-alert success">{notice}</div> : null}
+-            {error ? <div className="kitchen-alert error">{error}</div> : null}
+-            <div className="kitchen-actions kitchen-dish-actions">
 -              {isCreatingIngredient ? (
 -                <div className="kitchen-inline-warning">
 -                  Termina de crear el ingrediente para guardar el plato.
 -                </div>
-+            <div className="kitchen-actions kitchen-dish-actions">
-+              {isCreatingIngredient ? (
-+                <div className="kitchen-inline-warning">
-+                  Termina de crear el ingrediente para guardar el plato.
-+                </div>
-               ) : (
-                 <button className="kitchen-button" type="submit" disabled={saving}>
-                   {saving ? "Guardando..." : "Guardar plato"}
-                 </button>
-               )}
-               {editingId ? (
-                 <button className="kitchen-button ghost" type="button" onClick={resetForm}>
-                   Cancelar edición
-                 </button>
-               ) : null}
-             </div>
-           </form>
+-              ) : (
+-                <button className="kitchen-button" type="submit" disabled={saving}>
+-                  {saving ? "Guardando..." : "Guardar plato"}
+-                </button>
+-              )}
+-              {editingId ? (
+-                <button className="kitchen-button ghost" type="button" onClick={resetForm}>
+-                  Cancelar edición
+-                </button>
+-              ) : null}
+-            </div>
+-          </form>
++      <div className="kitchen-dishes-page">
++        <div className="kitchen-dishes-header">
++          <div>
++            <h2>Platos</h2>
++            <p className="kitchen-muted">Administra tus platos y sus ingredientes en un solo lugar.</p>
++          </div>
++          <button className="kitchen-button" type="button" onClick={startCreate}>
++            Nuevo plato
++          </button>
++        </div>
++        <div className="kitchen-dishes-search">
++          <input
++            className="kitchen-input"
++            placeholder="Buscar por plato o ingrediente…"
++            value={searchTerm}
++            onChange={(event) => setSearchTerm(event.target.value)}
++          />
          </div>
++        {loading ? (
++          <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
++        ) : visibleDishes.length === 0 ? (
++          <div className="kitchen-card kitchen-empty">
++            <p>
++              {dishes.length === 0
++                ? "No hay platos aún. Crea el primero."
++                : "No encontramos platos con ese criterio."}
++            </p>
++          </div>
++        ) : (
++          <div className="kitchen-dishes-grid">
++            {visibleDishes.map((dish) => {
++              const ingredientsText =
++                (dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes";
++              return (
++                <article className="kitchen-dish-card" key={dish._id}>
++                  <div>
++                    <h3 className="kitchen-dish-name">{dish.name}</h3>
++                    <p className="kitchen-dish-ingredients-text" title={ingredientsText}>
++                      {ingredientsText}
++                    </p>
++                  </div>
++                  <div className="kitchen-dish-actions">
++                    <button
++                      className="kitchen-icon-button"
++                      type="button"
++                      onClick={() => startEdit(dish)}
++                      aria-label={`Editar ${dish.name}`}
++                    >
++                      <svg viewBox="0 0 24 24" aria-hidden="true">
++                        <path
++                          d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
++                          fill="none"
++                          stroke="currentColor"
++                          strokeWidth="1.5"
++                          strokeLinecap="round"
++                          strokeLinejoin="round"
++                        />
++                        <path
++                          d="M15.75 5.625 18.375 8.25"
++                          fill="none"
++                          stroke="currentColor"
++                          strokeWidth="1.5"
++                          strokeLinecap="round"
++                        />
++                      </svg>
++                    </button>
++                    {user?.role === "admin" ? (
++                      <button
++                        className="kitchen-icon-button danger"
++                        type="button"
++                        onClick={async () => {
++                          await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
++                          if (editingId === dish._id) closeModal();
++                          loadDishes();
++                        }}
++                        aria-label={`Eliminar ${dish.name}`}
++                      >
++                        <svg viewBox="0 0 24 24" aria-hidden="true">
++                          <path
++                            d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
++                            fill="none"
++                            stroke="currentColor"
++                            strokeWidth="1.5"
++                            strokeLinecap="round"
++                            strokeLinejoin="round"
++                          />
++                          <path
++                            d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
++                            fill="none"
++                            stroke="currentColor"
++                            strokeWidth="1.5"
++                            strokeLinecap="round"
++                            strokeLinejoin="round"
++                          />
++                        </svg>
++                      </button>
++                    ) : null}
++                  </div>
++                </article>
++              );
++            })}
++          </div>
++        )}
++      </div>
  
-         <div className="kitchen-card">
-           <h3>Platos guardados</h3>
-           {loading ? (
-             <p>Cargando...</p>
-           ) : dishes.length === 0 ? (
-             <div className="kitchen-empty">
-               <p>No hay platos aún. Crea el primero.</p>
+-        <div className="kitchen-card">
+-          <h3>Platos guardados</h3>
+-          {loading ? (
+-            <p>Cargando...</p>
+-          ) : dishes.length === 0 ? (
+-            <div className="kitchen-empty">
+-              <p>No hay platos aún. Crea el primero.</p>
++      {isModalOpen ? (
++        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeModal}>
++          <div
++            className="kitchen-modal"
++            role="dialog"
++            aria-modal="true"
++            aria-label={editingId ? "Editar plato" : "Crear plato"}
++            onClick={(event) => event.stopPropagation()}
++          >
++            <div className="kitchen-modal-header">
++              <div>
++                <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
++                <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
++              </div>
++              <button className="kitchen-icon-button" type="button" onClick={closeModal} aria-label="Cerrar">
++                <svg viewBox="0 0 24 24" aria-hidden="true">
++                  <path
++                    d="M6 6l12 12M18 6l-12 12"
++                    fill="none"
++                    stroke="currentColor"
++                    strokeWidth="1.5"
++                    strokeLinecap="round"
++                  />
++                </svg>
++              </button>
              </div>
-           ) : (
-             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-               {dishes.map((dish) => (
+-          ) : (
+-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+-              {dishes.map((dish) => (
+-                <li key={dish._id} style={{ marginBottom: 12 }}>
+-                  <div className="kitchen-dish-row">
+-                    <div>
+-                      <strong>{dish.name}</strong>
+-                      <div className="kitchen-muted">
+-                        {(dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes"}
+-                      </div>
+-                    </div>
+-                    <div className="kitchen-dish-actions">
+-                      <button className="kitchen-button secondary" type="button" onClick={() => startEdit(dish)}>
+-                        Editar
+-                      </button>
+-                      {user?.role === "admin" ? (
+-                        <button
+-                          className="kitchen-button ghost"
+-                          type="button"
+-                          onClick={async () => {
+-                            await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
+-                            if (editingId === dish._id) resetForm();
+-                            loadDishes();
+-                          }}
+-                        >
+-                          Eliminar
+-                        </button>
+-                      ) : null}
+-                    </div>
++            <form onSubmit={onSave} className="kitchen-form">
++              <label className="kitchen-field">
++                <span className="kitchen-label">Nombre del plato</span>
++                <input
++                  className="kitchen-input"
++                  value={form.name}
++                  onChange={(event) => setForm({ ...form, name: event.target.value })}
++                  required
++                  placeholder="Ej. Pollo al horno"
++                />
++              </label>
++              <div className="kitchen-field kitchen-dish-ingredients">
++                <span className="kitchen-label">Ingredientes</span>
++                <IngredientPicker
++                  value={form.ingredients}
++                  onChange={(ingredients) => setForm({ ...form, ingredients })}
++                  categories={categories}
++                  onCategoryCreated={onCategoryCreated}
++                  onCreateStateChange={setIsCreatingIngredient}
++                />
++                {pendingCount ? (
++                  <p className="kitchen-inline-warning">
++                    Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente
++                    {pendingCount > 1 ? "s" : ""} de vincular con el catálogo global.
++                  </p>
++                ) : null}
++              </div>
++              {notice ? <div className="kitchen-alert success">{notice}</div> : null}
++              {error ? <div className="kitchen-alert error">{error}</div> : null}
++              <div className="kitchen-modal-actions">
++                {isCreatingIngredient ? (
++                  <div className="kitchen-inline-warning">
++                    Termina de crear el ingrediente para guardar el plato.
+                   </div>
+-                </li>
+-              ))}
+-            </ul>
+-          )}
++                ) : (
++                  <button className="kitchen-button" type="submit" disabled={saving}>
++                    {saving ? "Guardando..." : "Guardar"}
++                  </button>
++                )}
++                <button className="kitchen-button ghost" type="button" onClick={closeModal}>
++                  Cancelar
++                </button>
++              </div>
++            </form>
++          </div>
+         </div>
+-      </div>
++      ) : null}
+     </KitchenLayout>
+   );
+ }

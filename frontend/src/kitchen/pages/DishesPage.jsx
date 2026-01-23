@@ -13,9 +13,11 @@ export default function DishesPage() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", ingredients: [] });
   const [editingId, setEditingId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [isCreatingIngredient, setIsCreatingIngredient] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const ingredientCache = useRef(new Map());
 
   const loadDishes = async () => {
@@ -88,6 +90,8 @@ export default function DishesPage() {
   const startEdit = useCallback(
     async (dish) => {
       setNotice("");
+      setError("");
+      setIsModalOpen(true);
       const ingredients = await resolveIngredients(dish.ingredients || []);
       setForm({ name: dish.name || "", ingredients });
       setEditingId(dish._id);
@@ -99,6 +103,17 @@ export default function DishesPage() {
     setForm({ name: "", ingredients: [] });
     setEditingId(null);
     setNotice("");
+    setError("");
+  };
+
+  const startCreate = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    resetForm();
+    setIsModalOpen(false);
   };
 
   const onSave = async (event) => {
@@ -128,7 +143,7 @@ export default function DishesPage() {
         });
         setNotice("Plato creado.");
       }
-      resetForm();
+      closeModal();
       loadDishes();
     } catch (err) {
       setError(err.message || "No se pudo guardar el plato.");
@@ -156,106 +171,200 @@ export default function DishesPage() {
     [form.ingredients]
   );
 
+  const normalizedSearch = useMemo(() => normalizeIngredientName(searchTerm), [searchTerm]);
+  const visibleDishes = useMemo(() => {
+    if (!normalizedSearch) return dishes;
+    return dishes.filter((dish) => {
+      const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
+      if (nameMatch) return true;
+      return (dish.ingredients || []).some((item) => {
+        const displayName = normalizeIngredientName(item.displayName || "");
+        const canonicalName = normalizeIngredientName(item.canonicalName || "");
+        return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
+      });
+    });
+  }, [dishes, normalizedSearch]);
+
   return (
     <KitchenLayout>
-      <div className="kitchen-grid">
-        <div className="kitchen-card kitchen-dish-form-card">
+      <div className="kitchen-dishes-page">
+        <div className="kitchen-dishes-header">
           <div>
-            <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
-            <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
+            <h2>Platos</h2>
+            <p className="kitchen-muted">Administra tus platos y sus ingredientes en un solo lugar.</p>
           </div>
-          <form onSubmit={onSave} className="kitchen-form">
-            <label className="kitchen-field">
-              <span className="kitchen-label">Nombre del plato</span>
-              <input
-                className="kitchen-input"
-                value={form.name}
-                onChange={(event) => setForm({ ...form, name: event.target.value })}
-                required
-                placeholder="Ej. Pollo al horno"
-              />
-            </label>
-            <div className="kitchen-field kitchen-dish-ingredients">
-              <span className="kitchen-label">Ingredientes</span>
-              <IngredientPicker
-                value={form.ingredients}
-                onChange={(ingredients) => setForm({ ...form, ingredients })}
-                categories={categories}
-                onCategoryCreated={onCategoryCreated}
-                onCreateStateChange={setIsCreatingIngredient}
-              />
-              {pendingCount ? (
-                <p className="kitchen-inline-warning">
-                  Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente{pendingCount > 1 ? "s" : ""} de
-                  vincular con el catálogo global.
-                </p>
-              ) : null}
-            </div>
-            {notice ? <div className="kitchen-alert success">{notice}</div> : null}
-            {error ? <div className="kitchen-alert error">{error}</div> : null}
-            <div className="kitchen-actions kitchen-dish-actions">
-              {isCreatingIngredient ? (
-                <div className="kitchen-inline-warning">
-                  Termina de crear el ingrediente para guardar el plato.
-                </div>
-              ) : (
-                <button className="kitchen-button" type="submit" disabled={saving}>
-                  {saving ? "Guardando..." : "Guardar plato"}
-                </button>
-              )}
-              {editingId ? (
-                <button className="kitchen-button ghost" type="button" onClick={resetForm}>
-                  Cancelar edición
-                </button>
-              ) : null}
-            </div>
-          </form>
+          <button className="kitchen-button" type="button" onClick={startCreate}>
+            Nuevo plato
+          </button>
         </div>
-
-        <div className="kitchen-card">
-          <h3>Platos guardados</h3>
-          {loading ? (
-            <p>Cargando...</p>
-          ) : dishes.length === 0 ? (
-            <div className="kitchen-empty">
-              <p>No hay platos aún. Crea el primero.</p>
-            </div>
-          ) : (
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {dishes.map((dish) => (
-                <li key={dish._id} style={{ marginBottom: 12 }}>
-                  <div className="kitchen-dish-row">
-                    <div>
-                      <strong>{dish.name}</strong>
-                      <div className="kitchen-muted">
-                        {(dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes"}
-                      </div>
-                    </div>
-                    <div className="kitchen-dish-actions">
-                      <button className="kitchen-button secondary" type="button" onClick={() => startEdit(dish)}>
-                        Editar
-                      </button>
-                      {user?.role === "admin" ? (
-                        <button
-                          className="kitchen-button ghost"
-                          type="button"
-                          onClick={async () => {
-                            await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
-                            if (editingId === dish._id) resetForm();
-                            loadDishes();
-                          }}
-                        >
-                          Eliminar
-                        </button>
-                      ) : null}
-                    </div>
+        <div className="kitchen-dishes-search">
+          <input
+            className="kitchen-input"
+            placeholder="Buscar por plato o ingrediente…"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+        </div>
+        {loading ? (
+          <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
+        ) : visibleDishes.length === 0 ? (
+          <div className="kitchen-card kitchen-empty">
+            <p>
+              {dishes.length === 0
+                ? "No hay platos aún. Crea el primero."
+                : "No encontramos platos con ese criterio."}
+            </p>
+          </div>
+        ) : (
+          <div className="kitchen-dishes-grid">
+            {visibleDishes.map((dish) => {
+              const ingredientsText =
+                (dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes";
+              return (
+                <article className="kitchen-dish-card" key={dish._id}>
+                  <div>
+                    <h3 className="kitchen-dish-name">{dish.name}</h3>
+                    <p className="kitchen-dish-ingredients-text" title={ingredientsText}>
+                      {ingredientsText}
+                    </p>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                  <div className="kitchen-dish-actions">
+                    <button
+                      className="kitchen-icon-button"
+                      type="button"
+                      onClick={() => startEdit(dish)}
+                      aria-label={`Editar ${dish.name}`}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M15.75 5.625 18.375 8.25"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                    {user?.role === "admin" ? (
+                      <button
+                        className="kitchen-icon-button danger"
+                        type="button"
+                        onClick={async () => {
+                          await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
+                          if (editingId === dish._id) closeModal();
+                          loadDishes();
+                        }}
+                        aria-label={`Eliminar ${dish.name}`}
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path
+                            d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      {isModalOpen ? (
+        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeModal}>
+          <div
+            className="kitchen-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={editingId ? "Editar plato" : "Crear plato"}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <div>
+                <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
+                <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
+              </div>
+              <button className="kitchen-icon-button" type="button" onClick={closeModal} aria-label="Cerrar">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M6 6l12 12M18 6l-12 12"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={onSave} className="kitchen-form">
+              <label className="kitchen-field">
+                <span className="kitchen-label">Nombre del plato</span>
+                <input
+                  className="kitchen-input"
+                  value={form.name}
+                  onChange={(event) => setForm({ ...form, name: event.target.value })}
+                  required
+                  placeholder="Ej. Pollo al horno"
+                />
+              </label>
+              <div className="kitchen-field kitchen-dish-ingredients">
+                <span className="kitchen-label">Ingredientes</span>
+                <IngredientPicker
+                  value={form.ingredients}
+                  onChange={(ingredients) => setForm({ ...form, ingredients })}
+                  categories={categories}
+                  onCategoryCreated={onCategoryCreated}
+                  onCreateStateChange={setIsCreatingIngredient}
+                />
+                {pendingCount ? (
+                  <p className="kitchen-inline-warning">
+                    Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente
+                    {pendingCount > 1 ? "s" : ""} de vincular con el catálogo global.
+                  </p>
+                ) : null}
+              </div>
+              {notice ? <div className="kitchen-alert success">{notice}</div> : null}
+              {error ? <div className="kitchen-alert error">{error}</div> : null}
+              <div className="kitchen-modal-actions">
+                {isCreatingIngredient ? (
+                  <div className="kitchen-inline-warning">
+                    Termina de crear el ingrediente para guardar el plato.
+                  </div>
+                ) : (
+                  <button className="kitchen-button" type="submit" disabled={saving}>
+                    {saving ? "Guardando..." : "Guardar"}
+                  </button>
+                )}
+                <button className="kitchen-button ghost" type="button" onClick={closeModal}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </KitchenLayout>
   );
 }
