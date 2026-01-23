@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../api.js";
 import { useAuth } from "../auth";
 import KitchenLayout from "../Layout.jsx";
@@ -23,11 +23,16 @@ export default function WeekPage() {
   const [dishes, setDishes] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [dayStatus, setDayStatus] = useState({});
+  const [dayErrors, setDayErrors] = useState({});
+  const [ingredientInputs, setIngredientInputs] = useState({});
+  const lastSyncedIngredients = useRef({});
+  const saveTimers = useRef({});
 
   const loadData = async () => {
     setLoading(true);
-    setError("");
+    setLoadError("");
     try {
       const [planData, dishesData] = await Promise.all([
         apiRequest(`/api/kitchen/weeks/${weekStart}`),
@@ -40,7 +45,7 @@ export default function WeekPage() {
         setUsers(usersData.users || []);
       }
     } catch (err) {
-      setError(err.message || "No se pudo cargar la semana.");
+      setLoadError(err.message || "No se pudo cargar la semana.");
     } finally {
       setLoading(false);
     }
@@ -56,15 +61,47 @@ export default function WeekPage() {
     return map;
   }, [users]);
 
+  useEffect(() => {
+    if (!plan?.days) {
+      return;
+    }
+    setIngredientInputs((prev) => {
+      const next = { ...prev };
+      plan.days.forEach((day) => {
+        const key = day.date.slice(0, 10);
+        const serverValue = (day.ingredientOverrides || [])
+          .map((item) => item.displayName)
+          .join(", ");
+        if (prev[key] === undefined || prev[key] === lastSyncedIngredients.current[key]) {
+          next[key] = serverValue;
+          lastSyncedIngredients.current[key] = serverValue;
+        }
+      });
+      return next;
+    });
+  }, [plan]);
+
   const updateDay = async (day, updates) => {
+    const dayKey = day.date.slice(0, 10);
+    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
+    setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
     try {
       const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
         method: "PUT",
         body: JSON.stringify(updates)
       });
       setPlan(data.plan);
+      setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
+      if (saveTimers.current[dayKey]) {
+        clearTimeout(saveTimers.current[dayKey]);
+      }
+      saveTimers.current[dayKey] = window.setTimeout(() => {
+        setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
+      }, 2000);
     } catch (err) {
-      setError(err.message || "No se pudo actualizar el día.");
+      const message = err.message || "No se pudo actualizar el día.";
+      setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
+      setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
     }
   };
 
@@ -80,20 +117,13 @@ export default function WeekPage() {
     );
   }
 
-  if (error) {
-    return (
-      <KitchenLayout>
-        <div className="kitchen-card" style={{ color: "#b42318" }}>{error}</div>
-      </KitchenLayout>
-    );
-  }
-
   if (!plan) {
     return (
       <KitchenLayout>
         <div className="kitchen-card kitchen-empty">
           <h3>No hay planificación todavía</h3>
           <p>Cuando guardes un día aparecerá aquí.</p>
+          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
         </div>
       </KitchenLayout>
     );
@@ -114,6 +144,7 @@ export default function WeekPage() {
           <p className="kitchen-muted">
             Planifica de lunes a viernes, con cocina por defecto el día anterior.
           </p>
+          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
         </div>
         <div className="kitchen-week-header-actions">
           <a className="kitchen-button" href="#week-grid">Planificar semana</a>
@@ -131,7 +162,22 @@ export default function WeekPage() {
 
       <div className="kitchen-grid" id="week-grid">
         {plan.days.map((day) => {
+          const dayKey = day.date.slice(0, 10);
           const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
+          const isAssigned = Boolean(day.cookUserId);
+          const isPlanned = Boolean(day.mainDishId);
+          const isAssignedToSelf = day.cookUserId
+            && (day.cookUserId === user?.id || day.cookUserId === user?._id);
+          const statusLabels = [];
+          if (isAssigned) {
+            statusLabels.push({
+              label: isAssignedToSelf ? "Asignado a ti" : "Asignado",
+              type: "assigned"
+            });
+          }
+          if (isPlanned) {
+            statusLabels.push({ label: "Planificado", type: "planned" });
+          }
           return (
             <div key={day.date} className="kitchen-card kitchen-day-card">
               <div className="kitchen-day-header">
@@ -140,6 +186,15 @@ export default function WeekPage() {
                   <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
                   <span>Cocinero: {cookUser?.displayName || "Sin asignar"}</span>
                 </div>
+                {statusLabels.length ? (
+                  <div className="kitchen-day-status" aria-label="Estado del día">
+                    {statusLabels.map((item) => (
+                      <span key={item.label} className={`kitchen-status-pill ${item.type}`}>
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </div>
 
               <label className="kitchen-field">
@@ -187,7 +242,10 @@ export default function WeekPage() {
                 <textarea
                   className="kitchen-textarea"
                   rows="2"
-                  defaultValue={(day.ingredientOverrides || []).map((item) => item.displayName).join(", ")}
+                  value={ingredientInputs[dayKey] ?? ""}
+                  onChange={(event) => {
+                    setIngredientInputs((prev) => ({ ...prev, [dayKey]: event.target.value }));
+                  }}
                   onBlur={(event) => {
                     const list = event.target.value
                       .split(",")
@@ -213,6 +271,17 @@ export default function WeekPage() {
                       <option key={u.id} value={u.id}>{u.displayName}</option>
                     ))}
                   </select>
+                ) : null}
+              </div>
+              <div className="kitchen-day-feedback" aria-live="polite">
+                {dayStatus[dayKey] === "saving" ? (
+                  <span className="kitchen-day-feedback-text saving">Guardando...</span>
+                ) : null}
+                {dayStatus[dayKey] === "saved" ? (
+                  <span className="kitchen-day-feedback-text saved">Guardado</span>
+                ) : null}
+                {dayErrors[dayKey] ? (
+                  <span className="kitchen-day-feedback-text error" role="alert">{dayErrors[dayKey]}</span>
                 ) : null}
               </div>
             </div>

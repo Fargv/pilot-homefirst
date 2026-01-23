@@ -313,6 +313,64 @@
   color: #667085;
 }
 
+.kitchen-day-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kitchen-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  color: #344054;
+  background: #f2f4f7;
+}
+
+.kitchen-status-pill.assigned {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #dbeafe;
+}
+
+.kitchen-status-pill.planned {
+  color: #1f2937;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.kitchen-inline-error {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #b42318;
+}
+
+.kitchen-day-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #667085;
+}
+
+.kitchen-day-feedback-text.saving {
+  color: #475467;
+}
+
+.kitchen-day-feedback-text.saved {
+  color: #027a48;
+}
+
+.kitchen-day-feedback-text.error {
+  color: #b42318;
+}
+
 .kitchen-toolbar {
   display: flex;
   flex-wrap: wrap;
