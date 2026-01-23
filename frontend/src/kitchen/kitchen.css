@@ -158,7 +158,7 @@
 .kitchen-card {
   background: white;
   border-radius: 16px;
-  padding: 20px;
+  padding: 24px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
   display: flex;
   flex-direction: column;
@@ -175,13 +175,29 @@
 }
 
 .kitchen-button {
-  background: #2563eb;
+  background: #4f46e5;
   border: none;
   color: white;
-  padding: 10px 16px;
+  padding: 12px 18px;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
+  font-size: 15px;
+  min-height: 48px;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kitchen-button:hover {
+  background: #4338ca;
+}
+
+.kitchen-button:active {
+  transform: translateY(1px);
+}
+
+.kitchen-button:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.35);
+  outline-offset: 2px;
 }
 
 .kitchen-button.secondary {
@@ -247,8 +263,8 @@
 .kitchen-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: auto;
+  gap: 12px;
+  margin-top: 20px;
   width: 100%;
 }
 
@@ -381,6 +397,7 @@
   flex-wrap: wrap;
   gap: 10px 12px;
   align-items: center;
+  margin-bottom: 8px;
 }
 
 .kitchen-chip-item {
@@ -579,6 +596,26 @@
   border: 1px solid #fecdca;
 }
 
+.kitchen-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.kitchen-dish-form-card {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.kitchen-dish-ingredients {
+  gap: 10px;
+}
+
+.kitchen-dish-actions .kitchen-button {
+  width: 100%;
+}
+
 .kitchen-table {
   width: 100%;
   border-collapse: collapse;
@@ -630,5 +667,16 @@
 
   .kitchen-nav-toggle {
     display: flex;
+  }
+}
+
+@media (min-width: 900px) {
+  .kitchen-dish-actions {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .kitchen-dish-actions .kitchen-button {
+    width: auto;
   }
 }

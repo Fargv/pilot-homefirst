@@ -159,7 +159,7 @@ export default function DishesPage() {
   return (
     <KitchenLayout>
       <div className="kitchen-grid">
-        <div className="kitchen-card">
+        <div className="kitchen-card kitchen-dish-form-card">
           <div>
             <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
             <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
@@ -175,7 +175,7 @@ export default function DishesPage() {
                 placeholder="Ej. Pollo al horno"
               />
             </label>
-            <div className="kitchen-field">
+            <div className="kitchen-field kitchen-dish-ingredients">
               <span className="kitchen-label">Ingredientes</span>
               <IngredientPicker
                 value={form.ingredients}
@@ -193,7 +193,7 @@ export default function DishesPage() {
             </div>
             {notice ? <div className="kitchen-alert success">{notice}</div> : null}
             {error ? <div className="kitchen-alert error">{error}</div> : null}
-            <div className="kitchen-actions">
+            <div className="kitchen-actions kitchen-dish-actions">
               {isCreatingIngredient ? (
                 <div className="kitchen-inline-warning">
                   Termina de crear el ingrediente para guardar el plato.
