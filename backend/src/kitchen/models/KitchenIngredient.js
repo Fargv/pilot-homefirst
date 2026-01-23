@@ -10,4 +10,8 @@ const KitchenIngredientSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export const KitchenIngredient = mongoose.model("KitchenIngredient", KitchenIngredientSchema);
+export const KitchenIngredient = mongoose.model(
+  "KitchenIngredient",
+  KitchenIngredientSchema,
+  "kitchenIngredients"
+);
