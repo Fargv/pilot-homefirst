@@ -6,5 +6,10 @@ export async function connectDb() {
 
   mongoose.set("strictQuery", true);
   await mongoose.connect(config.mongodbUri);
+  const match = config.mongodbUri.match(/\/([^/?]+)(\?|$)/);
+  const dbName = match ? match[1] : "desconocida";
   console.log("✅ MongoDB conectado");
+  if (config.nodeEnv === "development") {
+    console.log(`🔎 MongoDB DB: ${dbName}`);
+  }
 }

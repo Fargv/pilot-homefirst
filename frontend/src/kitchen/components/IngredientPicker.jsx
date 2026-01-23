@@ -34,6 +34,9 @@ export default function IngredientPicker({ value = [], onChange, categories = []
 
     const timeout = setTimeout(async () => {
       try {
+        if (import.meta.env.DEV) {
+          console.debug("[IngredientPicker] buscando", { query });
+        }
         const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(query)}`);
         if (!active) return;
         setSuggestions(data.ingredients || []);
@@ -106,6 +109,12 @@ export default function IngredientPicker({ value = [], onChange, categories = []
     setSaving(true);
     setCreateError("");
     try {
+      if (import.meta.env.DEV) {
+        console.debug("[IngredientPicker] creando ingrediente", {
+          name: createName.trim(),
+          categoryId: selectedCategory?._id
+        });
+      }
       const data = await apiRequest("/api/kitchenIngredients", {
         method: "POST",
         body: JSON.stringify({ name: createName, categoryId: selectedCategory._id })

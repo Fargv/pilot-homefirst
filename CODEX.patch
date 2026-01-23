@@ -1,422 +1,206 @@
-diff --git a/backend/src/index.js b/backend/src/index.js
-index e1b3ef86408414ef89d756df77cb994f30654ae3..c234679f704775594d2a397f53a49ea9e77920b9 100644
---- a/backend/src/index.js
-+++ b/backend/src/index.js
-@@ -1,40 +1,44 @@
- import express from "express";
- import cors from "cors";
- import { config } from "./config.js";
- import { connectDb } from "./db.js";
- import { sendTestEmail } from "./mailer.js";
--import kitchenRouter from "./kitchen/index.js";
--import usersRouter from "./users/index.js";
-+import kitchenRouter from "./kitchen/index.js";
-+import categoriesRouter from "./kitchen/routes/categories.js";
-+import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
-+import usersRouter from "./users/index.js";
- 
- const app = express();
- 
- app.use(cors({ origin: config.corsOrigin }));
- app.use(express.json());
- 
- app.get("/health", (req, res) => {
-   res.json({ ok: true, env: config.nodeEnv, time: new Date().toISOString() });
- });
- 
- app.post("/api/email/test", async (req, res) => {
-   try {
-     const { to } = req.body;
-     if (!to) return res.status(400).json({ ok: false, error: "Falta 'to' en body" });
- 
-     const messageId = await sendTestEmail({ to });
-     res.json({ ok: true, messageId });
-   } catch (e) {
-     res.status(500).json({ ok: false, error: e.message });
-   }
- });
- 
--app.use("/api/kitchen", kitchenRouter);
--app.use("/api/users", usersRouter);
-+app.use("/api/kitchen", kitchenRouter);
-+app.use("/api/categories", categoriesRouter);
-+app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
-+app.use("/api/users", usersRouter);
- 
- connectDb()
-   .then(() => {
-     app.listen(config.port, () => console.log(`🚀 API escuchando en :${config.port}`));
-   })
-   .catch((e) => {
-     console.error("❌ Error conectando DB", e);
-     process.exit(1);
-   });
-diff --git a/backend/src/kitchen/models/KitchenDish.js b/backend/src/kitchen/models/KitchenDish.js
-index ae942d218eca14408b16124559c6f86ce0695c78..04f0752b0e7def6454906424eaab5fc7a5466cb9 100644
---- a/backend/src/kitchen/models/KitchenDish.js
-+++ b/backend/src/kitchen/models/KitchenDish.js
-@@ -1,20 +1,21 @@
+diff --git a/backend/src/db.js b/backend/src/db.js
+index cfeecb8814828f7b692471409d013a940b5fc861..80bd0db144bac642bbbaec7cbeab60b4b39c48bc 100644
+--- a/backend/src/db.js
++++ b/backend/src/db.js
+@@ -1,10 +1,15 @@
  import mongoose from "mongoose";
+ import { config } from "./config.js";
  
- const IngredientSchema = new mongoose.Schema(
-   {
-+    ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient" },
-     displayName: { type: String, required: true, trim: true },
-     canonicalName: { type: String, required: true, index: true }
-   },
-   { _id: false }
- );
+ export async function connectDb() {
+   if (!config.mongodbUri) return;
  
- const KitchenDishSchema = new mongoose.Schema(
-   {
-     name: { type: String, required: true, trim: true },
-     ingredients: { type: [IngredientSchema], default: [] },
-     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" }
-   },
-   { timestamps: true }
- );
- 
- export const KitchenDish = mongoose.model("KitchenDish", KitchenDishSchema);
-diff --git a/backend/src/kitchen/utils/normalize.js b/backend/src/kitchen/utils/normalize.js
-index e1aeac4fecf53ba4f4a5c7501fadbcf6567cdf8d..6a587b11d343d6d2c240e88582612ca6ee126a65 100644
---- a/backend/src/kitchen/utils/normalize.js
-+++ b/backend/src/kitchen/utils/normalize.js
-@@ -1,34 +1,36 @@
- export function normalizeIngredientName(value = "") {
-   const trimmed = value.trim().toLowerCase();
-   if (!trimmed) return "";
- 
-   const noAccents = trimmed.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-   const noPunctuation = noAccents.replace(/[.,;:!¡¿?()\[\]{}"'`´]/g, "");
-   const normalizedSpaces = noPunctuation.replace(/\s+/g, " ").trim();
- 
-   return singularize(normalizedSpaces);
+   mongoose.set("strictQuery", true);
+   await mongoose.connect(config.mongodbUri);
++  const match = config.mongodbUri.match(/\/([^/?]+)(\?|$)/);
++  const dbName = match ? match[1] : "desconocida";
+   console.log("✅ MongoDB conectado");
++  if (config.nodeEnv === "development") {
++    console.log(`🔎 MongoDB DB: ${dbName}`);
++  }
  }
+diff --git a/backend/src/kitchen/routes/kitchenIngredients.js b/backend/src/kitchen/routes/kitchenIngredients.js
+index 30d1c819793b3d0ba0538a74232d28cde96d9794..3f4e917c32fd6a68315356628cfe7a44433c3911 100644
+--- a/backend/src/kitchen/routes/kitchenIngredients.js
++++ b/backend/src/kitchen/routes/kitchenIngredients.js
+@@ -1,60 +1,66 @@
+ import express from "express";
+ import { KitchenIngredient } from "../models/KitchenIngredient.js";
+ import { requireAuth } from "../middleware.js";
+ import { normalizeIngredientName } from "../utils/normalize.js";
  
- function singularize(value) {
-   if (value.length <= 3) return value;
+ const router = express.Router();
+ const MAX_RESULTS = 15;
+ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  
-   if (value.endsWith("ces")) return value.slice(0, -3) + "z"; // luces -> luz
-   if (value.endsWith("es")) return value.slice(0, -2); // tomates -> tomate (heurística simple)
-   if (value.endsWith("s")) return value.slice(0, -1); // patatas -> patata
+ router.get("/", requireAuth, async (req, res) => {
+   const { q } = req.query;
+   const filters = { active: true };
++  if (process.env.NODE_ENV === "development") {
++    console.log("🔎 [kitchenIngredients] search", { q });
++  }
  
-   return value;
- }
+   if (q) {
+     const trimmed = String(q).trim();
+     const normalized = normalizeIngredientName(trimmed);
+     const normalizedRegex = normalized ? new RegExp(escapeRegex(normalized), "i") : null;
+     const nameRegex = trimmed ? new RegExp(escapeRegex(trimmed), "i") : null;
+     const orFilters = [];
+     if (normalizedRegex) orFilters.push({ canonicalName: normalizedRegex });
+     if (nameRegex) orFilters.push({ name: nameRegex });
+     if (orFilters.length) filters.$or = orFilters;
+   }
  
- export function normalizeIngredientList(list = []) {
-   return list
-     .map((item) => {
--      const displayName = String(item?.displayName || item || "").trim();
--      const canonicalName = normalizeIngredientName(displayName);
-+      const displayName = String(item?.displayName || item?.name || item || "").trim();
-+      const canonicalName = String(item?.canonicalName || normalizeIngredientName(displayName)).trim();
-+      const ingredientId = item?.ingredientId || undefined;
-       if (!displayName || !canonicalName) return null;
-       return {
-         displayName,
--        canonicalName
-+        canonicalName,
-+        ...(ingredientId ? { ingredientId } : {})
-       };
-     })
-     .filter(Boolean);
- }
-diff --git a/frontend/src/kitchen/pages/DishesPage.jsx b/frontend/src/kitchen/pages/DishesPage.jsx
-index c937803ae164346e199ab3dbaac223cdb34c410c..6e5858f551d8a190a7d0404d5eb84f753b0dc431 100644
---- a/frontend/src/kitchen/pages/DishesPage.jsx
-+++ b/frontend/src/kitchen/pages/DishesPage.jsx
-@@ -1,118 +1,253 @@
--import React, { useEffect, useState } from "react";
-+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
- import { apiRequest } from "../api.js";
- import KitchenLayout from "../Layout.jsx";
- import { useAuth } from "../auth";
-+import IngredientPicker from "../components/IngredientPicker.jsx";
-+import { normalizeIngredientName } from "../utils/normalize.js";
+   const ingredients = await KitchenIngredient.find(filters)
+     .populate("categoryId", "name colorBg colorText")
+     .sort({ name: 1 })
+     .limit(MAX_RESULTS);
  
- export default function DishesPage() {
-   const { user } = useAuth();
-   const [dishes, setDishes] = useState([]);
-+  const [categories, setCategories] = useState([]);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState("");
--  const [form, setForm] = useState({ name: "", ingredients: "" });
-+  const [form, setForm] = useState({ name: "", ingredients: [] });
-+  const [editingId, setEditingId] = useState(null);
-+  const [saving, setSaving] = useState(false);
-+  const [notice, setNotice] = useState("");
-+  const ingredientCache = useRef(new Map());
+   return res.json({ ok: true, ingredients });
+ });
  
-   const loadDishes = async () => {
-     setLoading(true);
-     setError("");
-     try {
-       const data = await apiRequest("/api/kitchen/dishes");
-       setDishes(data.dishes || []);
-     } catch (err) {
-       setError(err.message || "No se pudieron cargar los platos.");
-     } finally {
-       setLoading(false);
-     }
-   };
+ router.post("/", requireAuth, async (req, res) => {
+   try {
+     const { name, categoryId } = req.body;
++    if (process.env.NODE_ENV === "development") {
++      console.log("🧪 [kitchenIngredients] create", { name, categoryId });
++    }
+     if (!name) return res.status(400).json({ ok: false, error: "El nombre del ingrediente es obligatorio." });
+     if (!categoryId)
+       return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
+ 
+     const trimmedName = String(name).trim();
+     const canonicalName = normalizeIngredientName(trimmedName);
+     if (!canonicalName)
+       return res.status(400).json({ ok: false, error: "El nombre del ingrediente no es válido." });
+ 
+     const existing = await KitchenIngredient.findOne({
+       canonicalName: new RegExp(`^${escapeRegex(canonicalName)}$`, "i")
+     }).populate("categoryId", "name colorBg colorText");
+ 
+     if (existing) return res.json({ ok: true, ingredient: existing, created: false });
+ 
+     const ingredient = await KitchenIngredient.create({
+       name: trimmedName,
+       canonicalName,
+       categoryId
+     });
+ 
+     const populatedIngredient = await KitchenIngredient.findById(ingredient._id).populate(
+       "categoryId",
+       "name colorBg colorText"
+     );
+diff --git a/frontend/src/kitchen/components/IngredientPicker.jsx b/frontend/src/kitchen/components/IngredientPicker.jsx
+index 3a7ef0538698a7b6915028fb3d1faf6091caaaa5..28ace9afb7eefd88c699023d73507987930c263b 100644
+--- a/frontend/src/kitchen/components/IngredientPicker.jsx
++++ b/frontend/src/kitchen/components/IngredientPicker.jsx
+@@ -12,50 +12,53 @@ export default function IngredientPicker({ value = [], onChange, categories = []
+   const [searchError, setSearchError] = useState("");
+   const [showCreate, setShowCreate] = useState(false);
+   const [createName, setCreateName] = useState("");
+   const [createError, setCreateError] = useState("");
+   const [saving, setSaving] = useState(false);
+   const [categoryQuery, setCategoryQuery] = useState("");
+   const [selectedCategory, setSelectedCategory] = useState(null);
+   const [lastUsedCategory, setLastUsedCategory] = useState(null);
+   const [creatingCategory, setCreatingCategory] = useState(false);
+   const [replaceItem, setReplaceItem] = useState(null);
  
    useEffect(() => {
-     loadDishes();
-   }, []);
+     if (!query) {
+       setSuggestions([]);
+       setSearchError("");
+       setSearching(false);
+       return;
+     }
  
--  const onCreate = async (event) => {
-+  const loadCategories = async () => {
-+    try {
-+      const data = await apiRequest("/api/categories");
-+      setCategories(data.categories || []);
-+    } catch (err) {
-+      setError(err.message || "No se pudieron cargar las categorías.");
-+    }
-+  };
-+
-+  useEffect(() => {
-+    loadCategories();
-+  }, []);
-+
-+  const fetchIngredientMatch = useCallback(async (canonicalName) => {
-+    if (!canonicalName) return null;
-+    if (ingredientCache.current.has(canonicalName)) {
-+      return ingredientCache.current.get(canonicalName);
-+    }
-+    try {
-+      const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(canonicalName)}`);
-+      const match = (data.ingredients || []).find((item) => item.canonicalName === canonicalName);
-+      ingredientCache.current.set(canonicalName, match || null);
-+      return match || null;
-+    } catch (err) {
-+      return null;
-+    }
-+  }, []);
-+
-+  const resolveIngredients = useCallback(
-+    async (ingredients = []) => {
-+      const resolved = await Promise.all(
-+        ingredients.map(async (item) => {
-+          const displayName = String(item?.displayName || "").trim();
-+          const canonicalName = String(item?.canonicalName || normalizeIngredientName(displayName)).trim();
-+          const match = await fetchIngredientMatch(canonicalName);
-+          const ingredientId = item?.ingredientId || match?._id;
-+          return {
-+            ingredientId,
-+            displayName,
-+            canonicalName,
-+            category: match?.categoryId || null,
-+            status: ingredientId ? "resolved" : "pending"
-+          };
-+        })
-+      );
-+      return resolved.filter((item) => item.displayName);
-+    },
-+    [fetchIngredientMatch]
-+  );
-+
-+  const startEdit = useCallback(
-+    async (dish) => {
-+      setNotice("");
-+      const ingredients = await resolveIngredients(dish.ingredients || []);
-+      setForm({ name: dish.name || "", ingredients });
-+      setEditingId(dish._id);
-+    },
-+    [resolveIngredients]
-+  );
-+
-+  const resetForm = () => {
-+    setForm({ name: "", ingredients: [] });
-+    setEditingId(null);
-+    setNotice("");
-+  };
-+
-+  const onSave = async (event) => {
-     event.preventDefault();
-     setError("");
-+    setNotice("");
-+    setSaving(true);
+     let active = true;
+     setSearching(true);
+     setSearchError("");
+ 
+     const timeout = setTimeout(async () => {
+       try {
++        if (import.meta.env.DEV) {
++          console.debug("[IngredientPicker] buscando", { query });
++        }
+         const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(query)}`);
+         if (!active) return;
+         setSuggestions(data.ingredients || []);
+       } catch (err) {
+         if (!active) return;
+         setSearchError(err.message || "No se pudieron buscar ingredientes.");
+       } finally {
+         if (active) setSearching(false);
+       }
+     }, 250);
+ 
+     return () => {
+       active = false;
+       clearTimeout(timeout);
+     };
+   }, [query]);
+ 
+   const filteredCategories = useMemo(() => {
+     if (!categoryQuery) return categories;
+     const lower = categoryQuery.toLowerCase();
+     return categories.filter((category) => category.name.toLowerCase().includes(lower));
+   }, [categories, categoryQuery]);
+ 
+   const addIngredient = (ingredient, displayNameOverride, targetToReplace = null) => {
+     const canonicalName = ingredient.canonicalName || normalizeIngredientName(displayNameOverride || ingredient.name);
+@@ -84,50 +87,56 @@ export default function IngredientPicker({ value = [], onChange, categories = []
+     addIngredient(ingredient, ingredient.name);
+     setQuery("");
+     setSuggestions([]);
+     setShowCreate(false);
+     setCreateName("");
+   };
+ 
+   const openCreateFlow = (name, itemToReplace = null) => {
+     setCreateName(name);
+     setCreateError("");
+     setShowCreate(true);
+     setSelectedCategory(lastUsedCategory);
+     setCategoryQuery("");
+     setReplaceItem(itemToReplace);
+   };
+ 
+   const handleCreateIngredient = async () => {
+     if (!createName.trim()) return;
+     if (!selectedCategory?._id) {
+       setCreateError("Selecciona una categoría para continuar.");
+       return;
+     }
+     setSaving(true);
+     setCreateError("");
      try {
-       const payload = {
-         name: form.name,
--        ingredients: form.ingredients
--          .split(",")
--          .map((value) => ({ displayName: value.trim() }))
--          .filter((item) => item.displayName)
-+        ingredients: (form.ingredients || []).map((item) => ({
-+          ingredientId: item.ingredientId,
-+          displayName: item.displayName,
-+          canonicalName: item.canonicalName || normalizeIngredientName(item.displayName)
-+        }))
-       };
--      await apiRequest("/api/kitchen/dishes", {
--        method: "POST",
--        body: JSON.stringify(payload)
--      });
--      setForm({ name: "", ingredients: "" });
-+      if (editingId) {
-+        await apiRequest(`/api/kitchen/dishes/${editingId}`, {
-+          method: "PUT",
-+          body: JSON.stringify(payload)
++      if (import.meta.env.DEV) {
++        console.debug("[IngredientPicker] creando ingrediente", {
++          name: createName.trim(),
++          categoryId: selectedCategory?._id
 +        });
-+        setNotice("Plato actualizado.");
-+      } else {
-+        await apiRequest("/api/kitchen/dishes", {
-+          method: "POST",
-+          body: JSON.stringify(payload)
-+        });
-+        setNotice("Plato creado.");
 +      }
-+      resetForm();
-       loadDishes();
+       const data = await apiRequest("/api/kitchenIngredients", {
+         method: "POST",
+         body: JSON.stringify({ name: createName, categoryId: selectedCategory._id })
+       });
+       const ingredient = data.ingredient;
+       addIngredient(ingredient, createName.trim(), replaceItem);
+       setLastUsedCategory(selectedCategory);
+       setShowCreate(false);
+       setCreateName("");
+       setQuery("");
      } catch (err) {
--      setError(err.message || "No se pudo crear el plato.");
-+      setError(err.message || "No se pudo guardar el plato.");
-+    } finally {
-+      setSaving(false);
+       setCreateError(err.message || "No se pudo crear el ingrediente.");
+     } finally {
+       setSaving(false);
      }
    };
  
-+  const onCategoryCreated = async (name) => {
-+    const data = await apiRequest("/api/categories", {
-+      method: "POST",
-+      body: JSON.stringify({ name })
-+    });
-+    const category = data.category;
-+    setCategories((prev) => {
-+      const exists = prev.find((item) => item._id === category._id);
-+      if (exists) return prev;
-+      return [...prev, category];
-+    });
-+    return category;
-+  };
-+
-+  const pendingCount = useMemo(
-+    () => (form.ingredients || []).filter((item) => item.status === "pending").length,
-+    [form.ingredients]
-+  );
-+
-   return (
-     <KitchenLayout>
-       <div className="kitchen-grid">
-         <div className="kitchen-card">
--          <h3>Crear plato</h3>
--          <p className="kitchen-muted">Añade ingredientes sin cantidades.</p>
--          <form onSubmit={onCreate} style={{ display: "grid", gap: 12, marginTop: 12 }}>
--            <label>
-+          <div>
-+            <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
-+            <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
-+          </div>
-+          <form onSubmit={onSave} className="kitchen-form">
-+            <label className="kitchen-field">
-               <span className="kitchen-label">Nombre del plato</span>
-               <input
-                 className="kitchen-input"
-                 value={form.name}
-                 onChange={(event) => setForm({ ...form, name: event.target.value })}
-                 required
-+                placeholder="Ej. Pollo al horno"
-               />
-             </label>
--            <label>
--              <span className="kitchen-label">Ingredientes (separados por coma)</span>
--              <textarea
--                className="kitchen-textarea"
--                rows="3"
-+            <div className="kitchen-field">
-+              <span className="kitchen-label">Ingredientes</span>
-+              <IngredientPicker
-                 value={form.ingredients}
--                onChange={(event) => setForm({ ...form, ingredients: event.target.value })}
-+                onChange={(ingredients) => setForm({ ...form, ingredients })}
-+                categories={categories}
-+                onCategoryCreated={onCategoryCreated}
-               />
--            </label>
--            {error ? <div style={{ color: "#b42318" }}>{error}</div> : null}
--            <button className="kitchen-button" type="submit">Guardar plato</button>
-+              {pendingCount ? (
-+                <p className="kitchen-inline-warning">
-+                  Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente{pendingCount > 1 ? "s" : ""} de
-+                  vincular con el catálogo global.
-+                </p>
-+              ) : null}
-+            </div>
-+            {notice ? <div className="kitchen-alert success">{notice}</div> : null}
-+            {error ? <div className="kitchen-alert error">{error}</div> : null}
-+            <div className="kitchen-actions">
-+              <button className="kitchen-button" type="submit" disabled={saving}>
-+                {saving ? "Guardando..." : "Guardar plato"}
-+              </button>
-+              {editingId ? (
-+                <button className="kitchen-button ghost" type="button" onClick={resetForm}>
-+                  Cancelar edición
-+                </button>
-+              ) : null}
-+            </div>
-           </form>
-         </div>
- 
-         <div className="kitchen-card">
-           <h3>Platos guardados</h3>
-           {loading ? (
-             <p>Cargando...</p>
-           ) : dishes.length === 0 ? (
-             <div className="kitchen-empty">
-               <p>No hay platos aún. Crea el primero.</p>
-             </div>
-           ) : (
-             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-               {dishes.map((dish) => (
-                 <li key={dish._id} style={{ marginBottom: 12 }}>
--                  <strong>{dish.name}</strong>
--                  <div className="kitchen-muted">
--                    {(dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes"}
-+                  <div className="kitchen-dish-row">
-+                    <div>
-+                      <strong>{dish.name}</strong>
-+                      <div className="kitchen-muted">
-+                        {(dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes"}
-+                      </div>
-+                    </div>
-+                    <div className="kitchen-dish-actions">
-+                      <button className="kitchen-button secondary" type="button" onClick={() => startEdit(dish)}>
-+                        Editar
-+                      </button>
-+                      {user?.role === "admin" ? (
-+                        <button
-+                          className="kitchen-button ghost"
-+                          type="button"
-+                          onClick={async () => {
-+                            await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
-+                            if (editingId === dish._id) resetForm();
-+                            loadDishes();
-+                          }}
-+                        >
-+                          Eliminar
-+                        </button>
-+                      ) : null}
-+                    </div>
-                   </div>
--                  {user?.role === "admin" ? (
--                    <button
--                      className="kitchen-button secondary"
--                      style={{ marginTop: 8 }}
--                      onClick={async () => {
--                        await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
--                        loadDishes();
--                      }}
--                    >
--                      Eliminar
--                    </button>
--                  ) : null}
-                 </li>
-               ))}
-             </ul>
-           )}
-         </div>
-       </div>
-     </KitchenLayout>
-   );
- }
+   const handleCreateCategory = async () => {
+     if (!onCategoryCreated) return;
+     if (!categoryQuery.trim()) return;
+     setCreatingCategory(true);
+     try {
+       const category = await onCategoryCreated(categoryQuery.trim());
+       setSelectedCategory(category);
+       setCategoryQuery("");

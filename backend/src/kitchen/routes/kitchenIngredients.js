@@ -10,6 +10,9 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 router.get("/", requireAuth, async (req, res) => {
   const { q } = req.query;
   const filters = { active: true };
+  if (process.env.NODE_ENV === "development") {
+    console.log("🔎 [kitchenIngredients] search", { q });
+  }
 
   if (q) {
     const trimmed = String(q).trim();
@@ -33,6 +36,9 @@ router.get("/", requireAuth, async (req, res) => {
 router.post("/", requireAuth, async (req, res) => {
   try {
     const { name, categoryId } = req.body;
+    if (process.env.NODE_ENV === "development") {
+      console.log("🧪 [kitchenIngredients] create", { name, categoryId });
+    }
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del ingrediente es obligatorio." });
     if (!categoryId)
       return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
