@@ -152,10 +152,14 @@ export default function DishesPage() {
     }
   };
 
-  const onCategoryCreated = async (name) => {
+  const onCategoryCreated = async (name, colors = null) => {
     const data = await apiRequest("/api/categories", {
       method: "POST",
-      body: JSON.stringify({ name })
+      body: JSON.stringify({
+        name,
+        colorBg: colors?.colorBg,
+        colorText: colors?.colorText
+      })
     });
     const category = data.category;
     setCategories((prev) => {

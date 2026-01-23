@@ -700,6 +700,96 @@
   gap: 10px;
 }
 
+.kitchen-context-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 60;
+}
+
+.kitchen-context-modal-backdrop.inner {
+  background: rgba(15, 23, 42, 0.2);
+  z-index: 70;
+}
+
+.kitchen-context-modal {
+  width: min(420px, 100%);
+  max-height: min(80vh, 560px);
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.kitchen-context-modal.small {
+  width: min(380px, 100%);
+}
+
+.kitchen-context-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kitchen-context-modal-header h4 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.kitchen-context-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.kitchen-context-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.kitchen-color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.kitchen-color-option {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: #f2f4f7;
+  color: #101828;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.kitchen-color-option.swatch {
+  width: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.kitchen-color-option.selected {
+  border-color: rgba(15, 23, 42, 0.3);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.15);
+}
+
 .kitchen-day-feedback {
   display: flex;
   flex-direction: column;
@@ -839,6 +929,16 @@
   .kitchen-modal {
     padding: 20px;
     max-height: 92vh;
+  }
+
+  .kitchen-context-modal-backdrop {
+    align-items: flex-end;
+  }
+
+  .kitchen-context-modal {
+    width: 100%;
+    border-radius: 18px 18px 0 0;
+    max-height: 85vh;
   }
 }
 
