@@ -22,12 +22,14 @@ function singularize(value) {
 export function normalizeIngredientList(list = []) {
   return list
     .map((item) => {
-      const displayName = String(item?.displayName || item || "").trim();
-      const canonicalName = normalizeIngredientName(displayName);
+      const displayName = String(item?.displayName || item?.name || item || "").trim();
+      const canonicalName = String(item?.canonicalName || normalizeIngredientName(displayName)).trim();
+      const ingredientId = item?.ingredientId || undefined;
       if (!displayName || !canonicalName) return null;
       return {
         displayName,
-        canonicalName
+        canonicalName,
+        ...(ingredientId ? { ingredientId } : {})
       };
     })
     .filter(Boolean);

@@ -4,6 +4,8 @@ import { config } from "./config.js";
 import { connectDb } from "./db.js";
 import { sendTestEmail } from "./mailer.js";
 import kitchenRouter from "./kitchen/index.js";
+import categoriesRouter from "./kitchen/routes/categories.js";
+import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
 import usersRouter from "./users/index.js";
 
 const app = express();
@@ -28,6 +30,8 @@ app.post("/api/email/test", async (req, res) => {
 });
 
 app.use("/api/kitchen", kitchenRouter);
+app.use("/api/categories", categoriesRouter);
+app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
 app.use("/api/users", usersRouter);
 
 connectDb()

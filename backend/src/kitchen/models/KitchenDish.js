@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const IngredientSchema = new mongoose.Schema(
   {
+    ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient" },
     displayName: { type: String, required: true, trim: true },
     canonicalName: { type: String, required: true, index: true }
   },

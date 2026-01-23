@@ -1,461 +1,421 @@
-diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 9f812bb34a16aef496e19655c2e141fd663028c8..20833750a8bab8c2a21a640e3ed5ab5ac5d2c9db 100644
---- a/frontend/src/kitchen/kitchen.css
-+++ b/frontend/src/kitchen/kitchen.css
-@@ -283,56 +283,114 @@
+diff --git a/backend/src/index.js b/backend/src/index.js
+index e1b3ef86408414ef89d756df77cb994f30654ae3..c234679f704775594d2a397f53a49ea9e77920b9 100644
+--- a/backend/src/index.js
++++ b/backend/src/index.js
+@@ -1,40 +1,44 @@
+ import express from "express";
+ import cors from "cors";
+ import { config } from "./config.js";
+ import { connectDb } from "./db.js";
+ import { sendTestEmail } from "./mailer.js";
+-import kitchenRouter from "./kitchen/index.js";
+-import usersRouter from "./users/index.js";
++import kitchenRouter from "./kitchen/index.js";
++import categoriesRouter from "./kitchen/routes/categories.js";
++import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
++import usersRouter from "./users/index.js";
  
- .kitchen-title {
-   margin: 0;
-   font-size: 28px;
-   font-weight: 700;
-   color: #0f172a;
+ const app = express();
+ 
+ app.use(cors({ origin: config.corsOrigin }));
+ app.use(express.json());
+ 
+ app.get("/health", (req, res) => {
+   res.json({ ok: true, env: config.nodeEnv, time: new Date().toISOString() });
+ });
+ 
+ app.post("/api/email/test", async (req, res) => {
+   try {
+     const { to } = req.body;
+     if (!to) return res.status(400).json({ ok: false, error: "Falta 'to' en body" });
+ 
+     const messageId = await sendTestEmail({ to });
+     res.json({ ok: true, messageId });
+   } catch (e) {
+     res.status(500).json({ ok: false, error: e.message });
+   }
+ });
+ 
+-app.use("/api/kitchen", kitchenRouter);
+-app.use("/api/users", usersRouter);
++app.use("/api/kitchen", kitchenRouter);
++app.use("/api/categories", categoriesRouter);
++app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
++app.use("/api/users", usersRouter);
+ 
+ connectDb()
+   .then(() => {
+     app.listen(config.port, () => console.log(`🚀 API escuchando en :${config.port}`));
+   })
+   .catch((e) => {
+     console.error("❌ Error conectando DB", e);
+     process.exit(1);
+   });
+diff --git a/backend/src/kitchen/models/KitchenDish.js b/backend/src/kitchen/models/KitchenDish.js
+index ae942d218eca14408b16124559c6f86ce0695c78..04f0752b0e7def6454906424eaab5fc7a5466cb9 100644
+--- a/backend/src/kitchen/models/KitchenDish.js
++++ b/backend/src/kitchen/models/KitchenDish.js
+@@ -1,20 +1,21 @@
+ import mongoose from "mongoose";
+ 
+ const IngredientSchema = new mongoose.Schema(
+   {
++    ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient" },
+     displayName: { type: String, required: true, trim: true },
+     canonicalName: { type: String, required: true, index: true }
+   },
+   { _id: false }
+ );
+ 
+ const KitchenDishSchema = new mongoose.Schema(
+   {
+     name: { type: String, required: true, trim: true },
+     ingredients: { type: [IngredientSchema], default: [] },
+     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" }
+   },
+   { timestamps: true }
+ );
+ 
+ export const KitchenDish = mongoose.model("KitchenDish", KitchenDishSchema);
+diff --git a/backend/src/kitchen/utils/normalize.js b/backend/src/kitchen/utils/normalize.js
+index e1aeac4fecf53ba4f4a5c7501fadbcf6567cdf8d..6a587b11d343d6d2c240e88582612ca6ee126a65 100644
+--- a/backend/src/kitchen/utils/normalize.js
++++ b/backend/src/kitchen/utils/normalize.js
+@@ -1,34 +1,36 @@
+ export function normalizeIngredientName(value = "") {
+   const trimmed = value.trim().toLowerCase();
+   if (!trimmed) return "";
+ 
+   const noAccents = trimmed.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+   const noPunctuation = noAccents.replace(/[.,;:!¡¿?()\[\]{}"'`´]/g, "");
+   const normalizedSpaces = noPunctuation.replace(/\s+/g, " ").trim();
+ 
+   return singularize(normalizedSpaces);
  }
  
- .kitchen-day-card {
-   min-height: 100%;
+ function singularize(value) {
+   if (value.length <= 3) return value;
+ 
+   if (value.endsWith("ces")) return value.slice(0, -3) + "z"; // luces -> luz
+   if (value.endsWith("es")) return value.slice(0, -2); // tomates -> tomate (heurística simple)
+   if (value.endsWith("s")) return value.slice(0, -1); // patatas -> patata
+ 
+   return value;
  }
  
- .kitchen-day-header {
-   display: flex;
-   flex-direction: column;
-   gap: 6px;
+ export function normalizeIngredientList(list = []) {
+   return list
+     .map((item) => {
+-      const displayName = String(item?.displayName || item || "").trim();
+-      const canonicalName = normalizeIngredientName(displayName);
++      const displayName = String(item?.displayName || item?.name || item || "").trim();
++      const canonicalName = String(item?.canonicalName || normalizeIngredientName(displayName)).trim();
++      const ingredientId = item?.ingredientId || undefined;
+       if (!displayName || !canonicalName) return null;
+       return {
+         displayName,
+-        canonicalName
++        canonicalName,
++        ...(ingredientId ? { ingredientId } : {})
+       };
+     })
+     .filter(Boolean);
  }
- 
- .kitchen-day-title {
-   margin: 0;
-   font-size: 18px;
-   font-weight: 700;
-   text-transform: capitalize;
- }
- 
--.kitchen-day-meta {
--  display: flex;
--  flex-direction: column;
--  gap: 4px;
--  font-size: 13px;
--  color: #667085;
-+.kitchen-day-meta {
-+  display: flex;
-+  flex-direction: column;
-+  gap: 4px;
-+  font-size: 13px;
-+  color: #667085;
-+}
-+
-+.kitchen-day-status {
-+  display: flex;
-+  flex-wrap: wrap;
-+  gap: 6px;
-+}
-+
-+.kitchen-status-pill {
-+  display: inline-flex;
-+  align-items: center;
-+  padding: 2px 8px;
-+  border-radius: 999px;
-+  font-size: 11px;
-+  font-weight: 600;
-+  letter-spacing: 0.01em;
-+  border: 1px solid transparent;
-+  color: #344054;
-+  background: #f2f4f7;
-+}
-+
-+.kitchen-status-pill.assigned {
-+  color: #1d4ed8;
-+  background: #eff6ff;
-+  border-color: #dbeafe;
-+}
-+
-+.kitchen-status-pill.planned {
-+  color: #1f2937;
-+  background: #f8fafc;
-+  border-color: #e2e8f0;
-+}
-+
-+.kitchen-inline-error {
-+  margin: 4px 0 0;
-+  font-size: 13px;
-+  color: #b42318;
-+}
-+
-+.kitchen-day-feedback {
-+  display: flex;
-+  flex-direction: column;
-+  gap: 4px;
-+  margin-top: 12px;
-+  font-size: 13px;
-+  color: #667085;
-+}
-+
-+.kitchen-day-feedback-text.saving {
-+  color: #475467;
-+}
-+
-+.kitchen-day-feedback-text.saved {
-+  color: #027a48;
-+}
-+
-+.kitchen-day-feedback-text.error {
-+  color: #b42318;
- }
- 
- .kitchen-toolbar {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 12px;
-   align-items: center;
-   justify-content: space-between;
-   margin-top: 16px;
- }
- 
- .kitchen-alert {
-   border-radius: 12px;
-   padding: 10px 12px;
-   font-weight: 600;
-   font-size: 14px;
- }
- 
- .kitchen-alert.success {
-   background: #ecfdf3;
-   color: #027a48;
-   border: 1px solid #a6f4c5;
- }
- 
- .kitchen-alert.error {
-diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
-index 09663547bd961e9b698469bce83bec8c1ed0fc2e..44774653cd11f7cb0887e29ff3d11ec61b2dd1df 100644
---- a/frontend/src/kitchen/pages/WeekPage.jsx
-+++ b/frontend/src/kitchen/pages/WeekPage.jsx
-@@ -1,224 +1,293 @@
--import React, { useEffect, useMemo, useState } from "react";
-+import React, { useEffect, useMemo, useRef, useState } from "react";
+diff --git a/frontend/src/kitchen/pages/DishesPage.jsx b/frontend/src/kitchen/pages/DishesPage.jsx
+index c937803ae164346e199ab3dbaac223cdb34c410c..6e5858f551d8a190a7d0404d5eb84f753b0dc431 100644
+--- a/frontend/src/kitchen/pages/DishesPage.jsx
++++ b/frontend/src/kitchen/pages/DishesPage.jsx
+@@ -1,118 +1,253 @@
+-import React, { useEffect, useState } from "react";
++import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
  import { apiRequest } from "../api.js";
- import { useAuth } from "../auth";
  import KitchenLayout from "../Layout.jsx";
+ import { useAuth } from "../auth";
++import IngredientPicker from "../components/IngredientPicker.jsx";
++import { normalizeIngredientName } from "../utils/normalize.js";
  
- function getMondayISO(date = new Date()) {
-   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-   const day = d.getUTCDay();
-   const diff = (day === 0 ? -6 : 1) - day;
-   d.setUTCDate(d.getUTCDate() + diff);
-   return d.toISOString().slice(0, 10);
- }
- 
- function formatDateLabel(dateString) {
-   const date = new Date(dateString);
-   return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" });
- }
- 
- export default function WeekPage() {
+ export default function DishesPage() {
    const { user } = useAuth();
-   const [weekStart, setWeekStart] = useState(getMondayISO());
-   const [plan, setPlan] = useState(null);
    const [dishes, setDishes] = useState([]);
-   const [users, setUsers] = useState([]);
++  const [categories, setCategories] = useState([]);
    const [loading, setLoading] = useState(true);
--  const [error, setError] = useState("");
-+  const [loadError, setLoadError] = useState("");
-+  const [dayStatus, setDayStatus] = useState({});
-+  const [dayErrors, setDayErrors] = useState({});
-+  const [ingredientInputs, setIngredientInputs] = useState({});
-+  const lastSyncedIngredients = useRef({});
-+  const saveTimers = useRef({});
+   const [error, setError] = useState("");
+-  const [form, setForm] = useState({ name: "", ingredients: "" });
++  const [form, setForm] = useState({ name: "", ingredients: [] });
++  const [editingId, setEditingId] = useState(null);
++  const [saving, setSaving] = useState(false);
++  const [notice, setNotice] = useState("");
++  const ingredientCache = useRef(new Map());
  
-   const loadData = async () => {
+   const loadDishes = async () => {
      setLoading(true);
--    setError("");
-+    setLoadError("");
+     setError("");
      try {
-       const [planData, dishesData] = await Promise.all([
-         apiRequest(`/api/kitchen/weeks/${weekStart}`),
-         apiRequest("/api/kitchen/dishes")
-       ]);
-       setPlan(planData.plan);
-       setDishes(dishesData.dishes || []);
-       if (user?.role === "admin") {
-         const usersData = await apiRequest("/api/kitchen/users");
-         setUsers(usersData.users || []);
-       }
+       const data = await apiRequest("/api/kitchen/dishes");
+       setDishes(data.dishes || []);
      } catch (err) {
--      setError(err.message || "No se pudo cargar la semana.");
-+      setLoadError(err.message || "No se pudo cargar la semana.");
+       setError(err.message || "No se pudieron cargar los platos.");
      } finally {
        setLoading(false);
      }
    };
  
    useEffect(() => {
-     loadData();
-   }, [weekStart]);
+     loadDishes();
+   }, []);
  
-   const userMap = useMemo(() => {
-     const map = new Map();
-     users.forEach((u) => map.set(u.id, u));
-     return map;
-   }, [users]);
- 
-+  useEffect(() => {
-+    if (!plan?.days) {
-+      return;
+-  const onCreate = async (event) => {
++  const loadCategories = async () => {
++    try {
++      const data = await apiRequest("/api/categories");
++      setCategories(data.categories || []);
++    } catch (err) {
++      setError(err.message || "No se pudieron cargar las categorías.");
 +    }
-+    setIngredientInputs((prev) => {
-+      const next = { ...prev };
-+      plan.days.forEach((day) => {
-+        const key = day.date.slice(0, 10);
-+        const serverValue = (day.ingredientOverrides || [])
-+          .map((item) => item.displayName)
-+          .join(", ");
-+        if (prev[key] === undefined || prev[key] === lastSyncedIngredients.current[key]) {
-+          next[key] = serverValue;
-+          lastSyncedIngredients.current[key] = serverValue;
-+        }
-+      });
-+      return next;
-+    });
-+  }, [plan]);
++  };
 +
-   const updateDay = async (day, updates) => {
-+    const dayKey = day.date.slice(0, 10);
-+    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
-+    setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
++  useEffect(() => {
++    loadCategories();
++  }, []);
++
++  const fetchIngredientMatch = useCallback(async (canonicalName) => {
++    if (!canonicalName) return null;
++    if (ingredientCache.current.has(canonicalName)) {
++      return ingredientCache.current.get(canonicalName);
++    }
++    try {
++      const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(canonicalName)}`);
++      const match = (data.ingredients || []).find((item) => item.canonicalName === canonicalName);
++      ingredientCache.current.set(canonicalName, match || null);
++      return match || null;
++    } catch (err) {
++      return null;
++    }
++  }, []);
++
++  const resolveIngredients = useCallback(
++    async (ingredients = []) => {
++      const resolved = await Promise.all(
++        ingredients.map(async (item) => {
++          const displayName = String(item?.displayName || "").trim();
++          const canonicalName = String(item?.canonicalName || normalizeIngredientName(displayName)).trim();
++          const match = await fetchIngredientMatch(canonicalName);
++          const ingredientId = item?.ingredientId || match?._id;
++          return {
++            ingredientId,
++            displayName,
++            canonicalName,
++            category: match?.categoryId || null,
++            status: ingredientId ? "resolved" : "pending"
++          };
++        })
++      );
++      return resolved.filter((item) => item.displayName);
++    },
++    [fetchIngredientMatch]
++  );
++
++  const startEdit = useCallback(
++    async (dish) => {
++      setNotice("");
++      const ingredients = await resolveIngredients(dish.ingredients || []);
++      setForm({ name: dish.name || "", ingredients });
++      setEditingId(dish._id);
++    },
++    [resolveIngredients]
++  );
++
++  const resetForm = () => {
++    setForm({ name: "", ingredients: [] });
++    setEditingId(null);
++    setNotice("");
++  };
++
++  const onSave = async (event) => {
+     event.preventDefault();
+     setError("");
++    setNotice("");
++    setSaving(true);
      try {
--      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
-+      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
-         method: "PUT",
-         body: JSON.stringify(updates)
-       });
-       setPlan(data.plan);
-+      setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
-+      if (saveTimers.current[dayKey]) {
-+        clearTimeout(saveTimers.current[dayKey]);
+       const payload = {
+         name: form.name,
+-        ingredients: form.ingredients
+-          .split(",")
+-          .map((value) => ({ displayName: value.trim() }))
+-          .filter((item) => item.displayName)
++        ingredients: (form.ingredients || []).map((item) => ({
++          ingredientId: item.ingredientId,
++          displayName: item.displayName,
++          canonicalName: item.canonicalName || normalizeIngredientName(item.displayName)
++        }))
+       };
+-      await apiRequest("/api/kitchen/dishes", {
+-        method: "POST",
+-        body: JSON.stringify(payload)
+-      });
+-      setForm({ name: "", ingredients: "" });
++      if (editingId) {
++        await apiRequest(`/api/kitchen/dishes/${editingId}`, {
++          method: "PUT",
++          body: JSON.stringify(payload)
++        });
++        setNotice("Plato actualizado.");
++      } else {
++        await apiRequest("/api/kitchen/dishes", {
++          method: "POST",
++          body: JSON.stringify(payload)
++        });
++        setNotice("Plato creado.");
 +      }
-+      saveTimers.current[dayKey] = window.setTimeout(() => {
-+        setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
-+      }, 2000);
++      resetForm();
+       loadDishes();
      } catch (err) {
--      setError(err.message || "No se pudo actualizar el día.");
-+      const message = err.message || "No se pudo actualizar el día.";
-+      setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
-+      setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
+-      setError(err.message || "No se pudo crear el plato.");
++      setError(err.message || "No se pudo guardar el plato.");
++    } finally {
++      setSaving(false);
      }
    };
  
-   const onAssignSelf = (day) => {
-     updateDay(day, { cookUserId: user?.id || user?._id });
-   };
- 
-   if (loading) {
-     return (
-       <KitchenLayout>
-         <div className="kitchen-card">Cargando semana...</div>
-       </KitchenLayout>
-     );
-   }
- 
--  if (error) {
--    return (
--      <KitchenLayout>
--        <div className="kitchen-card" style={{ color: "#b42318" }}>{error}</div>
--      </KitchenLayout>
--    );
--  }
--
-   if (!plan) {
-     return (
-       <KitchenLayout>
-         <div className="kitchen-card kitchen-empty">
-           <h3>No hay planificación todavía</h3>
-           <p>Cuando guardes un día aparecerá aquí.</p>
-+          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
-         </div>
-       </KitchenLayout>
-     );
-   }
- 
-   const weekLabel = new Date(weekStart).toLocaleDateString("es-ES", {
-     day: "numeric",
-     month: "long",
-     year: "numeric"
-   });
- 
++  const onCategoryCreated = async (name) => {
++    const data = await apiRequest("/api/categories", {
++      method: "POST",
++      body: JSON.stringify({ name })
++    });
++    const category = data.category;
++    setCategories((prev) => {
++      const exists = prev.find((item) => item._id === category._id);
++      if (exists) return prev;
++      return [...prev, category];
++    });
++    return category;
++  };
++
++  const pendingCount = useMemo(
++    () => (form.ingredients || []).filter((item) => item.status === "pending").length,
++    [form.ingredients]
++  );
++
    return (
      <KitchenLayout>
--      <section className="kitchen-week-header">
--        <div className="kitchen-week-header-main">
--          <span className="kitchen-eyebrow">Plan semanal</span>
--          <h1 className="kitchen-title">Semana del {weekLabel}</h1>
--          <p className="kitchen-muted">
--            Planifica de lunes a viernes, con cocina por defecto el día anterior.
--          </p>
--        </div>
--        <div className="kitchen-week-header-actions">
--          <a className="kitchen-button" href="#week-grid">Planificar semana</a>
--          <label className="kitchen-field">
--            <span className="kitchen-label">Cambiar semana (lunes)</span>
-+      <section className="kitchen-week-header">
-+        <div className="kitchen-week-header-main">
-+          <span className="kitchen-eyebrow">Plan semanal</span>
-+          <h1 className="kitchen-title">Semana del {weekLabel}</h1>
-+          <p className="kitchen-muted">
-+            Planifica de lunes a viernes, con cocina por defecto el día anterior.
-+          </p>
-+          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
-+        </div>
-+        <div className="kitchen-week-header-actions">
-+          <a className="kitchen-button" href="#week-grid">Planificar semana</a>
-+          <label className="kitchen-field">
-+            <span className="kitchen-label">Cambiar semana (lunes)</span>
-             <input
-               className="kitchen-input"
-               type="date"
-               value={weekStart}
-               onChange={(event) => setWeekStart(event.target.value)}
-             />
-           </label>
+       <div className="kitchen-grid">
+         <div className="kitchen-card">
+-          <h3>Crear plato</h3>
+-          <p className="kitchen-muted">Añade ingredientes sin cantidades.</p>
+-          <form onSubmit={onCreate} style={{ display: "grid", gap: 12, marginTop: 12 }}>
+-            <label>
++          <div>
++            <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
++            <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
++          </div>
++          <form onSubmit={onSave} className="kitchen-form">
++            <label className="kitchen-field">
+               <span className="kitchen-label">Nombre del plato</span>
+               <input
+                 className="kitchen-input"
+                 value={form.name}
+                 onChange={(event) => setForm({ ...form, name: event.target.value })}
+                 required
++                placeholder="Ej. Pollo al horno"
+               />
+             </label>
+-            <label>
+-              <span className="kitchen-label">Ingredientes (separados por coma)</span>
+-              <textarea
+-                className="kitchen-textarea"
+-                rows="3"
++            <div className="kitchen-field">
++              <span className="kitchen-label">Ingredientes</span>
++              <IngredientPicker
+                 value={form.ingredients}
+-                onChange={(event) => setForm({ ...form, ingredients: event.target.value })}
++                onChange={(ingredients) => setForm({ ...form, ingredients })}
++                categories={categories}
++                onCategoryCreated={onCategoryCreated}
+               />
+-            </label>
+-            {error ? <div style={{ color: "#b42318" }}>{error}</div> : null}
+-            <button className="kitchen-button" type="submit">Guardar plato</button>
++              {pendingCount ? (
++                <p className="kitchen-inline-warning">
++                  Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente{pendingCount > 1 ? "s" : ""} de
++                  vincular con el catálogo global.
++                </p>
++              ) : null}
++            </div>
++            {notice ? <div className="kitchen-alert success">{notice}</div> : null}
++            {error ? <div className="kitchen-alert error">{error}</div> : null}
++            <div className="kitchen-actions">
++              <button className="kitchen-button" type="submit" disabled={saving}>
++                {saving ? "Guardando..." : "Guardar plato"}
++              </button>
++              {editingId ? (
++                <button className="kitchen-button ghost" type="button" onClick={resetForm}>
++                  Cancelar edición
++                </button>
++              ) : null}
++            </div>
+           </form>
          </div>
-       </section>
  
--      <div className="kitchen-grid" id="week-grid">
-+      <div className="kitchen-grid" id="week-grid">
-         {plan.days.map((day) => {
-+          const dayKey = day.date.slice(0, 10);
-           const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
-+          const isAssigned = Boolean(day.cookUserId);
-+          const isPlanned = Boolean(day.mainDishId);
-+          const isAssignedToSelf = day.cookUserId
-+            && (day.cookUserId === user?.id || day.cookUserId === user?._id);
-+          const statusLabels = [];
-+          if (isAssigned) {
-+            statusLabels.push({
-+              label: isAssignedToSelf ? "Asignado a ti" : "Asignado",
-+              type: "assigned"
-+            });
-+          }
-+          if (isPlanned) {
-+            statusLabels.push({ label: "Planificado", type: "planned" });
-+          }
-           return (
--            <div key={day.date} className="kitchen-card kitchen-day-card">
--              <div className="kitchen-day-header">
--                <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
--                <div className="kitchen-day-meta">
--                  <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
--                  <span>Cocinero: {cookUser?.displayName || "Sin asignar"}</span>
--                </div>
--              </div>
-+            <div key={day.date} className="kitchen-card kitchen-day-card">
-+              <div className="kitchen-day-header">
-+                <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
-+                <div className="kitchen-day-meta">
-+                  <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
-+                  <span>Cocinero: {cookUser?.displayName || "Sin asignar"}</span>
-+                </div>
-+                {statusLabels.length ? (
-+                  <div className="kitchen-day-status" aria-label="Estado del día">
-+                    {statusLabels.map((item) => (
-+                      <span key={item.label} className={`kitchen-status-pill ${item.type}`}>
-+                        {item.label}
-+                      </span>
-+                    ))}
-+                  </div>
-+                ) : null}
-+              </div>
- 
-               <label className="kitchen-field">
-                 <span className="kitchen-label">Plato principal</span>
-                 <select
-                   className="kitchen-select"
-                   value={day.mainDishId || ""}
-                   onChange={(event) => updateDay(day, { mainDishId: event.target.value || null })}
-                 >
-                   <option value="">Sin plato</option>
-                   {dishes.map((dish) => (
-                     <option key={dish._id} value={dish._id}>{dish.name}</option>
-                   ))}
-                 </select>
-               </label>
- 
-               <label className="kitchen-field">
-                 <span className="kitchen-label">Guarnición (opcional)</span>
-                 <select
-                   className="kitchen-select"
-                   value={day.sideDishId || ""}
-                   onChange={(event) => updateDay(day, { sideDishId: event.target.value || null })}
-                 >
-                   <option value="">Sin guarnición</option>
-                   {dishes.map((dish) => (
-                     <option key={dish._id} value={dish._id}>{dish.name}</option>
-                   ))}
-                 </select>
-               </label>
- 
-               <label className="kitchen-field">
-                 <span className="kitchen-label">Cuándo se cocina</span>
-                 <select
-                   className="kitchen-select"
-                   value={day.cookTiming}
-                   onChange={(event) => updateDay(day, { cookTiming: event.target.value })}
-                 >
-                   <option value="previous_day">Día anterior</option>
-                   <option value="same_day">Mismo día</option>
-                 </select>
-               </label>
- 
--              <label className="kitchen-field">
--                <span className="kitchen-label">Ingredientes extra (separados por coma)</span>
-+              <label className="kitchen-field">
-+                <span className="kitchen-label">Ingredientes extra (separados por coma)</span>
-                 <textarea
-                   className="kitchen-textarea"
-                   rows="2"
--                  defaultValue={(day.ingredientOverrides || []).map((item) => item.displayName).join(", ")}
-+                  value={ingredientInputs[dayKey] ?? ""}
-+                  onChange={(event) => {
-+                    setIngredientInputs((prev) => ({ ...prev, [dayKey]: event.target.value }));
-+                  }}
-                   onBlur={(event) => {
-                     const list = event.target.value
-                       .split(",")
-                       .map((value) => ({ displayName: value.trim() }))
-                       .filter((item) => item.displayName);
-                     updateDay(day, { ingredientOverrides: list });
-                   }}
-                 />
--              </label>
-+              </label>
- 
-               <div className="kitchen-actions">
-                 <button className="kitchen-button" onClick={() => onAssignSelf(day)}>
-                   Me lo asigno
-                 </button>
-                 {user?.role === "admin" ? (
-                   <select
-                     className="kitchen-select"
-                     value={day.cookUserId || ""}
-                     onChange={(event) => updateDay(day, { cookUserId: event.target.value || null })}
-                   >
-                     <option value="">Sin asignar</option>
-                     {users.map((u) => (
-                       <option key={u.id} value={u.id}>{u.displayName}</option>
-                     ))}
-                   </select>
-                 ) : null}
-               </div>
-+              <div className="kitchen-day-feedback" aria-live="polite">
-+                {dayStatus[dayKey] === "saving" ? (
-+                  <span className="kitchen-day-feedback-text saving">Guardando...</span>
-+                ) : null}
-+                {dayStatus[dayKey] === "saved" ? (
-+                  <span className="kitchen-day-feedback-text saved">Guardado</span>
-+                ) : null}
-+                {dayErrors[dayKey] ? (
-+                  <span className="kitchen-day-feedback-text error" role="alert">{dayErrors[dayKey]}</span>
-+                ) : null}
-+              </div>
+         <div className="kitchen-card">
+           <h3>Platos guardados</h3>
+           {loading ? (
+             <p>Cargando...</p>
+           ) : dishes.length === 0 ? (
+             <div className="kitchen-empty">
+               <p>No hay platos aún. Crea el primero.</p>
              </div>
-           );
-         })}
+           ) : (
+             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+               {dishes.map((dish) => (
+                 <li key={dish._id} style={{ marginBottom: 12 }}>
+-                  <strong>{dish.name}</strong>
+-                  <div className="kitchen-muted">
+-                    {(dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes"}
++                  <div className="kitchen-dish-row">
++                    <div>
++                      <strong>{dish.name}</strong>
++                      <div className="kitchen-muted">
++                        {(dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes"}
++                      </div>
++                    </div>
++                    <div className="kitchen-dish-actions">
++                      <button className="kitchen-button secondary" type="button" onClick={() => startEdit(dish)}>
++                        Editar
++                      </button>
++                      {user?.role === "admin" ? (
++                        <button
++                          className="kitchen-button ghost"
++                          type="button"
++                          onClick={async () => {
++                            await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
++                            if (editingId === dish._id) resetForm();
++                            loadDishes();
++                          }}
++                        >
++                          Eliminar
++                        </button>
++                      ) : null}
++                    </div>
+                   </div>
+-                  {user?.role === "admin" ? (
+-                    <button
+-                      className="kitchen-button secondary"
+-                      style={{ marginTop: 8 }}
+-                      onClick={async () => {
+-                        await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
+-                        loadDishes();
+-                      }}
+-                    >
+-                      Eliminar
+-                    </button>
+-                  ) : null}
+                 </li>
+               ))}
+             </ul>
+           )}
+         </div>
        </div>
      </KitchenLayout>
    );
