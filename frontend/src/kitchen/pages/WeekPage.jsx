@@ -257,44 +257,46 @@ export default function WeekPage() {
 
   return (
     <KitchenLayout>
-      <section className="kitchen-week-header">
-        <div className="kitchen-week-header-actions">
-          <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
-            <button
-              className="kitchen-week-arrow"
-              type="button"
-              onClick={() => handleWeekShift(-7)}
-              aria-label="Ir a la semana anterior"
-            >
-              <ChevronIcon className="kitchen-week-arrow-icon" />
-            </button>
-            <label className="kitchen-field kitchen-week-picker">
-              <span className="kitchen-label">Semana (lunes)</span>
-              <input
-                className="kitchen-input"
-                type="date"
-                value={weekStart}
-                onChange={(event) => setWeekStart(event.target.value)}
-              />
-            </label>
-            <button
-              className="kitchen-week-arrow"
-              type="button"
-              onClick={() => handleWeekShift(7)}
-              aria-label="Ir a la semana siguiente"
-            >
-              <ChevronIcon className="kitchen-week-arrow-icon is-next" />
-            </button>
+      <div className="kitchen-week-controls">
+        <section className="kitchen-week-header">
+          <div className="kitchen-week-header-actions">
+            <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
+              <button
+                className="kitchen-week-arrow"
+                type="button"
+                onClick={() => handleWeekShift(-7)}
+                aria-label="Ir a la semana anterior"
+              >
+                <ChevronIcon className="kitchen-week-arrow-icon" />
+              </button>
+              <label className="kitchen-field kitchen-week-picker">
+                <span className="kitchen-label">Semana (lunes)</span>
+                <input
+                  className="kitchen-input"
+                  type="date"
+                  value={weekStart}
+                  onChange={(event) => setWeekStart(event.target.value)}
+                />
+              </label>
+              <button
+                className="kitchen-week-arrow"
+                type="button"
+                onClick={() => handleWeekShift(7)}
+                aria-label="Ir a la semana siguiente"
+              >
+                <ChevronIcon className="kitchen-week-arrow-icon is-next" />
+              </button>
+            </div>
+            {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
           </div>
-          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
-        </div>
-      </section>
-      <WeekDaysStrip
-        days={plan.days}
-        userMap={userMap}
-        selectedDay={selectedDay}
-        onSelectDay={handleSelectDay}
-      />
+        </section>
+        <WeekDaysStrip
+          days={plan.days}
+          userMap={userMap}
+          selectedDay={selectedDay}
+          onSelectDay={handleSelectDay}
+        />
+      </div>
 
       <div className="kitchen-week-carousel">
         {showCarouselControls ? (
