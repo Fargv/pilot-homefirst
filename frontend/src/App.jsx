@@ -11,6 +11,7 @@ import WeekPage from "./kitchen/pages/WeekPage.jsx";
 import DishesPage from "./kitchen/pages/DishesPage.jsx";
 import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
 import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
+import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
 import "./kitchen/kitchen.css";
 
 function HomeRedirect() {
@@ -105,6 +106,14 @@ export default function App() {
             element={(
               <RequireAuth>
                 <SwapsPage />
+              </RequireAuth>
+            )}
+          />
+          <Route
+            path="/kitchen/configuracion"
+            element={(
+              <RequireAuth>
+                <SettingsPage />
               </RequireAuth>
             )}
           />

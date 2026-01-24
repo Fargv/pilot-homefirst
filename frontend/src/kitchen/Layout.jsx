@@ -2,6 +2,45 @@ import React, { useMemo, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth";
 
+function CalendarIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <rect x="3" y="5" width="18" height="16" rx="3" />
+      <path d="M8 3v4M16 3v4M3 10h18" />
+    </svg>
+  );
+}
+
+function UtensilsIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M6 3v8M9 3v8M6 7h3" />
+      <path d="M14 3v8c0 1.1.9 2 2 2h1v8" />
+      <path d="M18 3v10" />
+    </svg>
+  );
+}
+
+function ListIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M8 6h12M8 12h12M8 18h12" />
+      <circle cx="4" cy="6" r="1.5" />
+      <circle cx="4" cy="12" r="1.5" />
+      <circle cx="4" cy="18" r="1.5" />
+    </svg>
+  );
+}
+
+function SettingsIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 0 1-1.4 3.42 2 2 0 0 1-1.41-.58l-.06-.06a1.7 1.7 0 0 0-1.86-.34 1.7 1.7 0 0 0-1 1.55V22a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.86.34l-.06.06A2 2 0 0 1 2 18.35a2 2 0 0 1 .58-1.41l.06-.06a1.7 1.7 0 0 0 .34-1.86 1.7 1.7 0 0 0-1.55-1H1a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.86l-.06-.06A2 2 0 0 1 3.42 2 2 2 0 0 1 4.83 2.58l.06.06a1.7 1.7 0 0 0 1.86.34h.05A1.7 1.7 0 0 0 7.8 1.43V1a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55h.05a1.7 1.7 0 0 0 1.86-.34l.06-.06A2 2 0 0 1 20 5.65a2 2 0 0 1-.58 1.41l-.06.06a1.7 1.7 0 0 0-.34 1.86v.05a1.7 1.7 0 0 0 1.55 1H22a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z" />
+    </svg>
+  );
+}
+
 export default function KitchenLayout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -20,6 +59,16 @@ export default function KitchenLayout({ children }) {
 
     return links;
   }, [user?.role]);
+
+  const bottomNavLinks = useMemo(
+    () => [
+      { to: "/kitchen/semana", label: "Semana", icon: CalendarIcon },
+      { to: "/kitchen/platos", label: "Platos", icon: UtensilsIcon },
+      { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
+      { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon },
+    ],
+    []
+  );
 
   const onLogout = async () => {
     await logout();
@@ -107,6 +156,26 @@ export default function KitchenLayout({ children }) {
         ) : null}
         {children}
       </div>
+      <nav className="kitchen-bottom-nav" aria-label="Navegación inferior">
+        <div className="kitchen-bottom-nav-inner">
+          {bottomNavLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={onNavigate}
+                className={({ isActive }) =>
+                  `kitchen-bottom-nav-item${isActive ? " active" : ""}`
+                }
+              >
+                <Icon className="kitchen-bottom-nav-icon" />
+                <span className="kitchen-bottom-nav-label">{link.label}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

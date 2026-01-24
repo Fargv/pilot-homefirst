@@ -1,848 +1,487 @@
-diff --git a/frontend/src/kitchen/components/IngredientPicker.jsx b/frontend/src/kitchen/components/IngredientPicker.jsx
-index 9448aa3bda47cf962269dc2d3aa98cad40f4208a..4ddf0dbcb96644d1aff725cd434233c844a773c8 100644
---- a/frontend/src/kitchen/components/IngredientPicker.jsx
-+++ b/frontend/src/kitchen/components/IngredientPicker.jsx
-@@ -1,343 +1,519 @@
--import React, { useEffect, useMemo, useState } from "react";
-+import React, { useEffect, useMemo, useRef, useState } from "react";
- import { apiRequest } from "../api.js";
- import CategoryChip from "./CategoryChip.jsx";
- import { normalizeIngredientName } from "../utils/normalize.js";
+diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
+index 72f041b0a5118d84f7619a9019feb788e22e5b25..baabdb69ad1c4f9254a78a918e01b6e757710a78 100644
+--- a/frontend/src/App.jsx
++++ b/frontend/src/App.jsx
+@@ -1,39 +1,40 @@
+ import React, { useEffect } from "react";
+ import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+ import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
+ import { buildApiUrl } from "./kitchen/api.js";
+ import KitchenLayout from "./kitchen/Layout.jsx";
+ import RequireAuth from "./kitchen/RequireAuth.jsx";
+ import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
+ import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
+ import LoginPage from "./kitchen/pages/LoginPage.jsx";
+ import WeekPage from "./kitchen/pages/WeekPage.jsx";
+ import DishesPage from "./kitchen/pages/DishesPage.jsx";
+-import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
+-import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
+-import "./kitchen/kitchen.css";
++import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
++import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
++import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
++import "./kitchen/kitchen.css";
  
- const emptyCategory = { _id: "", name: "", colorBg: "#E8F1FF", colorText: "#1D4ED8" };
- const PASTEL_PALETTE = [
-   { colorBg: "#E8F1FF", colorText: "#1D4ED8" },
-   { colorBg: "#FFE8E5", colorText: "#B42318" },
-   { colorBg: "#E7F8EE", colorText: "#027A48" },
-   { colorBg: "#FFF4D6", colorText: "#8A6A00" },
-   { colorBg: "#F3E8FF", colorText: "#6D28D9" },
-   { colorBg: "#FFE8F1", colorText: "#BE185D" },
-   { colorBg: "#E0F2FE", colorText: "#0369A1" },
-   { colorBg: "#F2F4F7", colorText: "#344054" }
- ];
- 
- const resolveCategoryColors = (category) => {
-   if (!category) return emptyCategory;
-   const seed = `${category.name || ""}${category._id || ""}`;
-   let hash = 0;
-   for (let index = 0; index < seed.length; index += 1) {
-     hash = (hash << 5) - hash + seed.charCodeAt(index);
-     hash |= 0;
-   }
-   const palette = PASTEL_PALETTE[Math.abs(hash) % PASTEL_PALETTE.length];
-   return {
-     colorBg: palette.colorBg,
-     colorText: palette.colorText
-   };
- };
- 
- export default function IngredientPicker({
-   value = [],
-   onChange,
-   categories = [],
-   onCategoryCreated,
-   onCreateStateChange
- }) {
-   const [query, setQuery] = useState("");
-   const [suggestions, setSuggestions] = useState([]);
-   const [searching, setSearching] = useState(false);
-   const [searchError, setSearchError] = useState("");
-   const [showCreate, setShowCreate] = useState(false);
-   const [createName, setCreateName] = useState("");
-   const [createError, setCreateError] = useState("");
-   const [saving, setSaving] = useState(false);
-   const [categoryQuery, setCategoryQuery] = useState("");
-   const [selectedCategory, setSelectedCategory] = useState(null);
-   const [lastUsedCategory, setLastUsedCategory] = useState(null);
-   const [creatingCategory, setCreatingCategory] = useState(false);
-+  const [showCategoryModal, setShowCategoryModal] = useState(false);
-+  const [categoryDraftName, setCategoryDraftName] = useState("");
-+  const [categoryColor, setCategoryColor] = useState(null);
-   const [replaceItem, setReplaceItem] = useState(null);
-+  const searchInputRef = useRef(null);
-+  const createInputRef = useRef(null);
-+  const categoryNameInputRef = useRef(null);
- 
--  useEffect(() => {
--    if (onCreateStateChange) {
--      onCreateStateChange(showCreate);
--    }
--  }, [onCreateStateChange, showCreate]);
-+  useEffect(() => {
-+    if (onCreateStateChange) {
-+      onCreateStateChange(showCreate || showCategoryModal);
-+    }
-+  }, [onCreateStateChange, showCreate, showCategoryModal]);
-+
-+  useEffect(() => {
-+    if (showCreate) {
-+      requestAnimationFrame(() => {
-+        createInputRef.current?.focus();
-+      });
-+    }
-+  }, [showCreate]);
-+
-+  useEffect(() => {
-+    if (showCategoryModal) {
-+      requestAnimationFrame(() => {
-+        categoryNameInputRef.current?.focus();
-+      });
-+    }
-+  }, [showCategoryModal]);
+ function HomeRedirect() {
+   const { user, loading } = useAuth();
+   const navigate = useNavigate();
  
    useEffect(() => {
-     if (!query) {
-       setSuggestions([]);
-       setSearchError("");
-       setSearching(false);
-       return;
-     }
+     if (loading) return;
+     const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/kitchen/login";
+     navigate(destination, { replace: true });
+   }, [loading, navigate, user]);
  
-     let active = true;
-     setSearching(true);
-     setSearchError("");
+   return (
+     <div className="kitchen-app">
+       <div className="kitchen-container" style={{ maxWidth: 520 }}>
+         <div className="kitchen-card">
+           <h2>Cargando HomeFirst...</h2>
+           <p className="kitchen-muted">
+             Estamos preparando tu acceso a Kitchen. En unos segundos te redirigimos.
+           </p>
+         </div>
+       </div>
+     </div>
+   );
+ }
  
-     const timeout = setTimeout(async () => {
-       try {
-         if (import.meta.env.DEV) {
-           console.debug("[IngredientPicker] buscando", { query });
-         }
-         const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(query)}`);
-         if (!active) return;
-         setSuggestions(data.ingredients || []);
-       } catch (err) {
-         if (!active) return;
-         setSearchError(err.message || "No se pudieron buscar ingredientes.");
-       } finally {
-         if (active) setSearching(false);
-       }
-     }, 250);
+@@ -78,56 +79,64 @@ export default function App() {
+           <Route path="/kitchen/login" element={<LoginPage />} />
+           <Route
+             path="/kitchen/semana"
+             element={(
+               <RequireAuth>
+                 <WeekPage />
+               </RequireAuth>
+             )}
+           />
+           <Route
+             path="/kitchen/platos"
+             element={(
+               <RequireAuth>
+                 <DishesPage />
+               </RequireAuth>
+             )}
+           />
+           <Route
+             path="/kitchen/compra"
+             element={(
+               <RequireAuth>
+                 <ShoppingPage />
+               </RequireAuth>
+             )}
+           />
+-          <Route
+-            path="/kitchen/cambios"
+-            element={(
+-              <RequireAuth>
+-                <SwapsPage />
++          <Route
++            path="/kitchen/cambios"
++            element={(
++              <RequireAuth>
++                <SwapsPage />
+               </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/admin/usuarios"
+-            element={(
+-              <RequireAuth roles={["admin"]}>
++            )}
++          />
++          <Route
++            path="/kitchen/configuracion"
++            element={(
++              <RequireAuth>
++                <SettingsPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/admin/usuarios"
++            element={(
++              <RequireAuth roles={["admin"]}>
+                 <AdminUsersPage />
+               </RequireAuth>
+             )}
+           />
+           <Route
+             path="/kitchen"
+             element={(
+               <RequireAuth>
+                 <KitchenLayout>
+                   <div className="kitchen-card">Selecciona una sección.</div>
+                 </KitchenLayout>
+               </RequireAuth>
+             )}
+           />
+         </Routes>
+       </AuthProvider>
+     </BrowserRouter>
+   );
+ }
+diff --git a/frontend/src/kitchen/Layout.jsx b/frontend/src/kitchen/Layout.jsx
+index ca16c2f805060d2375dd6517edf92425a58a49eb..952169b4e896fb94ccbd45081375b54bbb0e6b91 100644
+--- a/frontend/src/kitchen/Layout.jsx
++++ b/frontend/src/kitchen/Layout.jsx
+@@ -1,112 +1,181 @@
+-import React, { useMemo, useState } from "react";
++import React, { useMemo, useState } from "react";
+ import { Link, NavLink, useNavigate } from "react-router-dom";
+ import { useAuth } from "./auth";
  
-     return () => {
-       active = false;
-       clearTimeout(timeout);
-     };
-   }, [query]);
- 
-   const normalizedQuery = useMemo(() => normalizeIngredientName(query), [query]);
- 
-   const filteredCategories = useMemo(() => {
-     if (!categoryQuery) return categories;
-     const lower = categoryQuery.toLowerCase();
-     return categories.filter((category) => category.name.toLowerCase().includes(lower));
-   }, [categories, categoryQuery]);
- 
-+  const normalizedCategoryQuery = useMemo(
-+    () => normalizeIngredientName(categoryQuery),
-+    [categoryQuery]
++function CalendarIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <rect x="3" y="5" width="18" height="16" rx="3" />
++      <path d="M8 3v4M16 3v4M3 10h18" />
++    </svg>
 +  );
++}
 +
-+  const hasExactCategory = useMemo(
-+    () =>
-+      Boolean(
-+        normalizedCategoryQuery &&
-+          categories.some(
-+            (category) => normalizeIngredientName(category.name) === normalizedCategoryQuery
-+          )
-+      ),
-+    [categories, normalizedCategoryQuery]
++function UtensilsIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <path d="M6 3v8M9 3v8M6 7h3" />
++      <path d="M14 3v8c0 1.1.9 2 2 2h1v8" />
++      <path d="M18 3v10" />
++    </svg>
 +  );
++}
 +
-   const visibleSuggestions = useMemo(() => {
-     if (!normalizedQuery) return suggestions;
-     return suggestions.filter((item) =>
-       normalizeIngredientName(item.name || "").includes(normalizedQuery)
-     );
-   }, [normalizedQuery, suggestions]);
++function ListIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <path d="M8 6h12M8 12h12M8 18h12" />
++      <circle cx="4" cy="6" r="1.5" />
++      <circle cx="4" cy="12" r="1.5" />
++      <circle cx="4" cy="18" r="1.5" />
++    </svg>
++  );
++}
++
++function SettingsIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
++      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 0 1-1.4 3.42 2 2 0 0 1-1.41-.58l-.06-.06a1.7 1.7 0 0 0-1.86-.34 1.7 1.7 0 0 0-1 1.55V22a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.86.34l-.06.06A2 2 0 0 1 2 18.35a2 2 0 0 1 .58-1.41l.06-.06a1.7 1.7 0 0 0 .34-1.86 1.7 1.7 0 0 0-1.55-1H1a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.86l-.06-.06A2 2 0 0 1 3.42 2 2 2 0 0 1 4.83 2.58l.06.06a1.7 1.7 0 0 0 1.86.34h.05A1.7 1.7 0 0 0 7.8 1.43V1a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55h.05a1.7 1.7 0 0 0 1.86-.34l.06-.06A2 2 0 0 1 20 5.65a2 2 0 0 1-.58 1.41l-.06.06a1.7 1.7 0 0 0-.34 1.86v.05a1.7 1.7 0 0 0 1.55 1H22a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z" />
++    </svg>
++  );
++}
++
+ export default function KitchenLayout({ children }) {
+   const { user, logout } = useAuth();
+   const navigate = useNavigate();
+-  const [drawerOpen, setDrawerOpen] = useState(false);
++  const [drawerOpen, setDrawerOpen] = useState(false);
  
-   const addIngredient = (ingredient, displayNameOverride, targetToReplace = null) => {
-     const canonicalName = ingredient.canonicalName || normalizeIngredientName(displayNameOverride || ingredient.name);
-     const ingredientId = ingredient._id || ingredient.ingredientId;
-     const nextBase = targetToReplace ? value.filter((item) => item !== targetToReplace) : value;
-     if (
-       nextBase.some((item) => item.ingredientId === ingredientId || item.canonicalName === canonicalName)
-     ) {
-       return;
-     }
-     const next = [
-       ...nextBase,
-       {
-         ingredientId,
-         displayName: displayNameOverride || ingredient.name,
-         canonicalName,
-         category: ingredient.categoryId || ingredient.category || emptyCategory,
-         status: "resolved"
-       }
+   const navLinks = useMemo(() => {
+     const links = [
+       { to: "/kitchen/semana", label: "Semana" },
+       { to: "/kitchen/platos", label: "Platos" },
+       { to: "/kitchen/compra", label: "Ingredientes" },
      ];
-     onChange(next);
-     setReplaceItem(null);
-   };
  
-   const handleSelectSuggestion = (ingredient) => {
-     addIngredient(ingredient, ingredient.name);
-     setQuery("");
-     setSuggestions([]);
-     setShowCreate(false);
-     setCreateName("");
-   };
+     if (user?.role === "admin") {
+       links.push({ to: "/admin/usuarios", label: "Usuarios" });
+     }
  
-   const openCreateFlow = (name, itemToReplace = null) => {
-     setCreateName(name);
-     setCreateError("");
-     setShowCreate(true);
-     setSelectedCategory(lastUsedCategory);
-     setCategoryQuery("");
-+    setShowCategoryModal(false);
-+    setCategoryDraftName("");
-+    setCategoryColor(null);
-     setReplaceItem(itemToReplace);
-   };
- 
-+  const closeCreateFlow = () => {
-+    setShowCreate(false);
-+    setCreateName("");
-+    setCreateError("");
-+    setCategoryQuery("");
-+    setSelectedCategory(null);
-+    setShowCategoryModal(false);
-+    setCategoryDraftName("");
-+    setCategoryColor(null);
-+    setReplaceItem(null);
-+    requestAnimationFrame(() => {
-+      searchInputRef.current?.focus();
-+    });
-+  };
+     return links;
+-  }, [user?.role]);
++  }, [user?.role]);
 +
-   const handleCreateIngredient = async () => {
-     if (!createName.trim()) return;
-     if (!selectedCategory?._id) {
-       setCreateError("Selecciona una categoría para continuar.");
-       return;
-     }
-     setSaving(true);
-     setCreateError("");
-     try {
-       if (import.meta.env.DEV) {
-         console.debug("[IngredientPicker] creando ingrediente", {
-           name: createName.trim(),
-           categoryId: selectedCategory?._id
-         });
--      }
-+      }
-       const data = await apiRequest("/api/kitchenIngredients", {
-         method: "POST",
-         body: JSON.stringify({ name: createName, categoryId: selectedCategory._id })
-       });
-       const ingredient = data.ingredient;
-       addIngredient(ingredient, createName.trim(), replaceItem);
-       setLastUsedCategory(selectedCategory);
--      setShowCreate(false);
--      setCreateName("");
-       setQuery("");
-+      closeCreateFlow();
-     } catch (err) {
-       setCreateError(err.message || "No se pudo crear el ingrediente.");
-     } finally {
-       setSaving(false);
-     }
++  const bottomNavLinks = useMemo(
++    () => [
++      { to: "/kitchen/semana", label: "Semana", icon: CalendarIcon },
++      { to: "/kitchen/platos", label: "Platos", icon: UtensilsIcon },
++      { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
++      { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon },
++    ],
++    []
++  );
+ 
+   const onLogout = async () => {
+     await logout();
+     navigate("/login");
+     setDrawerOpen(false);
    };
  
-   const handleCreateCategory = async () => {
-     if (!onCategoryCreated) return;
--    if (!categoryQuery.trim()) return;
-+    if (!categoryDraftName.trim()) return;
-     setCreatingCategory(true);
-     try {
--      const category = await onCategoryCreated(categoryQuery.trim());
-+      const category = await onCategoryCreated(categoryDraftName.trim(), categoryColor);
-       setSelectedCategory(category);
-       setCategoryQuery("");
-+      setShowCategoryModal(false);
-+      setCategoryDraftName("");
-+      setCategoryColor(null);
-     } catch (err) {
-       setCreateError(err.message || "No se pudo crear la categoría.");
-     } finally {
-       setCreatingCategory(false);
-     }
+   const onNavigate = () => {
+     setDrawerOpen(false);
    };
  
    return (
-     <div className="kitchen-ingredient-picker">
--      <div className="kitchen-field kitchen-ingredient-search">
--        <input
--          className="kitchen-input"
--          placeholder="Busca y añade ingredientes…"
--          value={query}
--          onChange={(event) => {
--            setQuery(event.target.value);
--            setShowCreate(false);
--          }}
--        />
--        {searchError ? <span className="kitchen-inline-error">{searchError}</span> : null}
--        {query ? (
--          <div className="kitchen-suggestion-list">
--            {searching ? <div className="kitchen-muted">Buscando...</div> : null}
--            {!searching && visibleSuggestions.length === 0 ? (
--              <button className="kitchen-button ghost" type="button" onClick={() => openCreateFlow(query)}>
-+      <div className="kitchen-field kitchen-ingredient-search">
-+        <input
-+          className="kitchen-input"
-+          placeholder="Busca y añade ingredientes…"
-+          value={query}
-+          ref={searchInputRef}
-+          onChange={(event) => {
-+            setQuery(event.target.value);
-+            setShowCreate(false);
-+          }}
-+        />
-+        {searchError ? <span className="kitchen-inline-error">{searchError}</span> : null}
-+        {query && !showCreate ? (
-+          <div className="kitchen-suggestion-list">
-+            {searching ? <div className="kitchen-muted">Buscando...</div> : null}
-+            {!searching && visibleSuggestions.length === 0 ? (
-+              <button className="kitchen-button ghost" type="button" onClick={() => openCreateFlow(query)}>
-                 Crear “{query}”
-               </button>
-             ) : (
-               visibleSuggestions.map((item) => (
-                 <button
-                   className="kitchen-suggestion"
-                   key={item._id}
-                   type="button"
-                   onClick={() => handleSelectSuggestion(item)}
-                 >
-                   <span className="kitchen-suggestion-name">{item.name}</span>
-                 </button>
-               ))
-             )}
-           </div>
-         ) : null}
-       </div>
- 
-       <div className="kitchen-chip-list">
-         {value.length === 0 ? (
-           <span className="kitchen-muted">Sin ingredientes todavía.</span>
-         ) : (
-           value.map((item) => {
-             const colors = resolveCategoryColors(item.category);
-             return (
-               <div className="kitchen-chip-item" key={`${item.ingredientId || item.canonicalName}`}>
-                 <CategoryChip
-                   label={item.displayName}
-                   colorBg={colors.colorBg}
-                   colorText={colors.colorText}
-                   status={item.status === "pending" ? "pending" : ""}
-                   onRemove={() => onChange(value.filter((entry) => entry !== item))}
-                 />
-               {item.status === "pending" ? (
-                 <button
-                   className="kitchen-chip-action"
-                   type="button"
-                   onClick={() => openCreateFlow(item.displayName, item)}
-                 >
-                   Completar
-                 </button>
-               ) : null}
-               </div>
-             );
-           })
-         )}
-       </div>
- 
-       {showCreate ? (
--        <div className="kitchen-inline-panel">
--          <div className="kitchen-inline-header">
--            <strong>Crear ingrediente</strong>
--            <span className="kitchen-muted">Elige categoría antes de guardar.</span>
--          </div>
--          <label className="kitchen-field">
--            <span className="kitchen-label">Nombre del ingrediente</span>
--            <input
--              className="kitchen-input"
--              value={createName}
--              onChange={(event) => setCreateName(event.target.value)}
--            />
--          </label>
--          <div className="kitchen-field">
--            <span className="kitchen-label">Categoría</span>
--            <input
--              className="kitchen-input"
--              placeholder="Busca una categoría…"
--              value={categoryQuery}
--              onChange={(event) => setCategoryQuery(event.target.value)}
--            />
--            <div className="kitchen-category-list">
--              {filteredCategories.map((category) => {
--                const colors = resolveCategoryColors(category);
--                return (
--                  <button
--                    key={category._id}
--                    className={`kitchen-category-option ${
--                      selectedCategory?._id === category._id ? "selected" : ""
--                    }`}
--                    type="button"
--                    onClick={() => setSelectedCategory(category)}
--                  >
--                    <CategoryChip
--                      label={category.name}
--                      colorBg={colors.colorBg}
--                      colorText={colors.colorText}
--                    />
--                    {selectedCategory?._id === category._id ? (
--                      <span className="kitchen-category-check" aria-hidden="true">
--                        ✓
--                      </span>
--                    ) : null}
--                  </button>
--                );
--              })}
--              {!filteredCategories.length && categoryQuery ? (
--                <button
--                  className="kitchen-button ghost"
--                  type="button"
--                  onClick={handleCreateCategory}
--                  disabled={creatingCategory}
--                >
--                  {creatingCategory ? "Creando..." : `Crear categoría “${categoryQuery}”`}
--                </button>
--              ) : null}
-+        <div className="kitchen-context-modal-backdrop" role="presentation" onClick={closeCreateFlow}>
-+          <div
-+            className="kitchen-context-modal"
-+            role="dialog"
-+            aria-modal="true"
-+            aria-label="Crear ingrediente"
-+            onClick={(event) => event.stopPropagation()}
-+          >
-+            <div className="kitchen-context-modal-header">
-+              <div>
-+                <h4>Crear ingrediente</h4>
-+                <p className="kitchen-muted">Añade un ingrediente rápido y sigue sumando al plato.</p>
-+              </div>
-+              <button className="kitchen-icon-button" type="button" onClick={closeCreateFlow} aria-label="Cerrar">
-+                <svg viewBox="0 0 24 24" aria-hidden="true">
-+                  <path
-+                    d="M6 6l12 12M18 6l-12 12"
-+                    fill="none"
-+                    stroke="currentColor"
-+                    strokeWidth="1.5"
-+                    strokeLinecap="round"
-+                  />
-+                </svg>
-+              </button>
-+            </div>
-+            <div className="kitchen-context-modal-body">
-+              <label className="kitchen-field">
-+                <span className="kitchen-label">Nombre del ingrediente</span>
-+                <input
-+                  className="kitchen-input"
-+                  value={createName}
-+                  ref={createInputRef}
-+                  onChange={(event) => setCreateName(event.target.value)}
-+                />
-+              </label>
-+              <div className="kitchen-field">
-+                <span className="kitchen-label">Categoría</span>
-+                <input
-+                  className="kitchen-input"
-+                  placeholder="Busca una categoría…"
-+                  value={categoryQuery}
-+                  onChange={(event) => setCategoryQuery(event.target.value)}
-+                />
-+                <div className="kitchen-category-list">
-+                  {filteredCategories.map((category) => {
-+                    const colors = resolveCategoryColors(category);
-+                    return (
-+                      <button
-+                        key={category._id}
-+                        className={`kitchen-category-option ${
-+                          selectedCategory?._id === category._id ? "selected" : ""
-+                        }`}
-+                        type="button"
-+                        onClick={() => setSelectedCategory(category)}
-+                      >
-+                        <CategoryChip
-+                          label={category.name}
-+                          colorBg={colors.colorBg}
-+                          colorText={colors.colorText}
-+                        />
-+                        {selectedCategory?._id === category._id ? (
-+                          <span className="kitchen-category-check" aria-hidden="true">
-+                            ✓
-+                          </span>
-+                        ) : null}
-+                      </button>
-+                    );
-+                  })}
-+                  {!hasExactCategory && categoryQuery ? (
-+                    <button
-+                      className="kitchen-button ghost"
-+                      type="button"
-+                      onClick={() => {
-+                        setCategoryDraftName(categoryQuery.trim());
-+                        setCreateError("");
-+                        setShowCategoryModal(true);
-+                      }}
-+                    >
-+                      Crear categoría “{categoryQuery}”
-+                    </button>
-+                  ) : null}
-+                </div>
-+              </div>
-+              {createError ? <div className="kitchen-inline-error">{createError}</div> : null}
-+            </div>
-+            <div className="kitchen-context-modal-actions">
-+              <button className="kitchen-button" type="button" onClick={handleCreateIngredient} disabled={saving}>
-+                {saving ? "Guardando..." : "Crear ingrediente"}
-+              </button>
-+              <button className="kitchen-button secondary" type="button" onClick={closeCreateFlow}>
-+                Cancelar
-+              </button>
-             </div>
-           </div>
--          {createError ? <div className="kitchen-inline-error">{createError}</div> : null}
--          <div className="kitchen-inline-actions">
--            <button className="kitchen-button" type="button" onClick={handleCreateIngredient} disabled={saving}>
--              {saving ? "Guardando..." : "Añadir ingrediente"}
--            </button>
+     <div className="kitchen-app">
+-      <header className="kitchen-topbar">
+-        <div className="kitchen-topbar-inner">
+-          <div className="kitchen-brand">
 -            <button
--              className="kitchen-button ghost"
--              type="button"
--              onClick={() => {
--                setShowCreate(false);
--                setCreateName("");
--                setCreateError("");
--                setReplaceItem(null);
-+          {showCategoryModal ? (
-+            <div
-+              className="kitchen-context-modal-backdrop inner"
-+              role="presentation"
-+              onClick={(event) => {
-+                event.stopPropagation();
-+                setShowCategoryModal(false);
-               }}
+-              className="kitchen-nav-toggle"
++      <header className="kitchen-topbar">
++        <div className="kitchen-topbar-inner">
++          <div className="kitchen-brand">
++            <button
++              className="kitchen-nav-toggle"
+               type="button"
+               onClick={() => setDrawerOpen((open) => !open)}
+               aria-label="Abrir menú"
+               aria-expanded={drawerOpen}
              >
--              Cancelar
--            </button>
--          </div>
-+              <div
-+                className="kitchen-context-modal small"
-+                role="dialog"
-+                aria-modal="true"
-+                aria-label="Crear categoría"
-+                onClick={(event) => event.stopPropagation()}
-+              >
-+                <div className="kitchen-context-modal-header">
-+                  <div>
-+                    <h4>Crear categoría</h4>
-+                    <p className="kitchen-muted">Define el nombre y elige un color si quieres.</p>
-+                  </div>
-+                  <button
-+                    className="kitchen-icon-button"
-+                    type="button"
-+                    onClick={() => setShowCategoryModal(false)}
-+                    aria-label="Cerrar"
-+                  >
-+                    <svg viewBox="0 0 24 24" aria-hidden="true">
-+                      <path
-+                        d="M6 6l12 12M18 6l-12 12"
-+                        fill="none"
-+                        stroke="currentColor"
-+                        strokeWidth="1.5"
-+                        strokeLinecap="round"
-+                      />
-+                    </svg>
-+                  </button>
-+                </div>
-+                <div className="kitchen-context-modal-body">
-+                  <label className="kitchen-field">
-+                    <span className="kitchen-label">Nombre de categoría</span>
-+                    <input
-+                      className="kitchen-input"
-+                      value={categoryDraftName}
-+                      ref={categoryNameInputRef}
-+                      onChange={(event) => setCategoryDraftName(event.target.value)}
-+                    />
-+                  </label>
-+                  <div className="kitchen-field">
-+                    <span className="kitchen-label">Color (opcional)</span>
-+                    <div className="kitchen-color-grid">
-+                      <button
-+                        className={`kitchen-color-option ${categoryColor ? "" : "selected"}`}
-+                        type="button"
-+                        onClick={() => setCategoryColor(null)}
-+                      >
-+                        Automático
-+                      </button>
-+                      {PASTEL_PALETTE.map((palette) => (
-+                        <button
-+                          key={`${palette.colorBg}-${palette.colorText}`}
-+                          className={`kitchen-color-option swatch ${
-+                            categoryColor?.colorBg === palette.colorBg ? "selected" : ""
-+                          }`}
-+                          type="button"
-+                          onClick={() => setCategoryColor(palette)}
-+                          aria-label={`Color ${palette.colorBg}`}
-+                          style={{
-+                            background: palette.colorBg,
-+                            color: palette.colorText
-+                          }}
-+                        >
-+                          Aa
-+                        </button>
-+                      ))}
-+                    </div>
-+                  </div>
-+                  {createError ? <div className="kitchen-inline-error">{createError}</div> : null}
-+                </div>
-+                <div className="kitchen-context-modal-actions">
-+                  <button
-+                    className="kitchen-button"
-+                    type="button"
-+                    onClick={handleCreateCategory}
-+                    disabled={creatingCategory}
-+                  >
-+                    {creatingCategory ? "Guardando..." : "Guardar categoría"}
-+                  </button>
-+                  <button
-+                    className="kitchen-button secondary"
-+                    type="button"
-+                    onClick={() => setShowCategoryModal(false)}
-+                  >
-+                    Cancelar
-+                  </button>
-+                </div>
-+              </div>
-+            </div>
-+          ) : null}
+               <span />
+               <span />
+               <span />
+             </button>
+             <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
+               HomeFirst
+             </Link>
+           </div>
+           <nav className="kitchen-nav-desktop">
+             {navLinks.map((link) => (
+               <NavLink key={link.to} to={link.to} onClick={onNavigate}>
+                 {link.label}
+               </NavLink>
+             ))}
+           </nav>
+           {user ? (
+             <div className="kitchen-user">
+               <div>
+                 <div className="kitchen-pill">{user.displayName}</div>
+                 <div className="kitchen-muted kitchen-user-role">{user.role}</div>
+               </div>
+               <button className="kitchen-button secondary" type="button" onClick={onLogout}>
+                 Cerrar sesión
+               </button>
+             </div>
+           ) : (
+             <div className="kitchen-user-placeholder" />
+           )}
          </div>
-       ) : null}
+-      </header>
+-      <div className="kitchen-container">
+-        {drawerOpen ? (
+-          <>
+-            <button className="kitchen-drawer-backdrop" type="button" onClick={onNavigate} aria-label="Cerrar menú" />
++      </header>
++      <div className="kitchen-container">
++        {drawerOpen ? (
++          <>
++            <button className="kitchen-drawer-backdrop" type="button" onClick={onNavigate} aria-label="Cerrar menú" />
+             <aside className="kitchen-drawer" aria-hidden={!drawerOpen}>
+               <div className="kitchen-drawer-header">
+                 <span>Menú</span>
+                 <button className="kitchen-drawer-close" type="button" onClick={onNavigate}>
+                   Cerrar
+                 </button>
+               </div>
+               <nav className="kitchen-nav-mobile">
+                 {navLinks.map((link) => (
+                   <NavLink key={link.to} to={link.to} onClick={onNavigate}>
+                     {link.label}
+                   </NavLink>
+                 ))}
+               </nav>
+               {user ? (
+                 <div className="kitchen-drawer-user">
+                   <div>
+                     <div className="kitchen-pill">{user.displayName}</div>
+                     <div className="kitchen-muted kitchen-user-role">{user.role}</div>
+                   </div>
+                   <button className="kitchen-button secondary" type="button" onClick={onLogout}>
+                     Cerrar sesión
+                   </button>
+                 </div>
+               ) : null}
+             </aside>
+           </>
+-        ) : null}
++        ) : null}
+         {children}
+       </div>
++      <nav className="kitchen-bottom-nav" aria-label="Navegación inferior">
++        <div className="kitchen-bottom-nav-inner">
++          {bottomNavLinks.map((link) => {
++            const Icon = link.icon;
++            return (
++              <NavLink
++                key={link.to}
++                to={link.to}
++                onClick={onNavigate}
++                className={({ isActive }) =>
++                  `kitchen-bottom-nav-item${isActive ? " active" : ""}`
++                }
++              >
++                <Icon className="kitchen-bottom-nav-icon" />
++                <span className="kitchen-bottom-nav-label">{link.label}</span>
++              </NavLink>
++            );
++          })}
++        </div>
++      </nav>
      </div>
    );
  }
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 5209822770662713494d3616ca4955d59d38fb7a..615933f4fc41ce7168678b2a3075b5302fc34d61 100644
+index 149b0cc9adce1c13eb6d56274f6e74ebdc1d6d82..417ddfc7f807f84978feaa6fa7caee6635d69ca1 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -614,54 +614,54 @@
-   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-   padding: 6px;
-   display: flex;
-   flex-direction: column;
-   gap: 4px;
+@@ -1,42 +1,102 @@
+ :root {
+   color-scheme: light;
  }
  
- .kitchen-suggestion {
-   border: none;
-   background: transparent;
-   text-align: left;
-   padding: 10px 12px;
-   border-radius: 12px;
-   font-size: 15px;
-   font-weight: 600;
+ .kitchen-app {
+   font-family: "Inter", system-ui, sans-serif;
+   background: #f6f7fb;
+   min-height: 100vh;
    color: #101828;
-   cursor: pointer;
  }
  
- .kitchen-suggestion:hover,
- .kitchen-suggestion:focus-visible {
-   background: #f2f4f7;
-   outline: none;
+ .kitchen-container {
+   max-width: 1100px;
+   margin: 0 auto;
+   padding: 24px;
  }
  
--.kitchen-inline-panel {
--  margin-top: 8px;
--  border-radius: 16px;
--  border: 1px solid #e4e7ec;
-+.kitchen-inline-panel {
-+  margin-top: 8px;
-+  border-radius: 16px;
-+  border: 1px solid #e4e7ec;
-   background: #ffffff;
-   padding: 16px;
-   display: flex;
-   flex-direction: column;
-   gap: 16px;
-   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
- }
- 
- .kitchen-inline-header {
-   display: flex;
-   flex-direction: column;
-   gap: 4px;
-   font-size: 16px;
- }
- 
- .kitchen-category-list {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 10px;
-   margin-top: 6px;
- }
- 
- .kitchen-category-option {
-   border: none;
-   background: transparent;
-@@ -673,54 +673,144 @@
- .kitchen-category-option .kitchen-chip {
-   padding-right: 26px;
- }
- 
- .kitchen-category-option.selected .kitchen-chip {
-   border-color: rgba(15, 23, 42, 0.25);
-   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
- }
- 
- .kitchen-category-check {
-   position: absolute;
-   top: -6px;
-   right: -4px;
-   width: 18px;
-   height: 18px;
-   border-radius: 999px;
-   background: #0f172a;
-   color: white;
-   font-size: 11px;
-   display: inline-flex;
-   align-items: center;
-   justify-content: center;
- }
- 
- .kitchen-inline-actions {
--  display: flex;
--  flex-wrap: wrap;
--  gap: 10px;
--}
-+  display: flex;
-+  flex-wrap: wrap;
-+  gap: 10px;
-+}
-+
-+.kitchen-context-modal-backdrop {
++.kitchen-bottom-nav {
 +  position: fixed;
-+  inset: 0;
-+  background: rgba(15, 23, 42, 0.35);
-+  display: flex;
-+  align-items: center;
-+  justify-content: center;
-+  padding: 20px;
-+  z-index: 60;
-+}
-+
-+.kitchen-context-modal-backdrop.inner {
-+  background: rgba(15, 23, 42, 0.2);
-+  z-index: 70;
-+}
-+
-+.kitchen-context-modal {
-+  width: min(420px, 100%);
-+  max-height: min(80vh, 560px);
++  bottom: 0;
++  left: 0;
++  right: 0;
 +  background: #ffffff;
-+  border-radius: 18px;
-+  padding: 20px;
-+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
++  border-top: 1px solid #e4e7ec;
++  z-index: 25;
++  padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
++  display: none;
++}
++
++.kitchen-bottom-nav-inner {
++  max-width: 720px;
++  margin: 0 auto;
++  display: grid;
++  grid-template-columns: repeat(4, minmax(0, 1fr));
++  gap: 8px;
++}
++
++.kitchen-bottom-nav-item {
 +  display: flex;
 +  flex-direction: column;
-+  gap: 16px;
-+  overflow: hidden;
-+}
-+
-+.kitchen-context-modal.small {
-+  width: min(380px, 100%);
-+}
-+
-+.kitchen-context-modal-header {
-+  display: flex;
-+  justify-content: space-between;
-+  gap: 12px;
-+}
-+
-+.kitchen-context-modal-header h4 {
-+  margin: 0;
-+  font-size: 18px;
-+}
-+
-+.kitchen-context-modal-body {
-+  display: flex;
-+  flex-direction: column;
-+  gap: 14px;
-+  overflow-y: auto;
-+  padding-right: 2px;
-+}
-+
-+.kitchen-context-modal-actions {
-+  display: flex;
-+  flex-wrap: wrap;
-+  gap: 12px;
-+  justify-content: center;
-+}
-+
-+.kitchen-color-grid {
-+  display: flex;
-+  flex-wrap: wrap;
-+  gap: 10px;
-+}
-+
-+.kitchen-color-option {
-+  border: 1px solid transparent;
-+  border-radius: 12px;
-+  padding: 8px 12px;
-+  background: #f2f4f7;
-+  color: #101828;
-+  font-weight: 600;
-+  cursor: pointer;
-+  min-height: 44px;
-+}
-+
-+.kitchen-color-option.swatch {
-+  width: 44px;
-+  padding: 0;
-+  display: inline-flex;
 +  align-items: center;
-+  justify-content: center;
-+  font-weight: 700;
++  gap: 4px;
++  padding: 8px 6px;
++  border-radius: 14px;
++  text-decoration: none;
++  color: #667085;
++  font-weight: 600;
++  font-size: 12px;
++  line-height: 1.1;
++  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
 +}
 +
-+.kitchen-color-option.selected {
-+  border-color: rgba(15, 23, 42, 0.3);
-+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.15);
++.kitchen-bottom-nav-item.active {
++  background: #eef2ff;
++  color: #4338ca;
 +}
++
++.kitchen-bottom-nav-item:active {
++  transform: translateY(1px);
++}
++
++.kitchen-bottom-nav-icon {
++  width: 22px;
++  height: 22px;
++  stroke: currentColor;
++  stroke-width: 1.8;
++  fill: none;
++  stroke-linecap: round;
++  stroke-linejoin: round;
++}
++
++.kitchen-bottom-nav-label {
++  font-size: 12px;
++  text-align: center;
++  white-space: nowrap;
++}
++
+ .kitchen-topbar {
+   position: sticky;
+   top: 0;
+   z-index: 20;
+   background: white;
+   border-bottom: 1px solid #e4e7ec;
+ }
  
- .kitchen-day-feedback {
+ .kitchen-topbar-inner {
+   max-width: 1100px;
+   margin: 0 auto;
+   padding: 16px 24px;
    display: flex;
-   flex-direction: column;
-   gap: 4px;
-   margin-top: 12px;
-   font-size: 13px;
-   color: #667085;
+   align-items: center;
+   justify-content: space-between;
+   gap: 16px;
+   min-height: 72px;
  }
  
- .kitchen-day-feedback-text.saving {
-   color: #475467;
- }
- 
- .kitchen-day-feedback-text.saved {
-   color: #027a48;
- }
- 
- .kitchen-day-feedback-text.error {
-   color: #b42318;
- }
- 
- .kitchen-toolbar {
+ .kitchen-brand {
    display: flex;
-   flex-wrap: wrap;
-@@ -814,36 +904,46 @@
+   align-items: center;
+   gap: 12px;
+ }
+ 
+@@ -849,50 +909,51 @@
+   width: 100%;
+   max-width: 560px;
+   margin: 0 auto;
+ }
+ 
+ .kitchen-dish-ingredients {
+   gap: 10px;
+ }
+ 
+ .kitchen-table {
+   width: 100%;
+   border-collapse: collapse;
+ }
+ 
+ .kitchen-table th,
+ .kitchen-table td {
+   text-align: left;
+   padding: 10px 8px;
+   border-bottom: 1px solid #eef2f6;
+   font-size: 14px;
+ }
+ 
+ @media (max-width: 600px) {
+   .kitchen-container {
+     padding: 16px;
++    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+   }
+ 
+   .kitchen-grid {
+     grid-template-columns: 1fr;
+     gap: 16px;
+   }
+ 
+   .kitchen-week-header {
+     flex-direction: column;
+     margin-bottom: 16px;
+   }
+ 
+   .kitchen-week-header-actions {
+     width: 100%;
+   }
+ 
+   .kitchen-topbar-inner {
+     padding: 12px 16px;
+     min-height: 72px;
+   }
+ 
+   .kitchen-nav-desktop {
      display: none;
    }
  
-   .kitchen-nav-toggle {
-     display: flex;
-   }
- 
-   .kitchen-dishes-header {
-     align-items: flex-start;
+@@ -913,37 +974,51 @@
    }
  
    .kitchen-dishes-header .kitchen-button {
@@ -859,24 +498,39 @@ index 5209822770662713494d3616ca4955d59d38fb7a..615933f4fc41ce7168678b2a3075b530
      justify-content: flex-end;
    }
  
--  .kitchen-modal {
--    padding: 20px;
--    max-height: 92vh;
+   .kitchen-modal {
+     padding: 20px;
+     max-height: 92vh;
+   }
+ 
+   .kitchen-context-modal-backdrop {
+     align-items: flex-end;
+   }
+ 
+-  .kitchen-context-modal {
+-    width: 100%;
+-    border-radius: 18px 18px 0 0;
+-    max-height: 85vh;
 -  }
 -}
-+  .kitchen-modal {
-+    padding: 20px;
-+    max-height: 92vh;
-+  }
-+
-+  .kitchen-context-modal-backdrop {
-+    align-items: flex-end;
-+  }
-+
 +  .kitchen-context-modal {
 +    width: 100%;
 +    border-radius: 18px 18px 0 0;
 +    max-height: 85vh;
++  }
++
++  .kitchen-bottom-nav {
++    display: block;
++  }
++
++  .kitchen-bottom-nav-label {
++    font-size: 11px;
++  }
++}
++
++@media (max-width: 360px) {
++  .kitchen-bottom-nav-label {
++    font-size: 10px;
 +  }
 +}
  
@@ -885,72 +539,3 @@ index 5209822770662713494d3616ca4955d59d38fb7a..615933f4fc41ce7168678b2a3075b530
      flex-direction: row;
    }
  }
-diff --git a/frontend/src/kitchen/pages/DishesPage.jsx b/frontend/src/kitchen/pages/DishesPage.jsx
-index 0a38bab88872807005d0bebfcc5c71af87e378e7..58e99cde82edadf3856d5b2aac3d5bc290c85112 100644
---- a/frontend/src/kitchen/pages/DishesPage.jsx
-+++ b/frontend/src/kitchen/pages/DishesPage.jsx
-@@ -130,55 +130,59 @@ export default function DishesPage() {
-           canonicalName: item.canonicalName || normalizeIngredientName(item.displayName)
-         }))
-       };
-       if (editingId) {
-         await apiRequest(`/api/kitchen/dishes/${editingId}`, {
-           method: "PUT",
-           body: JSON.stringify(payload)
-         });
-         setNotice("Plato actualizado.");
-       } else {
-         await apiRequest("/api/kitchen/dishes", {
-           method: "POST",
-           body: JSON.stringify(payload)
-         });
-         setNotice("Plato creado.");
-       }
-       closeModal();
-       loadDishes();
-     } catch (err) {
-       setError(err.message || "No se pudo guardar el plato.");
-     } finally {
-       setSaving(false);
-     }
-   };
- 
--  const onCategoryCreated = async (name) => {
--    const data = await apiRequest("/api/categories", {
--      method: "POST",
--      body: JSON.stringify({ name })
--    });
-+  const onCategoryCreated = async (name, colors = null) => {
-+    const data = await apiRequest("/api/categories", {
-+      method: "POST",
-+      body: JSON.stringify({
-+        name,
-+        colorBg: colors?.colorBg,
-+        colorText: colors?.colorText
-+      })
-+    });
-     const category = data.category;
-     setCategories((prev) => {
-       const exists = prev.find((item) => item._id === category._id);
-       if (exists) return prev;
-       return [...prev, category];
-     });
-     return category;
-   };
- 
-   const pendingCount = useMemo(
-     () => (form.ingredients || []).filter((item) => item.status === "pending").length,
-     [form.ingredients]
-   );
- 
-   const normalizedSearch = useMemo(() => normalizeIngredientName(searchTerm), [searchTerm]);
-   const visibleDishes = useMemo(() => {
-     if (!normalizedSearch) return dishes;
-     return dishes.filter((dish) => {
-       const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
-       if (nameMatch) return true;
-       return (dish.ingredients || []).some((item) => {
-         const displayName = normalizeIngredientName(item.displayName || "");
-         const canonicalName = normalizeIngredientName(item.canonicalName || "");
-         return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
-       });
