@@ -16,6 +16,29 @@ function formatDateLabel(dateString) {
   return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" });
 }
 
+function formatWeekRange(dateString) {
+  const startDate = new Date(dateString);
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+
+  const startDay = startDate.toLocaleDateString("es-ES", { day: "numeric" });
+  const startMonth = startDate.toLocaleDateString("es-ES", { month: "short" });
+  const startYear = startDate.toLocaleDateString("es-ES", { year: "numeric" });
+  const endDay = endDate.toLocaleDateString("es-ES", { day: "numeric" });
+  const endMonth = endDate.toLocaleDateString("es-ES", { month: "short" });
+  const endYear = endDate.toLocaleDateString("es-ES", { year: "numeric" });
+
+  if (startYear === endYear && startMonth === endMonth) {
+    return `${startDay}–${endDay} ${endMonth} ${endYear}`;
+  }
+
+  if (startYear === endYear) {
+    return `${startDay} ${startMonth}–${endDay} ${endMonth} ${endYear}`;
+  }
+
+  return `${startDay} ${startMonth} ${startYear}–${endDay} ${endMonth} ${endYear}`;
+}
+
 export default function WeekPage() {
   const { user } = useAuth();
   const [weekStart, setWeekStart] = useState(getMondayISO());
@@ -129,25 +152,17 @@ export default function WeekPage() {
     );
   }
 
-  const weekLabel = new Date(weekStart).toLocaleDateString("es-ES", {
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  });
+  const weekRange = formatWeekRange(weekStart);
 
   return (
     <KitchenLayout>
       <section className="kitchen-week-header">
         <div className="kitchen-week-header-main">
-          <span className="kitchen-eyebrow">Plan semanal</span>
-          <h1 className="kitchen-title">Semana del {weekLabel}</h1>
-          <p className="kitchen-muted">
-            Planifica de lunes a viernes, con cocina por defecto el día anterior.
-          </p>
+          <h1 className="kitchen-title">Semana</h1>
+          <p className="kitchen-muted kitchen-week-subtitle">{weekRange}</p>
           {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
         </div>
         <div className="kitchen-week-header-actions">
-          <a className="kitchen-button" href="#week-grid">Planificar semana</a>
           <label className="kitchen-field">
             <span className="kitchen-label">Cambiar semana (lunes)</span>
             <input
