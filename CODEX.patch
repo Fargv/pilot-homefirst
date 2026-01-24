@@ -1,22 +1,8 @@
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index d65a44b0fbc5922120f7092e9344678427265eb4..e284cc2cf32458dbbc66635f317a155cfbbe545c 100644
+index 12424621494b68200f51fb1cfd8704233f54bbca..e7d7fd3d411336245766dc1e80971cc6042057b8 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -459,85 +459,81 @@
-   background: #eef2ff;
-   color: #4338ca;
-   font-size: 12px;
-   font-weight: 600;
- }
- 
- .kitchen-empty {
-   text-align: center;
-   padding: 32px;
-   color: #475467;
- }
- 
- .kitchen-muted {
-   color: #667085;
+@@ -473,62 +473,100 @@
    font-size: 14px;
  }
  
@@ -28,64 +14,87 @@ index d65a44b0fbc5922120f7092e9344678427265eb4..e284cc2cf32458dbbc66635f317a155c
    width: 100%;
  }
  
--.kitchen-week-header {
--  display: flex;
--  align-items: flex-start;
--  justify-content: space-between;
--  gap: 24px;
--  margin-bottom: 24px;
--}
--
--.kitchen-week-header-main {
--  display: flex;
--  flex-direction: column;
--  gap: 8px;
--}
-+.kitchen-week-header {
-+  display: flex;
-+  align-items: flex-start;
-+  justify-content: space-between;
-+  gap: 16px;
-+  margin-bottom: 20px;
-+}
-+
-+.kitchen-week-header-main {
-+  display: flex;
-+  flex-direction: column;
-+  gap: 4px;
-+}
- 
- .kitchen-week-header-actions {
+ .kitchen-week-header {
    display: flex;
-   flex-direction: column;
-   gap: 12px;
-   width: min(320px, 100%);
+   align-items: flex-start;
+   justify-content: space-between;
+   gap: 16px;
+   margin-bottom: 20px;
  }
  
--.kitchen-eyebrow {
--  text-transform: uppercase;
--  letter-spacing: 0.12em;
--  font-size: 11px;
--  font-weight: 700;
--  color: #7c3aed;
+ .kitchen-week-header-main {
+   display: flex;
+   flex-direction: column;
+   gap: 4px;
+ }
+ 
+-.kitchen-week-header-actions {
+-  display: flex;
+-  flex-direction: column;
+-  gap: 12px;
+-  width: min(320px, 100%);
 -}
 -
 -.kitchen-title {
 -  margin: 0;
--  font-size: 28px;
+-  font-size: 22px;
 -  font-weight: 700;
 -  color: #0f172a;
--}
++.kitchen-week-header-actions {
++  display: flex;
++  flex-direction: column;
++  gap: 12px;
++  width: min(320px, 100%);
++  align-items: flex-end;
++}
++
++.kitchen-week-nav {
++  display: flex;
++  align-items: flex-end;
++  gap: 12px;
++  width: 100%;
++}
++
++.kitchen-week-picker {
++  flex: 1;
++}
++
++.kitchen-week-arrow {
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++  width: 44px;
++  height: 44px;
++  border-radius: 12px;
++  border: 1px solid #d0d5dd;
++  background: #ffffff;
++  color: #344054;
++  font-size: 18px;
++  cursor: pointer;
++  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
++}
++
++.kitchen-week-arrow:hover {
++  background: #f8fafc;
++  border-color: #c7ced6;
++  color: #1d2939;
++}
++
++.kitchen-week-arrow:focus-visible {
++  outline: 2px solid #6366f1;
++  outline-offset: 2px;
++}
++
 +.kitchen-title {
 +  margin: 0;
 +  font-size: 22px;
 +  font-weight: 700;
 +  color: #0f172a;
-+}
-+
-+.kitchen-week-subtitle {
-+  margin: 0;
-+}
+ }
+ 
+ .kitchen-week-subtitle {
+   margin: 0;
+ }
  
  .kitchen-day-card {
    min-height: 100%;
@@ -106,16 +115,92 @@ index d65a44b0fbc5922120f7092e9344678427265eb4..e284cc2cf32458dbbc66635f317a155c
  
  .kitchen-day-meta {
    display: flex;
-   flex-direction: column;
-   gap: 4px;
-   font-size: 13px;
-   color: #667085;
+@@ -905,66 +943,71 @@
+   width: 100%;
+   max-width: 560px;
+   margin: 0 auto;
  }
+ 
+ .kitchen-dish-ingredients {
+   gap: 10px;
+ }
+ 
+ .kitchen-table {
+   width: 100%;
+   border-collapse: collapse;
+ }
+ 
+ .kitchen-table th,
+ .kitchen-table td {
+   text-align: left;
+   padding: 10px 8px;
+   border-bottom: 1px solid #eef2f6;
+   font-size: 14px;
+ }
+ 
+ @media (max-width: 600px) {
+   .kitchen-container {
+     padding: 16px;
+-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
++    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+   }
+ 
+   .kitchen-grid {
+     grid-template-columns: 1fr;
+     gap: 16px;
+   }
+ 
+-  .kitchen-week-header {
+-    flex-direction: column;
+-    margin-bottom: 16px;
+-  }
+-
+-  .kitchen-week-header-actions {
+-    width: 100%;
+-  }
++  .kitchen-week-header {
++    flex-direction: column;
++    margin-bottom: 16px;
++  }
++
++  .kitchen-week-header-actions {
++    width: 100%;
++    align-items: stretch;
++  }
++
++  .kitchen-week-nav {
++    align-items: center;
++  }
+ 
+   .kitchen-topbar-inner {
+     padding: 12px 16px;
+     min-height: 72px;
+   }
+ 
+   .kitchen-nav-desktop {
+     display: none;
+   }
+ 
+   .kitchen-user {
+     display: none;
+   }
+ 
+   .kitchen-user-placeholder {
+     display: none;
+   }
+ 
+   .kitchen-nav-toggle {
+     display: flex;
+   }
+ 
+   .kitchen-dishes-header {
+     align-items: flex-start;
+   }
 diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
-index 0854589b1f7d5789160321262fa4395873eea003..94f5bc9ac6a12abe6ff562b34b9bfb6c093c1022 100644
+index ff3eb969f6da4cb58736b98364399da6175f75ab..a5ccbb58675b049e56465a1e26801692fe269f81 100644
 --- a/frontend/src/kitchen/pages/WeekPage.jsx
 +++ b/frontend/src/kitchen/pages/WeekPage.jsx
-@@ -1,43 +1,66 @@
+@@ -1,66 +1,73 @@
  import React, { useEffect, useMemo, useRef, useState } from "react";
  import { apiRequest } from "../api.js";
  import { useAuth } from "../auth";
@@ -134,27 +219,41 @@ index 0854589b1f7d5789160321262fa4395873eea003..94f5bc9ac6a12abe6ff562b34b9bfb6c
    return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" });
  }
  
+-function formatWeekRange(dateString) {
+-  const startDate = new Date(dateString);
+-  const endDate = new Date(startDate);
+-  endDate.setDate(startDate.getDate() + 6);
 +function formatWeekRange(dateString) {
 +  const startDate = new Date(dateString);
 +  const endDate = new Date(startDate);
 +  endDate.setDate(startDate.getDate() + 6);
-+
-+  const startDay = startDate.toLocaleDateString("es-ES", { day: "numeric" });
-+  const startMonth = startDate.toLocaleDateString("es-ES", { month: "short" });
-+  const startYear = startDate.toLocaleDateString("es-ES", { year: "numeric" });
-+  const endDay = endDate.toLocaleDateString("es-ES", { day: "numeric" });
-+  const endMonth = endDate.toLocaleDateString("es-ES", { month: "short" });
-+  const endYear = endDate.toLocaleDateString("es-ES", { year: "numeric" });
-+
-+  if (startYear === endYear && startMonth === endMonth) {
-+    return `${startDay}–${endDay} ${endMonth} ${endYear}`;
-+  }
-+
-+  if (startYear === endYear) {
-+    return `${startDay} ${startMonth}–${endDay} ${endMonth} ${endYear}`;
-+  }
-+
+ 
+   const startDay = startDate.toLocaleDateString("es-ES", { day: "numeric" });
+   const startMonth = startDate.toLocaleDateString("es-ES", { month: "short" });
+   const startYear = startDate.toLocaleDateString("es-ES", { year: "numeric" });
+   const endDay = endDate.toLocaleDateString("es-ES", { day: "numeric" });
+   const endMonth = endDate.toLocaleDateString("es-ES", { month: "short" });
+   const endYear = endDate.toLocaleDateString("es-ES", { year: "numeric" });
+ 
+   if (startYear === endYear && startMonth === endMonth) {
+     return `${startDay}–${endDay} ${endMonth} ${endYear}`;
+   }
+ 
+   if (startYear === endYear) {
+     return `${startDay} ${startMonth}–${endDay} ${endMonth} ${endYear}`;
+   }
+ 
+-  return `${startDay} ${startMonth} ${startYear}–${endDay} ${endMonth} ${endYear}`;
+-}
+-
 +  return `${startDay} ${startMonth} ${startYear}–${endDay} ${endMonth} ${endYear}`;
++}
++
++function addDaysToISO(dateString, days) {
++  const [year, month, day] = dateString.split("-").map(Number);
++  const date = new Date(Date.UTC(year, month - 1, day));
++  date.setUTCDate(date.getUTCDate() + days);
++  return date.toISOString().slice(0, 10);
 +}
 +
  export default function WeekPage() {
@@ -182,7 +281,7 @@ index 0854589b1f7d5789160321262fa4395873eea003..94f5bc9ac6a12abe6ff562b34b9bfb6c
        setPlan(planData.plan);
        setDishes(dishesData.dishes || []);
        if (user?.role === "admin") {
-@@ -107,72 +130,64 @@ export default function WeekPage() {
+@@ -130,72 +137,93 @@ export default function WeekPage() {
  
    const onAssignSelf = (day) => {
      updateDay(day, { cookUserId: user?.id || user?._id });
@@ -208,48 +307,65 @@ index 0854589b1f7d5789160321262fa4395873eea003..94f5bc9ac6a12abe6ff562b34b9bfb6c
      );
    }
  
--  const weekLabel = new Date(weekStart).toLocaleDateString("es-ES", {
--    day: "numeric",
--    month: "long",
--    year: "numeric"
--  });
+-  const weekRange = formatWeekRange(weekStart);
 -
 +  const weekRange = formatWeekRange(weekStart);
++  const handleWeekShift = (days) => {
++    setWeekStart((prev) => addDaysToISO(prev, days));
++  };
 +
    return (
      <KitchenLayout>
 -      <section className="kitchen-week-header">
--        <div className="kitchen-week-header-main">
--          <span className="kitchen-eyebrow">Plan semanal</span>
--          <h1 className="kitchen-title">Semana del {weekLabel}</h1>
--          <p className="kitchen-muted">
--            Planifica de lunes a viernes, con cocina por defecto el día anterior.
--          </p>
--          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
++      <section className="kitchen-week-header">
+         <div className="kitchen-week-header-main">
+           <h1 className="kitchen-title">Semana</h1>
+           <p className="kitchen-muted kitchen-week-subtitle">{weekRange}</p>
+           {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
 -        </div>
 -        <div className="kitchen-week-header-actions">
--          <a className="kitchen-button" href="#week-grid">Planificar semana</a>
 -          <label className="kitchen-field">
 -            <span className="kitchen-label">Cambiar semana (lunes)</span>
 -            <input
-+      <section className="kitchen-week-header">
-+        <div className="kitchen-week-header-main">
-+          <h1 className="kitchen-title">Semana</h1>
-+          <p className="kitchen-muted kitchen-week-subtitle">{weekRange}</p>
-+          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
+-              className="kitchen-input"
+-              type="date"
+-              value={weekStart}
+-              onChange={(event) => setWeekStart(event.target.value)}
+-            />
+-          </label>
+-        </div>
+-      </section>
 +        </div>
 +        <div className="kitchen-week-header-actions">
-+          <label className="kitchen-field">
-+            <span className="kitchen-label">Cambiar semana (lunes)</span>
-+            <input
-               className="kitchen-input"
-               type="date"
-               value={weekStart}
-               onChange={(event) => setWeekStart(event.target.value)}
-             />
-           </label>
-         </div>
-       </section>
++          <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
++            <button
++              className="kitchen-week-arrow"
++              type="button"
++              onClick={() => handleWeekShift(-7)}
++              aria-label="Ir a la semana anterior"
++            >
++              <span aria-hidden="true">←</span>
++            </button>
++            <label className="kitchen-field kitchen-week-picker">
++              <span className="kitchen-label">Semana (lunes)</span>
++              <input
++                className="kitchen-input"
++                type="date"
++                value={weekStart}
++                onChange={(event) => setWeekStart(event.target.value)}
++              />
++            </label>
++            <button
++              className="kitchen-week-arrow"
++              type="button"
++              onClick={() => handleWeekShift(7)}
++              aria-label="Ir a la semana siguiente"
++            >
++              <span aria-hidden="true">→</span>
++            </button>
++          </div>
++        </div>
++      </section>
  
        <div className="kitchen-grid" id="week-grid">
          {plan.days.map((day) => {
@@ -267,3 +383,11 @@ index 0854589b1f7d5789160321262fa4395873eea003..94f5bc9ac6a12abe6ff562b34b9bfb6c
              });
            }
            if (isPlanned) {
+             statusLabels.push({ label: "Planificado", type: "planned" });
+           }
+           return (
+             <div key={day.date} className="kitchen-card kitchen-day-card">
+               <div className="kitchen-day-header">
+                 <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
+                 <div className="kitchen-day-meta">
+                   <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>

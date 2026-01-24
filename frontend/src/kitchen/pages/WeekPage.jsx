@@ -39,6 +39,13 @@ function formatWeekRange(dateString) {
   return `${startDay} ${startMonth} ${startYear}–${endDay} ${endMonth} ${endYear}`;
 }
 
+function addDaysToISO(dateString, days) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 export default function WeekPage() {
   const { user } = useAuth();
   const [weekStart, setWeekStart] = useState(getMondayISO());
@@ -153,6 +160,9 @@ export default function WeekPage() {
   }
 
   const weekRange = formatWeekRange(weekStart);
+  const handleWeekShift = (days) => {
+    setWeekStart((prev) => addDaysToISO(prev, days));
+  };
 
   return (
     <KitchenLayout>
@@ -163,15 +173,33 @@ export default function WeekPage() {
           {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
         </div>
         <div className="kitchen-week-header-actions">
-          <label className="kitchen-field">
-            <span className="kitchen-label">Cambiar semana (lunes)</span>
-            <input
-              className="kitchen-input"
-              type="date"
-              value={weekStart}
-              onChange={(event) => setWeekStart(event.target.value)}
-            />
-          </label>
+          <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
+            <button
+              className="kitchen-week-arrow"
+              type="button"
+              onClick={() => handleWeekShift(-7)}
+              aria-label="Ir a la semana anterior"
+            >
+              <span aria-hidden="true">←</span>
+            </button>
+            <label className="kitchen-field kitchen-week-picker">
+              <span className="kitchen-label">Semana (lunes)</span>
+              <input
+                className="kitchen-input"
+                type="date"
+                value={weekStart}
+                onChange={(event) => setWeekStart(event.target.value)}
+              />
+            </label>
+            <button
+              className="kitchen-week-arrow"
+              type="button"
+              onClick={() => handleWeekShift(7)}
+              aria-label="Ir a la semana siguiente"
+            >
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
         </div>
       </section>
 
