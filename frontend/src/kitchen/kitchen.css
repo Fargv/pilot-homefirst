@@ -269,6 +269,75 @@
   align-items: stretch;
 }
 
+.kitchen-week-carousel {
+  position: relative;
+}
+
+.kitchen-week-days {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+
+.kitchen-week-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #1f2937;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+  cursor: pointer;
+  z-index: 2;
+}
+
+.kitchen-week-carousel-arrow.is-left {
+  left: -6px;
+}
+
+.kitchen-week-carousel-arrow.is-right {
+  right: -6px;
+}
+
+.kitchen-week-carousel-arrow-icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.kitchen-week-carousel-arrow-icon.is-next {
+  transform: rotate(180deg);
+}
+
+.kitchen-week-carousel-dots {
+  display: none;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.kitchen-week-carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  background: #d0d5dd;
+}
+
+.kitchen-week-carousel-dot.is-active {
+  background: #6366f1;
+}
+
 .kitchen-dishes-page {
   display: flex;
   flex-direction: column;
@@ -1178,6 +1247,38 @@
   .kitchen-grid {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .kitchen-week-carousel {
+    margin: 0 -12px;
+  }
+
+  .kitchen-week-carousel-arrow {
+    display: none;
+  }
+
+  .kitchen-week-days {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    padding: 0 12px 4px;
+  }
+
+  .kitchen-week-days::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kitchen-week-days .kitchen-day-card {
+    flex: 0 0 calc(100% - 24px);
+    scroll-snap-align: start;
+  }
+
+  .kitchen-week-carousel-dots {
+    display: flex;
   }
 
   .kitchen-week-header {

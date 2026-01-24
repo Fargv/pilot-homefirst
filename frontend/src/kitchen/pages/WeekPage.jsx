@@ -44,8 +44,13 @@ export default function WeekPage() {
   const [dayErrors, setDayErrors] = useState({});
   const [ingredientInputs, setIngredientInputs] = useState({});
   const [selectedDay, setSelectedDay] = useState("");
+  const [showCarouselControls, setShowCarouselControls] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const lastSyncedIngredients = useRef({});
   const saveTimers = useRef({});
+  const carouselRef = useRef(null);
+  const dayRefs = useRef(new Map());
+  const selectedDayRef = useRef(selectedDay);
 
   const loadData = async () => {
     setLoading(true);
@@ -116,6 +121,73 @@ export default function WeekPage() {
     });
   }, [plan]);
 
+  useEffect(() => {
+    selectedDayRef.current = selectedDay;
+  }, [selectedDay]);
+
+  const dayKeys = useMemo(() => plan?.days?.map((day) => day.date.slice(0, 10)) || [], [plan]);
+
+  useEffect(() => {
+    const element = carouselRef.current;
+    if (!element) return;
+
+    const updateControls = () => {
+      const shouldShow = element.scrollWidth > element.clientWidth + 1;
+      setShowCarouselControls(shouldShow);
+    };
+
+    updateControls();
+    const observer = new ResizeObserver(updateControls);
+    observer.observe(element);
+    window.addEventListener("resize", updateControls);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateControls);
+    };
+  }, [dayKeys.length]);
+
+  useEffect(() => {
+    const element = carouselRef.current;
+    if (!element || !dayKeys.length) return;
+
+    let frame = null;
+    const handleScroll = () => {
+      if (frame) {
+        cancelAnimationFrame(frame);
+      }
+      frame = requestAnimationFrame(() => {
+        const center = element.scrollLeft + element.clientWidth / 2;
+        let closestIndex = 0;
+        let closestDistance = Number.POSITIVE_INFINITY;
+        dayKeys.forEach((key, index) => {
+          const node = dayRefs.current.get(key);
+          if (!node) return;
+          const nodeCenter = node.offsetLeft + node.offsetWidth / 2;
+          const distance = Math.abs(center - nodeCenter);
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = index;
+          }
+        });
+        const nextKey = dayKeys[closestIndex];
+        setActiveIndex(closestIndex);
+        if (nextKey && nextKey !== selectedDayRef.current) {
+          setSelectedDay(nextKey);
+        }
+      });
+    };
+
+    element.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      element.removeEventListener("scroll", handleScroll);
+      if (frame) {
+        cancelAnimationFrame(frame);
+      }
+    };
+  }, [dayKeys]);
+
   const updateDay = async (day, updates) => {
     const dayKey = day.date.slice(0, 10);
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
@@ -170,11 +242,17 @@ export default function WeekPage() {
 
   const handleSelectDay = (dayKey) => {
     setSelectedDay(dayKey);
-    const target = document.getElementById(`kitchen-day-${dayKey}`);
+    const target = dayRefs.current.get(dayKey) || document.getElementById(`kitchen-day-${dayKey}`);
     if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
       target.focus?.({ preventScroll: true });
     }
+  };
+
+  const handleCarouselScroll = (direction) => {
+    const element = carouselRef.current;
+    if (!element) return;
+    element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
   };
 
   return (
@@ -218,7 +296,18 @@ export default function WeekPage() {
         onSelectDay={handleSelectDay}
       />
 
-      <div className="kitchen-grid" id="week-grid">
+      <div className="kitchen-week-carousel">
+        {showCarouselControls ? (
+          <button
+            className="kitchen-week-carousel-arrow is-left"
+            type="button"
+            onClick={() => handleCarouselScroll(-1)}
+            aria-label="Mostrar día anterior"
+          >
+            <ChevronIcon className="kitchen-week-carousel-arrow-icon" />
+          </button>
+        ) : null}
+        <div className="kitchen-grid kitchen-week-days" id="week-grid" ref={carouselRef}>
         {plan.days.map((day) => {
           const dayKey = day.date.slice(0, 10);
           const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
@@ -242,6 +331,13 @@ export default function WeekPage() {
               id={`kitchen-day-${dayKey}`}
               className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""}`}
               tabIndex={-1}
+              ref={(node) => {
+                if (!node) {
+                  dayRefs.current.delete(dayKey);
+                  return;
+                }
+                dayRefs.current.set(dayKey, node);
+              }}
             >
               <div className="kitchen-day-header">
                 <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
@@ -350,7 +446,32 @@ export default function WeekPage() {
             </div>
           );
         })}
+        </div>
+        {showCarouselControls ? (
+          <button
+            className="kitchen-week-carousel-arrow is-right"
+            type="button"
+            onClick={() => handleCarouselScroll(1)}
+            aria-label="Mostrar día siguiente"
+          >
+            <ChevronIcon className="kitchen-week-carousel-arrow-icon is-next" />
+          </button>
+        ) : null}
       </div>
+      {dayKeys.length > 1 ? (
+        <div className="kitchen-week-carousel-dots" role="tablist" aria-label="Días de la semana">
+          {dayKeys.map((key, index) => (
+            <button
+              key={key}
+              type="button"
+              className={`kitchen-week-carousel-dot ${activeIndex === index ? "is-active" : ""}`}
+              onClick={() => handleSelectDay(key)}
+              aria-label={`Ir a ${formatDateLabel(key)}`}
+              aria-current={activeIndex === index ? "true" : undefined}
+            />
+          ))}
+        </div>
+      ) : null}
     </KitchenLayout>
   );
 }
