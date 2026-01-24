@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../api.js";
 import { useAuth } from "../auth";
+import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
 import KitchenLayout from "../Layout.jsx";
 
 function getMondayISO(date = new Date()) {
@@ -57,6 +58,7 @@ export default function WeekPage() {
   const [dayStatus, setDayStatus] = useState({});
   const [dayErrors, setDayErrors] = useState({});
   const [ingredientInputs, setIngredientInputs] = useState({});
+  const [selectedDay, setSelectedDay] = useState("");
   const lastSyncedIngredients = useRef({});
   const saveTimers = useRef({});
 
@@ -70,8 +72,9 @@ export default function WeekPage() {
       ]);
       setPlan(planData.plan);
       setDishes(dishesData.dishes || []);
-      if (user?.role === "admin") {
-        const usersData = await apiRequest("/api/kitchen/users");
+      if (user) {
+        const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
+        const usersData = await apiRequest(usersEndpoint);
         setUsers(usersData.users || []);
       }
     } catch (err) {
@@ -108,6 +111,23 @@ export default function WeekPage() {
         }
       });
       return next;
+    });
+  }, [plan]);
+
+  useEffect(() => {
+    if (!plan?.days?.length) {
+      return;
+    }
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const fallbackDay = plan.days[0]?.date?.slice(0, 10) || "";
+    const defaultDay = plan.days.some((day) => day.date.slice(0, 10) === todayKey)
+      ? todayKey
+      : fallbackDay;
+    setSelectedDay((prev) => {
+      if (prev && plan.days.some((day) => day.date.slice(0, 10) === prev)) {
+        return prev;
+      }
+      return defaultDay;
     });
   }, [plan]);
 
@@ -164,6 +184,15 @@ export default function WeekPage() {
     setWeekStart((prev) => addDaysToISO(prev, days));
   };
 
+  const handleSelectDay = (dayKey) => {
+    setSelectedDay(dayKey);
+    const target = document.getElementById(`kitchen-day-${dayKey}`);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.focus?.({ preventScroll: true });
+    }
+  };
+
   return (
     <KitchenLayout>
       <section className="kitchen-week-header">
@@ -202,6 +231,12 @@ export default function WeekPage() {
           </div>
         </div>
       </section>
+      <WeekDaysStrip
+        days={plan.days}
+        userMap={userMap}
+        selectedDay={selectedDay}
+        onSelectDay={handleSelectDay}
+      />
 
       <div className="kitchen-grid" id="week-grid">
         {plan.days.map((day) => {
@@ -222,7 +257,12 @@ export default function WeekPage() {
             statusLabels.push({ label: "Planificado", type: "planned" });
           }
           return (
-            <div key={day.date} className="kitchen-card kitchen-day-card">
+            <div
+              key={day.date}
+              id={`kitchen-day-${dayKey}`}
+              className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""}`}
+              tabIndex={-1}
+            >
               <div className="kitchen-day-header">
                 <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
                 <div className="kitchen-day-meta">

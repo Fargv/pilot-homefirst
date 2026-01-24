@@ -551,8 +551,133 @@
   margin: 0;
 }
 
+.kitchen-weekdays-strip {
+  padding: 20px 22px;
+  border: 1px solid #eaecf0;
+  box-shadow: none;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kitchen-weekdays-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.kitchen-weekdays-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.kitchen-weekdays-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #667085;
+}
+
+.kitchen-weekdays-arrows {
+  display: flex;
+  gap: 8px;
+}
+
+.kitchen-weekdays-arrow {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid #e4e7ec;
+  background: #ffffff;
+  color: #344054;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.kitchen-weekdays-arrow:hover {
+  background: #f8fafc;
+  border-color: #d0d5dd;
+}
+
+.kitchen-weekdays-list {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 4px;
+}
+
+.kitchen-weekdays-list.is-carousel {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.kitchen-weekdays-list.is-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.kitchen-weekdays-item {
+  min-width: 64px;
+  min-height: 80px;
+  padding: 8px 6px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  scroll-snap-align: center;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.kitchen-weekdays-item:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.kitchen-weekdays-item.is-selected {
+  border-color: #c7d2fe;
+  background: #f8f9ff;
+}
+
+.kitchen-weekdays-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--weekday-bg);
+  color: var(--weekday-text);
+  border: 1px solid var(--weekday-border);
+  box-sizing: border-box;
+}
+
+.kitchen-weekdays-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475467;
+  text-transform: uppercase;
+}
+
 .kitchen-day-card {
   min-height: 100%;
+}
+
+.kitchen-day-card.is-selected {
+  border: 1px solid #c7d2fe;
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.05);
 }
 
 .kitchen-day-header {
@@ -985,6 +1110,14 @@
 
   .kitchen-week-nav {
     align-items: center;
+  }
+
+  .kitchen-weekdays-strip {
+    padding: 16px;
+  }
+
+  .kitchen-weekdays-arrows {
+    display: none;
   }
 
   .kitchen-topbar-inner {
