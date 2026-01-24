@@ -61,12 +61,12 @@ export default function ShoppingPage() {
         <div className="kitchen-actions">
           <button className="kitchen-button" onClick={rebuild}>Recalcular lista</button>
           <label>
-            <span className="kitchen-label">Semana (lunes)</span>
             <input
               className="kitchen-input"
               type="date"
               value={weekStart}
               onChange={(event) => setWeekStart(event.target.value)}
+              aria-label="Semana"
             />
           </label>
           <label>

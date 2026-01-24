@@ -70,13 +70,13 @@ export default function SwapsPage() {
           <p className="kitchen-muted">Propón intercambiar días con otro miembro.</p>
           <form onSubmit={submitSwap} style={{ display: "grid", gap: 12, marginTop: 12 }}>
             <label>
-              <span className="kitchen-label">Semana (lunes)</span>
               <input
                 className="kitchen-input"
                 type="date"
                 value={form.weekStart}
                 onChange={(event) => setForm({ ...form, weekStart: event.target.value })}
                 required
+                aria-label="Semana"
               />
             </label>
             <label>

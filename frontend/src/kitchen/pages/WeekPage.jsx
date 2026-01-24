@@ -270,12 +270,12 @@ export default function WeekPage() {
                 <ChevronIcon className="kitchen-week-arrow-icon" />
               </button>
               <label className="kitchen-field kitchen-week-picker">
-                <span className="kitchen-label">Semana (lunes)</span>
                 <input
                   className="kitchen-input"
                   type="date"
                   value={weekStart}
                   onChange={(event) => setWeekStart(event.target.value)}
+                  aria-label="Semana"
                 />
               </label>
               <button

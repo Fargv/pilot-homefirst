@@ -608,16 +608,19 @@
 }
 
 .kitchen-week-nav {
-  display: flex;
+  display: grid;
+  grid-template-columns: 44px minmax(200px, 260px) 44px;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   width: 100%;
-  justify-content: center;
 }
 
 .kitchen-week-picker {
-  flex: 1;
-  max-width: 260px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .kitchen-week-arrow {
@@ -638,6 +641,7 @@
   min-height: 44px;
   height: 44px;
   text-align: center;
+  width: 100%;
 }
 
 .kitchen-week-arrow-icon {
@@ -1306,7 +1310,7 @@
   }
 
   .kitchen-week-nav {
-    align-items: center;
+    grid-template-columns: 44px minmax(180px, 220px) 44px;
   }
 
   .kitchen-week-controls {
@@ -1324,7 +1328,7 @@
   }
 
   .kitchen-week-picker {
-    max-width: 220px;
+    width: 100%;
   }
 
   .kitchen-week-picker .kitchen-label {
@@ -1336,11 +1340,31 @@
   }
 
   .kitchen-weekdays-strip {
-    padding: 16px;
+    padding: 12px;
   }
 
   .kitchen-weekdays-arrow {
     display: none;
+  }
+
+  .kitchen-weekdays-list {
+    gap: 8px;
+  }
+
+  .kitchen-weekdays-item {
+    min-width: 56px;
+    min-height: 72px;
+    padding: 6px 4px;
+  }
+
+  .kitchen-weekdays-circle {
+    width: 44px;
+    height: 44px;
+    font-size: 12px;
+  }
+
+  .kitchen-weekdays-label {
+    font-size: 11px;
   }
 
   .kitchen-topbar {
