@@ -22,6 +22,14 @@ function getInitials(name) {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
+function ChevronIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  );
+}
+
 export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay }) {
   const scrollRef = useRef(null);
   const [isCarousel, setIsCarousel] = useState(false);
@@ -76,60 +84,56 @@ export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay 
 
   return (
     <section className="kitchen-weekdays-strip kitchen-card" aria-label="Panel de días">
-      <div className="kitchen-weekdays-header">
-        <div>
-          <p className="kitchen-weekdays-title">Días de la semana</p>
-          <p className="kitchen-weekdays-subtitle">Toca un día para ver o asignar cocina.</p>
+      <div className={`kitchen-weekdays-carousel ${isCarousel ? "is-carousel" : ""}`}>
+        {isCarousel ? (
+          <button
+            className="kitchen-weekdays-arrow is-left"
+            type="button"
+            onClick={() => scrollByOffset(-1)}
+            aria-label="Desplazar días a la izquierda"
+          >
+            <ChevronIcon className="kitchen-weekdays-arrow-icon" />
+          </button>
+        ) : null}
+        <div
+          ref={scrollRef}
+          className={`kitchen-weekdays-list ${isCarousel ? "is-carousel" : ""}`}
+          role="list"
+        >
+          {entries.map((entry) => {
+            const isSelected = selectedDay === entry.key;
+            const colors = entry.isAssigned ? getUserColor(entry.cookUserId) : getUnassignedColor();
+            return (
+              <button
+                key={entry.key}
+                type="button"
+                className={`kitchen-weekdays-item ${isSelected ? "is-selected" : ""}`}
+                onClick={() => handleSelect(entry)}
+                aria-label={`${getDayLong(entry.date)}: ${entry.cookName}`}
+                style={{
+                  "--weekday-bg": colors.background,
+                  "--weekday-text": colors.text,
+                  "--weekday-border": colors.border || "transparent"
+                }}
+              >
+                <span className="kitchen-weekdays-circle" aria-hidden="true">
+                  {entry.isAssigned ? entry.initials : "+"}
+                </span>
+                <span className="kitchen-weekdays-label">{getDayAbbreviation(entry.date)}</span>
+              </button>
+            );
+          })}
         </div>
         {isCarousel ? (
-          <div className="kitchen-weekdays-arrows" aria-hidden="true">
-            <button
-              className="kitchen-weekdays-arrow"
-              type="button"
-              onClick={() => scrollByOffset(-1)}
-              aria-label="Desplazar días a la izquierda"
-            >
-              ←
-            </button>
-            <button
-              className="kitchen-weekdays-arrow"
-              type="button"
-              onClick={() => scrollByOffset(1)}
-              aria-label="Desplazar días a la derecha"
-            >
-              →
-            </button>
-          </div>
+          <button
+            className="kitchen-weekdays-arrow is-right"
+            type="button"
+            onClick={() => scrollByOffset(1)}
+            aria-label="Desplazar días a la derecha"
+          >
+            <ChevronIcon className="kitchen-weekdays-arrow-icon is-next" />
+          </button>
         ) : null}
-      </div>
-      <div
-        ref={scrollRef}
-        className={`kitchen-weekdays-list ${isCarousel ? "is-carousel" : ""}`}
-        role="list"
-      >
-        {entries.map((entry) => {
-          const isSelected = selectedDay === entry.key;
-          const colors = entry.isAssigned ? getUserColor(entry.cookUserId) : getUnassignedColor();
-          return (
-            <button
-              key={entry.key}
-              type="button"
-              className={`kitchen-weekdays-item ${isSelected ? "is-selected" : ""}`}
-              onClick={() => handleSelect(entry)}
-              aria-label={`${getDayLong(entry.date)}: ${entry.cookName}`}
-              style={{
-                "--weekday-bg": colors.background,
-                "--weekday-text": colors.text,
-                "--weekday-border": colors.border || "transparent"
-              }}
-            >
-              <span className="kitchen-weekdays-circle" aria-hidden="true">
-                {entry.isAssigned ? entry.initials : "+"}
-              </span>
-              <span className="kitchen-weekdays-label">{getDayAbbreviation(entry.date)}</span>
-            </button>
-          );
-        })}
       </div>
     </section>
   );

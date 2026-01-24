@@ -132,12 +132,47 @@
 .kitchen-user {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.kitchen-user-role {
-  font-size: 12px;
-  margin-top: 2px;
+.kitchen-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d2939;
+}
+
+.kitchen-logout-button {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #475467;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.kitchen-logout-button:hover {
+  background: #f2f4f7;
+  color: #111827;
+}
+
+.kitchen-logout-button:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.kitchen-logout-icon {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .kitchen-user-placeholder {
@@ -484,7 +519,7 @@
 .kitchen-week-header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: center;
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -499,15 +534,16 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: min(320px, 100%);
-  align-items: flex-end;
+  width: min(420px, 100%);
+  align-items: center;
 }
 
 .kitchen-week-nav {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 12px;
   width: 100%;
+  justify-content: center;
 }
 
 .kitchen-week-picker {
@@ -524,9 +560,22 @@
   border: 1px solid #d0d5dd;
   background: #ffffff;
   color: #344054;
-  font-size: 18px;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.kitchen-week-arrow-icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.kitchen-week-arrow-icon.is-next {
+  transform: rotate(180deg);
 }
 
 .kitchen-week-arrow:hover {
@@ -559,43 +608,50 @@
   margin-bottom: 24px;
 }
 
-.kitchen-weekdays-header {
+.kitchen-weekdays-carousel {
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  align-items: center;
+  width: 100%;
 }
 
-.kitchen-weekdays-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: #111827;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
+.kitchen-weekdays-carousel.is-carousel::before,
+.kitchen-weekdays-carousel.is-carousel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none;
+  z-index: 1;
 }
 
-.kitchen-weekdays-subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: #667085;
+.kitchen-weekdays-carousel.is-carousel::before {
+  left: 0;
+  background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
 }
 
-.kitchen-weekdays-arrows {
-  display: flex;
-  gap: 8px;
+.kitchen-weekdays-carousel.is-carousel::after {
+  right: 0;
+  background: linear-gradient(270deg, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
 }
 
 .kitchen-weekdays-arrow {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
   border: 1px solid #e4e7ec;
   background: #ffffff;
   color: #344054;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
 }
 
 .kitchen-weekdays-arrow:hover {
@@ -603,10 +659,34 @@
   border-color: #d0d5dd;
 }
 
+.kitchen-weekdays-arrow.is-left {
+  left: -8px;
+}
+
+.kitchen-weekdays-arrow.is-right {
+  right: -8px;
+}
+
+.kitchen-weekdays-arrow-icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.kitchen-weekdays-arrow-icon.is-next {
+  transform: rotate(180deg);
+}
+
 .kitchen-weekdays-list {
   display: flex;
   gap: 12px;
   align-items: center;
+  justify-content: center;
+  width: 100%;
   padding-bottom: 4px;
 }
 
@@ -615,6 +695,8 @@
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  justify-content: flex-start;
+  padding: 4px 32px;
 }
 
 .kitchen-weekdays-list.is-carousel::-webkit-scrollbar {
@@ -1116,7 +1198,7 @@
     padding: 16px;
   }
 
-  .kitchen-weekdays-arrows {
+  .kitchen-weekdays-arrow {
     display: none;
   }
 

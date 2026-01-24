@@ -41,6 +41,16 @@ function SettingsIcon(props) {
   );
 }
 
+function LogoutIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      <path d="M10 17l5-5-5-5" />
+      <path d="M15 12H3" />
+    </svg>
+  );
+}
+
 export default function KitchenLayout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -109,12 +119,15 @@ export default function KitchenLayout({ children }) {
           </nav>
           {user ? (
             <div className="kitchen-user">
-              <div>
-                <div className="kitchen-pill">{user.displayName}</div>
-                <div className="kitchen-muted kitchen-user-role">{user.role}</div>
-              </div>
-              <button className="kitchen-button secondary" type="button" onClick={onLogout}>
-                Cerrar sesión
+              <span className="kitchen-user-name">{user.displayName}</span>
+              <button
+                className="kitchen-logout-button"
+                type="button"
+                onClick={onLogout}
+                aria-label="Cerrar sesión"
+                title="Cerrar sesión"
+              >
+                <LogoutIcon className="kitchen-logout-icon" />
               </button>
             </div>
           ) : (
@@ -144,7 +157,6 @@ export default function KitchenLayout({ children }) {
                 <div className="kitchen-drawer-user">
                   <div>
                     <div className="kitchen-pill">{user.displayName}</div>
-                    <div className="kitchen-muted kitchen-user-role">{user.role}</div>
                   </div>
                   <button className="kitchen-button secondary" type="button" onClick={onLogout}>
                     Cerrar sesión

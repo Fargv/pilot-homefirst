@@ -17,34 +17,19 @@ function formatDateLabel(dateString) {
   return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" });
 }
 
-function formatWeekRange(dateString) {
-  const startDate = new Date(dateString);
-  const endDate = new Date(startDate);
-  endDate.setDate(startDate.getDate() + 6);
-
-  const startDay = startDate.toLocaleDateString("es-ES", { day: "numeric" });
-  const startMonth = startDate.toLocaleDateString("es-ES", { month: "short" });
-  const startYear = startDate.toLocaleDateString("es-ES", { year: "numeric" });
-  const endDay = endDate.toLocaleDateString("es-ES", { day: "numeric" });
-  const endMonth = endDate.toLocaleDateString("es-ES", { month: "short" });
-  const endYear = endDate.toLocaleDateString("es-ES", { year: "numeric" });
-
-  if (startYear === endYear && startMonth === endMonth) {
-    return `${startDay}–${endDay} ${endMonth} ${endYear}`;
-  }
-
-  if (startYear === endYear) {
-    return `${startDay} ${startMonth}–${endDay} ${endMonth} ${endYear}`;
-  }
-
-  return `${startDay} ${startMonth} ${startYear}–${endDay} ${endMonth} ${endYear}`;
-}
-
 function addDaysToISO(dateString, days) {
   const [year, month, day] = dateString.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+function ChevronIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  );
 }
 
 export default function WeekPage() {
@@ -179,7 +164,6 @@ export default function WeekPage() {
     );
   }
 
-  const weekRange = formatWeekRange(weekStart);
   const handleWeekShift = (days) => {
     setWeekStart((prev) => addDaysToISO(prev, days));
   };
@@ -196,11 +180,6 @@ export default function WeekPage() {
   return (
     <KitchenLayout>
       <section className="kitchen-week-header">
-        <div className="kitchen-week-header-main">
-          <h1 className="kitchen-title">Semana</h1>
-          <p className="kitchen-muted kitchen-week-subtitle">{weekRange}</p>
-          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
-        </div>
         <div className="kitchen-week-header-actions">
           <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
             <button
@@ -209,7 +188,7 @@ export default function WeekPage() {
               onClick={() => handleWeekShift(-7)}
               aria-label="Ir a la semana anterior"
             >
-              <span aria-hidden="true">←</span>
+              <ChevronIcon className="kitchen-week-arrow-icon" />
             </button>
             <label className="kitchen-field kitchen-week-picker">
               <span className="kitchen-label">Semana (lunes)</span>
@@ -226,9 +205,10 @@ export default function WeekPage() {
               onClick={() => handleWeekShift(7)}
               aria-label="Ir a la semana siguiente"
             >
-              <span aria-hidden="true">→</span>
+              <ChevronIcon className="kitchen-week-arrow-icon is-next" />
             </button>
           </div>
+          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
         </div>
       </section>
       <WeekDaysStrip
