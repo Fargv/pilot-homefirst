@@ -52,6 +52,26 @@ function getInitials(name) {
 
 const MAX_DISH_RESULTS = 8;
 
+function mergeIngredientLists(...lists) {
+  const merged = new Map();
+  lists.flat().filter(Boolean).forEach((item) => {
+    const displayName = String(item?.displayName || "").trim();
+    const canonicalName = String(
+      item?.canonicalName || normalizeIngredientName(displayName)
+    ).trim();
+    if (!displayName || !canonicalName) return;
+    const key = item?.ingredientId || canonicalName;
+    if (!merged.has(key)) {
+      merged.set(key, {
+        ...item,
+        displayName,
+        canonicalName
+      });
+    }
+  });
+  return Array.from(merged.values());
+}
+
 export default function WeekPage() {
   const { user } = useAuth();
   const [weekStart, setWeekStart] = useState(getMondayISO());
@@ -65,6 +85,7 @@ export default function WeekPage() {
   const [dayStatus, setDayStatus] = useState({});
   const [dayErrors, setDayErrors] = useState({});
   const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
+  const [extraIngredientsEnabled, setExtraIngredientsEnabled] = useState({});
   const [selectedDay, setSelectedDay] = useState("");
   const [editingDays, setEditingDays] = useState({});
   const [sideDishEnabled, setSideDishEnabled] = useState({});
@@ -347,6 +368,10 @@ export default function WeekPage() {
     const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
     setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
     setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
+    setExtraIngredientsEnabled((prev) => ({
+      ...prev,
+      [dayKey]: Boolean(day.ingredientOverrides?.length)
+    }));
     setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
     setSideDishQueries((prev) => ({ ...prev, [dayKey]: sideDishName || "" }));
@@ -580,7 +605,10 @@ export default function WeekPage() {
           const sideToggleId = `side-toggle-${dayKey}`;
           const isEmptyState = !isPlanned && !isEditing;
           const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
-          const baseIngredients = mainDish?.ingredients || [];
+          const baseIngredients = mergeIngredientLists(
+            mainDish?.ingredients || [],
+            sideDish?.ingredients || []
+          );
           const extraIngredients = day.ingredientOverrides || [];
           const extraIngredientsValue =
             extraIngredientsByDay[dayKey] ||
@@ -622,6 +650,8 @@ export default function WeekPage() {
               (dish) => normalizeIngredientName(dish.name || "") === normalizedSideDishQuery
             )
             : false;
+          const extrasOn = extraIngredientsEnabled[dayKey] ?? Boolean(extraIngredients.length);
+          const extrasToggleId = `extras-toggle-${dayKey}`;
           const statusLabels = [];
           if (isAssigned) {
             statusLabels.push({
@@ -752,7 +782,7 @@ export default function WeekPage() {
                         )}
                       </div>
                     </div>
-                    {extraIngredients.length ? (
+                    {extraIngredients.length && extrasOn ? (
                       <div className="kitchen-day-ingredients">
                         <span className="kitchen-label">Extras</span>
                         <div className="kitchen-day-ingredient-pills is-extra">
@@ -1025,25 +1055,50 @@ export default function WeekPage() {
                     </div>
                   </div>
 
-                  <div className="kitchen-field kitchen-day-ingredients">
-                    <span className="kitchen-label">Extras</span>
-                    <IngredientPicker
-                      value={extraIngredientsValue}
-                      onChange={(next) => {
-                        setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: next }));
-                        const overrides = next
-                          .map((item) => ({
-                            displayName: item.displayName,
-                            canonicalName: item.canonicalName,
-                            ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
-                          }))
-                          .filter((item) => item.displayName && item.canonicalName);
-                        updateDay(day, { ingredientOverrides: overrides });
-                      }}
-                      categories={categories}
-                      onCategoryCreated={handleCategoryCreated}
-                    />
+                  <div className="kitchen-field kitchen-toggle-field">
+                    <div className="kitchen-toggle-row">
+                      <span className="kitchen-label">Añadir extras</span>
+                      <label className="kitchen-toggle" htmlFor={extrasToggleId}>
+                        <input
+                          id={extrasToggleId}
+                          type="checkbox"
+                          className="kitchen-toggle-input"
+                          checked={extrasOn}
+                          onChange={(event) => {
+                            const nextValue = event.target.checked;
+                            setExtraIngredientsEnabled((prev) => ({ ...prev, [dayKey]: nextValue }));
+                            if (!nextValue) {
+                              setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: [] }));
+                              updateDay(day, { ingredientOverrides: [] });
+                            }
+                          }}
+                        />
+                        <span className="kitchen-toggle-track" aria-hidden="true" />
+                      </label>
+                    </div>
                   </div>
+
+                  {extrasOn ? (
+                    <div className="kitchen-field kitchen-day-ingredients">
+                      <span className="kitchen-label">Extras</span>
+                      <IngredientPicker
+                        value={extraIngredientsValue}
+                        onChange={(next) => {
+                          setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: next }));
+                          const overrides = next
+                            .map((item) => ({
+                              displayName: item.displayName,
+                              canonicalName: item.canonicalName,
+                              ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
+                            }))
+                            .filter((item) => item.displayName && item.canonicalName);
+                          updateDay(day, { ingredientOverrides: overrides });
+                        }}
+                        categories={categories}
+                        onCategoryCreated={handleCategoryCreated}
+                      />
+                    </div>
+                  ) : null}
 
                   <div className="kitchen-actions">
                     {user?.role === "admin" ? (

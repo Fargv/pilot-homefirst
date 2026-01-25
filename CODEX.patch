@@ -1,476 +1,525 @@
-diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index c10902f52a37086fce79503c593ead78d5560dce..f5eedbe650284f16796f72e7a5f305de91fe7324 100644
---- a/frontend/src/kitchen/kitchen.css
-+++ b/frontend/src/kitchen/kitchen.css
-@@ -339,77 +339,131 @@
+diff --git a/backend/src/kitchen/routes/shopping.js b/backend/src/kitchen/routes/shopping.js
+index c143af2a46694a0420b782ad0b928117f7c93fd8..6e4ba5f81931ad69aacdea49ab772e6a278b192e 100644
+--- a/backend/src/kitchen/routes/shopping.js
++++ b/backend/src/kitchen/routes/shopping.js
+@@ -1,60 +1,60 @@
+ import express from "express";
+ import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
+ import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
+ import { KitchenDish } from "../models/KitchenDish.js";
+ import { requireAuth } from "../middleware.js";
+ import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
+-import { normalizeIngredientList } from "../utils/normalize.js";
++import { combineDayIngredients } from "../utils/ingredients.js";
+ 
+ const router = express.Router();
+ 
+ async function ensureShoppingList(weekStartDate) {
+   const existing = await KitchenShoppingList.findOne({ weekStart: weekStartDate });
+   if (existing) return existing;
+   return KitchenShoppingList.create({ weekStart: weekStartDate, items: [] });
  }
  
- .kitchen-dishes-page {
-   display: flex;
-   flex-direction: column;
-   gap: 20px;
- }
+ async function buildFromWeek(weekStartDate) {
+   const plan = await KitchenWeekPlan.findOne({ weekStart: weekStartDate });
+   if (!plan) return [];
  
- .kitchen-dishes-header {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 16px;
-   align-items: center;
-   justify-content: space-between;
- }
+   const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
+   const dishes = await KitchenDish.find({ _id: { $in: dishIds } });
+   const dishMap = new Map(dishes.map((dish) => [dish._id.toString(), dish]));
  
- .kitchen-dishes-header h2 {
-   margin: 0;
-   font-size: 24px;
- }
- 
- .kitchen-dishes-header .kitchen-muted {
-   margin-top: 4px;
- }
- 
--.kitchen-dishes-search {
--  display: flex;
--}
+   const ingredients = [];
+   plan.days.forEach((day) => {
+     const main = day.mainDishId ? dishMap.get(day.mainDishId.toString()) : null;
+     const side = day.sideDishId ? dishMap.get(day.sideDishId.toString()) : null;
 -
--.kitchen-dishes-grid {
--  display: grid;
--  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
--  gap: 16px;
--}
+-    const baseIngredients = [];
+-    if (main) baseIngredients.push(...main.ingredients);
+-    if (side) baseIngredients.push(...side.ingredients);
 -
--.kitchen-dish-card {
--  background: white;
--  border-radius: 14px;
--  padding: 16px;
--  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
--  display: flex;
--  align-items: flex-start;
--  justify-content: space-between;
--  gap: 16px;
--  min-height: 96px;
--}
--
--.kitchen-dish-name {
--  margin: 0 0 6px;
--  font-size: 16px;
--}
--
-+.kitchen-dishes-search {
-+  display: flex;
-+}
-+
-+.kitchen-dishes-tabs {
-+  display: inline-flex;
-+  gap: 8px;
-+  padding: 6px;
-+  border-radius: 12px;
-+  background: #f1f5f9;
-+  align-self: flex-start;
-+}
-+
-+.kitchen-tab-button {
-+  border: none;
-+  background: transparent;
-+  padding: 8px 16px;
-+  border-radius: 10px;
-+  font-weight: 600;
-+  color: #475569;
-+  cursor: pointer;
-+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-+}
-+
-+.kitchen-tab-button.is-active {
-+  background: white;
-+  color: #1e293b;
-+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-+}
-+
-+.kitchen-tab-button:focus-visible {
-+  outline: 3px solid rgba(79, 70, 229, 0.35);
-+  outline-offset: 2px;
-+}
-+
-+.kitchen-dishes-grid {
-+  display: grid;
-+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-+  gap: 16px;
-+}
-+
-+.kitchen-dish-card {
-+  background: white;
-+  border-radius: 14px;
-+  padding: 16px;
-+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
-+  display: flex;
-+  align-items: flex-start;
-+  justify-content: space-between;
-+  gap: 16px;
-+  min-height: 96px;
-+}
-+
-+.kitchen-dish-card.is-sidedish {
-+  background: #f8fafc;
-+  border: 1px solid #e2e8f0;
-+}
-+
-+.kitchen-dish-title-row {
-+  display: flex;
-+  flex-wrap: wrap;
-+  align-items: center;
-+  gap: 8px;
-+}
-+
-+.kitchen-dish-name {
-+  margin: 0 0 6px;
-+  font-size: 16px;
-+}
-+
-+.kitchen-dish-badge {
-+  display: inline-flex;
-+  align-items: center;
-+  padding: 2px 10px;
-+  border-radius: 999px;
-+  font-size: 11px;
-+  font-weight: 600;
-+  color: #1d4ed8;
-+  background: #dbeafe;
-+}
-+
- .kitchen-dish-ingredients-text {
-   margin: 0;
-   color: #667085;
-   font-size: 13px;
-   line-height: 1.4;
-   display: -webkit-box;
-   -webkit-line-clamp: 2;
-   -webkit-box-orient: vertical;
-   overflow: hidden;
+-    const overrides = normalizeIngredientList(day.ingredientOverrides || []);
+-    ingredients.push(...baseIngredients, ...overrides);
++    ingredients.push(
++      ...combineDayIngredients({
++        mainDish: main,
++        sideDish: side,
++        overrides: day.ingredientOverrides
++      })
++    );
+   });
+ 
+   return ingredients;
  }
  
- .kitchen-dish-actions {
-   display: flex;
-   gap: 8px;
-   align-items: center;
+ router.get("/:weekStart", requireAuth, async (req, res) => {
+   const weekStart = parseISODate(req.params.weekStart);
+   if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+ 
+   const monday = getWeekStart(weekStart);
+   const list = await ensureShoppingList(monday);
+ 
+   res.json({ ok: true, weekStart: formatDateISO(monday), list });
+ });
+ 
+ router.post("/:weekStart/rebuild", requireAuth, async (req, res) => {
+   const weekStart = parseISODate(req.params.weekStart);
+   if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+ 
+   const monday = getWeekStart(weekStart);
+   const list = await ensureShoppingList(monday);
+ 
+   const ingredients = await buildFromWeek(monday);
+   const merged = new Map();
+ 
+diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
+index 36982e37f775b00ae09aa5349de17f1d19914a78..adf72f03851a1a07dafe395ef6abd27ee229bcd3 100644
+--- a/frontend/src/kitchen/pages/WeekPage.jsx
++++ b/frontend/src/kitchen/pages/WeekPage.jsx
+@@ -28,68 +28,89 @@ function formatDateLabel(dateString) {
  }
  
- .kitchen-icon-button {
-   border: 1px solid #e2e8f0;
-   background: white;
-   width: 44px;
-   height: 44px;
-   border-radius: 12px;
-   display: inline-flex;
-   align-items: center;
-diff --git a/frontend/src/kitchen/pages/DishesPage.jsx b/frontend/src/kitchen/pages/DishesPage.jsx
-index e8c60fe64286f4ecf7b3eafaee13be01b0a13b0a..4b7ce54cab96093b32d87c2ef6746de7adfdff2f 100644
---- a/frontend/src/kitchen/pages/DishesPage.jsx
-+++ b/frontend/src/kitchen/pages/DishesPage.jsx
-@@ -1,168 +1,212 @@
- import React, { useCallback, useEffect, useMemo, useState } from "react";
- import { apiRequest } from "../api.js";
- import KitchenLayout from "../Layout.jsx";
- import { useAuth } from "../auth";
- import DishModal from "../components/DishModal.jsx";
- import { normalizeIngredientName } from "../utils/normalize.js";
+ function addDaysToISO(dateString, days) {
+   const [year, month, day] = dateString.split("-").map(Number);
+   const date = new Date(Date.UTC(year, month - 1, day));
+   date.setUTCDate(date.getUTCDate() + days);
+   return date.toISOString().slice(0, 10);
+ }
  
- export default function DishesPage() {
-   const { user } = useAuth();
-   const [dishes, setDishes] = useState([]);
--  const [categories, setCategories] = useState([]);
-+  const [categories, setCategories] = useState([]);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState("");
--  const [isModalOpen, setIsModalOpen] = useState(false);
--  const [activeDish, setActiveDish] = useState(null);
--  const [searchTerm, setSearchTerm] = useState("");
-+  const [isModalOpen, setIsModalOpen] = useState(false);
-+  const [activeDish, setActiveDish] = useState(null);
-+  const [searchTerm, setSearchTerm] = useState("");
-+  const [activeTab, setActiveTab] = useState("main");
-+  const [initialSidedish, setInitialSidedish] = useState(false);
- 
-   const loadDishes = async () => {
-     setLoading(true);
-     setError("");
-     try {
-       const data = await apiRequest("/api/kitchen/dishes");
-       setDishes(data.dishes || []);
-     } catch (err) {
-       setError(err.message || "No se pudieron cargar los platos.");
-     } finally {
-       setLoading(false);
-     }
-   };
- 
-   useEffect(() => {
-     loadDishes();
-   }, []);
- 
-   const loadCategories = async () => {
-     try {
-       const data = await apiRequest("/api/categories");
-       setCategories(data.categories || []);
-     } catch (err) {
-       setError(err.message || "No se pudieron cargar las categorías.");
-     }
-   };
- 
-   useEffect(() => {
-     loadCategories();
-   }, []);
- 
-   const startEdit = useCallback(
-     (dish) => {
-       setError("");
-       setActiveDish(dish);
-       setIsModalOpen(true);
-     },
-     []
-   );
- 
--  const startCreate = () => {
--    setActiveDish(null);
-+  const startCreate = () => {
-+    setActiveDish(null);
-     setError("");
--    setIsModalOpen(true);
-+    setInitialSidedish(activeTab === "side");
-+    setIsModalOpen(true);
-   };
- 
-   const closeModal = () => {
-     setIsModalOpen(false);
-     setActiveDish(null);
-   };
- 
-   const onCategoryCreated = async (name, colors = null) => {
-     const data = await apiRequest("/api/categories", {
-       method: "POST",
-       body: JSON.stringify({
-         name,
-         colorBg: colors?.colorBg,
-         colorText: colors?.colorText
-       })
-     });
-     const category = data.category;
-     setCategories((prev) => {
-       const exists = prev.find((item) => item._id === category._id);
-       if (exists) return prev;
-       return [...prev, category];
-     });
-     return category;
-   };
- 
--  const normalizedSearch = useMemo(() => normalizeIngredientName(searchTerm), [searchTerm]);
--  const visibleDishes = useMemo(() => {
--    if (!normalizedSearch) return dishes;
--    return dishes.filter((dish) => {
--      const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
--      if (nameMatch) return true;
--      return (dish.ingredients || []).some((item) => {
--        const displayName = normalizeIngredientName(item.displayName || "");
--        const canonicalName = normalizeIngredientName(item.canonicalName || "");
--        return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
--      });
--    });
--  }, [dishes, normalizedSearch]);
-+  const normalizedSearch = useMemo(() => normalizeIngredientName(searchTerm), [searchTerm]);
-+  const tabFilteredDishes = useMemo(() => {
-+    const shouldShowSide = activeTab === "side";
-+    return dishes.filter((dish) => Boolean(dish.sidedish) === shouldShowSide);
-+  }, [activeTab, dishes]);
-+  const visibleDishes = useMemo(() => {
-+    if (!normalizedSearch) return tabFilteredDishes;
-+    return tabFilteredDishes.filter((dish) => {
-+      const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
-+      if (nameMatch) return true;
-+      return (dish.ingredients || []).some((item) => {
-+        const displayName = normalizeIngredientName(item.displayName || "");
-+        const canonicalName = normalizeIngredientName(item.canonicalName || "");
-+        return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
-+      });
-+    });
-+  }, [normalizedSearch, tabFilteredDishes]);
-+
-+  const emptyMessage = useMemo(() => {
-+    if (dishes.length === 0) {
-+      return "No hay platos aún. Crea el primero.";
-+    }
-+    if (visibleDishes.length === 0) {
-+      if (searchTerm.trim()) {
-+        return "No encontramos platos con ese criterio.";
-+      }
-+      return activeTab === "side"
-+        ? "No hay guarniciones aún. Crea la primera."
-+        : "No hay platos principales aún. Crea el primero.";
-+    }
-+    return "";
-+  }, [activeTab, dishes.length, searchTerm, visibleDishes.length]);
- 
+ function ChevronIcon(props) {
    return (
-     <KitchenLayout>
-       <div className="kitchen-dishes-page">
--        <div className="kitchen-dishes-header">
--          <div>
--            <h2>Platos</h2>
--            <p className="kitchen-muted">Administra tus platos y sus ingredientes en un solo lugar.</p>
--          </div>
--          <button className="kitchen-button" type="button" onClick={startCreate}>
--            Nuevo plato
--          </button>
--        </div>
--        <div className="kitchen-dishes-search">
--          <input
--            className="kitchen-input"
--            placeholder="Buscar por plato o ingrediente…"
--            value={searchTerm}
--            onChange={(event) => setSearchTerm(event.target.value)}
--          />
-+        <div className="kitchen-dishes-header">
-+          <div>
-+            <h2>Platos</h2>
-+            <p className="kitchen-muted">Administra tus platos y sus ingredientes en un solo lugar.</p>
-+          </div>
-+          <button className="kitchen-button" type="button" onClick={startCreate}>
-+            {activeTab === "side" ? "Nueva guarnición" : "Nuevo plato"}
-+          </button>
-         </div>
--        {loading ? (
--          <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
--        ) : visibleDishes.length === 0 ? (
--          <div className="kitchen-card kitchen-empty">
--            <p>
--              {dishes.length === 0
--                ? "No hay platos aún. Crea el primero."
--                : "No encontramos platos con ese criterio."}
--            </p>
--          </div>
--        ) : (
--          <div className="kitchen-dishes-grid">
--            {visibleDishes.map((dish) => {
--              const ingredientsText =
--                (dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes";
--              return (
--                <article className="kitchen-dish-card" key={dish._id}>
--                  <div>
--                    <h3 className="kitchen-dish-name">{dish.name}</h3>
--                    <p className="kitchen-dish-ingredients-text" title={ingredientsText}>
--                      {ingredientsText}
--                    </p>
--                  </div>
--                  <div className="kitchen-dish-actions">
-+        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Tipos de platos">
-+          <button
-+            className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
-+            type="button"
-+            role="tab"
-+            aria-selected={activeTab === "main"}
-+            onClick={() => setActiveTab("main")}
-+          >
-+            Platos
-+          </button>
-+          <button
-+            className={`kitchen-tab-button ${activeTab === "side" ? "is-active" : ""}`}
-+            type="button"
-+            role="tab"
-+            aria-selected={activeTab === "side"}
-+            onClick={() => setActiveTab("side")}
-+          >
-+            Guarniciones
-+          </button>
-+        </div>
-+        <div className="kitchen-dishes-search">
-+          <input
-+            className="kitchen-input"
-+            placeholder="Buscar por plato o ingrediente…"
-+            value={searchTerm}
-+            onChange={(event) => setSearchTerm(event.target.value)}
-+          />
-+        </div>
-+        {loading ? (
-+          <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
-+        ) : visibleDishes.length === 0 ? (
-+          <div className="kitchen-card kitchen-empty">
-+            <p>{emptyMessage}</p>
-+          </div>
-+        ) : (
-+          <div className="kitchen-dishes-grid">
-+            {visibleDishes.map((dish) => {
-+              const ingredientsText =
-+                (dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes";
-+              return (
-+                <article
-+                  className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
-+                  key={dish._id}
-+                >
-+                  <div>
-+                    <div className="kitchen-dish-title-row">
-+                      <h3 className="kitchen-dish-name">{dish.name}</h3>
-+                      {dish.sidedish ? <span className="kitchen-dish-badge">Guarnición</span> : null}
-+                    </div>
-+                    <p className="kitchen-dish-ingredients-text" title={ingredientsText}>
-+                      {ingredientsText}
-+                    </p>
-+                  </div>
-+                  <div className="kitchen-dish-actions">
-                     <button
-                       className="kitchen-icon-button"
-                       type="button"
-                       onClick={() => startEdit(dish)}
-                       aria-label={`Editar ${dish.name}`}
-                     >
-                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                         <path
-                           d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
-                           fill="none"
-                           stroke="currentColor"
-                           strokeWidth="1.5"
-                           strokeLinecap="round"
-                           strokeLinejoin="round"
-                         />
-                         <path
-                           d="M15.75 5.625 18.375 8.25"
-                           fill="none"
-                           stroke="currentColor"
-                           strokeWidth="1.5"
-                           strokeLinecap="round"
-                         />
-                       </svg>
-                     </button>
-                     {user?.role === "admin" ? (
-@@ -190,31 +234,32 @@ export default function DishesPage() {
-                             fill="none"
-                             stroke="currentColor"
-                             strokeWidth="1.5"
-                             strokeLinecap="round"
-                             strokeLinejoin="round"
-                           />
-                         </svg>
+     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+       <path d="M15 18l-6-6 6-6" />
+     </svg>
+   );
+ }
+ 
+ function getInitials(name) {
+   if (!name) return "";
+   const parts = name.trim().split(/\s+/).filter(Boolean);
+   if (!parts.length) return "";
+   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+ }
+ 
+-const MAX_DISH_RESULTS = 8;
+-
++const MAX_DISH_RESULTS = 8;
++
++function mergeIngredientLists(...lists) {
++  const merged = new Map();
++  lists.flat().filter(Boolean).forEach((item) => {
++    const displayName = String(item?.displayName || "").trim();
++    const canonicalName = String(
++      item?.canonicalName || normalizeIngredientName(displayName)
++    ).trim();
++    if (!displayName || !canonicalName) return;
++    const key = item?.ingredientId || canonicalName;
++    if (!merged.has(key)) {
++      merged.set(key, {
++        ...item,
++        displayName,
++        canonicalName
++      });
++    }
++  });
++  return Array.from(merged.values());
++}
++
+ export default function WeekPage() {
+   const { user } = useAuth();
+   const [weekStart, setWeekStart] = useState(getMondayISO());
+   const [plan, setPlan] = useState(null);
+   const [dishes, setDishes] = useState([]);
+   const [sideDishes, setSideDishes] = useState([]);
+   const [users, setUsers] = useState([]);
+   const [categories, setCategories] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [loadError, setLoadError] = useState("");
+   const [dayStatus, setDayStatus] = useState({});
+   const [dayErrors, setDayErrors] = useState({});
+-  const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
+-  const [selectedDay, setSelectedDay] = useState("");
+-  const [editingDays, setEditingDays] = useState({});
+-  const [sideDishEnabled, setSideDishEnabled] = useState({});
++  const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
++  const [extraIngredientsEnabled, setExtraIngredientsEnabled] = useState({});
++  const [selectedDay, setSelectedDay] = useState("");
++  const [editingDays, setEditingDays] = useState({});
++  const [sideDishEnabled, setSideDishEnabled] = useState({});
+   const [showCarouselControls, setShowCarouselControls] = useState(false);
+   const [activeIndex, setActiveIndex] = useState(0);
+   const [mainDishQueries, setMainDishQueries] = useState({});
+   const [mainDishOpen, setMainDishOpen] = useState({});
+   const [sideDishQueries, setSideDishQueries] = useState({});
+   const [sideDishOpen, setSideDishOpen] = useState({});
+   const [assigneeOpen, setAssigneeOpen] = useState({});
+   const [dishModalOpen, setDishModalOpen] = useState(false);
+   const [dishModalName, setDishModalName] = useState("");
+   const [dishModalDayKey, setDishModalDayKey] = useState(null);
+   const [dishModalMode, setDishModalMode] = useState("main");
+   const [dishModalSidedish, setDishModalSidedish] = useState(false);
+   const ingredientCache = useRef(new Map());
+   const saveTimers = useRef({});
+   const carouselRef = useRef(null);
+   const dayRefs = useRef(new Map());
+   const mainDishRefs = useRef(new Map());
+   const sideDishRefs = useRef(new Map());
+   const selectedDayRef = useRef(selectedDay);
+   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
+ 
+   const loadData = async () => {
+     setLoading(true);
+     setLoadError("");
+     try {
+@@ -322,56 +343,60 @@ export default function WeekPage() {
+       });
+       setPlan(data.plan);
+       setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
+       if (saveTimers.current[dayKey]) {
+         clearTimeout(saveTimers.current[dayKey]);
+       }
+       saveTimers.current[dayKey] = window.setTimeout(() => {
+         setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
+       }, 2000);
+       return data.plan;
+     } catch (err) {
+       const message = err.message || "No se pudo actualizar el día.";
+       setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
+       setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
+       return null;
+     }
+   };
+ 
+   const onAssignSelf = async (day) => {
+     return updateDay(day, { cookUserId: user?.id || user?._id });
+   };
+ 
+   const startEditingDay = (day) => {
+     const dayKey = day.date.slice(0, 10);
+     const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
+-    const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
+-    setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
+-    setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
+-    setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
+-    setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-    setSideDishQueries((prev) => ({ ...prev, [dayKey]: sideDishName || "" }));
++    const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
++    setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
++    setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
++    setExtraIngredientsEnabled((prev) => ({
++      ...prev,
++      [dayKey]: Boolean(day.ingredientOverrides?.length)
++    }));
++    setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
++    setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++    setSideDishQueries((prev) => ({ ...prev, [dayKey]: sideDishName || "" }));
+     setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+   };
+ 
+   const stopEditingDay = (dayKey) => {
+     setEditingDays((prev) => ({ ...prev, [dayKey]: false }));
+     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+     setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+   };
+ 
+   const focusMainDish = (dayKey) => {
+     window.requestAnimationFrame(() => {
+       const node = mainDishRefs.current.get(dayKey);
+       if (node) {
+         node.focus();
+       }
+     });
+   };
+ 
+   const handleAssignCta = async (day, canEdit, isAssigned) => {
+     const dayKey = day.date.slice(0, 10);
+     if (canEdit) {
+       startEditingDay(day);
+       focusMainDish(dayKey);
+       return;
+     }
+@@ -557,94 +582,99 @@ export default function WeekPage() {
+             return (
+               <div key={`day-${index}`} className="kitchen-card kitchen-day-card">
+                 <div className="kitchen-day-header">
+                   <h3 className="kitchen-day-title">Día sin fecha</h3>
+                   <p className="kitchen-muted">Falta la fecha de este día en la planificación.</p>
+                 </div>
+               </div>
+             );
+           }
+           const dayKey = day.date.slice(0, 10);
+           const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
+           const cookInitials = getInitials(cookUser?.displayName);
+           const cookColors = getUserColor(day.cookUserId);
+           const isAssigned = Boolean(day.cookUserId);
+           const isPlanned = Boolean(day.mainDishId);
+           const isAssignedToSelf = day.cookUserId
+             && (day.cookUserId === user?.id || day.cookUserId === user?._id);
+           const canEdit = user?.role === "admin" || isAssignedToSelf;
+           const isEditing = Boolean(editingDays[dayKey]);
+           const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
+           const sideDish = day.sideDishId ? dishMap.get(day.sideDishId) : null;
+           const showSideDish = Boolean(sideDish);
+           const sideDishOn = Boolean(sideDishEnabled[dayKey]);
+           const sideToggleId = `side-toggle-${dayKey}`;
+           const isEmptyState = !isPlanned && !isEditing;
+-          const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
+-          const baseIngredients = mainDish?.ingredients || [];
+-          const extraIngredients = day.ingredientOverrides || [];
+-          const extraIngredientsValue =
+-            extraIngredientsByDay[dayKey] ||
++          const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
++          const baseIngredients = mergeIngredientLists(
++            mainDish?.ingredients || [],
++            sideDish?.ingredients || []
++          );
++          const extraIngredients = day.ingredientOverrides || [];
++          const extraIngredientsValue =
++            extraIngredientsByDay[dayKey] ||
+             extraIngredients.map((item) => ({
+               ingredientId: item.ingredientId,
+               displayName: item.displayName,
+               canonicalName: item.canonicalName,
+               status: item.ingredientId ? "resolved" : "pending"
+             }));
+           const mainDishQuery = mainDishQueries[dayKey] ?? mainDish?.name ?? "";
+           const trimmedMainDishQuery = mainDishQuery.trim();
+           const normalizedMainDishQuery = normalizeIngredientName(trimmedMainDishQuery);
+           const mainDishTokens = normalizedMainDishQuery.split(" ").filter(Boolean);
+           const filteredMainDishes = mainDishTokens.length
+             ? dishes.filter((dish) => {
+               const normalizedName = normalizeIngredientName(dish.name || "");
+               return mainDishTokens.every((token) => normalizedName.includes(token));
+             })
+             : [];
+           const limitedMainDishes = filteredMainDishes.slice(0, MAX_DISH_RESULTS);
+           const hasExactMainDishMatch = mainDishTokens.length
+             ? dishes.some(
+               (dish) => normalizeIngredientName(dish.name || "") === normalizedMainDishQuery
+             )
+             : false;
+-          const sideDishQuery = sideDishQueries[dayKey] ?? sideDish?.name ?? "";
++          const sideDishQuery = sideDishQueries[dayKey] ?? sideDish?.name ?? "";
+           const trimmedSideDishQuery = sideDishQuery.trim();
+           const normalizedSideDishQuery = normalizeIngredientName(trimmedSideDishQuery);
+           const sideDishTokens = normalizedSideDishQuery.split(" ").filter(Boolean);
+           const filteredSideDishes = sideDishTokens.length
+             ? sideDishes.filter((dish) => {
+               const normalizedName = normalizeIngredientName(dish.name || "");
+               return sideDishTokens.every((token) => normalizedName.includes(token));
+             })
+             : [];
+           const limitedSideDishes = filteredSideDishes.slice(0, MAX_DISH_RESULTS);
+-          const hasExactSideDishMatch = sideDishTokens.length
+-            ? sideDishes.some(
+-              (dish) => normalizeIngredientName(dish.name || "") === normalizedSideDishQuery
+-            )
+-            : false;
+-          const statusLabels = [];
++          const hasExactSideDishMatch = sideDishTokens.length
++            ? sideDishes.some(
++              (dish) => normalizeIngredientName(dish.name || "") === normalizedSideDishQuery
++            )
++            : false;
++          const extrasOn = extraIngredientsEnabled[dayKey] ?? Boolean(extraIngredients.length);
++          const extrasToggleId = `extras-toggle-${dayKey}`;
++          const statusLabels = [];
+           if (isAssigned) {
+             statusLabels.push({
+               label: isAssignedToSelf ? "Asignado a ti" : "Asignado",
+               type: "assigned"
+             });
+           }
+           if (isPlanned) {
+             statusLabels.push({ label: "Planificado", type: "planned" });
+           }
+           return (
+             <div
+               key={day.date}
+               id={`kitchen-day-${dayKey}`}
+               className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""}`}
+               tabIndex={-1}
+               ref={(node) => {
+                 if (!node) {
+                   dayRefs.current.delete(dayKey);
+                   return;
+                 }
+                 dayRefs.current.set(dayKey, node);
+               }}
+             >
+               <div className="kitchen-day-header">
+                 <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
+@@ -730,54 +760,54 @@ export default function WeekPage() {
+                       <button
+                         type="button"
+                         className="kitchen-button"
+                         onClick={() => handleAssignCta(day, canEdit, isAssigned)}
+                       >
+                         Asignar plato
                        </button>
                      ) : null}
+                     <div className="kitchen-day-ingredients">
+                       <span className="kitchen-label">Ingredientes</span>
+                       <div className="kitchen-day-ingredient-pills">
+                         {baseIngredients.length ? (
+                           baseIngredients.map((item) => (
+                             <span
+                               key={item.ingredientId || item.canonicalName || item.displayName}
+                               className="kitchen-ingredient-pill"
+                             >
+                               {item.displayName}
+                             </span>
+                           ))
+                         ) : (
+                           <span className="kitchen-muted">Sin ingredientes base.</span>
+                         )}
+                       </div>
+                     </div>
+-                    {extraIngredients.length ? (
+-                      <div className="kitchen-day-ingredients">
+-                        <span className="kitchen-label">Extras</span>
+-                        <div className="kitchen-day-ingredient-pills is-extra">
++                    {extraIngredients.length && extrasOn ? (
++                      <div className="kitchen-day-ingredients">
++                        <span className="kitchen-label">Extras</span>
++                        <div className="kitchen-day-ingredient-pills is-extra">
+                           {extraIngredients.map((item) => (
+                             <span key={item.ingredientId || item.canonicalName || item.displayName} className="kitchen-ingredient-pill is-extra">
+                               {item.displayName}
+                             </span>
+                           ))}
+                         </div>
+                       </div>
+                     ) : null}
                    </div>
-                 </article>
-               );
-             })}
-           </div>
-         )}
-         {error ? <div className="kitchen-alert error">{error}</div> : null}
-       </div>
+                 )
+               ) : (
+                 <>
+                   <label className="kitchen-field">
+                     <span className="kitchen-label">Plato principal</span>
+                     <div className="kitchen-ingredient-search">
+                       <input
+                         ref={(node) => {
+                           if (!node) {
+                             mainDishRefs.current.delete(dayKey);
+                             return;
+                           }
+                           mainDishRefs.current.set(dayKey, node);
+                         }}
+                         className="kitchen-input"
+                         value={mainDishQuery}
+@@ -1003,69 +1033,94 @@ export default function WeekPage() {
+                       onChange={(event) => updateDay(day, { cookTiming: event.target.value })}
+                     >
+                       <option value="previous_day">Día anterior</option>
+                       <option value="same_day">Mismo día</option>
+                     </select>
+                   </label>
  
-       <DishModal
-         isOpen={isModalOpen}
-         onClose={closeModal}
-         onSaved={async () => {
-           await loadDishes();
-         }}
-         categories={categories}
--        onCategoryCreated={onCategoryCreated}
--        initialDish={activeDish}
--      />
-+        onCategoryCreated={onCategoryCreated}
-+        initialDish={activeDish}
-+        initialSidedish={initialSidedish}
-+      />
-     </KitchenLayout>
-   );
- }
+                   <div className="kitchen-day-ingredients">
+                     <span className="kitchen-label">Ingredientes base</span>
+                     <div className="kitchen-day-ingredient-pills">
+                       {baseIngredients.length ? (
+                         baseIngredients.map((item) => (
+                           <span
+                             key={item.ingredientId || item.canonicalName || item.displayName}
+                             className="kitchen-ingredient-pill"
+                           >
+                             {item.displayName}
+                           </span>
+                         ))
+                       ) : (
+                         <span className="kitchen-muted">Sin ingredientes base.</span>
+                       )}
+                     </div>
+                   </div>
+ 
+-                  <div className="kitchen-field kitchen-day-ingredients">
+-                    <span className="kitchen-label">Extras</span>
+-                    <IngredientPicker
+-                      value={extraIngredientsValue}
+-                      onChange={(next) => {
+-                        setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: next }));
+-                        const overrides = next
+-                          .map((item) => ({
+-                            displayName: item.displayName,
+-                            canonicalName: item.canonicalName,
+-                            ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
+-                          }))
+-                          .filter((item) => item.displayName && item.canonicalName);
+-                        updateDay(day, { ingredientOverrides: overrides });
+-                      }}
+-                      categories={categories}
+-                      onCategoryCreated={handleCategoryCreated}
+-                    />
+-                  </div>
++                  <div className="kitchen-field kitchen-toggle-field">
++                    <div className="kitchen-toggle-row">
++                      <span className="kitchen-label">Añadir extras</span>
++                      <label className="kitchen-toggle" htmlFor={extrasToggleId}>
++                        <input
++                          id={extrasToggleId}
++                          type="checkbox"
++                          className="kitchen-toggle-input"
++                          checked={extrasOn}
++                          onChange={(event) => {
++                            const nextValue = event.target.checked;
++                            setExtraIngredientsEnabled((prev) => ({ ...prev, [dayKey]: nextValue }));
++                            if (!nextValue) {
++                              setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: [] }));
++                              updateDay(day, { ingredientOverrides: [] });
++                            }
++                          }}
++                        />
++                        <span className="kitchen-toggle-track" aria-hidden="true" />
++                      </label>
++                    </div>
++                  </div>
++
++                  {extrasOn ? (
++                    <div className="kitchen-field kitchen-day-ingredients">
++                      <span className="kitchen-label">Extras</span>
++                      <IngredientPicker
++                        value={extraIngredientsValue}
++                        onChange={(next) => {
++                          setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: next }));
++                          const overrides = next
++                            .map((item) => ({
++                              displayName: item.displayName,
++                              canonicalName: item.canonicalName,
++                              ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
++                            }))
++                            .filter((item) => item.displayName && item.canonicalName);
++                          updateDay(day, { ingredientOverrides: overrides });
++                        }}
++                        categories={categories}
++                        onCategoryCreated={handleCategoryCreated}
++                      />
++                    </div>
++                  ) : null}
+ 
+                   <div className="kitchen-actions">
+                     {user?.role === "admin" ? (
+                       <div className="kitchen-field">
+                         <span className="kitchen-label">Persona asignada</span>
+                         <div
+                           className="kitchen-assignee-picker"
+                           onBlur={(event) => {
+                             if (!event.currentTarget.contains(event.relatedTarget)) {
+                               setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+                             }
+                           }}
+                         >
+                           <button
+                             type="button"
+                             className="kitchen-assignee-button"
+                             onClick={() =>
+                               setAssigneeOpen((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))
+                             }
+                             aria-haspopup="listbox"
+                             aria-expanded={assigneeOpen[dayKey] ? "true" : "false"}
+                           >
+                             <span
+                               className="kitchen-assignee-avatar"
+                               style={{

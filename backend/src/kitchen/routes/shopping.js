@@ -4,7 +4,7 @@ import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { requireAuth } from "../middleware.js";
 import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
-import { normalizeIngredientList } from "../utils/normalize.js";
+import { combineDayIngredients } from "../utils/ingredients.js";
 
 const router = express.Router();
 
@@ -26,13 +26,13 @@ async function buildFromWeek(weekStartDate) {
   plan.days.forEach((day) => {
     const main = day.mainDishId ? dishMap.get(day.mainDishId.toString()) : null;
     const side = day.sideDishId ? dishMap.get(day.sideDishId.toString()) : null;
-
-    const baseIngredients = [];
-    if (main) baseIngredients.push(...main.ingredients);
-    if (side) baseIngredients.push(...side.ingredients);
-
-    const overrides = normalizeIngredientList(day.ingredientOverrides || []);
-    ingredients.push(...baseIngredients, ...overrides);
+    ingredients.push(
+      ...combineDayIngredients({
+        mainDish: main,
+        sideDish: side,
+        overrides: day.ingredientOverrides
+      })
+    );
   });
 
   return ingredients;
