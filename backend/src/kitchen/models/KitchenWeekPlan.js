@@ -4,6 +4,7 @@ const IngredientOverrideSchema = new mongoose.Schema(
   {
     displayName: { type: String, required: true, trim: true },
     canonicalName: { type: String, required: true, index: true },
+    ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient" },
     status: { type: String, enum: ["need", "have", "bought"], default: "need" }
   },
   { _id: false }
