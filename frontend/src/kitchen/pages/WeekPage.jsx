@@ -357,6 +357,26 @@ export default function WeekPage() {
     }
   };
 
+  const handleCategoryCreated = useCallback(async (name, color) => {
+    const payload = { name };
+    if (color?.colorBg) {
+      payload.colorBg = color.colorBg;
+      payload.colorText = color.colorText;
+    }
+    const data = await apiRequest("/api/categories", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    const category = data.category;
+    setCategories((prev) => {
+      if (prev.some((item) => item._id === category._id)) {
+        return prev;
+      }
+      return [...prev, category];
+    });
+    return category;
+  }, []);
+
   if (loading) {
     return (
       <KitchenLayout>
@@ -395,26 +415,6 @@ export default function WeekPage() {
     if (!element) return;
     element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
   };
-
-  const handleCategoryCreated = useCallback(async (name, color) => {
-    const payload = { name };
-    if (color?.colorBg) {
-      payload.colorBg = color.colorBg;
-      payload.colorText = color.colorText;
-    }
-    const data = await apiRequest("/api/categories", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    const category = data.category;
-    setCategories((prev) => {
-      if (prev.some((item) => item._id === category._id)) {
-        return prev;
-      }
-      return [...prev, category];
-    });
-    return category;
-  }, []);
 
   return (
     <KitchenLayout>

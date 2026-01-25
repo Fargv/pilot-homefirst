@@ -1,462 +1,159 @@
-diff --git a/frontend/src/kitchen/components/WeekDaysStrip.jsx b/frontend/src/kitchen/components/WeekDaysStrip.jsx
-index 669c45a1183fd334e9fdd98c2407e8998731053b..a83eb90a0225dcb4f34d0d07e5ce9951a4eaad21 100644
---- a/frontend/src/kitchen/components/WeekDaysStrip.jsx
-+++ b/frontend/src/kitchen/components/WeekDaysStrip.jsx
-@@ -1,93 +1,105 @@
- import React, { useEffect, useMemo, useRef, useState } from "react";
- import { getUnassignedColor, getUserColor } from "../utils/userColors";
- 
- const DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
- const DAY_LONG = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
- 
- function getDayAbbreviation(dateString) {
-+  if (!dateString) return "-";
-   const date = new Date(dateString);
-+  if (Number.isNaN(date.getTime())) {
-+    return "-";
-+  }
-   return DAY_LABELS[date.getDay()];
- }
- 
- function getDayLong(dateString) {
-+  if (!dateString) return "sin fecha";
-   const date = new Date(dateString);
-+  if (Number.isNaN(date.getTime())) {
-+    return "sin fecha";
-+  }
-   return DAY_LONG[date.getDay()];
- }
- 
- function getInitials(name) {
-   if (!name) return "";
-   const parts = name.trim().split(/\s+/).filter(Boolean);
-   if (!parts.length) return "";
-   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
- }
- 
- function ChevronIcon(props) {
-   return (
-     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-       <path d="M15 18l-6-6 6-6" />
-     </svg>
-   );
- }
- 
- export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay }) {
-   const scrollRef = useRef(null);
-   const [isCarousel, setIsCarousel] = useState(false);
-+  const safeDays = useMemo(() => (Array.isArray(days) ? days : []), [days]);
- 
-   const entries = useMemo(() => {
--    return days.map((day) => {
--      const dayKey = day.date.slice(0, 10);
-+    return safeDays.map((day, index) => {
-+      const dayKey = day?.date ? day.date.slice(0, 10) : `day-${index}`;
-       const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
-       const initials = cookUser ? getInitials(cookUser.displayName) : "";
-       return {
-         key: dayKey,
-         date: day.date,
-         isAssigned: Boolean(day.cookUserId),
-         cookUserId: day.cookUserId,
-         cookName: cookUser?.displayName || "Sin asignar",
-         initials
-       };
-     });
--  }, [days, userMap]);
-+  }, [safeDays, userMap]);
- 
-   useEffect(() => {
-     const element = scrollRef.current;
-     if (!element) return;
- 
-     const updateCarousel = () => {
-       const shouldCarousel = element.scrollWidth > element.clientWidth + 1;
-       setIsCarousel(shouldCarousel);
-     };
- 
-     updateCarousel();
--    const observer = new ResizeObserver(updateCarousel);
--    observer.observe(element);
-+    let observer;
-+    if (typeof ResizeObserver !== "undefined") {
-+      observer = new ResizeObserver(updateCarousel);
-+      observer.observe(element);
-+    }
-     window.addEventListener("resize", updateCarousel);
- 
-     return () => {
--      observer.disconnect();
-+      observer?.disconnect();
-       window.removeEventListener("resize", updateCarousel);
-     };
-   }, []);
- 
-   const handleSelect = (entry) => {
-     if (!entry) return;
-     onSelectDay(entry.key);
-   };
- 
-   const scrollByOffset = (direction) => {
-     const element = scrollRef.current;
-     if (!element) return;
-     const scrollAmount = Math.min(240, element.clientWidth * 0.8);
-     element.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
-   };
- 
-   return (
-     <section className="kitchen-weekdays-strip kitchen-card" aria-label="Panel de días">
-       <div className={`kitchen-weekdays-carousel ${isCarousel ? "is-carousel" : ""}`}>
-         {isCarousel ? (
-           <button
-             className="kitchen-weekdays-arrow is-left"
-             type="button"
-             onClick={() => scrollByOffset(-1)}
-             aria-label="Desplazar días a la izquierda"
 diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
-index 8103f27de2639774331f45ee1e7077b5e8fb0088..c8bc3e129400494b7166a71fe41b8cd1395b7fad 100644
+index 521553ea87f294c48f024e14942330eece8405b1..175423f80a6e31aa9b7792e3a64e8bedd69f3383 100644
 --- a/frontend/src/kitchen/pages/WeekPage.jsx
 +++ b/frontend/src/kitchen/pages/WeekPage.jsx
-@@ -1,86 +1,93 @@
- import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
- import { apiRequest } from "../api.js";
- import { useAuth } from "../auth";
- import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
- import IngredientPicker from "../components/IngredientPicker.jsx";
- import KitchenLayout from "../Layout.jsx";
- import { normalizeIngredientName } from "../utils/normalize.js";
+@@ -319,125 +319,125 @@ export default function WeekPage() {
+   };
  
- function getMondayISO(date = new Date()) {
-   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-   const day = d.getUTCDay();
-   const diff = (day === 0 ? -6 : 1) - day;
-   d.setUTCDate(d.getUTCDate() + diff);
-   return d.toISOString().slice(0, 10);
- }
+   const startEditingDay = (day) => {
+     const dayKey = day.date.slice(0, 10);
+     const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
+     setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
+     setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
+     setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
+     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+   };
  
- function formatDateLabel(dateString) {
-+  if (!dateString) {
-+    return "Sin fecha";
-+  }
-   const date = new Date(dateString);
-+  if (Number.isNaN(date.getTime())) {
-+    return "Sin fecha";
-+  }
-   return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" });
- }
+   const stopEditingDay = (dayKey) => {
+     setEditingDays((prev) => ({ ...prev, [dayKey]: false }));
+     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+   };
  
- function addDaysToISO(dateString, days) {
-   const [year, month, day] = dateString.split("-").map(Number);
-   const date = new Date(Date.UTC(year, month - 1, day));
-   date.setUTCDate(date.getUTCDate() + days);
-   return date.toISOString().slice(0, 10);
- }
- 
- function ChevronIcon(props) {
-   return (
-     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-       <path d="M15 18l-6-6 6-6" />
-     </svg>
-   );
- }
- 
- export default function WeekPage() {
-   const { user } = useAuth();
-   const [weekStart, setWeekStart] = useState(getMondayISO());
-   const [plan, setPlan] = useState(null);
-   const [dishes, setDishes] = useState([]);
-   const [users, setUsers] = useState([]);
-   const [categories, setCategories] = useState([]);
-   const [loading, setLoading] = useState(true);
-   const [loadError, setLoadError] = useState("");
-   const [dayStatus, setDayStatus] = useState({});
-   const [dayErrors, setDayErrors] = useState({});
-   const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
-   const [selectedDay, setSelectedDay] = useState("");
-   const [editingDays, setEditingDays] = useState({});
-   const [sideDishEnabled, setSideDishEnabled] = useState({});
-   const [showCarouselControls, setShowCarouselControls] = useState(false);
-   const [activeIndex, setActiveIndex] = useState(0);
--  const [mainDishQueries, setMainDishQueries] = useState({});
--  const [mainDishOpen, setMainDishOpen] = useState({});
--  const ingredientCache = useRef(new Map());
--  const saveTimers = useRef({});
--  const carouselRef = useRef(null);
-+  const [mainDishQueries, setMainDishQueries] = useState({});
-+  const [mainDishOpen, setMainDishOpen] = useState({});
-+  const ingredientCache = useRef(new Map());
-+  const saveTimers = useRef({});
-+  const carouselRef = useRef(null);
-   const dayRefs = useRef(new Map());
--  const mainDishRefs = useRef(new Map());
--  const selectedDayRef = useRef(selectedDay);
-+  const mainDishRefs = useRef(new Map());
-+  const selectedDayRef = useRef(selectedDay);
-+  const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
- 
-   const loadData = async () => {
-     setLoading(true);
-     setLoadError("");
-     try {
-       const [planData, dishesData] = await Promise.all([
-         apiRequest(`/api/kitchen/weeks/${weekStart}`),
-         apiRequest("/api/kitchen/dishes")
-       ]);
-       setPlan(planData.plan);
-       setDishes(dishesData.dishes || []);
-       if (user) {
-         const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
-         const usersData = await apiRequest(usersEndpoint);
-         setUsers(usersData.users || []);
+   const focusMainDish = (dayKey) => {
+     window.requestAnimationFrame(() => {
+       const node = mainDishRefs.current.get(dayKey);
+       if (node) {
+         node.focus();
        }
-     } catch (err) {
-       setLoadError(err.message || "No se pudo cargar la semana.");
-     } finally {
-       setLoading(false);
+     });
+   };
+ 
+-  const handleAssignCta = async (day, canEdit, isAssigned) => {
+-    const dayKey = day.date.slice(0, 10);
+-    if (canEdit) {
+-      startEditingDay(day);
+-      focusMainDish(dayKey);
+-      return;
+-    }
+-    if (!isAssigned && user) {
+-      const updatedPlan = await onAssignSelf(day);
+-      if (updatedPlan) {
+-        startEditingDay(day);
+-        focusMainDish(dayKey);
+-      }
+-    }
++  const handleAssignCta = async (day, canEdit, isAssigned) => {
++    const dayKey = day.date.slice(0, 10);
++    if (canEdit) {
++      startEditingDay(day);
++      focusMainDish(dayKey);
++      return;
++    }
++    if (!isAssigned && user) {
++      const updatedPlan = await onAssignSelf(day);
++      if (updatedPlan) {
++        startEditingDay(day);
++        focusMainDish(dayKey);
++      }
++    }
+   };
+ 
++  const handleCategoryCreated = useCallback(async (name, color) => {
++    const payload = { name };
++    if (color?.colorBg) {
++      payload.colorBg = color.colorBg;
++      payload.colorText = color.colorText;
++    }
++    const data = await apiRequest("/api/categories", {
++      method: "POST",
++      body: JSON.stringify(payload)
++    });
++    const category = data.category;
++    setCategories((prev) => {
++      if (prev.some((item) => item._id === category._id)) {
++        return prev;
++      }
++      return [...prev, category];
++    });
++    return category;
++  }, []);
++
+   if (loading) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card">Cargando semana...</div>
+       </KitchenLayout>
+     );
+   }
+ 
+   if (!plan) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card kitchen-empty">
+           <h3>No hay planificación todavía</h3>
+           <p>Cuando guardes un día aparecerá aquí.</p>
+           {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
+         </div>
+       </KitchenLayout>
+     );
+   }
+ 
+   const handleWeekShift = (days) => {
+     setWeekStart((prev) => addDaysToISO(prev, days));
+   };
+ 
+   const handleSelectDay = (dayKey) => {
+     setSelectedDay(dayKey);
+     const target = dayRefs.current.get(dayKey) || document.getElementById(`kitchen-day-${dayKey}`);
+     if (target) {
+       target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+       target.focus?.({ preventScroll: true });
      }
    };
  
-   useEffect(() => {
-     loadData();
-@@ -123,175 +130,185 @@ export default function WeekPage() {
-   const resolveIngredients = useCallback(
-     async (ingredients = []) => {
-       const resolved = await Promise.all(
-         ingredients.map(async (item) => {
-           const displayName = String(item?.displayName || "").trim();
-           const canonicalName = String(
-             item?.canonicalName || normalizeIngredientName(displayName)
-           ).trim();
-           const match = await fetchIngredientMatch(canonicalName);
-           const ingredientId = item?.ingredientId || match?._id;
-           return {
-             ingredientId,
-             displayName,
-             canonicalName,
-             category: match?.categoryId || null,
-             status: ingredientId ? "resolved" : "pending"
-           };
-         })
-       );
-       return resolved.filter((entry) => entry.displayName);
-     },
-     [fetchIngredientMatch]
-   );
- 
-   useEffect(() => {
--    if (!plan?.days) {
--      return;
+-  const handleCarouselScroll = (direction) => {
+-    const element = carouselRef.current;
+-    if (!element) return;
+-    element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
+-  };
+-
+-  const handleCategoryCreated = useCallback(async (name, color) => {
+-    const payload = { name };
+-    if (color?.colorBg) {
+-      payload.colorBg = color.colorBg;
+-      payload.colorText = color.colorText;
 -    }
-+    if (!safeDays.length) {
-+      return;
-+    }
-     let active = true;
-     const loadExtras = async () => {
-       const resolved = await Promise.all(
--        plan.days.map(async (day) => {
--          const key = day.date.slice(0, 10);
--          const items = await resolveIngredients(day.ingredientOverrides || []);
--          return [key, items];
--        })
--      );
--      if (!active) return;
--      setExtraIngredientsByDay((prev) => {
--        const next = { ...prev };
--        resolved.forEach(([key, items]) => {
--          next[key] = items;
--        });
--        return next;
--      });
--    };
-+        safeDays.map(async (day) => {
-+          if (!day?.date) {
-+            return ["", []];
-+          }
-+          const key = day.date.slice(0, 10);
-+          const items = await resolveIngredients(day.ingredientOverrides || []);
-+          return [key, items];
-+        })
-+      );
-+      if (!active) return;
-+      setExtraIngredientsByDay((prev) => {
-+        const next = { ...prev };
-+        resolved.forEach(([key, items]) => {
-+          if (!key) return;
-+          next[key] = items;
-+        });
-+        return next;
-+      });
-+    };
-     loadExtras();
-     return () => {
-       active = false;
-     };
-   }, [plan, resolveIngredients]);
- 
-   useEffect(() => {
--    if (!plan?.days?.length) {
--      return;
--    }
--    const todayKey = new Date().toISOString().slice(0, 10);
--    const fallbackDay = plan.days[0]?.date?.slice(0, 10) || "";
--    const defaultDay = plan.days.some((day) => day.date.slice(0, 10) === todayKey)
--      ? todayKey
--      : fallbackDay;
--    setSelectedDay((prev) => {
--      if (prev && plan.days.some((day) => day.date.slice(0, 10) === prev)) {
+-    const data = await apiRequest("/api/categories", {
+-      method: "POST",
+-      body: JSON.stringify(payload)
+-    });
+-    const category = data.category;
+-    setCategories((prev) => {
+-      if (prev.some((item) => item._id === category._id)) {
 -        return prev;
 -      }
--      return defaultDay;
+-      return [...prev, category];
 -    });
--  }, [plan]);
-+    if (!safeDays.length) {
-+      return;
-+    }
-+    const todayKey = new Date().toISOString().slice(0, 10);
-+    const fallbackDay = safeDays[0]?.date?.slice(0, 10) || "";
-+    const defaultDay = safeDays.some((day) => day.date?.slice(0, 10) === todayKey)
-+      ? todayKey
-+      : fallbackDay;
-+    setSelectedDay((prev) => {
-+      if (prev && safeDays.some((day) => day.date?.slice(0, 10) === prev)) {
-+        return prev;
-+      }
-+      return defaultDay;
-+    });
-+  }, [safeDays]);
- 
-   useEffect(() => {
-     selectedDayRef.current = selectedDay;
-   }, [selectedDay]);
- 
--  const dayKeys = useMemo(() => plan?.days?.map((day) => day.date.slice(0, 10)) || [], [plan]);
-+  const dayKeys = useMemo(
-+    () => safeDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
-+    [safeDays]
-+  );
-   const dishMap = useMemo(() => {
-     const map = new Map();
-     dishes.forEach((dish) => {
-       map.set(dish._id, dish);
-     });
-     return map;
-   }, [dishes]);
-   const sideDishes = useMemo(() => dishes.filter((dish) => dish.isSide), [dishes]);
--  const showCookTiming = useMemo(() => {
--    if (!plan?.days?.length) {
--      return false;
--    }
--    const [first] = plan.days;
--    return plan.days.some((day) => day.cookTiming !== first.cookTiming);
--  }, [plan]);
-+  const showCookTiming = useMemo(() => {
-+    if (!safeDays.length) {
-+      return false;
-+    }
-+    const [first] = safeDays;
-+    return safeDays.some((day) => day.cookTiming !== first.cookTiming);
-+  }, [safeDays]);
- 
-   useEffect(() => {
-     const element = carouselRef.current;
-     if (!element) return;
- 
-     const updateControls = () => {
-       const shouldShow = element.scrollWidth > element.clientWidth + 1;
-       setShowCarouselControls(shouldShow);
-     };
- 
-     updateControls();
--    const observer = new ResizeObserver(updateControls);
--    observer.observe(element);
--    window.addEventListener("resize", updateControls);
+-    return category;
+-  }, []);
 -
--    return () => {
--      observer.disconnect();
--      window.removeEventListener("resize", updateControls);
--    };
--  }, [dayKeys.length]);
-+    let observer;
-+    if (typeof ResizeObserver !== "undefined") {
-+      observer = new ResizeObserver(updateControls);
-+      observer.observe(element);
-+    }
-+    window.addEventListener("resize", updateControls);
++  const handleCarouselScroll = (direction) => {
++    const element = carouselRef.current;
++    if (!element) return;
++    element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
++  };
 +
-+    return () => {
-+      observer?.disconnect();
-+      window.removeEventListener("resize", updateControls);
-+    };
-+  }, [dayKeys.length]);
- 
-   useEffect(() => {
-     const element = carouselRef.current;
-     if (!element || !dayKeys.length) return;
- 
-     let frame = null;
-     const handleScroll = () => {
-       if (frame) {
-         cancelAnimationFrame(frame);
-       }
-       frame = requestAnimationFrame(() => {
-         const center = element.scrollLeft + element.clientWidth / 2;
-         let closestIndex = 0;
-         let closestDistance = Number.POSITIVE_INFINITY;
-         dayKeys.forEach((key, index) => {
-           const node = dayRefs.current.get(key);
-           if (!node) return;
-           const nodeCenter = node.offsetLeft + node.offsetWidth / 2;
-           const distance = Math.abs(center - nodeCenter);
-           if (distance < closestDistance) {
-             closestDistance = distance;
-             closestIndex = index;
-           }
-         });
-         const nextKey = dayKeys[closestIndex];
-         setActiveIndex(closestIndex);
-         if (nextKey && nextKey !== selectedDayRef.current) {
-           setSelectedDay(nextKey);
-         }
-       });
-     };
- 
-     element.addEventListener("scroll", handleScroll, { passive: true });
-     handleScroll();
-     return () => {
-       element.removeEventListener("scroll", handleScroll);
-       if (frame) {
-         cancelAnimationFrame(frame);
-       }
-     };
--  }, [dayKeys]);
-+  }, [dayKeys]);
- 
-   const updateDay = async (day, updates) => {
-     const dayKey = day.date.slice(0, 10);
-     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
-     setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
-     try {
-       const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
-         method: "PUT",
-         body: JSON.stringify(updates)
-       });
-       setPlan(data.plan);
-       setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
-       if (saveTimers.current[dayKey]) {
-         clearTimeout(saveTimers.current[dayKey]);
-       }
-       saveTimers.current[dayKey] = window.setTimeout(() => {
-         setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
-       }, 2000);
-       return data.plan;
-     } catch (err) {
-       const message = err.message || "No se pudo actualizar el día.";
-       setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
-       setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
-       return null;
-     }
-@@ -413,74 +430,84 @@ export default function WeekPage() {
+   return (
+     <KitchenLayout>
+       <div className="kitchen-week-controls">
+         <section className="kitchen-week-header">
+           <div className="kitchen-week-header-actions">
+             <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
+               <button
+                 className="kitchen-week-arrow"
+                 type="button"
+                 onClick={() => handleWeekShift(-7)}
+                 aria-label="Ir a la semana anterior"
                >
                  <ChevronIcon className="kitchen-week-arrow-icon" />
                </button>
@@ -471,84 +168,3 @@ index 8103f27de2639774331f45ee1e7077b5e8fb0088..c8bc3e129400494b7166a71fe41b8cd1
                </label>
                <button
                  className="kitchen-week-arrow"
-                 type="button"
-                 onClick={() => handleWeekShift(7)}
-                 aria-label="Ir a la semana siguiente"
-               >
-                 <ChevronIcon className="kitchen-week-arrow-icon is-next" />
-               </button>
-             </div>
-             {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
-           </div>
-         </section>
-         <WeekDaysStrip
--          days={plan.days}
--          userMap={userMap}
--          selectedDay={selectedDay}
--          onSelectDay={handleSelectDay}
--        />
--      </div>
-+          days={safeDays}
-+          userMap={userMap}
-+          selectedDay={selectedDay}
-+          onSelectDay={handleSelectDay}
-+        />
-+      </div>
- 
-       <div className="kitchen-week-carousel">
-         {showCarouselControls ? (
-           <button
-             className="kitchen-week-carousel-arrow is-left"
-             type="button"
-             onClick={() => handleCarouselScroll(-1)}
-             aria-label="Mostrar día anterior"
-           >
-             <ChevronIcon className="kitchen-week-carousel-arrow-icon" />
-           </button>
-         ) : null}
--        <div className="kitchen-grid kitchen-week-days" id="week-grid" ref={carouselRef}>
--        {plan.days.map((day) => {
--          const dayKey = day.date.slice(0, 10);
-+        <div className="kitchen-grid kitchen-week-days" id="week-grid" ref={carouselRef}>
-+        {safeDays.map((day, index) => {
-+          if (!day?.date) {
-+            return (
-+              <div key={`day-${index}`} className="kitchen-card kitchen-day-card">
-+                <div className="kitchen-day-header">
-+                  <h3 className="kitchen-day-title">Día sin fecha</h3>
-+                  <p className="kitchen-muted">Falta la fecha de este día en la planificación.</p>
-+                </div>
-+              </div>
-+            );
-+          }
-+          const dayKey = day.date.slice(0, 10);
-           const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
--          const isAssigned = Boolean(day.cookUserId);
--          const isPlanned = Boolean(day.mainDishId);
-+          const isAssigned = Boolean(day.cookUserId);
-+          const isPlanned = Boolean(day.mainDishId);
-           const isAssignedToSelf = day.cookUserId
-             && (day.cookUserId === user?.id || day.cookUserId === user?._id);
-           const canEdit = user?.role === "admin" || isAssignedToSelf;
-           const isEditing = Boolean(editingDays[dayKey]);
-           const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
-           const sideDish = day.sideDishId ? dishMap.get(day.sideDishId) : null;
-           const showSideDish = Boolean(sideDish);
-           const sideDishOn = Boolean(sideDishEnabled[dayKey]);
-           const baseIngredients = mainDish?.ingredients || [];
-           const extraIngredients = day.ingredientOverrides || [];
-           const extraIngredientsValue =
-             extraIngredientsByDay[dayKey] ||
-             extraIngredients.map((item) => ({
-               ingredientId: item.ingredientId,
-               displayName: item.displayName,
-               canonicalName: item.canonicalName,
-               status: item.ingredientId ? "resolved" : "pending"
-             }));
-           const mainDishQuery = mainDishQueries[dayKey] ?? mainDish?.name ?? "";
-           const filteredMainDishes = dishes.filter((dish) =>
-             dish.name.toLowerCase().includes(mainDishQuery.toLowerCase())
-           );
-           const statusLabels = [];
-           if (isAssigned) {
-             statusLabels.push({
