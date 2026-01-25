@@ -1,511 +1,502 @@
-diff --git a/frontend/src/kitchen/Layout.jsx b/frontend/src/kitchen/Layout.jsx
-index e8e6ff8e6aac6c9e391d4b44247010ad7bcbf4ff..c9bc16b4a4b22a04910cf866972da3d496e225f6 100644
---- a/frontend/src/kitchen/Layout.jsx
-+++ b/frontend/src/kitchen/Layout.jsx
-@@ -1,67 +1,72 @@
- import React, { useMemo, useState } from "react";
- import { Link, NavLink, useNavigate } from "react-router-dom";
- import { useAuth } from "./auth";
- 
- function CalendarIcon(props) {
-   return (
-     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-       <rect x="3" y="5" width="18" height="16" rx="3" />
-       <path d="M8 3v4M16 3v4M3 10h18" />
-     </svg>
-   );
- }
- 
--function UtensilsIcon(props) {
--  return (
--    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
--      <path d="M4 3v8M7 3v8M4 7h3" />
--      <path d="M18 3v18" />
--      <circle cx="12" cy="12" r="5" />
--    </svg>
--  );
--}
-+function UtensilsIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-+      <path
-+        fill="currentColor"
-+        stroke="none"
-+        d="m10.8 3.9l-6 4.5c-.5.38-.8.97-.8 1.6v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9c0-.63-.3-1.22-.8-1.6l-6-4.5a2.01 2.01 0 0 0-2.4 0m1.7 8.6c0 .83-.67 1.5-1.5 1.5v3.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V14c-.83 0-1.5-.67-1.5-1.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5zm2 5.5c-.28 0-.5-.22-.5-.5v-3h-.5c-.28 0-.5-.22-.5-.5v-2.5c0-.88.57-1.63 1.36-1.89c.31-.11.64.14.64.48v7.41c0 .28-.22.5-.5.5"
-+      />
-+    </svg>
-+  );
-+}
- 
- function ListIcon(props) {
-   return (
-     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-       <path d="M8 6h12M8 12h12M8 18h12" />
-       <circle cx="4" cy="6" r="1.5" />
-       <circle cx="4" cy="12" r="1.5" />
-       <circle cx="4" cy="18" r="1.5" />
-     </svg>
-   );
- }
- 
--function SettingsIcon(props) {
--  return (
--    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
--      <circle cx="12" cy="12" r="3.25" />
--      <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
--    </svg>
--  );
--}
-+function SettingsIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-+      <path
-+        fill="currentColor"
-+        stroke="none"
-+        d="M19.14 12.94c.04-.3.06-.61.06-.94c0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6s3.6 1.62 3.6 3.6s-1.62 3.6-3.6 3.6"
-+      />
-+    </svg>
-+  );
-+}
- 
- function LogoutIcon(props) {
-   return (
-     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-       <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-       <path d="M10 17l5-5-5-5" />
-       <path d="M15 12H3" />
-     </svg>
-   );
- }
- 
- export default function KitchenLayout({ children }) {
-   const { user, logout } = useAuth();
-   const navigate = useNavigate();
-   const [drawerOpen, setDrawerOpen] = useState(false);
- 
-   const navLinks = useMemo(() => {
-     const links = [
-       { to: "/kitchen/semana", label: "Semana" },
-       { to: "/kitchen/platos", label: "Platos" },
-       { to: "/kitchen/compra", label: "Ingredientes" },
-     ];
- 
-     if (user?.role === "admin") {
-       links.push({ to: "/admin/usuarios", label: "Usuarios" });
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index edafd6bc1ae876c33b2fdb979b273a374d392feb..43bc4657d675f5d296369227918e028a664646a2 100644
+index b69d8ac126e8f330d8f924862d0dff4eccd5c916..b1441482da4510746d9811d31ce05f271269d107 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -585,82 +585,86 @@
-   width: 100%;
- }
- 
- .kitchen-week-header {
-   display: flex;
+@@ -470,61 +470,67 @@
    align-items: flex-start;
-   justify-content: center;
-   gap: 16px;
-   margin-bottom: 0;
+   justify-content: space-between;
+   gap: 12px;
  }
  
- .kitchen-week-header-main {
-   display: flex;
-   flex-direction: column;
-   gap: 4px;
+ .kitchen-modal-header h3 {
+   margin: 0;
+   font-size: 20px;
  }
  
- .kitchen-week-header-actions {
+ .kitchen-modal-actions {
    display: flex;
    flex-direction: column;
    gap: 12px;
-   width: min(420px, 100%);
    align-items: center;
+   justify-content: center;
+   padding-top: 4px;
  }
  
--.kitchen-week-nav {
--  display: flex;
--  align-items: center;
--  gap: 12px;
--  width: 100%;
--  justify-content: center;
--}
--
--.kitchen-week-picker {
--  flex: 1;
--  max-width: 260px;
--}
--
--.kitchen-week-arrow {
--  display: inline-flex;
--  align-items: center;
--  justify-content: center;
-+.kitchen-week-nav {
-+  display: grid;
-+  grid-template-columns: 44px minmax(200px, 260px) 44px;
-+  align-items: center;
-+  justify-content: center;
-+  gap: 12px;
-+  width: 100%;
-+}
-+
-+.kitchen-week-picker {
-+  width: 100%;
-+  display: flex;
-+  align-items: center;
-+  justify-content: center;
-+}
-+
-+.kitchen-week-arrow {
-+  display: inline-flex;
-+  align-items: center;
-+  justify-content: center;
-   width: 44px;
-   height: 44px;
-   border-radius: 12px;
-   border: 1px solid #d0d5dd;
-   background: #ffffff;
-   color: #344054;
+ .kitchen-dishes-loading {
+   font-weight: 600;
+   text-align: center;
+ }
+ 
+ .kitchen-button {
+-  background: #4f46e5;
++  background: #4f46e5;
+   border: none;
+   color: white;
+-  padding: 12px 18px;
++  padding: 12px 18px;
+   border-radius: 10px;
    cursor: pointer;
-   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
- }
- 
--.kitchen-week-picker .kitchen-input {
--  min-height: 44px;
--  height: 44px;
--  text-align: center;
+   font-weight: 600;
+   font-size: 15px;
+   min-height: 48px;
+-  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 -}
-+.kitchen-week-picker .kitchen-input {
-+  min-height: 44px;
-+  height: 44px;
-+  text-align: center;
-+  width: 100%;
++  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
++}
++
++.kitchen-button.is-small {
++  padding: 6px 12px;
++  font-size: 13px;
++  min-height: 32px;
 +}
  
- .kitchen-week-arrow-icon {
-   width: 18px;
-   height: 18px;
-   stroke: currentColor;
-   stroke-width: 2;
-   fill: none;
-   stroke-linecap: round;
-   stroke-linejoin: round;
+ .kitchen-button:hover {
+   background: #4338ca;
  }
  
- .kitchen-week-arrow-icon.is-next {
-   transform: rotate(180deg);
+ .kitchen-button:active {
+   transform: translateY(1px);
  }
  
- .kitchen-week-arrow:hover {
-   background: #f8fafc;
-   border-color: #c7ced6;
-   color: #1d2939;
- }
- 
- .kitchen-week-arrow:focus-visible {
-   outline: 2px solid #6366f1;
+ .kitchen-button:focus-visible {
+   outline: 3px solid rgba(79, 70, 229, 0.35);
    outline-offset: 2px;
  }
-@@ -1283,87 +1287,107 @@
-   }
  
-   .kitchen-week-days::-webkit-scrollbar {
-     display: none;
-   }
+ .kitchen-button.secondary {
+   background: #e2e8f0;
+   color: #0f172a;
+ }
  
-   .kitchen-week-days .kitchen-day-card {
-     flex: 0 0 calc(100% - 24px);
-     scroll-snap-align: start;
-   }
+ .kitchen-button.ghost {
+   background: transparent;
+   border: 1px solid #cbd5f5;
+   color: #1e293b;
+ }
  
-   .kitchen-week-carousel-dots {
-     display: flex;
-   }
+@@ -827,76 +833,145 @@
+   font-size: 14px;
+   letter-spacing: 0.04em;
+   text-transform: uppercase;
+   background: var(--weekday-bg);
+   color: var(--weekday-text);
+   border: 1px solid var(--weekday-border);
+   box-sizing: border-box;
+ }
  
-   .kitchen-week-header {
-     flex-direction: column;
-     margin-bottom: 16px;
-   }
+ .kitchen-weekdays-label {
+   font-size: 12px;
+   font-weight: 600;
+   color: #475467;
+   text-transform: uppercase;
+ }
  
-   .kitchen-week-header-actions {
-     width: 100%;
-     align-items: stretch;
-   }
+ .kitchen-day-card {
+   min-height: 100%;
+ }
  
--  .kitchen-week-nav {
--    align-items: center;
--  }
-+  .kitchen-week-nav {
-+    grid-template-columns: 44px minmax(180px, 220px) 44px;
-+  }
+ .kitchen-day-card.is-selected {
+   border: 1px solid #c7d2fe;
+   box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.05);
+ }
  
-   .kitchen-week-controls {
-     gap: 12px;
-     margin-bottom: 16px;
-   }
- 
-   .kitchen-week-header {
-     order: 2;
-     margin-bottom: 0;
-   }
- 
-   .kitchen-weekdays-strip {
-     order: 1;
-   }
- 
--  .kitchen-week-picker {
--    max-width: 220px;
--  }
-+  .kitchen-week-picker {
-+    width: 100%;
-+  }
- 
-   .kitchen-week-picker .kitchen-label {
-     display: none;
-   }
- 
-   .kitchen-week-picker .kitchen-input {
-     font-size: 15px;
-   }
- 
--  .kitchen-weekdays-strip {
--    padding: 16px;
--  }
-+  .kitchen-weekdays-strip {
-+    padding: 12px;
-+  }
- 
--  .kitchen-weekdays-arrow {
--    display: none;
--  }
-+  .kitchen-weekdays-arrow {
-+    display: none;
-+  }
+-.kitchen-day-header {
+-  display: flex;
+-  flex-direction: column;
+-  gap: 6px;
+-}
+-
+-.kitchen-day-title {
+-  margin: 0;
+-  font-size: 18px;
+-  font-weight: 700;
+-  text-transform: capitalize;
+-}
++.kitchen-day-header {
++  display: flex;
++  flex-direction: column;
++  gap: 6px;
++}
 +
-+  .kitchen-weekdays-list {
-+    gap: 8px;
-+  }
++.kitchen-day-cta {
++  display: flex;
++  justify-content: flex-end;
++  align-items: center;
++  gap: 8px;
++}
 +
-+  .kitchen-weekdays-item {
-+    min-width: 56px;
-+    min-height: 72px;
-+    padding: 6px 4px;
-+  }
++.kitchen-day-edit-actions {
++  display: inline-flex;
++  gap: 8px;
++}
 +
-+  .kitchen-weekdays-circle {
-+    width: 44px;
-+    height: 44px;
-+    font-size: 12px;
-+  }
++.kitchen-day-title {
++  margin: 0;
++  font-size: 18px;
++  font-weight: 700;
++  text-transform: capitalize;
++}
+ 
+ .kitchen-day-meta {
+   display: flex;
+   flex-direction: column;
+   gap: 4px;
+   font-size: 13px;
+   color: #667085;
+ }
+ 
+-.kitchen-day-status {
+-  display: flex;
+-  flex-wrap: wrap;
+-  gap: 6px;
+-}
++.kitchen-day-status {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 6px;
++}
 +
-+  .kitchen-weekdays-label {
-+    font-size: 11px;
-+  }
++.kitchen-day-view {
++  display: flex;
++  flex-direction: column;
++  gap: 12px;
++}
++
++.kitchen-day-info {
++  display: flex;
++  flex-direction: column;
++  gap: 4px;
++}
++
++.kitchen-day-info-label {
++  font-size: 12px;
++  color: #667085;
++  font-weight: 600;
++  text-transform: uppercase;
++  letter-spacing: 0.04em;
++}
++
++.kitchen-day-info-value {
++  font-size: 16px;
++  font-weight: 600;
++  color: #101828;
++}
++
++.kitchen-day-ingredients {
++  display: flex;
++  flex-direction: column;
++  gap: 6px;
++}
++
++.kitchen-day-ingredient-pills {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 8px;
++}
++
++.kitchen-ingredient-pill {
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++  padding: 4px 10px;
++  border-radius: 999px;
++  font-size: 12px;
++  font-weight: 600;
++  background: #f8fafc;
++  border: 1px solid #e2e8f0;
++  color: #1f2937;
++}
++
++.kitchen-ingredient-pill.is-extra {
++  background: #fef3f2;
++  border-color: #fecaca;
++  color: #991b1b;
++}
  
-   .kitchen-topbar {
-     display: none;
-   }
+ .kitchen-status-pill {
+   display: inline-flex;
+   align-items: center;
+   padding: 2px 8px;
+   border-radius: 999px;
+   font-size: 11px;
+   font-weight: 600;
+   letter-spacing: 0.01em;
+   border: 1px solid transparent;
+   color: #344054;
+   background: #f2f4f7;
+ }
  
-   .kitchen-nav-desktop {
-     display: none;
-   }
+ .kitchen-status-pill.assigned {
+   color: #1d4ed8;
+   background: #eff6ff;
+   border-color: #dbeafe;
+ }
  
-   .kitchen-user {
-     display: none;
-   }
- 
-   .kitchen-user-placeholder {
-     display: none;
-   }
- 
-   .kitchen-nav-toggle {
-     display: none;
-   }
- 
-   .kitchen-drawer,
-   .kitchen-drawer-backdrop {
-     display: none;
-   }
-diff --git a/frontend/src/kitchen/pages/ShoppingPage.jsx b/frontend/src/kitchen/pages/ShoppingPage.jsx
-index 0e9a98ffb3db2b87101f2c822485cda938b702f3..01e15cb04f0f73165e46fd18b50d76c5541b4e93 100644
---- a/frontend/src/kitchen/pages/ShoppingPage.jsx
-+++ b/frontend/src/kitchen/pages/ShoppingPage.jsx
-@@ -39,56 +39,56 @@ export default function ShoppingPage() {
-     }
-   };
- 
-   const updateStatus = async (item, status) => {
-     try {
-       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
-         method: "PUT",
-         body: JSON.stringify({ canonicalName: item.canonicalName, status, displayName: item.displayName })
-       });
-       setList(data.list);
-     } catch (err) {
-       setError(err.message || "No se pudo actualizar.");
-     }
-   };
- 
-   const items = (list?.items || []).filter((item) => (filter ? item.status === filter : true));
- 
-   return (
-     <KitchenLayout>
-       <div className="kitchen-card" style={{ marginBottom: 16 }}>
-         <h3>Lista de la compra</h3>
-         <p className="kitchen-muted">Generada desde la planificación semanal.</p>
-         <div className="kitchen-actions">
-           <button className="kitchen-button" onClick={rebuild}>Recalcular lista</button>
-           <label>
--            <span className="kitchen-label">Semana (lunes)</span>
-             <input
-               className="kitchen-input"
-               type="date"
-               value={weekStart}
-               onChange={(event) => setWeekStart(event.target.value)}
-+              aria-label="Semana"
-             />
-           </label>
-           <label>
-             <span className="kitchen-label">Filtro</span>
-             <select className="kitchen-select" value={filter} onChange={(event) => setFilter(event.target.value)}>
-               <option value="need">Pendiente</option>
-               <option value="have">Ya lo tenemos</option>
-               <option value="bought">Comprado</option>
-               <option value="">Todos</option>
-             </select>
-           </label>
-         </div>
-         {error ? <div style={{ color: "#b42318", marginTop: 8 }}>{error}</div> : null}
-       </div>
- 
-       <div className="kitchen-card">
-         {items.length === 0 ? (
-           <div className="kitchen-empty">
-             <h4>No hay ingredientes en este estado.</h4>
-             <p className="kitchen-muted">Recalcula la lista o cambia el filtro.</p>
-           </div>
-         ) : (
-           <table className="kitchen-table">
-             <thead>
-               <tr>
-diff --git a/frontend/src/kitchen/pages/SwapsPage.jsx b/frontend/src/kitchen/pages/SwapsPage.jsx
-index 50eca591ef61fb03ae4179b7c09c41d7d0b8b905..4901b76051211b015cee657380a567315b23254a 100644
---- a/frontend/src/kitchen/pages/SwapsPage.jsx
-+++ b/frontend/src/kitchen/pages/SwapsPage.jsx
-@@ -48,57 +48,57 @@ export default function SwapsPage() {
-       });
-       setForm({ weekStart: getMondayISO(), toUserId: "", fromDate: "", toDate: "" });
-       loadData();
-     } catch (err) {
-       setError(err.message || "No se pudo solicitar el cambio.");
-     }
-   };
- 
-   const act = async (swapId, action) => {
-     try {
-       await apiRequest(`/api/kitchen/swaps/${swapId}/${action}`, { method: "POST" });
-       loadData();
-     } catch (err) {
-       setError(err.message || "No se pudo actualizar el cambio.");
-     }
-   };
- 
-   return (
-     <KitchenLayout>
-       <div className="kitchen-grid">
-         <div className="kitchen-card">
-           <h3>Solicitar cambio</h3>
-           <p className="kitchen-muted">Propón intercambiar días con otro miembro.</p>
-           <form onSubmit={submitSwap} style={{ display: "grid", gap: 12, marginTop: 12 }}>
-             <label>
--              <span className="kitchen-label">Semana (lunes)</span>
-               <input
-                 className="kitchen-input"
-                 type="date"
-                 value={form.weekStart}
-                 onChange={(event) => setForm({ ...form, weekStart: event.target.value })}
-                 required
-+                aria-label="Semana"
-               />
-             </label>
-             <label>
-               <span className="kitchen-label">Para quién</span>
-               <select
-                 className="kitchen-select"
-                 value={form.toUserId}
-                 onChange={(event) => setForm({ ...form, toUserId: event.target.value })}
-                 required
-               >
-                 <option value="">Selecciona un miembro</option>
-                 {users.map((u) => (
-                   <option key={u.id} value={u.id}>{u.displayName}</option>
-                 ))}
-               </select>
-             </label>
-             <label>
-               <span className="kitchen-label">Mi día actual</span>
-               <input
-                 className="kitchen-input"
-                 type="date"
-                 value={form.fromDate}
-                 onChange={(event) => setForm({ ...form, fromDate: event.target.value })}
-                 required
-               />
+ .kitchen-status-pill.planned {
+   color: #1f2937;
+   background: #f8fafc;
+   border-color: #e2e8f0;
+ }
 diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
-index 93224866969b5c6b84ede3b28c37fa4400055b8d..461726ebbe58b13d896d06c8674030c05c685a2a 100644
+index f826831ff8f7ad985f2721fd87918c508a28230a..78525c18999efed7644aa2e2d567f03ae23e23f6 100644
 --- a/frontend/src/kitchen/pages/WeekPage.jsx
 +++ b/frontend/src/kitchen/pages/WeekPage.jsx
-@@ -247,59 +247,59 @@ export default function WeekPage() {
-       target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
-       target.focus?.({ preventScroll: true });
+@@ -20,59 +20,61 @@ function formatDateLabel(dateString) {
+ function addDaysToISO(dateString, days) {
+   const [year, month, day] = dateString.split("-").map(Number);
+   const date = new Date(Date.UTC(year, month - 1, day));
+   date.setUTCDate(date.getUTCDate() + days);
+   return date.toISOString().slice(0, 10);
+ }
+ 
+ function ChevronIcon(props) {
+   return (
+     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+       <path d="M15 18l-6-6 6-6" />
+     </svg>
+   );
+ }
+ 
+ export default function WeekPage() {
+   const { user } = useAuth();
+   const [weekStart, setWeekStart] = useState(getMondayISO());
+   const [plan, setPlan] = useState(null);
+   const [dishes, setDishes] = useState([]);
+   const [users, setUsers] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [loadError, setLoadError] = useState("");
+   const [dayStatus, setDayStatus] = useState({});
+   const [dayErrors, setDayErrors] = useState({});
+-  const [ingredientInputs, setIngredientInputs] = useState({});
+-  const [selectedDay, setSelectedDay] = useState("");
+-  const [showCarouselControls, setShowCarouselControls] = useState(false);
+-  const [activeIndex, setActiveIndex] = useState(0);
+-  const lastSyncedIngredients = useRef({});
+-  const saveTimers = useRef({});
+-  const carouselRef = useRef(null);
+-  const dayRefs = useRef(new Map());
+-  const selectedDayRef = useRef(selectedDay);
++  const [ingredientInputs, setIngredientInputs] = useState({});
++  const [selectedDay, setSelectedDay] = useState("");
++  const [editingDays, setEditingDays] = useState({});
++  const [showCarouselControls, setShowCarouselControls] = useState(false);
++  const [activeIndex, setActiveIndex] = useState(0);
++  const lastSyncedIngredients = useRef({});
++  const saveTimers = useRef({});
++  const carouselRef = useRef(null);
++  const dayRefs = useRef(new Map());
++  const mainDishRefs = useRef(new Map());
++  const selectedDayRef = useRef(selectedDay);
+ 
+   const loadData = async () => {
+     setLoading(true);
+     setLoadError("");
+     try {
+       const [planData, dishesData] = await Promise.all([
+         apiRequest(`/api/kitchen/weeks/${weekStart}`),
+         apiRequest("/api/kitchen/dishes")
+       ]);
+       setPlan(planData.plan);
+       setDishes(dishesData.dishes || []);
+       if (user) {
+         const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
+         const usersData = await apiRequest(usersEndpoint);
+         setUsers(usersData.users || []);
+       }
+     } catch (err) {
+       setLoadError(err.message || "No se pudo cargar la semana.");
+     } finally {
+       setLoading(false);
      }
    };
  
-   const handleCarouselScroll = (direction) => {
+   useEffect(() => {
+     loadData();
+@@ -103,51 +105,65 @@ export default function WeekPage() {
+       return next;
+     });
+   }, [plan]);
+ 
+   useEffect(() => {
+     if (!plan?.days?.length) {
+       return;
+     }
+     const todayKey = new Date().toISOString().slice(0, 10);
+     const fallbackDay = plan.days[0]?.date?.slice(0, 10) || "";
+     const defaultDay = plan.days.some((day) => day.date.slice(0, 10) === todayKey)
+       ? todayKey
+       : fallbackDay;
+     setSelectedDay((prev) => {
+       if (prev && plan.days.some((day) => day.date.slice(0, 10) === prev)) {
+         return prev;
+       }
+       return defaultDay;
+     });
+   }, [plan]);
+ 
+   useEffect(() => {
+     selectedDayRef.current = selectedDay;
+   }, [selectedDay]);
+ 
+-  const dayKeys = useMemo(() => plan?.days?.map((day) => day.date.slice(0, 10)) || [], [plan]);
++  const dayKeys = useMemo(() => plan?.days?.map((day) => day.date.slice(0, 10)) || [], [plan]);
++  const dishMap = useMemo(() => {
++    const map = new Map();
++    dishes.forEach((dish) => {
++      map.set(dish._id, dish);
++    });
++    return map;
++  }, [dishes]);
++  const showCookTiming = useMemo(() => {
++    if (!plan?.days?.length) {
++      return false;
++    }
++    const [first] = plan.days;
++    return plan.days.some((day) => day.cookTiming !== first.cookTiming);
++  }, [plan]);
+ 
+   useEffect(() => {
      const element = carouselRef.current;
      if (!element) return;
-     element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
+ 
+     const updateControls = () => {
+       const shouldShow = element.scrollWidth > element.clientWidth + 1;
+       setShowCarouselControls(shouldShow);
+     };
+ 
+     updateControls();
+     const observer = new ResizeObserver(updateControls);
+     observer.observe(element);
+     window.addEventListener("resize", updateControls);
+ 
+     return () => {
+       observer.disconnect();
+       window.removeEventListener("resize", updateControls);
+     };
+   }, [dayKeys.length]);
+ 
+   useEffect(() => {
+     const element = carouselRef.current;
+     if (!element || !dayKeys.length) return;
+ 
+@@ -167,75 +183,106 @@ export default function WeekPage() {
+           const distance = Math.abs(center - nodeCenter);
+           if (distance < closestDistance) {
+             closestDistance = distance;
+             closestIndex = index;
+           }
+         });
+         const nextKey = dayKeys[closestIndex];
+         setActiveIndex(closestIndex);
+         if (nextKey && nextKey !== selectedDayRef.current) {
+           setSelectedDay(nextKey);
+         }
+       });
+     };
+ 
+     element.addEventListener("scroll", handleScroll, { passive: true });
+     handleScroll();
+     return () => {
+       element.removeEventListener("scroll", handleScroll);
+       if (frame) {
+         cancelAnimationFrame(frame);
+       }
+     };
+   }, [dayKeys]);
+ 
+   const updateDay = async (day, updates) => {
+-    const dayKey = day.date.slice(0, 10);
+-    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
+-    setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
++    const dayKey = day.date.slice(0, 10);
++    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
++    setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
+     try {
+-      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
++      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
+         method: "PUT",
+         body: JSON.stringify(updates)
+       });
+       setPlan(data.plan);
+       setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
+       if (saveTimers.current[dayKey]) {
+         clearTimeout(saveTimers.current[dayKey]);
+       }
+       saveTimers.current[dayKey] = window.setTimeout(() => {
+         setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
+-      }, 2000);
++      }, 2000);
++      return data.plan;
+     } catch (err) {
+-      const message = err.message || "No se pudo actualizar el día.";
+-      setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
+-      setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
++      const message = err.message || "No se pudo actualizar el día.";
++      setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
++      setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
++      return null;
+     }
    };
  
-   return (
-     <KitchenLayout>
-       <div className="kitchen-week-controls">
-         <section className="kitchen-week-header">
-           <div className="kitchen-week-header-actions">
-             <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
-               <button
-                 className="kitchen-week-arrow"
-                 type="button"
-                 onClick={() => handleWeekShift(-7)}
-                 aria-label="Ir a la semana anterior"
-               >
-                 <ChevronIcon className="kitchen-week-arrow-icon" />
-               </button>
--              <label className="kitchen-field kitchen-week-picker">
--                <span className="kitchen-label">Semana (lunes)</span>
--                <input
--                  className="kitchen-input"
--                  type="date"
--                  value={weekStart}
--                  onChange={(event) => setWeekStart(event.target.value)}
--                />
--              </label>
-+              <label className="kitchen-field kitchen-week-picker">
-+                <input
-+                  className="kitchen-input"
-+                  type="date"
-+                  value={weekStart}
-+                  onChange={(event) => setWeekStart(event.target.value)}
-+                  aria-label="Semana"
-+                />
-+              </label>
-               <button
-                 className="kitchen-week-arrow"
-                 type="button"
-                 onClick={() => handleWeekShift(7)}
-                 aria-label="Ir a la semana siguiente"
-               >
-                 <ChevronIcon className="kitchen-week-arrow-icon is-next" />
-               </button>
+-  const onAssignSelf = (day) => {
+-    updateDay(day, { cookUserId: user?.id || user?._id });
++  const onAssignSelf = async (day) => {
++    return updateDay(day, { cookUserId: user?.id || user?._id });
++  };
++
++  const setEditingForDay = (dayKey, value) => {
++    setEditingDays((prev) => ({ ...prev, [dayKey]: value }));
++  };
++
++  const focusMainDish = (dayKey) => {
++    window.requestAnimationFrame(() => {
++      const node = mainDishRefs.current.get(dayKey);
++      if (node) {
++        node.focus();
++      }
++    });
++  };
++
++  const handleAssignCta = async (day, canEdit, isAssigned) => {
++    const dayKey = day.date.slice(0, 10);
++    if (canEdit) {
++      setEditingForDay(dayKey, true);
++      focusMainDish(dayKey);
++      return;
++    }
++    if (!isAssigned && user) {
++      const updatedPlan = await onAssignSelf(day);
++      if (updatedPlan) {
++        setEditingForDay(dayKey, true);
++        focusMainDish(dayKey);
++      }
++    }
+   };
+ 
+   if (loading) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card">Cargando semana...</div>
+       </KitchenLayout>
+     );
+   }
+ 
+   if (!plan) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card kitchen-empty">
+           <h3>No hay planificación todavía</h3>
+           <p>Cuando guardes un día aparecerá aquí.</p>
+           {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
+         </div>
+       </KitchenLayout>
+     );
+   }
+ 
+   const handleWeekShift = (days) => {
+     setWeekStart((prev) => addDaysToISO(prev, days));
+   };
+@@ -289,173 +336,264 @@ export default function WeekPage() {
              </div>
              {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
            </div>
@@ -523,3 +514,344 @@ index 93224866969b5c6b84ede3b28c37fa4400055b8d..461726ebbe58b13d896d06c8674030c0
            <button
              className="kitchen-week-carousel-arrow is-left"
              type="button"
+             onClick={() => handleCarouselScroll(-1)}
+             aria-label="Mostrar día anterior"
+           >
+             <ChevronIcon className="kitchen-week-carousel-arrow-icon" />
+           </button>
+         ) : null}
+         <div className="kitchen-grid kitchen-week-days" id="week-grid" ref={carouselRef}>
+         {plan.days.map((day) => {
+-          const dayKey = day.date.slice(0, 10);
++          const dayKey = day.date.slice(0, 10);
+           const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
+-          const isAssigned = Boolean(day.cookUserId);
+-          const isPlanned = Boolean(day.mainDishId);
+-          const isAssignedToSelf = day.cookUserId
+-            && (day.cookUserId === user?.id || day.cookUserId === user?._id);
+-          const statusLabels = [];
+-          if (isAssigned) {
+-            statusLabels.push({
+-              label: isAssignedToSelf ? "Asignado a ti" : "Asignado",
+-              type: "assigned"
+-            });
++          const isAssigned = Boolean(day.cookUserId);
++          const isPlanned = Boolean(day.mainDishId);
++          const isAssignedToSelf = day.cookUserId
++            && (day.cookUserId === user?.id || day.cookUserId === user?._id);
++          const canEdit = user?.role === "admin" || isAssignedToSelf;
++          const isEditing = Boolean(editingDays[dayKey]);
++          const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
++          const baseIngredients = mainDish?.ingredients || [];
++          const extraIngredients = day.ingredientOverrides || [];
++          const statusLabels = [];
++          if (isAssigned) {
++            statusLabels.push({
++              label: isAssignedToSelf ? "Asignado a ti" : "Asignado",
++              type: "assigned"
++            });
+           }
+           if (isPlanned) {
+             statusLabels.push({ label: "Planificado", type: "planned" });
+           }
+           return (
+             <div
+               key={day.date}
+               id={`kitchen-day-${dayKey}`}
+               className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""}`}
+               tabIndex={-1}
+               ref={(node) => {
+                 if (!node) {
+                   dayRefs.current.delete(dayKey);
+                   return;
+                 }
+                 dayRefs.current.set(dayKey, node);
+               }}
+             >
+               <div className="kitchen-day-header">
+-                <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
+-                <div className="kitchen-day-meta">
+-                  <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
+-                  <span>Cocinero: {cookUser?.displayName || "Sin asignar"}</span>
+-                </div>
+-                {statusLabels.length ? (
+-                  <div className="kitchen-day-status" aria-label="Estado del día">
+-                    {statusLabels.map((item) => (
+-                      <span key={item.label} className={`kitchen-status-pill ${item.type}`}>
++                <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
++                <div className="kitchen-day-meta">
++                  {showCookTiming ? (
++                    <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
++                  ) : null}
++                  {cookUser?.displayName ? (
++                    <span>Cocinero: {cookUser.displayName}</span>
++                  ) : null}
++                </div>
++                {statusLabels.length ? (
++                  <div className="kitchen-day-status" aria-label="Estado del día">
++                    {statusLabels.map((item) => (
++                      <span key={item.label} className={`kitchen-status-pill ${item.type}`}>
+                         {item.label}
+                       </span>
+                     ))}
+                   </div>
+-                ) : null}
+-              </div>
++                ) : null}
++                <div className="kitchen-day-cta">
++                  {canEdit && !isEditing ? (
++                    <button
++                      type="button"
++                      className="kitchen-button is-small"
++                      onClick={() => setEditingForDay(dayKey, true)}
++                    >
++                      Editar
++                    </button>
++                  ) : null}
++                  {isEditing ? (
++                    <div className="kitchen-day-edit-actions">
++                      <button
++                        type="button"
++                        className="kitchen-button is-small"
++                        onClick={() => setEditingForDay(dayKey, false)}
++                      >
++                        Guardar
++                      </button>
++                      <button
++                        type="button"
++                        className="kitchen-button secondary is-small"
++                        onClick={() => setEditingForDay(dayKey, false)}
++                      >
++                        Cancelar
++                      </button>
++                    </div>
++                  ) : null}
++                </div>
++              </div>
+ 
+-              <label className="kitchen-field">
+-                <span className="kitchen-label">Plato principal</span>
+-                <select
+-                  className="kitchen-select"
+-                  value={day.mainDishId || ""}
+-                  onChange={(event) => updateDay(day, { mainDishId: event.target.value || null })}
+-                >
+-                  <option value="">Sin plato</option>
+-                  {dishes.map((dish) => (
+-                    <option key={dish._id} value={dish._id}>{dish.name}</option>
+-                  ))}
+-                </select>
+-              </label>
++              {!isEditing ? (
++                <div className="kitchen-day-view">
++                  <div className="kitchen-day-info">
++                    <span className="kitchen-day-info-label">Plato principal</span>
++                    <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>
++                  </div>
++                  {!isAssigned || !isPlanned ? (
++                    <button
++                      type="button"
++                      className="kitchen-button"
++                      onClick={() => handleAssignCta(day, canEdit, isAssigned)}
++                    >
++                      Asignar plato
++                    </button>
++                  ) : null}
++                  {baseIngredients.length ? (
++                    <div className="kitchen-day-ingredients">
++                      <span className="kitchen-label">Ingredientes</span>
++                      <div className="kitchen-day-ingredient-pills">
++                        {baseIngredients.map((item) => (
++                          <span key={item.ingredientId || item.canonicalName || item.displayName} className="kitchen-ingredient-pill">
++                            {item.displayName}
++                          </span>
++                        ))}
++                      </div>
++                    </div>
++                  ) : null}
++                  {extraIngredients.length ? (
++                    <div className="kitchen-day-ingredients">
++                      <span className="kitchen-label">Extras</span>
++                      <div className="kitchen-day-ingredient-pills is-extra">
++                        {extraIngredients.map((item) => (
++                          <span key={item.ingredientId || item.canonicalName || item.displayName} className="kitchen-ingredient-pill is-extra">
++                            {item.displayName}
++                          </span>
++                        ))}
++                      </div>
++                    </div>
++                  ) : null}
++                </div>
++              ) : (
++                <>
++                  <label className="kitchen-field">
++                    <span className="kitchen-label">Plato principal</span>
++                    <select
++                      ref={(node) => {
++                        if (!node) {
++                          mainDishRefs.current.delete(dayKey);
++                          return;
++                        }
++                        mainDishRefs.current.set(dayKey, node);
++                      }}
++                      className="kitchen-select"
++                      value={day.mainDishId || ""}
++                      onChange={(event) => updateDay(day, { mainDishId: event.target.value || null })}
++                    >
++                      <option value="">Sin plato</option>
++                      {dishes.map((dish) => (
++                        <option key={dish._id} value={dish._id}>{dish.name}</option>
++                      ))}
++                    </select>
++                  </label>
+ 
+-              <label className="kitchen-field">
+-                <span className="kitchen-label">Guarnición (opcional)</span>
+-                <select
+-                  className="kitchen-select"
+-                  value={day.sideDishId || ""}
+-                  onChange={(event) => updateDay(day, { sideDishId: event.target.value || null })}
+-                >
+-                  <option value="">Sin guarnición</option>
+-                  {dishes.map((dish) => (
+-                    <option key={dish._id} value={dish._id}>{dish.name}</option>
+-                  ))}
+-                </select>
+-              </label>
++                  <label className="kitchen-field">
++                    <span className="kitchen-label">Guarnición (opcional)</span>
++                    <select
++                      className="kitchen-select"
++                      value={day.sideDishId || ""}
++                      onChange={(event) => updateDay(day, { sideDishId: event.target.value || null })}
++                    >
++                      <option value="">Sin guarnición</option>
++                      {dishes.map((dish) => (
++                        <option key={dish._id} value={dish._id}>{dish.name}</option>
++                      ))}
++                    </select>
++                  </label>
+ 
+-              <label className="kitchen-field">
+-                <span className="kitchen-label">Cuándo se cocina</span>
+-                <select
+-                  className="kitchen-select"
+-                  value={day.cookTiming}
+-                  onChange={(event) => updateDay(day, { cookTiming: event.target.value })}
+-                >
+-                  <option value="previous_day">Día anterior</option>
+-                  <option value="same_day">Mismo día</option>
+-                </select>
+-              </label>
++                  <label className="kitchen-field">
++                    <span className="kitchen-label">Cuándo se cocina</span>
++                    <select
++                      className="kitchen-select"
++                      value={day.cookTiming}
++                      onChange={(event) => updateDay(day, { cookTiming: event.target.value })}
++                    >
++                      <option value="previous_day">Día anterior</option>
++                      <option value="same_day">Mismo día</option>
++                    </select>
++                  </label>
+ 
+-              <label className="kitchen-field">
+-                <span className="kitchen-label">Ingredientes extra (separados por coma)</span>
+-                <textarea
+-                  className="kitchen-textarea"
+-                  rows="2"
+-                  value={ingredientInputs[dayKey] ?? ""}
+-                  onChange={(event) => {
+-                    setIngredientInputs((prev) => ({ ...prev, [dayKey]: event.target.value }));
+-                  }}
+-                  onBlur={(event) => {
+-                    const list = event.target.value
+-                      .split(",")
+-                      .map((value) => ({ displayName: value.trim() }))
+-                      .filter((item) => item.displayName);
+-                    updateDay(day, { ingredientOverrides: list });
+-                  }}
+-                />
+-              </label>
++                  <label className="kitchen-field">
++                    <span className="kitchen-label">Ingredientes extra (separados por coma)</span>
++                    <textarea
++                      className="kitchen-textarea"
++                      rows="2"
++                      value={ingredientInputs[dayKey] ?? ""}
++                      onChange={(event) => {
++                        setIngredientInputs((prev) => ({ ...prev, [dayKey]: event.target.value }));
++                      }}
++                      onBlur={(event) => {
++                        const list = event.target.value
++                          .split(",")
++                          .map((value) => ({ displayName: value.trim() }))
++                          .filter((item) => item.displayName);
++                        updateDay(day, { ingredientOverrides: list });
++                      }}
++                    />
++                  </label>
+ 
+-              <div className="kitchen-actions">
+-                <button className="kitchen-button" onClick={() => onAssignSelf(day)}>
+-                  Me lo asigno
+-                </button>
+-                {user?.role === "admin" ? (
+-                  <select
+-                    className="kitchen-select"
+-                    value={day.cookUserId || ""}
+-                    onChange={(event) => updateDay(day, { cookUserId: event.target.value || null })}
+-                  >
+-                    <option value="">Sin asignar</option>
+-                    {users.map((u) => (
+-                      <option key={u.id} value={u.id}>{u.displayName}</option>
+-                    ))}
+-                  </select>
+-                ) : null}
+-              </div>
++                  <div className="kitchen-actions">
++                    {!isAssignedToSelf ? (
++                      <button className="kitchen-button" onClick={() => onAssignSelf(day)}>
++                        Me lo asigno
++                      </button>
++                    ) : null}
++                    {user?.role === "admin" ? (
++                      <select
++                        className="kitchen-select"
++                        value={day.cookUserId || ""}
++                        onChange={(event) => updateDay(day, { cookUserId: event.target.value || null })}
++                      >
++                        <option value="">Sin asignar</option>
++                        {users.map((u) => (
++                          <option key={u.id} value={u.id}>{u.displayName}</option>
++                        ))}
++                      </select>
++                    ) : null}
++                  </div>
++                </>
++              )}
+               <div className="kitchen-day-feedback" aria-live="polite">
+                 {dayStatus[dayKey] === "saving" ? (
+                   <span className="kitchen-day-feedback-text saving">Guardando...</span>
+                 ) : null}
+                 {dayStatus[dayKey] === "saved" ? (
+                   <span className="kitchen-day-feedback-text saved">Guardado</span>
+                 ) : null}
+                 {dayErrors[dayKey] ? (
+                   <span className="kitchen-day-feedback-text error" role="alert">{dayErrors[dayKey]}</span>
+                 ) : null}
+               </div>
+             </div>
+           );
+         })}
+         </div>
+         {showCarouselControls ? (
+           <button
+             className="kitchen-week-carousel-arrow is-right"
+             type="button"
+             onClick={() => handleCarouselScroll(1)}
+             aria-label="Mostrar día siguiente"
+           >
+             <ChevronIcon className="kitchen-week-carousel-arrow-icon is-next" />
+           </button>
+         ) : null}

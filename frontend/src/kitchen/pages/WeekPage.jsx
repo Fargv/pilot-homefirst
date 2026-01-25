@@ -44,12 +44,14 @@ export default function WeekPage() {
   const [dayErrors, setDayErrors] = useState({});
   const [ingredientInputs, setIngredientInputs] = useState({});
   const [selectedDay, setSelectedDay] = useState("");
+  const [editingDays, setEditingDays] = useState({});
   const [showCarouselControls, setShowCarouselControls] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const lastSyncedIngredients = useRef({});
   const saveTimers = useRef({});
   const carouselRef = useRef(null);
   const dayRefs = useRef(new Map());
+  const mainDishRefs = useRef(new Map());
   const selectedDayRef = useRef(selectedDay);
 
   const loadData = async () => {
@@ -126,6 +128,20 @@ export default function WeekPage() {
   }, [selectedDay]);
 
   const dayKeys = useMemo(() => plan?.days?.map((day) => day.date.slice(0, 10)) || [], [plan]);
+  const dishMap = useMemo(() => {
+    const map = new Map();
+    dishes.forEach((dish) => {
+      map.set(dish._id, dish);
+    });
+    return map;
+  }, [dishes]);
+  const showCookTiming = useMemo(() => {
+    if (!plan?.days?.length) {
+      return false;
+    }
+    const [first] = plan.days;
+    return plan.days.some((day) => day.cookTiming !== first.cookTiming);
+  }, [plan]);
 
   useEffect(() => {
     const element = carouselRef.current;
@@ -205,15 +221,46 @@ export default function WeekPage() {
       saveTimers.current[dayKey] = window.setTimeout(() => {
         setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
       }, 2000);
+      return data.plan;
     } catch (err) {
       const message = err.message || "No se pudo actualizar el día.";
       setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
       setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
+      return null;
     }
   };
 
-  const onAssignSelf = (day) => {
-    updateDay(day, { cookUserId: user?.id || user?._id });
+  const onAssignSelf = async (day) => {
+    return updateDay(day, { cookUserId: user?.id || user?._id });
+  };
+
+  const setEditingForDay = (dayKey, value) => {
+    setEditingDays((prev) => ({ ...prev, [dayKey]: value }));
+  };
+
+  const focusMainDish = (dayKey) => {
+    window.requestAnimationFrame(() => {
+      const node = mainDishRefs.current.get(dayKey);
+      if (node) {
+        node.focus();
+      }
+    });
+  };
+
+  const handleAssignCta = async (day, canEdit, isAssigned) => {
+    const dayKey = day.date.slice(0, 10);
+    if (canEdit) {
+      setEditingForDay(dayKey, true);
+      focusMainDish(dayKey);
+      return;
+    }
+    if (!isAssigned && user) {
+      const updatedPlan = await onAssignSelf(day);
+      if (updatedPlan) {
+        setEditingForDay(dayKey, true);
+        focusMainDish(dayKey);
+      }
+    }
   };
 
   if (loading) {
@@ -317,6 +364,11 @@ export default function WeekPage() {
           const isPlanned = Boolean(day.mainDishId);
           const isAssignedToSelf = day.cookUserId
             && (day.cookUserId === user?.id || day.cookUserId === user?._id);
+          const canEdit = user?.role === "admin" || isAssignedToSelf;
+          const isEditing = Boolean(editingDays[dayKey]);
+          const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
+          const baseIngredients = mainDish?.ingredients || [];
+          const extraIngredients = day.ingredientOverrides || [];
           const statusLabels = [];
           if (isAssigned) {
             statusLabels.push({
@@ -344,8 +396,12 @@ export default function WeekPage() {
               <div className="kitchen-day-header">
                 <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
                 <div className="kitchen-day-meta">
-                  <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
-                  <span>Cocinero: {cookUser?.displayName || "Sin asignar"}</span>
+                  {showCookTiming ? (
+                    <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
+                  ) : null}
+                  {cookUser?.displayName ? (
+                    <span>Cocinero: {cookUser.displayName}</span>
+                  ) : null}
                 </div>
                 {statusLabels.length ? (
                   <div className="kitchen-day-status" aria-label="Estado del día">
@@ -356,84 +412,166 @@ export default function WeekPage() {
                     ))}
                   </div>
                 ) : null}
+                <div className="kitchen-day-cta">
+                  {canEdit && !isEditing ? (
+                    <button
+                      type="button"
+                      className="kitchen-button is-small"
+                      onClick={() => setEditingForDay(dayKey, true)}
+                    >
+                      Editar
+                    </button>
+                  ) : null}
+                  {isEditing ? (
+                    <div className="kitchen-day-edit-actions">
+                      <button
+                        type="button"
+                        className="kitchen-button is-small"
+                        onClick={() => setEditingForDay(dayKey, false)}
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        type="button"
+                        className="kitchen-button secondary is-small"
+                        onClick={() => setEditingForDay(dayKey, false)}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </div>
 
-              <label className="kitchen-field">
-                <span className="kitchen-label">Plato principal</span>
-                <select
-                  className="kitchen-select"
-                  value={day.mainDishId || ""}
-                  onChange={(event) => updateDay(day, { mainDishId: event.target.value || null })}
-                >
-                  <option value="">Sin plato</option>
-                  {dishes.map((dish) => (
-                    <option key={dish._id} value={dish._id}>{dish.name}</option>
-                  ))}
-                </select>
-              </label>
+              {!isEditing ? (
+                <div className="kitchen-day-view">
+                  <div className="kitchen-day-info">
+                    <span className="kitchen-day-info-label">Plato principal</span>
+                    <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>
+                  </div>
+                  {!isAssigned || !isPlanned ? (
+                    <button
+                      type="button"
+                      className="kitchen-button"
+                      onClick={() => handleAssignCta(day, canEdit, isAssigned)}
+                    >
+                      Asignar plato
+                    </button>
+                  ) : null}
+                  {baseIngredients.length ? (
+                    <div className="kitchen-day-ingredients">
+                      <span className="kitchen-label">Ingredientes</span>
+                      <div className="kitchen-day-ingredient-pills">
+                        {baseIngredients.map((item) => (
+                          <span key={item.ingredientId || item.canonicalName || item.displayName} className="kitchen-ingredient-pill">
+                            {item.displayName}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  {extraIngredients.length ? (
+                    <div className="kitchen-day-ingredients">
+                      <span className="kitchen-label">Extras</span>
+                      <div className="kitchen-day-ingredient-pills is-extra">
+                        {extraIngredients.map((item) => (
+                          <span key={item.ingredientId || item.canonicalName || item.displayName} className="kitchen-ingredient-pill is-extra">
+                            {item.displayName}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <>
+                  <label className="kitchen-field">
+                    <span className="kitchen-label">Plato principal</span>
+                    <select
+                      ref={(node) => {
+                        if (!node) {
+                          mainDishRefs.current.delete(dayKey);
+                          return;
+                        }
+                        mainDishRefs.current.set(dayKey, node);
+                      }}
+                      className="kitchen-select"
+                      value={day.mainDishId || ""}
+                      onChange={(event) => updateDay(day, { mainDishId: event.target.value || null })}
+                    >
+                      <option value="">Sin plato</option>
+                      {dishes.map((dish) => (
+                        <option key={dish._id} value={dish._id}>{dish.name}</option>
+                      ))}
+                    </select>
+                  </label>
 
-              <label className="kitchen-field">
-                <span className="kitchen-label">Guarnición (opcional)</span>
-                <select
-                  className="kitchen-select"
-                  value={day.sideDishId || ""}
-                  onChange={(event) => updateDay(day, { sideDishId: event.target.value || null })}
-                >
-                  <option value="">Sin guarnición</option>
-                  {dishes.map((dish) => (
-                    <option key={dish._id} value={dish._id}>{dish.name}</option>
-                  ))}
-                </select>
-              </label>
+                  <label className="kitchen-field">
+                    <span className="kitchen-label">Guarnición (opcional)</span>
+                    <select
+                      className="kitchen-select"
+                      value={day.sideDishId || ""}
+                      onChange={(event) => updateDay(day, { sideDishId: event.target.value || null })}
+                    >
+                      <option value="">Sin guarnición</option>
+                      {dishes.map((dish) => (
+                        <option key={dish._id} value={dish._id}>{dish.name}</option>
+                      ))}
+                    </select>
+                  </label>
 
-              <label className="kitchen-field">
-                <span className="kitchen-label">Cuándo se cocina</span>
-                <select
-                  className="kitchen-select"
-                  value={day.cookTiming}
-                  onChange={(event) => updateDay(day, { cookTiming: event.target.value })}
-                >
-                  <option value="previous_day">Día anterior</option>
-                  <option value="same_day">Mismo día</option>
-                </select>
-              </label>
+                  <label className="kitchen-field">
+                    <span className="kitchen-label">Cuándo se cocina</span>
+                    <select
+                      className="kitchen-select"
+                      value={day.cookTiming}
+                      onChange={(event) => updateDay(day, { cookTiming: event.target.value })}
+                    >
+                      <option value="previous_day">Día anterior</option>
+                      <option value="same_day">Mismo día</option>
+                    </select>
+                  </label>
 
-              <label className="kitchen-field">
-                <span className="kitchen-label">Ingredientes extra (separados por coma)</span>
-                <textarea
-                  className="kitchen-textarea"
-                  rows="2"
-                  value={ingredientInputs[dayKey] ?? ""}
-                  onChange={(event) => {
-                    setIngredientInputs((prev) => ({ ...prev, [dayKey]: event.target.value }));
-                  }}
-                  onBlur={(event) => {
-                    const list = event.target.value
-                      .split(",")
-                      .map((value) => ({ displayName: value.trim() }))
-                      .filter((item) => item.displayName);
-                    updateDay(day, { ingredientOverrides: list });
-                  }}
-                />
-              </label>
+                  <label className="kitchen-field">
+                    <span className="kitchen-label">Ingredientes extra (separados por coma)</span>
+                    <textarea
+                      className="kitchen-textarea"
+                      rows="2"
+                      value={ingredientInputs[dayKey] ?? ""}
+                      onChange={(event) => {
+                        setIngredientInputs((prev) => ({ ...prev, [dayKey]: event.target.value }));
+                      }}
+                      onBlur={(event) => {
+                        const list = event.target.value
+                          .split(",")
+                          .map((value) => ({ displayName: value.trim() }))
+                          .filter((item) => item.displayName);
+                        updateDay(day, { ingredientOverrides: list });
+                      }}
+                    />
+                  </label>
 
-              <div className="kitchen-actions">
-                <button className="kitchen-button" onClick={() => onAssignSelf(day)}>
-                  Me lo asigno
-                </button>
-                {user?.role === "admin" ? (
-                  <select
-                    className="kitchen-select"
-                    value={day.cookUserId || ""}
-                    onChange={(event) => updateDay(day, { cookUserId: event.target.value || null })}
-                  >
-                    <option value="">Sin asignar</option>
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>{u.displayName}</option>
-                    ))}
-                  </select>
-                ) : null}
-              </div>
+                  <div className="kitchen-actions">
+                    {!isAssignedToSelf ? (
+                      <button className="kitchen-button" onClick={() => onAssignSelf(day)}>
+                        Me lo asigno
+                      </button>
+                    ) : null}
+                    {user?.role === "admin" ? (
+                      <select
+                        className="kitchen-select"
+                        value={day.cookUserId || ""}
+                        onChange={(event) => updateDay(day, { cookUserId: event.target.value || null })}
+                      >
+                        <option value="">Sin asignar</option>
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>{u.displayName}</option>
+                        ))}
+                      </select>
+                    ) : null}
+                  </div>
+                </>
+              )}
               <div className="kitchen-day-feedback" aria-live="polite">
                 {dayStatus[dayKey] === "saving" ? (
                   <span className="kitchen-day-feedback-text saving">Guardando...</span>

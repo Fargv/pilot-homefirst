@@ -504,6 +504,12 @@
   transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.kitchen-button.is-small {
+  padding: 6px 12px;
+  font-size: 13px;
+  min-height: 32px;
+}
+
 .kitchen-button:hover {
   background: #4338ca;
 }
@@ -855,6 +861,18 @@
   gap: 6px;
 }
 
+.kitchen-day-cta {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.kitchen-day-edit-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
 .kitchen-day-title {
   margin: 0;
   font-size: 18px;
@@ -874,6 +892,63 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.kitchen-day-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kitchen-day-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kitchen-day-info-label {
+  font-size: 12px;
+  color: #667085;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kitchen-day-info-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #101828;
+}
+
+.kitchen-day-ingredients {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kitchen-day-ingredient-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kitchen-ingredient-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1f2937;
+}
+
+.kitchen-ingredient-pill.is-extra {
+  background: #fef3f2;
+  border-color: #fecaca;
+  color: #991b1b;
 }
 
 .kitchen-status-pill {
