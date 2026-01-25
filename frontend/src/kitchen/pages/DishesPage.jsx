@@ -11,7 +11,7 @@ export default function DishesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ name: "", ingredients: [] });
+  const [form, setForm] = useState({ name: "", ingredients: [], isSide: false });
   const [editingId, setEditingId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -93,14 +93,14 @@ export default function DishesPage() {
       setError("");
       setIsModalOpen(true);
       const ingredients = await resolveIngredients(dish.ingredients || []);
-      setForm({ name: dish.name || "", ingredients });
+      setForm({ name: dish.name || "", ingredients, isSide: Boolean(dish.isSide) });
       setEditingId(dish._id);
     },
     [resolveIngredients]
   );
 
   const resetForm = () => {
-    setForm({ name: "", ingredients: [] });
+    setForm({ name: "", ingredients: [], isSide: false });
     setEditingId(null);
     setNotice("");
     setError("");
@@ -124,6 +124,7 @@ export default function DishesPage() {
     try {
       const payload = {
         name: form.name,
+        isSide: form.isSide,
         ingredients: (form.ingredients || []).map((item) => ({
           ingredientId: item.ingredientId,
           displayName: item.displayName,
@@ -331,6 +332,14 @@ export default function DishesPage() {
                   onChange={(event) => setForm({ ...form, name: event.target.value })}
                   required
                   placeholder="Ej. Pollo al horno"
+                />
+              </label>
+              <label className="kitchen-field">
+                <span className="kitchen-label">Es guarnición</span>
+                <input
+                  type="checkbox"
+                  checked={form.isSide}
+                  onChange={(event) => setForm({ ...form, isSide: event.target.checked })}
                 />
               </label>
               <div className="kitchen-field kitchen-dish-ingredients">

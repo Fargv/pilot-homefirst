@@ -45,6 +45,7 @@ export default function WeekPage() {
   const [ingredientInputs, setIngredientInputs] = useState({});
   const [selectedDay, setSelectedDay] = useState("");
   const [editingDays, setEditingDays] = useState({});
+  const [sideDishEnabled, setSideDishEnabled] = useState({});
   const [showCarouselControls, setShowCarouselControls] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const lastSyncedIngredients = useRef({});
@@ -135,6 +136,7 @@ export default function WeekPage() {
     });
     return map;
   }, [dishes]);
+  const sideDishes = useMemo(() => dishes.filter((dish) => dish.isSide), [dishes]);
   const showCookTiming = useMemo(() => {
     if (!plan?.days?.length) {
       return false;
@@ -234,8 +236,14 @@ export default function WeekPage() {
     return updateDay(day, { cookUserId: user?.id || user?._id });
   };
 
-  const setEditingForDay = (dayKey, value) => {
-    setEditingDays((prev) => ({ ...prev, [dayKey]: value }));
+  const startEditingDay = (day) => {
+    const dayKey = day.date.slice(0, 10);
+    setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
+    setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
+  };
+
+  const stopEditingDay = (dayKey) => {
+    setEditingDays((prev) => ({ ...prev, [dayKey]: false }));
   };
 
   const focusMainDish = (dayKey) => {
@@ -250,14 +258,14 @@ export default function WeekPage() {
   const handleAssignCta = async (day, canEdit, isAssigned) => {
     const dayKey = day.date.slice(0, 10);
     if (canEdit) {
-      setEditingForDay(dayKey, true);
+      startEditingDay(day);
       focusMainDish(dayKey);
       return;
     }
     if (!isAssigned && user) {
       const updatedPlan = await onAssignSelf(day);
       if (updatedPlan) {
-        setEditingForDay(dayKey, true);
+        startEditingDay(day);
         focusMainDish(dayKey);
       }
     }
@@ -367,6 +375,9 @@ export default function WeekPage() {
           const canEdit = user?.role === "admin" || isAssignedToSelf;
           const isEditing = Boolean(editingDays[dayKey]);
           const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
+          const sideDish = day.sideDishId ? dishMap.get(day.sideDishId) : null;
+          const showSideDish = Boolean(sideDish);
+          const sideDishOn = Boolean(sideDishEnabled[dayKey]);
           const baseIngredients = mainDish?.ingredients || [];
           const extraIngredients = day.ingredientOverrides || [];
           const statusLabels = [];
@@ -417,7 +428,7 @@ export default function WeekPage() {
                     <button
                       type="button"
                       className="kitchen-button is-small"
-                      onClick={() => setEditingForDay(dayKey, true)}
+                      onClick={() => startEditingDay(day)}
                     >
                       Editar
                     </button>
@@ -427,14 +438,14 @@ export default function WeekPage() {
                       <button
                         type="button"
                         className="kitchen-button is-small"
-                        onClick={() => setEditingForDay(dayKey, false)}
+                        onClick={() => stopEditingDay(dayKey)}
                       >
                         Guardar
                       </button>
                       <button
                         type="button"
                         className="kitchen-button secondary is-small"
-                        onClick={() => setEditingForDay(dayKey, false)}
+                        onClick={() => stopEditingDay(dayKey)}
                       >
                         Cancelar
                       </button>
@@ -449,6 +460,12 @@ export default function WeekPage() {
                     <span className="kitchen-day-info-label">Plato principal</span>
                     <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>
                   </div>
+                  {showSideDish ? (
+                    <div className="kitchen-day-info">
+                      <span className="kitchen-day-info-label">Guarnición</span>
+                      <span className="kitchen-day-info-value">{sideDish?.name}</span>
+                    </div>
+                  ) : null}
                   {!isAssigned || !isPlanned ? (
                     <button
                       type="button"
@@ -507,18 +524,35 @@ export default function WeekPage() {
                   </label>
 
                   <label className="kitchen-field">
-                    <span className="kitchen-label">Guarnición (opcional)</span>
-                    <select
-                      className="kitchen-select"
-                      value={day.sideDishId || ""}
-                      onChange={(event) => updateDay(day, { sideDishId: event.target.value || null })}
-                    >
-                      <option value="">Sin guarnición</option>
-                      {dishes.map((dish) => (
-                        <option key={dish._id} value={dish._id}>{dish.name}</option>
-                      ))}
-                    </select>
+                    <span className="kitchen-label">Añadir guarnición</span>
+                    <input
+                      type="checkbox"
+                      checked={sideDishOn}
+                      onChange={(event) => {
+                        const nextValue = event.target.checked;
+                        setSideDishEnabled((prev) => ({ ...prev, [dayKey]: nextValue }));
+                        if (!nextValue) {
+                          updateDay(day, { sideDishId: null });
+                        }
+                      }}
+                    />
                   </label>
+
+                  {sideDishOn ? (
+                    <label className="kitchen-field">
+                      <span className="kitchen-label">Guarnición</span>
+                      <select
+                        className="kitchen-select"
+                        value={day.sideDishId || ""}
+                        onChange={(event) => updateDay(day, { sideDishId: event.target.value || null })}
+                      >
+                        <option value="">Sin guarnición</option>
+                        {sideDishes.map((dish) => (
+                          <option key={dish._id} value={dish._id}>{dish.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
 
                   <label className="kitchen-field">
                     <span className="kitchen-label">Cuándo se cocina</span>

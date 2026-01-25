@@ -12,13 +12,14 @@ router.get("/", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients } = req.body;
+    const { name, ingredients, isSide } = req.body;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
 
     const normalizedIngredients = normalizeIngredientList(ingredients || []);
     const dish = await KitchenDish.create({
       name: String(name).trim(),
       ingredients: normalizedIngredients,
+      isSide: Boolean(isSide),
       createdBy: req.kitchenUser._id
     });
 
@@ -30,12 +31,13 @@ router.post("/", requireAuth, async (req, res) => {
 
 router.put("/:id", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients } = req.body;
+    const { name, ingredients, isSide } = req.body;
     const dish = await KitchenDish.findById(req.params.id);
     if (!dish) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
 
     if (name) dish.name = String(name).trim();
     if (Array.isArray(ingredients)) dish.ingredients = normalizeIngredientList(ingredients);
+    if (typeof isSide === "boolean") dish.isSide = isSide;
 
     await dish.save();
     return res.json({ ok: true, dish });
