@@ -3,7 +3,7 @@ import { apiRequest } from "../api.js";
 import IngredientPicker from "./IngredientPicker.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
-const EMPTY_FORM = { name: "", ingredients: [], isSide: false };
+const EMPTY_FORM = { name: "", ingredients: [], sidedish: false };
 
 export default function DishModal({
   isOpen,
@@ -12,7 +12,8 @@ export default function DishModal({
   categories = [],
   onCategoryCreated,
   initialDish = null,
-  initialName = ""
+  initialName = "",
+  initialSidedish = false
 }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
@@ -71,14 +72,14 @@ export default function DishModal({
         setForm({
           name: initialDish.name || "",
           ingredients,
-          isSide: Boolean(initialDish.isSide)
+          sidedish: Boolean(initialDish.sidedish)
         });
         setEditingId(initialDish._id);
       } else {
         setForm({
           name: initialName || "",
           ingredients: [],
-          isSide: false
+          sidedish: Boolean(initialSidedish)
         });
         setEditingId(null);
       }
@@ -87,7 +88,7 @@ export default function DishModal({
     return () => {
       active = false;
     };
-  }, [initialDish, initialName, isOpen, resolveIngredients]);
+  }, [initialDish, initialName, initialSidedish, isOpen, resolveIngredients]);
 
   const pendingCount = useMemo(
     () => (form.ingredients || []).filter((item) => item.status === "pending").length,
@@ -109,7 +110,7 @@ export default function DishModal({
     try {
       const payload = {
         name: form.name,
-        isSide: form.isSide,
+        sidedish: form.sidedish,
         ingredients: (form.ingredients || []).map((item) => ({
           ingredientId: item.ingredientId,
           displayName: item.displayName,
@@ -180,14 +181,23 @@ export default function DishModal({
               placeholder="Ej. Pollo al horno"
             />
           </label>
-          <label className="kitchen-field">
-            <span className="kitchen-label">Es guarnición</span>
-            <input
-              type="checkbox"
-              checked={form.isSide}
-              onChange={(event) => setForm((prev) => ({ ...prev, isSide: event.target.checked }))}
-            />
-          </label>
+          <div className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Guarnición</span>
+              <label className="kitchen-toggle" htmlFor="dish-sideswitch">
+                <input
+                  id="dish-sideswitch"
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={form.sidedish}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, sidedish: event.target.checked }))
+                  }
+                />
+                <span className="kitchen-toggle-track" aria-hidden="true" />
+              </label>
+            </div>
+          </div>
           <div className="kitchen-field kitchen-dish-ingredients">
             <span className="kitchen-label">Ingredientes</span>
             <IngredientPicker

@@ -57,6 +57,7 @@ export default function WeekPage() {
   const [weekStart, setWeekStart] = useState(getMondayISO());
   const [plan, setPlan] = useState(null);
   const [dishes, setDishes] = useState([]);
+  const [sideDishes, setSideDishes] = useState([]);
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,15 +72,20 @@ export default function WeekPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [mainDishQueries, setMainDishQueries] = useState({});
   const [mainDishOpen, setMainDishOpen] = useState({});
+  const [sideDishQueries, setSideDishQueries] = useState({});
+  const [sideDishOpen, setSideDishOpen] = useState({});
   const [assigneeOpen, setAssigneeOpen] = useState({});
   const [dishModalOpen, setDishModalOpen] = useState(false);
   const [dishModalName, setDishModalName] = useState("");
   const [dishModalDayKey, setDishModalDayKey] = useState(null);
+  const [dishModalMode, setDishModalMode] = useState("main");
+  const [dishModalSidedish, setDishModalSidedish] = useState(false);
   const ingredientCache = useRef(new Map());
   const saveTimers = useRef({});
   const carouselRef = useRef(null);
   const dayRefs = useRef(new Map());
   const mainDishRefs = useRef(new Map());
+  const sideDishRefs = useRef(new Map());
   const selectedDayRef = useRef(selectedDay);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
 
@@ -87,12 +93,14 @@ export default function WeekPage() {
     setLoading(true);
     setLoadError("");
     try {
-      const [planData, dishesData] = await Promise.all([
+      const [planData, dishesData, sideDishesData] = await Promise.all([
         apiRequest(`/api/kitchen/weeks/${weekStart}`),
-        apiRequest("/api/kitchen/dishes")
+        apiRequest("/api/kitchen/dishes"),
+        apiRequest("/api/kitchen/dishes?sidedish=true")
       ]);
       setPlan(planData.plan);
       setDishes(dishesData.dishes || []);
+      setSideDishes(sideDishesData.dishes || []);
       if (user) {
         const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
         const usersData = await apiRequest(usersEndpoint);
@@ -231,7 +239,6 @@ export default function WeekPage() {
     });
     return map;
   }, [dishes]);
-  const sideDishes = useMemo(() => dishes.filter((dish) => dish.isSide), [dishes]);
   const showCookTiming = useMemo(() => {
     if (!safeDays.length) {
       return false;
@@ -337,15 +344,19 @@ export default function WeekPage() {
   const startEditingDay = (day) => {
     const dayKey = day.date.slice(0, 10);
     const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
+    const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
     setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
     setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
     setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+    setSideDishQueries((prev) => ({ ...prev, [dayKey]: sideDishName || "" }));
+    setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
   };
 
   const stopEditingDay = (dayKey) => {
     setEditingDays((prev) => ({ ...prev, [dayKey]: false }));
     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+    setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
   };
 
   const focusMainDish = (dayKey) => {
@@ -373,9 +384,12 @@ export default function WeekPage() {
     }
   };
 
-  const openDishModal = (dayKey, name) => {
+  const openDishModal = (dayKey, name, options = {}) => {
+    const { mode = "main", sidedish = false } = options;
     setDishModalDayKey(dayKey);
     setDishModalName(name);
+    setDishModalMode(mode);
+    setDishModalSidedish(sidedish);
     setDishModalOpen(true);
   };
 
@@ -383,6 +397,8 @@ export default function WeekPage() {
     setDishModalOpen(false);
     setDishModalName("");
     setDishModalDayKey(null);
+    setDishModalMode("main");
+    setDishModalSidedish(false);
   };
 
   const handleDishSaved = async (dish) => {
@@ -394,12 +410,30 @@ export default function WeekPage() {
       }
       return [dish, ...prev];
     });
+    setSideDishes((prev) => {
+      const isSide = Boolean(dish.sidedish);
+      const exists = prev.some((item) => item._id === dish._id);
+      if (!isSide) {
+        return prev.filter((item) => item._id !== dish._id);
+      }
+      if (exists) {
+        return prev.map((item) => (item._id === dish._id ? dish : item));
+      }
+      return [dish, ...prev];
+    });
     if (dishModalDayKey) {
       const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === dishModalDayKey);
       if (targetDay) {
-        updateDay(targetDay, { mainDishId: dish._id });
-        setMainDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
-        setMainDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
+        if (dishModalMode === "side") {
+          updateDay(targetDay, { sideDishId: dish._id });
+          setSideDishEnabled((prev) => ({ ...prev, [dishModalDayKey]: true }));
+          setSideDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
+          setSideDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
+        } else {
+          updateDay(targetDay, { mainDishId: dish._id });
+          setMainDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
+          setMainDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
+        }
       }
     }
   };
@@ -570,6 +604,22 @@ export default function WeekPage() {
           const hasExactMainDishMatch = mainDishTokens.length
             ? dishes.some(
               (dish) => normalizeIngredientName(dish.name || "") === normalizedMainDishQuery
+            )
+            : false;
+          const sideDishQuery = sideDishQueries[dayKey] ?? sideDish?.name ?? "";
+          const trimmedSideDishQuery = sideDishQuery.trim();
+          const normalizedSideDishQuery = normalizeIngredientName(trimmedSideDishQuery);
+          const sideDishTokens = normalizedSideDishQuery.split(" ").filter(Boolean);
+          const filteredSideDishes = sideDishTokens.length
+            ? sideDishes.filter((dish) => {
+              const normalizedName = normalizeIngredientName(dish.name || "");
+              return sideDishTokens.every((token) => normalizedName.includes(token));
+            })
+            : [];
+          const limitedSideDishes = filteredSideDishes.slice(0, MAX_DISH_RESULTS);
+          const hasExactSideDishMatch = sideDishTokens.length
+            ? sideDishes.some(
+              (dish) => normalizeIngredientName(dish.name || "") === normalizedSideDishQuery
             )
             : false;
           const statusLabels = [];
@@ -831,6 +881,8 @@ export default function WeekPage() {
                             setSideDishEnabled((prev) => ({ ...prev, [dayKey]: nextValue }));
                             if (!nextValue) {
                               updateDay(day, { sideDishId: null });
+                              setSideDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
+                              setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
                             }
                           }}
                         />
@@ -842,16 +894,104 @@ export default function WeekPage() {
                   {sideDishOn ? (
                     <label className="kitchen-field">
                       <span className="kitchen-label">Guarnición</span>
-                      <select
-                        className="kitchen-select"
-                        value={day.sideDishId || ""}
-                        onChange={(event) => updateDay(day, { sideDishId: event.target.value || null })}
-                      >
-                        <option value="">Sin guarnición</option>
-                        {sideDishes.map((dish) => (
-                          <option key={dish._id} value={dish._id}>{dish.name}</option>
-                        ))}
-                      </select>
+                      <div className="kitchen-ingredient-search">
+                        <input
+                          ref={(node) => {
+                            if (!node) {
+                              sideDishRefs.current.delete(dayKey);
+                              return;
+                            }
+                            sideDishRefs.current.set(dayKey, node);
+                          }}
+                          className="kitchen-input"
+                          value={sideDishQuery}
+                          placeholder="Busca una guarnición…"
+                          onFocus={() => setSideDishOpen((prev) => ({ ...prev, [dayKey]: true }))}
+                          onBlur={() => {
+                            const trimmed = sideDishQuery.trim();
+                            const normalized = normalizeIngredientName(trimmed);
+                            const match = sideDishes.find(
+                              (dish) => normalizeIngredientName(dish.name || "") === normalized
+                            );
+                            if (!trimmed) {
+                              updateDay(day, { sideDishId: null });
+                              setSideDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
+                            } else if (match) {
+                              updateDay(day, { sideDishId: match._id });
+                              setSideDishQueries((prev) => ({ ...prev, [dayKey]: match.name }));
+                            } else {
+                              setSideDishQueries((prev) => ({
+                                ...prev,
+                                [dayKey]: sideDish?.name || ""
+                              }));
+                            }
+                            setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+                          }}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setSideDishQueries((prev) => ({ ...prev, [dayKey]: value }));
+                            setSideDishOpen((prev) => ({ ...prev, [dayKey]: true }));
+                          }}
+                        />
+                        {sideDishOpen[dayKey] ? (
+                          <div className="kitchen-suggestion-list is-scrollable">
+                            {sideDishTokens.length ? (
+                              <>
+                                <button
+                                  className="kitchen-suggestion"
+                                  type="button"
+                                  onMouseDown={(event) => {
+                                    event.preventDefault();
+                                    updateDay(day, { sideDishId: null });
+                                    setSideDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
+                                    setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+                                  }}
+                                >
+                                  Sin guarnición
+                                </button>
+                                {limitedSideDishes.length ? (
+                                  limitedSideDishes.map((dish) => (
+                                    <button
+                                      className="kitchen-suggestion"
+                                      key={dish._id}
+                                      type="button"
+                                      onMouseDown={(event) => {
+                                        event.preventDefault();
+                                        updateDay(day, { sideDishId: dish._id });
+                                        setSideDishQueries((prev) => ({ ...prev, [dayKey]: dish.name }));
+                                        setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+                                      }}
+                                    >
+                                      <span className="kitchen-suggestion-name">{dish.name}</span>
+                                    </button>
+                                  ))
+                                ) : !hasExactSideDishMatch && trimmedSideDishQuery ? (
+                                  <button
+                                    className="kitchen-suggestion is-create"
+                                    type="button"
+                                    onMouseDown={(event) => {
+                                      event.preventDefault();
+                                      setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+                                      openDishModal(dayKey, trimmedSideDishQuery, {
+                                        mode: "side",
+                                        sidedish: true
+                                      });
+                                    }}
+                                  >
+                                    Crear guarnición “{trimmedSideDishQuery}”
+                                  </button>
+                                ) : (
+                                  <div className="kitchen-muted kitchen-suggestion-empty">Sin coincidencias.</div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="kitchen-muted kitchen-suggestion-empty">
+                                Escribe para buscar...
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
                     </label>
                   ) : null}
 
@@ -1036,6 +1176,7 @@ export default function WeekPage() {
         categories={categories}
         onCategoryCreated={handleCategoryCreated}
         initialName={dishModalName}
+        initialSidedish={dishModalSidedish}
       />
     </KitchenLayout>
   );
