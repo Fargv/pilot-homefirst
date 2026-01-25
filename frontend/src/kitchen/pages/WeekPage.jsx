@@ -614,7 +614,7 @@ export default function WeekPage() {
                   </div>
                 ) : null}
                 <div className="kitchen-day-cta">
-                  {canEdit && !isEditing ? (
+                  {canEdit && isPlanned && !isEditing ? (
                     <button
                       type="button"
                       className="kitchen-button is-small"
@@ -656,7 +656,7 @@ export default function WeekPage() {
                       <span className="kitchen-day-info-value">{sideDish?.name}</span>
                     </div>
                   ) : null}
-                  {!isAssigned || !isPlanned ? (
+                  {!isPlanned ? (
                     <button
                       type="button"
                       className="kitchen-button"
