@@ -5,12 +5,20 @@ const DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
 const DAY_LONG = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
 function getDayAbbreviation(dateString) {
+  if (!dateString) return "-";
   const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
   return DAY_LABELS[date.getDay()];
 }
 
 function getDayLong(dateString) {
+  if (!dateString) return "sin fecha";
   const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) {
+    return "sin fecha";
+  }
   return DAY_LONG[date.getDay()];
 }
 
@@ -33,10 +41,11 @@ function ChevronIcon(props) {
 export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay }) {
   const scrollRef = useRef(null);
   const [isCarousel, setIsCarousel] = useState(false);
+  const safeDays = useMemo(() => (Array.isArray(days) ? days : []), [days]);
 
   const entries = useMemo(() => {
-    return days.map((day) => {
-      const dayKey = day.date.slice(0, 10);
+    return safeDays.map((day, index) => {
+      const dayKey = day?.date ? day.date.slice(0, 10) : `day-${index}`;
       const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
       const initials = cookUser ? getInitials(cookUser.displayName) : "";
       return {
@@ -48,7 +57,7 @@ export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay 
         initials
       };
     });
-  }, [days, userMap]);
+  }, [safeDays, userMap]);
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -60,12 +69,15 @@ export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay 
     };
 
     updateCarousel();
-    const observer = new ResizeObserver(updateCarousel);
-    observer.observe(element);
+    let observer;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(updateCarousel);
+      observer.observe(element);
+    }
     window.addEventListener("resize", updateCarousel);
 
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       window.removeEventListener("resize", updateCarousel);
     };
   }, []);

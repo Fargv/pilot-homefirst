@@ -15,7 +15,13 @@ function getMondayISO(date = new Date()) {
 }
 
 function formatDateLabel(dateString) {
+  if (!dateString) {
+    return "Sin fecha";
+  }
   const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) {
+    return "Sin fecha";
+  }
   return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" });
 }
 
@@ -59,6 +65,7 @@ export default function WeekPage() {
   const dayRefs = useRef(new Map());
   const mainDishRefs = useRef(new Map());
   const selectedDayRef = useRef(selectedDay);
+  const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
 
   const loadData = async () => {
     setLoading(true);
@@ -145,13 +152,16 @@ export default function WeekPage() {
   );
 
   useEffect(() => {
-    if (!plan?.days) {
+    if (!safeDays.length) {
       return;
     }
     let active = true;
     const loadExtras = async () => {
       const resolved = await Promise.all(
-        plan.days.map(async (day) => {
+        safeDays.map(async (day) => {
+          if (!day?.date) {
+            return ["", []];
+          }
           const key = day.date.slice(0, 10);
           const items = await resolveIngredients(day.ingredientOverrides || []);
           return [key, items];
@@ -161,6 +171,7 @@ export default function WeekPage() {
       setExtraIngredientsByDay((prev) => {
         const next = { ...prev };
         resolved.forEach(([key, items]) => {
+          if (!key) return;
           next[key] = items;
         });
         return next;
@@ -173,27 +184,30 @@ export default function WeekPage() {
   }, [plan, resolveIngredients]);
 
   useEffect(() => {
-    if (!plan?.days?.length) {
+    if (!safeDays.length) {
       return;
     }
     const todayKey = new Date().toISOString().slice(0, 10);
-    const fallbackDay = plan.days[0]?.date?.slice(0, 10) || "";
-    const defaultDay = plan.days.some((day) => day.date.slice(0, 10) === todayKey)
+    const fallbackDay = safeDays[0]?.date?.slice(0, 10) || "";
+    const defaultDay = safeDays.some((day) => day.date?.slice(0, 10) === todayKey)
       ? todayKey
       : fallbackDay;
     setSelectedDay((prev) => {
-      if (prev && plan.days.some((day) => day.date.slice(0, 10) === prev)) {
+      if (prev && safeDays.some((day) => day.date?.slice(0, 10) === prev)) {
         return prev;
       }
       return defaultDay;
     });
-  }, [plan]);
+  }, [safeDays]);
 
   useEffect(() => {
     selectedDayRef.current = selectedDay;
   }, [selectedDay]);
 
-  const dayKeys = useMemo(() => plan?.days?.map((day) => day.date.slice(0, 10)) || [], [plan]);
+  const dayKeys = useMemo(
+    () => safeDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
+    [safeDays]
+  );
   const dishMap = useMemo(() => {
     const map = new Map();
     dishes.forEach((dish) => {
@@ -203,12 +217,12 @@ export default function WeekPage() {
   }, [dishes]);
   const sideDishes = useMemo(() => dishes.filter((dish) => dish.isSide), [dishes]);
   const showCookTiming = useMemo(() => {
-    if (!plan?.days?.length) {
+    if (!safeDays.length) {
       return false;
     }
-    const [first] = plan.days;
-    return plan.days.some((day) => day.cookTiming !== first.cookTiming);
-  }, [plan]);
+    const [first] = safeDays;
+    return safeDays.some((day) => day.cookTiming !== first.cookTiming);
+  }, [safeDays]);
 
   useEffect(() => {
     const element = carouselRef.current;
@@ -220,12 +234,15 @@ export default function WeekPage() {
     };
 
     updateControls();
-    const observer = new ResizeObserver(updateControls);
-    observer.observe(element);
+    let observer;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(updateControls);
+      observer.observe(element);
+    }
     window.addEventListener("resize", updateControls);
 
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       window.removeEventListener("resize", updateControls);
     };
   }, [dayKeys.length]);
@@ -435,7 +452,7 @@ export default function WeekPage() {
           </div>
         </section>
         <WeekDaysStrip
-          days={plan.days}
+          days={safeDays}
           userMap={userMap}
           selectedDay={selectedDay}
           onSelectDay={handleSelectDay}
@@ -454,7 +471,17 @@ export default function WeekPage() {
           </button>
         ) : null}
         <div className="kitchen-grid kitchen-week-days" id="week-grid" ref={carouselRef}>
-        {plan.days.map((day) => {
+        {safeDays.map((day, index) => {
+          if (!day?.date) {
+            return (
+              <div key={`day-${index}`} className="kitchen-card kitchen-day-card">
+                <div className="kitchen-day-header">
+                  <h3 className="kitchen-day-title">Día sin fecha</h3>
+                  <p className="kitchen-muted">Falta la fecha de este día en la planificación.</p>
+                </div>
+              </div>
+            );
+          }
           const dayKey = day.date.slice(0, 10);
           const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
           const isAssigned = Boolean(day.cookUserId);
