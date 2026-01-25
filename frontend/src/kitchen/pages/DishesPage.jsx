@@ -14,6 +14,8 @@ export default function DishesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeDish, setActiveDish] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("main");
+  const [initialSidedish, setInitialSidedish] = useState(false);
 
   const loadDishes = async () => {
     setLoading(true);
@@ -57,6 +59,7 @@ export default function DishesPage() {
   const startCreate = () => {
     setActiveDish(null);
     setError("");
+    setInitialSidedish(activeTab === "side");
     setIsModalOpen(true);
   };
 
@@ -84,9 +87,13 @@ export default function DishesPage() {
   };
 
   const normalizedSearch = useMemo(() => normalizeIngredientName(searchTerm), [searchTerm]);
+  const tabFilteredDishes = useMemo(() => {
+    const shouldShowSide = activeTab === "side";
+    return dishes.filter((dish) => Boolean(dish.sidedish) === shouldShowSide);
+  }, [activeTab, dishes]);
   const visibleDishes = useMemo(() => {
-    if (!normalizedSearch) return dishes;
-    return dishes.filter((dish) => {
+    if (!normalizedSearch) return tabFilteredDishes;
+    return tabFilteredDishes.filter((dish) => {
       const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
       if (nameMatch) return true;
       return (dish.ingredients || []).some((item) => {
@@ -95,7 +102,22 @@ export default function DishesPage() {
         return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
       });
     });
-  }, [dishes, normalizedSearch]);
+  }, [normalizedSearch, tabFilteredDishes]);
+
+  const emptyMessage = useMemo(() => {
+    if (dishes.length === 0) {
+      return "No hay platos aún. Crea el primero.";
+    }
+    if (visibleDishes.length === 0) {
+      if (searchTerm.trim()) {
+        return "No encontramos platos con ese criterio.";
+      }
+      return activeTab === "side"
+        ? "No hay guarniciones aún. Crea la primera."
+        : "No hay platos principales aún. Crea el primero.";
+    }
+    return "";
+  }, [activeTab, dishes.length, searchTerm, visibleDishes.length]);
 
   return (
     <KitchenLayout>
@@ -106,7 +128,27 @@ export default function DishesPage() {
             <p className="kitchen-muted">Administra tus platos y sus ingredientes en un solo lugar.</p>
           </div>
           <button className="kitchen-button" type="button" onClick={startCreate}>
-            Nuevo plato
+            {activeTab === "side" ? "Nueva guarnición" : "Nuevo plato"}
+          </button>
+        </div>
+        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Tipos de platos">
+          <button
+            className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "main"}
+            onClick={() => setActiveTab("main")}
+          >
+            Platos
+          </button>
+          <button
+            className={`kitchen-tab-button ${activeTab === "side" ? "is-active" : ""}`}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "side"}
+            onClick={() => setActiveTab("side")}
+          >
+            Guarniciones
           </button>
         </div>
         <div className="kitchen-dishes-search">
@@ -121,11 +163,7 @@ export default function DishesPage() {
           <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
         ) : visibleDishes.length === 0 ? (
           <div className="kitchen-card kitchen-empty">
-            <p>
-              {dishes.length === 0
-                ? "No hay platos aún. Crea el primero."
-                : "No encontramos platos con ese criterio."}
-            </p>
+            <p>{emptyMessage}</p>
           </div>
         ) : (
           <div className="kitchen-dishes-grid">
@@ -133,9 +171,15 @@ export default function DishesPage() {
               const ingredientsText =
                 (dish.ingredients || []).map((item) => item.displayName).join(", ") || "Sin ingredientes";
               return (
-                <article className="kitchen-dish-card" key={dish._id}>
+                <article
+                  className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
+                  key={dish._id}
+                >
                   <div>
-                    <h3 className="kitchen-dish-name">{dish.name}</h3>
+                    <div className="kitchen-dish-title-row">
+                      <h3 className="kitchen-dish-name">{dish.name}</h3>
+                      {dish.sidedish ? <span className="kitchen-dish-badge">Guarnición</span> : null}
+                    </div>
                     <p className="kitchen-dish-ingredients-text" title={ingredientsText}>
                       {ingredientsText}
                     </p>
@@ -214,6 +258,7 @@ export default function DishesPage() {
         categories={categories}
         onCategoryCreated={onCategoryCreated}
         initialDish={activeDish}
+        initialSidedish={initialSidedish}
       />
     </KitchenLayout>
   );

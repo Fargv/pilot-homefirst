@@ -365,6 +365,37 @@
   display: flex;
 }
 
+.kitchen-dishes-tabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  align-self: flex-start;
+}
+
+.kitchen-tab-button {
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kitchen-tab-button.is-active {
+  background: white;
+  color: #1e293b;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.kitchen-tab-button:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.35);
+  outline-offset: 2px;
+}
+
 .kitchen-dishes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -383,9 +414,32 @@
   min-height: 96px;
 }
 
+.kitchen-dish-card.is-sidedish {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.kitchen-dish-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .kitchen-dish-name {
   margin: 0 0 6px;
   font-size: 16px;
+}
+
+.kitchen-dish-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #dbeafe;
 }
 
 .kitchen-dish-ingredients-text {
