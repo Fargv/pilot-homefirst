@@ -544,6 +544,8 @@ export default function WeekPage() {
           const showSideDish = Boolean(sideDish);
           const sideDishOn = Boolean(sideDishEnabled[dayKey]);
           const sideToggleId = `side-toggle-${dayKey}`;
+          const isEmptyState = !isPlanned && !isEditing;
+          const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
           const baseIngredients = mainDish?.ingredients || [];
           const extraIngredients = day.ingredientOverrides || [];
           const extraIngredientsValue =
@@ -584,7 +586,7 @@ export default function WeekPage() {
             <div
               key={day.date}
               id={`kitchen-day-${dayKey}`}
-              className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""}`}
+              className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""}`}
               tabIndex={-1}
               ref={(node) => {
                 if (!node) {
@@ -596,105 +598,124 @@ export default function WeekPage() {
             >
               <div className="kitchen-day-header">
                 <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
-                <div className="kitchen-day-meta">
-                  {showCookTiming ? (
-                    <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
-                  ) : null}
-                  {cookUser?.displayName ? (
-                    <span>Cocinero: {cookUser.displayName}</span>
-                  ) : null}
-                </div>
-                {statusLabels.length ? (
-                  <div className="kitchen-day-status" aria-label="Estado del día">
-                    {statusLabels.map((item) => (
-                      <span key={item.label} className={`kitchen-status-pill ${item.type}`}>
-                        {item.label}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-                <div className="kitchen-day-cta">
-                  {canEdit && isPlanned && !isEditing ? (
-                    <button
-                      type="button"
-                      className="kitchen-button is-small"
-                      onClick={() => startEditingDay(day)}
-                    >
-                      Editar
-                    </button>
-                  ) : null}
-                  {isEditing ? (
-                    <div className="kitchen-day-edit-actions">
-                      <button
-                        type="button"
-                        className="kitchen-button is-small"
-                        onClick={() => stopEditingDay(dayKey)}
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        type="button"
-                        className="kitchen-button secondary is-small"
-                        onClick={() => stopEditingDay(dayKey)}
-                      >
-                        Cancelar
-                      </button>
+                {!isEmptyState ? (
+                  <>
+                    <div className="kitchen-day-meta">
+                      {showCookTiming ? (
+                        <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
+                      ) : null}
+                      {cookUser?.displayName ? (
+                        <span>Cocinero: {cookUser.displayName}</span>
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
-              </div>
-
-              {!isEditing ? (
-                <div className="kitchen-day-view">
-                  <div className="kitchen-day-info">
-                    <span className="kitchen-day-info-label">Plato principal</span>
-                    <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>
-                  </div>
-                  {showSideDish ? (
-                    <div className="kitchen-day-info">
-                      <span className="kitchen-day-info-label">Guarnición</span>
-                      <span className="kitchen-day-info-value">{sideDish?.name}</span>
-                    </div>
-                  ) : null}
-                  {!isPlanned ? (
-                    <button
-                      type="button"
-                      className="kitchen-button"
-                      onClick={() => handleAssignCta(day, canEdit, isAssigned)}
-                    >
-                      Asignar plato
-                    </button>
-                  ) : null}
-                  <div className="kitchen-day-ingredients">
-                    <span className="kitchen-label">Ingredientes</span>
-                    <div className="kitchen-day-ingredient-pills">
-                      {baseIngredients.length ? (
-                        baseIngredients.map((item) => (
-                          <span
-                            key={item.ingredientId || item.canonicalName || item.displayName}
-                            className="kitchen-ingredient-pill"
-                          >
-                            {item.displayName}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="kitchen-muted">Sin ingredientes base.</span>
-                      )}
-                    </div>
-                  </div>
-                  {extraIngredients.length ? (
-                    <div className="kitchen-day-ingredients">
-                      <span className="kitchen-label">Extras</span>
-                      <div className="kitchen-day-ingredient-pills is-extra">
-                        {extraIngredients.map((item) => (
-                          <span key={item.ingredientId || item.canonicalName || item.displayName} className="kitchen-ingredient-pill is-extra">
-                            {item.displayName}
+                    {statusLabels.length ? (
+                      <div className="kitchen-day-status" aria-label="Estado del día">
+                        {statusLabels.map((item) => (
+                          <span key={item.label} className={`kitchen-status-pill ${item.type}`}>
+                            {item.label}
                           </span>
                         ))}
                       </div>
+                    ) : null}
+                    <div className="kitchen-day-cta">
+                      {canEdit && isPlanned && !isEditing ? (
+                        <button
+                          type="button"
+                          className="kitchen-button is-small"
+                          onClick={() => startEditingDay(day)}
+                        >
+                          Editar
+                        </button>
+                      ) : null}
+                      {isEditing ? (
+                        <div className="kitchen-day-edit-actions">
+                          <button
+                            type="button"
+                            className="kitchen-button is-small"
+                            onClick={() => stopEditingDay(dayKey)}
+                          >
+                            Guardar
+                          </button>
+                          <button
+                            type="button"
+                            className="kitchen-button secondary is-small"
+                            onClick={() => stopEditingDay(dayKey)}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
+                  </>
+                ) : null}
+              </div>
+
+              {!isEditing ? (
+                isEmptyState ? (
+                  <div className="kitchen-day-empty">
+                    <div className="kitchen-day-empty-spacer" aria-hidden="true" />
+                    {canShowAssignCta ? (
+                      <button
+                        type="button"
+                        className="kitchen-button kitchen-day-empty-button"
+                        onClick={() => handleAssignCta(day, canEdit, isAssigned)}
+                      >
+                        Asignar plato
+                      </button>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="kitchen-day-view">
+                    <div className="kitchen-day-info">
+                      <span className="kitchen-day-info-label">Plato principal</span>
+                      <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>
+                    </div>
+                    {showSideDish ? (
+                      <div className="kitchen-day-info">
+                        <span className="kitchen-day-info-label">Guarnición</span>
+                        <span className="kitchen-day-info-value">{sideDish?.name}</span>
+                      </div>
+                    ) : null}
+                    {!isPlanned && canShowAssignCta ? (
+                      <button
+                        type="button"
+                        className="kitchen-button"
+                        onClick={() => handleAssignCta(day, canEdit, isAssigned)}
+                      >
+                        Asignar plato
+                      </button>
+                    ) : null}
+                    <div className="kitchen-day-ingredients">
+                      <span className="kitchen-label">Ingredientes</span>
+                      <div className="kitchen-day-ingredient-pills">
+                        {baseIngredients.length ? (
+                          baseIngredients.map((item) => (
+                            <span
+                              key={item.ingredientId || item.canonicalName || item.displayName}
+                              className="kitchen-ingredient-pill"
+                            >
+                              {item.displayName}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="kitchen-muted">Sin ingredientes base.</span>
+                        )}
+                      </div>
+                    </div>
+                    {extraIngredients.length ? (
+                      <div className="kitchen-day-ingredients">
+                        <span className="kitchen-label">Extras</span>
+                        <div className="kitchen-day-ingredient-pills is-extra">
+                          {extraIngredients.map((item) => (
+                            <span key={item.ingredientId || item.canonicalName || item.displayName} className="kitchen-ingredient-pill is-extra">
+                              {item.displayName}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )
               ) : (
                 <>
                   <label className="kitchen-field">

@@ -958,6 +958,13 @@
   min-height: 100%;
 }
 
+.kitchen-day-card.is-empty {
+  min-height: auto;
+  background: #f8f9ff;
+  border: 1px solid #e4e7ff;
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.06);
+}
+
 .kitchen-day-card.is-selected {
   border: 1px solid #c7d2fe;
   box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.05);
@@ -1006,6 +1013,23 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.kitchen-day-empty {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 120px;
+}
+
+.kitchen-day-empty-spacer {
+  flex: 1;
+}
+
+.kitchen-day-empty-button {
+  margin-top: auto;
+  align-self: center;
+  width: 100%;
 }
 
 .kitchen-day-info {
@@ -1643,6 +1667,10 @@
 }
 
 @media (min-width: 900px) {
+  .kitchen-day-empty-button {
+    max-width: 280px;
+  }
+
   .kitchen-modal-actions {
     flex-direction: row;
   }
