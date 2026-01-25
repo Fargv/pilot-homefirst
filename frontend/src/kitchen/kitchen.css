@@ -560,6 +560,65 @@
   gap: 6px;
 }
 
+.kitchen-toggle-field {
+  gap: 0;
+}
+
+.kitchen-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kitchen-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.kitchen-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.kitchen-toggle-track {
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: #e4e7ec;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.kitchen-toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.kitchen-toggle-input:checked + .kitchen-toggle-track {
+  background: #4f46e5;
+}
+
+.kitchen-toggle-input:checked + .kitchen-toggle-track::after {
+  transform: translateX(20px);
+}
+
+.kitchen-toggle-input:focus-visible + .kitchen-toggle-track {
+  outline: 3px solid rgba(79, 70, 229, 0.35);
+  outline-offset: 2px;
+}
+
 .kitchen-pill {
   display: inline-flex;
   align-items: center;
@@ -589,6 +648,55 @@
   gap: 12px;
   margin-top: 20px;
   width: 100%;
+}
+
+.kitchen-assignee-picker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kitchen-assignee-button {
+  width: 100%;
+  border: 1px solid #d0d5dd;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #101828;
+  min-height: 48px;
+  cursor: pointer;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kitchen-assignee-button:hover {
+  border-color: #c7d2fe;
+}
+
+.kitchen-assignee-button:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.35);
+  outline-offset: 2px;
+}
+
+.kitchen-assignee-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kitchen-assignee-name {
+  flex: 1;
+  text-align: left;
 }
 
 .kitchen-week-header {
@@ -1081,6 +1189,11 @@
   gap: 4px;
 }
 
+.kitchen-suggestion-list.is-scrollable {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
 .kitchen-suggestion {
   border: none;
   background: transparent;
@@ -1091,6 +1204,20 @@
   font-weight: 600;
   color: #101828;
   cursor: pointer;
+}
+
+.kitchen-suggestion.is-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kitchen-suggestion.is-create {
+  color: #4338ca;
+}
+
+.kitchen-suggestion-empty {
+  padding: 8px 10px;
 }
 
 .kitchen-suggestion:hover,

@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../api.js";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
-import IngredientPicker from "../components/IngredientPicker.jsx";
+import DishModal from "../components/DishModal.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
 export default function DishesPage() {
@@ -11,14 +11,9 @@ export default function DishesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ name: "", ingredients: [], isSide: false });
-  const [editingId, setEditingId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [isCreatingIngredient, setIsCreatingIngredient] = useState(false);
+  const [activeDish, setActiveDish] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const ingredientCache = useRef(new Map());
 
   const loadDishes = async () => {
     setLoading(true);
@@ -50,107 +45,24 @@ export default function DishesPage() {
     loadCategories();
   }, []);
 
-  const fetchIngredientMatch = useCallback(async (canonicalName) => {
-    if (!canonicalName) return null;
-    if (ingredientCache.current.has(canonicalName)) {
-      return ingredientCache.current.get(canonicalName);
-    }
-    try {
-      const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(canonicalName)}`);
-      const match = (data.ingredients || []).find((item) => item.canonicalName === canonicalName);
-      ingredientCache.current.set(canonicalName, match || null);
-      return match || null;
-    } catch (err) {
-      return null;
-    }
-  }, []);
-
-  const resolveIngredients = useCallback(
-    async (ingredients = []) => {
-      const resolved = await Promise.all(
-        ingredients.map(async (item) => {
-          const displayName = String(item?.displayName || "").trim();
-          const canonicalName = String(item?.canonicalName || normalizeIngredientName(displayName)).trim();
-          const match = await fetchIngredientMatch(canonicalName);
-          const ingredientId = item?.ingredientId || match?._id;
-          return {
-            ingredientId,
-            displayName,
-            canonicalName,
-            category: match?.categoryId || null,
-            status: ingredientId ? "resolved" : "pending"
-          };
-        })
-      );
-      return resolved.filter((item) => item.displayName);
-    },
-    [fetchIngredientMatch]
-  );
-
   const startEdit = useCallback(
-    async (dish) => {
-      setNotice("");
+    (dish) => {
       setError("");
+      setActiveDish(dish);
       setIsModalOpen(true);
-      const ingredients = await resolveIngredients(dish.ingredients || []);
-      setForm({ name: dish.name || "", ingredients, isSide: Boolean(dish.isSide) });
-      setEditingId(dish._id);
     },
-    [resolveIngredients]
+    []
   );
-
-  const resetForm = () => {
-    setForm({ name: "", ingredients: [], isSide: false });
-    setEditingId(null);
-    setNotice("");
-    setError("");
-  };
 
   const startCreate = () => {
-    resetForm();
+    setActiveDish(null);
+    setError("");
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
-    resetForm();
     setIsModalOpen(false);
-  };
-
-  const onSave = async (event) => {
-    event.preventDefault();
-    setError("");
-    setNotice("");
-    setSaving(true);
-    try {
-      const payload = {
-        name: form.name,
-        isSide: form.isSide,
-        ingredients: (form.ingredients || []).map((item) => ({
-          ingredientId: item.ingredientId,
-          displayName: item.displayName,
-          canonicalName: item.canonicalName || normalizeIngredientName(item.displayName)
-        }))
-      };
-      if (editingId) {
-        await apiRequest(`/api/kitchen/dishes/${editingId}`, {
-          method: "PUT",
-          body: JSON.stringify(payload)
-        });
-        setNotice("Plato actualizado.");
-      } else {
-        await apiRequest("/api/kitchen/dishes", {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
-        setNotice("Plato creado.");
-      }
-      closeModal();
-      loadDishes();
-    } catch (err) {
-      setError(err.message || "No se pudo guardar el plato.");
-    } finally {
-      setSaving(false);
-    }
+    setActiveDish(null);
   };
 
   const onCategoryCreated = async (name, colors = null) => {
@@ -170,11 +82,6 @@ export default function DishesPage() {
     });
     return category;
   };
-
-  const pendingCount = useMemo(
-    () => (form.ingredients || []).filter((item) => item.status === "pending").length,
-    [form.ingredients]
-  );
 
   const normalizedSearch = useMemo(() => normalizeIngredientName(searchTerm), [searchTerm]);
   const visibleDishes = useMemo(() => {
@@ -264,7 +171,7 @@ export default function DishesPage() {
                         type="button"
                         onClick={async () => {
                           await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
-                          if (editingId === dish._id) closeModal();
+                          if (activeDish?._id === dish._id) closeModal();
                           loadDishes();
                         }}
                         aria-label={`Eliminar ${dish.name}`}
@@ -295,89 +202,19 @@ export default function DishesPage() {
             })}
           </div>
         )}
+        {error ? <div className="kitchen-alert error">{error}</div> : null}
       </div>
 
-      {isModalOpen ? (
-        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeModal}>
-          <div
-            className="kitchen-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label={editingId ? "Editar plato" : "Crear plato"}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="kitchen-modal-header">
-              <div>
-                <h3>{editingId ? "Editar plato" : "Crear plato"}</h3>
-                <p className="kitchen-muted">Selecciona ingredientes con búsqueda y añade nuevos al vuelo.</p>
-              </div>
-              <button className="kitchen-icon-button" type="button" onClick={closeModal} aria-label="Cerrar">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M6 6l12 12M18 6l-12 12"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            </div>
-            <form onSubmit={onSave} className="kitchen-form">
-              <label className="kitchen-field">
-                <span className="kitchen-label">Nombre del plato</span>
-                <input
-                  className="kitchen-input"
-                  value={form.name}
-                  onChange={(event) => setForm({ ...form, name: event.target.value })}
-                  required
-                  placeholder="Ej. Pollo al horno"
-                />
-              </label>
-              <label className="kitchen-field">
-                <span className="kitchen-label">Es guarnición</span>
-                <input
-                  type="checkbox"
-                  checked={form.isSide}
-                  onChange={(event) => setForm({ ...form, isSide: event.target.checked })}
-                />
-              </label>
-              <div className="kitchen-field kitchen-dish-ingredients">
-                <span className="kitchen-label">Ingredientes</span>
-                <IngredientPicker
-                  value={form.ingredients}
-                  onChange={(ingredients) => setForm({ ...form, ingredients })}
-                  categories={categories}
-                  onCategoryCreated={onCategoryCreated}
-                  onCreateStateChange={setIsCreatingIngredient}
-                />
-                {pendingCount ? (
-                  <p className="kitchen-inline-warning">
-                    Hay {pendingCount} ingrediente{pendingCount > 1 ? "s" : ""} pendiente
-                    {pendingCount > 1 ? "s" : ""} de vincular con el catálogo global.
-                  </p>
-                ) : null}
-              </div>
-              {notice ? <div className="kitchen-alert success">{notice}</div> : null}
-              {error ? <div className="kitchen-alert error">{error}</div> : null}
-              <div className="kitchen-modal-actions">
-                {isCreatingIngredient ? (
-                  <div className="kitchen-inline-warning">
-                    Termina de crear el ingrediente para guardar el plato.
-                  </div>
-                ) : (
-                  <button className="kitchen-button" type="submit" disabled={saving}>
-                    {saving ? "Guardando..." : "Guardar"}
-                  </button>
-                )}
-                <button className="kitchen-button ghost" type="button" onClick={closeModal}>
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
+      <DishModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSaved={async () => {
+          await loadDishes();
+        }}
+        categories={categories}
+        onCategoryCreated={onCategoryCreated}
+        initialDish={activeDish}
+      />
     </KitchenLayout>
   );
 }
