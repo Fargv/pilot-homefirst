@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
@@ -8,8 +9,39 @@ import CategoryChip from "../components/CategoryChip.jsx";
 import { resolveCategoryColors } from "../components/categoryUtils.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
+const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
+
+function getMondayISO(date = new Date()) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+function addDaysToISO(dateString, days) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function getAssignDayLabel(dateString) {
+  if (!dateString) return "-";
+  const date = new Date(`${dateString}T00:00:00Z`);
+  const dayIndex = date.getUTCDay();
+  return ASSIGN_DAY_LABELS[dayIndex] || "-";
+}
+
+function getAssignDayNumber(dateString) {
+  if (!dateString) return "-";
+  const date = new Date(`${dateString}T00:00:00Z`);
+  return date.getUTCDate();
+}
+
 export default function DishesPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [dishes, setDishes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +57,9 @@ export default function DishesPage() {
   const [ingredientSearchTerm, setIngredientSearchTerm] = useState("");
   const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
   const [activeIngredient, setActiveIngredient] = useState(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignDish, setAssignDish] = useState(null);
+  const [assignDate, setAssignDate] = useState("");
 
   const loadDishes = async () => {
     setLoading(true);
@@ -169,6 +204,39 @@ export default function DishesPage() {
   const closeIngredientModal = () => {
     setIsIngredientModalOpen(false);
     setActiveIngredient(null);
+  };
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const assignDays = useMemo(() => {
+    const weekStart = getMondayISO();
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = addDaysToISO(weekStart, index);
+      return {
+        date,
+        label: getAssignDayLabel(date),
+        number: getAssignDayNumber(date)
+      };
+    });
+  }, [todayKey]);
+
+  const openAssignModal = (dish) => {
+    if (!dish) return;
+    const initialDate = assignDays.find((day) => day.date >= todayKey)?.date || "";
+    setAssignDish(dish);
+    setAssignDate(initialDate);
+    setAssignModalOpen(true);
+  };
+
+  const closeAssignModal = () => {
+    setAssignModalOpen(false);
+    setAssignDish(null);
+    setAssignDate("");
+  };
+
+  const confirmAssign = () => {
+    if (!assignDish?._id || !assignDate) return;
+    navigate(`/kitchen/semana?assignPlateId=${assignDish._id}&date=${assignDate}`);
+    closeAssignModal();
   };
 
   const ingredientEmptyMessage = useMemo(() => {
@@ -368,6 +436,32 @@ export default function DishesPage() {
                         />
                       </svg>
                     </button>
+                    <button
+                      className="kitchen-icon-button assign"
+                      type="button"
+                      onClick={() => openAssignModal(dish)}
+                      aria-label="Asignar"
+                      title="Asignar"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M5 10h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="m8 15 2 2 4-4"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
                     {user?.role === "admin" ? (
                       <button
                         className="kitchen-icon-button danger"
@@ -432,6 +526,72 @@ export default function DishesPage() {
         onCategoryCreated={onCategoryCreated}
         initialIngredient={activeIngredient}
       />
+      {assignModalOpen ? (
+        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeAssignModal}>
+          <div
+            className="kitchen-modal kitchen-assign-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Asignar plato"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <div>
+                <h3>Asignar plato</h3>
+                <p className="kitchen-muted">
+                  Selecciona el día en el que quieres planificar {assignDish?.name}.
+                </p>
+              </div>
+              <button
+                className="kitchen-icon-button"
+                type="button"
+                onClick={closeAssignModal}
+                aria-label="Cerrar"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M6 6l12 12M18 6 6 18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="kitchen-assign-body">
+              <span className="kitchen-label">Semana actual</span>
+              <div className="kitchen-assign-days" role="group" aria-label="Selecciona el día">
+                {assignDays.map((day) => {
+                  const isDisabled = day.date < todayKey;
+                  const isSelected = assignDate === day.date;
+                  return (
+                    <button
+                      key={day.date}
+                      type="button"
+                      className={`kitchen-assign-day ${isSelected ? "is-selected" : ""}`}
+                      onClick={() => setAssignDate(day.date)}
+                      disabled={isDisabled}
+                      aria-pressed={isSelected}
+                    >
+                      <span className="kitchen-assign-day-label">{day.label}</span>
+                      <span className="kitchen-assign-day-number">{day.number}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="kitchen-modal-actions">
+              <button className="kitchen-button" type="button" onClick={confirmAssign} disabled={!assignDate}>
+                Confirmar día
+              </button>
+              <button className="kitchen-button secondary" type="button" onClick={closeAssignModal}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </KitchenLayout>
   );
 }

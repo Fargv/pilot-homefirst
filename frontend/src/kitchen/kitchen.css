@@ -508,6 +508,12 @@
   box-shadow: 0 6px 12px rgba(79, 70, 229, 0.15);
 }
 
+.kitchen-icon-button.assign:hover {
+  border-color: #bbf7d0;
+  color: #15803d;
+  box-shadow: 0 6px 12px rgba(21, 128, 61, 0.12);
+}
+
 .kitchen-icon-button.danger:hover {
   border-color: #fecaca;
   color: #b42318;
@@ -562,6 +568,61 @@
   align-items: center;
   justify-content: center;
   padding-top: 4px;
+}
+
+.kitchen-assign-modal .kitchen-modal-header p {
+  margin: 6px 0 0;
+}
+
+.kitchen-assign-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kitchen-assign-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.kitchen-assign-day {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #0f172a;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.kitchen-assign-day.is-selected {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  color: #312e81;
+  box-shadow: 0 8px 16px rgba(79, 70, 229, 0.12);
+}
+
+.kitchen-assign-day:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f1f5f9;
+}
+
+.kitchen-assign-day-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.kitchen-assign-day-number {
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .kitchen-dishes-loading {
