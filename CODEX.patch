@@ -1,768 +1,86 @@
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 98f0a570b702cfea72791b14d8e71afb87825f26..25329c85662815cf8acc848d1fde1fe02945cc99 100644
+index 03bc6eec8fa7d47d029f830a735eec4e7323892d..33b8f473f54566c2e909675f3effb2d288111cfe 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -552,100 +552,168 @@
- .kitchen-modal-header {
-   display: flex;
-   align-items: flex-start;
-   justify-content: space-between;
-   gap: 12px;
- }
- 
- .kitchen-modal-header h3 {
-   margin: 0;
-   font-size: 20px;
- }
- 
- .kitchen-modal-actions {
-   display: flex;
-   flex-direction: column;
-   gap: 12px;
-   align-items: center;
-   justify-content: center;
-   padding-top: 4px;
- }
- 
- .kitchen-assign-modal .kitchen-modal-header p {
-   margin: 6px 0 0;
- }
- 
--.kitchen-assign-body {
--  display: flex;
--  flex-direction: column;
--  gap: 12px;
--}
--
--.kitchen-assign-days {
--  display: grid;
--  grid-template-columns: repeat(7, minmax(0, 1fr));
-+.kitchen-assign-body {
-+  display: flex;
-+  flex-direction: column;
-+  gap: 16px;
-+}
-+
-+.kitchen-assign-week-header {
-+  display: grid;
-+  grid-template-columns: 40px 1fr 40px;
-+  align-items: center;
-+  gap: 12px;
-+  width: 100%;
-+}
-+
-+.kitchen-assign-week-label {
-+  text-align: center;
-+  font-size: 13px;
-+  font-weight: 600;
-+  color: #0f172a;
-+}
-+
-+.kitchen-assign-week-nav {
-+  border: 1px solid #e2e8f0;
-+  background: #ffffff;
-+  color: #475569;
-+  width: 40px;
-+  height: 40px;
-+  border-radius: 10px;
-+  display: inline-flex;
-+  align-items: center;
-+  justify-content: center;
-+  cursor: pointer;
-+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
-+}
-+
-+.kitchen-assign-week-nav:disabled {
-+  cursor: not-allowed;
-+  opacity: 0.45;
-+}
-+
-+.kitchen-assign-week-icon {
-+  width: 16px;
-+  height: 16px;
-+  stroke: currentColor;
-+  stroke-width: 2;
-+  fill: none;
-+  stroke-linecap: round;
-+  stroke-linejoin: round;
-+}
-+
-+.kitchen-assign-week-icon.is-next {
-+  transform: rotate(180deg);
-+}
-+
-+.kitchen-assign-days {
-+  display: grid;
-+  grid-template-columns: repeat(7, minmax(0, 1fr));
-   gap: 8px;
- }
- 
- .kitchen-assign-day {
-   border: 1px solid #e2e8f0;
-   background: #f8fafc;
-   border-radius: 12px;
-   padding: 10px 6px;
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   gap: 4px;
-   font-size: 12px;
-   color: #0f172a;
-   cursor: pointer;
-   transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
- }
- 
--.kitchen-assign-day.is-selected {
--  border-color: #4f46e5;
--  background: #eef2ff;
--  color: #312e81;
--  box-shadow: 0 8px 16px rgba(79, 70, 229, 0.12);
--}
--
--.kitchen-assign-day:disabled {
--  opacity: 0.45;
--  cursor: not-allowed;
--  background: #f1f5f9;
-+.kitchen-assign-day.is-selected {
-+  border-color: #4f46e5;
-+  background: #eef2ff;
-+  color: #312e81;
-+  box-shadow: 0 8px 16px rgba(79, 70, 229, 0.12);
-+}
-+
-+.kitchen-assign-day.is-occupied {
-+  border-color: #cbd5f5;
-+}
-+
-+.kitchen-assign-day:disabled {
-+  opacity: 0.45;
-+  cursor: not-allowed;
-+  background: #f1f5f9;
- }
- 
- .kitchen-assign-day-label {
-   font-size: 11px;
-   text-transform: uppercase;
-   letter-spacing: 0.08em;
- }
- 
--.kitchen-assign-day-number {
--  font-size: 15px;
--  font-weight: 700;
--}
-+.kitchen-assign-day-number {
-+  font-size: 15px;
-+  font-weight: 700;
-+}
-+
-+.kitchen-assign-day-status {
-+  font-size: 10px;
-+  text-transform: uppercase;
-+  letter-spacing: 0.08em;
-+  color: #64748b;
-+  text-align: center;
-+}
-+
-+.kitchen-assign-day-detail {
-+  display: block;
-+  font-size: 11px;
-+  letter-spacing: normal;
-+  text-transform: none;
-+  color: #475569;
-+}
- 
- .kitchen-dishes-loading {
-   font-weight: 600;
-   text-align: center;
- }
- 
- .kitchen-button {
-   background: #4f46e5;
-   border: none;
-   color: white;
-   padding: 12px 18px;
-   border-radius: 10px;
-   cursor: pointer;
-   font-weight: 600;
-   font-size: 15px;
-   min-height: 48px;
-   transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
- }
- 
- .kitchen-button.is-small {
-   padding: 6px 12px;
-   font-size: 13px;
-   min-height: 32px;
- }
- 
-@@ -816,57 +884,57 @@
- .kitchen-assignee-button:hover {
-   border-color: #c7d2fe;
- }
- 
- .kitchen-assignee-button:focus-visible {
-   outline: 3px solid rgba(79, 70, 229, 0.35);
-   outline-offset: 2px;
- }
- 
- .kitchen-assignee-avatar {
-   width: 28px;
-   height: 28px;
-   border-radius: 50%;
-   display: inline-flex;
-   align-items: center;
-   justify-content: center;
-   font-size: 12px;
-   font-weight: 700;
- }
- 
- .kitchen-assignee-name {
-   flex: 1;
-   text-align: left;
- }
- 
--.kitchen-week-header {
--  display: flex;
--  align-items: flex-start;
--  justify-content: center;
--  gap: 16px;
--  margin-bottom: 0;
--}
-+.kitchen-week-header {
-+  display: flex;
-+  align-items: flex-start;
-+  justify-content: center;
-+  gap: 16px;
-+  margin-bottom: 20px;
-+}
- 
- .kitchen-week-header-main {
-   display: flex;
-   flex-direction: column;
-   gap: 4px;
- }
- 
- .kitchen-week-header-actions {
-   display: flex;
-   flex-direction: column;
-   gap: 12px;
-   width: min(420px, 100%);
-   align-items: center;
- }
- 
- .kitchen-week-mobile-frame {
+@@ -1689,73 +1689,77 @@
    width: 100%;
-   display: flex;
-   flex-direction: column;
-   align-items: stretch;
+   max-width: 560px;
+   margin: 0 auto;
  }
  
- .kitchen-week-nav {
-   display: grid;
-   grid-template-columns: 44px minmax(200px, 260px) 44px;
-diff --git a/frontend/src/kitchen/pages/DishesPage.jsx b/frontend/src/kitchen/pages/DishesPage.jsx
-index e7a2bd67105b425959ff86f7689cb117435294b1..25eb63919ed76db07654e3a320d03f173d6b2424 100644
---- a/frontend/src/kitchen/pages/DishesPage.jsx
-+++ b/frontend/src/kitchen/pages/DishesPage.jsx
-@@ -1,87 +1,128 @@
- import React, { useCallback, useEffect, useMemo, useState } from "react";
- import { useNavigate } from "react-router-dom";
- import { apiRequest } from "../api.js";
- import KitchenLayout from "../Layout.jsx";
- import { useAuth } from "../auth";
- import DishModal from "../components/DishModal.jsx";
- import IngredientModal from "../components/IngredientModal.jsx";
- import CategoryChip from "../components/CategoryChip.jsx";
- import { resolveCategoryColors } from "../components/categoryUtils.js";
- import { normalizeIngredientName } from "../utils/normalize.js";
- 
--const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
--
--function getMondayISO(date = new Date()) {
--  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
--  const day = d.getUTCDay();
-+const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
-+
-+function getMondayISO(date = new Date()) {
-+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-+  const day = d.getUTCDay();
-   const diff = (day === 0 ? -6 : 1) - day;
-   d.setUTCDate(d.getUTCDate() + diff);
-   return d.toISOString().slice(0, 10);
+ .kitchen-dish-ingredients {
+   gap: 10px;
  }
  
--function addDaysToISO(dateString, days) {
--  const [year, month, day] = dateString.split("-").map(Number);
--  const date = new Date(Date.UTC(year, month - 1, day));
--  date.setUTCDate(date.getUTCDate() + days);
--  return date.toISOString().slice(0, 10);
--}
--
--function getAssignDayLabel(dateString) {
--  if (!dateString) return "-";
--  const date = new Date(`${dateString}T00:00:00Z`);
--  const dayIndex = date.getUTCDay();
--  return ASSIGN_DAY_LABELS[dayIndex] || "-";
-+function addDaysToISO(dateString, days) {
-+  const [year, month, day] = dateString.split("-").map(Number);
-+  const date = new Date(Date.UTC(year, month - 1, day));
-+  date.setUTCDate(date.getUTCDate() + days);
-+  return date.toISOString().slice(0, 10);
-+}
-+
-+function buildAssignDays(weekStart) {
-+  return Array.from({ length: 7 }, (_, index) => {
-+    const date = addDaysToISO(weekStart, index);
-+    return {
-+      date,
-+      label: getAssignDayLabel(date),
-+      number: getAssignDayNumber(date)
-+    };
-+  });
-+}
-+
-+function formatWeekLabel(dateString) {
-+  if (!dateString) return "-";
-+  const date = new Date(`${dateString}T00:00:00Z`);
-+  if (Number.isNaN(date.getTime())) return "-";
-+  return date.toLocaleDateString("es-ES", {
-+    day: "2-digit",
-+    month: "2-digit",
-+    year: "numeric"
-+  });
-+}
-+
-+function getAssignDayLabel(dateString) {
-+  if (!dateString) return "-";
-+  const date = new Date(`${dateString}T00:00:00Z`);
-+  const dayIndex = date.getUTCDay();
-+  return ASSIGN_DAY_LABELS[dayIndex] || "-";
+ .kitchen-table {
+   width: 100%;
+   border-collapse: collapse;
  }
  
--function getAssignDayNumber(dateString) {
--  if (!dateString) return "-";
--  const date = new Date(`${dateString}T00:00:00Z`);
--  return date.getUTCDate();
--}
-+function getAssignDayNumber(dateString) {
-+  if (!dateString) return "-";
-+  const date = new Date(`${dateString}T00:00:00Z`);
-+  return date.getUTCDate();
-+}
-+
-+function ChevronIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-+      <path d="M15 18l-6-6 6-6" />
-+    </svg>
-+  );
-+}
- 
- export default function DishesPage() {
-   const { user } = useAuth();
--  const navigate = useNavigate();
-+  const navigate = useNavigate();
-   const [dishes, setDishes] = useState([]);
-   const [categories, setCategories] = useState([]);
-   const [loading, setLoading] = useState(true);
-   const [dishError, setDishError] = useState("");
-   const [isModalOpen, setIsModalOpen] = useState(false);
-   const [activeDish, setActiveDish] = useState(null);
-   const [dishSearchTerm, setDishSearchTerm] = useState("");
-   const [activeTab, setActiveTab] = useState("main");
-   const [initialSidedish, setInitialSidedish] = useState(false);
-   const [ingredients, setIngredients] = useState([]);
-   const [ingredientsLoading, setIngredientsLoading] = useState(false);
-   const [ingredientsError, setIngredientsError] = useState("");
-   const [ingredientSearchTerm, setIngredientSearchTerm] = useState("");
--  const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
--  const [activeIngredient, setActiveIngredient] = useState(null);
--  const [assignModalOpen, setAssignModalOpen] = useState(false);
--  const [assignDish, setAssignDish] = useState(null);
--  const [assignDate, setAssignDate] = useState("");
-+  const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
-+  const [activeIngredient, setActiveIngredient] = useState(null);
-+  const [assignModalOpen, setAssignModalOpen] = useState(false);
-+  const [assignDish, setAssignDish] = useState(null);
-+  const [assignDate, setAssignDate] = useState("");
-+  const todayKey = new Date().toISOString().slice(0, 10);
-+  const currentWeekStart = useMemo(
-+    () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
-+    [todayKey]
-+  );
-+  const [assignWeekStart, setAssignWeekStart] = useState(currentWeekStart);
-+  const [assignWeekData, setAssignWeekData] = useState({
-+    status: "idle",
-+    occupied: {},
-+    dishNames: {}
-+  });
- 
-   const loadDishes = async () => {
-     setLoading(true);
-     setDishError("");
-     try {
-       const data = await apiRequest("/api/kitchen/dishes");
-       setDishes(data.dishes || []);
-     } catch (err) {
-       setDishError(err.message || "No se pudieron cargar los platos.");
-     } finally {
-       setLoading(false);
-     }
-   };
- 
-   useEffect(() => {
-     loadDishes();
-   }, []);
- 
-   const loadCategories = async () => {
-     try {
-       const data = await apiRequest("/api/categories");
-       setCategories(data.categories || []);
-     } catch (err) {
-       setDishError(err.message || "No se pudieron cargar las categorías.");
-     }
-@@ -116,62 +157,69 @@ export default function DishesPage() {
-     const data = await apiRequest("/api/categories", {
-       method: "POST",
-       body: JSON.stringify({
-         name,
-         colorBg: colors?.colorBg,
-         colorText: colors?.colorText
-       })
-     });
-     const category = data.category;
-     setCategories((prev) => {
-       const exists = prev.find((item) => item._id === category._id);
-       if (exists) return prev;
-       return [...prev, category];
-     });
-     return category;
-   };
- 
-   const normalizedSearch = useMemo(
-     () => normalizeIngredientName(dishSearchTerm),
-     [dishSearchTerm]
-   );
-   const tabFilteredDishes = useMemo(() => {
-     const shouldShowSide = activeTab === "side";
-     return dishes.filter((dish) => Boolean(dish.sidedish) === shouldShowSide);
-   }, [activeTab, dishes]);
--  const visibleDishes = useMemo(() => {
--    if (!normalizedSearch) return tabFilteredDishes;
--    return tabFilteredDishes.filter((dish) => {
-+  const visibleDishes = useMemo(() => {
-+    if (!normalizedSearch) return tabFilteredDishes;
-+    return tabFilteredDishes.filter((dish) => {
-       const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
-       if (nameMatch) return true;
-       return (dish.ingredients || []).some((item) => {
-         const displayName = normalizeIngredientName(item.displayName || "");
-         const canonicalName = normalizeIngredientName(item.canonicalName || "");
-         return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
-       });
-     });
--  }, [normalizedSearch, tabFilteredDishes]);
-+  }, [normalizedSearch, tabFilteredDishes]);
-+  const dishMap = useMemo(() => {
-+    const map = new Map();
-+    dishes.forEach((dish) => {
-+      if (dish?._id) map.set(dish._id, dish);
-+    });
-+    return map;
-+  }, [dishes]);
- 
-   const emptyMessage = useMemo(() => {
-     if (dishes.length === 0) {
-       return "No hay platos aún. Crea el primero.";
-     }
-     if (visibleDishes.length === 0) {
-       if (dishSearchTerm.trim()) {
-         return "No encontramos platos con ese criterio.";
-       }
-       return activeTab === "side"
-         ? "No hay guarniciones aún. Crea la primera."
-         : "No hay platos principales aún. Crea el primero.";
-     }
-     return "";
-   }, [activeTab, dishSearchTerm, dishes.length, visibleDishes.length]);
- 
-   const loadIngredients = useCallback(async (query = "") => {
-     setIngredientsLoading(true);
-     setIngredientsError("");
-     try {
-       const params = new URLSearchParams({ includeInactive: "true", limit: "0" });
-       if (query.trim()) params.set("q", query.trim());
-       const data = await apiRequest(`/api/kitchenIngredients?${params.toString()}`);
-       setIngredients(data.ingredients || []);
-     } catch (err) {
-@@ -184,76 +232,125 @@ export default function DishesPage() {
-   useEffect(() => {
-     if (activeTab !== "ingredients") return;
-     const timeout = setTimeout(() => {
-       loadIngredients(ingredientSearchTerm);
-     }, 250);
-     return () => clearTimeout(timeout);
-   }, [activeTab, ingredientSearchTerm, loadIngredients]);
- 
-   const startIngredientCreate = () => {
-     setActiveIngredient(null);
-     setIngredientsError("");
-     setIsIngredientModalOpen(true);
-   };
- 
-   const startIngredientEdit = (ingredient) => {
-     setActiveIngredient(ingredient);
-     setIngredientsError("");
-     setIsIngredientModalOpen(true);
-   };
- 
-   const closeIngredientModal = () => {
-     setIsIngredientModalOpen(false);
-     setActiveIngredient(null);
-   };
- 
--  const todayKey = new Date().toISOString().slice(0, 10);
--  const assignDays = useMemo(() => {
--    const weekStart = getMondayISO();
--    return Array.from({ length: 7 }, (_, index) => {
--      const date = addDaysToISO(weekStart, index);
--      return {
--        date,
--        label: getAssignDayLabel(date),
--        number: getAssignDayNumber(date)
--      };
--    });
--  }, [todayKey]);
--
--  const openAssignModal = (dish) => {
--    if (!dish) return;
--    const initialDate = assignDays.find((day) => day.date >= todayKey)?.date || "";
--    setAssignDish(dish);
--    setAssignDate(initialDate);
--    setAssignModalOpen(true);
--  };
-+  const assignDays = useMemo(() => {
-+    return buildAssignDays(assignWeekStart);
-+  }, [assignWeekStart]);
-+
-+  useEffect(() => {
-+    if (!assignModalOpen) return;
-+    let isActive = true;
-+    setAssignWeekData({ status: "loading", occupied: {}, dishNames: {} });
-+
-+    apiRequest(`/api/kitchen/weeks/${assignWeekStart}`)
-+      .then((data) => {
-+        if (!isActive) return;
-+        const occupied = {};
-+        const dishNames = {};
-+        (data?.plan?.days || []).forEach((day) => {
-+          const dayKey = day?.date?.slice(0, 10);
-+          if (!dayKey) return;
-+          if (day.mainDishId) {
-+            occupied[dayKey] = true;
-+            const dishName = dishMap.get(day.mainDishId)?.name;
-+            if (dishName) {
-+              dishNames[dayKey] = dishName;
-+            }
-+          }
-+        });
-+        setAssignWeekData({ status: "ready", occupied, dishNames });
-+      })
-+      .catch(() => {
-+        if (!isActive) return;
-+        setAssignWeekData({ status: "error", occupied: {}, dishNames: {} });
-+      });
-+
-+    return () => {
-+      isActive = false;
-+    };
-+  }, [assignModalOpen, assignWeekStart, dishMap]);
-+
-+  useEffect(() => {
-+    if (!assignModalOpen) return;
-+    const occupancyReady = assignWeekData.status === "ready";
-+    const isDateInWeek = assignDays.some((day) => day.date === assignDate);
-+    const isCurrentValid =
-+      assignDate &&
-+      isDateInWeek &&
-+      assignDate >= todayKey &&
-+      (!occupancyReady || !assignWeekData.occupied[assignDate]);
-+    if (isCurrentValid) return;
-+    const nextDate =
-+      assignDays.find(
-+        (day) =>
-+          day.date >= todayKey &&
-+          (!occupancyReady || !assignWeekData.occupied[day.date])
-+      )?.date || "";
-+    if (nextDate !== assignDate) {
-+      setAssignDate(nextDate);
-+    }
-+  }, [assignModalOpen, assignDate, assignDays, assignWeekData, todayKey]);
-+
-+  const openAssignModal = (dish) => {
-+    if (!dish) return;
-+    const initialWeekStart = getMondayISO();
-+    const initialDays = buildAssignDays(initialWeekStart);
-+    const initialDate = initialDays.find((day) => day.date >= todayKey)?.date || "";
-+    setAssignDish(dish);
-+    setAssignWeekStart(initialWeekStart);
-+    setAssignDate(initialDate);
-+    setAssignModalOpen(true);
-+  };
- 
--  const closeAssignModal = () => {
--    setAssignModalOpen(false);
--    setAssignDish(null);
--    setAssignDate("");
--  };
-+  const closeAssignModal = () => {
-+    setAssignModalOpen(false);
-+    setAssignDish(null);
-+    setAssignDate("");
-+    setAssignWeekData({ status: "idle", occupied: {}, dishNames: {} });
-+  };
- 
-   const confirmAssign = () => {
-     if (!assignDish?._id || !assignDate) return;
-     navigate(`/kitchen/semana?assignPlateId=${assignDish._id}&date=${assignDate}`);
-     closeAssignModal();
-   };
- 
-   const ingredientEmptyMessage = useMemo(() => {
-     if (ingredients.length === 0) {
-       return "No hay ingredientes aún. Crea el primero.";
-     }
-     if (ingredientSearchTerm.trim()) {
-       return "No encontramos ingredientes con ese criterio.";
-     }
-     return "";
-   }, [ingredientSearchTerm, ingredients.length]);
- 
-   const isIngredientsTab = activeTab === "ingredients";
-   const headerTitle = isIngredientsTab ? "Ingredientes" : "Platos";
-   const headerDescription = isIngredientsTab
-     ? "Gestiona el catálogo de ingredientes con sus categorías y estado."
-     : "Administra tus platos y sus ingredientes en un solo lugar.";
-   const headerActionLabel = isIngredientsTab
-     ? "Nuevo ingrediente"
-     : activeTab === "side"
-@@ -536,62 +633,97 @@ export default function DishesPage() {
-             onClick={(event) => event.stopPropagation()}
-           >
-             <div className="kitchen-modal-header">
-               <div>
-                 <h3>Asignar plato</h3>
-                 <p className="kitchen-muted">
-                   Selecciona el día en el que quieres planificar {assignDish?.name}.
-                 </p>
-               </div>
-               <button
-                 className="kitchen-icon-button"
-                 type="button"
-                 onClick={closeAssignModal}
-                 aria-label="Cerrar"
-               >
-                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                   <path
-                     d="M6 6l12 12M18 6 6 18"
-                     fill="none"
-                     stroke="currentColor"
-                     strokeWidth="1.5"
-                     strokeLinecap="round"
-                   />
-                 </svg>
-               </button>
--            </div>
--            <div className="kitchen-assign-body">
--              <span className="kitchen-label">Semana actual</span>
--              <div className="kitchen-assign-days" role="group" aria-label="Selecciona el día">
--                {assignDays.map((day) => {
--                  const isDisabled = day.date < todayKey;
--                  const isSelected = assignDate === day.date;
--                  return (
--                    <button
--                      key={day.date}
--                      type="button"
--                      className={`kitchen-assign-day ${isSelected ? "is-selected" : ""}`}
--                      onClick={() => setAssignDate(day.date)}
--                      disabled={isDisabled}
--                      aria-pressed={isSelected}
--                    >
--                      <span className="kitchen-assign-day-label">{day.label}</span>
--                      <span className="kitchen-assign-day-number">{day.number}</span>
--                    </button>
--                  );
--                })}
--              </div>
-+            </div>
-+            <div className="kitchen-assign-body">
-+              <div className="kitchen-assign-week-header" role="group" aria-label="Cambiar semana">
-+                <button
-+                  className="kitchen-assign-week-nav"
-+                  type="button"
-+                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, -7))}
-+                  aria-label="Ir a la semana anterior"
-+                  disabled={assignWeekStart <= currentWeekStart}
-+                >
-+                  <ChevronIcon className="kitchen-assign-week-icon" />
-+                </button>
-+                <span className="kitchen-assign-week-label">
-+                  Semana del {formatWeekLabel(assignWeekStart)}
-+                </span>
-+                <button
-+                  className="kitchen-assign-week-nav"
-+                  type="button"
-+                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, 7))}
-+                  aria-label="Ir a la semana siguiente"
-+                >
-+                  <ChevronIcon className="kitchen-assign-week-icon is-next" />
-+                </button>
-+              </div>
-+              <div className="kitchen-assign-days" role="group" aria-label="Selecciona el día">
-+                {assignDays.map((day) => {
-+                  const occupancyReady = assignWeekData.status === "ready";
-+                  const isOccupied = occupancyReady && assignWeekData.occupied[day.date];
-+                  const isDisabled = day.date < todayKey || isOccupied;
-+                  const isSelected = assignDate === day.date;
-+                  const occupiedDishName = isOccupied ? assignWeekData.dishNames[day.date] : "";
-+                  return (
-+                    <button
-+                      key={day.date}
-+                      type="button"
-+                      className={`kitchen-assign-day ${isSelected ? "is-selected" : ""} ${
-+                        isOccupied ? "is-occupied" : ""
-+                      }`}
-+                      onClick={() => setAssignDate(day.date)}
-+                      disabled={isDisabled}
-+                      aria-pressed={isSelected}
-+                      title={occupiedDishName ? `Ocupado: ${occupiedDishName}` : undefined}
-+                    >
-+                      <span className="kitchen-assign-day-label">{day.label}</span>
-+                      <span className="kitchen-assign-day-number">{day.number}</span>
-+                      {isOccupied ? (
-+                        <span className="kitchen-assign-day-status">
-+                          Ocupado
-+                          {occupiedDishName ? (
-+                            <span className="kitchen-assign-day-detail">{occupiedDishName}</span>
-+                          ) : null}
-+                        </span>
-+                      ) : null}
-+                    </button>
-+                  );
-+                })}
-+              </div>
-             </div>
-             <div className="kitchen-modal-actions">
-               <button className="kitchen-button" type="button" onClick={confirmAssign} disabled={!assignDate}>
-                 Confirmar día
-               </button>
-               <button className="kitchen-button secondary" type="button" onClick={closeAssignModal}>
-                 Cancelar
-               </button>
-             </div>
-           </div>
-         </div>
-       ) : null}
-     </KitchenLayout>
-   );
+ .kitchen-table th,
+ .kitchen-table td {
+   text-align: left;
+   padding: 10px 8px;
+   border-bottom: 1px solid #eef2f6;
+   font-size: 14px;
  }
+ 
+ @media (max-width: 600px) {
+   .kitchen-container {
+     padding: 16px;
+-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
++    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+   }
+ 
+   .kitchen-grid {
+     grid-template-columns: 1fr;
+     gap: 16px;
+   }
+ 
+   .kitchen-week-mobile-frame {
+     width: calc(100% - 32px);
+     max-width: 420px;
+     margin: 0 auto;
+     gap: 16px;
+   }
+ 
+   .kitchen-week-carousel {
+     margin: 0;
+     width: 100%;
+   }
+ 
+-  .kitchen-week-carousel-arrow {
+-    display: none;
+-  }
++  .kitchen-week-carousel-arrow {
++    display: none;
++  }
++
++  .kitchen-assign-day.is-occupied .kitchen-assign-day-status {
++    display: none;
++  }
+ 
+   .kitchen-week-days {
+     display: flex;
+     grid-template-columns: none;
+     overflow-x: auto;
+     scroll-snap-type: x mandatory;
+     scroll-behavior: smooth;
+     -webkit-overflow-scrolling: touch;
+     width: 100%;
+     gap: 0;
+     padding: 0 0 4px;
+     scroll-padding-inline: 0;
+   }
+ 
+   .kitchen-week-days::-webkit-scrollbar {
+     display: none;
+   }
+ 
+   .kitchen-week-days .kitchen-day-card {
+     flex: 0 0 100%;
+     scroll-snap-align: start;
+   }
+ 
+   .kitchen-week-carousel-dots {
+     display: flex;

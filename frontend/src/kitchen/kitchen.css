@@ -1735,6 +1735,10 @@
     display: none;
   }
 
+  .kitchen-assign-day.is-occupied .kitchen-assign-day-status {
+    display: none;
+  }
+
   .kitchen-week-days {
     display: flex;
     grid-template-columns: none;
