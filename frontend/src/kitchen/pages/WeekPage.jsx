@@ -108,6 +108,7 @@ export default function WeekPage() {
   const mainDishRefs = useRef(new Map());
   const sideDishRefs = useRef(new Map());
   const selectedDayRef = useRef(selectedDay);
+  const hasInitializedRef = useRef(false);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
 
   const loadData = async () => {
@@ -233,17 +234,40 @@ export default function WeekPage() {
       return;
     }
     const todayKey = new Date().toISOString().slice(0, 10);
+    const todayWeekStart = getMondayISO();
     const fallbackDay = safeDays[0]?.date?.slice(0, 10) || "";
-    const defaultDay = safeDays.some((day) => day.date?.slice(0, 10) === todayKey)
-      ? todayKey
-      : fallbackDay;
+    const todayIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === todayKey);
+    const containsToday = todayIndex !== -1;
+
+    if (!hasInitializedRef.current) {
+      if (!containsToday) {
+        if (weekStart !== todayWeekStart) {
+          setWeekStart(todayWeekStart);
+        }
+        return;
+      }
+      const nextDay = todayKey || fallbackDay;
+      setSelectedDay(nextDay);
+      if (todayIndex >= 0) {
+        setActiveIndex(todayIndex);
+      }
+      requestAnimationFrame(() => {
+        const element = carouselRef.current;
+        if (!element) return;
+        const targetIndex = todayIndex >= 0 ? todayIndex : 0;
+        element.scrollTo({ left: targetIndex * element.clientWidth, behavior: "auto" });
+      });
+      hasInitializedRef.current = true;
+      return;
+    }
+
     setSelectedDay((prev) => {
       if (prev && safeDays.some((day) => day.date?.slice(0, 10) === prev)) {
         return prev;
       }
-      return defaultDay;
+      return fallbackDay;
     });
-  }, [safeDays]);
+  }, [safeDays, weekStart]);
 
   useEffect(() => {
     selectedDayRef.current = selectedDay;
