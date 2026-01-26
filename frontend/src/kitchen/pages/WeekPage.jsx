@@ -429,6 +429,66 @@ export default function WeekPage() {
     });
   };
 
+  const openDayEditor = useCallback(
+    (targetDate, plateId) => {
+      if (!targetDate || !safeDays.length) return false;
+      const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === targetDate);
+      if (!targetDay) return false;
+
+      const targetIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === targetDate);
+      setSelectedDay(targetDate);
+      if (targetIndex >= 0) {
+        setActiveIndex(targetIndex);
+      }
+
+      startEditingDay(targetDay);
+
+      if (plateId) {
+        const allDishes = [...dishes, ...sideDishes];
+        const targetDish = allDishes.find((dish) => dish._id === plateId);
+        if (targetDish?.sidedish) {
+          setSideDishEnabled((prev) => ({ ...prev, [targetDate]: true }));
+          setSideDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
+          updateDay(targetDay, { sideDishId: targetDish._id });
+          focusSideDish(targetDate);
+        } else if (targetDish) {
+          setMainDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
+          updateDay(targetDay, { mainDishId: targetDish._id });
+          focusMainDish(targetDate);
+        }
+      }
+
+      window.requestAnimationFrame(() => {
+        const carouselElement = carouselRef.current;
+        const dayNode =
+          dayRefs.current.get(targetDate) || document.getElementById(`daycard-${targetDate}`);
+        const canCarousel =
+          carouselElement && carouselElement.scrollWidth > carouselElement.clientWidth + 1;
+
+        if (canCarousel && targetIndex >= 0) {
+          carouselElement.scrollTo({
+            left: targetIndex * carouselElement.clientWidth,
+            behavior: "smooth"
+          });
+        } else if (dayNode) {
+          dayNode.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        dayNode?.focus?.({ preventScroll: true });
+      });
+
+      return true;
+    },
+    [
+      dishes,
+      focusMainDish,
+      focusSideDish,
+      safeDays,
+      sideDishes,
+      startEditingDay,
+      updateDay
+    ]
+  );
+
   useEffect(() => {
     const assignPlateId = searchParams.get("assignPlateId") || searchParams.get("plateId");
     const assignDate = searchParams.get("date");
@@ -478,49 +538,16 @@ export default function WeekPage() {
       clearAssignParams();
       return;
     }
-
-    const allDishes = [...dishes, ...sideDishes];
-    const targetDish = allDishes.find((dish) => dish._id === assignPlateId);
-    const targetIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === assignDate);
-
-    setSelectedDay(assignDate);
-    if (targetIndex >= 0) {
-      setActiveIndex(targetIndex);
-    }
-    startEditingDay(targetDay);
-    if (targetDish?.sidedish) {
-      setSideDishEnabled((prev) => ({ ...prev, [assignDate]: true }));
-      setSideDishQueries((prev) => ({ ...prev, [assignDate]: targetDish.name }));
-      updateDay(targetDay, { sideDishId: targetDish._id });
-      focusSideDish(assignDate);
-    } else if (targetDish) {
-      setMainDishQueries((prev) => ({ ...prev, [assignDate]: targetDish.name }));
-      updateDay(targetDay, { mainDishId: targetDish._id });
-      focusMainDish(assignDate);
-    }
-
-    window.requestAnimationFrame(() => {
-      const node =
-        dayRefs.current.get(assignDate) || document.getElementById(`kitchen-day-${assignDate}`);
-      if (node) {
-        node.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
-        node.focus?.({ preventScroll: true });
-      }
-    });
+    openDayEditor(assignDate, assignPlateId);
 
     assignIntentRef.current = { key: intentKey, handled: true };
     clearAssignParams();
   }, [
     clearAssignParams,
-    dishes,
-    focusMainDish,
-    focusSideDish,
     loading,
+    openDayEditor,
     plan,
     safeDays,
-    sideDishes,
-    startEditingDay,
-    updateDay,
     weekStart
   ]);
 
@@ -640,7 +667,7 @@ export default function WeekPage() {
 
   const handleSelectDay = (dayKey) => {
     setSelectedDay(dayKey);
-    const target = dayRefs.current.get(dayKey) || document.getElementById(`kitchen-day-${dayKey}`);
+    const target = dayRefs.current.get(dayKey) || document.getElementById(`daycard-${dayKey}`);
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
       target.focus?.({ preventScroll: true });
@@ -796,7 +823,7 @@ export default function WeekPage() {
           return (
             <div
               key={day.date}
-              id={`kitchen-day-${dayKey}`}
+              id={`daycard-${dayKey}`}
               className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""}`}
               tabIndex={-1}
               ref={(node) => {

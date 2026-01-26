@@ -1,95 +1,8 @@
 diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
-index a5815a06e4199bc7f97eac9682ed7e958428bc77..1ac203a05ec9b984c17b9821388c198e1c00ac1c 100644
+index 7bdbf57a4fca93baf5e22cc46124ca99a2f424bc..4223ef369c6e4eb2f46a01cbf323f3c80819e0be 100644
 --- a/frontend/src/kitchen/pages/WeekPage.jsx
 +++ b/frontend/src/kitchen/pages/WeekPage.jsx
-@@ -1,27 +1,27 @@
--import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
--import { useSearchParams } from "react-router-dom";
-+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-+import { useSearchParams } from "react-router-dom";
- import { apiRequest } from "../api.js";
- import { useAuth } from "../auth";
- import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
- import IngredientPicker from "../components/IngredientPicker.jsx";
- import DishModal from "../components/DishModal.jsx";
- import KitchenLayout from "../Layout.jsx";
- import { normalizeIngredientName } from "../utils/normalize.js";
- import { getUserColor } from "../utils/userColors";
- 
- function getMondayISO(date = new Date()) {
-   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-   const day = d.getUTCDay();
-   const diff = (day === 0 ? -6 : 1) - day;
-   d.setUTCDate(d.getUTCDate() + diff);
-   return d.toISOString().slice(0, 10);
- }
- 
- function formatDateLabel(dateString) {
-   if (!dateString) {
-     return "Sin fecha";
-   }
-   const date = new Date(dateString);
-   if (Number.isNaN(date.getTime())) {
-     return "Sin fecha";
-   }
-@@ -88,53 +88,53 @@ export default function WeekPage() {
-   const [dayErrors, setDayErrors] = useState({});
-   const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
-   const [extraIngredientsEnabled, setExtraIngredientsEnabled] = useState({});
-   const [selectedDay, setSelectedDay] = useState("");
-   const [editingDays, setEditingDays] = useState({});
-   const [sideDishEnabled, setSideDishEnabled] = useState({});
-   const [showCarouselControls, setShowCarouselControls] = useState(false);
-   const [activeIndex, setActiveIndex] = useState(0);
-   const [mainDishQueries, setMainDishQueries] = useState({});
-   const [mainDishOpen, setMainDishOpen] = useState({});
-   const [sideDishQueries, setSideDishQueries] = useState({});
-   const [sideDishOpen, setSideDishOpen] = useState({});
-   const [assigneeOpen, setAssigneeOpen] = useState({});
-   const [dishModalOpen, setDishModalOpen] = useState(false);
-   const [dishModalName, setDishModalName] = useState("");
-   const [dishModalDayKey, setDishModalDayKey] = useState(null);
-   const [dishModalMode, setDishModalMode] = useState("main");
-   const [dishModalSidedish, setDishModalSidedish] = useState(false);
-   const ingredientCache = useRef(new Map());
-   const saveTimers = useRef({});
-   const carouselRef = useRef(null);
-   const dayRefs = useRef(new Map());
-   const mainDishRefs = useRef(new Map());
-   const sideDishRefs = useRef(new Map());
-   const selectedDayRef = useRef(selectedDay);
--  const hasInitializedRef = useRef(false);
--  const assignIntentRef = useRef(null);
--  const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
-+  const hasInitializedRef = useRef(false);
-+  const assignIntentRef = useRef(null);
-+  const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
- 
-   const loadData = async () => {
-     setLoading(true);
-     setLoadError("");
-     try {
-       const [planData, dishesData, sideDishesData] = await Promise.all([
-         apiRequest(`/api/kitchen/weeks/${weekStart}`),
-         apiRequest("/api/kitchen/dishes"),
-         apiRequest("/api/kitchen/dishes?sidedish=true")
-       ]);
-       setPlan(planData.plan);
-       setDishes(dishesData.dishes || []);
-       setSideDishes(sideDishesData.dishes || []);
-       if (user) {
-         const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
-         const usersData = await apiRequest(usersEndpoint);
-         setUsers(usersData.users || []);
-       }
-     } catch (err) {
-       setLoadError(err.message || "No se pudo cargar la semana.");
-     } finally {
-       setLoading(false);
-     }
-   };
- 
-@@ -398,127 +398,153 @@ export default function WeekPage() {
+@@ -398,153 +398,180 @@ export default function WeekPage() {
      setExtraIngredientsEnabled((prev) => ({
        ...prev,
        [dayKey]: Boolean(day.ingredientOverrides?.length)
@@ -123,29 +36,122 @@ index a5815a06e4199bc7f97eac9682ed7e958428bc77..1ac203a05ec9b984c17b9821388c198e
 -      }
 -    });
 -  };
--
--  useEffect(() => {
--    const assignPlateId = searchParams.get("assignPlateId");
--    const assignDate = searchParams.get("date");
--    if (!assignPlateId || !assignDate) return;
--
--    const intentKey = `${assignPlateId}-${assignDate}`;
--    if (assignIntentRef.current?.key === intentKey && assignIntentRef.current?.handled) {
--      return;
--    }
--
--    const targetWeekStart = getMondayISO(new Date(assignDate));
--    if (weekStart !== targetWeekStart) {
--      assignIntentRef.current = { key: intentKey, handled: false };
--      setWeekStart(targetWeekStart);
--      return;
--    }
--
--    if (!safeDays.length) return;
++  const focusSideDish = (dayKey) => {
++    window.requestAnimationFrame(() => {
++      const node = sideDishRefs.current.get(dayKey);
++      if (node) {
++        node.focus();
++      }
++    });
++  };
++
++  const openDayEditor = useCallback(
++    (targetDate, plateId) => {
++      if (!targetDate || !safeDays.length) return false;
++      const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === targetDate);
++      if (!targetDay) return false;
++
++      const targetIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === targetDate);
++      setSelectedDay(targetDate);
++      if (targetIndex >= 0) {
++        setActiveIndex(targetIndex);
++      }
++
++      startEditingDay(targetDay);
++
++      if (plateId) {
++        const allDishes = [...dishes, ...sideDishes];
++        const targetDish = allDishes.find((dish) => dish._id === plateId);
++        if (targetDish?.sidedish) {
++          setSideDishEnabled((prev) => ({ ...prev, [targetDate]: true }));
++          setSideDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
++          updateDay(targetDay, { sideDishId: targetDish._id });
++          focusSideDish(targetDate);
++        } else if (targetDish) {
++          setMainDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
++          updateDay(targetDay, { mainDishId: targetDish._id });
++          focusMainDish(targetDate);
++        }
++      }
++
++      window.requestAnimationFrame(() => {
++        const carouselElement = carouselRef.current;
++        const dayNode =
++          dayRefs.current.get(targetDate) || document.getElementById(`daycard-${targetDate}`);
++        const canCarousel =
++          carouselElement && carouselElement.scrollWidth > carouselElement.clientWidth + 1;
++
++        if (canCarousel && targetIndex >= 0) {
++          carouselElement.scrollTo({
++            left: targetIndex * carouselElement.clientWidth,
++            behavior: "smooth"
++          });
++        } else if (dayNode) {
++          dayNode.scrollIntoView({ behavior: "smooth", block: "start" });
++        }
++        dayNode?.focus?.({ preventScroll: true });
++      });
++
++      return true;
++    },
++    [
++      dishes,
++      focusMainDish,
++      focusSideDish,
++      safeDays,
++      sideDishes,
++      startEditingDay,
++      updateDay
++    ]
++  );
+ 
+   useEffect(() => {
+     const assignPlateId = searchParams.get("assignPlateId") || searchParams.get("plateId");
+     const assignDate = searchParams.get("date");
+     if (!assignPlateId || !assignDate) return;
+ 
+     const intentKey = `${assignPlateId}-${assignDate}`;
+     if (assignIntentRef.current?.key === intentKey) {
+       return;
+     }
+ 
+     assignIntentRef.current = {
+       key: intentKey,
+       handled: false,
+       plateId: assignPlateId,
+       date: assignDate
+     };
+ 
+     const targetWeekStart = getMondayISO(new Date(assignDate));
+     if (weekStart !== targetWeekStart) {
+       setWeekStart(targetWeekStart);
+     }
+   }, [searchParams, weekStart]);
+ 
+   const clearAssignParams = useCallback(() => {
+     const nextParams = new URLSearchParams(searchParams);
+     nextParams.delete("assignPlateId");
+     nextParams.delete("plateId");
+     nextParams.delete("assign");
+     nextParams.delete("date");
+     setSearchParams(nextParams, { replace: true });
+   }, [searchParams, setSearchParams]);
+ 
+   useEffect(() => {
+     const intent = assignIntentRef.current;
+     if (!intent || intent.handled) return;
+     if (loading || !plan || !safeDays.length) return;
+ 
+     const planWeekStart = plan?.weekStart
+       ? getMondayISO(new Date(plan.weekStart))
+       : null;
+     if (planWeekStart && planWeekStart !== weekStart) return;
+ 
+     const { date: assignDate, plateId: assignPlateId, key: intentKey } = intent;
 -    const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === assignDate);
 -    if (!targetDay) {
 -      assignIntentRef.current = { key: intentKey, handled: true };
--      setSearchParams({}, { replace: true });
+-      clearAssignParams();
 -      return;
 -    }
 -
@@ -179,120 +185,36 @@ index a5815a06e4199bc7f97eac9682ed7e958428bc77..1ac203a05ec9b984c17b9821388c198e
 -    });
 -
 -    assignIntentRef.current = { key: intentKey, handled: true };
--    setSearchParams({}, { replace: true });
+-    clearAssignParams();
 -  }, [
+-    clearAssignParams,
 -    dishes,
 -    focusMainDish,
 -    focusSideDish,
+-    loading,
+-    plan,
 -    safeDays,
--    searchParams,
--    setSearchParams,
 -    sideDishes,
 -    startEditingDay,
 -    updateDay,
 -    weekStart
 -  ]);
-+  const focusSideDish = (dayKey) => {
-+    window.requestAnimationFrame(() => {
-+      const node = sideDishRefs.current.get(dayKey);
-+      if (node) {
-+        node.focus();
-+      }
-+    });
-+  };
-+
-+  useEffect(() => {
-+    const assignPlateId = searchParams.get("assignPlateId") || searchParams.get("plateId");
-+    const assignDate = searchParams.get("date");
-+    if (!assignPlateId || !assignDate) return;
-+
-+    const intentKey = `${assignPlateId}-${assignDate}`;
-+    if (assignIntentRef.current?.key === intentKey) {
-+      return;
-+    }
-+
-+    assignIntentRef.current = {
-+      key: intentKey,
-+      handled: false,
-+      plateId: assignPlateId,
-+      date: assignDate
-+    };
-+
-+    const targetWeekStart = getMondayISO(new Date(assignDate));
-+    if (weekStart !== targetWeekStart) {
-+      setWeekStart(targetWeekStart);
-+    }
-+  }, [searchParams, weekStart]);
-+
-+  const clearAssignParams = useCallback(() => {
-+    const nextParams = new URLSearchParams(searchParams);
-+    nextParams.delete("assignPlateId");
-+    nextParams.delete("plateId");
-+    nextParams.delete("assign");
-+    nextParams.delete("date");
-+    setSearchParams(nextParams, { replace: true });
-+  }, [searchParams, setSearchParams]);
-+
-+  useEffect(() => {
-+    const intent = assignIntentRef.current;
-+    if (!intent || intent.handled) return;
-+    if (loading || !plan || !safeDays.length) return;
-+
-+    const planWeekStart = plan?.weekStart
-+      ? getMondayISO(new Date(plan.weekStart))
-+      : null;
-+    if (planWeekStart && planWeekStart !== weekStart) return;
-+
-+    const { date: assignDate, plateId: assignPlateId, key: intentKey } = intent;
 +    const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === assignDate);
 +    if (!targetDay) {
 +      assignIntentRef.current = { key: intentKey, handled: true };
 +      clearAssignParams();
 +      return;
 +    }
-+
-+    const allDishes = [...dishes, ...sideDishes];
-+    const targetDish = allDishes.find((dish) => dish._id === assignPlateId);
-+    const targetIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === assignDate);
-+
-+    setSelectedDay(assignDate);
-+    if (targetIndex >= 0) {
-+      setActiveIndex(targetIndex);
-+    }
-+    startEditingDay(targetDay);
-+    if (targetDish?.sidedish) {
-+      setSideDishEnabled((prev) => ({ ...prev, [assignDate]: true }));
-+      setSideDishQueries((prev) => ({ ...prev, [assignDate]: targetDish.name }));
-+      updateDay(targetDay, { sideDishId: targetDish._id });
-+      focusSideDish(assignDate);
-+    } else if (targetDish) {
-+      setMainDishQueries((prev) => ({ ...prev, [assignDate]: targetDish.name }));
-+      updateDay(targetDay, { mainDishId: targetDish._id });
-+      focusMainDish(assignDate);
-+    }
-+
-+    window.requestAnimationFrame(() => {
-+      const node =
-+        dayRefs.current.get(assignDate) || document.getElementById(`kitchen-day-${assignDate}`);
-+      if (node) {
-+        node.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
-+        node.focus?.({ preventScroll: true });
-+      }
-+    });
++    openDayEditor(assignDate, assignPlateId);
 +
 +    assignIntentRef.current = { key: intentKey, handled: true };
 +    clearAssignParams();
 +  }, [
 +    clearAssignParams,
-+    dishes,
-+    focusMainDish,
-+    focusSideDish,
 +    loading,
++    openDayEditor,
 +    plan,
 +    safeDays,
-+    sideDishes,
-+    startEditingDay,
-+    updateDay,
 +    weekStart
 +  ]);
  
@@ -320,3 +242,123 @@ index a5815a06e4199bc7f97eac9682ed7e958428bc77..1ac203a05ec9b984c17b9821388c198e
      setDishModalSidedish(sidedish);
      setDishModalOpen(true);
    };
+@@ -616,58 +643,58 @@ export default function WeekPage() {
+ 
+   if (loading) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card">Cargando semana...</div>
+       </KitchenLayout>
+     );
+   }
+ 
+   if (!plan) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card kitchen-empty">
+           <h3>No hay planificación todavía</h3>
+           <p>Cuando guardes un día aparecerá aquí.</p>
+           {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
+         </div>
+       </KitchenLayout>
+     );
+   }
+ 
+   const handleWeekShift = (days) => {
+     setWeekStart((prev) => addDaysToISO(prev, days));
+   };
+ 
+-  const handleSelectDay = (dayKey) => {
+-    setSelectedDay(dayKey);
+-    const target = dayRefs.current.get(dayKey) || document.getElementById(`kitchen-day-${dayKey}`);
+-    if (target) {
+-      target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+-      target.focus?.({ preventScroll: true });
+-    }
+-  };
++  const handleSelectDay = (dayKey) => {
++    setSelectedDay(dayKey);
++    const target = dayRefs.current.get(dayKey) || document.getElementById(`daycard-${dayKey}`);
++    if (target) {
++      target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
++      target.focus?.({ preventScroll: true });
++    }
++  };
+ 
+   const handleCarouselScroll = (direction) => {
+     const element = carouselRef.current;
+     if (!element) return;
+     element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
+   };
+ 
+   return (
+     <KitchenLayout>
+       <div className="kitchen-week-controls">
+         <WeekDaysStrip
+           days={safeDays}
+           userMap={userMap}
+           selectedDay={selectedDay}
+           onSelectDay={handleSelectDay}
+         />
+         <div className="kitchen-week-mobile-frame">
+           <section className="kitchen-week-header">
+             <div className="kitchen-week-header-actions">
+               <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
+                 <button
+                   className="kitchen-week-arrow"
+                   type="button"
+                   onClick={() => handleWeekShift(-7)}
+                   aria-label="Ir a la semana anterior"
+@@ -774,51 +801,51 @@ export default function WeekPage() {
+               const normalizedName = normalizeIngredientName(dish.name || "");
+               return sideDishTokens.every((token) => normalizedName.includes(token));
+             })
+             : [];
+           const limitedSideDishes = filteredSideDishes.slice(0, MAX_DISH_RESULTS);
+           const hasExactSideDishMatch = sideDishTokens.length
+             ? sideDishes.some(
+               (dish) => normalizeIngredientName(dish.name || "") === normalizedSideDishQuery
+             )
+             : false;
+           const extrasOn = extraIngredientsEnabled[dayKey] ?? Boolean(extraIngredients.length);
+           const extrasToggleId = `extras-toggle-${dayKey}`;
+           const statusLabels = [];
+           if (isAssigned) {
+             statusLabels.push({
+               label: isAssignedToSelf ? "Asignado a ti" : "Asignado",
+               type: "assigned"
+             });
+           }
+           if (isPlanned) {
+             statusLabels.push({ label: "Planificado", type: "planned" });
+           }
+           return (
+             <div
+               key={day.date}
+-              id={`kitchen-day-${dayKey}`}
++              id={`daycard-${dayKey}`}
+               className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""}`}
+               tabIndex={-1}
+               ref={(node) => {
+                 if (!node) {
+                   dayRefs.current.delete(dayKey);
+                   return;
+                 }
+                 dayRefs.current.set(dayKey, node);
+               }}
+             >
+               <div className="kitchen-day-header">
+                 <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
+                 {!isEmptyState ? (
+                   <>
+                     <div className="kitchen-day-meta">
+                       {showCookTiming ? (
+                         <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
+                       ) : null}
+                       {cookUser?.displayName ? (
+                         <span>Cocinero: {cookUser.displayName}</span>
+                       ) : null}
+                     </div>
+                     {statusLabels.length ? (
+                       <div className="kitchen-day-status" aria-label="Estado del día">
+                         {statusLabels.map((item) => (
