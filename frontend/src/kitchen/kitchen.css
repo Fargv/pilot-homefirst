@@ -577,7 +577,55 @@
 .kitchen-assign-body {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+}
+
+.kitchen-assign-week-header {
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
   gap: 12px;
+  width: 100%;
+}
+
+.kitchen-assign-week-label {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.kitchen-assign-week-nav {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.kitchen-assign-week-nav:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.kitchen-assign-week-icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.kitchen-assign-week-icon.is-next {
+  transform: rotate(180deg);
 }
 
 .kitchen-assign-days {
@@ -608,6 +656,10 @@
   box-shadow: 0 8px 16px rgba(79, 70, 229, 0.12);
 }
 
+.kitchen-assign-day.is-occupied {
+  border-color: #cbd5f5;
+}
+
 .kitchen-assign-day:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -623,6 +675,22 @@
 .kitchen-assign-day-number {
   font-size: 15px;
   font-weight: 700;
+}
+
+.kitchen-assign-day-status {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  text-align: center;
+}
+
+.kitchen-assign-day-detail {
+  display: block;
+  font-size: 11px;
+  letter-spacing: normal;
+  text-transform: none;
+  color: #475569;
 }
 
 .kitchen-dishes-loading {
@@ -843,7 +911,7 @@
   align-items: flex-start;
   justify-content: center;
   gap: 16px;
-  margin-bottom: 0;
+  margin-bottom: 20px;
 }
 
 .kitchen-week-header-main {

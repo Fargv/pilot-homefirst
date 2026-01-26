@@ -26,6 +26,28 @@ function addDaysToISO(dateString, days) {
   return date.toISOString().slice(0, 10);
 }
 
+function buildAssignDays(weekStart) {
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = addDaysToISO(weekStart, index);
+    return {
+      date,
+      label: getAssignDayLabel(date),
+      number: getAssignDayNumber(date)
+    };
+  });
+}
+
+function formatWeekLabel(dateString) {
+  if (!dateString) return "-";
+  const date = new Date(`${dateString}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+}
+
 function getAssignDayLabel(dateString) {
   if (!dateString) return "-";
   const date = new Date(`${dateString}T00:00:00Z`);
@@ -37,6 +59,14 @@ function getAssignDayNumber(dateString) {
   if (!dateString) return "-";
   const date = new Date(`${dateString}T00:00:00Z`);
   return date.getUTCDate();
+}
+
+function ChevronIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  );
 }
 
 export default function DishesPage() {
@@ -60,6 +90,17 @@ export default function DishesPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignDish, setAssignDish] = useState(null);
   const [assignDate, setAssignDate] = useState("");
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const currentWeekStart = useMemo(
+    () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
+    [todayKey]
+  );
+  const [assignWeekStart, setAssignWeekStart] = useState(currentWeekStart);
+  const [assignWeekData, setAssignWeekData] = useState({
+    status: "idle",
+    occupied: {},
+    dishNames: {}
+  });
 
   const loadDishes = async () => {
     setLoading(true);
@@ -150,6 +191,13 @@ export default function DishesPage() {
       });
     });
   }, [normalizedSearch, tabFilteredDishes]);
+  const dishMap = useMemo(() => {
+    const map = new Map();
+    dishes.forEach((dish) => {
+      if (dish?._id) map.set(dish._id, dish);
+    });
+    return map;
+  }, [dishes]);
 
   const emptyMessage = useMemo(() => {
     if (dishes.length === 0) {
@@ -206,23 +254,71 @@ export default function DishesPage() {
     setActiveIngredient(null);
   };
 
-  const todayKey = new Date().toISOString().slice(0, 10);
   const assignDays = useMemo(() => {
-    const weekStart = getMondayISO();
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = addDaysToISO(weekStart, index);
-      return {
-        date,
-        label: getAssignDayLabel(date),
-        number: getAssignDayNumber(date)
-      };
-    });
-  }, [todayKey]);
+    return buildAssignDays(assignWeekStart);
+  }, [assignWeekStart]);
+
+  useEffect(() => {
+    if (!assignModalOpen) return;
+    let isActive = true;
+    setAssignWeekData({ status: "loading", occupied: {}, dishNames: {} });
+
+    apiRequest(`/api/kitchen/weeks/${assignWeekStart}`)
+      .then((data) => {
+        if (!isActive) return;
+        const occupied = {};
+        const dishNames = {};
+        (data?.plan?.days || []).forEach((day) => {
+          const dayKey = day?.date?.slice(0, 10);
+          if (!dayKey) return;
+          if (day.mainDishId) {
+            occupied[dayKey] = true;
+            const dishName = dishMap.get(day.mainDishId)?.name;
+            if (dishName) {
+              dishNames[dayKey] = dishName;
+            }
+          }
+        });
+        setAssignWeekData({ status: "ready", occupied, dishNames });
+      })
+      .catch(() => {
+        if (!isActive) return;
+        setAssignWeekData({ status: "error", occupied: {}, dishNames: {} });
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [assignModalOpen, assignWeekStart, dishMap]);
+
+  useEffect(() => {
+    if (!assignModalOpen) return;
+    const occupancyReady = assignWeekData.status === "ready";
+    const isDateInWeek = assignDays.some((day) => day.date === assignDate);
+    const isCurrentValid =
+      assignDate &&
+      isDateInWeek &&
+      assignDate >= todayKey &&
+      (!occupancyReady || !assignWeekData.occupied[assignDate]);
+    if (isCurrentValid) return;
+    const nextDate =
+      assignDays.find(
+        (day) =>
+          day.date >= todayKey &&
+          (!occupancyReady || !assignWeekData.occupied[day.date])
+      )?.date || "";
+    if (nextDate !== assignDate) {
+      setAssignDate(nextDate);
+    }
+  }, [assignModalOpen, assignDate, assignDays, assignWeekData, todayKey]);
 
   const openAssignModal = (dish) => {
     if (!dish) return;
-    const initialDate = assignDays.find((day) => day.date >= todayKey)?.date || "";
+    const initialWeekStart = getMondayISO();
+    const initialDays = buildAssignDays(initialWeekStart);
+    const initialDate = initialDays.find((day) => day.date >= todayKey)?.date || "";
     setAssignDish(dish);
+    setAssignWeekStart(initialWeekStart);
     setAssignDate(initialDate);
     setAssignModalOpen(true);
   };
@@ -231,6 +327,7 @@ export default function DishesPage() {
     setAssignModalOpen(false);
     setAssignDish(null);
     setAssignDate("");
+    setAssignWeekData({ status: "idle", occupied: {}, dishNames: {} });
   };
 
   const confirmAssign = () => {
@@ -560,22 +657,57 @@ export default function DishesPage() {
               </button>
             </div>
             <div className="kitchen-assign-body">
-              <span className="kitchen-label">Semana actual</span>
+              <div className="kitchen-assign-week-header" role="group" aria-label="Cambiar semana">
+                <button
+                  className="kitchen-assign-week-nav"
+                  type="button"
+                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, -7))}
+                  aria-label="Ir a la semana anterior"
+                  disabled={assignWeekStart <= currentWeekStart}
+                >
+                  <ChevronIcon className="kitchen-assign-week-icon" />
+                </button>
+                <span className="kitchen-assign-week-label">
+                  Semana del {formatWeekLabel(assignWeekStart)}
+                </span>
+                <button
+                  className="kitchen-assign-week-nav"
+                  type="button"
+                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, 7))}
+                  aria-label="Ir a la semana siguiente"
+                >
+                  <ChevronIcon className="kitchen-assign-week-icon is-next" />
+                </button>
+              </div>
               <div className="kitchen-assign-days" role="group" aria-label="Selecciona el día">
                 {assignDays.map((day) => {
-                  const isDisabled = day.date < todayKey;
+                  const occupancyReady = assignWeekData.status === "ready";
+                  const isOccupied = occupancyReady && assignWeekData.occupied[day.date];
+                  const isDisabled = day.date < todayKey || isOccupied;
                   const isSelected = assignDate === day.date;
+                  const occupiedDishName = isOccupied ? assignWeekData.dishNames[day.date] : "";
                   return (
                     <button
                       key={day.date}
                       type="button"
-                      className={`kitchen-assign-day ${isSelected ? "is-selected" : ""}`}
+                      className={`kitchen-assign-day ${isSelected ? "is-selected" : ""} ${
+                        isOccupied ? "is-occupied" : ""
+                      }`}
                       onClick={() => setAssignDate(day.date)}
                       disabled={isDisabled}
                       aria-pressed={isSelected}
+                      title={occupiedDishName ? `Ocupado: ${occupiedDishName}` : undefined}
                     >
                       <span className="kitchen-assign-day-label">{day.label}</span>
                       <span className="kitchen-assign-day-number">{day.number}</span>
+                      {isOccupied ? (
+                        <span className="kitchen-assign-day-status">
+                          Ocupado
+                          {occupiedDishName ? (
+                            <span className="kitchen-assign-day-detail">{occupiedDishName}</span>
+                          ) : null}
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })}
