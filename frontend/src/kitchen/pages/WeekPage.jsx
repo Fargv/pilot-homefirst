@@ -430,27 +430,52 @@ export default function WeekPage() {
   };
 
   useEffect(() => {
-    const assignPlateId = searchParams.get("assignPlateId");
+    const assignPlateId = searchParams.get("assignPlateId") || searchParams.get("plateId");
     const assignDate = searchParams.get("date");
     if (!assignPlateId || !assignDate) return;
 
     const intentKey = `${assignPlateId}-${assignDate}`;
-    if (assignIntentRef.current?.key === intentKey && assignIntentRef.current?.handled) {
+    if (assignIntentRef.current?.key === intentKey) {
       return;
     }
+
+    assignIntentRef.current = {
+      key: intentKey,
+      handled: false,
+      plateId: assignPlateId,
+      date: assignDate
+    };
 
     const targetWeekStart = getMondayISO(new Date(assignDate));
     if (weekStart !== targetWeekStart) {
-      assignIntentRef.current = { key: intentKey, handled: false };
       setWeekStart(targetWeekStart);
-      return;
     }
+  }, [searchParams, weekStart]);
 
-    if (!safeDays.length) return;
+  const clearAssignParams = useCallback(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("assignPlateId");
+    nextParams.delete("plateId");
+    nextParams.delete("assign");
+    nextParams.delete("date");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    const intent = assignIntentRef.current;
+    if (!intent || intent.handled) return;
+    if (loading || !plan || !safeDays.length) return;
+
+    const planWeekStart = plan?.weekStart
+      ? getMondayISO(new Date(plan.weekStart))
+      : null;
+    if (planWeekStart && planWeekStart !== weekStart) return;
+
+    const { date: assignDate, plateId: assignPlateId, key: intentKey } = intent;
     const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === assignDate);
     if (!targetDay) {
       assignIntentRef.current = { key: intentKey, handled: true };
-      setSearchParams({}, { replace: true });
+      clearAssignParams();
       return;
     }
 
@@ -484,14 +509,15 @@ export default function WeekPage() {
     });
 
     assignIntentRef.current = { key: intentKey, handled: true };
-    setSearchParams({}, { replace: true });
+    clearAssignParams();
   }, [
+    clearAssignParams,
     dishes,
     focusMainDish,
     focusSideDish,
+    loading,
+    plan,
     safeDays,
-    searchParams,
-    setSearchParams,
     sideDishes,
     startEditingDay,
     updateDay,
