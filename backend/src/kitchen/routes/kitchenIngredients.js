@@ -32,8 +32,12 @@ const buildAccentInsensitiveRegex = (value) => {
 };
 
 router.get("/", requireAuth, async (req, res) => {
-  const { q } = req.query;
-  const filters = { active: true };
+  const { q, includeInactive, limit } = req.query;
+  const filters = {};
+  const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
+  if (!shouldIncludeInactive) {
+    filters.active = true;
+  }
   if (process.env.NODE_ENV === "development") {
     console.log("🔎 [kitchenIngredients] search", { q });
   }
@@ -52,17 +56,24 @@ router.get("/", requireAuth, async (req, res) => {
     if (orFilters.length) filters.$or = orFilters;
   }
 
-  const ingredients = await KitchenIngredient.find(filters)
+  const limitValue = Number.parseInt(limit, 10);
+  let queryBuilder = KitchenIngredient.find(filters)
     .populate("categoryId", "name colorBg colorText")
-    .sort({ name: 1 })
-    .limit(MAX_RESULTS);
+    .sort({ name: 1 });
+  if (!Number.isNaN(limitValue) && limitValue > 0) {
+    queryBuilder = queryBuilder.limit(limitValue);
+  } else if (!limit) {
+    queryBuilder = queryBuilder.limit(MAX_RESULTS);
+  }
+
+  const ingredients = await queryBuilder;
 
   return res.json({ ok: true, ingredients });
 });
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { name, categoryId } = req.body;
+    const { name, categoryId, canonicalName: canonicalInput } = req.body;
     if (process.env.NODE_ENV === "development") {
       console.log("🧪 [kitchenIngredients] create", { name, categoryId });
     }
@@ -71,7 +82,7 @@ router.post("/", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
 
     const trimmedName = String(name).trim();
-    const canonicalName = normalizeIngredientName(trimmedName);
+    const canonicalName = normalizeIngredientName(canonicalInput || trimmedName);
     if (!canonicalName)
       return res.status(400).json({ ok: false, error: "El nombre del ingrediente no es válido." });
 
@@ -95,6 +106,42 @@ router.post("/", requireAuth, async (req, res) => {
     return res.status(201).json({ ok: true, ingredient: populatedIngredient, created: true });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo crear el ingrediente." });
+  }
+});
+
+router.put("/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, categoryId, active, canonicalName: canonicalInput } = req.body;
+    if (!name) return res.status(400).json({ ok: false, error: "El nombre del ingrediente es obligatorio." });
+    if (!categoryId)
+      return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
+    if (typeof active !== "boolean")
+      return res.status(400).json({ ok: false, error: "Indica si el ingrediente está activo." });
+
+    const trimmedName = String(name).trim();
+    const canonicalName = normalizeIngredientName(canonicalInput || trimmedName);
+    if (!canonicalName)
+      return res.status(400).json({ ok: false, error: "El nombre del ingrediente no es válido." });
+
+    const ingredient = await KitchenIngredient.findByIdAndUpdate(
+      id,
+      {
+        name: trimmedName,
+        canonicalName,
+        categoryId,
+        active
+      },
+      { new: true }
+    ).populate("categoryId", "name colorBg colorText");
+
+    if (!ingredient) {
+      return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
+    }
+
+    return res.json({ ok: true, ingredient });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el ingrediente." });
   }
 });
 

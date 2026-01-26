@@ -453,6 +453,30 @@
   overflow: hidden;
 }
 
+.kitchen-ingredient-card {
+  gap: 12px;
+}
+
+.kitchen-ingredient-canonical {
+  margin: 6px 0 0;
+  color: #667085;
+  font-size: 13px;
+}
+
+.kitchen-ingredient-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.kitchen-ingredient-selected-category {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .kitchen-dish-actions {
   display: flex;
   gap: 8px;
@@ -1167,6 +1191,18 @@
   color: #1f2937;
   background: #f8fafc;
   border-color: #e2e8f0;
+}
+
+.kitchen-status-pill.active {
+  color: #027a48;
+  background: #ecfdf3;
+  border-color: #abefc6;
+}
+
+.kitchen-status-pill.inactive {
+  color: #b42318;
+  background: #fef3f2;
+  border-color: #fecaca;
 }
 
 .kitchen-inline-error {
