@@ -1,26 +1,30 @@
 :root {
   color-scheme: light;
-  --hf-bg: #f6f7fb;
+  --hf-bg: #f8fafc;
   --hf-surface: #ffffff;
-  --hf-surface-soft: #f8faff;
-  --hf-text: #101828;
+  --hf-surface-soft: #eef2ff;
+  --hf-surface-mint: #f0fdf4;
+  --hf-surface-peach: #fff7ed;
+  --hf-text: #1e293b;
   --hf-muted: #667085;
-  --hf-brand: #5b5bd6;
+  --hf-brand: #4338ca;
   --hf-brand-strong: #4338ca;
   --hf-border: #e4e7ec;
   --hf-danger: #b42318;
-  --hf-radius-lg: 24px;
+  --hf-radius-md: 24px;
+  --hf-radius-lg: 28px;
   --hf-radius-xl: 32px;
-  --hf-shadow-soft: 0 14px 40px rgba(16, 24, 40, 0.08);
+  --hf-shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
   --hf-shadow-glass: 0 10px 30px rgba(31, 41, 55, 0.1);
-  --hf-glass: rgba(255, 255, 255, 0.78);
+  --hf-glass: rgba(255, 255, 255, 0.7);
+  --hf-glass-border: rgba(255, 255, 255, 0.9);
 }
 
 .kitchen-app {
   font-family: "Inter", system-ui, sans-serif;
-  background: #f6f7fb;
+  background: var(--hf-bg);
   min-height: 100vh;
-  color: #101828;
+  color: var(--hf-text);
 }
 
 .kitchen-container {
@@ -1943,8 +1947,8 @@
 
 .kitchen-ui-button {
   border: none;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #6866e7, var(--hf-brand));
+  border-radius: 999px;
+  background: var(--hf-brand);
   color: #fff;
   padding: 12px 16px;
   font-weight: 700;
@@ -1975,7 +1979,7 @@
 
 .kitchen-ui-input {
   border: 1px solid var(--hf-border);
-  border-radius: 14px;
+  border-radius: var(--hf-radius-md);
   padding: 11px 12px;
   font-size: 14px;
   background: #fff;
@@ -1994,8 +1998,8 @@
 }
 
 .kitchen-ui-badge-default { background: #eef2ff; color: #3730a3; }
-.kitchen-ui-badge-success { background: #e8f7ee; color: #0f7a3d; }
-.kitchen-ui-badge-warning { background: #fff5e8; color: #9a580a; }
+.kitchen-ui-badge-success { background: var(--hf-surface-mint); color: #0f7a3d; }
+.kitchen-ui-badge-warning { background: var(--hf-surface-peach); color: #9a580a; }
 
 .kitchen-ui-header,
 .kitchen-ui-bottom-nav {
@@ -2008,7 +2012,7 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  border-bottom: 1px solid var(--hf-border);
+  border-bottom: 1px solid var(--hf-glass-border);
 }
 
 .kitchen-ui-header-inner {
@@ -2028,8 +2032,30 @@
   bottom: 0;
   z-index: 25;
   padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid var(--hf-border);
+  border-top: 1px solid var(--hf-glass-border);
   display: none;
+}
+
+.kitchen-login-wrap {
+  max-width: 480px;
+  padding-top: 48px;
+}
+
+.kitchen-login-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.5vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.kitchen-login-form {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.kitchen-login-error {
+  color: var(--hf-danger);
 }
 
 .kitchen-ui-bottom-nav-inner {

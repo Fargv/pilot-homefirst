@@ -28,11 +28,11 @@ export default function LoginPage() {
 
   return (
     <div className="kitchen-app">
-      <div className="kitchen-container" style={{ maxWidth: 480 }}>
+      <div className="kitchen-container kitchen-login-wrap">
         <Card>
-          <h2>Acceso a HomeFirst</h2>
+          <h2 className="kitchen-login-title">Acceso a HomeFirst</h2>
           <p className="kitchen-muted">Usa tus credenciales familiares para entrar.</p>
-          <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
+          <form onSubmit={onSubmit} className="kitchen-login-form">
             <Input
               id="login-email"
               label="Email"
@@ -51,7 +51,7 @@ export default function LoginPage() {
               placeholder="••••••••"
               required
             />
-            {error ? <div style={{ color: "#b42318" }}>{error}</div> : null}
+            {error ? <div className="kitchen-login-error">{error}</div> : null}
             <Button type="submit" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"}
             </Button>
