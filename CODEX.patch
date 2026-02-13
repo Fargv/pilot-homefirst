@@ -1,242 +1,424 @@
-diff --git a/frontend/src/app.css b/frontend/src/app.css
-index 06e543bd2b5dacf181facd10612662b1c5ff6bfb..2751ac79f739644b7c257f38dc7e1ef7f87360e8 100644
---- a/frontend/src/app.css
-+++ b/frontend/src/app.css
-@@ -1,32 +1,40 @@
- .app-shell {
-   min-height: 100vh;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   padding: 48px 20px;
--  background: #f8fafc;
-+  background-color: #f8fafc;
-+  background-image: linear-gradient(
-+    180deg,
-+    rgba(238, 242, 255, 0.72) 0%,
-+    rgba(240, 253, 244, 0.5) 42%,
-+    rgba(248, 250, 252, 0.96) 100%
-+  );
-+  background-repeat: no-repeat;
-+  background-size: 100% 100%;
-   color: #0f172a;
-   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
+index 925f2a34a68539b9771ec5d4f74c1d2c61217054..80418ad6758eacf8ca5e784618bd2bbea0f6860a 100644
+--- a/frontend/src/kitchen/kitchen.css
++++ b/frontend/src/kitchen/kitchen.css
+@@ -2045,71 +2045,252 @@
+   z-index: 20;
+   border-bottom: 1px solid var(--hf-glass-border);
  }
  
- .app-panel {
-   width: min(640px, 100%);
-   background: #ffffff;
-   border-radius: 20px;
-   padding: 40px 36px;
-   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+ .kitchen-ui-header-inner {
+   max-width: 1100px;
+   margin: 0 auto;
+   padding: 16px 24px;
    display: flex;
-   flex-direction: column;
+   justify-content: space-between;
+   align-items: center;
    gap: 16px;
  }
  
- .app-title {
-   font-size: 32px;
-   font-weight: 600;
-   margin: 0;
- }
- 
- .app-subtitle {
-   margin: 0;
-   color: #475569;
-   font-size: 16px;
-@@ -56,68 +64,100 @@
- 
- .app-primary-button {
-   display: inline-flex;
-   align-items: center;
-   justify-content: center;
-   padding: 12px 18px;
-   border-radius: 10px;
-   background: #0f172a;
-   color: #ffffff;
-   text-decoration: none;
-   font-weight: 600;
-   width: fit-content;
-   transition: transform 0.15s ease, box-shadow 0.15s ease;
- }
- 
- .app-primary-button:hover {
-   transform: translateY(-1px);
-   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
- }
- 
- .app-splash {
-   min-height: 100vh;
-   display: flex;
-   align-items: center;
-   justify-content: center;
--  background: #f8fafc;
-+  background-color: #f8fafc;
-+  background-image: linear-gradient(
-+    180deg,
-+    rgba(238, 242, 255, 0.72) 0%,
-+    rgba(240, 253, 244, 0.5) 42%,
-+    rgba(248, 250, 252, 0.96) 100%
-+  );
-+  background-repeat: no-repeat;
-+  background-size: 100% 100%;
-   color: #0f172a;
-   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
- }
- 
- .app-splash-card {
-   display: grid;
-   gap: 12px;
-   justify-items: center;
- }
- 
- .app-logo {
-   width: 72px;
-   height: 72px;
-   border-radius: 20px;
-   background: #0f172a;
-   color: #ffffff;
-   display: grid;
-   place-items: center;
-   font-weight: 700;
-   font-size: 24px;
-   letter-spacing: 1px;
- }
- 
- .app-name {
-   font-size: 20px;
-   font-weight: 600;
- }
- 
- .app-loader {
-   width: 32px;
-   height: 32px;
-   border-radius: 50%;
-   border: 3px solid #e2e8f0;
-   border-top-color: #0f172a;
-   animation: app-spin 0.8s linear infinite;
- }
- 
- @keyframes app-spin {
-   to {
-     transform: rotate(360deg);
-   }
- }
-+
-+@media (min-width: 768px) {
-+  .app-shell,
-+  .app-splash {
-+    background-image: linear-gradient(
-+      180deg,
-+      rgba(238, 242, 255, 0.66) 0%,
-+      rgba(240, 253, 244, 0.44) 46%,
-+      rgba(248, 250, 252, 0.98) 100%
-+    );
-+  }
-+}
-+
-+@media (min-width: 1200px) {
-+  .app-shell,
-+  .app-splash {
-+    background-image: linear-gradient(
-+      180deg,
-+      rgba(238, 242, 255, 0.58) 0%,
-+      rgba(240, 253, 244, 0.38) 50%,
-+      rgba(248, 250, 252, 1) 100%
-+    );
-+  }
-+}
-diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 70513e4c0e613f2e8203ea76a6709f48ecc0d007..e821804b6d571bd79b5fc8edfd9e34afb92b79c7 100644
---- a/frontend/src/kitchen/kitchen.css
-+++ b/frontend/src/kitchen/kitchen.css
-@@ -1,53 +1,84 @@
- :root {
-   color-scheme: light;
--  --hf-bg: #f8fafc;
--  --hf-surface: #ffffff;
-+  --hf-bg: #f8fafc;
-+  --hf-bg-gradient: linear-gradient(
-+    180deg,
-+    rgba(238, 242, 255, 0.72) 0%,
-+    rgba(240, 253, 244, 0.5) 42%,
-+    rgba(248, 250, 252, 0.96) 100%
-+  );
-+  --hf-surface: #ffffff;
-   --hf-surface-soft: #eef2ff;
-   --hf-surface-mint: #f0fdf4;
-   --hf-surface-peach: #fff7ed;
-   --hf-text: #1e293b;
-   --hf-muted: #667085;
-   --hf-brand: #4338ca;
-   --hf-brand-strong: #4338ca;
-   --hf-border: #e4e7ec;
-   --hf-danger: #b42318;
-   --hf-radius-md: 24px;
-   --hf-radius-lg: 28px;
-   --hf-radius-xl: 32px;
-   --hf-shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-   --hf-shadow-glass: 0 10px 30px rgba(31, 41, 55, 0.1);
-   --hf-glass: rgba(255, 255, 255, 0.7);
-   --hf-glass-border: rgba(255, 255, 255, 0.9);
- }
- 
- .kitchen-app {
-   font-family: "Inter", system-ui, sans-serif;
--  background: var(--hf-bg);
-+  background-color: var(--hf-bg);
-+  background-image: var(--hf-bg-gradient);
-+  background-repeat: no-repeat;
-+  background-size: 100% 100%;
-   min-height: 100vh;
--  color: var(--hf-text);
--}
-+  color: var(--hf-text);
-+}
-+
-+@media (min-width: 768px) {
-+  :root {
-+    --hf-bg-gradient: linear-gradient(
-+      180deg,
-+      rgba(238, 242, 255, 0.66) 0%,
-+      rgba(240, 253, 244, 0.44) 46%,
-+      rgba(248, 250, 252, 0.98) 100%
-+    );
-+  }
-+}
-+
-+@media (min-width: 1200px) {
-+  :root {
-+    --hf-bg-gradient: linear-gradient(
-+      180deg,
-+      rgba(238, 242, 255, 0.58) 0%,
-+      rgba(240, 253, 244, 0.38) 50%,
-+      rgba(248, 250, 252, 1) 100%
-+    );
-+  }
-+}
- 
- .kitchen-container {
-   max-width: 1100px;
-   margin: 0 auto;
-   padding: 24px;
- }
- 
- .kitchen-bottom-nav {
+ .kitchen-ui-bottom-nav {
    position: fixed;
-   bottom: 0;
    left: 0;
    right: 0;
-   background: #ffffff;
-   border-top: 1px solid #e4e7ec;
+   bottom: 0;
    z-index: 25;
    padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+   border-top: 1px solid var(--hf-glass-border);
    display: none;
  }
  
- .kitchen-bottom-nav-inner {
+-.kitchen-login-wrap {
+-  max-width: 480px;
+-  padding-top: 48px;
+-}
+-
+-.kitchen-login-title {
+-  margin: 0;
+-  font-size: clamp(1.6rem, 3.5vw, 2rem);
+-  font-weight: 600;
+-  letter-spacing: -0.02em;
+-}
+-
+-.kitchen-login-form {
+-  margin-top: 16px;
+-  display: grid;
+-  gap: 12px;
+-}
+-
+-.kitchen-login-error {
+-  color: var(--hf-danger);
+-}
++.kitchen-login-wrap {
++  max-width: 560px;
++  min-height: 100vh;
++  display: grid;
++  place-items: center;
++  padding-top: 24px;
++  padding-bottom: 24px;
++}
++
++.kitchen-login-card {
++  width: min(100%, 460px);
++  border-radius: 30px;
++  padding: clamp(22px, 5vw, 34px);
++  background: rgba(248, 250, 252, 0.88);
++  border: 1px solid rgba(228, 231, 236, 0.72);
++  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
++}
++
++.kitchen-login-badge {
++  display: grid;
++  place-items: center;
++  margin-top: 4px;
++}
++
++.kitchen-login-badge-icon {
++  width: 94px;
++  height: 94px;
++  border-radius: 999px;
++  display: grid;
++  place-items: center;
++  color: #374151;
++  background: #f8fafc;
++  box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.9), 0 0 30px rgba(67, 56, 202, 0.14);
++}
++
++.kitchen-login-icon {
++  width: 42px;
++  height: 42px;
++}
++
++.kitchen-login-title {
++  margin: 8px 0 0;
++  text-align: center;
++  font-size: clamp(2rem, 7vw, 2.8rem);
++  font-weight: 700;
++  letter-spacing: -0.02em;
++}
++
++.kitchen-login-subtitle {
++  margin: 0;
++  text-align: center;
++  color: #98a2b3;
++  font-size: clamp(0.95rem, 3vw, 1.1rem);
++}
++
++.kitchen-login-form {
++  margin-top: 10px;
++  display: grid;
++  gap: 14px;
++}
++
++.kitchen-login-fields {
++  display: grid;
++  gap: 14px;
++  border-radius: 30px;
++  background: rgba(255, 255, 255, 0.62);
++  border: 1px solid rgba(228, 231, 236, 0.6);
++  padding: clamp(16px, 5vw, 24px);
++}
++
++.kitchen-login-label {
++  font-size: 0.78rem;
++  color: #98a2b3;
++  font-weight: 700;
++  letter-spacing: 0.06em;
++}
++
++.kitchen-login-input-wrap {
++  position: relative;
++  display: flex;
++  align-items: center;
++}
++
++.kitchen-login-input-icon {
++  width: 18px;
++  height: 18px;
++  color: #98a2b3;
++}
++
++.kitchen-login-input-wrap > .kitchen-login-input-icon {
++  position: absolute;
++  left: 14px;
++}
++
++.kitchen-login-input {
++  width: 100%;
++  padding-left: 42px;
++  border-radius: 999px;
++  border-color: transparent;
++  background: #f8fafc;
++}
++
++.kitchen-login-input::placeholder {
++  color: #c0c5d0;
++}
++
++.kitchen-login-input:focus-visible {
++  border-color: #4338ca;
++  outline: 2px solid rgba(67, 56, 202, 0.2);
++  outline-offset: 1px;
++}
++
++.kitchen-login-password-input {
++  padding-right: 46px;
++}
++
++.kitchen-login-eye {
++  position: absolute;
++  right: 10px;
++  border: none;
++  background: transparent;
++  padding: 6px;
++  border-radius: 999px;
++  display: grid;
++  place-items: center;
++}
++
++.kitchen-login-forgot-row {
++  display: flex;
++  justify-content: flex-end;
++}
++
++.kitchen-login-link {
++  border: none;
++  background: transparent;
++  color: #4338ca;
++  font-weight: 600;
++  font-size: 0.95rem;
++  padding: 0;
++  cursor: pointer;
++}
++
++.kitchen-login-submit {
++  min-height: 54px;
++  font-size: 1.08rem;
++}
++
++.kitchen-login-divider {
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  color: #98a2b3;
++  font-size: 0.78rem;
++  font-weight: 700;
++  letter-spacing: 0.08em;
++  gap: 10px;
++}
++
++.kitchen-login-divider::before,
++.kitchen-login-divider::after {
++  content: "";
++  height: 1px;
++  flex: 1;
++  background: #e4e7ec;
++}
++
++.kitchen-login-socials {
++  display: grid;
++  grid-template-columns: repeat(2, minmax(0, 1fr));
++  gap: 10px;
++}
++
++.kitchen-login-social-button {
++  border-radius: 999px;
++  border: 1px solid var(--hf-border);
++  min-height: 46px;
++  background: rgba(255, 255, 255, 0.8);
++  color: #344054;
++  font-weight: 600;
++  font-size: 1rem;
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++  gap: 10px;
++}
++
++.kitchen-login-social-icon {
++  font-size: 1.1rem;
++  line-height: 1;
++}
++
++.kitchen-login-footer {
++  margin: 0;
++  text-align: center;
++  color: #98a2b3;
++  font-size: 1rem;
++}
++
++.kitchen-login-error {
++  color: var(--hf-danger);
++  text-align: center;
++}
+ 
+ .kitchen-ui-bottom-nav-inner {
    max-width: 720px;
    margin: 0 auto;
    display: grid;
    grid-template-columns: repeat(4, minmax(0, 1fr));
    gap: 8px;
+ }
+ 
+ .kitchen-ui-bottom-nav-item {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   color: var(--hf-muted);
+   gap: 4px;
+   border-radius: 14px;
+   padding: 8px 6px;
+   text-decoration: none;
+   font-size: 12px;
+   font-weight: 600;
+ }
+ 
+ .kitchen-ui-bottom-nav-item.active {
+   background: #eef2ff;
+   color: var(--hf-brand-strong);
+diff --git a/frontend/src/kitchen/pages/LoginPage.jsx b/frontend/src/kitchen/pages/LoginPage.jsx
+index 32596505e6732c977cd24371fba249aea228a45c..040b4f65a9b222e72a18dcc7418c3e4bec6d1057 100644
+--- a/frontend/src/kitchen/pages/LoginPage.jsx
++++ b/frontend/src/kitchen/pages/LoginPage.jsx
+@@ -1,63 +1,110 @@
+ import React, { useState } from "react";
+ import { useNavigate } from "react-router-dom";
+ import { useAuth } from "../auth";
+-import Button from "../components/ui/Button";
+-import Card from "../components/ui/Card";
+-import Input from "../components/ui/Input";
++import Card from "../components/ui/Card";
+ 
+ export default function LoginPage() {
+   const { login } = useAuth();
+   const navigate = useNavigate();
+   const [form, setForm] = useState({ email: "", password: "" });
+   const [error, setError] = useState("");
+   const [loading, setLoading] = useState(false);
+ 
+   const onSubmit = async (event) => {
+     event.preventDefault();
+     setError("");
+     setLoading(true);
+     try {
+       await login(form.email, form.password);
+       navigate("/kitchen/semana");
+     } catch (err) {
+       setError(err.message || "No se pudo iniciar sesión.");
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   return (
+     <div className="kitchen-app">
+-      <div className="kitchen-container kitchen-login-wrap">
+-        <Card>
+-          <h2 className="kitchen-login-title">Acceso a Lunchfy</h2>
+-          <p className="kitchen-muted">Usa tus credenciales familiares para entrar.</p>
+-          <form onSubmit={onSubmit} className="kitchen-login-form">
+-            <Input
+-              id="login-email"
+-              label="Email"
+-              type="email"
+-              value={form.email}
+-              onChange={(event) => setForm({ ...form, email: event.target.value })}
+-              placeholder="Ej: ana@email.com"
+-              required
+-            />
+-            <Input
+-              id="login-password"
+-              label="Contraseña"
+-              type="password"
+-              value={form.password}
+-              onChange={(event) => setForm({ ...form, password: event.target.value })}
+-              placeholder="••••••••"
+-              required
+-            />
+-            {error ? <div className="kitchen-login-error">{error}</div> : null}
+-            <Button type="submit" disabled={loading}>
+-              {loading ? "Entrando..." : "Entrar"}
+-            </Button>
++      <div className="kitchen-container kitchen-login-wrap">
++        <Card className="kitchen-login-card">
++          <div className="kitchen-login-badge" aria-hidden="true">
++            <div className="kitchen-login-badge-icon">
++              <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-icon">
++                <path d="M7 12a4 4 0 0 1 0-8c1.1 0 2.1.45 2.83 1.17A4 4 0 0 1 16 8a3 3 0 0 1 1 5.83V18H7v-6Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
++                <path d="M9 18v2h8v-2M7 20h2" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
++              </svg>
++            </div>
++          </div>
++          <h2 className="kitchen-login-title">¡Bienvenido de nuevo!</h2>
++          <p className="kitchen-login-subtitle">Hay planes deliciosos esperándote.</p>
++          <form onSubmit={onSubmit} className="kitchen-login-form">
++            <div className="kitchen-login-fields">
++              <label className="kitchen-ui-input-group" htmlFor="login-email">
++                <span className="kitchen-login-label">CORREO ELECTRÓNICO</span>
++                <div className="kitchen-login-input-wrap">
++                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
++                    <path d="M3.5 7.5h17v9h-17z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
++                    <path d="m4.5 8.5 7.5 5 7.5-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
++                  </svg>
++                  <input
++                    id="login-email"
++                    className="kitchen-ui-input kitchen-login-input"
++                    type="email"
++                    value={form.email}
++                    onChange={(event) => setForm({ ...form, email: event.target.value })}
++                    placeholder="tunombre@email.com"
++                    required
++                  />
++                </div>
++              </label>
++              <label className="kitchen-ui-input-group" htmlFor="login-password">
++                <span className="kitchen-login-label">CONTRASEÑA</span>
++                <div className="kitchen-login-input-wrap">
++                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
++                    <path d="M7.5 11V8a4.5 4.5 0 0 1 9 0v3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
++                    <rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7" />
++                  </svg>
++                  <input
++                    id="login-password"
++                    className="kitchen-ui-input kitchen-login-input kitchen-login-password-input"
++                    type="password"
++                    value={form.password}
++                    onChange={(event) => setForm({ ...form, password: event.target.value })}
++                    placeholder="••••••••"
++                    required
++                  />
++                  <button type="button" className="kitchen-login-eye" aria-label="Mostrar contraseña">
++                    <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
++                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
++                      <circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" strokeWidth="1.7" />
++                    </svg>
++                  </button>
++                </div>
++              </label>
++              <div className="kitchen-login-forgot-row">
++                <button type="button" className="kitchen-login-link">¿Olvidaste tu contraseña?</button>
++              </div>
++            </div>
++            {error ? <div className="kitchen-login-error">{error}</div> : null}
++            <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={loading}>
++              {loading ? "Entrando..." : "Iniciar sesión →"}
++            </button>
++            <div className="kitchen-login-divider">O CONTINUAR CON</div>
++            <div className="kitchen-login-socials">
++              <button type="button" className="kitchen-login-social-button">
++                <span className="kitchen-login-social-icon" aria-hidden="true">G</span>
++                Google
++              </button>
++              <button type="button" className="kitchen-login-social-button">
++                <span className="kitchen-login-social-icon" aria-hidden="true"></span>
++                Apple
++              </button>
++            </div>
+           </form>
+-        </Card>
++          <p className="kitchen-login-footer">¿No tienes cuenta? <button type="button" className="kitchen-login-link">Regístrate</button></p>
++        </Card>
+       </div>
+     </div>
+   );
+ }
