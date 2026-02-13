@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import Header from "./components/ui/Header";
+import BottomNav from "./components/ui/BottomNav";
 import { useAuth } from "./auth";
 
 function CalendarIcon(props) {
@@ -97,8 +99,8 @@ export default function KitchenLayout({ children }) {
 
   return (
     <div className="kitchen-app">
-      <header className="kitchen-topbar">
-        <div className="kitchen-topbar-inner">
+      <Header
+        left={(
           <div className="kitchen-brand">
             <button
               className="kitchen-nav-toggle"
@@ -115,6 +117,8 @@ export default function KitchenLayout({ children }) {
               HomeFirst
             </Link>
           </div>
+        )}
+        center={(
           <nav className="kitchen-nav-desktop">
             {navLinks.map((link) => (
               <NavLink key={link.to} to={link.to} onClick={onNavigate}>
@@ -122,7 +126,8 @@ export default function KitchenLayout({ children }) {
               </NavLink>
             ))}
           </nav>
-          {user ? (
+        )}
+        right={user ? (
             <div className="kitchen-user">
               <span className="kitchen-user-name">{user.displayName}</span>
               <button
@@ -135,11 +140,10 @@ export default function KitchenLayout({ children }) {
                 <LogoutIcon className="kitchen-logout-icon" />
               </button>
             </div>
-          ) : (
-            <div className="kitchen-user-placeholder" />
-          )}
-        </div>
-      </header>
+        ) : (
+          <div className="kitchen-user-placeholder" />
+        )}
+      />
       <div className="kitchen-container">
         {drawerOpen ? (
           <>
@@ -173,26 +177,7 @@ export default function KitchenLayout({ children }) {
         ) : null}
         {children}
       </div>
-      <nav className="kitchen-bottom-nav" aria-label="Navegación inferior">
-        <div className="kitchen-bottom-nav-inner">
-          {bottomNavLinks.map((link) => {
-            const Icon = link.icon;
-            return (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                onClick={onNavigate}
-                className={({ isActive }) =>
-                  `kitchen-bottom-nav-item${isActive ? " active" : ""}`
-                }
-              >
-                <Icon className="kitchen-bottom-nav-icon" />
-                <span className="kitchen-bottom-nav-label">{link.label}</span>
-              </NavLink>
-            );
-          })}
-        </div>
-      </nav>
+      <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
     </div>
   );
 }

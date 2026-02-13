@@ -1,5 +1,19 @@
 :root {
   color-scheme: light;
+  --hf-bg: #f6f7fb;
+  --hf-surface: #ffffff;
+  --hf-surface-soft: #f8faff;
+  --hf-text: #101828;
+  --hf-muted: #667085;
+  --hf-brand: #5b5bd6;
+  --hf-brand-strong: #4338ca;
+  --hf-border: #e4e7ec;
+  --hf-danger: #b42318;
+  --hf-radius-lg: 24px;
+  --hf-radius-xl: 32px;
+  --hf-shadow-soft: 0 14px 40px rgba(16, 24, 40, 0.08);
+  --hf-shadow-glass: 0 10px 30px rgba(31, 41, 55, 0.1);
+  --hf-glass: rgba(255, 255, 255, 0.78);
 }
 
 .kitchen-app {
@@ -1914,4 +1928,183 @@
   .kitchen-modal-actions {
     flex-direction: row;
   }
+}
+
+
+.kitchen-ui-card {
+  background: var(--hf-surface);
+  border-radius: var(--hf-radius-lg);
+  padding: 24px;
+  box-shadow: var(--hf-shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kitchen-ui-button {
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #6866e7, var(--hf-brand));
+  color: #fff;
+  padding: 12px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.kitchen-ui-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.kitchen-ui-button-secondary {
+  background: var(--hf-surface-soft);
+  color: var(--hf-text);
+  border: 1px solid var(--hf-border);
+}
+
+.kitchen-ui-button-ghost {
+  background: transparent;
+  border: 1px solid var(--hf-border);
+  color: var(--hf-text);
+}
+
+.kitchen-ui-input-group {
+  display: grid;
+  gap: 6px;
+}
+
+.kitchen-ui-input {
+  border: 1px solid var(--hf-border);
+  border-radius: 14px;
+  padding: 11px 12px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.kitchen-ui-input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hf-brand) 35%, white);
+  outline-offset: 1px;
+}
+
+.kitchen-ui-badge {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.kitchen-ui-badge-default { background: #eef2ff; color: #3730a3; }
+.kitchen-ui-badge-success { background: #e8f7ee; color: #0f7a3d; }
+.kitchen-ui-badge-warning { background: #fff5e8; color: #9a580a; }
+
+.kitchen-ui-header,
+.kitchen-ui-bottom-nav {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: var(--hf-glass);
+}
+
+.kitchen-ui-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--hf-border);
+}
+
+.kitchen-ui-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.kitchen-ui-bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--hf-border);
+  display: none;
+}
+
+.kitchen-ui-bottom-nav-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.kitchen-ui-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--hf-muted);
+  gap: 4px;
+  border-radius: 14px;
+  padding: 8px 6px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.kitchen-ui-bottom-nav-item.active {
+  background: #eef2ff;
+  color: var(--hf-brand-strong);
+}
+
+.kitchen-ui-avatar-stack { display: flex; }
+.kitchen-ui-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #eef2ff;
+  border: 2px solid white;
+  margin-left: -8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kitchen-ui-avatar:first-child { margin-left: 0; }
+
+.kitchen-ui-fab {
+  position: fixed;
+  bottom: 82px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: none;
+  background: var(--hf-brand);
+  color: #fff;
+  box-shadow: var(--hf-shadow-glass);
+}
+
+.kitchen-ui-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.45);
+  z-index: 45;
+  display: grid;
+  place-items: end center;
+}
+
+.kitchen-ui-sheet {
+  width: min(720px, 100%);
+  background: #fff;
+  border-radius: var(--hf-radius-xl) var(--hf-radius-xl) 0 0;
+  padding: 24px;
+}
+
+.kitchen-ui-sheet-actions { margin-top: 16px; display: flex; gap: 12px; justify-content: flex-end; }
+
+@media (max-width: 900px) {
+  .kitchen-ui-bottom-nav { display: block; }
 }

@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import Input from "../components/ui/Input";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -26,38 +29,34 @@ export default function LoginPage() {
   return (
     <div className="kitchen-app">
       <div className="kitchen-container" style={{ maxWidth: 480 }}>
-        <div className="kitchen-card">
+        <Card>
           <h2>Acceso a HomeFirst</h2>
           <p className="kitchen-muted">Usa tus credenciales familiares para entrar.</p>
           <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
-            <label>
-              <span className="kitchen-label">Email</span>
-              <input
-                className="kitchen-input"
-                type="email"
-                value={form.email}
-                onChange={(event) => setForm({ ...form, email: event.target.value })}
-                placeholder="Ej: ana@email.com"
-                required
-              />
-            </label>
-            <label>
-              <span className="kitchen-label">Contraseña</span>
-              <input
-                className="kitchen-input"
-                type="password"
-                value={form.password}
-                onChange={(event) => setForm({ ...form, password: event.target.value })}
-                placeholder="••••••••"
-                required
-              />
-            </label>
+            <Input
+              id="login-email"
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
+              placeholder="Ej: ana@email.com"
+              required
+            />
+            <Input
+              id="login-password"
+              label="Contraseña"
+              type="password"
+              value={form.password}
+              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              placeholder="••••••••"
+              required
+            />
             {error ? <div style={{ color: "#b42318" }}>{error}</div> : null}
-            <button className="kitchen-button" type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"}
-            </button>
+            </Button>
           </form>
-        </div>
+        </Card>
       </div>
     </div>
   );
