@@ -1,3 +1,35 @@
+html,
+body,
+#root {
+  height: 100%;
+}
+
+@media (pointer: coarse) {
+  html,
+  body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+}
+
+@media (pointer: fine) {
+  body {
+    overflow-y: auto;
+  }
+
+  #root {
+    min-height: 100%;
+  }
+}
+
 :root {
   color-scheme: light;
   --hf-bg: #f8fafc;
@@ -33,6 +65,7 @@
   background-repeat: no-repeat;
   background-size: 100% 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--hf-text);
 }
 
@@ -2085,6 +2118,7 @@
 .kitchen-login-wrap {
   max-width: 560px;
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding-top: 24px;
