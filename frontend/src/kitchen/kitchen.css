@@ -150,10 +150,25 @@
 }
 
 .kitchen-brand-link {
+  display: inline-flex;
+  align-items: center;
   font-weight: 700;
   font-size: 20px;
   color: #101828;
   text-decoration: none;
+}
+
+.kitchen-brand-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.kitchen-brand-logo {
+  display: none;
+  height: 30px;
+  width: auto;
+  object-fit: contain;
 }
 
 .kitchen-nav-desktop,
@@ -2095,25 +2110,35 @@
   margin: 0;
   text-align: center;
   color: #4338ca;
-  font-size: 0.92rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .kitchen-login-badge-icon {
-  width: 94px;
-  height: 94px;
+  width: 88px;
+  height: 88px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  color: #374151;
   background: #f8fafc;
   box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.9), 0 0 30px rgba(67, 56, 202, 0.14);
 }
 
 .kitchen-login-icon {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+@media (min-width: 768px) {
+  .kitchen-brand-icon {
+    display: none;
+  }
+
+  .kitchen-brand-logo {
+    display: block;
+  }
 }
 
 .kitchen-login-title {

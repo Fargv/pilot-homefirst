@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
 import Card from "../components/ui/Card";
+import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -31,10 +32,7 @@ export default function LoginPage() {
           <p className="kitchen-login-brand">Lunchfy</p>
           <div className="kitchen-login-badge" aria-hidden="true">
             <div className="kitchen-login-badge-icon">
-              <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-icon">
-                <path d="M7 12a4 4 0 0 1 0-8c1.1 0 2.1.45 2.83 1.17A4 4 0 0 1 16 8a3 3 0 0 1 1 5.83V18H7v-6Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M9 18v2h8v-2M7 20h2" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <img className="kitchen-login-icon" src={lunchfyIcon} alt="" />
             </div>
           </div>
           <h2 className="kitchen-login-title">¡Bienvenido de nuevo!</h2>

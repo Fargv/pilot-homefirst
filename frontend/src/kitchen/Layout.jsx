@@ -3,6 +3,8 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import Header from "./components/ui/Header";
 import BottomNav from "./components/ui/BottomNav";
 import { useAuth } from "./auth";
+import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
+import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
 
 function CalendarIcon(props) {
   return (
@@ -114,7 +116,8 @@ export default function KitchenLayout({ children }) {
               <span />
             </button>
             <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
-              Lunchfy
+              <img className="kitchen-brand-icon" src={lunchfyIcon} alt="Lunchfy" />
+              <img className="kitchen-brand-logo" src={lunchfyLogo} alt="Lunchfy" />
             </Link>
           </div>
         )}

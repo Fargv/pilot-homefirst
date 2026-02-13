@@ -1,127 +1,388 @@
+diff --git a/frontend/index.html b/frontend/index.html
+index 41847d88cdd55ecdaf60770608502d47eba6aa8e..c626ae8fc4226a9e837529311b436fbcdee9fc73 100644
+--- a/frontend/index.html
++++ b/frontend/index.html
+@@ -1,12 +1,13 @@
+ <!doctype html>
+ <html lang="es">
+   <head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <link rel="icon" type="image/png" href="/brand/Lunchfy_icon.png" />
+     <title>Piloto HomeFirst</title>
+   </head>
+   <body>
+     <div id="root"></div>
+     <script type="module" src="/src/main.jsx"></script>
+   </body>
+ </html>
+diff --git a/frontend/src/kitchen/Layout.jsx b/frontend/src/kitchen/Layout.jsx
+index 30e66efbf0762d511e449dbefcd0b32f7b19da8c..805285818de350d41b3aaa40798834a32359b5f9 100644
+--- a/frontend/src/kitchen/Layout.jsx
++++ b/frontend/src/kitchen/Layout.jsx
+@@ -1,30 +1,32 @@
+-import React, { useMemo, useState } from "react";
++import React, { useMemo, useState } from "react";
+ import { Link, NavLink, useNavigate } from "react-router-dom";
+-import Header from "./components/ui/Header";
+-import BottomNav from "./components/ui/BottomNav";
++import Header from "./components/ui/Header";
++import BottomNav from "./components/ui/BottomNav";
+ import { useAuth } from "./auth";
++import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
++import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
+ 
+ function CalendarIcon(props) {
+   return (
+     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+       <rect x="3" y="5" width="18" height="16" rx="3" />
+       <path d="M8 3v4M16 3v4M3 10h18" />
+     </svg>
+   );
+ }
+ 
+ function UtensilsIcon(props) {
+   return (
+     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+       <path
+         fill="currentColor"
+         stroke="none"
+         d="m10.8 3.9l-6 4.5c-.5.38-.8.97-.8 1.6v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9c0-.63-.3-1.22-.8-1.6l-6-4.5a2.01 2.01 0 0 0-2.4 0m1.7 8.6c0 .83-.67 1.5-1.5 1.5v3.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V14c-.83 0-1.5-.67-1.5-1.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5zm2 5.5c-.28 0-.5-.22-.5-.5v-3h-.5c-.28 0-.5-.22-.5-.5v-2.5c0-.88.57-1.63 1.36-1.89c.31-.11.64.14.64.48v7.41c0 .28-.22.5-.5.5"
+       />
+     </svg>
+   );
+ }
+ 
+ function ListIcon(props) {
+   return (
+     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+@@ -90,56 +92,57 @@ export default function KitchenLayout({ children }) {
+   const onLogout = async () => {
+     await logout();
+     navigate("/login");
+     setDrawerOpen(false);
+   };
+ 
+   const onNavigate = () => {
+     setDrawerOpen(false);
+   };
+ 
+   return (
+     <div className="kitchen-app">
+       <Header
+         left={(
+           <div className="kitchen-brand">
+             <button
+               className="kitchen-nav-toggle"
+               type="button"
+               onClick={() => setDrawerOpen((open) => !open)}
+               aria-label="Abrir menú"
+               aria-expanded={drawerOpen}
+             >
+               <span />
+               <span />
+               <span />
+-            </button>
+-            <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
+-              Lunchfy
++            </button>
++            <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
++              <img className="kitchen-brand-icon" src={lunchfyIcon} alt="Lunchfy" />
++              <img className="kitchen-brand-logo" src={lunchfyLogo} alt="Lunchfy" />
+             </Link>
+           </div>
+-        )}
++        )}
+         center={(
+           <nav className="kitchen-nav-desktop">
+             {navLinks.map((link) => (
+               <NavLink key={link.to} to={link.to} onClick={onNavigate}>
+                 {link.label}
+               </NavLink>
+             ))}
+           </nav>
+         )}
+         right={user ? (
+             <div className="kitchen-user">
+               <span className="kitchen-user-name">{user.displayName}</span>
+               <button
+                 className="kitchen-logout-button"
+                 type="button"
+                 onClick={onLogout}
+                 aria-label="Cerrar sesión"
+                 title="Cerrar sesión"
+               >
+                 <LogoutIcon className="kitchen-logout-icon" />
+               </button>
+             </div>
+         ) : (
+           <div className="kitchen-user-placeholder" />
+         )}
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 7291c5fb4b04fbf51e590c41eeceddf3451fb824..e3266aa7ff5c96e7f60abbd63f592577e1f13972 100644
+index 7e6052a90709dab50cb2c14ee306f4b1df178a3a..4ff88791572a0cdd8165371913da5e9d2ebddac7 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -2143,85 +2143,94 @@
-   border-radius: 30px;
-   background: rgba(255, 255, 255, 0.62);
-   border: 1px solid rgba(228, 231, 236, 0.6);
-   padding: clamp(16px, 5vw, 24px);
+@@ -127,56 +127,71 @@
+ .kitchen-topbar {
+   position: sticky;
+   top: 0;
+   z-index: 20;
+   background: white;
+   border-bottom: 1px solid #e4e7ec;
  }
  
- .kitchen-login-label {
-   font-size: 0.78rem;
-   color: #98a2b3;
-   font-weight: 700;
-   letter-spacing: 0.06em;
- }
- 
- .kitchen-login-input-wrap {
-   position: relative;
+ .kitchen-topbar-inner {
+   max-width: 1100px;
+   margin: 0 auto;
+   padding: 16px 24px;
    display: flex;
    align-items: center;
+   justify-content: space-between;
+   gap: 16px;
+   min-height: 72px;
  }
  
- .kitchen-login-input-icon {
-   width: 18px;
-   height: 18px;
-   color: #98a2b3;
+ .kitchen-brand {
+   display: flex;
+   align-items: center;
+   gap: 12px;
  }
  
--.kitchen-login-input-wrap > .kitchen-login-input-icon {
--  position: absolute;
--  left: 14px;
+-.kitchen-brand-link {
+-  font-weight: 700;
+-  font-size: 20px;
+-  color: #101828;
+-  text-decoration: none;
 -}
--
--.kitchen-login-input {
--  width: 100%;
--  padding-left: 48px;
--  border-radius: 999px;
--  border-color: transparent;
--  background: #f8fafc;
--  color: #1e293b;
--  font-size: 15px;
--}
--
--.kitchen-login-input::placeholder {
--  color: #94a3b8;
--}
-+.kitchen-login-input-wrap > .kitchen-login-input-icon {
-+  position: absolute;
-+  left: 16px;
-+  top: 50%;
-+  transform: translateY(-50%);
-+  pointer-events: none;
++.kitchen-brand-link {
++  display: inline-flex;
++  align-items: center;
++  font-weight: 700;
++  font-size: 20px;
++  color: #101828;
++  text-decoration: none;
 +}
 +
-+.kitchen-login-input {
-+  width: 100%;
-+  padding: 15px 16px;
-+  padding-left: 52px;
-+  border-radius: 999px;
-+  border-color: transparent;
-+  background: #f8fafc;
-+  color: #334155;
-+  font-size: 16px;
-+  line-height: 1.3;
-+  font-weight: 500;
++.kitchen-brand-icon {
++  width: 30px;
++  height: 30px;
++  object-fit: contain;
 +}
 +
-+.kitchen-login-input::placeholder {
-+  color: #94a3b8;
-+  font-weight: 400;
++.kitchen-brand-logo {
++  display: none;
++  height: 30px;
++  width: auto;
++  object-fit: contain;
 +}
  
- .kitchen-login-input:focus-visible {
-   border-color: #4338ca;
-   outline: 2px solid rgba(67, 56, 202, 0.2);
-   outline-offset: 1px;
+ .kitchen-nav-desktop,
+ .kitchen-nav-mobile {
+   display: flex;
+   gap: 16px;
  }
  
--.kitchen-login-password-input {
--  padding-right: 46px;
--}
--
--.kitchen-login-eye {
--  position: absolute;
--  right: 10px;
--  border: none;
--  background: transparent;
--  padding: 6px;
-+.kitchen-login-password-input {
-+  padding-right: 52px;
-+}
-+
-+.kitchen-login-eye {
-+  position: absolute;
-+  right: 16px;
-+  top: 50%;
-+  transform: translateY(-50%);
-+  border: none;
-+  background: transparent;
-+  padding: 6px;
-   border-radius: 999px;
+ .kitchen-nav-desktop a,
+ .kitchen-nav-mobile a {
+   text-decoration: none;
+   color: #1d2939;
+   font-weight: 600;
+   font-size: 14px;
+   padding: 6px 8px;
+   border-radius: 8px;
+ }
+ 
+ .kitchen-nav-desktop a.active,
+ .kitchen-nav-mobile a.active {
+   background: #eef2ff;
+   color: #3730a3;
+ }
+ 
+ .kitchen-user {
+   display: flex;
+@@ -2069,74 +2084,84 @@
+ 
+ .kitchen-login-wrap {
+   max-width: 560px;
+   min-height: 100vh;
    display: grid;
    place-items: center;
+   padding-top: 24px;
+   padding-bottom: 24px;
  }
  
- .kitchen-login-forgot-row {
-   display: flex;
-   justify-content: flex-end;
+ .kitchen-login-card {
+   width: min(100%, 460px);
+   border-radius: 30px;
+   padding: clamp(22px, 5vw, 34px);
+   background: rgba(248, 250, 252, 0.88);
+   border: 1px solid rgba(228, 231, 236, 0.72);
+   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
  }
  
- .kitchen-login-link {
-   border: none;
-   background: transparent;
-   color: #4338ca;
-   font-weight: 600;
-   font-size: 0.95rem;
-   padding: 0;
-   cursor: pointer;
+ .kitchen-login-badge {
+   display: grid;
+   place-items: center;
+   margin-top: 4px;
  }
  
- .kitchen-login-submit {
-   min-height: 54px;
-   font-size: 1.08rem;
+-.kitchen-login-brand {
+-  margin: 0;
+-  text-align: center;
+-  color: #4338ca;
+-  font-size: 0.92rem;
+-  font-weight: 600;
+-  letter-spacing: 0.05em;
+-}
+-
+-.kitchen-login-badge-icon {
+-  width: 94px;
+-  height: 94px;
+-  border-radius: 999px;
+-  display: grid;
+-  place-items: center;
+-  color: #374151;
+-  background: #f8fafc;
+-  box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.9), 0 0 30px rgba(67, 56, 202, 0.14);
+-}
++.kitchen-login-brand {
++  margin: 0;
++  text-align: center;
++  color: #4338ca;
++  font-size: 1rem;
++  font-weight: 700;
++  letter-spacing: 0.02em;
++}
+ 
+-.kitchen-login-icon {
+-  width: 42px;
+-  height: 42px;
+-}
++.kitchen-login-badge-icon {
++  width: 88px;
++  height: 88px;
++  border-radius: 999px;
++  display: grid;
++  place-items: center;
++  background: #f8fafc;
++  box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.9), 0 0 30px rgba(67, 56, 202, 0.14);
++}
++
++.kitchen-login-icon {
++  width: 40px;
++  height: 40px;
++  object-fit: contain;
++}
++
++@media (min-width: 768px) {
++  .kitchen-brand-icon {
++    display: none;
++  }
++
++  .kitchen-brand-logo {
++    display: block;
++  }
++}
+ 
+ .kitchen-login-title {
+   margin: 8px 0 0;
+   text-align: center;
+   font-size: clamp(2rem, 7vw, 2.8rem);
+   font-weight: 700;
+   letter-spacing: -0.02em;
  }
  
+ .kitchen-login-subtitle {
+   margin: 0;
+   text-align: center;
+   color: #98a2b3;
+   font-size: clamp(0.95rem, 3vw, 1.1rem);
+ }
+ 
+ .kitchen-login-form {
+   margin-top: 10px;
+   display: grid;
+   gap: 14px;
+ }
+ 
+ .kitchen-login-fields {
+   display: grid;
+   gap: 14px;
+diff --git a/frontend/src/kitchen/pages/LoginPage.jsx b/frontend/src/kitchen/pages/LoginPage.jsx
+index 0ef4f2fb2b10357359022ceec107fcb10a7583e7..1cf6c3fd79af58f8cf39b1bf8ee443a8afacaf19 100644
+--- a/frontend/src/kitchen/pages/LoginPage.jsx
++++ b/frontend/src/kitchen/pages/LoginPage.jsx
+@@ -1,64 +1,62 @@
+ import React, { useState } from "react";
+ import { useNavigate } from "react-router-dom";
+ import { useAuth } from "../auth";
+-import Card from "../components/ui/Card";
++import Card from "../components/ui/Card";
++import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
+ 
+ export default function LoginPage() {
+   const { login } = useAuth();
+   const navigate = useNavigate();
+   const [form, setForm] = useState({ email: "", password: "" });
+   const [error, setError] = useState("");
+   const [loading, setLoading] = useState(false);
+ 
+   const onSubmit = async (event) => {
+     event.preventDefault();
+     setError("");
+     setLoading(true);
+     try {
+       await login(form.email, form.password);
+       navigate("/kitchen/semana");
+     } catch (err) {
+       setError(err.message || "No se pudo iniciar sesión.");
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   return (
+     <div className="kitchen-app">
+       <div className="kitchen-container kitchen-login-wrap">
+-        <Card className="kitchen-login-card">
+-          <p className="kitchen-login-brand">Lunchfy</p>
+-          <div className="kitchen-login-badge" aria-hidden="true">
+-            <div className="kitchen-login-badge-icon">
+-              <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-icon">
+-                <path d="M7 12a4 4 0 0 1 0-8c1.1 0 2.1.45 2.83 1.17A4 4 0 0 1 16 8a3 3 0 0 1 1 5.83V18H7v-6Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+-                <path d="M9 18v2h8v-2M7 20h2" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+-              </svg>
+-            </div>
+-          </div>
++        <Card className="kitchen-login-card">
++          <p className="kitchen-login-brand">Lunchfy</p>
++          <div className="kitchen-login-badge" aria-hidden="true">
++            <div className="kitchen-login-badge-icon">
++              <img className="kitchen-login-icon" src={lunchfyIcon} alt="" />
++            </div>
++          </div>
+           <h2 className="kitchen-login-title">¡Bienvenido de nuevo!</h2>
+           <p className="kitchen-login-subtitle">Hay planes deliciosos esperándote.</p>
+           <form onSubmit={onSubmit} className="kitchen-login-form">
+             <div className="kitchen-login-fields">
+               <label className="kitchen-ui-input-group" htmlFor="login-email">
+                 <span className="kitchen-login-label">CORREO ELECTRÓNICO</span>
+                 <div className="kitchen-login-input-wrap">
+                   <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
+                     <path d="M3.5 7.5h17v9h-17z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+                     <path d="m4.5 8.5 7.5 5 7.5-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                   </svg>
+                   <input
+                     id="login-email"
+                     className="kitchen-ui-input kitchen-login-input"
+                     type="email"
+                     value={form.email}
+                     onChange={(event) => setForm({ ...form, email: event.target.value })}
+                     placeholder="tunombre@email.com"
+                     required
+                   />
+                 </div>
+               </label>
+               <label className="kitchen-ui-input-group" htmlFor="login-password">
+                 <span className="kitchen-login-label">CONTRASEÑA</span>
+                 <div className="kitchen-login-input-wrap">
