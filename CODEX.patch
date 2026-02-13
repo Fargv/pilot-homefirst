@@ -1,1275 +1,242 @@
-diff --git a/README.md b/README.md
-index 01f6c1a61bbb8568c1118eb130a7534b7c30380d..f89fe9d3e3f41419480aea265573d3756b29a0b9 100644
---- a/README.md
-+++ b/README.md
-@@ -1,61 +1,61 @@
--# Pilot HomeFirst
--
--## Módulo Kitchen
--
--Kitchen es el módulo familiar para planificar comidas (lunes a viernes), generar lista de compra semanal y gestionar cambios de cocina entre usuarios.
--
--### Rutas principales (frontend)
--
--- `/kitchen/login`
--- `/kitchen/semana`
--- `/kitchen/platos`
--- `/kitchen/compra`
--- `/kitchen/cambios`
--
--### Endpoints principales (backend)
--
--Prefijo: `/api/kitchen`
--
--- Auth
--  - `POST /auth/login`
--  - `POST /auth/logout`
--  - `GET /auth/me`
--- Platos
--  - `GET /dishes`
--  - `POST /dishes`
--  - `PUT /dishes/:id`
--  - `DELETE /dishes/:id`
--- Semana
--  - `GET /weeks/:weekStart`
--  - `PUT /weeks/:weekStart/day/:date`
--  - `POST /weeks/:weekStart/copy-from/:otherWeekStart`
--- Compra
--  - `GET /shopping/:weekStart`
--  - `POST /shopping/:weekStart/rebuild`
--  - `PUT /shopping/:weekStart/item`
--- Cambios
--  - `POST /swaps`
--  - `GET /swaps`
--  - `POST /swaps/:id/accept`
--  - `POST /swaps/:id/reject`
--
--### Variables de entorno
--
--Backend (`backend/.env`):
--
--- `MONGODB_URI`: conexión a MongoDB.
--- `JWT_SECRET`: secreto para firmar sesiones Kitchen.
--- `CORS_ORIGIN`: origen permitido para el frontend (por defecto `http://localhost:5173`).
--
--Frontend (`frontend/.env`):
--
--- `VITE_API_URL`: URL base del backend (ej. `http://localhost:3000`).
--
--### Usuarios
--
--- Solo admin puede crear usuarios vía API (`POST /api/kitchen/users`).
--- Para listar miembros en UI se usa `GET /api/kitchen/users/members`.
--
--### Nota PWA
--
--El módulo está preparado para futuras mejoras PWA (instalación en dispositivos), pero no se ha activado push ni cambios de manifiesto en esta iteración.
-+# Pilot Lunchfy
-+
-+## Módulo Kitchen
-+
-+Kitchen es el módulo familiar para planificar comidas (lunes a viernes), generar lista de compra semanal y gestionar cambios de cocina entre usuarios.
-+
-+### Rutas principales (frontend)
-+
-+- `/kitchen/login`
-+- `/kitchen/semana`
-+- `/kitchen/platos`
-+- `/kitchen/compra`
-+- `/kitchen/cambios`
-+
-+### Endpoints principales (backend)
-+
-+Prefijo: `/api/kitchen`
-+
-+- Auth
-+  - `POST /auth/login`
-+  - `POST /auth/logout`
-+  - `GET /auth/me`
-+- Platos
-+  - `GET /dishes`
-+  - `POST /dishes`
-+  - `PUT /dishes/:id`
-+  - `DELETE /dishes/:id`
-+- Semana
-+  - `GET /weeks/:weekStart`
-+  - `PUT /weeks/:weekStart/day/:date`
-+  - `POST /weeks/:weekStart/copy-from/:otherWeekStart`
-+- Compra
-+  - `GET /shopping/:weekStart`
-+  - `POST /shopping/:weekStart/rebuild`
-+  - `PUT /shopping/:weekStart/item`
-+- Cambios
-+  - `POST /swaps`
-+  - `GET /swaps`
-+  - `POST /swaps/:id/accept`
-+  - `POST /swaps/:id/reject`
-+
-+### Variables de entorno
-+
-+Backend (`backend/.env`):
-+
-+- `MONGODB_URI`: conexión a MongoDB.
-+- `JWT_SECRET`: secreto para firmar sesiones Kitchen.
-+- `CORS_ORIGIN`: origen permitido para el frontend (por defecto `http://localhost:5173`).
-+
-+Frontend (`frontend/.env`):
-+
-+- `VITE_API_URL`: URL base del backend (ej. `http://localhost:3000`).
-+
-+### Usuarios
-+
-+- Solo admin puede crear usuarios vía API (`POST /api/kitchen/users`).
-+- Para listar miembros en UI se usa `GET /api/kitchen/users/members`.
-+
-+### Nota PWA
-+
-+El módulo está preparado para futuras mejoras PWA (instalación en dispositivos), pero no se ha activado push ni cambios de manifiesto en esta iteración.
-diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
-index 6f7a9ab8f90edbe239148ce6fddf825082352df3..ec07e334d14270f3870024c8334d54733688fbdb 100644
---- a/frontend/src/App.jsx
-+++ b/frontend/src/App.jsx
-@@ -1,142 +1,142 @@
--import React, { useEffect } from "react";
--import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
--import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
--import { buildApiUrl } from "./kitchen/api.js";
--import KitchenLayout from "./kitchen/Layout.jsx";
--import RequireAuth from "./kitchen/RequireAuth.jsx";
--import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
--import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
--import LoginPage from "./kitchen/pages/LoginPage.jsx";
--import WeekPage from "./kitchen/pages/WeekPage.jsx";
--import DishesPage from "./kitchen/pages/DishesPage.jsx";
--import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
--import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
--import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
--import "./kitchen/kitchen.css";
--
--function HomeRedirect() {
--  const { user, loading } = useAuth();
--  const navigate = useNavigate();
--
--  useEffect(() => {
--    if (loading) return;
--    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/kitchen/login";
--    navigate(destination, { replace: true });
--  }, [loading, navigate, user]);
--
--  return (
--    <div className="kitchen-app">
--      <div className="kitchen-container" style={{ maxWidth: 520 }}>
--        <div className="kitchen-card">
--          <h2>Cargando HomeFirst...</h2>
--          <p className="kitchen-muted">
--            Estamos preparando tu acceso a Kitchen. En unos segundos te redirigimos.
--          </p>
--        </div>
--      </div>
--    </div>
--  );
--}
--
--function BootstrapRedirect() {
--  const navigate = useNavigate();
--  const location = useLocation();
--
--  useEffect(() => {
--    let active = true;
--    const checkBootstrap = async () => {
--      try {
--        const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
--        const data = await response.json().catch(() => ({}));
--        if (!active || !response.ok) return;
--        if (data.needed && location.pathname !== "/bootstrap") {
--          navigate("/bootstrap", { replace: true });
--        }
--        if (!data.needed && location.pathname === "/bootstrap") {
--          navigate("/kitchen/login", { replace: true });
--        }
--      } catch {
--        // Sin bloqueo si el backend no responde.
--      }
--    };
--    checkBootstrap();
--    return () => {
--      active = false;
--    };
--  }, [location.pathname, navigate]);
--
--  return null;
--}
--
--export default function App() {
--  return (
--    <BrowserRouter>
--      <AuthProvider>
--        <BootstrapRedirect />
--        <Routes>
--          <Route path="/" element={<HomeRedirect />} />
--          <Route path="/bootstrap" element={<BootstrapPage />} />
--          <Route path="/kitchen/login" element={<LoginPage />} />
--          <Route
--            path="/kitchen/semana"
--            element={(
--              <RequireAuth>
--                <WeekPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/kitchen/platos"
--            element={(
--              <RequireAuth>
--                <DishesPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/kitchen/compra"
--            element={(
--              <RequireAuth>
--                <ShoppingPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/kitchen/cambios"
--            element={(
--              <RequireAuth>
--                <SwapsPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/kitchen/configuracion"
--            element={(
--              <RequireAuth>
--                <SettingsPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/admin/usuarios"
--            element={(
--              <RequireAuth roles={["admin"]}>
--                <AdminUsersPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/kitchen"
--            element={(
--              <RequireAuth>
--                <KitchenLayout>
--                  <div className="kitchen-card">Selecciona una sección.</div>
--                </KitchenLayout>
--              </RequireAuth>
--            )}
--          />
--        </Routes>
--      </AuthProvider>
--    </BrowserRouter>
--  );
--}
-+import React, { useEffect } from "react";
-+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-+import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
-+import { buildApiUrl } from "./kitchen/api.js";
-+import KitchenLayout from "./kitchen/Layout.jsx";
-+import RequireAuth from "./kitchen/RequireAuth.jsx";
-+import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
-+import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
-+import LoginPage from "./kitchen/pages/LoginPage.jsx";
-+import WeekPage from "./kitchen/pages/WeekPage.jsx";
-+import DishesPage from "./kitchen/pages/DishesPage.jsx";
-+import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
-+import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
-+import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
-+import "./kitchen/kitchen.css";
-+
-+function HomeRedirect() {
-+  const { user, loading } = useAuth();
-+  const navigate = useNavigate();
-+
-+  useEffect(() => {
-+    if (loading) return;
-+    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/kitchen/login";
-+    navigate(destination, { replace: true });
-+  }, [loading, navigate, user]);
-+
-+  return (
-+    <div className="kitchen-app">
-+      <div className="kitchen-container" style={{ maxWidth: 520 }}>
-+        <div className="kitchen-card">
-+          <h2>Cargando Lunchfy...</h2>
-+          <p className="kitchen-muted">
-+            Estamos preparando tu acceso a Lunchfy. En unos segundos te redirigimos.
-+          </p>
-+        </div>
-+      </div>
-+    </div>
+diff --git a/frontend/src/app.css b/frontend/src/app.css
+index 06e543bd2b5dacf181facd10612662b1c5ff6bfb..2751ac79f739644b7c257f38dc7e1ef7f87360e8 100644
+--- a/frontend/src/app.css
++++ b/frontend/src/app.css
+@@ -1,32 +1,40 @@
+ .app-shell {
+   min-height: 100vh;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   padding: 48px 20px;
+-  background: #f8fafc;
++  background-color: #f8fafc;
++  background-image: linear-gradient(
++    180deg,
++    rgba(238, 242, 255, 0.72) 0%,
++    rgba(240, 253, 244, 0.5) 42%,
++    rgba(248, 250, 252, 0.96) 100%
 +  );
-+}
-+
-+function BootstrapRedirect() {
-+  const navigate = useNavigate();
-+  const location = useLocation();
-+
-+  useEffect(() => {
-+    let active = true;
-+    const checkBootstrap = async () => {
-+      try {
-+        const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
-+        const data = await response.json().catch(() => ({}));
-+        if (!active || !response.ok) return;
-+        if (data.needed && location.pathname !== "/bootstrap") {
-+          navigate("/bootstrap", { replace: true });
-+        }
-+        if (!data.needed && location.pathname === "/bootstrap") {
-+          navigate("/kitchen/login", { replace: true });
-+        }
-+      } catch {
-+        // Sin bloqueo si el backend no responde.
-+      }
-+    };
-+    checkBootstrap();
-+    return () => {
-+      active = false;
-+    };
-+  }, [location.pathname, navigate]);
-+
-+  return null;
-+}
-+
-+export default function App() {
-+  return (
-+    <BrowserRouter>
-+      <AuthProvider>
-+        <BootstrapRedirect />
-+        <Routes>
-+          <Route path="/" element={<HomeRedirect />} />
-+          <Route path="/bootstrap" element={<BootstrapPage />} />
-+          <Route path="/kitchen/login" element={<LoginPage />} />
-+          <Route
-+            path="/kitchen/semana"
-+            element={(
-+              <RequireAuth>
-+                <WeekPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/kitchen/platos"
-+            element={(
-+              <RequireAuth>
-+                <DishesPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/kitchen/compra"
-+            element={(
-+              <RequireAuth>
-+                <ShoppingPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/kitchen/cambios"
-+            element={(
-+              <RequireAuth>
-+                <SwapsPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/kitchen/configuracion"
-+            element={(
-+              <RequireAuth>
-+                <SettingsPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/admin/usuarios"
-+            element={(
-+              <RequireAuth roles={["admin"]}>
-+                <AdminUsersPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/kitchen"
-+            element={(
-+              <RequireAuth>
-+                <KitchenLayout>
-+                  <div className="kitchen-card">Selecciona una sección.</div>
-+                </KitchenLayout>
-+              </RequireAuth>
-+            )}
-+          />
-+        </Routes>
-+      </AuthProvider>
-+    </BrowserRouter>
-+  );
-+}
-diff --git a/frontend/src/kitchen/Layout.jsx b/frontend/src/kitchen/Layout.jsx
-index e977b3509fb0a0b7e6ab24b967759b2b0644b2da..09094b1e7d595c1bf7b7adf735d73b2d89f193bd 100644
---- a/frontend/src/kitchen/Layout.jsx
-+++ b/frontend/src/kitchen/Layout.jsx
-@@ -1,183 +1,183 @@
--import React, { useMemo, useState } from "react";
-+import React, { useMemo, useState } from "react";
- import { Link, NavLink, useNavigate } from "react-router-dom";
--import Header from "./components/ui/Header";
--import BottomNav from "./components/ui/BottomNav";
-+import Header from "./components/ui/Header";
-+import BottomNav from "./components/ui/BottomNav";
- import { useAuth } from "./auth";
- 
--function CalendarIcon(props) {
--  return (
--    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
--      <rect x="3" y="5" width="18" height="16" rx="3" />
--      <path d="M8 3v4M16 3v4M3 10h18" />
--    </svg>
--  );
--}
--
--function UtensilsIcon(props) {
--  return (
--    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
--      <path
--        fill="currentColor"
--        stroke="none"
--        d="m10.8 3.9l-6 4.5c-.5.38-.8.97-.8 1.6v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9c0-.63-.3-1.22-.8-1.6l-6-4.5a2.01 2.01 0 0 0-2.4 0m1.7 8.6c0 .83-.67 1.5-1.5 1.5v3.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V14c-.83 0-1.5-.67-1.5-1.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5zm2 5.5c-.28 0-.5-.22-.5-.5v-3h-.5c-.28 0-.5-.22-.5-.5v-2.5c0-.88.57-1.63 1.36-1.89c.31-.11.64.14.64.48v7.41c0 .28-.22.5-.5.5"
--      />
--    </svg>
--  );
--}
--
--function ListIcon(props) {
--  return (
--    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
--      <path d="M8 6h12M8 12h12M8 18h12" />
--      <circle cx="4" cy="6" r="1.5" />
--      <circle cx="4" cy="12" r="1.5" />
--      <circle cx="4" cy="18" r="1.5" />
--    </svg>
--  );
--}
--
--function SettingsIcon(props) {
--  return (
--    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
--      <path
--        fill="currentColor"
--        stroke="none"
--        d="M19.14 12.94c.04-.3.06-.61.06-.94c0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6s3.6 1.62 3.6 3.6s-1.62 3.6-3.6 3.6"
--      />
--    </svg>
--  );
--}
--
--function LogoutIcon(props) {
--  return (
--    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
--      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
--      <path d="M10 17l5-5-5-5" />
--      <path d="M15 12H3" />
--    </svg>
--  );
--}
--
-+function CalendarIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-+      <rect x="3" y="5" width="18" height="16" rx="3" />
-+      <path d="M8 3v4M16 3v4M3 10h18" />
-+    </svg>
-+  );
-+}
-+
-+function UtensilsIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-+      <path
-+        fill="currentColor"
-+        stroke="none"
-+        d="m10.8 3.9l-6 4.5c-.5.38-.8.97-.8 1.6v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9c0-.63-.3-1.22-.8-1.6l-6-4.5a2.01 2.01 0 0 0-2.4 0m1.7 8.6c0 .83-.67 1.5-1.5 1.5v3.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V14c-.83 0-1.5-.67-1.5-1.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5zm2 5.5c-.28 0-.5-.22-.5-.5v-3h-.5c-.28 0-.5-.22-.5-.5v-2.5c0-.88.57-1.63 1.36-1.89c.31-.11.64.14.64.48v7.41c0 .28-.22.5-.5.5"
-+      />
-+    </svg>
-+  );
-+}
-+
-+function ListIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-+      <path d="M8 6h12M8 12h12M8 18h12" />
-+      <circle cx="4" cy="6" r="1.5" />
-+      <circle cx="4" cy="12" r="1.5" />
-+      <circle cx="4" cy="18" r="1.5" />
-+    </svg>
-+  );
-+}
-+
-+function SettingsIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-+      <path
-+        fill="currentColor"
-+        stroke="none"
-+        d="M19.14 12.94c.04-.3.06-.61.06-.94c0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6s3.6 1.62 3.6 3.6s-1.62 3.6-3.6 3.6"
-+      />
-+    </svg>
-+  );
-+}
-+
-+function LogoutIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-+      <path d="M10 17l5-5-5-5" />
-+      <path d="M15 12H3" />
-+    </svg>
-+  );
-+}
-+
- export default function KitchenLayout({ children }) {
-   const { user, logout } = useAuth();
-   const navigate = useNavigate();
--  const [drawerOpen, setDrawerOpen] = useState(false);
--
--  const navLinks = useMemo(() => {
--    const links = [
--      { to: "/kitchen/semana", label: "Semana" },
--      { to: "/kitchen/platos", label: "Platos" },
--      { to: "/kitchen/compra", label: "Ingredientes" },
--    ];
--
--    if (user?.role === "admin") {
--      links.push({ to: "/admin/usuarios", label: "Usuarios" });
--    }
--
--    return links;
--  }, [user?.role]);
--
--  const bottomNavLinks = useMemo(
--    () => [
--      { to: "/kitchen/semana", label: "Semana", icon: CalendarIcon },
--      { to: "/kitchen/platos", label: "Platos", icon: UtensilsIcon },
--      { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
--      { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon },
--    ],
--    []
--  );
-+  const [drawerOpen, setDrawerOpen] = useState(false);
-+
-+  const navLinks = useMemo(() => {
-+    const links = [
-+      { to: "/kitchen/semana", label: "Semana" },
-+      { to: "/kitchen/platos", label: "Platos" },
-+      { to: "/kitchen/compra", label: "Ingredientes" },
-+    ];
-+
-+    if (user?.role === "admin") {
-+      links.push({ to: "/admin/usuarios", label: "Usuarios" });
-+    }
-+
-+    return links;
-+  }, [user?.role]);
-+
-+  const bottomNavLinks = useMemo(
-+    () => [
-+      { to: "/kitchen/semana", label: "Semana", icon: CalendarIcon },
-+      { to: "/kitchen/platos", label: "Platos", icon: UtensilsIcon },
-+      { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
-+      { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon },
-+    ],
-+    []
-+  );
- 
-   const onLogout = async () => {
-     await logout();
--    navigate("/login");
--    setDrawerOpen(false);
--  };
--
--  const onNavigate = () => {
--    setDrawerOpen(false);
-+    navigate("/login");
-+    setDrawerOpen(false);
-+  };
-+
-+  const onNavigate = () => {
-+    setDrawerOpen(false);
-   };
- 
-   return (
-     <div className="kitchen-app">
--      <Header
--        left={(
--          <div className="kitchen-brand">
--            <button
--              className="kitchen-nav-toggle"
--              type="button"
--              onClick={() => setDrawerOpen((open) => !open)}
--              aria-label="Abrir menú"
--              aria-expanded={drawerOpen}
--            >
--              <span />
--              <span />
--              <span />
--            </button>
--            <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
--              HomeFirst
-+      <Header
-+        left={(
-+          <div className="kitchen-brand">
-+            <button
-+              className="kitchen-nav-toggle"
-+              type="button"
-+              onClick={() => setDrawerOpen((open) => !open)}
-+              aria-label="Abrir menú"
-+              aria-expanded={drawerOpen}
-+            >
-+              <span />
-+              <span />
-+              <span />
-+            </button>
-+            <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
-+              Lunchfy
-             </Link>
-           </div>
--        )}
--        center={(
--          <nav className="kitchen-nav-desktop">
--            {navLinks.map((link) => (
--              <NavLink key={link.to} to={link.to} onClick={onNavigate}>
--                {link.label}
--              </NavLink>
--            ))}
-+        )}
-+        center={(
-+          <nav className="kitchen-nav-desktop">
-+            {navLinks.map((link) => (
-+              <NavLink key={link.to} to={link.to} onClick={onNavigate}>
-+                {link.label}
-+              </NavLink>
-+            ))}
-           </nav>
--        )}
--        right={user ? (
--            <div className="kitchen-user">
--              <span className="kitchen-user-name">{user.displayName}</span>
--              <button
--                className="kitchen-logout-button"
--                type="button"
--                onClick={onLogout}
--                aria-label="Cerrar sesión"
--                title="Cerrar sesión"
--              >
--                <LogoutIcon className="kitchen-logout-icon" />
-+        )}
-+        right={user ? (
-+            <div className="kitchen-user">
-+              <span className="kitchen-user-name">{user.displayName}</span>
-+              <button
-+                className="kitchen-logout-button"
-+                type="button"
-+                onClick={onLogout}
-+                aria-label="Cerrar sesión"
-+                title="Cerrar sesión"
-+              >
-+                <LogoutIcon className="kitchen-logout-icon" />
-               </button>
-             </div>
--        ) : (
--          <div className="kitchen-user-placeholder" />
--        )}
--      />
--      <div className="kitchen-container">
--        {drawerOpen ? (
--          <>
--            <button className="kitchen-drawer-backdrop" type="button" onClick={onNavigate} aria-label="Cerrar menú" />
--            <aside className="kitchen-drawer" aria-hidden={!drawerOpen}>
--              <div className="kitchen-drawer-header">
--                <span>Menú</span>
--                <button className="kitchen-drawer-close" type="button" onClick={onNavigate}>
--                  Cerrar
--                </button>
--              </div>
--              <nav className="kitchen-nav-mobile">
--                {navLinks.map((link) => (
--                  <NavLink key={link.to} to={link.to} onClick={onNavigate}>
--                    {link.label}
--                  </NavLink>
--                ))}
--              </nav>
--              {user ? (
--                <div className="kitchen-drawer-user">
--                  <div>
--                    <div className="kitchen-pill">{user.displayName}</div>
--                  </div>
--                  <button className="kitchen-button secondary" type="button" onClick={onLogout}>
--                    Cerrar sesión
--                  </button>
--                </div>
--              ) : null}
--            </aside>
--          </>
--        ) : null}
-+        ) : (
-+          <div className="kitchen-user-placeholder" />
-+        )}
-+      />
-+      <div className="kitchen-container">
-+        {drawerOpen ? (
-+          <>
-+            <button className="kitchen-drawer-backdrop" type="button" onClick={onNavigate} aria-label="Cerrar menú" />
-+            <aside className="kitchen-drawer" aria-hidden={!drawerOpen}>
-+              <div className="kitchen-drawer-header">
-+                <span>Menú</span>
-+                <button className="kitchen-drawer-close" type="button" onClick={onNavigate}>
-+                  Cerrar
-+                </button>
-+              </div>
-+              <nav className="kitchen-nav-mobile">
-+                {navLinks.map((link) => (
-+                  <NavLink key={link.to} to={link.to} onClick={onNavigate}>
-+                    {link.label}
-+                  </NavLink>
-+                ))}
-+              </nav>
-+              {user ? (
-+                <div className="kitchen-drawer-user">
-+                  <div>
-+                    <div className="kitchen-pill">{user.displayName}</div>
-+                  </div>
-+                  <button className="kitchen-button secondary" type="button" onClick={onLogout}>
-+                    Cerrar sesión
-+                  </button>
-+                </div>
-+              ) : null}
-+            </aside>
-+          </>
-+        ) : null}
-         {children}
-       </div>
--      <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
-+      <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
-     </div>
-   );
++  background-repeat: no-repeat;
++  background-size: 100% 100%;
+   color: #0f172a;
+   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
  }
+ 
+ .app-panel {
+   width: min(640px, 100%);
+   background: #ffffff;
+   border-radius: 20px;
+   padding: 40px 36px;
+   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+   display: flex;
+   flex-direction: column;
+   gap: 16px;
+ }
+ 
+ .app-title {
+   font-size: 32px;
+   font-weight: 600;
+   margin: 0;
+ }
+ 
+ .app-subtitle {
+   margin: 0;
+   color: #475569;
+   font-size: 16px;
+@@ -56,68 +64,100 @@
+ 
+ .app-primary-button {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   padding: 12px 18px;
+   border-radius: 10px;
+   background: #0f172a;
+   color: #ffffff;
+   text-decoration: none;
+   font-weight: 600;
+   width: fit-content;
+   transition: transform 0.15s ease, box-shadow 0.15s ease;
+ }
+ 
+ .app-primary-button:hover {
+   transform: translateY(-1px);
+   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
+ }
+ 
+ .app-splash {
+   min-height: 100vh;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+-  background: #f8fafc;
++  background-color: #f8fafc;
++  background-image: linear-gradient(
++    180deg,
++    rgba(238, 242, 255, 0.72) 0%,
++    rgba(240, 253, 244, 0.5) 42%,
++    rgba(248, 250, 252, 0.96) 100%
++  );
++  background-repeat: no-repeat;
++  background-size: 100% 100%;
+   color: #0f172a;
+   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+ }
+ 
+ .app-splash-card {
+   display: grid;
+   gap: 12px;
+   justify-items: center;
+ }
+ 
+ .app-logo {
+   width: 72px;
+   height: 72px;
+   border-radius: 20px;
+   background: #0f172a;
+   color: #ffffff;
+   display: grid;
+   place-items: center;
+   font-weight: 700;
+   font-size: 24px;
+   letter-spacing: 1px;
+ }
+ 
+ .app-name {
+   font-size: 20px;
+   font-weight: 600;
+ }
+ 
+ .app-loader {
+   width: 32px;
+   height: 32px;
+   border-radius: 50%;
+   border: 3px solid #e2e8f0;
+   border-top-color: #0f172a;
+   animation: app-spin 0.8s linear infinite;
+ }
+ 
+ @keyframes app-spin {
+   to {
+     transform: rotate(360deg);
+   }
+ }
++
++@media (min-width: 768px) {
++  .app-shell,
++  .app-splash {
++    background-image: linear-gradient(
++      180deg,
++      rgba(238, 242, 255, 0.66) 0%,
++      rgba(240, 253, 244, 0.44) 46%,
++      rgba(248, 250, 252, 0.98) 100%
++    );
++  }
++}
++
++@media (min-width: 1200px) {
++  .app-shell,
++  .app-splash {
++    background-image: linear-gradient(
++      180deg,
++      rgba(238, 242, 255, 0.58) 0%,
++      rgba(240, 253, 244, 0.38) 50%,
++      rgba(248, 250, 252, 1) 100%
++    );
++  }
++}
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 34543aafb098f81ff6c1ad96b30feaa6c62627a9..f5ca62f6fa426ead5099ed475c79f9341f74b5c1 100644
+index 70513e4c0e613f2e8203ea76a6709f48ecc0d007..e821804b6d571bd79b5fc8edfd9e34afb92b79c7 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -2112,25 +2112,149 @@
-   color: #fff;
-   box-shadow: var(--hf-shadow-glass);
+@@ -1,53 +1,84 @@
+ :root {
+   color-scheme: light;
+-  --hf-bg: #f8fafc;
+-  --hf-surface: #ffffff;
++  --hf-bg: #f8fafc;
++  --hf-bg-gradient: linear-gradient(
++    180deg,
++    rgba(238, 242, 255, 0.72) 0%,
++    rgba(240, 253, 244, 0.5) 42%,
++    rgba(248, 250, 252, 0.96) 100%
++  );
++  --hf-surface: #ffffff;
+   --hf-surface-soft: #eef2ff;
+   --hf-surface-mint: #f0fdf4;
+   --hf-surface-peach: #fff7ed;
+   --hf-text: #1e293b;
+   --hf-muted: #667085;
+   --hf-brand: #4338ca;
+   --hf-brand-strong: #4338ca;
+   --hf-border: #e4e7ec;
+   --hf-danger: #b42318;
+   --hf-radius-md: 24px;
+   --hf-radius-lg: 28px;
+   --hf-radius-xl: 32px;
+   --hf-shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+   --hf-shadow-glass: 0 10px 30px rgba(31, 41, 55, 0.1);
+   --hf-glass: rgba(255, 255, 255, 0.7);
+   --hf-glass-border: rgba(255, 255, 255, 0.9);
  }
  
- .kitchen-ui-sheet-backdrop {
-   position: fixed;
-   inset: 0;
-   background: rgba(16, 24, 40, 0.45);
-   z-index: 45;
-   display: grid;
-   place-items: end center;
- }
+ .kitchen-app {
+   font-family: "Inter", system-ui, sans-serif;
+-  background: var(--hf-bg);
++  background-color: var(--hf-bg);
++  background-image: var(--hf-bg-gradient);
++  background-repeat: no-repeat;
++  background-size: 100% 100%;
+   min-height: 100vh;
+-  color: var(--hf-text);
+-}
++  color: var(--hf-text);
++}
++
++@media (min-width: 768px) {
++  :root {
++    --hf-bg-gradient: linear-gradient(
++      180deg,
++      rgba(238, 242, 255, 0.66) 0%,
++      rgba(240, 253, 244, 0.44) 46%,
++      rgba(248, 250, 252, 0.98) 100%
++    );
++  }
++}
++
++@media (min-width: 1200px) {
++  :root {
++    --hf-bg-gradient: linear-gradient(
++      180deg,
++      rgba(238, 242, 255, 0.58) 0%,
++      rgba(240, 253, 244, 0.38) 50%,
++      rgba(248, 250, 252, 1) 100%
++    );
++  }
++}
  
- .kitchen-ui-sheet {
-   width: min(720px, 100%);
-   background: #fff;
-   border-radius: var(--hf-radius-xl) var(--hf-radius-xl) 0 0;
+ .kitchen-container {
+   max-width: 1100px;
+   margin: 0 auto;
    padding: 24px;
  }
  
- .kitchen-ui-sheet-actions { margin-top: 16px; display: flex; gap: 12px; justify-content: flex-end; }
- 
- @media (max-width: 900px) {
-   .kitchen-ui-bottom-nav { display: block; }
+ .kitchen-bottom-nav {
+   position: fixed;
+   bottom: 0;
+   left: 0;
+   right: 0;
+   background: #ffffff;
+   border-top: 1px solid #e4e7ec;
+   z-index: 25;
+   padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+   display: none;
  }
-+
-+/* Neo-Soft 2026 global harmonization */
-+.kitchen-container {
-+  width: min(1120px, 100%);
-+  padding: 20px;
-+}
-+
-+.kitchen-ui-card,
-+.kitchen-card,
-+.kitchen-dish-card,
-+.kitchen-inline-panel,
-+.kitchen-modal,
-+.kitchen-context-modal,
-+.kitchen-day-card,
-+.kitchen-weekdays-strip {
-+  border-radius: var(--hf-radius-lg);
-+  box-shadow: var(--hf-shadow-soft);
-+  border: 1px solid var(--hf-border);
-+  background: var(--hf-surface);
-+}
-+
-+.kitchen-day-card.is-empty,
-+.kitchen-dish-card.is-sidedish,
-+.kitchen-ui-button-secondary,
-+.kitchen-button.secondary,
-+.kitchen-status-pill.planned,
-+.kitchen-tab-button.is-active {
-+  background: var(--hf-surface-soft);
-+}
-+
-+.kitchen-ui-button,
-+.kitchen-button,
-+.kitchen-assignee-button,
-+.kitchen-week-arrow,
-+.kitchen-weekdays-arrow,
-+.kitchen-assign-week-nav,
-+.kitchen-color-option,
-+.kitchen-chip-action {
-+  border-radius: 999px;
-+  min-height: 44px;
-+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, color 180ms ease;
-+}
-+
-+.kitchen-ui-button,
-+.kitchen-button {
-+  background: var(--hf-brand);
-+  color: #fff;
-+  box-shadow: var(--hf-shadow-soft);
-+}
-+
-+.kitchen-ui-button:hover,
-+.kitchen-button:hover {
-+  background: var(--hf-brand-strong);
-+  transform: translateY(-1px);
-+}
-+
-+.kitchen-ui-button-secondary,
-+.kitchen-button.secondary {
-+  border: 1px solid var(--hf-border);
-+  color: var(--hf-text);
-+}
-+
-+.kitchen-ui-button-ghost,
-+.kitchen-button.ghost {
-+  background: transparent;
-+  border: 1px solid var(--hf-border);
-+  color: var(--hf-text);
-+}
-+
-+.kitchen-ui-input,
-+.kitchen-input,
-+.kitchen-select,
-+.kitchen-textarea {
-+  border-radius: var(--hf-radius-md);
-+  border: 1px solid var(--hf-border);
-+  min-height: 48px;
-+  padding: 11px 14px;
-+}
-+
-+.kitchen-topbar,
-+.kitchen-bottom-nav,
-+.kitchen-ui-header,
-+.kitchen-ui-bottom-nav {
-+  background: var(--hf-glass);
-+  border-color: var(--hf-glass-border);
-+  backdrop-filter: blur(12px);
-+  -webkit-backdrop-filter: blur(12px);
-+}
-+
-+.kitchen-brand-link,
-+.kitchen-title,
-+.kitchen-login-title,
-+.kitchen-day-title,
-+.kitchen-dishes-header h2 {
-+  color: var(--hf-text);
-+}
-+
-+.kitchen-toolbar-search {
-+  max-width: 340px;
-+}
-+
-+.kitchen-block-gap {
-+  margin-bottom: 16px;
-+}
-+
-+.kitchen-title-no-margin {
-+  margin-top: 0;
-+  margin-bottom: 6px;
-+}
-+
-+.kitchen-form-compact {
-+  gap: 12px;
-+}
-+
-+.kitchen-table th,
-+.kitchen-table td {
-+  border-bottom: 1px solid var(--hf-border);
-+}
-+
-+@media (min-width: 900px) {
-+  .kitchen-grid {
-+    grid-template-columns: repeat(2, minmax(0, 1fr));
-+  }
-+}
-diff --git a/frontend/src/kitchen/pages/AdminUsersPage.jsx b/frontend/src/kitchen/pages/AdminUsersPage.jsx
-index 600bd6c082182408b5bb465e1dc6ede442914c3d..e43089fec25d0e7e06f27ff8a6ee0e77009ad926 100644
---- a/frontend/src/kitchen/pages/AdminUsersPage.jsx
-+++ b/frontend/src/kitchen/pages/AdminUsersPage.jsx
-@@ -1,28 +1,31 @@
- import React, { useEffect, useMemo, useState } from "react";
- import { apiRequest } from "../api.js";
- import KitchenLayout from "../Layout.jsx";
-+import Button from "../components/ui/Button.jsx";
-+import Card from "../components/ui/Card.jsx";
-+import Input from "../components/ui/Input.jsx";
  
- const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
- 
- export default function AdminUsersPage() {
-   const [users, setUsers] = useState([]);
-   const [query, setQuery] = useState("");
-   const [loading, setLoading] = useState(true);
-   const [formOpen, setFormOpen] = useState(false);
-   const [form, setForm] = useState({
-     firstName: "",
-     lastName: "",
-     email: "",
-     password: "",
-     role: "user"
-   });
-   const [error, setError] = useState("");
-   const [success, setSuccess] = useState("");
- 
-   const loadUsers = async () => {
-     setLoading(true);
-     setError("");
-     try {
-       const data = await apiRequest("/api/users");
-       setUsers(data.users || []);
-     } catch (err) {
-@@ -74,147 +77,139 @@ export default function AdminUsersPage() {
-       return;
-     }
- 
-     try {
-       await apiRequest("/api/users", {
-         method: "POST",
-         body: JSON.stringify({
-           firstName: form.firstName,
-           lastName: form.lastName,
-           email: trimmedEmail,
-           password: form.password,
-           role: form.role
-         })
-       });
-       setSuccess("Usuario creado correctamente.");
-       resetForm();
-       setFormOpen(false);
-       await loadUsers();
-     } catch (err) {
-       setError(err.message || "No se pudo crear el usuario.");
-     }
-   };
- 
-   return (
-     <KitchenLayout>
--      <div className="kitchen-card" style={{ marginBottom: 16 }}>
--        <h2 style={{ marginTop: 0 }}>Gestión de usuarios</h2>
-+      <Card className="kitchen-block-gap">
-+        <h2 className="kitchen-title-no-margin">Gestión de usuarios</h2>
-         <p className="kitchen-muted">Crea y administra los accesos del equipo.</p>
-         <div className="kitchen-toolbar">
--          <input
--            className="kitchen-input"
-+          <Input
-+            id="search-users"
-+            className="kitchen-toolbar-search"
-             placeholder="Buscar por nombre o email"
-             value={query}
-             onChange={(event) => setQuery(event.target.value)}
--            style={{ maxWidth: 320 }}
-           />
--          <button className="kitchen-button" onClick={() => setFormOpen((open) => !open)}>
-+          <Button onClick={() => setFormOpen((open) => !open)}>
-             {formOpen ? "Cerrar formulario" : "Crear usuario"}
--          </button>
-+          </Button>
-         </div>
--        {error ? <div className="kitchen-alert error" style={{ marginTop: 12 }}>{error}</div> : null}
--        {success ? <div className="kitchen-alert success" style={{ marginTop: 12 }}>{success}</div> : null}
--      </div>
-+        {error ? <div className="kitchen-alert error">{error}</div> : null}
-+        {success ? <div className="kitchen-alert success">{success}</div> : null}
-+      </Card>
- 
-       {formOpen ? (
--        <div className="kitchen-card" style={{ marginBottom: 16 }}>
--          <h3 style={{ marginTop: 0 }}>Nuevo usuario</h3>
--          <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-+        <Card className="kitchen-block-gap">
-+          <h3 className="kitchen-title-no-margin">Nuevo usuario</h3>
-+          <form onSubmit={onSubmit} className="kitchen-form kitchen-form-compact">
-             <div className="kitchen-grid">
--              <label>
--                <span className="kitchen-label">Nombre</span>
--                <input
--                  className="kitchen-input"
--                  value={form.firstName}
--                  onChange={(event) => setForm({ ...form, firstName: event.target.value })}
--                  required
--                />
--              </label>
--              <label>
--                <span className="kitchen-label">Apellidos (opcional)</span>
--                <input
--                  className="kitchen-input"
--                  value={form.lastName}
--                  onChange={(event) => setForm({ ...form, lastName: event.target.value })}
--                />
--              </label>
--            </div>
--            <label>
--              <span className="kitchen-label">Email</span>
--              <input
--                className="kitchen-input"
--                type="email"
--                value={form.email}
--                onChange={(event) => setForm({ ...form, email: event.target.value })}
-+              <Input
-+                id="new-user-firstName"
-+                label="Nombre"
-+                value={form.firstName}
-+                onChange={(event) => setForm({ ...form, firstName: event.target.value })}
-                 required
-               />
--            </label>
--            <label>
--              <span className="kitchen-label">Contraseña</span>
--              <input
--                className="kitchen-input"
--                type="password"
--                value={form.password}
--                onChange={(event) => setForm({ ...form, password: event.target.value })}
--                required
-+              <Input
-+                id="new-user-lastName"
-+                label="Apellidos (opcional)"
-+                value={form.lastName}
-+                onChange={(event) => setForm({ ...form, lastName: event.target.value })}
-               />
--            </label>
-+            </div>
-+            <Input
-+              id="new-user-email"
-+              label="Email"
-+              type="email"
-+              value={form.email}
-+              onChange={(event) => setForm({ ...form, email: event.target.value })}
-+              required
-+            />
-+            <Input
-+              id="new-user-password"
-+              label="Contraseña"
-+              type="password"
-+              value={form.password}
-+              onChange={(event) => setForm({ ...form, password: event.target.value })}
-+              required
-+            />
-             <label>
-               <span className="kitchen-label">Rol</span>
-               <select
-                 className="kitchen-select"
-                 value={form.role}
-                 onChange={(event) => setForm({ ...form, role: event.target.value })}
-               >
-                 <option value="admin">Admin</option>
-                 <option value="user">Usuario</option>
-               </select>
-             </label>
-             <div className="kitchen-actions">
--              <button className="kitchen-button" type="submit">Crear usuario</button>
--              <button
--                className="kitchen-button secondary"
-+              <Button type="submit">Crear usuario</Button>
-+              <Button
-+                variant="secondary"
-                 type="button"
-                 onClick={() => {
-                   resetForm();
-                   setFormOpen(false);
-                 }}
-               >
-                 Cancelar
--              </button>
-+              </Button>
-             </div>
-           </form>
--        </div>
-+        </Card>
-       ) : null}
- 
--      <div className="kitchen-card">
-+      <Card>
-         {loading ? (
-           <div className="kitchen-muted">Cargando usuarios...</div>
-         ) : filteredUsers.length === 0 ? (
-           <div className="kitchen-empty">
-             <h3>Sin resultados</h3>
-             <p>Prueba con otro término de búsqueda.</p>
-           </div>
-         ) : (
-           <table className="kitchen-table">
-             <thead>
-               <tr>
-                 <th>Nombre</th>
-                 <th>Email</th>
-                 <th>Rol</th>
-               </tr>
-             </thead>
-             <tbody>
-               {filteredUsers.map((user) => (
-                 <tr key={user.id}>
-                   <td>{user.displayName}</td>
-                   <td>{user.email}</td>
-                   <td>{user.role === "admin" ? "Admin" : "Usuario"}</td>
-                 </tr>
-               ))}
-             </tbody>
-           </table>
-         )}
--      </div>
-+      </Card>
-     </KitchenLayout>
-   );
- }
-diff --git a/frontend/src/kitchen/pages/LoginPage.jsx b/frontend/src/kitchen/pages/LoginPage.jsx
-index 5f8deb79e6186d45d7c3d8f8fbf697f062a0c0e4..9149e2893f11f33c4af9778684a774ca037ef039 100644
---- a/frontend/src/kitchen/pages/LoginPage.jsx
-+++ b/frontend/src/kitchen/pages/LoginPage.jsx
-@@ -1,63 +1,63 @@
- import React, { useState } from "react";
- import { useNavigate } from "react-router-dom";
- import { useAuth } from "../auth";
--import Button from "../components/ui/Button";
--import Card from "../components/ui/Card";
--import Input from "../components/ui/Input";
-+import Button from "../components/ui/Button";
-+import Card from "../components/ui/Card";
-+import Input from "../components/ui/Input";
- 
- export default function LoginPage() {
-   const { login } = useAuth();
-   const navigate = useNavigate();
--  const [form, setForm] = useState({ email: "", password: "" });
-+  const [form, setForm] = useState({ email: "", password: "" });
-   const [error, setError] = useState("");
-   const [loading, setLoading] = useState(false);
- 
-   const onSubmit = async (event) => {
-     event.preventDefault();
-     setError("");
-     setLoading(true);
-     try {
--      await login(form.email, form.password);
--      navigate("/kitchen/semana");
-+      await login(form.email, form.password);
-+      navigate("/kitchen/semana");
-     } catch (err) {
-       setError(err.message || "No se pudo iniciar sesión.");
-     } finally {
-       setLoading(false);
-     }
-   };
- 
-   return (
-     <div className="kitchen-app">
--      <div className="kitchen-container kitchen-login-wrap">
--        <Card>
--          <h2 className="kitchen-login-title">Acceso a HomeFirst</h2>
-+      <div className="kitchen-container kitchen-login-wrap">
-+        <Card>
-+          <h2 className="kitchen-login-title">Acceso a Lunchfy</h2>
-           <p className="kitchen-muted">Usa tus credenciales familiares para entrar.</p>
--          <form onSubmit={onSubmit} className="kitchen-login-form">
--            <Input
--              id="login-email"
--              label="Email"
--              type="email"
--              value={form.email}
--              onChange={(event) => setForm({ ...form, email: event.target.value })}
--              placeholder="Ej: ana@email.com"
--              required
--            />
--            <Input
--              id="login-password"
--              label="Contraseña"
--              type="password"
--              value={form.password}
--              onChange={(event) => setForm({ ...form, password: event.target.value })}
--              placeholder="••••••••"
--              required
--            />
--            {error ? <div className="kitchen-login-error">{error}</div> : null}
--            <Button type="submit" disabled={loading}>
-+          <form onSubmit={onSubmit} className="kitchen-login-form">
-+            <Input
-+              id="login-email"
-+              label="Email"
-+              type="email"
-+              value={form.email}
-+              onChange={(event) => setForm({ ...form, email: event.target.value })}
-+              placeholder="Ej: ana@email.com"
-+              required
-+            />
-+            <Input
-+              id="login-password"
-+              label="Contraseña"
-+              type="password"
-+              value={form.password}
-+              onChange={(event) => setForm({ ...form, password: event.target.value })}
-+              placeholder="••••••••"
-+              required
-+            />
-+            {error ? <div className="kitchen-login-error">{error}</div> : null}
-+            <Button type="submit" disabled={loading}>
-               {loading ? "Entrando..." : "Entrar"}
--            </Button>
-+            </Button>
-           </form>
--        </Card>
-+        </Card>
-       </div>
-     </div>
-   );
- }
-diff --git a/frontend/src/pages/DashboardPage.jsx b/frontend/src/pages/DashboardPage.jsx
-index a33c74b065e344100417b0ed81c2f9564192f353..92c20f4ea0a6f63d74826c44bfec04ca76234e5a 100644
---- a/frontend/src/pages/DashboardPage.jsx
-+++ b/frontend/src/pages/DashboardPage.jsx
-@@ -1,20 +1,20 @@
- import React from "react";
- import { Link } from "react-router-dom";
- 
- export default function DashboardPage() {
-   return (
-     <div className="app-shell">
-       <div className="app-panel">
-         <h1 className="app-title">Panel</h1>
-         <p className="app-subtitle">Aquí verás tu resumen y accesos.</p>
-         <div className="app-empty">
-           <div className="app-empty-title">Todavía no hay actividad.</div>
-           <p className="app-muted">Empieza por el módulo principal.</p>
-           <Link className="app-primary-button" to="/kitchen/semana">
--            Ir a Kitchen
-+            Ir a Lunchfy
-           </Link>
-         </div>
-       </div>
-     </div>
-   );
- }
+ .kitchen-bottom-nav-inner {
+   max-width: 720px;
+   margin: 0 auto;
+   display: grid;
+   grid-template-columns: repeat(4, minmax(0, 1fr));
+   gap: 8px;

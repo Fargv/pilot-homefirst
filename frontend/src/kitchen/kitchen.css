@@ -1,6 +1,12 @@
 :root {
   color-scheme: light;
   --hf-bg: #f8fafc;
+  --hf-bg-gradient: linear-gradient(
+    180deg,
+    rgba(238, 242, 255, 0.72) 0%,
+    rgba(240, 253, 244, 0.5) 42%,
+    rgba(248, 250, 252, 0.96) 100%
+  );
   --hf-surface: #ffffff;
   --hf-surface-soft: #eef2ff;
   --hf-surface-mint: #f0fdf4;
@@ -22,9 +28,34 @@
 
 .kitchen-app {
   font-family: "Inter", system-ui, sans-serif;
-  background: var(--hf-bg);
+  background-color: var(--hf-bg);
+  background-image: var(--hf-bg-gradient);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   min-height: 100vh;
   color: var(--hf-text);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --hf-bg-gradient: linear-gradient(
+      180deg,
+      rgba(238, 242, 255, 0.66) 0%,
+      rgba(240, 253, 244, 0.44) 46%,
+      rgba(248, 250, 252, 0.98) 100%
+    );
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --hf-bg-gradient: linear-gradient(
+      180deg,
+      rgba(238, 242, 255, 0.58) 0%,
+      rgba(240, 253, 244, 0.38) 50%,
+      rgba(248, 250, 252, 1) 100%
+    );
+  }
 }
 
 .kitchen-container {
