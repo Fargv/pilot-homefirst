@@ -28,9 +28,9 @@ function HomeRedirect() {
     <div className="kitchen-app">
       <div className="kitchen-container" style={{ maxWidth: 520 }}>
         <div className="kitchen-card">
-          <h2>Cargando HomeFirst...</h2>
+          <h2>Cargando Lunchfy...</h2>
           <p className="kitchen-muted">
-            Estamos preparando tu acceso a Kitchen. En unos segundos te redirigimos.
+            Estamos preparando tu acceso a Lunchfy. En unos segundos te redirigimos.
           </p>
         </div>
       </div>

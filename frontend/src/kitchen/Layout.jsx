@@ -114,7 +114,7 @@ export default function KitchenLayout({ children }) {
               <span />
             </button>
             <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
-              HomeFirst
+              Lunchfy
             </Link>
           </div>
         )}

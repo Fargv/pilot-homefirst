@@ -2134,3 +2134,127 @@
 @media (max-width: 900px) {
   .kitchen-ui-bottom-nav { display: block; }
 }
+
+/* Neo-Soft 2026 global harmonization */
+.kitchen-container {
+  width: min(1120px, 100%);
+  padding: 20px;
+}
+
+.kitchen-ui-card,
+.kitchen-card,
+.kitchen-dish-card,
+.kitchen-inline-panel,
+.kitchen-modal,
+.kitchen-context-modal,
+.kitchen-day-card,
+.kitchen-weekdays-strip {
+  border-radius: var(--hf-radius-lg);
+  box-shadow: var(--hf-shadow-soft);
+  border: 1px solid var(--hf-border);
+  background: var(--hf-surface);
+}
+
+.kitchen-day-card.is-empty,
+.kitchen-dish-card.is-sidedish,
+.kitchen-ui-button-secondary,
+.kitchen-button.secondary,
+.kitchen-status-pill.planned,
+.kitchen-tab-button.is-active {
+  background: var(--hf-surface-soft);
+}
+
+.kitchen-ui-button,
+.kitchen-button,
+.kitchen-assignee-button,
+.kitchen-week-arrow,
+.kitchen-weekdays-arrow,
+.kitchen-assign-week-nav,
+.kitchen-color-option,
+.kitchen-chip-action {
+  border-radius: 999px;
+  min-height: 44px;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.kitchen-ui-button,
+.kitchen-button {
+  background: var(--hf-brand);
+  color: #fff;
+  box-shadow: var(--hf-shadow-soft);
+}
+
+.kitchen-ui-button:hover,
+.kitchen-button:hover {
+  background: var(--hf-brand-strong);
+  transform: translateY(-1px);
+}
+
+.kitchen-ui-button-secondary,
+.kitchen-button.secondary {
+  border: 1px solid var(--hf-border);
+  color: var(--hf-text);
+}
+
+.kitchen-ui-button-ghost,
+.kitchen-button.ghost {
+  background: transparent;
+  border: 1px solid var(--hf-border);
+  color: var(--hf-text);
+}
+
+.kitchen-ui-input,
+.kitchen-input,
+.kitchen-select,
+.kitchen-textarea {
+  border-radius: var(--hf-radius-md);
+  border: 1px solid var(--hf-border);
+  min-height: 48px;
+  padding: 11px 14px;
+}
+
+.kitchen-topbar,
+.kitchen-bottom-nav,
+.kitchen-ui-header,
+.kitchen-ui-bottom-nav {
+  background: var(--hf-glass);
+  border-color: var(--hf-glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.kitchen-brand-link,
+.kitchen-title,
+.kitchen-login-title,
+.kitchen-day-title,
+.kitchen-dishes-header h2 {
+  color: var(--hf-text);
+}
+
+.kitchen-toolbar-search {
+  max-width: 340px;
+}
+
+.kitchen-block-gap {
+  margin-bottom: 16px;
+}
+
+.kitchen-title-no-margin {
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.kitchen-form-compact {
+  gap: 12px;
+}
+
+.kitchen-table th,
+.kitchen-table td {
+  border-bottom: 1px solid var(--hf-border);
+}
+
+@media (min-width: 900px) {
+  .kitchen-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

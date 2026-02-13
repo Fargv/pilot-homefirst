@@ -30,7 +30,7 @@ export default function LoginPage() {
     <div className="kitchen-app">
       <div className="kitchen-container kitchen-login-wrap">
         <Card>
-          <h2 className="kitchen-login-title">Acceso a HomeFirst</h2>
+          <h2 className="kitchen-login-title">Acceso a Lunchfy</h2>
           <p className="kitchen-muted">Usa tus credenciales familiares para entrar.</p>
           <form onSubmit={onSubmit} className="kitchen-login-form">
             <Input

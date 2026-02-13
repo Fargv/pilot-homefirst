@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../api.js";
 import KitchenLayout from "../Layout.jsx";
+import Button from "../components/ui/Button.jsx";
+import Card from "../components/ui/Card.jsx";
+import Input from "../components/ui/Input.jsx";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -96,68 +99,60 @@ export default function AdminUsersPage() {
 
   return (
     <KitchenLayout>
-      <div className="kitchen-card" style={{ marginBottom: 16 }}>
-        <h2 style={{ marginTop: 0 }}>Gestión de usuarios</h2>
+      <Card className="kitchen-block-gap">
+        <h2 className="kitchen-title-no-margin">Gestión de usuarios</h2>
         <p className="kitchen-muted">Crea y administra los accesos del equipo.</p>
         <div className="kitchen-toolbar">
-          <input
-            className="kitchen-input"
+          <Input
+            id="search-users"
+            className="kitchen-toolbar-search"
             placeholder="Buscar por nombre o email"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            style={{ maxWidth: 320 }}
           />
-          <button className="kitchen-button" onClick={() => setFormOpen((open) => !open)}>
+          <Button onClick={() => setFormOpen((open) => !open)}>
             {formOpen ? "Cerrar formulario" : "Crear usuario"}
-          </button>
+          </Button>
         </div>
-        {error ? <div className="kitchen-alert error" style={{ marginTop: 12 }}>{error}</div> : null}
-        {success ? <div className="kitchen-alert success" style={{ marginTop: 12 }}>{success}</div> : null}
-      </div>
+        {error ? <div className="kitchen-alert error">{error}</div> : null}
+        {success ? <div className="kitchen-alert success">{success}</div> : null}
+      </Card>
 
       {formOpen ? (
-        <div className="kitchen-card" style={{ marginBottom: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Nuevo usuario</h3>
-          <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
+        <Card className="kitchen-block-gap">
+          <h3 className="kitchen-title-no-margin">Nuevo usuario</h3>
+          <form onSubmit={onSubmit} className="kitchen-form kitchen-form-compact">
             <div className="kitchen-grid">
-              <label>
-                <span className="kitchen-label">Nombre</span>
-                <input
-                  className="kitchen-input"
-                  value={form.firstName}
-                  onChange={(event) => setForm({ ...form, firstName: event.target.value })}
-                  required
-                />
-              </label>
-              <label>
-                <span className="kitchen-label">Apellidos (opcional)</span>
-                <input
-                  className="kitchen-input"
-                  value={form.lastName}
-                  onChange={(event) => setForm({ ...form, lastName: event.target.value })}
-                />
-              </label>
+              <Input
+                id="new-user-firstName"
+                label="Nombre"
+                value={form.firstName}
+                onChange={(event) => setForm({ ...form, firstName: event.target.value })}
+                required
+              />
+              <Input
+                id="new-user-lastName"
+                label="Apellidos (opcional)"
+                value={form.lastName}
+                onChange={(event) => setForm({ ...form, lastName: event.target.value })}
+              />
             </div>
-            <label>
-              <span className="kitchen-label">Email</span>
-              <input
-                className="kitchen-input"
-                type="email"
-                value={form.email}
-                onChange={(event) => setForm({ ...form, email: event.target.value })}
-                required
-              />
-            </label>
-            <label>
-              <span className="kitchen-label">Contraseña</span>
-              <input
-                className="kitchen-input"
-                type="password"
-                value={form.password}
-                onChange={(event) => setForm({ ...form, password: event.target.value })}
-                required
-              />
-            </label>
+            <Input
+              id="new-user-email"
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
+              required
+            />
+            <Input
+              id="new-user-password"
+              label="Contraseña"
+              type="password"
+              value={form.password}
+              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              required
+            />
             <label>
               <span className="kitchen-label">Rol</span>
               <select
@@ -170,9 +165,9 @@ export default function AdminUsersPage() {
               </select>
             </label>
             <div className="kitchen-actions">
-              <button className="kitchen-button" type="submit">Crear usuario</button>
-              <button
-                className="kitchen-button secondary"
+              <Button type="submit">Crear usuario</Button>
+              <Button
+                variant="secondary"
                 type="button"
                 onClick={() => {
                   resetForm();
@@ -180,13 +175,13 @@ export default function AdminUsersPage() {
                 }}
               >
                 Cancelar
-              </button>
+              </Button>
             </div>
           </form>
-        </div>
+        </Card>
       ) : null}
 
-      <div className="kitchen-card">
+      <Card>
         {loading ? (
           <div className="kitchen-muted">Cargando usuarios...</div>
         ) : filteredUsers.length === 0 ? (
@@ -214,7 +209,7 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         )}
-      </div>
+      </Card>
     </KitchenLayout>
   );
 }

@@ -11,7 +11,7 @@ export default function DashboardPage() {
           <div className="app-empty-title">Todavía no hay actividad.</div>
           <p className="app-muted">Empieza por el módulo principal.</p>
           <Link className="app-primary-button" to="/kitchen/semana">
-            Ir a Kitchen
+            Ir a Lunchfy
           </Link>
         </div>
       </div>
