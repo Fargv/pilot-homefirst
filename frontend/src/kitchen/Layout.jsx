@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import Header from "./components/ui/Header";
 import BottomNav from "./components/ui/BottomNav";
@@ -60,61 +60,90 @@ function LogoutIcon(props) {
   );
 }
 
+function UserIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M12 12a4 4 0 1 0 0-8a4 4 0 0 0 0 8M4 20a8 8 0 0 1 16 0" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="m6 9l6 6l6-6" />
+    </svg>
+  );
+}
+
+function getFirstName(displayName = "") {
+  return String(displayName).trim().split(/\s+/)[0] || "";
+}
+
+function getInitials(name = "") {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
+
 export default function KitchenLayout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
-  const navLinks = useMemo(() => {
-    const links = [
+  const navLinks = useMemo(
+    () => [
       { to: "/kitchen/semana", label: "Semana" },
       { to: "/kitchen/platos", label: "Platos" },
-      { to: "/kitchen/compra", label: "Ingredientes" },
-    ];
-
-    if (user?.role === "admin") {
-      links.push({ to: "/admin/usuarios", label: "Usuarios" });
-    }
-
-    return links;
-  }, [user?.role]);
+      { to: "/kitchen/compra", label: "Lista de la compra" },
+      { to: "/kitchen/configuracion", label: "Configuración" }
+    ],
+    []
+  );
 
   const bottomNavLinks = useMemo(
     () => [
       { to: "/kitchen/semana", label: "Semana", icon: CalendarIcon },
       { to: "/kitchen/platos", label: "Platos", icon: UtensilsIcon },
       { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
-      { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon },
+      { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon }
     ],
     []
   );
 
+  useEffect(() => {
+    const onPointerDown = (event) => {
+      if (!userMenuRef.current?.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, []);
+
   const onLogout = async () => {
-    await logout();
-    navigate("/login");
-    setDrawerOpen(false);
+    try {
+      await logout();
+    } finally {
+      navigate("/login", { replace: true });
+    }
+    setUserMenuOpen(false);
   };
 
   const onNavigate = () => {
-    setDrawerOpen(false);
+    setUserMenuOpen(false);
   };
+
+  const userName = getFirstName(user?.displayName || "");
+  const userInitials = getInitials(user?.displayName || "");
 
   return (
     <div className="kitchen-app">
       <Header
         left={(
           <div className="kitchen-brand">
-            <button
-              className="kitchen-nav-toggle"
-              type="button"
-              onClick={() => setDrawerOpen((open) => !open)}
-              aria-label="Abrir menú"
-              aria-expanded={drawerOpen}
-            >
-              <span />
-              <span />
-              <span />
-            </button>
             <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
               <img className="kitchen-brand-icon" src={lunchfyIcon} alt="Lunchfy" />
               <img className="kitchen-brand-logo" src={lunchfyLogo} alt="Lunchfy" />
@@ -131,55 +160,40 @@ export default function KitchenLayout({ children }) {
           </nav>
         )}
         right={user ? (
-            <div className="kitchen-user">
-              <span className="kitchen-user-name">{user.displayName}</span>
-              <button
-                className="kitchen-logout-button"
-                type="button"
-                onClick={onLogout}
-                aria-label="Cerrar sesión"
-                title="Cerrar sesión"
-              >
-                <LogoutIcon className="kitchen-logout-icon" />
-              </button>
-            </div>
+          <div className="kitchen-user" ref={userMenuRef}>
+            <button
+              className="kitchen-user-chip"
+              type="button"
+              onClick={() => setUserMenuOpen((open) => !open)}
+              aria-expanded={userMenuOpen}
+              aria-haspopup="menu"
+            >
+              <span className="kitchen-user-avatar">{userInitials}</span>
+              <span className="kitchen-user-name">{userName}</span>
+              <ChevronDownIcon className="kitchen-user-chevron" />
+            </button>
+            {userMenuOpen ? (
+              <div className="kitchen-user-menu" role="menu">
+                <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion?section=perfil")}>
+                  <UserIcon className="kitchen-user-menu-icon" />
+                  Editar mi perfil
+                </button>
+                <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion")}>
+                  <SettingsIcon className="kitchen-user-menu-icon" />
+                  Configuración
+                </button>
+                <button type="button" role="menuitem" onClick={onLogout}>
+                  <LogoutIcon className="kitchen-user-menu-icon" />
+                  Cerrar sesión
+                </button>
+              </div>
+            ) : null}
+          </div>
         ) : (
           <div className="kitchen-user-placeholder" />
         )}
       />
-      <div className="kitchen-container">
-        {drawerOpen ? (
-          <>
-            <button className="kitchen-drawer-backdrop" type="button" onClick={onNavigate} aria-label="Cerrar menú" />
-            <aside className="kitchen-drawer" aria-hidden={!drawerOpen}>
-              <div className="kitchen-drawer-header">
-                <span>Menú</span>
-                <button className="kitchen-drawer-close" type="button" onClick={onNavigate}>
-                  Cerrar
-                </button>
-              </div>
-              <nav className="kitchen-nav-mobile">
-                {navLinks.map((link) => (
-                  <NavLink key={link.to} to={link.to} onClick={onNavigate}>
-                    {link.label}
-                  </NavLink>
-                ))}
-              </nav>
-              {user ? (
-                <div className="kitchen-drawer-user">
-                  <div>
-                    <div className="kitchen-pill">{user.displayName}</div>
-                  </div>
-                  <button className="kitchen-button secondary" type="button" onClick={onLogout}>
-                    Cerrar sesión
-                  </button>
-                </div>
-              ) : null}
-            </aside>
-          </>
-        ) : null}
-        {children}
-      </div>
+      <div className="kitchen-container">{children}</div>
       <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
     </div>
   );

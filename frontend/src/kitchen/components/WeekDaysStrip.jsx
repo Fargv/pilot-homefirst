@@ -38,7 +38,7 @@ function ChevronIcon(props) {
   );
 }
 
-export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay }) {
+export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay, onCreateDish }) {
   const scrollRef = useRef(null);
   const [isCarousel, setIsCarousel] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(days) ? days : []), [days]);
@@ -51,6 +51,7 @@ export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay 
       return {
         key: dayKey,
         date: day.date,
+        hasDish: Boolean(day.mainDishId),
         isAssigned: Boolean(day.cookUserId),
         cookUserId: day.cookUserId,
         cookName: cookUser?.displayName || "Sin asignar",
@@ -84,6 +85,10 @@ export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay 
 
   const handleSelect = (entry) => {
     if (!entry) return;
+    if (!entry.hasDish && onCreateDish) {
+      onCreateDish(entry.key);
+      return;
+    }
     onSelectDay(entry.key);
   };
 
@@ -129,7 +134,7 @@ export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay 
                 }}
               >
                 <span className="kitchen-weekdays-circle" aria-hidden="true">
-                  {entry.isAssigned ? entry.initials : "+"}
+                  {entry.hasDish ? (entry.isAssigned ? entry.initials : "•") : "+"}
                 </span>
                 <span className="kitchen-weekdays-label">{getDayAbbreviation(entry.date)}</span>
               </button>

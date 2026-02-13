@@ -8,6 +8,19 @@ import DishModal from "../components/DishModal.jsx";
 import KitchenLayout from "../Layout.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { getUserColor } from "../utils/userColors";
+import mainCourseImg from "../../assets/food/main-course.svg";
+import sideDishImg from "../../assets/food/side-dish.svg";
+import emptyDishImg from "../../assets/food/empty-dish.svg";
+
+const DAY_CARD_STYLES = [
+  { background: "#eef2ff", color: "#1f2a60" },
+  { background: "#ecfeff", color: "#134e4a" },
+  { background: "#fef9c3", color: "#713f12" },
+  { background: "#fce7f3", color: "#831843" },
+  { background: "#dcfce7", color: "#14532d" },
+  { background: "#ffedd5", color: "#7c2d12" },
+  { background: "#ede9fe", color: "#4c1d95" }
+];
 
 function getMondayISO(date = new Date()) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -674,6 +687,11 @@ export default function WeekPage() {
     }
   };
 
+  const handleCreateDishFromStrip = (dayKey) => {
+    setSelectedDay(dayKey);
+    openDishModal(dayKey, "", { mode: "main", sidedish: false });
+  };
+
   const handleCarouselScroll = (direction) => {
     const element = carouselRef.current;
     if (!element) return;
@@ -688,6 +706,7 @@ export default function WeekPage() {
           userMap={userMap}
           selectedDay={selectedDay}
           onSelectDay={handleSelectDay}
+          onCreateDish={handleCreateDishFromStrip}
         />
         <div className="kitchen-week-mobile-frame">
           <section className="kitchen-week-header">
@@ -763,6 +782,8 @@ export default function WeekPage() {
                 const sideToggleId = `side-toggle-${dayKey}`;
                 const isEmptyState = !isPlanned && !isEditing;
                 const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
+                const dayVisual = DAY_CARD_STYLES[index % DAY_CARD_STYLES.length];
+                const dishIllustration = isEmptyState ? emptyDishImg : (showSideDish ? sideDishImg : mainCourseImg);
                 const baseIngredients = mergeIngredientLists(
                   mainDish?.ingredients || [],
                   sideDish?.ingredients || []
@@ -824,6 +845,7 @@ export default function WeekPage() {
             <div
               key={day.date}
               id={`daycard-${dayKey}`}
+              style={{ "--day-card-bg": dayVisual.background, "--day-card-text": dayVisual.color }}
               className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""}`}
               tabIndex={-1}
               ref={(node) => {
@@ -904,6 +926,7 @@ export default function WeekPage() {
                   </div>
                 ) : (
                   <div className="kitchen-day-view">
+                    <img className="kitchen-day-illustration" src={dishIllustration} alt="Ilustración del plato" />
                     <div className="kitchen-day-info">
                       <span className="kitchen-day-info-label">Plato principal</span>
                       <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>

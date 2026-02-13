@@ -1,344 +1,3472 @@
+diff --git a/frontend/src/kitchen/Layout.jsx b/frontend/src/kitchen/Layout.jsx
+index fc067dcae435379e28c10364315dc57fa82e0f16..d563cbd44161eb4dbad2a1f777fb3d4800e63ceb 100644
+--- a/frontend/src/kitchen/Layout.jsx
++++ b/frontend/src/kitchen/Layout.jsx
+@@ -1,186 +1,200 @@
+-import React, { useMemo, useState } from "react";
++import React, { useEffect, useMemo, useRef, useState } from "react";
+ import { Link, NavLink, useNavigate } from "react-router-dom";
+-import Header from "./components/ui/Header";
+-import BottomNav from "./components/ui/BottomNav";
++import Header from "./components/ui/Header";
++import BottomNav from "./components/ui/BottomNav";
+ import { useAuth } from "./auth";
+-import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
+-import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
+-
+-function CalendarIcon(props) {
+-  return (
+-    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+-      <rect x="3" y="5" width="18" height="16" rx="3" />
+-      <path d="M8 3v4M16 3v4M3 10h18" />
+-    </svg>
+-  );
+-}
+-
+-function UtensilsIcon(props) {
+-  return (
+-    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+-      <path
+-        fill="currentColor"
+-        stroke="none"
+-        d="m10.8 3.9l-6 4.5c-.5.38-.8.97-.8 1.6v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9c0-.63-.3-1.22-.8-1.6l-6-4.5a2.01 2.01 0 0 0-2.4 0m1.7 8.6c0 .83-.67 1.5-1.5 1.5v3.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V14c-.83 0-1.5-.67-1.5-1.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5zm2 5.5c-.28 0-.5-.22-.5-.5v-3h-.5c-.28 0-.5-.22-.5-.5v-2.5c0-.88.57-1.63 1.36-1.89c.31-.11.64.14.64.48v7.41c0 .28-.22.5-.5.5"
+-      />
+-    </svg>
+-  );
+-}
+-
+-function ListIcon(props) {
+-  return (
+-    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+-      <path d="M8 6h12M8 12h12M8 18h12" />
+-      <circle cx="4" cy="6" r="1.5" />
+-      <circle cx="4" cy="12" r="1.5" />
+-      <circle cx="4" cy="18" r="1.5" />
+-    </svg>
+-  );
+-}
+-
+-function SettingsIcon(props) {
+-  return (
+-    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+-      <path
+-        fill="currentColor"
+-        stroke="none"
+-        d="M19.14 12.94c.04-.3.06-.61.06-.94c0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6s3.6 1.62 3.6 3.6s-1.62 3.6-3.6 3.6"
+-      />
+-    </svg>
+-  );
+-}
+-
+-function LogoutIcon(props) {
+-  return (
+-    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+-      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+-      <path d="M10 17l5-5-5-5" />
+-      <path d="M15 12H3" />
+-    </svg>
+-  );
+-}
+-
++import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
++import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
++
++function CalendarIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <rect x="3" y="5" width="18" height="16" rx="3" />
++      <path d="M8 3v4M16 3v4M3 10h18" />
++    </svg>
++  );
++}
++
++function UtensilsIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <path
++        fill="currentColor"
++        stroke="none"
++        d="m10.8 3.9l-6 4.5c-.5.38-.8.97-.8 1.6v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9c0-.63-.3-1.22-.8-1.6l-6-4.5a2.01 2.01 0 0 0-2.4 0m1.7 8.6c0 .83-.67 1.5-1.5 1.5v3.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V14c-.83 0-1.5-.67-1.5-1.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5v2.5h.5V10c0-.28.22-.5.5-.5s.5.22.5.5zm2 5.5c-.28 0-.5-.22-.5-.5v-3h-.5c-.28 0-.5-.22-.5-.5v-2.5c0-.88.57-1.63 1.36-1.89c.31-.11.64.14.64.48v7.41c0 .28-.22.5-.5.5"
++      />
++    </svg>
++  );
++}
++
++function ListIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <path d="M8 6h12M8 12h12M8 18h12" />
++      <circle cx="4" cy="6" r="1.5" />
++      <circle cx="4" cy="12" r="1.5" />
++      <circle cx="4" cy="18" r="1.5" />
++    </svg>
++  );
++}
++
++function SettingsIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <path
++        fill="currentColor"
++        stroke="none"
++        d="M19.14 12.94c.04-.3.06-.61.06-.94c0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6s3.6 1.62 3.6 3.6s-1.62 3.6-3.6 3.6"
++      />
++    </svg>
++  );
++}
++
++function LogoutIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
++      <path d="M10 17l5-5-5-5" />
++      <path d="M15 12H3" />
++    </svg>
++  );
++}
++
++function UserIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <path d="M12 12a4 4 0 1 0 0-8a4 4 0 0 0 0 8M4 20a8 8 0 0 1 16 0" />
++    </svg>
++  );
++}
++
++function ChevronDownIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <path d="m6 9l6 6l6-6" />
++    </svg>
++  );
++}
++
++function getFirstName(displayName = "") {
++  return String(displayName).trim().split(/\s+/)[0] || "";
++}
++
++function getInitials(name = "") {
++  const parts = String(name).trim().split(/\s+/).filter(Boolean);
++  if (!parts.length) return "U";
++  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
++  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
++}
++
+ export default function KitchenLayout({ children }) {
+   const { user, logout } = useAuth();
+   const navigate = useNavigate();
+-  const [drawerOpen, setDrawerOpen] = useState(false);
+-
+-  const navLinks = useMemo(() => {
+-    const links = [
+-      { to: "/kitchen/semana", label: "Semana" },
+-      { to: "/kitchen/platos", label: "Platos" },
+-      { to: "/kitchen/compra", label: "Ingredientes" },
+-    ];
+-
+-    if (user?.role === "admin") {
+-      links.push({ to: "/admin/usuarios", label: "Usuarios" });
+-    }
+-
+-    return links;
+-  }, [user?.role]);
+-
+-  const bottomNavLinks = useMemo(
+-    () => [
+-      { to: "/kitchen/semana", label: "Semana", icon: CalendarIcon },
+-      { to: "/kitchen/platos", label: "Platos", icon: UtensilsIcon },
+-      { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
+-      { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon },
+-    ],
+-    []
+-  );
++  const [userMenuOpen, setUserMenuOpen] = useState(false);
++  const userMenuRef = useRef(null);
++
++  const navLinks = useMemo(
++    () => [
++      { to: "/kitchen/semana", label: "Semana" },
++      { to: "/kitchen/platos", label: "Platos" },
++      { to: "/kitchen/compra", label: "Lista de la compra" },
++      { to: "/kitchen/configuracion", label: "Configuración" }
++    ],
++    []
++  );
++
++  const bottomNavLinks = useMemo(
++    () => [
++      { to: "/kitchen/semana", label: "Semana", icon: CalendarIcon },
++      { to: "/kitchen/platos", label: "Platos", icon: UtensilsIcon },
++      { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
++      { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon }
++    ],
++    []
++  );
++
++  useEffect(() => {
++    const onPointerDown = (event) => {
++      if (!userMenuRef.current?.contains(event.target)) {
++        setUserMenuOpen(false);
++      }
++    };
++    document.addEventListener("mousedown", onPointerDown);
++    return () => document.removeEventListener("mousedown", onPointerDown);
++  }, []);
+ 
+   const onLogout = async () => {
+-    await logout();
+-    navigate("/login");
+-    setDrawerOpen(false);
+-  };
+-
+-  const onNavigate = () => {
+-    setDrawerOpen(false);
++    try {
++      await logout();
++    } finally {
++      navigate("/login", { replace: true });
++    }
++    setUserMenuOpen(false);
++  };
++
++  const onNavigate = () => {
++    setUserMenuOpen(false);
+   };
+ 
++  const userName = getFirstName(user?.displayName || "");
++  const userInitials = getInitials(user?.displayName || "");
++
+   return (
+     <div className="kitchen-app">
+-      <Header
+-        left={(
+-          <div className="kitchen-brand">
+-            <button
+-              className="kitchen-nav-toggle"
+-              type="button"
+-              onClick={() => setDrawerOpen((open) => !open)}
+-              aria-label="Abrir menú"
+-              aria-expanded={drawerOpen}
+-            >
+-              <span />
+-              <span />
+-              <span />
+-            </button>
+-            <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
+-              <img className="kitchen-brand-icon" src={lunchfyIcon} alt="Lunchfy" />
+-              <img className="kitchen-brand-logo" src={lunchfyLogo} alt="Lunchfy" />
++      <Header
++        left={(
++          <div className="kitchen-brand">
++            <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
++              <img className="kitchen-brand-icon" src={lunchfyIcon} alt="Lunchfy" />
++              <img className="kitchen-brand-logo" src={lunchfyLogo} alt="Lunchfy" />
+             </Link>
+           </div>
+-        )}
+-        center={(
+-          <nav className="kitchen-nav-desktop">
+-            {navLinks.map((link) => (
+-              <NavLink key={link.to} to={link.to} onClick={onNavigate}>
+-                {link.label}
+-              </NavLink>
+-            ))}
++        )}
++        center={(
++          <nav className="kitchen-nav-desktop">
++            {navLinks.map((link) => (
++              <NavLink key={link.to} to={link.to} onClick={onNavigate}>
++                {link.label}
++              </NavLink>
++            ))}
+           </nav>
+-        )}
+-        right={user ? (
+-            <div className="kitchen-user">
+-              <span className="kitchen-user-name">{user.displayName}</span>
+-              <button
+-                className="kitchen-logout-button"
+-                type="button"
+-                onClick={onLogout}
+-                aria-label="Cerrar sesión"
+-                title="Cerrar sesión"
+-              >
+-                <LogoutIcon className="kitchen-logout-icon" />
+-              </button>
+-            </div>
+-        ) : (
+-          <div className="kitchen-user-placeholder" />
+-        )}
+-      />
+-      <div className="kitchen-container">
+-        {drawerOpen ? (
+-          <>
+-            <button className="kitchen-drawer-backdrop" type="button" onClick={onNavigate} aria-label="Cerrar menú" />
+-            <aside className="kitchen-drawer" aria-hidden={!drawerOpen}>
+-              <div className="kitchen-drawer-header">
+-                <span>Menú</span>
+-                <button className="kitchen-drawer-close" type="button" onClick={onNavigate}>
+-                  Cerrar
+-                </button>
+-              </div>
+-              <nav className="kitchen-nav-mobile">
+-                {navLinks.map((link) => (
+-                  <NavLink key={link.to} to={link.to} onClick={onNavigate}>
+-                    {link.label}
+-                  </NavLink>
+-                ))}
+-              </nav>
+-              {user ? (
+-                <div className="kitchen-drawer-user">
+-                  <div>
+-                    <div className="kitchen-pill">{user.displayName}</div>
+-                  </div>
+-                  <button className="kitchen-button secondary" type="button" onClick={onLogout}>
+-                    Cerrar sesión
+-                  </button>
+-                </div>
+-              ) : null}
+-            </aside>
+-          </>
+-        ) : null}
+-        {children}
+-      </div>
+-      <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
++        )}
++        right={user ? (
++          <div className="kitchen-user" ref={userMenuRef}>
++            <button
++              className="kitchen-user-chip"
++              type="button"
++              onClick={() => setUserMenuOpen((open) => !open)}
++              aria-expanded={userMenuOpen}
++              aria-haspopup="menu"
++            >
++              <span className="kitchen-user-avatar">{userInitials}</span>
++              <span className="kitchen-user-name">{userName}</span>
++              <ChevronDownIcon className="kitchen-user-chevron" />
++            </button>
++            {userMenuOpen ? (
++              <div className="kitchen-user-menu" role="menu">
++                <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion?section=perfil")}>
++                  <UserIcon className="kitchen-user-menu-icon" />
++                  Editar mi perfil
++                </button>
++                <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion")}>
++                  <SettingsIcon className="kitchen-user-menu-icon" />
++                  Configuración
++                </button>
++                <button type="button" role="menuitem" onClick={onLogout}>
++                  <LogoutIcon className="kitchen-user-menu-icon" />
++                  Cerrar sesión
++                </button>
++              </div>
++            ) : null}
++          </div>
++        ) : (
++          <div className="kitchen-user-placeholder" />
++        )}
++      />
++      <div className="kitchen-container">{children}</div>
++      <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
+     </div>
+   );
+ }
+diff --git a/frontend/src/kitchen/components/WeekDaysStrip.jsx b/frontend/src/kitchen/components/WeekDaysStrip.jsx
+index a2ea499aa8038e453bab4bec572f1f0bc79a8976..a02fdf2b29a3eaa96a618f3557bf94a311309547 100644
+--- a/frontend/src/kitchen/components/WeekDaysStrip.jsx
++++ b/frontend/src/kitchen/components/WeekDaysStrip.jsx
+@@ -16,137 +16,142 @@ function getDayAbbreviation(dateString) {
+ function getDayLong(dateString) {
+   if (!dateString) return "sin fecha";
+   const date = new Date(dateString);
+   if (Number.isNaN(date.getTime())) {
+     return "sin fecha";
+   }
+   return DAY_LONG[date.getDay()];
+ }
+ 
+ function getInitials(name) {
+   if (!name) return "";
+   const parts = name.trim().split(/\s+/).filter(Boolean);
+   if (!parts.length) return "";
+   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+ }
+ 
+ function ChevronIcon(props) {
+   return (
+     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+       <path d="M15 18l-6-6 6-6" />
+     </svg>
+   );
+ }
+ 
+-export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay }) {
++export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay, onCreateDish }) {
+   const scrollRef = useRef(null);
+   const [isCarousel, setIsCarousel] = useState(false);
+   const safeDays = useMemo(() => (Array.isArray(days) ? days : []), [days]);
+ 
+   const entries = useMemo(() => {
+     return safeDays.map((day, index) => {
+       const dayKey = day?.date ? day.date.slice(0, 10) : `day-${index}`;
+       const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
+       const initials = cookUser ? getInitials(cookUser.displayName) : "";
+       return {
+         key: dayKey,
+         date: day.date,
++        hasDish: Boolean(day.mainDishId),
+         isAssigned: Boolean(day.cookUserId),
+         cookUserId: day.cookUserId,
+         cookName: cookUser?.displayName || "Sin asignar",
+         initials
+       };
+     });
+   }, [safeDays, userMap]);
+ 
+   useEffect(() => {
+     const element = scrollRef.current;
+     if (!element) return;
+ 
+     const updateCarousel = () => {
+       const shouldCarousel = element.scrollWidth > element.clientWidth + 1;
+       setIsCarousel(shouldCarousel);
+     };
+ 
+     updateCarousel();
+     let observer;
+     if (typeof ResizeObserver !== "undefined") {
+       observer = new ResizeObserver(updateCarousel);
+       observer.observe(element);
+     }
+     window.addEventListener("resize", updateCarousel);
+ 
+     return () => {
+       observer?.disconnect();
+       window.removeEventListener("resize", updateCarousel);
+     };
+   }, []);
+ 
+   const handleSelect = (entry) => {
+     if (!entry) return;
++    if (!entry.hasDish && onCreateDish) {
++      onCreateDish(entry.key);
++      return;
++    }
+     onSelectDay(entry.key);
+   };
+ 
+   const scrollByOffset = (direction) => {
+     const element = scrollRef.current;
+     if (!element) return;
+     const scrollAmount = Math.min(240, element.clientWidth * 0.8);
+     element.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
+   };
+ 
+   return (
+     <section className="kitchen-weekdays-strip kitchen-card" aria-label="Panel de días">
+       <div className={`kitchen-weekdays-carousel ${isCarousel ? "is-carousel" : ""}`}>
+         {isCarousel ? (
+           <button
+             className="kitchen-weekdays-arrow is-left"
+             type="button"
+             onClick={() => scrollByOffset(-1)}
+             aria-label="Desplazar días a la izquierda"
+           >
+             <ChevronIcon className="kitchen-weekdays-arrow-icon" />
+           </button>
+         ) : null}
+         <div
+           ref={scrollRef}
+           className={`kitchen-weekdays-list ${isCarousel ? "is-carousel" : ""}`}
+           role="list"
+         >
+           {entries.map((entry) => {
+             const isSelected = selectedDay === entry.key;
+-            const colors = entry.isAssigned ? getUserColor(entry.cookUserId) : getUnassignedColor();
+-            return (
++            const colors = entry.isAssigned ? getUserColor(entry.cookUserId) : getUnassignedColor();
++            return (
+               <button
+                 key={entry.key}
+                 type="button"
+                 className={`kitchen-weekdays-item ${isSelected ? "is-selected" : ""}`}
+                 onClick={() => handleSelect(entry)}
+                 aria-label={`${getDayLong(entry.date)}: ${entry.cookName}`}
+                 style={{
+                   "--weekday-bg": colors.background,
+                   "--weekday-text": colors.text,
+                   "--weekday-border": colors.border || "transparent"
+                 }}
+               >
+                 <span className="kitchen-weekdays-circle" aria-hidden="true">
+-                  {entry.isAssigned ? entry.initials : "+"}
+-                </span>
++                  {entry.hasDish ? (entry.isAssigned ? entry.initials : "•") : "+"}
++                </span>
+                 <span className="kitchen-weekdays-label">{getDayAbbreviation(entry.date)}</span>
+               </button>
+             );
+           })}
+         </div>
+         {isCarousel ? (
+           <button
+             className="kitchen-weekdays-arrow is-right"
+             type="button"
+             onClick={() => scrollByOffset(1)}
+             aria-label="Desplazar días a la derecha"
+           >
+             <ChevronIcon className="kitchen-weekdays-arrow-icon is-next" />
+           </button>
+         ) : null}
+       </div>
+     </section>
+   );
+ }
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index faeff8c20d4b1c78c59d57ea8350d423cab5d744..00c60c595228375ac6a683d2a939f5703695157d 100644
+index 945c13c5a06127b302e553b687953c992fb42e47..22a062f6143cbf725294eedba1a7adb773781ea7 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -1,30 +1,46 @@
--html,
--body,
--#root {
--  height: 100%;
--}
-+*,
-+*::before,
-+*::after {
-+  box-sizing: border-box;
+@@ -2564,25 +2564,173 @@ body {
+ }
+ 
+ .kitchen-block-gap {
+   margin-bottom: 16px;
+ }
+ 
+ .kitchen-title-no-margin {
+   margin-top: 0;
+   margin-bottom: 6px;
+ }
+ 
+ .kitchen-form-compact {
+   gap: 12px;
+ }
+ 
+ .kitchen-table th,
+ .kitchen-table td {
+   border-bottom: 1px solid var(--hf-border);
+ }
+ 
+ @media (min-width: 900px) {
+   .kitchen-grid {
+     grid-template-columns: repeat(2, minmax(0, 1fr));
+   }
+ }
++
++/* Semana Neo-Soft 2026 redesign */
++.kitchen-ui-header {
++  background: #eef2ff;
++  border-bottom: 1px solid #dbe3ff;
 +}
 +
-+html,
-+body {
-+  width: 100%;
-+  max-width: 100%;
-+  height: 100%;
-+  margin: 0;
-+  overflow-x: hidden;
++.kitchen-ui-header-inner {
++  min-height: 88px;
++  padding: 20px 24px;
 +}
 +
-+#root {
-+  width: 100%;
-+  max-width: 100%;
-+  height: 100%;
-+  overflow-x: hidden;
++.kitchen-brand-icon {
++  width: 36px;
++  height: 36px;
 +}
- 
- @media (pointer: coarse) {
-   html,
-   body {
-     overflow: hidden;
-     overscroll-behavior: none;
-   }
- 
-   #root {
-     height: 100dvh;
-     overflow-y: auto;
-     overscroll-behavior: none;
-     -webkit-overflow-scrolling: touch;
-     touch-action: pan-y;
-   }
- }
- 
- @media (pointer: fine) {
-   body {
-     overflow-y: auto;
-   }
- 
-   #root {
-     min-height: 100%;
-   }
-@@ -38,86 +54,89 @@ body,
-     rgba(238, 242, 255, 0.72) 0%,
-     rgba(240, 253, 244, 0.5) 42%,
-     rgba(248, 250, 252, 0.96) 100%
-   );
-   --hf-surface: #ffffff;
-   --hf-surface-soft: #eef2ff;
-   --hf-surface-mint: #f0fdf4;
-   --hf-surface-peach: #fff7ed;
-   --hf-text: #1e293b;
-   --hf-muted: #667085;
-   --hf-brand: #4338ca;
-   --hf-brand-strong: #4338ca;
-   --hf-border: #e4e7ec;
-   --hf-danger: #b42318;
-   --hf-radius-md: 24px;
-   --hf-radius-lg: 28px;
-   --hf-radius-xl: 32px;
-   --hf-shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-   --hf-shadow-glass: 0 10px 30px rgba(31, 41, 55, 0.1);
-   --hf-glass: rgba(255, 255, 255, 0.7);
-   --hf-glass-border: rgba(255, 255, 255, 0.9);
- }
- 
- .kitchen-app {
-   font-family: "Inter", system-ui, sans-serif;
--  background-color: var(--hf-bg);
-+  background-color: var(--hf-bg);
-   background-image: var(--hf-bg-gradient);
-   background-repeat: no-repeat;
-   background-size: 100% 100%;
-   min-height: 100vh;
--  min-height: 100dvh;
--  color: var(--hf-text);
--}
-+  min-height: 100dvh;
-+  width: 100%;
-+  max-width: 100%;
-+  color: var(--hf-text);
++
++.kitchen-nav-desktop {
++  gap: 10px;
 +}
- 
- @media (min-width: 768px) {
-   :root {
-     --hf-bg-gradient: linear-gradient(
-       180deg,
-       rgba(238, 242, 255, 0.66) 0%,
-       rgba(240, 253, 244, 0.44) 46%,
-       rgba(248, 250, 252, 0.98) 100%
-     );
-   }
- }
- 
- @media (min-width: 1200px) {
-   :root {
-     --hf-bg-gradient: linear-gradient(
-       180deg,
-       rgba(238, 242, 255, 0.58) 0%,
-       rgba(240, 253, 244, 0.38) 50%,
-       rgba(248, 250, 252, 1) 100%
-     );
-   }
- }
- 
--.kitchen-container {
--  max-width: 1100px;
--  margin: 0 auto;
--  padding: 24px;
--}
-+.kitchen-container {
-+  max-width: 1100px;
-+  margin: 0 auto;
-+  padding: 24px;
-+  width: 100%;
++
++.kitchen-nav-desktop a {
++  border-radius: 14px;
++  padding: 11px 18px;
++  font-size: 14px;
++  background: transparent;
 +}
- 
- .kitchen-bottom-nav {
-   position: fixed;
-   bottom: 0;
-   left: 0;
-   right: 0;
-   background: #ffffff;
-   border-top: 1px solid #e4e7ec;
-   z-index: 25;
-   padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
-   display: none;
- }
- 
- .kitchen-bottom-nav-inner {
-   max-width: 720px;
-   margin: 0 auto;
-   display: grid;
-   grid-template-columns: repeat(4, minmax(0, 1fr));
-   gap: 8px;
- }
- 
- .kitchen-bottom-nav-item {
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-@@ -1098,56 +1117,57 @@ body,
-   margin: 0;
-   font-size: 22px;
-   font-weight: 700;
-   color: #0f172a;
- }
- 
- .kitchen-week-subtitle {
-   margin: 0;
- }
- 
- .kitchen-weekdays-strip {
-   padding: 20px 22px;
-   border: 1px solid #eaecf0;
-   box-shadow: none;
-   gap: 16px;
-   margin-bottom: 0;
- }
- 
- .kitchen-week-controls {
-   display: flex;
-   flex-direction: column;
-   gap: 20px;
-   margin-bottom: 24px;
- }
- 
--.kitchen-weekdays-carousel {
--  position: relative;
--  display: flex;
--  align-items: center;
--  width: 100%;
--}
-+.kitchen-weekdays-carousel {
-+  position: relative;
++
++.kitchen-nav-desktop a.active {
++  background: #dfe4ff;
++  color: #3730a3;
++}
++
++.kitchen-user { position: relative; }
++
++.kitchen-user-chip {
++  display: inline-flex;
++  align-items: center;
++  gap: 10px;
++  border: 1px solid #dbe3ff;
++  background: #ffffff;
++  border-radius: 999px;
++  padding: 7px 14px 7px 8px;
++  cursor: pointer;
++  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.12);
++}
++
++.kitchen-user-chip:hover { background: #f8faff; }
++
++.kitchen-user-avatar {
++  width: 34px;
++  height: 34px;
++  border-radius: 999px;
++  display: grid;
++  place-items: center;
++  background: #dfe4ff;
++  color: #3730a3;
++  font-weight: 700;
++  font-size: 12px;
++}
++
++.kitchen-user-name { font-weight: 600; font-size: 14px; }
++.kitchen-user-chevron,
++.kitchen-user-menu-icon {
++  width: 16px;
++  height: 16px;
++  stroke: currentColor;
++  stroke-width: 1.8;
++  fill: none;
++}
++
++.kitchen-user-menu {
++  position: absolute;
++  right: 0;
++  top: calc(100% + 10px);
++  min-width: 220px;
++  background: rgba(255, 255, 255, 0.96);
++  border: 1px solid #e6e9f8;
++  box-shadow: 0 16px 30px rgba(30, 41, 59, 0.14);
++  border-radius: 20px;
++  padding: 8px;
++  display: grid;
++  gap: 4px;
++  z-index: 30;
++}
++
++.kitchen-user-menu button {
++  border: none;
++  background: transparent;
++  border-radius: 14px;
++  padding: 10px 12px;
 +  display: flex;
 +  align-items: center;
++  gap: 10px;
++  font-weight: 600;
++  color: #334155;
++  cursor: pointer;
++}
++
++.kitchen-user-menu button:hover { background: #eef2ff; }
++
++.kitchen-weekdays-item {
++  min-width: 72px;
++  min-height: 92px;
++  border-radius: 20px;
++}
++
++.kitchen-weekdays-circle {
++  border-radius: 20px;
++}
++
++.kitchen-day-card {
++  background: var(--day-card-bg, #fff);
++  color: var(--day-card-text, var(--hf-text));
++}
++
++.kitchen-day-title,
++.kitchen-day-info-value,
++.kitchen-day-info-label {
++  color: inherit;
++}
++
++.kitchen-day-illustration {
 +  width: 100%;
-+  max-width: 100%;
++  max-width: 220px;
++  height: 110px;
++  object-fit: contain;
++  align-self: center;
 +}
++
++.kitchen-day-empty-button {
++  border-radius: 18px;
++  min-height: 50px;
++}
++
++.kitchen-week-mobile-frame { gap: 22px; }
++
++.kitchen-ui-bottom-nav {
++  background: #eef2ff;
++  border-top: 1px solid #dbe3ff;
++}
++
++@media (max-width: 900px) {
++  .kitchen-ui-header { display: none; }
++  .kitchen-container {
++    padding: 14px 14px 88px;
++  }
++}
+diff --git a/frontend/src/kitchen/pages/SettingsPage.jsx b/frontend/src/kitchen/pages/SettingsPage.jsx
+index 9e001e4cecfa9365d6d9466e5da0f9c862e75c68..cad6028be1de20b39ffef373dcfe925fdf1340d9 100644
+--- a/frontend/src/kitchen/pages/SettingsPage.jsx
++++ b/frontend/src/kitchen/pages/SettingsPage.jsx
+@@ -1,13 +1,29 @@
+ import React from "react";
++import { useNavigate } from "react-router-dom";
+ import KitchenLayout from "../Layout.jsx";
++import { useAuth } from "../auth";
  
- .kitchen-weekdays-carousel.is-carousel::before,
- .kitchen-weekdays-carousel.is-carousel::after {
-   content: "";
-   position: absolute;
-   top: 0;
-   bottom: 0;
-   width: 32px;
-   pointer-events: none;
-   z-index: 1;
+ export default function SettingsPage() {
++  const { logout } = useAuth();
++  const navigate = useNavigate();
++
++  const handleLogout = async () => {
++    try {
++      await logout();
++    } finally {
++      navigate("/login", { replace: true });
++    }
++  };
++
+   return (
+     <KitchenLayout>
+       <div className="kitchen-card">
+         <h2>Configuración</h2>
+         <p className="kitchen-muted">Personaliza tu experiencia en Kitchen.</p>
++        <button type="button" className="kitchen-button secondary" onClick={handleLogout}>
++          Cerrar sesión
++        </button>
+       </div>
+     </KitchenLayout>
+   );
+ }
+diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
+index b806be7a0d8a886d3098d56316cb701a8d923922..0edf850ee2e0dafaf2d53329c784490508686d75 100644
+--- a/frontend/src/kitchen/pages/WeekPage.jsx
++++ b/frontend/src/kitchen/pages/WeekPage.jsx
+@@ -1,1398 +1,1421 @@
+-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+-import { useSearchParams } from "react-router-dom";
++import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
++import { useSearchParams } from "react-router-dom";
+ import { apiRequest } from "../api.js";
+ import { useAuth } from "../auth";
+-import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
+-import IngredientPicker from "../components/IngredientPicker.jsx";
+-import DishModal from "../components/DishModal.jsx";
++import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
++import IngredientPicker from "../components/IngredientPicker.jsx";
++import DishModal from "../components/DishModal.jsx";
+ import KitchenLayout from "../Layout.jsx";
+-import { normalizeIngredientName } from "../utils/normalize.js";
+-import { getUserColor } from "../utils/userColors";
++import { normalizeIngredientName } from "../utils/normalize.js";
++import { getUserColor } from "../utils/userColors";
++import mainCourseImg from "../../assets/food/main-course.svg";
++import sideDishImg from "../../assets/food/side-dish.svg";
++import emptyDishImg from "../../assets/food/empty-dish.svg";
++
++const DAY_CARD_STYLES = [
++  { background: "#eef2ff", color: "#1f2a60" },
++  { background: "#ecfeff", color: "#134e4a" },
++  { background: "#fef9c3", color: "#713f12" },
++  { background: "#fce7f3", color: "#831843" },
++  { background: "#dcfce7", color: "#14532d" },
++  { background: "#ffedd5", color: "#7c2d12" },
++  { background: "#ede9fe", color: "#4c1d95" }
++];
+ 
+ function getMondayISO(date = new Date()) {
+   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+   const day = d.getUTCDay();
+   const diff = (day === 0 ? -6 : 1) - day;
+   d.setUTCDate(d.getUTCDate() + diff);
+   return d.toISOString().slice(0, 10);
  }
  
- .kitchen-weekdays-carousel.is-carousel::before {
-   left: 0;
-   background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
+ function formatDateLabel(dateString) {
+-  if (!dateString) {
+-    return "Sin fecha";
+-  }
++  if (!dateString) {
++    return "Sin fecha";
++  }
+   const date = new Date(dateString);
+-  if (Number.isNaN(date.getTime())) {
+-    return "Sin fecha";
+-  }
++  if (Number.isNaN(date.getTime())) {
++    return "Sin fecha";
++  }
+   return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" });
  }
  
- .kitchen-weekdays-carousel.is-carousel::after {
-   right: 0;
-   background: linear-gradient(270deg, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
- }
- 
- .kitchen-weekdays-arrow {
-   width: 40px;
-   height: 40px;
-@@ -1180,58 +1200,59 @@ body,
- }
- 
- .kitchen-weekdays-arrow-icon {
-   width: 18px;
-   height: 18px;
-   stroke: currentColor;
-   stroke-width: 2;
-   fill: none;
-   stroke-linecap: round;
-   stroke-linejoin: round;
- }
- 
- .kitchen-weekdays-arrow-icon.is-next {
-   transform: rotate(180deg);
- }
- 
- .kitchen-weekdays-list {
-   display: flex;
-   gap: 12px;
-   align-items: center;
-   justify-content: center;
-   width: 100%;
-   padding-bottom: 4px;
- }
- 
--.kitchen-weekdays-list.is-carousel {
--  overflow-x: auto;
-+.kitchen-weekdays-list.is-carousel {
-+  overflow-x: auto;
-   scroll-snap-type: x mandatory;
-   -webkit-overflow-scrolling: touch;
-   scrollbar-width: none;
-   justify-content: flex-start;
--  padding: 4px 32px;
+-function addDaysToISO(dateString, days) {
+-  const [year, month, day] = dateString.split("-").map(Number);
+-  const date = new Date(Date.UTC(year, month - 1, day));
+-  date.setUTCDate(date.getUTCDate() + days);
+-  return date.toISOString().slice(0, 10);
 -}
-+  padding: 4px 32px;
-+  max-width: 100%;
-+}
- 
- .kitchen-weekdays-list.is-carousel::-webkit-scrollbar {
-   display: none;
- }
- 
- .kitchen-weekdays-item {
-   min-width: 64px;
-   min-height: 80px;
-   padding: 8px 6px;
-   border-radius: 14px;
-   border: 1px solid transparent;
-   background: transparent;
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   gap: 6px;
-   cursor: pointer;
-   scroll-snap-align: center;
-   transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
- }
- 
- .kitchen-weekdays-item:focus-visible {
-   outline: 2px solid #6366f1;
-   outline-offset: 2px;
- }
-@@ -2419,54 +2440,56 @@ body,
- }
- 
- .kitchen-ui-sheet-backdrop {
-   position: fixed;
-   inset: 0;
-   background: rgba(16, 24, 40, 0.45);
-   z-index: 45;
-   display: grid;
-   place-items: end center;
- }
- 
- .kitchen-ui-sheet {
-   width: min(720px, 100%);
-   background: #fff;
-   border-radius: var(--hf-radius-xl) var(--hf-radius-xl) 0 0;
-   padding: 24px;
- }
- 
- .kitchen-ui-sheet-actions { margin-top: 16px; display: flex; gap: 12px; justify-content: flex-end; }
- 
- @media (max-width: 900px) {
-   .kitchen-ui-bottom-nav { display: block; }
- }
- 
- /* Neo-Soft 2026 global harmonization */
--.kitchen-container {
--  width: min(1120px, 100%);
--  padding: 20px;
+-
+-function ChevronIcon(props) {
+-  return (
+-    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+-      <path d="M15 18l-6-6 6-6" />
+-    </svg>
+-  );
 -}
-+.kitchen-container {
-+  width: min(1120px, 100%);
-+  padding: 20px;
-+  margin: 0 auto;
-+  max-width: 100%;
+-
+-function getInitials(name) {
+-  if (!name) return "";
+-  const parts = name.trim().split(/\s+/).filter(Boolean);
+-  if (!parts.length) return "";
+-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+-}
+-
+-const MAX_DISH_RESULTS = 8;
+-
+-function mergeIngredientLists(...lists) {
+-  const merged = new Map();
+-  lists.flat().filter(Boolean).forEach((item) => {
+-    const displayName = String(item?.displayName || "").trim();
+-    const canonicalName = String(
+-      item?.canonicalName || normalizeIngredientName(displayName)
+-    ).trim();
+-    if (!displayName || !canonicalName) return;
+-    const key = item?.ingredientId || canonicalName;
+-    if (!merged.has(key)) {
+-      merged.set(key, {
+-        ...item,
+-        displayName,
+-        canonicalName
+-      });
+-    }
+-  });
+-  return Array.from(merged.values());
+-}
+-
++function addDaysToISO(dateString, days) {
++  const [year, month, day] = dateString.split("-").map(Number);
++  const date = new Date(Date.UTC(year, month - 1, day));
++  date.setUTCDate(date.getUTCDate() + days);
++  return date.toISOString().slice(0, 10);
 +}
++
++function ChevronIcon(props) {
++  return (
++    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
++      <path d="M15 18l-6-6 6-6" />
++    </svg>
++  );
++}
++
++function getInitials(name) {
++  if (!name) return "";
++  const parts = name.trim().split(/\s+/).filter(Boolean);
++  if (!parts.length) return "";
++  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
++  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
++}
++
++const MAX_DISH_RESULTS = 8;
++
++function mergeIngredientLists(...lists) {
++  const merged = new Map();
++  lists.flat().filter(Boolean).forEach((item) => {
++    const displayName = String(item?.displayName || "").trim();
++    const canonicalName = String(
++      item?.canonicalName || normalizeIngredientName(displayName)
++    ).trim();
++    if (!displayName || !canonicalName) return;
++    const key = item?.ingredientId || canonicalName;
++    if (!merged.has(key)) {
++      merged.set(key, {
++        ...item,
++        displayName,
++        canonicalName
++      });
++    }
++  });
++  return Array.from(merged.values());
++}
++
+ export default function WeekPage() {
+   const { user } = useAuth();
+-  const [searchParams, setSearchParams] = useSearchParams();
++  const [searchParams, setSearchParams] = useSearchParams();
+   const [weekStart, setWeekStart] = useState(getMondayISO());
+   const [plan, setPlan] = useState(null);
+   const [dishes, setDishes] = useState([]);
+-  const [sideDishes, setSideDishes] = useState([]);
++  const [sideDishes, setSideDishes] = useState([]);
+   const [users, setUsers] = useState([]);
+-  const [categories, setCategories] = useState([]);
++  const [categories, setCategories] = useState([]);
+   const [loading, setLoading] = useState(true);
+-  const [loadError, setLoadError] = useState("");
+-  const [dayStatus, setDayStatus] = useState({});
+-  const [dayErrors, setDayErrors] = useState({});
+-  const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
+-  const [extraIngredientsEnabled, setExtraIngredientsEnabled] = useState({});
+-  const [selectedDay, setSelectedDay] = useState("");
+-  const [editingDays, setEditingDays] = useState({});
+-  const [sideDishEnabled, setSideDishEnabled] = useState({});
+-  const [showCarouselControls, setShowCarouselControls] = useState(false);
+-  const [activeIndex, setActiveIndex] = useState(0);
+-  const [mainDishQueries, setMainDishQueries] = useState({});
+-  const [mainDishOpen, setMainDishOpen] = useState({});
+-  const [sideDishQueries, setSideDishQueries] = useState({});
+-  const [sideDishOpen, setSideDishOpen] = useState({});
+-  const [assigneeOpen, setAssigneeOpen] = useState({});
+-  const [dishModalOpen, setDishModalOpen] = useState(false);
+-  const [dishModalName, setDishModalName] = useState("");
+-  const [dishModalDayKey, setDishModalDayKey] = useState(null);
+-  const [dishModalMode, setDishModalMode] = useState("main");
+-  const [dishModalSidedish, setDishModalSidedish] = useState(false);
+-  const ingredientCache = useRef(new Map());
+-  const saveTimers = useRef({});
+-  const carouselRef = useRef(null);
+-  const dayRefs = useRef(new Map());
+-  const mainDishRefs = useRef(new Map());
+-  const sideDishRefs = useRef(new Map());
+-  const selectedDayRef = useRef(selectedDay);
+-  const hasInitializedRef = useRef(false);
+-  const assignIntentRef = useRef(null);
+-  const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
++  const [loadError, setLoadError] = useState("");
++  const [dayStatus, setDayStatus] = useState({});
++  const [dayErrors, setDayErrors] = useState({});
++  const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
++  const [extraIngredientsEnabled, setExtraIngredientsEnabled] = useState({});
++  const [selectedDay, setSelectedDay] = useState("");
++  const [editingDays, setEditingDays] = useState({});
++  const [sideDishEnabled, setSideDishEnabled] = useState({});
++  const [showCarouselControls, setShowCarouselControls] = useState(false);
++  const [activeIndex, setActiveIndex] = useState(0);
++  const [mainDishQueries, setMainDishQueries] = useState({});
++  const [mainDishOpen, setMainDishOpen] = useState({});
++  const [sideDishQueries, setSideDishQueries] = useState({});
++  const [sideDishOpen, setSideDishOpen] = useState({});
++  const [assigneeOpen, setAssigneeOpen] = useState({});
++  const [dishModalOpen, setDishModalOpen] = useState(false);
++  const [dishModalName, setDishModalName] = useState("");
++  const [dishModalDayKey, setDishModalDayKey] = useState(null);
++  const [dishModalMode, setDishModalMode] = useState("main");
++  const [dishModalSidedish, setDishModalSidedish] = useState(false);
++  const ingredientCache = useRef(new Map());
++  const saveTimers = useRef({});
++  const carouselRef = useRef(null);
++  const dayRefs = useRef(new Map());
++  const mainDishRefs = useRef(new Map());
++  const sideDishRefs = useRef(new Map());
++  const selectedDayRef = useRef(selectedDay);
++  const hasInitializedRef = useRef(false);
++  const assignIntentRef = useRef(null);
++  const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
  
- .kitchen-ui-card,
- .kitchen-card,
- .kitchen-dish-card,
- .kitchen-inline-panel,
- .kitchen-modal,
- .kitchen-context-modal,
- .kitchen-day-card,
- .kitchen-weekdays-strip {
-   border-radius: var(--hf-radius-lg);
-   box-shadow: var(--hf-shadow-soft);
-   border: 1px solid var(--hf-border);
-   background: var(--hf-surface);
+   const loadData = async () => {
+     setLoading(true);
+-    setLoadError("");
++    setLoadError("");
+     try {
+-      const [planData, dishesData, sideDishesData] = await Promise.all([
++      const [planData, dishesData, sideDishesData] = await Promise.all([
+         apiRequest(`/api/kitchen/weeks/${weekStart}`),
+-        apiRequest("/api/kitchen/dishes"),
+-        apiRequest("/api/kitchen/dishes?sidedish=true")
++        apiRequest("/api/kitchen/dishes"),
++        apiRequest("/api/kitchen/dishes?sidedish=true")
+       ]);
+       setPlan(planData.plan);
+       setDishes(dishesData.dishes || []);
+-      setSideDishes(sideDishesData.dishes || []);
+-      if (user) {
+-        const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
+-        const usersData = await apiRequest(usersEndpoint);
++      setSideDishes(sideDishesData.dishes || []);
++      if (user) {
++        const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
++        const usersData = await apiRequest(usersEndpoint);
+         setUsers(usersData.users || []);
+       }
+     } catch (err) {
+-      setLoadError(err.message || "No se pudo cargar la semana.");
++      setLoadError(err.message || "No se pudo cargar la semana.");
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   useEffect(() => {
+     loadData();
+   }, [weekStart]);
+ 
+-  const loadCategories = async () => {
+-    try {
+-      const data = await apiRequest("/api/categories");
+-      setCategories(data.categories || []);
+-    } catch (err) {
+-      setLoadError(err.message || "No se pudieron cargar las categorías.");
+-    }
+-  };
+-
+-  useEffect(() => {
+-    loadCategories();
+-  }, []);
+-
++  const loadCategories = async () => {
++    try {
++      const data = await apiRequest("/api/categories");
++      setCategories(data.categories || []);
++    } catch (err) {
++      setLoadError(err.message || "No se pudieron cargar las categorías.");
++    }
++  };
++
++  useEffect(() => {
++    loadCategories();
++  }, []);
++
+   const userMap = useMemo(() => {
+     const map = new Map();
+     users.forEach((u) => map.set(u.id, u));
+     return map;
+   }, [users]);
+ 
+-  const fetchIngredientMatch = useCallback(async (canonicalName) => {
+-    if (!canonicalName) return null;
+-    if (ingredientCache.current.has(canonicalName)) {
+-      return ingredientCache.current.get(canonicalName);
+-    }
+-    try {
+-      const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(canonicalName)}`);
+-      const match = (data.ingredients || []).find((item) => item.canonicalName === canonicalName);
+-      ingredientCache.current.set(canonicalName, match || null);
+-      return match || null;
+-    } catch (err) {
+-      return null;
+-    }
+-  }, []);
+-
+-  const resolveIngredients = useCallback(
+-    async (ingredients = []) => {
+-      const resolved = await Promise.all(
+-        ingredients.map(async (item) => {
+-          const displayName = String(item?.displayName || "").trim();
+-          const canonicalName = String(
+-            item?.canonicalName || normalizeIngredientName(displayName)
+-          ).trim();
+-          const match = await fetchIngredientMatch(canonicalName);
+-          const ingredientId = item?.ingredientId || match?._id;
+-          return {
+-            ingredientId,
+-            displayName,
+-            canonicalName,
+-            category: match?.categoryId || null,
+-            status: ingredientId ? "resolved" : "pending"
+-          };
+-        })
+-      );
+-      return resolved.filter((entry) => entry.displayName);
+-    },
+-    [fetchIngredientMatch]
+-  );
+-
+-  useEffect(() => {
+-    if (!safeDays.length) {
+-      return;
+-    }
+-    let active = true;
+-    const loadExtras = async () => {
+-      const resolved = await Promise.all(
+-        safeDays.map(async (day) => {
+-          if (!day?.date) {
+-            return ["", []];
+-          }
+-          const key = day.date.slice(0, 10);
+-          const items = await resolveIngredients(day.ingredientOverrides || []);
+-          return [key, items];
+-        })
+-      );
+-      if (!active) return;
+-      setExtraIngredientsByDay((prev) => {
+-        const next = { ...prev };
+-        resolved.forEach(([key, items]) => {
+-          if (!key) return;
+-          next[key] = items;
+-        });
+-        return next;
+-      });
+-    };
+-    loadExtras();
+-    return () => {
+-      active = false;
+-    };
+-  }, [plan, resolveIngredients]);
+-
+-  useEffect(() => {
+-    if (!safeDays.length) {
+-      return;
+-    }
+-    const todayKey = new Date().toISOString().slice(0, 10);
+-    const todayWeekStart = getMondayISO();
+-    const fallbackDay = safeDays[0]?.date?.slice(0, 10) || "";
+-    const todayIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === todayKey);
+-    const containsToday = todayIndex !== -1;
+-
+-    if (!hasInitializedRef.current) {
+-      if (!containsToday) {
+-        if (weekStart !== todayWeekStart) {
+-          setWeekStart(todayWeekStart);
+-        }
+-        return;
+-      }
+-      const nextDay = todayKey || fallbackDay;
+-      setSelectedDay(nextDay);
+-      if (todayIndex >= 0) {
+-        setActiveIndex(todayIndex);
+-      }
+-      requestAnimationFrame(() => {
+-        const element = carouselRef.current;
+-        if (!element) return;
+-        const targetIndex = todayIndex >= 0 ? todayIndex : 0;
+-        element.scrollTo({ left: targetIndex * element.clientWidth, behavior: "auto" });
+-      });
+-      hasInitializedRef.current = true;
+-      return;
+-    }
+-
+-    setSelectedDay((prev) => {
+-      if (prev && safeDays.some((day) => day.date?.slice(0, 10) === prev)) {
+-        return prev;
+-      }
+-      return fallbackDay;
+-    });
+-  }, [safeDays, weekStart]);
+-
+-  useEffect(() => {
+-    selectedDayRef.current = selectedDay;
+-  }, [selectedDay]);
+-
+-  const dayKeys = useMemo(
+-    () => safeDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
+-    [safeDays]
+-  );
+-  const dishMap = useMemo(() => {
+-    const map = new Map();
+-    dishes.forEach((dish) => {
+-      map.set(dish._id, dish);
+-    });
+-    return map;
+-  }, [dishes]);
+-  const showCookTiming = useMemo(() => {
+-    if (!safeDays.length) {
+-      return false;
+-    }
+-    const [first] = safeDays;
+-    return safeDays.some((day) => day.cookTiming !== first.cookTiming);
+-  }, [safeDays]);
+-
+-  useEffect(() => {
+-    const element = carouselRef.current;
+-    if (!element) return;
+-
+-    const updateControls = () => {
+-      const shouldShow = element.scrollWidth > element.clientWidth + 1;
+-      setShowCarouselControls(shouldShow);
+-    };
+-
+-    updateControls();
+-    let observer;
+-    if (typeof ResizeObserver !== "undefined") {
+-      observer = new ResizeObserver(updateControls);
+-      observer.observe(element);
+-    }
+-    window.addEventListener("resize", updateControls);
+-
+-    return () => {
+-      observer?.disconnect();
+-      window.removeEventListener("resize", updateControls);
+-    };
+-  }, [dayKeys.length]);
+-
+-  useEffect(() => {
+-    const element = carouselRef.current;
+-    if (!element || !dayKeys.length) return;
+-
+-    let frame = null;
+-    const handleScroll = () => {
+-      if (frame) {
+-        cancelAnimationFrame(frame);
+-      }
+-      frame = requestAnimationFrame(() => {
+-        const center = element.scrollLeft + element.clientWidth / 2;
+-        let closestIndex = 0;
+-        let closestDistance = Number.POSITIVE_INFINITY;
+-        dayKeys.forEach((key, index) => {
+-          const node = dayRefs.current.get(key);
+-          if (!node) return;
+-          const nodeCenter = node.offsetLeft + node.offsetWidth / 2;
+-          const distance = Math.abs(center - nodeCenter);
+-          if (distance < closestDistance) {
+-            closestDistance = distance;
+-            closestIndex = index;
+-          }
+-        });
+-        const nextKey = dayKeys[closestIndex];
+-        setActiveIndex(closestIndex);
+-        if (nextKey && nextKey !== selectedDayRef.current) {
+-          setSelectedDay(nextKey);
+-        }
+-      });
+-    };
+-
+-    element.addEventListener("scroll", handleScroll, { passive: true });
+-    handleScroll();
+-    return () => {
+-      element.removeEventListener("scroll", handleScroll);
+-      if (frame) {
+-        cancelAnimationFrame(frame);
+-      }
+-    };
+-  }, [dayKeys]);
+-
++  const fetchIngredientMatch = useCallback(async (canonicalName) => {
++    if (!canonicalName) return null;
++    if (ingredientCache.current.has(canonicalName)) {
++      return ingredientCache.current.get(canonicalName);
++    }
++    try {
++      const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(canonicalName)}`);
++      const match = (data.ingredients || []).find((item) => item.canonicalName === canonicalName);
++      ingredientCache.current.set(canonicalName, match || null);
++      return match || null;
++    } catch (err) {
++      return null;
++    }
++  }, []);
++
++  const resolveIngredients = useCallback(
++    async (ingredients = []) => {
++      const resolved = await Promise.all(
++        ingredients.map(async (item) => {
++          const displayName = String(item?.displayName || "").trim();
++          const canonicalName = String(
++            item?.canonicalName || normalizeIngredientName(displayName)
++          ).trim();
++          const match = await fetchIngredientMatch(canonicalName);
++          const ingredientId = item?.ingredientId || match?._id;
++          return {
++            ingredientId,
++            displayName,
++            canonicalName,
++            category: match?.categoryId || null,
++            status: ingredientId ? "resolved" : "pending"
++          };
++        })
++      );
++      return resolved.filter((entry) => entry.displayName);
++    },
++    [fetchIngredientMatch]
++  );
++
++  useEffect(() => {
++    if (!safeDays.length) {
++      return;
++    }
++    let active = true;
++    const loadExtras = async () => {
++      const resolved = await Promise.all(
++        safeDays.map(async (day) => {
++          if (!day?.date) {
++            return ["", []];
++          }
++          const key = day.date.slice(0, 10);
++          const items = await resolveIngredients(day.ingredientOverrides || []);
++          return [key, items];
++        })
++      );
++      if (!active) return;
++      setExtraIngredientsByDay((prev) => {
++        const next = { ...prev };
++        resolved.forEach(([key, items]) => {
++          if (!key) return;
++          next[key] = items;
++        });
++        return next;
++      });
++    };
++    loadExtras();
++    return () => {
++      active = false;
++    };
++  }, [plan, resolveIngredients]);
++
++  useEffect(() => {
++    if (!safeDays.length) {
++      return;
++    }
++    const todayKey = new Date().toISOString().slice(0, 10);
++    const todayWeekStart = getMondayISO();
++    const fallbackDay = safeDays[0]?.date?.slice(0, 10) || "";
++    const todayIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === todayKey);
++    const containsToday = todayIndex !== -1;
++
++    if (!hasInitializedRef.current) {
++      if (!containsToday) {
++        if (weekStart !== todayWeekStart) {
++          setWeekStart(todayWeekStart);
++        }
++        return;
++      }
++      const nextDay = todayKey || fallbackDay;
++      setSelectedDay(nextDay);
++      if (todayIndex >= 0) {
++        setActiveIndex(todayIndex);
++      }
++      requestAnimationFrame(() => {
++        const element = carouselRef.current;
++        if (!element) return;
++        const targetIndex = todayIndex >= 0 ? todayIndex : 0;
++        element.scrollTo({ left: targetIndex * element.clientWidth, behavior: "auto" });
++      });
++      hasInitializedRef.current = true;
++      return;
++    }
++
++    setSelectedDay((prev) => {
++      if (prev && safeDays.some((day) => day.date?.slice(0, 10) === prev)) {
++        return prev;
++      }
++      return fallbackDay;
++    });
++  }, [safeDays, weekStart]);
++
++  useEffect(() => {
++    selectedDayRef.current = selectedDay;
++  }, [selectedDay]);
++
++  const dayKeys = useMemo(
++    () => safeDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
++    [safeDays]
++  );
++  const dishMap = useMemo(() => {
++    const map = new Map();
++    dishes.forEach((dish) => {
++      map.set(dish._id, dish);
++    });
++    return map;
++  }, [dishes]);
++  const showCookTiming = useMemo(() => {
++    if (!safeDays.length) {
++      return false;
++    }
++    const [first] = safeDays;
++    return safeDays.some((day) => day.cookTiming !== first.cookTiming);
++  }, [safeDays]);
++
++  useEffect(() => {
++    const element = carouselRef.current;
++    if (!element) return;
++
++    const updateControls = () => {
++      const shouldShow = element.scrollWidth > element.clientWidth + 1;
++      setShowCarouselControls(shouldShow);
++    };
++
++    updateControls();
++    let observer;
++    if (typeof ResizeObserver !== "undefined") {
++      observer = new ResizeObserver(updateControls);
++      observer.observe(element);
++    }
++    window.addEventListener("resize", updateControls);
++
++    return () => {
++      observer?.disconnect();
++      window.removeEventListener("resize", updateControls);
++    };
++  }, [dayKeys.length]);
++
++  useEffect(() => {
++    const element = carouselRef.current;
++    if (!element || !dayKeys.length) return;
++
++    let frame = null;
++    const handleScroll = () => {
++      if (frame) {
++        cancelAnimationFrame(frame);
++      }
++      frame = requestAnimationFrame(() => {
++        const center = element.scrollLeft + element.clientWidth / 2;
++        let closestIndex = 0;
++        let closestDistance = Number.POSITIVE_INFINITY;
++        dayKeys.forEach((key, index) => {
++          const node = dayRefs.current.get(key);
++          if (!node) return;
++          const nodeCenter = node.offsetLeft + node.offsetWidth / 2;
++          const distance = Math.abs(center - nodeCenter);
++          if (distance < closestDistance) {
++            closestDistance = distance;
++            closestIndex = index;
++          }
++        });
++        const nextKey = dayKeys[closestIndex];
++        setActiveIndex(closestIndex);
++        if (nextKey && nextKey !== selectedDayRef.current) {
++          setSelectedDay(nextKey);
++        }
++      });
++    };
++
++    element.addEventListener("scroll", handleScroll, { passive: true });
++    handleScroll();
++    return () => {
++      element.removeEventListener("scroll", handleScroll);
++      if (frame) {
++        cancelAnimationFrame(frame);
++      }
++    };
++  }, [dayKeys]);
++
+   const updateDay = async (day, updates) => {
+-    const dayKey = day.date.slice(0, 10);
+-    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
+-    setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
++    const dayKey = day.date.slice(0, 10);
++    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
++    setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
+     try {
+-      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
++      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
+         method: "PUT",
+         body: JSON.stringify(updates)
+       });
+       setPlan(data.plan);
+-      setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
+-      if (saveTimers.current[dayKey]) {
+-        clearTimeout(saveTimers.current[dayKey]);
+-      }
+-      saveTimers.current[dayKey] = window.setTimeout(() => {
+-        setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
+-      }, 2000);
+-      return data.plan;
++      setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
++      if (saveTimers.current[dayKey]) {
++        clearTimeout(saveTimers.current[dayKey]);
++      }
++      saveTimers.current[dayKey] = window.setTimeout(() => {
++        setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
++      }, 2000);
++      return data.plan;
+     } catch (err) {
+-      const message = err.message || "No se pudo actualizar el día.";
+-      setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
+-      setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
+-      return null;
++      const message = err.message || "No se pudo actualizar el día.";
++      setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
++      setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
++      return null;
+     }
+   };
+ 
+-  const onAssignSelf = async (day) => {
+-    return updateDay(day, { cookUserId: user?.id || user?._id });
+-  };
+-
+-  const startEditingDay = (day) => {
+-    const dayKey = day.date.slice(0, 10);
+-    const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
+-    const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
+-    setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
+-    setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
+-    setExtraIngredientsEnabled((prev) => ({
+-      ...prev,
+-      [dayKey]: Boolean(day.ingredientOverrides?.length)
+-    }));
+-    setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
+-    setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-    setSideDishQueries((prev) => ({ ...prev, [dayKey]: sideDishName || "" }));
+-    setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-  };
+-
+-  const stopEditingDay = (dayKey) => {
+-    setEditingDays((prev) => ({ ...prev, [dayKey]: false }));
+-    setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-    setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-  };
+-
+-  const focusMainDish = (dayKey) => {
+-    window.requestAnimationFrame(() => {
+-      const node = mainDishRefs.current.get(dayKey);
+-      if (node) {
+-        node.focus();
+-      }
+-    });
+-  };
+-
+-  const focusSideDish = (dayKey) => {
+-    window.requestAnimationFrame(() => {
+-      const node = sideDishRefs.current.get(dayKey);
+-      if (node) {
+-        node.focus();
+-      }
+-    });
+-  };
+-
+-  const openDayEditor = useCallback(
+-    (targetDate, plateId) => {
+-      if (!targetDate || !safeDays.length) return false;
+-      const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === targetDate);
+-      if (!targetDay) return false;
+-
+-      const targetIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === targetDate);
+-      setSelectedDay(targetDate);
+-      if (targetIndex >= 0) {
+-        setActiveIndex(targetIndex);
+-      }
+-
+-      startEditingDay(targetDay);
+-
+-      if (plateId) {
+-        const allDishes = [...dishes, ...sideDishes];
+-        const targetDish = allDishes.find((dish) => dish._id === plateId);
+-        if (targetDish?.sidedish) {
+-          setSideDishEnabled((prev) => ({ ...prev, [targetDate]: true }));
+-          setSideDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
+-          updateDay(targetDay, { sideDishId: targetDish._id });
+-          focusSideDish(targetDate);
+-        } else if (targetDish) {
+-          setMainDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
+-          updateDay(targetDay, { mainDishId: targetDish._id });
+-          focusMainDish(targetDate);
+-        }
+-      }
+-
+-      window.requestAnimationFrame(() => {
+-        const carouselElement = carouselRef.current;
+-        const dayNode =
+-          dayRefs.current.get(targetDate) || document.getElementById(`daycard-${targetDate}`);
+-        const canCarousel =
+-          carouselElement && carouselElement.scrollWidth > carouselElement.clientWidth + 1;
+-
+-        if (canCarousel && targetIndex >= 0) {
+-          carouselElement.scrollTo({
+-            left: targetIndex * carouselElement.clientWidth,
+-            behavior: "smooth"
+-          });
+-        } else if (dayNode) {
+-          dayNode.scrollIntoView({ behavior: "smooth", block: "start" });
+-        }
+-        dayNode?.focus?.({ preventScroll: true });
+-      });
+-
+-      return true;
+-    },
+-    [
+-      dishes,
+-      focusMainDish,
+-      focusSideDish,
+-      safeDays,
+-      sideDishes,
+-      startEditingDay,
+-      updateDay
+-    ]
+-  );
+-
+-  useEffect(() => {
+-    const assignPlateId = searchParams.get("assignPlateId") || searchParams.get("plateId");
+-    const assignDate = searchParams.get("date");
+-    if (!assignPlateId || !assignDate) return;
+-
+-    const intentKey = `${assignPlateId}-${assignDate}`;
+-    if (assignIntentRef.current?.key === intentKey) {
+-      return;
+-    }
+-
+-    assignIntentRef.current = {
+-      key: intentKey,
+-      handled: false,
+-      plateId: assignPlateId,
+-      date: assignDate
+-    };
+-
+-    const targetWeekStart = getMondayISO(new Date(assignDate));
+-    if (weekStart !== targetWeekStart) {
+-      setWeekStart(targetWeekStart);
+-    }
+-  }, [searchParams, weekStart]);
+-
+-  const clearAssignParams = useCallback(() => {
+-    const nextParams = new URLSearchParams(searchParams);
+-    nextParams.delete("assignPlateId");
+-    nextParams.delete("plateId");
+-    nextParams.delete("assign");
+-    nextParams.delete("date");
+-    setSearchParams(nextParams, { replace: true });
+-  }, [searchParams, setSearchParams]);
+-
+-  useEffect(() => {
+-    const intent = assignIntentRef.current;
+-    if (!intent || intent.handled) return;
+-    if (loading || !plan || !safeDays.length) return;
+-
+-    const planWeekStart = plan?.weekStart
+-      ? getMondayISO(new Date(plan.weekStart))
+-      : null;
+-    if (planWeekStart && planWeekStart !== weekStart) return;
+-
+-    const { date: assignDate, plateId: assignPlateId, key: intentKey } = intent;
+-    const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === assignDate);
+-    if (!targetDay) {
+-      assignIntentRef.current = { key: intentKey, handled: true };
+-      clearAssignParams();
+-      return;
+-    }
+-    openDayEditor(assignDate, assignPlateId);
+-
+-    assignIntentRef.current = { key: intentKey, handled: true };
+-    clearAssignParams();
+-  }, [
+-    clearAssignParams,
+-    loading,
+-    openDayEditor,
+-    plan,
+-    safeDays,
+-    weekStart
+-  ]);
+-
+-  const handleAssignCta = async (day, canEdit, isAssigned) => {
+-    const dayKey = day.date.slice(0, 10);
+-    if (canEdit) {
+-      startEditingDay(day);
+-      focusMainDish(dayKey);
+-      return;
+-    }
+-    if (!isAssigned && user) {
+-      const updatedPlan = await onAssignSelf(day);
+-      if (updatedPlan) {
+-        startEditingDay(day);
+-        focusMainDish(dayKey);
+-      }
+-    }
+-  };
+-
+-  const openDishModal = (dayKey, name, options = {}) => {
+-    const { mode = "main", sidedish = false } = options;
+-    setDishModalDayKey(dayKey);
+-    setDishModalName(name);
+-    setDishModalMode(mode);
+-    setDishModalSidedish(sidedish);
+-    setDishModalOpen(true);
+-  };
+-
+-  const closeDishModal = () => {
+-    setDishModalOpen(false);
+-    setDishModalName("");
+-    setDishModalDayKey(null);
+-    setDishModalMode("main");
+-    setDishModalSidedish(false);
+-  };
+-
+-  const handleDishSaved = async (dish) => {
+-    if (!dish) return;
+-    setDishes((prev) => {
+-      const exists = prev.some((item) => item._id === dish._id);
+-      if (exists) {
+-        return prev.map((item) => (item._id === dish._id ? dish : item));
+-      }
+-      return [dish, ...prev];
+-    });
+-    setSideDishes((prev) => {
+-      const isSide = Boolean(dish.sidedish);
+-      const exists = prev.some((item) => item._id === dish._id);
+-      if (!isSide) {
+-        return prev.filter((item) => item._id !== dish._id);
+-      }
+-      if (exists) {
+-        return prev.map((item) => (item._id === dish._id ? dish : item));
+-      }
+-      return [dish, ...prev];
+-    });
+-    if (dishModalDayKey) {
+-      const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === dishModalDayKey);
+-      if (targetDay) {
+-        if (dishModalMode === "side") {
+-          updateDay(targetDay, { sideDishId: dish._id });
+-          setSideDishEnabled((prev) => ({ ...prev, [dishModalDayKey]: true }));
+-          setSideDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
+-          setSideDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
+-        } else {
+-          updateDay(targetDay, { mainDishId: dish._id });
+-          setMainDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
+-          setMainDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
+-        }
+-      }
+-    }
++  const onAssignSelf = async (day) => {
++    return updateDay(day, { cookUserId: user?.id || user?._id });
++  };
++
++  const startEditingDay = (day) => {
++    const dayKey = day.date.slice(0, 10);
++    const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
++    const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
++    setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
++    setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
++    setExtraIngredientsEnabled((prev) => ({
++      ...prev,
++      [dayKey]: Boolean(day.ingredientOverrides?.length)
++    }));
++    setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
++    setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++    setSideDishQueries((prev) => ({ ...prev, [dayKey]: sideDishName || "" }));
++    setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+   };
+ 
+-  const handleCategoryCreated = useCallback(async (name, color) => {
+-    const payload = { name };
+-    if (color?.colorBg) {
+-      payload.colorBg = color.colorBg;
+-      payload.colorText = color.colorText;
+-    }
+-    const data = await apiRequest("/api/categories", {
+-      method: "POST",
+-      body: JSON.stringify(payload)
+-    });
+-    const category = data.category;
+-    setCategories((prev) => {
+-      if (prev.some((item) => item._id === category._id)) {
+-        return prev;
+-      }
+-      return [...prev, category];
+-    });
+-    return category;
+-  }, []);
+-
++  const stopEditingDay = (dayKey) => {
++    setEditingDays((prev) => ({ ...prev, [dayKey]: false }));
++    setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++    setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++  };
++
++  const focusMainDish = (dayKey) => {
++    window.requestAnimationFrame(() => {
++      const node = mainDishRefs.current.get(dayKey);
++      if (node) {
++        node.focus();
++      }
++    });
++  };
++
++  const focusSideDish = (dayKey) => {
++    window.requestAnimationFrame(() => {
++      const node = sideDishRefs.current.get(dayKey);
++      if (node) {
++        node.focus();
++      }
++    });
++  };
++
++  const openDayEditor = useCallback(
++    (targetDate, plateId) => {
++      if (!targetDate || !safeDays.length) return false;
++      const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === targetDate);
++      if (!targetDay) return false;
++
++      const targetIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === targetDate);
++      setSelectedDay(targetDate);
++      if (targetIndex >= 0) {
++        setActiveIndex(targetIndex);
++      }
++
++      startEditingDay(targetDay);
++
++      if (plateId) {
++        const allDishes = [...dishes, ...sideDishes];
++        const targetDish = allDishes.find((dish) => dish._id === plateId);
++        if (targetDish?.sidedish) {
++          setSideDishEnabled((prev) => ({ ...prev, [targetDate]: true }));
++          setSideDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
++          updateDay(targetDay, { sideDishId: targetDish._id });
++          focusSideDish(targetDate);
++        } else if (targetDish) {
++          setMainDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
++          updateDay(targetDay, { mainDishId: targetDish._id });
++          focusMainDish(targetDate);
++        }
++      }
++
++      window.requestAnimationFrame(() => {
++        const carouselElement = carouselRef.current;
++        const dayNode =
++          dayRefs.current.get(targetDate) || document.getElementById(`daycard-${targetDate}`);
++        const canCarousel =
++          carouselElement && carouselElement.scrollWidth > carouselElement.clientWidth + 1;
++
++        if (canCarousel && targetIndex >= 0) {
++          carouselElement.scrollTo({
++            left: targetIndex * carouselElement.clientWidth,
++            behavior: "smooth"
++          });
++        } else if (dayNode) {
++          dayNode.scrollIntoView({ behavior: "smooth", block: "start" });
++        }
++        dayNode?.focus?.({ preventScroll: true });
++      });
++
++      return true;
++    },
++    [
++      dishes,
++      focusMainDish,
++      focusSideDish,
++      safeDays,
++      sideDishes,
++      startEditingDay,
++      updateDay
++    ]
++  );
++
++  useEffect(() => {
++    const assignPlateId = searchParams.get("assignPlateId") || searchParams.get("plateId");
++    const assignDate = searchParams.get("date");
++    if (!assignPlateId || !assignDate) return;
++
++    const intentKey = `${assignPlateId}-${assignDate}`;
++    if (assignIntentRef.current?.key === intentKey) {
++      return;
++    }
++
++    assignIntentRef.current = {
++      key: intentKey,
++      handled: false,
++      plateId: assignPlateId,
++      date: assignDate
++    };
++
++    const targetWeekStart = getMondayISO(new Date(assignDate));
++    if (weekStart !== targetWeekStart) {
++      setWeekStart(targetWeekStart);
++    }
++  }, [searchParams, weekStart]);
++
++  const clearAssignParams = useCallback(() => {
++    const nextParams = new URLSearchParams(searchParams);
++    nextParams.delete("assignPlateId");
++    nextParams.delete("plateId");
++    nextParams.delete("assign");
++    nextParams.delete("date");
++    setSearchParams(nextParams, { replace: true });
++  }, [searchParams, setSearchParams]);
++
++  useEffect(() => {
++    const intent = assignIntentRef.current;
++    if (!intent || intent.handled) return;
++    if (loading || !plan || !safeDays.length) return;
++
++    const planWeekStart = plan?.weekStart
++      ? getMondayISO(new Date(plan.weekStart))
++      : null;
++    if (planWeekStart && planWeekStart !== weekStart) return;
++
++    const { date: assignDate, plateId: assignPlateId, key: intentKey } = intent;
++    const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === assignDate);
++    if (!targetDay) {
++      assignIntentRef.current = { key: intentKey, handled: true };
++      clearAssignParams();
++      return;
++    }
++    openDayEditor(assignDate, assignPlateId);
++
++    assignIntentRef.current = { key: intentKey, handled: true };
++    clearAssignParams();
++  }, [
++    clearAssignParams,
++    loading,
++    openDayEditor,
++    plan,
++    safeDays,
++    weekStart
++  ]);
++
++  const handleAssignCta = async (day, canEdit, isAssigned) => {
++    const dayKey = day.date.slice(0, 10);
++    if (canEdit) {
++      startEditingDay(day);
++      focusMainDish(dayKey);
++      return;
++    }
++    if (!isAssigned && user) {
++      const updatedPlan = await onAssignSelf(day);
++      if (updatedPlan) {
++        startEditingDay(day);
++        focusMainDish(dayKey);
++      }
++    }
++  };
++
++  const openDishModal = (dayKey, name, options = {}) => {
++    const { mode = "main", sidedish = false } = options;
++    setDishModalDayKey(dayKey);
++    setDishModalName(name);
++    setDishModalMode(mode);
++    setDishModalSidedish(sidedish);
++    setDishModalOpen(true);
++  };
++
++  const closeDishModal = () => {
++    setDishModalOpen(false);
++    setDishModalName("");
++    setDishModalDayKey(null);
++    setDishModalMode("main");
++    setDishModalSidedish(false);
++  };
++
++  const handleDishSaved = async (dish) => {
++    if (!dish) return;
++    setDishes((prev) => {
++      const exists = prev.some((item) => item._id === dish._id);
++      if (exists) {
++        return prev.map((item) => (item._id === dish._id ? dish : item));
++      }
++      return [dish, ...prev];
++    });
++    setSideDishes((prev) => {
++      const isSide = Boolean(dish.sidedish);
++      const exists = prev.some((item) => item._id === dish._id);
++      if (!isSide) {
++        return prev.filter((item) => item._id !== dish._id);
++      }
++      if (exists) {
++        return prev.map((item) => (item._id === dish._id ? dish : item));
++      }
++      return [dish, ...prev];
++    });
++    if (dishModalDayKey) {
++      const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === dishModalDayKey);
++      if (targetDay) {
++        if (dishModalMode === "side") {
++          updateDay(targetDay, { sideDishId: dish._id });
++          setSideDishEnabled((prev) => ({ ...prev, [dishModalDayKey]: true }));
++          setSideDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
++          setSideDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
++        } else {
++          updateDay(targetDay, { mainDishId: dish._id });
++          setMainDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
++          setMainDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
++        }
++      }
++    }
++  };
++
++  const handleCategoryCreated = useCallback(async (name, color) => {
++    const payload = { name };
++    if (color?.colorBg) {
++      payload.colorBg = color.colorBg;
++      payload.colorText = color.colorText;
++    }
++    const data = await apiRequest("/api/categories", {
++      method: "POST",
++      body: JSON.stringify(payload)
++    });
++    const category = data.category;
++    setCategories((prev) => {
++      if (prev.some((item) => item._id === category._id)) {
++        return prev;
++      }
++      return [...prev, category];
++    });
++    return category;
++  }, []);
++
+   if (loading) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card">Cargando semana...</div>
+       </KitchenLayout>
+     );
+   }
+ 
+   if (!plan) {
+     return (
+       <KitchenLayout>
+         <div className="kitchen-card kitchen-empty">
+           <h3>No hay planificación todavía</h3>
+           <p>Cuando guardes un día aparecerá aquí.</p>
+-          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
++          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
+         </div>
+       </KitchenLayout>
+     );
+   }
+ 
+-  const handleWeekShift = (days) => {
+-    setWeekStart((prev) => addDaysToISO(prev, days));
+-  };
+-
+-  const handleSelectDay = (dayKey) => {
+-    setSelectedDay(dayKey);
+-    const target = dayRefs.current.get(dayKey) || document.getElementById(`daycard-${dayKey}`);
+-    if (target) {
+-      target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+-      target.focus?.({ preventScroll: true });
+-    }
+-  };
+-
+-  const handleCarouselScroll = (direction) => {
+-    const element = carouselRef.current;
+-    if (!element) return;
+-    element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
+-  };
+-
++  const handleWeekShift = (days) => {
++    setWeekStart((prev) => addDaysToISO(prev, days));
++  };
++
++  const handleSelectDay = (dayKey) => {
++    setSelectedDay(dayKey);
++    const target = dayRefs.current.get(dayKey) || document.getElementById(`daycard-${dayKey}`);
++    if (target) {
++      target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
++      target.focus?.({ preventScroll: true });
++    }
++  };
++
++  const handleCreateDishFromStrip = (dayKey) => {
++    setSelectedDay(dayKey);
++    openDishModal(dayKey, "", { mode: "main", sidedish: false });
++  };
++
++  const handleCarouselScroll = (direction) => {
++    const element = carouselRef.current;
++    if (!element) return;
++    element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
++  };
++
+   return (
+     <KitchenLayout>
+-      <div className="kitchen-week-controls">
+-        <WeekDaysStrip
+-          days={safeDays}
+-          userMap={userMap}
+-          selectedDay={selectedDay}
+-          onSelectDay={handleSelectDay}
+-        />
+-        <div className="kitchen-week-mobile-frame">
+-          <section className="kitchen-week-header">
+-            <div className="kitchen-week-header-actions">
+-              <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
+-                <button
+-                  className="kitchen-week-arrow"
+-                  type="button"
+-                  onClick={() => handleWeekShift(-7)}
+-                  aria-label="Ir a la semana anterior"
+-                >
+-                  <ChevronIcon className="kitchen-week-arrow-icon" />
+-                </button>
+-                <label className="kitchen-field kitchen-week-picker">
+-                  <input
+-                    className="kitchen-input"
+-                    type="date"
+-                    value={weekStart}
+-                    onChange={(event) => setWeekStart(event.target.value)}
+-                    aria-label="Semana"
+-                  />
+-                </label>
+-                <button
+-                  className="kitchen-week-arrow"
+-                  type="button"
+-                  onClick={() => handleWeekShift(7)}
+-                  aria-label="Ir a la semana siguiente"
+-                >
+-                  <ChevronIcon className="kitchen-week-arrow-icon is-next" />
+-                </button>
+-              </div>
+-              {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
+-            </div>
+-          </section>
+-
+-          <div className="kitchen-week-carousel">
+-            {showCarouselControls ? (
+-              <button
+-                className="kitchen-week-carousel-arrow is-left"
+-                type="button"
+-                onClick={() => handleCarouselScroll(-1)}
+-                aria-label="Mostrar día anterior"
+-              >
+-                <ChevronIcon className="kitchen-week-carousel-arrow-icon" />
+-              </button>
+-            ) : null}
+-            <div className="kitchen-grid kitchen-week-days" id="week-grid" ref={carouselRef}>
+-              {safeDays.map((day, index) => {
+-                if (!day?.date) {
+-                  return (
+-                    <div key={`day-${index}`} className="kitchen-card kitchen-day-card">
+-                      <div className="kitchen-day-header">
+-                        <h3 className="kitchen-day-title">Día sin fecha</h3>
+-                        <p className="kitchen-muted">Falta la fecha de este día en la planificación.</p>
+-                      </div>
+-                    </div>
+-                  );
+-                }
+-                const dayKey = day.date.slice(0, 10);
+-                const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
+-                const cookInitials = getInitials(cookUser?.displayName);
+-                const cookColors = getUserColor(day.cookUserId);
+-                const isAssigned = Boolean(day.cookUserId);
+-                const isPlanned = Boolean(day.mainDishId);
+-                const isAssignedToSelf = day.cookUserId
+-                  && (day.cookUserId === user?.id || day.cookUserId === user?._id);
+-                const canEdit = user?.role === "admin" || isAssignedToSelf;
+-                const isEditing = Boolean(editingDays[dayKey]);
+-                const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
+-                const sideDish = day.sideDishId ? dishMap.get(day.sideDishId) : null;
+-                const showSideDish = Boolean(sideDish);
+-                const sideDishOn = Boolean(sideDishEnabled[dayKey]);
+-                const sideToggleId = `side-toggle-${dayKey}`;
+-                const isEmptyState = !isPlanned && !isEditing;
+-                const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
+-                const baseIngredients = mergeIngredientLists(
+-                  mainDish?.ingredients || [],
+-                  sideDish?.ingredients || []
+-                );
+-                const extraIngredients = day.ingredientOverrides || [];
+-                const extraIngredientsValue =
+-                  extraIngredientsByDay[dayKey] ||
+-                  extraIngredients.map((item) => ({
+-                    ingredientId: item.ingredientId,
+-                    displayName: item.displayName,
+-                    canonicalName: item.canonicalName,
+-                    status: item.ingredientId ? "resolved" : "pending"
+-                  }));
+-                const mainDishQuery = mainDishQueries[dayKey] ?? mainDish?.name ?? "";
+-                const trimmedMainDishQuery = mainDishQuery.trim();
+-                const normalizedMainDishQuery = normalizeIngredientName(trimmedMainDishQuery);
+-                const mainDishTokens = normalizedMainDishQuery.split(" ").filter(Boolean);
+-                const filteredMainDishes = mainDishTokens.length
+-                  ? dishes.filter((dish) => {
+-                    const normalizedName = normalizeIngredientName(dish.name || "");
+-                    return mainDishTokens.every((token) => normalizedName.includes(token));
+-                  })
+-                  : [];
+-                const limitedMainDishes = filteredMainDishes.slice(0, MAX_DISH_RESULTS);
+-                const hasExactMainDishMatch = mainDishTokens.length
+-                  ? dishes.some(
+-                    (dish) => normalizeIngredientName(dish.name || "") === normalizedMainDishQuery
+-                  )
+-                  : false;
+-                const sideDishQuery = sideDishQueries[dayKey] ?? sideDish?.name ?? "";
+-                const trimmedSideDishQuery = sideDishQuery.trim();
+-                const normalizedSideDishQuery = normalizeIngredientName(trimmedSideDishQuery);
+-                const sideDishTokens = normalizedSideDishQuery.split(" ").filter(Boolean);
+-          const filteredSideDishes = sideDishTokens.length
+-            ? sideDishes.filter((dish) => {
+-              const normalizedName = normalizeIngredientName(dish.name || "");
+-              return sideDishTokens.every((token) => normalizedName.includes(token));
+-            })
+-            : [];
+-          const limitedSideDishes = filteredSideDishes.slice(0, MAX_DISH_RESULTS);
+-          const hasExactSideDishMatch = sideDishTokens.length
+-            ? sideDishes.some(
+-              (dish) => normalizeIngredientName(dish.name || "") === normalizedSideDishQuery
+-            )
+-            : false;
+-          const extrasOn = extraIngredientsEnabled[dayKey] ?? Boolean(extraIngredients.length);
+-          const extrasToggleId = `extras-toggle-${dayKey}`;
+-          const statusLabels = [];
+-          if (isAssigned) {
+-            statusLabels.push({
+-              label: isAssignedToSelf ? "Asignado a ti" : "Asignado",
+-              type: "assigned"
+-            });
+-          }
+-          if (isPlanned) {
+-            statusLabels.push({ label: "Planificado", type: "planned" });
+-          }
++      <div className="kitchen-week-controls">
++        <WeekDaysStrip
++          days={safeDays}
++          userMap={userMap}
++          selectedDay={selectedDay}
++          onSelectDay={handleSelectDay}
++          onCreateDish={handleCreateDishFromStrip}
++        />
++        <div className="kitchen-week-mobile-frame">
++          <section className="kitchen-week-header">
++            <div className="kitchen-week-header-actions">
++              <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
++                <button
++                  className="kitchen-week-arrow"
++                  type="button"
++                  onClick={() => handleWeekShift(-7)}
++                  aria-label="Ir a la semana anterior"
++                >
++                  <ChevronIcon className="kitchen-week-arrow-icon" />
++                </button>
++                <label className="kitchen-field kitchen-week-picker">
++                  <input
++                    className="kitchen-input"
++                    type="date"
++                    value={weekStart}
++                    onChange={(event) => setWeekStart(event.target.value)}
++                    aria-label="Semana"
++                  />
++                </label>
++                <button
++                  className="kitchen-week-arrow"
++                  type="button"
++                  onClick={() => handleWeekShift(7)}
++                  aria-label="Ir a la semana siguiente"
++                >
++                  <ChevronIcon className="kitchen-week-arrow-icon is-next" />
++                </button>
++              </div>
++              {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
++            </div>
++          </section>
++
++          <div className="kitchen-week-carousel">
++            {showCarouselControls ? (
++              <button
++                className="kitchen-week-carousel-arrow is-left"
++                type="button"
++                onClick={() => handleCarouselScroll(-1)}
++                aria-label="Mostrar día anterior"
++              >
++                <ChevronIcon className="kitchen-week-carousel-arrow-icon" />
++              </button>
++            ) : null}
++            <div className="kitchen-grid kitchen-week-days" id="week-grid" ref={carouselRef}>
++              {safeDays.map((day, index) => {
++                if (!day?.date) {
++                  return (
++                    <div key={`day-${index}`} className="kitchen-card kitchen-day-card">
++                      <div className="kitchen-day-header">
++                        <h3 className="kitchen-day-title">Día sin fecha</h3>
++                        <p className="kitchen-muted">Falta la fecha de este día en la planificación.</p>
++                      </div>
++                    </div>
++                  );
++                }
++                const dayKey = day.date.slice(0, 10);
++                const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
++                const cookInitials = getInitials(cookUser?.displayName);
++                const cookColors = getUserColor(day.cookUserId);
++                const isAssigned = Boolean(day.cookUserId);
++                const isPlanned = Boolean(day.mainDishId);
++                const isAssignedToSelf = day.cookUserId
++                  && (day.cookUserId === user?.id || day.cookUserId === user?._id);
++                const canEdit = user?.role === "admin" || isAssignedToSelf;
++                const isEditing = Boolean(editingDays[dayKey]);
++                const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
++                const sideDish = day.sideDishId ? dishMap.get(day.sideDishId) : null;
++                const showSideDish = Boolean(sideDish);
++                const sideDishOn = Boolean(sideDishEnabled[dayKey]);
++                const sideToggleId = `side-toggle-${dayKey}`;
++                const isEmptyState = !isPlanned && !isEditing;
++                const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
++                const dayVisual = DAY_CARD_STYLES[index % DAY_CARD_STYLES.length];
++                const dishIllustration = isEmptyState ? emptyDishImg : (showSideDish ? sideDishImg : mainCourseImg);
++                const baseIngredients = mergeIngredientLists(
++                  mainDish?.ingredients || [],
++                  sideDish?.ingredients || []
++                );
++                const extraIngredients = day.ingredientOverrides || [];
++                const extraIngredientsValue =
++                  extraIngredientsByDay[dayKey] ||
++                  extraIngredients.map((item) => ({
++                    ingredientId: item.ingredientId,
++                    displayName: item.displayName,
++                    canonicalName: item.canonicalName,
++                    status: item.ingredientId ? "resolved" : "pending"
++                  }));
++                const mainDishQuery = mainDishQueries[dayKey] ?? mainDish?.name ?? "";
++                const trimmedMainDishQuery = mainDishQuery.trim();
++                const normalizedMainDishQuery = normalizeIngredientName(trimmedMainDishQuery);
++                const mainDishTokens = normalizedMainDishQuery.split(" ").filter(Boolean);
++                const filteredMainDishes = mainDishTokens.length
++                  ? dishes.filter((dish) => {
++                    const normalizedName = normalizeIngredientName(dish.name || "");
++                    return mainDishTokens.every((token) => normalizedName.includes(token));
++                  })
++                  : [];
++                const limitedMainDishes = filteredMainDishes.slice(0, MAX_DISH_RESULTS);
++                const hasExactMainDishMatch = mainDishTokens.length
++                  ? dishes.some(
++                    (dish) => normalizeIngredientName(dish.name || "") === normalizedMainDishQuery
++                  )
++                  : false;
++                const sideDishQuery = sideDishQueries[dayKey] ?? sideDish?.name ?? "";
++                const trimmedSideDishQuery = sideDishQuery.trim();
++                const normalizedSideDishQuery = normalizeIngredientName(trimmedSideDishQuery);
++                const sideDishTokens = normalizedSideDishQuery.split(" ").filter(Boolean);
++          const filteredSideDishes = sideDishTokens.length
++            ? sideDishes.filter((dish) => {
++              const normalizedName = normalizeIngredientName(dish.name || "");
++              return sideDishTokens.every((token) => normalizedName.includes(token));
++            })
++            : [];
++          const limitedSideDishes = filteredSideDishes.slice(0, MAX_DISH_RESULTS);
++          const hasExactSideDishMatch = sideDishTokens.length
++            ? sideDishes.some(
++              (dish) => normalizeIngredientName(dish.name || "") === normalizedSideDishQuery
++            )
++            : false;
++          const extrasOn = extraIngredientsEnabled[dayKey] ?? Boolean(extraIngredients.length);
++          const extrasToggleId = `extras-toggle-${dayKey}`;
++          const statusLabels = [];
++          if (isAssigned) {
++            statusLabels.push({
++              label: isAssignedToSelf ? "Asignado a ti" : "Asignado",
++              type: "assigned"
++            });
++          }
++          if (isPlanned) {
++            statusLabels.push({ label: "Planificado", type: "planned" });
++          }
+           return (
+-            <div
+-              key={day.date}
+-              id={`daycard-${dayKey}`}
+-              className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""}`}
+-              tabIndex={-1}
+-              ref={(node) => {
+-                if (!node) {
+-                  dayRefs.current.delete(dayKey);
+-                  return;
+-                }
+-                dayRefs.current.set(dayKey, node);
+-              }}
+-            >
+-              <div className="kitchen-day-header">
+-                <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
+-                {!isEmptyState ? (
+-                  <>
+-                    <div className="kitchen-day-meta">
+-                      {showCookTiming ? (
+-                        <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
+-                      ) : null}
+-                      {cookUser?.displayName ? (
+-                        <span>Cocinero: {cookUser.displayName}</span>
+-                      ) : null}
+-                    </div>
+-                    {statusLabels.length ? (
+-                      <div className="kitchen-day-status" aria-label="Estado del día">
+-                        {statusLabels.map((item) => (
+-                          <span key={item.label} className={`kitchen-status-pill ${item.type}`}>
+-                            {item.label}
+-                          </span>
+-                        ))}
+-                      </div>
+-                    ) : null}
+-                    <div className="kitchen-day-cta">
+-                      {canEdit && isPlanned && !isEditing ? (
+-                        <button
+-                          type="button"
+-                          className="kitchen-button is-small"
+-                          onClick={() => startEditingDay(day)}
+-                        >
+-                          Editar
+-                        </button>
+-                      ) : null}
+-                      {isEditing ? (
+-                        <div className="kitchen-day-edit-actions">
+-                          <button
+-                            type="button"
+-                            className="kitchen-button is-small"
+-                            onClick={() => stopEditingDay(dayKey)}
+-                          >
+-                            Guardar
+-                          </button>
+-                          <button
+-                            type="button"
+-                            className="kitchen-button secondary is-small"
+-                            onClick={() => stopEditingDay(dayKey)}
+-                          >
+-                            Cancelar
+-                          </button>
+-                        </div>
+-                      ) : null}
+-                    </div>
+-                  </>
+-                ) : null}
+-              </div>
+-
+-              {!isEditing ? (
+-                isEmptyState ? (
+-                  <div className="kitchen-day-empty">
+-                    <div className="kitchen-day-empty-spacer" aria-hidden="true" />
+-                    {canShowAssignCta ? (
+-                      <button
+-                        type="button"
+-                        className="kitchen-button kitchen-day-empty-button"
+-                        onClick={() => handleAssignCta(day, canEdit, isAssigned)}
+-                      >
+-                        Asignar plato
+-                      </button>
+-                    ) : null}
+-                  </div>
+-                ) : (
+-                  <div className="kitchen-day-view">
+-                    <div className="kitchen-day-info">
+-                      <span className="kitchen-day-info-label">Plato principal</span>
+-                      <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>
+-                    </div>
+-                    {showSideDish ? (
+-                      <div className="kitchen-day-info">
+-                        <span className="kitchen-day-info-label">Guarnición</span>
+-                        <span className="kitchen-day-info-value">{sideDish?.name}</span>
+-                      </div>
+-                    ) : null}
+-                    {!isPlanned && canShowAssignCta ? (
+-                      <button
+-                        type="button"
+-                        className="kitchen-button"
+-                        onClick={() => handleAssignCta(day, canEdit, isAssigned)}
+-                      >
+-                        Asignar plato
+-                      </button>
+-                    ) : null}
+-                    <div className="kitchen-day-ingredients">
+-                      <span className="kitchen-label">Ingredientes</span>
+-                      <div className="kitchen-day-ingredient-pills">
+-                        {baseIngredients.length ? (
+-                          baseIngredients.map((item) => (
+-                            <span
+-                              key={item.ingredientId || item.canonicalName || item.displayName}
+-                              className="kitchen-ingredient-pill"
+-                            >
+-                              {item.displayName}
+-                            </span>
+-                          ))
+-                        ) : (
+-                          <span className="kitchen-muted">Sin ingredientes base.</span>
+-                        )}
+-                      </div>
+-                    </div>
+-                    {extraIngredients.length && extrasOn ? (
+-                      <div className="kitchen-day-ingredients">
+-                        <span className="kitchen-label">Extras</span>
+-                        <div className="kitchen-day-ingredient-pills is-extra">
+-                          {extraIngredients.map((item) => (
+-                            <span key={item.ingredientId || item.canonicalName || item.displayName} className="kitchen-ingredient-pill is-extra">
+-                              {item.displayName}
+-                            </span>
+-                          ))}
+-                        </div>
+-                      </div>
+-                    ) : null}
+-                  </div>
+-                )
+-              ) : (
+-                <>
+-                  <label className="kitchen-field">
+-                    <span className="kitchen-label">Plato principal</span>
+-                    <div className="kitchen-ingredient-search">
+-                      <input
+-                        ref={(node) => {
+-                          if (!node) {
+-                            mainDishRefs.current.delete(dayKey);
+-                            return;
+-                          }
+-                          mainDishRefs.current.set(dayKey, node);
+-                        }}
+-                        className="kitchen-input"
+-                        value={mainDishQuery}
+-                        placeholder="Busca un plato…"
+-                        onFocus={() => setMainDishOpen((prev) => ({ ...prev, [dayKey]: true }))}
+-                        onBlur={() => {
+-                          const trimmed = mainDishQuery.trim();
+-                          const normalized = normalizeIngredientName(trimmed);
+-                          const match = dishes.find(
+-                            (dish) => normalizeIngredientName(dish.name || "") === normalized
+-                          );
+-                          if (!trimmed) {
+-                            updateDay(day, { mainDishId: null });
+-                            setMainDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
+-                          } else if (match) {
+-                            updateDay(day, { mainDishId: match._id });
+-                            setMainDishQueries((prev) => ({ ...prev, [dayKey]: match.name }));
+-                          } else {
+-                            setMainDishQueries((prev) => ({
+-                              ...prev,
+-                              [dayKey]: mainDish?.name || ""
+-                            }));
+-                          }
+-                          setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                        }}
+-                        onChange={(event) => {
+-                          const value = event.target.value;
+-                          setMainDishQueries((prev) => ({ ...prev, [dayKey]: value }));
+-                          setMainDishOpen((prev) => ({ ...prev, [dayKey]: true }));
+-                        }}
+-                      />
+-                      {mainDishOpen[dayKey] ? (
+-                        <div className="kitchen-suggestion-list is-scrollable">
+-                          {mainDishTokens.length ? (
+-                            <>
+-                              <button
+-                                className="kitchen-suggestion"
+-                                type="button"
+-                                onMouseDown={(event) => {
+-                                  event.preventDefault();
+-                                  updateDay(day, { mainDishId: null });
+-                                  setMainDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
+-                                  setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                                }}
+-                              >
+-                                Sin plato
+-                              </button>
+-                              {limitedMainDishes.length ? (
+-                                limitedMainDishes.map((dish) => (
+-                                  <button
+-                                    className="kitchen-suggestion"
+-                                    key={dish._id}
+-                                    type="button"
+-                                    onMouseDown={(event) => {
+-                                      event.preventDefault();
+-                                      updateDay(day, { mainDishId: dish._id });
+-                                      setMainDishQueries((prev) => ({ ...prev, [dayKey]: dish.name }));
+-                                      setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                                    }}
+-                                  >
+-                                    <span className="kitchen-suggestion-name">{dish.name}</span>
+-                                  </button>
+-                                ))
+-                              ) : !hasExactMainDishMatch && trimmedMainDishQuery ? (
+-                                <button
+-                                  className="kitchen-suggestion is-create"
+-                                  type="button"
+-                                  onMouseDown={(event) => {
+-                                    event.preventDefault();
+-                                    setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                                    openDishModal(dayKey, trimmedMainDishQuery);
+-                                  }}
+-                                >
+-                                  Crear nuevo plato “{trimmedMainDishQuery}”
+-                                </button>
+-                              ) : (
+-                                <div className="kitchen-muted kitchen-suggestion-empty">Sin coincidencias.</div>
+-                              )}
+-                            </>
+-                          ) : (
+-                            <div className="kitchen-muted kitchen-suggestion-empty">
+-                              Escribe para buscar...
+-                            </div>
+-                          )}
+-                        </div>
+-                      ) : null}
+-                    </div>
+-                  </label>
+-
+-                  <div className="kitchen-field kitchen-toggle-field">
+-                    <div className="kitchen-toggle-row">
+-                      <span className="kitchen-label">Añadir guarnición</span>
+-                      <label className="kitchen-toggle" htmlFor={sideToggleId}>
+-                        <input
+-                          id={sideToggleId}
+-                          type="checkbox"
+-                          className="kitchen-toggle-input"
+-                          checked={sideDishOn}
+-                          onChange={(event) => {
+-                            const nextValue = event.target.checked;
+-                            setSideDishEnabled((prev) => ({ ...prev, [dayKey]: nextValue }));
+-                            if (!nextValue) {
+-                              updateDay(day, { sideDishId: null });
+-                              setSideDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
+-                              setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                            }
+-                          }}
+-                        />
+-                        <span className="kitchen-toggle-track" aria-hidden="true" />
+-                      </label>
+-                    </div>
+-                  </div>
+-
+-                  {sideDishOn ? (
+-                    <label className="kitchen-field">
+-                      <span className="kitchen-label">Guarnición</span>
+-                      <div className="kitchen-ingredient-search">
+-                        <input
+-                          ref={(node) => {
+-                            if (!node) {
+-                              sideDishRefs.current.delete(dayKey);
+-                              return;
+-                            }
+-                            sideDishRefs.current.set(dayKey, node);
+-                          }}
+-                          className="kitchen-input"
+-                          value={sideDishQuery}
+-                          placeholder="Busca una guarnición…"
+-                          onFocus={() => setSideDishOpen((prev) => ({ ...prev, [dayKey]: true }))}
+-                          onBlur={() => {
+-                            const trimmed = sideDishQuery.trim();
+-                            const normalized = normalizeIngredientName(trimmed);
+-                            const match = sideDishes.find(
+-                              (dish) => normalizeIngredientName(dish.name || "") === normalized
+-                            );
+-                            if (!trimmed) {
+-                              updateDay(day, { sideDishId: null });
+-                              setSideDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
+-                            } else if (match) {
+-                              updateDay(day, { sideDishId: match._id });
+-                              setSideDishQueries((prev) => ({ ...prev, [dayKey]: match.name }));
+-                            } else {
+-                              setSideDishQueries((prev) => ({
+-                                ...prev,
+-                                [dayKey]: sideDish?.name || ""
+-                              }));
+-                            }
+-                            setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                          }}
+-                          onChange={(event) => {
+-                            const value = event.target.value;
+-                            setSideDishQueries((prev) => ({ ...prev, [dayKey]: value }));
+-                            setSideDishOpen((prev) => ({ ...prev, [dayKey]: true }));
+-                          }}
+-                        />
+-                        {sideDishOpen[dayKey] ? (
+-                          <div className="kitchen-suggestion-list is-scrollable">
+-                            {sideDishTokens.length ? (
+-                              <>
+-                                <button
+-                                  className="kitchen-suggestion"
+-                                  type="button"
+-                                  onMouseDown={(event) => {
+-                                    event.preventDefault();
+-                                    updateDay(day, { sideDishId: null });
+-                                    setSideDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
+-                                    setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                                  }}
+-                                >
+-                                  Sin guarnición
+-                                </button>
+-                                {limitedSideDishes.length ? (
+-                                  limitedSideDishes.map((dish) => (
+-                                    <button
+-                                      className="kitchen-suggestion"
+-                                      key={dish._id}
+-                                      type="button"
+-                                      onMouseDown={(event) => {
+-                                        event.preventDefault();
+-                                        updateDay(day, { sideDishId: dish._id });
+-                                        setSideDishQueries((prev) => ({ ...prev, [dayKey]: dish.name }));
+-                                        setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                                      }}
+-                                    >
+-                                      <span className="kitchen-suggestion-name">{dish.name}</span>
+-                                    </button>
+-                                  ))
+-                                ) : !hasExactSideDishMatch && trimmedSideDishQuery ? (
+-                                  <button
+-                                    className="kitchen-suggestion is-create"
+-                                    type="button"
+-                                    onMouseDown={(event) => {
+-                                      event.preventDefault();
+-                                      setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                                      openDishModal(dayKey, trimmedSideDishQuery, {
+-                                        mode: "side",
+-                                        sidedish: true
+-                                      });
+-                                    }}
+-                                  >
+-                                    Crear guarnición “{trimmedSideDishQuery}”
+-                                  </button>
+-                                ) : (
+-                                  <div className="kitchen-muted kitchen-suggestion-empty">Sin coincidencias.</div>
+-                                )}
+-                              </>
+-                            ) : (
+-                              <div className="kitchen-muted kitchen-suggestion-empty">
+-                                Escribe para buscar...
+-                              </div>
+-                            )}
+-                          </div>
+-                        ) : null}
+-                      </div>
+-                    </label>
+-                  ) : null}
+-
+-                  <label className="kitchen-field">
+-                    <span className="kitchen-label">Cuándo se cocina</span>
+-                    <select
+-                      className="kitchen-select"
+-                      value={day.cookTiming}
+-                      onChange={(event) => updateDay(day, { cookTiming: event.target.value })}
+-                    >
+-                      <option value="previous_day">Día anterior</option>
+-                      <option value="same_day">Mismo día</option>
+-                    </select>
+-                  </label>
+-
+-                  <div className="kitchen-day-ingredients">
+-                    <span className="kitchen-label">Ingredientes base</span>
+-                    <div className="kitchen-day-ingredient-pills">
+-                      {baseIngredients.length ? (
+-                        baseIngredients.map((item) => (
+-                          <span
+-                            key={item.ingredientId || item.canonicalName || item.displayName}
+-                            className="kitchen-ingredient-pill"
+-                          >
+-                            {item.displayName}
+-                          </span>
+-                        ))
+-                      ) : (
+-                        <span className="kitchen-muted">Sin ingredientes base.</span>
+-                      )}
+-                    </div>
+-                  </div>
+-
+-                  <div className="kitchen-field kitchen-toggle-field">
+-                    <div className="kitchen-toggle-row">
+-                      <span className="kitchen-label">Añadir extras</span>
+-                      <label className="kitchen-toggle" htmlFor={extrasToggleId}>
+-                        <input
+-                          id={extrasToggleId}
+-                          type="checkbox"
+-                          className="kitchen-toggle-input"
+-                          checked={extrasOn}
+-                          onChange={(event) => {
+-                            const nextValue = event.target.checked;
+-                            setExtraIngredientsEnabled((prev) => ({ ...prev, [dayKey]: nextValue }));
+-                            if (!nextValue) {
+-                              setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: [] }));
+-                              updateDay(day, { ingredientOverrides: [] });
+-                            }
+-                          }}
+-                        />
+-                        <span className="kitchen-toggle-track" aria-hidden="true" />
+-                      </label>
+-                    </div>
+-                  </div>
+-
+-                  {extrasOn ? (
+-                    <div className="kitchen-field kitchen-day-ingredients">
+-                      <span className="kitchen-label">Extras</span>
+-                      <IngredientPicker
+-                        value={extraIngredientsValue}
+-                        onChange={(next) => {
+-                          setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: next }));
+-                          const overrides = next
+-                            .map((item) => ({
+-                              displayName: item.displayName,
+-                              canonicalName: item.canonicalName,
+-                              ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
+-                            }))
+-                            .filter((item) => item.displayName && item.canonicalName);
+-                          updateDay(day, { ingredientOverrides: overrides });
+-                        }}
+-                        categories={categories}
+-                        onCategoryCreated={handleCategoryCreated}
+-                      />
+-                    </div>
+-                  ) : null}
+-
+-                  <div className="kitchen-actions">
+-                    {user?.role === "admin" ? (
+-                      <div className="kitchen-field">
+-                        <span className="kitchen-label">Persona asignada</span>
+-                        <div
+-                          className="kitchen-assignee-picker"
+-                          onBlur={(event) => {
+-                            if (!event.currentTarget.contains(event.relatedTarget)) {
+-                              setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                            }
+-                          }}
+-                        >
+-                          <button
+-                            type="button"
+-                            className="kitchen-assignee-button"
+-                            onClick={() =>
+-                              setAssigneeOpen((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))
+-                            }
+-                            aria-haspopup="listbox"
+-                            aria-expanded={assigneeOpen[dayKey] ? "true" : "false"}
+-                          >
+-                            <span
+-                              className="kitchen-assignee-avatar"
+-                              style={{
+-                                background: cookColors.background,
+-                                color: cookColors.text
+-                              }}
+-                              aria-hidden="true"
+-                            >
+-                              {cookInitials || "+"}
+-                            </span>
+-                            <span className="kitchen-assignee-name">
+-                              {cookUser?.displayName || "Sin asignar"}
+-                            </span>
+-                          </button>
+-                          {assigneeOpen[dayKey] ? (
+-                            <div className="kitchen-suggestion-list is-scrollable" role="listbox">
+-                              <button
+-                                className="kitchen-suggestion"
+-                                type="button"
+-                                onMouseDown={(event) => {
+-                                  event.preventDefault();
+-                                  updateDay(day, { cookUserId: null });
+-                                  setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                                }}
+-                              >
+-                                Sin asignar
+-                              </button>
+-                              {users.map((person) => {
+-                                const initials = getInitials(person.displayName);
+-                                const colors = getUserColor(person.id);
+-                                return (
+-                                  <button
+-                                    className="kitchen-suggestion is-assignee"
+-                                    key={person.id}
+-                                    type="button"
+-                                    onMouseDown={(event) => {
+-                                      event.preventDefault();
+-                                      updateDay(day, { cookUserId: person.id });
+-                                      setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+-                                    }}
+-                                  >
+-                                    <span
+-                                      className="kitchen-assignee-avatar"
+-                                      style={{
+-                                        background: colors.background,
+-                                        color: colors.text
+-                                      }}
+-                                      aria-hidden="true"
+-                                    >
+-                                      {initials || "+"}
+-                                    </span>
+-                                    <span className="kitchen-assignee-name">{person.displayName}</span>
+-                                  </button>
+-                                );
+-                              })}
+-                            </div>
+-                          ) : null}
+-                        </div>
+-                      </div>
+-                    ) : null}
+-                  </div>
+-                </>
+-              )}
+-              <div className="kitchen-day-feedback" aria-live="polite">
+-                {dayStatus[dayKey] === "saving" ? (
+-                  <span className="kitchen-day-feedback-text saving">Guardando...</span>
+-                ) : null}
+-                {dayStatus[dayKey] === "saved" ? (
+-                  <span className="kitchen-day-feedback-text saved">Guardado</span>
+-                ) : null}
+-                {dayErrors[dayKey] ? (
+-                  <span className="kitchen-day-feedback-text error" role="alert">{dayErrors[dayKey]}</span>
+-                ) : null}
+-              </div>
++            <div
++              key={day.date}
++              id={`daycard-${dayKey}`}
++              style={{ "--day-card-bg": dayVisual.background, "--day-card-text": dayVisual.color }}
++              className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""}`}
++              tabIndex={-1}
++              ref={(node) => {
++                if (!node) {
++                  dayRefs.current.delete(dayKey);
++                  return;
++                }
++                dayRefs.current.set(dayKey, node);
++              }}
++            >
++              <div className="kitchen-day-header">
++                <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
++                {!isEmptyState ? (
++                  <>
++                    <div className="kitchen-day-meta">
++                      {showCookTiming ? (
++                        <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
++                      ) : null}
++                      {cookUser?.displayName ? (
++                        <span>Cocinero: {cookUser.displayName}</span>
++                      ) : null}
++                    </div>
++                    {statusLabels.length ? (
++                      <div className="kitchen-day-status" aria-label="Estado del día">
++                        {statusLabels.map((item) => (
++                          <span key={item.label} className={`kitchen-status-pill ${item.type}`}>
++                            {item.label}
++                          </span>
++                        ))}
++                      </div>
++                    ) : null}
++                    <div className="kitchen-day-cta">
++                      {canEdit && isPlanned && !isEditing ? (
++                        <button
++                          type="button"
++                          className="kitchen-button is-small"
++                          onClick={() => startEditingDay(day)}
++                        >
++                          Editar
++                        </button>
++                      ) : null}
++                      {isEditing ? (
++                        <div className="kitchen-day-edit-actions">
++                          <button
++                            type="button"
++                            className="kitchen-button is-small"
++                            onClick={() => stopEditingDay(dayKey)}
++                          >
++                            Guardar
++                          </button>
++                          <button
++                            type="button"
++                            className="kitchen-button secondary is-small"
++                            onClick={() => stopEditingDay(dayKey)}
++                          >
++                            Cancelar
++                          </button>
++                        </div>
++                      ) : null}
++                    </div>
++                  </>
++                ) : null}
++              </div>
++
++              {!isEditing ? (
++                isEmptyState ? (
++                  <div className="kitchen-day-empty">
++                    <div className="kitchen-day-empty-spacer" aria-hidden="true" />
++                    {canShowAssignCta ? (
++                      <button
++                        type="button"
++                        className="kitchen-button kitchen-day-empty-button"
++                        onClick={() => handleAssignCta(day, canEdit, isAssigned)}
++                      >
++                        Asignar plato
++                      </button>
++                    ) : null}
++                  </div>
++                ) : (
++                  <div className="kitchen-day-view">
++                    <img className="kitchen-day-illustration" src={dishIllustration} alt="Ilustración del plato" />
++                    <div className="kitchen-day-info">
++                      <span className="kitchen-day-info-label">Plato principal</span>
++                      <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>
++                    </div>
++                    {showSideDish ? (
++                      <div className="kitchen-day-info">
++                        <span className="kitchen-day-info-label">Guarnición</span>
++                        <span className="kitchen-day-info-value">{sideDish?.name}</span>
++                      </div>
++                    ) : null}
++                    {!isPlanned && canShowAssignCta ? (
++                      <button
++                        type="button"
++                        className="kitchen-button"
++                        onClick={() => handleAssignCta(day, canEdit, isAssigned)}
++                      >
++                        Asignar plato
++                      </button>
++                    ) : null}
++                    <div className="kitchen-day-ingredients">
++                      <span className="kitchen-label">Ingredientes</span>
++                      <div className="kitchen-day-ingredient-pills">
++                        {baseIngredients.length ? (
++                          baseIngredients.map((item) => (
++                            <span
++                              key={item.ingredientId || item.canonicalName || item.displayName}
++                              className="kitchen-ingredient-pill"
++                            >
++                              {item.displayName}
++                            </span>
++                          ))
++                        ) : (
++                          <span className="kitchen-muted">Sin ingredientes base.</span>
++                        )}
++                      </div>
++                    </div>
++                    {extraIngredients.length && extrasOn ? (
++                      <div className="kitchen-day-ingredients">
++                        <span className="kitchen-label">Extras</span>
++                        <div className="kitchen-day-ingredient-pills is-extra">
++                          {extraIngredients.map((item) => (
++                            <span key={item.ingredientId || item.canonicalName || item.displayName} className="kitchen-ingredient-pill is-extra">
++                              {item.displayName}
++                            </span>
++                          ))}
++                        </div>
++                      </div>
++                    ) : null}
++                  </div>
++                )
++              ) : (
++                <>
++                  <label className="kitchen-field">
++                    <span className="kitchen-label">Plato principal</span>
++                    <div className="kitchen-ingredient-search">
++                      <input
++                        ref={(node) => {
++                          if (!node) {
++                            mainDishRefs.current.delete(dayKey);
++                            return;
++                          }
++                          mainDishRefs.current.set(dayKey, node);
++                        }}
++                        className="kitchen-input"
++                        value={mainDishQuery}
++                        placeholder="Busca un plato…"
++                        onFocus={() => setMainDishOpen((prev) => ({ ...prev, [dayKey]: true }))}
++                        onBlur={() => {
++                          const trimmed = mainDishQuery.trim();
++                          const normalized = normalizeIngredientName(trimmed);
++                          const match = dishes.find(
++                            (dish) => normalizeIngredientName(dish.name || "") === normalized
++                          );
++                          if (!trimmed) {
++                            updateDay(day, { mainDishId: null });
++                            setMainDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
++                          } else if (match) {
++                            updateDay(day, { mainDishId: match._id });
++                            setMainDishQueries((prev) => ({ ...prev, [dayKey]: match.name }));
++                          } else {
++                            setMainDishQueries((prev) => ({
++                              ...prev,
++                              [dayKey]: mainDish?.name || ""
++                            }));
++                          }
++                          setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++                        }}
++                        onChange={(event) => {
++                          const value = event.target.value;
++                          setMainDishQueries((prev) => ({ ...prev, [dayKey]: value }));
++                          setMainDishOpen((prev) => ({ ...prev, [dayKey]: true }));
++                        }}
++                      />
++                      {mainDishOpen[dayKey] ? (
++                        <div className="kitchen-suggestion-list is-scrollable">
++                          {mainDishTokens.length ? (
++                            <>
++                              <button
++                                className="kitchen-suggestion"
++                                type="button"
++                                onMouseDown={(event) => {
++                                  event.preventDefault();
++                                  updateDay(day, { mainDishId: null });
++                                  setMainDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
++                                  setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++                                }}
++                              >
++                                Sin plato
++                              </button>
++                              {limitedMainDishes.length ? (
++                                limitedMainDishes.map((dish) => (
++                                  <button
++                                    className="kitchen-suggestion"
++                                    key={dish._id}
++                                    type="button"
++                                    onMouseDown={(event) => {
++                                      event.preventDefault();
++                                      updateDay(day, { mainDishId: dish._id });
++                                      setMainDishQueries((prev) => ({ ...prev, [dayKey]: dish.name }));
++                                      setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++                                    }}
++                                  >
++                                    <span className="kitchen-suggestion-name">{dish.name}</span>
++                                  </button>
++                                ))
++                              ) : !hasExactMainDishMatch && trimmedMainDishQuery ? (
++                                <button
++                                  className="kitchen-suggestion is-create"
++                                  type="button"
++                                  onMouseDown={(event) => {
++                                    event.preventDefault();
++                                    setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++                                    openDishModal(dayKey, trimmedMainDishQuery);
++                                  }}
++                                >
++                                  Crear nuevo plato “{trimmedMainDishQuery}”
++                                </button>
++                              ) : (
++                                <div className="kitchen-muted kitchen-suggestion-empty">Sin coincidencias.</div>
++                              )}
++                            </>
++                          ) : (
++                            <div className="kitchen-muted kitchen-suggestion-empty">
++                              Escribe para buscar...
++                            </div>
++                          )}
++                        </div>
++                      ) : null}
++                    </div>
++                  </label>
++
++                  <div className="kitchen-field kitchen-toggle-field">
++                    <div className="kitchen-toggle-row">
++                      <span className="kitchen-label">Añadir guarnición</span>
++                      <label className="kitchen-toggle" htmlFor={sideToggleId}>
++                        <input
++                          id={sideToggleId}
++                          type="checkbox"
++                          className="kitchen-toggle-input"
++                          checked={sideDishOn}
++                          onChange={(event) => {
++                            const nextValue = event.target.checked;
++                            setSideDishEnabled((prev) => ({ ...prev, [dayKey]: nextValue }));
++                            if (!nextValue) {
++                              updateDay(day, { sideDishId: null });
++                              setSideDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
++                              setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++                            }
++                          }}
++                        />
++                        <span className="kitchen-toggle-track" aria-hidden="true" />
++                      </label>
++                    </div>
++                  </div>
++
++                  {sideDishOn ? (
++                    <label className="kitchen-field">
++                      <span className="kitchen-label">Guarnición</span>
++                      <div className="kitchen-ingredient-search">
++                        <input
++                          ref={(node) => {
++                            if (!node) {
++                              sideDishRefs.current.delete(dayKey);
++                              return;
++                            }
++                            sideDishRefs.current.set(dayKey, node);
++                          }}
++                          className="kitchen-input"
++                          value={sideDishQuery}
++                          placeholder="Busca una guarnición…"
++                          onFocus={() => setSideDishOpen((prev) => ({ ...prev, [dayKey]: true }))}
++                          onBlur={() => {
++                            const trimmed = sideDishQuery.trim();
++                            const normalized = normalizeIngredientName(trimmed);
++                            const match = sideDishes.find(
++                              (dish) => normalizeIngredientName(dish.name || "") === normalized
++                            );
++                            if (!trimmed) {
++                              updateDay(day, { sideDishId: null });
++                              setSideDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
++                            } else if (match) {
++                              updateDay(day, { sideDishId: match._id });
++                              setSideDishQueries((prev) => ({ ...prev, [dayKey]: match.name }));
++                            } else {
++                              setSideDishQueries((prev) => ({
++                                ...prev,
++                                [dayKey]: sideDish?.name || ""
++                              }));
++                            }
++                            setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++                          }}
++                          onChange={(event) => {
++                            const value = event.target.value;
++                            setSideDishQueries((prev) => ({ ...prev, [dayKey]: value }));
++                            setSideDishOpen((prev) => ({ ...prev, [dayKey]: true }));
++                          }}
++                        />
++                        {sideDishOpen[dayKey] ? (
++                          <div className="kitchen-suggestion-list is-scrollable">
++                            {sideDishTokens.length ? (
++                              <>
++                                <button
++                                  className="kitchen-suggestion"
++                                  type="button"
++                                  onMouseDown={(event) => {
++                                    event.preventDefault();
++                                    updateDay(day, { sideDishId: null });
++                                    setSideDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
++                                    setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++                                  }}
++                                >
++                                  Sin guarnición
++                                </button>
++                                {limitedSideDishes.length ? (
++                                  limitedSideDishes.map((dish) => (
++                                    <button
++                                      className="kitchen-suggestion"
++                                      key={dish._id}
++                                      type="button"
++                                      onMouseDown={(event) => {
++                                        event.preventDefault();
++                                        updateDay(day, { sideDishId: dish._id });
++                                        setSideDishQueries((prev) => ({ ...prev, [dayKey]: dish.name }));
++                                        setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++                                      }}
++                                    >
++                                      <span className="kitchen-suggestion-name">{dish.name}</span>
++                                    </button>
++                                  ))
++                                ) : !hasExactSideDishMatch && trimmedSideDishQuery ? (
++                                  <button
++                                    className="kitchen-suggestion is-create"
++                                    type="button"
++                                    onMouseDown={(event) => {
++                                      event.preventDefault();
++                                      setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
++                                      openDishModal(dayKey, trimmedSideDishQuery, {
++                                        mode: "side",
++                                        sidedish: true
++                                      });
++                                    }}
++                                  >
++                                    Crear guarnición “{trimmedSideDishQuery}”
++                                  </button>
++                                ) : (
++                                  <div className="kitchen-muted kitchen-suggestion-empty">Sin coincidencias.</div>
++                                )}
++                              </>
++                            ) : (
++                              <div className="kitchen-muted kitchen-suggestion-empty">
++                                Escribe para buscar...
++                              </div>
++                            )}
++                          </div>
++                        ) : null}
++                      </div>
++                    </label>
++                  ) : null}
++
++                  <label className="kitchen-field">
++                    <span className="kitchen-label">Cuándo se cocina</span>
++                    <select
++                      className="kitchen-select"
++                      value={day.cookTiming}
++                      onChange={(event) => updateDay(day, { cookTiming: event.target.value })}
++                    >
++                      <option value="previous_day">Día anterior</option>
++                      <option value="same_day">Mismo día</option>
++                    </select>
++                  </label>
++
++                  <div className="kitchen-day-ingredients">
++                    <span className="kitchen-label">Ingredientes base</span>
++                    <div className="kitchen-day-ingredient-pills">
++                      {baseIngredients.length ? (
++                        baseIngredients.map((item) => (
++                          <span
++                            key={item.ingredientId || item.canonicalName || item.displayName}
++                            className="kitchen-ingredient-pill"
++                          >
++                            {item.displayName}
++                          </span>
++                        ))
++                      ) : (
++                        <span className="kitchen-muted">Sin ingredientes base.</span>
++                      )}
++                    </div>
++                  </div>
++
++                  <div className="kitchen-field kitchen-toggle-field">
++                    <div className="kitchen-toggle-row">
++                      <span className="kitchen-label">Añadir extras</span>
++                      <label className="kitchen-toggle" htmlFor={extrasToggleId}>
++                        <input
++                          id={extrasToggleId}
++                          type="checkbox"
++                          className="kitchen-toggle-input"
++                          checked={extrasOn}
++                          onChange={(event) => {
++                            const nextValue = event.target.checked;
++                            setExtraIngredientsEnabled((prev) => ({ ...prev, [dayKey]: nextValue }));
++                            if (!nextValue) {
++                              setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: [] }));
++                              updateDay(day, { ingredientOverrides: [] });
++                            }
++                          }}
++                        />
++                        <span className="kitchen-toggle-track" aria-hidden="true" />
++                      </label>
++                    </div>
++                  </div>
++
++                  {extrasOn ? (
++                    <div className="kitchen-field kitchen-day-ingredients">
++                      <span className="kitchen-label">Extras</span>
++                      <IngredientPicker
++                        value={extraIngredientsValue}
++                        onChange={(next) => {
++                          setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: next }));
++                          const overrides = next
++                            .map((item) => ({
++                              displayName: item.displayName,
++                              canonicalName: item.canonicalName,
++                              ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
++                            }))
++                            .filter((item) => item.displayName && item.canonicalName);
++                          updateDay(day, { ingredientOverrides: overrides });
++                        }}
++                        categories={categories}
++                        onCategoryCreated={handleCategoryCreated}
++                      />
++                    </div>
++                  ) : null}
++
++                  <div className="kitchen-actions">
++                    {user?.role === "admin" ? (
++                      <div className="kitchen-field">
++                        <span className="kitchen-label">Persona asignada</span>
++                        <div
++                          className="kitchen-assignee-picker"
++                          onBlur={(event) => {
++                            if (!event.currentTarget.contains(event.relatedTarget)) {
++                              setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
++                            }
++                          }}
++                        >
++                          <button
++                            type="button"
++                            className="kitchen-assignee-button"
++                            onClick={() =>
++                              setAssigneeOpen((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))
++                            }
++                            aria-haspopup="listbox"
++                            aria-expanded={assigneeOpen[dayKey] ? "true" : "false"}
++                          >
++                            <span
++                              className="kitchen-assignee-avatar"
++                              style={{
++                                background: cookColors.background,
++                                color: cookColors.text
++                              }}
++                              aria-hidden="true"
++                            >
++                              {cookInitials || "+"}
++                            </span>
++                            <span className="kitchen-assignee-name">
++                              {cookUser?.displayName || "Sin asignar"}
++                            </span>
++                          </button>
++                          {assigneeOpen[dayKey] ? (
++                            <div className="kitchen-suggestion-list is-scrollable" role="listbox">
++                              <button
++                                className="kitchen-suggestion"
++                                type="button"
++                                onMouseDown={(event) => {
++                                  event.preventDefault();
++                                  updateDay(day, { cookUserId: null });
++                                  setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
++                                }}
++                              >
++                                Sin asignar
++                              </button>
++                              {users.map((person) => {
++                                const initials = getInitials(person.displayName);
++                                const colors = getUserColor(person.id);
++                                return (
++                                  <button
++                                    className="kitchen-suggestion is-assignee"
++                                    key={person.id}
++                                    type="button"
++                                    onMouseDown={(event) => {
++                                      event.preventDefault();
++                                      updateDay(day, { cookUserId: person.id });
++                                      setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
++                                    }}
++                                  >
++                                    <span
++                                      className="kitchen-assignee-avatar"
++                                      style={{
++                                        background: colors.background,
++                                        color: colors.text
++                                      }}
++                                      aria-hidden="true"
++                                    >
++                                      {initials || "+"}
++                                    </span>
++                                    <span className="kitchen-assignee-name">{person.displayName}</span>
++                                  </button>
++                                );
++                              })}
++                            </div>
++                          ) : null}
++                        </div>
++                      </div>
++                    ) : null}
++                  </div>
++                </>
++              )}
++              <div className="kitchen-day-feedback" aria-live="polite">
++                {dayStatus[dayKey] === "saving" ? (
++                  <span className="kitchen-day-feedback-text saving">Guardando...</span>
++                ) : null}
++                {dayStatus[dayKey] === "saved" ? (
++                  <span className="kitchen-day-feedback-text saved">Guardado</span>
++                ) : null}
++                {dayErrors[dayKey] ? (
++                  <span className="kitchen-day-feedback-text error" role="alert">{dayErrors[dayKey]}</span>
++                ) : null}
++              </div>
+             </div>
+           );
+-              })}
+-            </div>
+-            {showCarouselControls ? (
+-              <button
+-                className="kitchen-week-carousel-arrow is-right"
+-                type="button"
+-                onClick={() => handleCarouselScroll(1)}
+-                aria-label="Mostrar día siguiente"
+-              >
+-                <ChevronIcon className="kitchen-week-carousel-arrow-icon is-next" />
+-              </button>
+-            ) : null}
+-          </div>
+-          {dayKeys.length > 1 ? (
+-            <div className="kitchen-week-carousel-dots" role="tablist" aria-label="Días de la semana">
+-              {dayKeys.map((key, index) => (
+-                <button
+-                  key={key}
+-                  type="button"
+-                  className={`kitchen-week-carousel-dot ${activeIndex === index ? "is-active" : ""}`}
+-                  onClick={() => handleSelectDay(key)}
+-                  aria-label={`Ir a ${formatDateLabel(key)}`}
+-                  aria-current={activeIndex === index ? "true" : undefined}
+-                />
+-              ))}
+-            </div>
+-          ) : null}
+-        </div>
++              })}
++            </div>
++            {showCarouselControls ? (
++              <button
++                className="kitchen-week-carousel-arrow is-right"
++                type="button"
++                onClick={() => handleCarouselScroll(1)}
++                aria-label="Mostrar día siguiente"
++              >
++                <ChevronIcon className="kitchen-week-carousel-arrow-icon is-next" />
++              </button>
++            ) : null}
++          </div>
++          {dayKeys.length > 1 ? (
++            <div className="kitchen-week-carousel-dots" role="tablist" aria-label="Días de la semana">
++              {dayKeys.map((key, index) => (
++                <button
++                  key={key}
++                  type="button"
++                  className={`kitchen-week-carousel-dot ${activeIndex === index ? "is-active" : ""}`}
++                  onClick={() => handleSelectDay(key)}
++                  aria-label={`Ir a ${formatDateLabel(key)}`}
++                  aria-current={activeIndex === index ? "true" : undefined}
++                />
++              ))}
++            </div>
++          ) : null}
++        </div>
+       </div>
+-      <DishModal
+-        isOpen={dishModalOpen}
+-        onClose={closeDishModal}
+-        onSaved={handleDishSaved}
+-        categories={categories}
+-        onCategoryCreated={handleCategoryCreated}
+-        initialName={dishModalName}
+-        initialSidedish={dishModalSidedish}
+-      />
++      <DishModal
++        isOpen={dishModalOpen}
++        onClose={closeDishModal}
++        onSaved={handleDishSaved}
++        categories={categories}
++        onCategoryCreated={handleCategoryCreated}
++        initialName={dishModalName}
++        initialSidedish={dishModalSidedish}
++      />
+     </KitchenLayout>
+   );
  }
- 
- .kitchen-day-card.is-empty,
- .kitchen-dish-card.is-sidedish,
- .kitchen-ui-button-secondary,
- .kitchen-button.secondary,
- .kitchen-status-pill.planned,
- .kitchen-tab-button.is-active {
-   background: var(--hf-surface-soft);
- }
- 
- .kitchen-ui-button,

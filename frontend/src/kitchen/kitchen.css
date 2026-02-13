@@ -2586,3 +2586,151 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Semana Neo-Soft 2026 redesign */
+.kitchen-ui-header {
+  background: #eef2ff;
+  border-bottom: 1px solid #dbe3ff;
+}
+
+.kitchen-ui-header-inner {
+  min-height: 88px;
+  padding: 20px 24px;
+}
+
+.kitchen-brand-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.kitchen-nav-desktop {
+  gap: 10px;
+}
+
+.kitchen-nav-desktop a {
+  border-radius: 14px;
+  padding: 11px 18px;
+  font-size: 14px;
+  background: transparent;
+}
+
+.kitchen-nav-desktop a.active {
+  background: #dfe4ff;
+  color: #3730a3;
+}
+
+.kitchen-user { position: relative; }
+
+.kitchen-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #dbe3ff;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 7px 14px 7px 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.12);
+}
+
+.kitchen-user-chip:hover { background: #f8faff; }
+
+.kitchen-user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #dfe4ff;
+  color: #3730a3;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.kitchen-user-name { font-weight: 600; font-size: 14px; }
+.kitchen-user-chevron,
+.kitchen-user-menu-icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.kitchen-user-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 220px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e6e9f8;
+  box-shadow: 0 16px 30px rgba(30, 41, 59, 0.14);
+  border-radius: 20px;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+  z-index: 30;
+}
+
+.kitchen-user-menu button {
+  border: none;
+  background: transparent;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+.kitchen-user-menu button:hover { background: #eef2ff; }
+
+.kitchen-weekdays-item {
+  min-width: 72px;
+  min-height: 92px;
+  border-radius: 20px;
+}
+
+.kitchen-weekdays-circle {
+  border-radius: 20px;
+}
+
+.kitchen-day-card {
+  background: var(--day-card-bg, #fff);
+  color: var(--day-card-text, var(--hf-text));
+}
+
+.kitchen-day-title,
+.kitchen-day-info-value,
+.kitchen-day-info-label {
+  color: inherit;
+}
+
+.kitchen-day-illustration {
+  width: 100%;
+  max-width: 220px;
+  height: 110px;
+  object-fit: contain;
+  align-self: center;
+}
+
+.kitchen-day-empty-button {
+  border-radius: 18px;
+  min-height: 50px;
+}
+
+.kitchen-week-mobile-frame { gap: 22px; }
+
+.kitchen-ui-bottom-nav {
+  background: #eef2ff;
+  border-top: 1px solid #dbe3ff;
+}
+
+@media (max-width: 900px) {
+  .kitchen-ui-header { display: none; }
+  .kitchen-container {
+    padding: 14px 14px 88px;
+  }
+}
