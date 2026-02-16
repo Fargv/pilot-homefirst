@@ -8,9 +8,6 @@ import DishModal from "../components/DishModal.jsx";
 import KitchenLayout from "../Layout.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { getUserColor } from "../utils/userColors";
-import mainCourseImg from "../../assets/food/main-course.svg";
-import sideDishImg from "../../assets/food/side-dish.svg";
-import emptyDishImg from "../../assets/food/empty-dish.svg";
 
 const DAY_CARD_STYLES = [
   { background: "#eef2ff", color: "#1f2a60" },
@@ -783,7 +780,6 @@ export default function WeekPage() {
                 const isEmptyState = !isPlanned && !isEditing;
                 const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
                 const dayVisual = DAY_CARD_STYLES[index % DAY_CARD_STYLES.length];
-                const dishIllustration = isEmptyState ? emptyDishImg : (showSideDish ? sideDishImg : mainCourseImg);
                 const baseIngredients = mergeIngredientLists(
                   mainDish?.ingredients || [],
                   sideDish?.ingredients || []
@@ -926,7 +922,6 @@ export default function WeekPage() {
                   </div>
                 ) : (
                   <div className="kitchen-day-view">
-                    <img className="kitchen-day-illustration" src={dishIllustration} alt="Ilustración del plato" />
                     <div className="kitchen-day-info">
                       <span className="kitchen-day-info-label">Plato principal</span>
                       <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>

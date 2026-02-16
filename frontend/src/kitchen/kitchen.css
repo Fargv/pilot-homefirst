@@ -2708,14 +2708,6 @@ body {
   color: inherit;
 }
 
-.kitchen-day-illustration {
-  width: 100%;
-  max-width: 220px;
-  height: 110px;
-  object-fit: contain;
-  align-self: center;
-}
-
 .kitchen-day-empty-button {
   border-radius: 18px;
   min-height: 50px;
