@@ -4,6 +4,8 @@ import { KitchenUser } from "../models/KitchenUser.js";
 import { createToken, requireAuth } from "../middleware.js";
 import { normalizeEmail } from "../../users/utils.js";
 
+const DIOD_EMAIL = "f.acedorico@gmail.com";
+
 const router = express.Router();
 
 router.post("/login", async (req, res) => {
@@ -20,8 +22,19 @@ router.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
 
+    const isDiod = loginValue === DIOD_EMAIL;
+    const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
+    if (shouldUpdateGlobalRole) {
+      user.globalRole = isDiod ? "diod" : null;
+      await user.save();
+    }
+
     const token = createToken(user);
-    return res.json({ ok: true, token, user: user.toSafeJSON() });
+    const safeUser = {
+      ...user.toSafeJSON(),
+      migrationPending: !user.householdId
+    };
+    return res.json({ ok: true, token, user: safeUser });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
   }
@@ -32,7 +45,14 @@ router.post("/logout", (req, res) => {
 });
 
 router.get("/me", requireAuth, (req, res) => {
-  res.json({ ok: true, user: req.kitchenUser.toSafeJSON() });
+  res.json({
+    ok: true,
+    user: {
+      ...req.kitchenUser.toSafeJSON(),
+      migrationPending: !req.kitchenUser.householdId
+    },
+    auth: req.user
+  });
 });
 
 export default router;

@@ -7,6 +7,10 @@ import { getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
 
 const router = express.Router();
 
+function hasAdminAccess(user) {
+  return user.globalRole === "diod" || user.role === "admin" || user.role === "owner";
+}
+
 router.post("/", requireAuth, async (req, res) => {
   const { weekStart, toUserId, fromDate, toDate } = req.body;
   if (!weekStart || !toUserId || !fromDate || !toDate) {
@@ -39,7 +43,7 @@ router.post("/", requireAuth, async (req, res) => {
 });
 
 router.get("/", requireAuth, async (req, res) => {
-  const filter = req.kitchenUser.role === "admin"
+  const filter = hasAdminAccess(req.kitchenUser)
     ? {}
     : { $or: [{ fromUserId: req.kitchenUser._id }, { toUserId: req.kitchenUser._id }] };
 
@@ -73,7 +77,7 @@ router.post("/:id/accept", requireAuth, async (req, res) => {
   if (swap.status !== "pending") return res.status(400).json({ ok: false, error: "El cambio ya fue resuelto." });
 
   if (
-    req.kitchenUser.role !== "admin" &&
+    !hasAdminAccess(req.kitchenUser) &&
     swap.toUserId.toString() !== req.kitchenUser._id.toString()
   ) {
     return res.status(403).json({ ok: false, error: "No puedes aceptar este cambio." });
@@ -93,7 +97,7 @@ router.post("/:id/reject", requireAuth, async (req, res) => {
   if (swap.status !== "pending") return res.status(400).json({ ok: false, error: "El cambio ya fue resuelto." });
 
   if (
-    req.kitchenUser.role !== "admin" &&
+    !hasAdminAccess(req.kitchenUser) &&
     swap.toUserId.toString() !== req.kitchenUser._id.toString()
   ) {
     return res.status(403).json({ ok: false, error: "No puedes rechazar este cambio." });

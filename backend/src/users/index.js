@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../kitchen/models/KitchenUser.js";
+import { Household } from "../kitchen/models/Household.js";
 import { requireAuth, requireRole } from "../kitchen/middleware.js";
 import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "./utils.js";
 
@@ -46,9 +47,17 @@ router.post("/bootstrap", async (req, res) => {
       firstName: firstName ? String(firstName).trim() : undefined,
       lastName: lastName ? String(lastName).trim() : undefined,
       displayName: safeDisplayName,
-      role: "admin",
+      role: "owner",
       passwordHash
     });
+
+    const household = await Household.create({
+      name: `Casa de ${safeDisplayName}`,
+      ownerUserId: user._id
+    });
+
+    user.householdId = household._id;
+    await user.save();
 
     return res.status(201).json({ ok: true, user: user.toSafeJSON() });
   } catch (error) {
@@ -95,6 +104,7 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       lastName: lastName ? String(lastName).trim() : undefined,
       displayName: safeDisplayName,
       role: normalizeRole(role),
+      householdId: req.kitchenUser.householdId,
       passwordHash
     });
 

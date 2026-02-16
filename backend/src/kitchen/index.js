@@ -5,7 +5,7 @@ import weekRoutes from "./routes/weeks.js";
 import shoppingRoutes from "./routes/shopping.js";
 import swapRoutes from "./routes/swaps.js";
 import userRoutes from "./routes/users.js";
-// test: trigger render auto-deploy (no functional change)
+import adminRoutes from "./routes/admin.js";
 
 const router = express.Router();
 
@@ -15,5 +15,6 @@ router.use("/weeks", weekRoutes);
 router.use("/shopping", shoppingRoutes);
 router.use("/swaps", swapRoutes);
 router.use("/users", userRoutes);
+router.use("/admin", adminRoutes);
 
 export default router;

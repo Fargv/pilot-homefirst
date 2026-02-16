@@ -8,7 +8,10 @@ const KitchenUserSchema = new mongoose.Schema(
     lastName: { type: String, trim: true },
     displayName: { type: String, required: true, trim: true },
     passwordHash: { type: String, required: true },
-    role: { type: String, enum: ["admin", "user"], default: "user" }
+    role: { type: String, enum: ["owner", "member", "admin", "user"], default: "member" },
+    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" },
+    globalRole: { type: String, enum: ["diod", null], default: null },
+    activeHouseholdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" }
   },
   { timestamps: true }
 );
@@ -21,7 +24,10 @@ KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
     firstName: this.firstName,
     lastName: this.lastName,
     displayName: this.displayName,
-    role: this.role
+    role: this.role,
+    householdId: this.householdId ?? null,
+    globalRole: this.globalRole ?? null,
+    activeHouseholdId: this.activeHouseholdId ?? null
   };
 };
 

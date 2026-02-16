@@ -1,28 +1,619 @@
-diff --git a/backend/package.json b/backend/package.json
-index 67c2d77084225c49876321df18dd2e2fb85465e7..da32b301bf24f744ce7ca3de55650e92cbcaa710 100644
---- a/backend/package.json
-+++ b/backend/package.json
-@@ -1,19 +1,20 @@
- {
-   "name": "pilot-backend",
-   "version": "1.0.0",
-   "type": "module",
-   "main": "src/index.js",
-   "scripts": {
-     "start": "node src/index.js",
--    "dev": "node --watch src/index.js"
-+    "dev": "node --watch src/index.js",
-+    "migrate:households": "node scripts/migrate-households.js"
-   },
-   "dependencies": {
--    "bcryptjs": "^2.4.3",
-+    "bcryptjs": "^2.4.3",
-     "cors": "^2.8.5",
-     "dotenv": "^16.4.5",
-     "express": "^4.19.2",
--    "jsonwebtoken": "^9.0.2",
-+    "jsonwebtoken": "^9.0.2",
-     "mongoose": "^8.6.1",
-     "nodemailer": "^6.9.14"
+diff --git a/backend/src/index.js b/backend/src/index.js
+index d106e9951e3c7b5d6dd8b90ef006cc40aac06abc..7c49f5f1f4c1640d273519465b1ff0cb6bae9761 100644
+--- a/backend/src/index.js
++++ b/backend/src/index.js
+@@ -1,44 +1,46 @@
+ import express from "express";
+ import cors from "cors";
+ import { config } from "./config.js";
+ import { connectDb } from "./db.js";
+ import { sendTestEmail } from "./mailer.js";
+-import kitchenRouter from "./kitchen/index.js";
+-import categoriesRouter from "./kitchen/routes/categories.js";
+-import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
+-import usersRouter from "./users/index.js";
++import kitchenRouter from "./kitchen/index.js";
++import categoriesRouter from "./kitchen/routes/categories.js";
++import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
++import usersRouter from "./users/index.js";
++import adminRouter from "./kitchen/routes/admin.js";
+ 
+ const app = express();
+ 
+ app.use(cors({ origin: config.corsOrigin }));
+ app.use(express.json());
+ 
+ app.get("/health", (req, res) => {
+   res.json({ ok: true, env: config.nodeEnv, time: new Date().toISOString() });
+ });
+ 
+ app.post("/api/email/test", async (req, res) => {
+   try {
+     const { to } = req.body;
+     if (!to) return res.status(400).json({ ok: false, error: "Falta 'to' en body" });
+ 
+     const messageId = await sendTestEmail({ to });
+     res.json({ ok: true, messageId });
+   } catch (e) {
+     res.status(500).json({ ok: false, error: e.message });
    }
+ });
+ 
+-app.use("/api/kitchen", kitchenRouter);
+-app.use("/api/categories", categoriesRouter);
++app.use("/api/kitchen", kitchenRouter);
++app.use("/api/admin", adminRouter);
++app.use("/api/categories", categoriesRouter);
+ app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
+ app.use("/api/users", usersRouter);
+ 
+ connectDb()
+   .then(() => {
+     app.listen(config.port, () => console.log(`🚀 API escuchando en :${config.port}`));
+   })
+   .catch((e) => {
+     console.error("❌ Error conectando DB", e);
+     process.exit(1);
+   });
+diff --git a/backend/src/kitchen/index.js b/backend/src/kitchen/index.js
+index 809c5d1111aae158907e725f0affd04939f00066..e4eb0b1e457d35dba5f27d824409dc8deb2aa1ef 100644
+--- a/backend/src/kitchen/index.js
++++ b/backend/src/kitchen/index.js
+@@ -1,19 +1,20 @@
+ import express from "express";
+ import authRoutes from "./routes/auth.js";
+ import dishRoutes from "./routes/dishes.js";
+ import weekRoutes from "./routes/weeks.js";
+ import shoppingRoutes from "./routes/shopping.js";
+ import swapRoutes from "./routes/swaps.js";
+ import userRoutes from "./routes/users.js";
+-// test: trigger render auto-deploy (no functional change)
++import adminRoutes from "./routes/admin.js";
+ 
+ const router = express.Router();
+ 
+ router.use("/auth", authRoutes);
+ router.use("/dishes", dishRoutes);
+ router.use("/weeks", weekRoutes);
+ router.use("/shopping", shoppingRoutes);
+ router.use("/swaps", swapRoutes);
+ router.use("/users", userRoutes);
++router.use("/admin", adminRoutes);
+ 
+ export default router;
+diff --git a/backend/src/kitchen/middleware.js b/backend/src/kitchen/middleware.js
+index dda0aa07c7917c3f702a7506ce7538ecff9737bb..8797e06b4b26700110f9e6c1cd3e71b295364f20 100644
+--- a/backend/src/kitchen/middleware.js
++++ b/backend/src/kitchen/middleware.js
+@@ -1,36 +1,76 @@
+ import jwt from "jsonwebtoken";
+ import { config } from "../config.js";
+ import { KitchenUser } from "./models/KitchenUser.js";
+ 
++function normalizeRoleForAuthorization(role) {
++  if (role === "owner") return "admin";
++  if (role === "member") return "user";
++  return role;
++}
++
++function buildAuthUser(user, payload) {
++  return {
++    id: user._id.toString(),
++    role: user.role,
++    householdId: payload.householdId ?? null,
++    globalRole: payload.globalRole ?? null,
++    activeHouseholdId: payload.activeHouseholdId ?? null
++  };
++}
++
+ export function createToken(user) {
+-  return jwt.sign({ sub: user._id.toString(), role: user.role }, config.jwtSecret, {
++  return jwt.sign(
++    {
++      sub: user._id.toString(),
++      userId: user._id.toString(),
++      role: user.role,
++      globalRole: user.globalRole ?? null,
++      householdId: user.householdId ? user.householdId.toString() : null,
++      activeHouseholdId: user.activeHouseholdId ? user.activeHouseholdId.toString() : null
++    },
++    config.jwtSecret,
++    {
+     expiresIn: "7d"
+-  });
++    }
++  );
+ }
+ 
+ export async function requireAuth(req, res, next) {
+   try {
+     const authHeader = req.headers.authorization || "";
+     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+     if (!token) return res.status(401).json({ ok: false, error: "No hay sesión activa." });
+ 
+     const payload = jwt.verify(token, config.jwtSecret);
+     const user = await KitchenUser.findById(payload.sub);
+     if (!user) return res.status(401).json({ ok: false, error: "Sesión inválida." });
+ 
+     req.kitchenUser = user;
++    req.user = buildAuthUser(user, payload);
+     return next();
+   } catch (error) {
+     return res.status(401).json({ ok: false, error: "No se pudo validar la sesión." });
+   }
+ }
+ 
+ export function requireRole(...roles) {
+   return (req, res, next) => {
+     if (!req.kitchenUser) return res.status(401).json({ ok: false, error: "No hay sesión activa." });
+-    if (!roles.includes(req.kitchenUser.role)) {
++    if (req.kitchenUser.globalRole === "diod") return next();
++
++    const normalizedRoles = roles.map((role) => normalizeRoleForAuthorization(role));
++    const userRole = normalizeRoleForAuthorization(req.kitchenUser.role);
++    if (!normalizedRoles.includes(userRole)) {
+       return res.status(403).json({ ok: false, error: "No tienes permisos para esta acción." });
+     }
+     return next();
+   };
+ }
++
++export function requireDiod(req, res, next) {
++  if (!req.kitchenUser) return res.status(401).json({ ok: false, error: "No hay sesión activa." });
++  if (req.kitchenUser.globalRole !== "diod") {
++    return res.status(403).json({ ok: false, error: "No tienes permisos para esta acción." });
++  }
++  return next();
++}
+diff --git a/backend/src/kitchen/models/KitchenUser.js b/backend/src/kitchen/models/KitchenUser.js
+index 1e2f499d5e9205aecb484b12a59e01d54c93c102..5deb5af0fe4cec51797f3c4b89164a57af4cab19 100644
+--- a/backend/src/kitchen/models/KitchenUser.js
++++ b/backend/src/kitchen/models/KitchenUser.js
+@@ -1,28 +1,34 @@
+ import mongoose from "mongoose";
+ 
+ const KitchenUserSchema = new mongoose.Schema(
+   {
+     username: { type: String, required: true, unique: true, trim: true },
+     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+-    firstName: { type: String, trim: true },
+-    lastName: { type: String, trim: true },
++    firstName: { type: String, trim: true },
++    lastName: { type: String, trim: true },
+     displayName: { type: String, required: true, trim: true },
+     passwordHash: { type: String, required: true },
+-    role: { type: String, enum: ["admin", "user"], default: "user" }
++    role: { type: String, enum: ["owner", "member", "admin", "user"], default: "member" },
++    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" },
++    globalRole: { type: String, enum: ["diod", null], default: null },
++    activeHouseholdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" }
+   },
+   { timestamps: true }
+ );
+ 
+ KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
+   return {
+     id: this._id,
+     username: this.username,
+     email: this.email,
+-    firstName: this.firstName,
+-    lastName: this.lastName,
++    firstName: this.firstName,
++    lastName: this.lastName,
+     displayName: this.displayName,
+-    role: this.role
++    role: this.role,
++    householdId: this.householdId ?? null,
++    globalRole: this.globalRole ?? null,
++    activeHouseholdId: this.activeHouseholdId ?? null
+   };
+ };
+ 
+ export const KitchenUser = mongoose.model("KitchenUser", KitchenUserSchema);
+diff --git a/backend/src/kitchen/routes/auth.js b/backend/src/kitchen/routes/auth.js
+index 872b62d0ac40625c5943cb1c91f879e33e1954cf..62ad803a12ba2b84ea6affdcff709faf333fb32f 100644
+--- a/backend/src/kitchen/routes/auth.js
++++ b/backend/src/kitchen/routes/auth.js
+@@ -1,38 +1,58 @@
+ import express from "express";
+ import bcrypt from "bcryptjs";
+ import { KitchenUser } from "../models/KitchenUser.js";
+ import { createToken, requireAuth } from "../middleware.js";
+-import { normalizeEmail } from "../../users/utils.js";
++import { normalizeEmail } from "../../users/utils.js";
++
++const DIOD_EMAIL = "f.acedorico@gmail.com";
+ 
+ const router = express.Router();
+ 
+ router.post("/login", async (req, res) => {
+   try {
+     const { email, password, username } = req.body;
+     const loginValue = normalizeEmail(email || username);
+     if (!loginValue || !password) {
+       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
+     }
+ 
+     const user = await KitchenUser.findOne({ email: loginValue });
+     if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+ 
+     const ok = await bcrypt.compare(password, user.passwordHash);
+     if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+ 
++    const isDiod = loginValue === DIOD_EMAIL;
++    const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
++    if (shouldUpdateGlobalRole) {
++      user.globalRole = isDiod ? "diod" : null;
++      await user.save();
++    }
++
+     const token = createToken(user);
+-    return res.json({ ok: true, token, user: user.toSafeJSON() });
++    const safeUser = {
++      ...user.toSafeJSON(),
++      migrationPending: !user.householdId
++    };
++    return res.json({ ok: true, token, user: safeUser });
+   } catch (error) {
+     return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
+   }
+ });
+ 
+ router.post("/logout", (req, res) => {
+   res.json({ ok: true });
+ });
+ 
+ router.get("/me", requireAuth, (req, res) => {
+-  res.json({ ok: true, user: req.kitchenUser.toSafeJSON() });
++  res.json({
++    ok: true,
++    user: {
++      ...req.kitchenUser.toSafeJSON(),
++      migrationPending: !req.kitchenUser.householdId
++    },
++    auth: req.user
++  });
+ });
+ 
+ export default router;
+diff --git a/backend/src/kitchen/routes/swaps.js b/backend/src/kitchen/routes/swaps.js
+index 84a089ef5ca22da84a77fe6f561413dcbc05480c..2d742e9eef6994cd0e621d3350ae6dcd798f9282 100644
+--- a/backend/src/kitchen/routes/swaps.js
++++ b/backend/src/kitchen/routes/swaps.js
+@@ -1,121 +1,125 @@
+ import express from "express";
+ import { KitchenSwap } from "../models/KitchenSwap.js";
+ import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
+ import { KitchenAuditLog } from "../models/KitchenAuditLog.js";
+ import { requireAuth, requireRole } from "../middleware.js";
+ import { getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
+ 
+ const router = express.Router();
+ 
++function hasAdminAccess(user) {
++  return user.globalRole === "diod" || user.role === "admin" || user.role === "owner";
++}
++
+ router.post("/", requireAuth, async (req, res) => {
+   const { weekStart, toUserId, fromDate, toDate } = req.body;
+   if (!weekStart || !toUserId || !fromDate || !toDate) {
+     return res.status(400).json({ ok: false, error: "Faltan datos para el cambio." });
+   }
+ 
+   const weekStartParsed = parseISODate(weekStart);
+   const fromDateObj = parseISODate(fromDate);
+   const toDateObj = parseISODate(toDate);
+   if (!weekStartParsed || !fromDateObj || !toDateObj) {
+     return res.status(400).json({ ok: false, error: "Fechas inválidas." });
+   }
+   const weekStartDate = getWeekStart(weekStartParsed);
+ 
+   const swap = await KitchenSwap.create({
+     weekStart: weekStartDate,
+     fromUserId: req.kitchenUser._id,
+     toUserId,
+     fromDate: fromDateObj,
+     toDate: toDateObj
+   });
+ 
+   await KitchenAuditLog.create({
+     action: "swap_requested",
+     actorUserId: req.kitchenUser._id,
+     data: { swapId: swap._id }
+   });
+ 
+   res.status(201).json({ ok: true, swap });
+ });
+ 
+ router.get("/", requireAuth, async (req, res) => {
+-  const filter = req.kitchenUser.role === "admin"
++  const filter = hasAdminAccess(req.kitchenUser)
+     ? {}
+     : { $or: [{ fromUserId: req.kitchenUser._id }, { toUserId: req.kitchenUser._id }] };
+ 
+   const swaps = await KitchenSwap.find(filter).sort({ createdAt: -1 });
+   res.json({ ok: true, swaps });
+ });
+ 
+ async function applySwap(swap, actor) {
+   const plan = await KitchenWeekPlan.findOne({ weekStart: swap.weekStart });
+   if (!plan) return;
+ 
+   const fromDay = plan.days.find((day) => isSameDay(day.date, swap.fromDate));
+   const toDay = plan.days.find((day) => isSameDay(day.date, swap.toDate));
+   if (!fromDay || !toDay) return;
+ 
+   const tempCook = fromDay.cookUserId;
+   fromDay.cookUserId = toDay.cookUserId;
+   toDay.cookUserId = tempCook;
+ 
+   await plan.save();
+   await KitchenAuditLog.create({
+     action: "swap_applied",
+     actorUserId: actor,
+     data: { swapId: swap._id }
+   });
+ }
+ 
+ router.post("/:id/accept", requireAuth, async (req, res) => {
+   const swap = await KitchenSwap.findById(req.params.id);
+   if (!swap) return res.status(404).json({ ok: false, error: "Cambio no encontrado." });
+   if (swap.status !== "pending") return res.status(400).json({ ok: false, error: "El cambio ya fue resuelto." });
+ 
+   if (
+-    req.kitchenUser.role !== "admin" &&
++    !hasAdminAccess(req.kitchenUser) &&
+     swap.toUserId.toString() !== req.kitchenUser._id.toString()
+   ) {
+     return res.status(403).json({ ok: false, error: "No puedes aceptar este cambio." });
+   }
+ 
+   swap.status = "accepted";
+   swap.resolvedAt = new Date();
+   await swap.save();
+   await applySwap(swap, req.kitchenUser._id);
+ 
+   res.json({ ok: true, swap });
+ });
+ 
+ router.post("/:id/reject", requireAuth, async (req, res) => {
+   const swap = await KitchenSwap.findById(req.params.id);
+   if (!swap) return res.status(404).json({ ok: false, error: "Cambio no encontrado." });
+   if (swap.status !== "pending") return res.status(400).json({ ok: false, error: "El cambio ya fue resuelto." });
+ 
+   if (
+-    req.kitchenUser.role !== "admin" &&
++    !hasAdminAccess(req.kitchenUser) &&
+     swap.toUserId.toString() !== req.kitchenUser._id.toString()
+   ) {
+     return res.status(403).json({ ok: false, error: "No puedes rechazar este cambio." });
+   }
+ 
+   swap.status = "rejected";
+   swap.resolvedAt = new Date();
+   await swap.save();
+ 
+   await KitchenAuditLog.create({
+     action: "swap_rejected",
+     actorUserId: req.kitchenUser._id,
+     data: { swapId: swap._id }
+   });
+ 
+   res.json({ ok: true, swap });
+ });
+ 
+ router.post("/:id/force", requireAuth, requireRole("admin"), async (req, res) => {
+   const swap = await KitchenSwap.findById(req.params.id);
+   if (!swap) return res.status(404).json({ ok: false, error: "Cambio no encontrado." });
+ 
+   swap.status = "accepted";
+   swap.resolvedAt = new Date();
+   await swap.save();
+diff --git a/backend/src/kitchen/routes/users.js b/backend/src/kitchen/routes/users.js
+index 41b9e68850f3a11cb41057ac072a091482d14f8d..767b5cfee846ee616d0e05af17a07a26aa11116b 100644
+--- a/backend/src/kitchen/routes/users.js
++++ b/backend/src/kitchen/routes/users.js
+@@ -18,41 +18,42 @@ router.get("/members", requireAuth, async (req, res) => {
+ 
+ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
+   try {
+     const { email, password, firstName, lastName, name, displayName } = req.body;
+     const normalizedEmail = normalizeEmail(email);
+     if (!normalizedEmail || !password) {
+       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
+     }
+     if (!isValidEmail(normalizedEmail)) {
+       return res.status(400).json({ ok: false, error: "El email no es válido." });
+     }
+     if (String(password).length < 8) {
+       return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
+     }
+ 
+     const exists = await KitchenUser.findOne({ email: normalizedEmail });
+     if (exists) return res.status(409).json({ ok: false, error: "El email ya está registrado." });
+ 
+     const safeDisplayName = buildDisplayName({ firstName, lastName, name, displayName });
+     if (!safeDisplayName) {
+       return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
+     }
+ 
+     const passwordHash = await bcrypt.hash(password, 10);
+     const user = await KitchenUser.create({
+-      username: normalizedEmail,
+-      email: normalizedEmail,
+-      firstName: firstName ? String(firstName).trim() : undefined,
+-      lastName: lastName ? String(lastName).trim() : undefined,
+-      displayName: safeDisplayName,
+-      role: normalizeRole(req.body.role),
++      username: normalizedEmail,
++      email: normalizedEmail,
++      firstName: firstName ? String(firstName).trim() : undefined,
++      lastName: lastName ? String(lastName).trim() : undefined,
++      displayName: safeDisplayName,
++      role: normalizeRole(req.body.role),
++      householdId: req.kitchenUser.householdId,
+       passwordHash
+     });
+ 
+     return res.status(201).json({ ok: true, user: user.toSafeJSON() });
+   } catch (error) {
+     return res.status(500).json({ ok: false, error: "No se pudo crear el usuario." });
+   }
+ });
+ 
+ export default router;
+diff --git a/backend/src/users/index.js b/backend/src/users/index.js
+index 1d3ba8a0406355fe109ba7c4149f24b17e6faa24..9d38108fbe2a4768071906fe548c666a088e74b8 100644
+--- a/backend/src/users/index.js
++++ b/backend/src/users/index.js
+@@ -1,107 +1,117 @@
+ import express from "express";
+ import bcrypt from "bcryptjs";
+ import { KitchenUser } from "../kitchen/models/KitchenUser.js";
++import { Household } from "../kitchen/models/Household.js";
+ import { requireAuth, requireRole } from "../kitchen/middleware.js";
+ import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "./utils.js";
+ 
+ const router = express.Router();
+ 
+ router.get("/bootstrap-needed", async (req, res) => {
+   try {
+     const total = await KitchenUser.countDocuments();
+     res.json({ needed: total === 0 });
+   } catch (error) {
+     res.status(500).json({ ok: false, error: "No se pudo comprobar el estado de usuarios." });
+   }
+ });
+ 
+ router.post("/bootstrap", async (req, res) => {
+   try {
+     const total = await KitchenUser.countDocuments();
+     if (total > 0) {
+       return res.status(403).json({ ok: false, error: "Ya existe un usuario creado." });
+     }
+ 
+     const { email, password, firstName, lastName, name, displayName } = req.body;
+     const normalizedEmail = normalizeEmail(email);
+     if (!normalizedEmail || !password) {
+       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
+     }
+     if (!isValidEmail(normalizedEmail)) {
+       return res.status(400).json({ ok: false, error: "El email no es válido." });
+     }
+     if (String(password).length < 8) {
+       return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
+     }
+ 
+     const safeDisplayName = buildDisplayName({ firstName, lastName, name, displayName });
+     if (!safeDisplayName) {
+       return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
+     }
+ 
+     const passwordHash = await bcrypt.hash(password, 10);
+     const user = await KitchenUser.create({
+       username: normalizedEmail,
+       email: normalizedEmail,
+       firstName: firstName ? String(firstName).trim() : undefined,
+       lastName: lastName ? String(lastName).trim() : undefined,
+       displayName: safeDisplayName,
+-      role: "admin",
++      role: "owner",
+       passwordHash
+     });
+ 
++    const household = await Household.create({
++      name: `Casa de ${safeDisplayName}`,
++      ownerUserId: user._id
++    });
++
++    user.householdId = household._id;
++    await user.save();
++
+     return res.status(201).json({ ok: true, user: user.toSafeJSON() });
+   } catch (error) {
+     return res.status(500).json({ ok: false, error: "No se pudo crear el primer usuario." });
+   }
+ });
+ 
+ router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
+   try {
+     const users = await KitchenUser.find().sort({ createdAt: 1 });
+     res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
+   } catch (error) {
+     res.status(500).json({ ok: false, error: "No se pudieron cargar los usuarios." });
+   }
+ });
+ 
+ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
+   try {
+     const { email, password, firstName, lastName, name, displayName, role } = req.body;
+     const normalizedEmail = normalizeEmail(email);
+     if (!normalizedEmail || !password) {
+       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
+     }
+     if (!isValidEmail(normalizedEmail)) {
+       return res.status(400).json({ ok: false, error: "El email no es válido." });
+     }
+     if (String(password).length < 8) {
+       return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
+     }
+ 
+     const exists = await KitchenUser.findOne({ email: normalizedEmail });
+     if (exists) return res.status(409).json({ ok: false, error: "El email ya está registrado." });
+ 
+     const safeDisplayName = buildDisplayName({ firstName, lastName, name, displayName });
+     if (!safeDisplayName) {
+       return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
+     }
+ 
+     const passwordHash = await bcrypt.hash(password, 10);
+     const user = await KitchenUser.create({
+       username: normalizedEmail,
+       email: normalizedEmail,
+       firstName: firstName ? String(firstName).trim() : undefined,
+       lastName: lastName ? String(lastName).trim() : undefined,
+       displayName: safeDisplayName,
+       role: normalizeRole(role),
++      householdId: req.kitchenUser.householdId,
+       passwordHash
+     });
+ 
+     return res.status(201).json({ ok: true, user: user.toSafeJSON() });
+   } catch (error) {
+     return res.status(500).json({ ok: false, error: "No se pudo crear el usuario." });
+   }
+ });
+ 
+ export default router;
+diff --git a/backend/src/users/utils.js b/backend/src/users/utils.js
+index 287c12fe3a58ad210b158545cffc18cb4cc6439a..bc53e47d3d6f52a574c352236d4764756c40d0c6 100644
+--- a/backend/src/users/utils.js
++++ b/backend/src/users/utils.js
+@@ -1,23 +1,23 @@
+ export function normalizeEmail(email) {
+   return String(email || "").trim().toLowerCase();
+ }
+ 
+ export function isValidEmail(email) {
+   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+ }
+ 
+ export function normalizeRole(role) {
+-  if (!role) return "user";
++  if (!role) return "member";
+   const value = String(role).toLowerCase();
+-  if (value === "admin") return "admin";
+-  if (value === "usuario") return "user";
+-  return "user";
++  if (value === "owner" || value === "admin") return "owner";
++  if (value === "member" || value === "usuario" || value === "user") return "member";
++  return "member";
+ }
+ 
+ export function buildDisplayName({ firstName, lastName, displayName, name }) {
+   const first = String(firstName || name || "").trim();
+   const last = String(lastName || "").trim();
+   const full = [first, last].filter(Boolean).join(" ").trim();
+   if (full) return full;
+   return String(displayName || "").trim();
  }

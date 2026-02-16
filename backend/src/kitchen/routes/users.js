@@ -46,6 +46,7 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       lastName: lastName ? String(lastName).trim() : undefined,
       displayName: safeDisplayName,
       role: normalizeRole(req.body.role),
+      householdId: req.kitchenUser.householdId,
       passwordHash
     });
 

@@ -7,11 +7,11 @@ export function isValidEmail(email) {
 }
 
 export function normalizeRole(role) {
-  if (!role) return "user";
+  if (!role) return "member";
   const value = String(role).toLowerCase();
-  if (value === "admin") return "admin";
-  if (value === "usuario") return "user";
-  return "user";
+  if (value === "owner" || value === "admin") return "owner";
+  if (value === "member" || value === "usuario" || value === "user") return "member";
+  return "member";
 }
 
 export function buildDisplayName({ firstName, lastName, displayName, name }) {
