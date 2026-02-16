@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "migrate:households": "node scripts/migrate-households.js"
+    "migrate:households": "node scripts/migrate-households.js",
+    "create:diod": "node scripts/create-diod.js",
+    "test:connection": "node scripts/test-connection.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
