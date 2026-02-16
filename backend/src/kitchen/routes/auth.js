@@ -4,7 +4,7 @@ import { KitchenUser } from "../models/KitchenUser.js";
 import { createToken, requireAuth } from "../middleware.js";
 import { normalizeEmail } from "../../users/utils.js";
 
-const DIOD_EMAIL = "f.acedorico@gmail.com";
+const DIOD_EMAIL = "admin@admin.com";
 
 const router = express.Router();
 
