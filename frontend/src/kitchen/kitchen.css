@@ -2253,7 +2253,7 @@ body {
   pointer-events: none;
 }
 
-.kitchen-login-input {
+.kitchen-ui-input.kitchen-login-input {
   width: 100%;
   padding: 15px 16px;
   padding-left: 52px;
@@ -2266,7 +2266,7 @@ body {
   font-weight: 500;
 }
 
-.kitchen-login-input::placeholder {
+.kitchen-ui-input.kitchen-login-input::placeholder {
   color: #94a3b8;
   font-weight: 400;
 }
@@ -2277,7 +2277,7 @@ body {
   outline-offset: 1px;
 }
 
-.kitchen-login-password-input {
+.kitchen-ui-input.kitchen-login-password-input {
   padding-right: 52px;
 }
 

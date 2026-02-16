@@ -1,233 +1,102 @@
 diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 3ad5b82fd524ac2ce7ecb6f2661070ba1553713e..4ba9bf2ce6d5c67a260b27a6ba858789f2dcf457 100644
+index 0b4ddd06d7c8a4fe2327358b8bc5ef091350803f..b1fd5acde91ef7a1325949a14db8f03caa9982cf 100644
 --- a/frontend/src/kitchen/kitchen.css
 +++ b/frontend/src/kitchen/kitchen.css
-@@ -2686,51 +2686,43 @@ body {
+@@ -2231,77 +2231,77 @@ body {
+   color: #98a2b3;
+   font-weight: 700;
+   letter-spacing: 0.06em;
  }
  
- .kitchen-user-menu button:hover { background: #eef2ff; }
- 
- .kitchen-weekdays-item {
-   min-width: 72px;
-   min-height: 92px;
-   border-radius: 20px;
+ .kitchen-login-input-wrap {
+   position: relative;
+   display: flex;
+   align-items: center;
  }
  
- .kitchen-weekdays-circle {
-   border-radius: 20px;
+ .kitchen-login-input-icon {
+   width: 18px;
+   height: 18px;
+   color: #98a2b3;
  }
  
- .kitchen-day-card {
-   background: var(--day-card-bg, #fff);
-   color: var(--day-card-text, var(--hf-text));
+ .kitchen-login-input-wrap > .kitchen-login-input-icon {
+   position: absolute;
+   left: 16px;
+   top: 50%;
+   transform: translateY(-50%);
+   pointer-events: none;
  }
  
- .kitchen-day-title,
- .kitchen-day-info-value,
- .kitchen-day-info-label {
-   color: inherit;
- }
- 
--.kitchen-day-illustration {
+-.kitchen-login-input {
 -  width: 100%;
--  max-width: 220px;
--  height: 110px;
--  object-fit: contain;
--  align-self: center;
+-  padding: 15px 16px;
+-  padding-left: 52px;
+-  border-radius: 999px;
+-  border-color: transparent;
+-  background: #f8fafc;
+-  color: #334155;
+-  font-size: 16px;
+-  line-height: 1.3;
+-  font-weight: 500;
 -}
 -
--.kitchen-day-empty-button {
--  border-radius: 18px;
--  min-height: 50px;
+-.kitchen-login-input::placeholder {
+-  color: #94a3b8;
+-  font-weight: 400;
 -}
-+.kitchen-day-empty-button {
-+  border-radius: 18px;
-+  min-height: 50px;
++.kitchen-ui-input.kitchen-login-input {
++  width: 100%;
++  padding: 15px 16px;
++  padding-left: 52px;
++  border-radius: 999px;
++  border-color: transparent;
++  background: #f8fafc;
++  color: #334155;
++  font-size: 16px;
++  line-height: 1.3;
++  font-weight: 500;
++}
++
++.kitchen-ui-input.kitchen-login-input::placeholder {
++  color: #94a3b8;
++  font-weight: 400;
 +}
  
- .kitchen-week-mobile-frame { gap: 22px; }
- 
- .kitchen-ui-bottom-nav {
-   background: #eef2ff;
-   border-top: 1px solid #dbe3ff;
+ .kitchen-login-input:focus-visible {
+   border-color: #4338ca;
+   outline: 2px solid rgba(67, 56, 202, 0.2);
+   outline-offset: 1px;
  }
  
- @media (max-width: 900px) {
-   .kitchen-ui-header { display: none; }
-   .kitchen-container {
-     padding: 14px 14px 88px;
-   }
- }
-diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
-index cb999cf5d2edf3df2fd7c722dd978e3241e1f99f..fa3bb51cacfc8f05ff7aa3ac9f77b8a93378b7de 100644
---- a/frontend/src/kitchen/pages/WeekPage.jsx
-+++ b/frontend/src/kitchen/pages/WeekPage.jsx
-@@ -1,38 +1,35 @@
- import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
- import { useSearchParams } from "react-router-dom";
- import { apiRequest } from "../api.js";
- import { useAuth } from "../auth";
- import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
- import IngredientPicker from "../components/IngredientPicker.jsx";
- import DishModal from "../components/DishModal.jsx";
- import KitchenLayout from "../Layout.jsx";
--import { normalizeIngredientName } from "../utils/normalize.js";
--import { getUserColor } from "../utils/userColors";
--import mainCourseImg from "../../assets/food/main-course.svg";
--import sideDishImg from "../../assets/food/side-dish.svg";
--import emptyDishImg from "../../assets/food/empty-dish.svg";
-+import { normalizeIngredientName } from "../utils/normalize.js";
-+import { getUserColor } from "../utils/userColors";
+-.kitchen-login-password-input {
+-  padding-right: 52px;
+-}
++.kitchen-ui-input.kitchen-login-password-input {
++  padding-right: 52px;
++}
  
- const DAY_CARD_STYLES = [
-   { background: "#eef2ff", color: "#1f2a60" },
-   { background: "#ecfeff", color: "#134e4a" },
-   { background: "#fef9c3", color: "#713f12" },
-   { background: "#fce7f3", color: "#831843" },
-   { background: "#dcfce7", color: "#14532d" },
-   { background: "#ffedd5", color: "#7c2d12" },
-   { background: "#ede9fe", color: "#4c1d95" }
- ];
- 
- function getMondayISO(date = new Date()) {
-   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-   const day = d.getUTCDay();
-   const diff = (day === 0 ? -6 : 1) - day;
-   d.setUTCDate(d.getUTCDate() + diff);
-   return d.toISOString().slice(0, 10);
+ .kitchen-login-eye {
+   position: absolute;
+   right: 16px;
+   top: 50%;
+   transform: translateY(-50%);
+   border: none;
+   background: transparent;
+   padding: 6px;
+   border-radius: 999px;
+   display: grid;
+   place-items: center;
  }
  
- function formatDateLabel(dateString) {
-   if (!dateString) {
-     return "Sin fecha";
-   }
-   const date = new Date(dateString);
-   if (Number.isNaN(date.getTime())) {
-@@ -758,58 +755,57 @@ export default function WeekPage() {
-                 if (!day?.date) {
-                   return (
-                     <div key={`day-${index}`} className="kitchen-card kitchen-day-card">
-                       <div className="kitchen-day-header">
-                         <h3 className="kitchen-day-title">Día sin fecha</h3>
-                         <p className="kitchen-muted">Falta la fecha de este día en la planificación.</p>
-                       </div>
-                     </div>
-                   );
-                 }
-                 const dayKey = day.date.slice(0, 10);
-                 const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
-                 const cookInitials = getInitials(cookUser?.displayName);
-                 const cookColors = getUserColor(day.cookUserId);
-                 const isAssigned = Boolean(day.cookUserId);
-                 const isPlanned = Boolean(day.mainDishId);
-                 const isAssignedToSelf = day.cookUserId
-                   && (day.cookUserId === user?.id || day.cookUserId === user?._id);
-                 const canEdit = user?.role === "admin" || isAssignedToSelf;
-                 const isEditing = Boolean(editingDays[dayKey]);
-                 const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
-                 const sideDish = day.sideDishId ? dishMap.get(day.sideDishId) : null;
-                 const showSideDish = Boolean(sideDish);
-                 const sideDishOn = Boolean(sideDishEnabled[dayKey]);
-                 const sideToggleId = `side-toggle-${dayKey}`;
--                const isEmptyState = !isPlanned && !isEditing;
--                const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
--                const dayVisual = DAY_CARD_STYLES[index % DAY_CARD_STYLES.length];
--                const dishIllustration = isEmptyState ? emptyDishImg : (showSideDish ? sideDishImg : mainCourseImg);
--                const baseIngredients = mergeIngredientLists(
--                  mainDish?.ingredients || [],
--                  sideDish?.ingredients || []
--                );
-+                const isEmptyState = !isPlanned && !isEditing;
-+                const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
-+                const dayVisual = DAY_CARD_STYLES[index % DAY_CARD_STYLES.length];
-+                const baseIngredients = mergeIngredientLists(
-+                  mainDish?.ingredients || [],
-+                  sideDish?.ingredients || []
-+                );
-                 const extraIngredients = day.ingredientOverrides || [];
-                 const extraIngredientsValue =
-                   extraIngredientsByDay[dayKey] ||
-                   extraIngredients.map((item) => ({
-                     ingredientId: item.ingredientId,
-                     displayName: item.displayName,
-                     canonicalName: item.canonicalName,
-                     status: item.ingredientId ? "resolved" : "pending"
-                   }));
-                 const mainDishQuery = mainDishQueries[dayKey] ?? mainDish?.name ?? "";
-                 const trimmedMainDishQuery = mainDishQuery.trim();
-                 const normalizedMainDishQuery = normalizeIngredientName(trimmedMainDishQuery);
-                 const mainDishTokens = normalizedMainDishQuery.split(" ").filter(Boolean);
-                 const filteredMainDishes = mainDishTokens.length
-                   ? dishes.filter((dish) => {
-                     const normalizedName = normalizeIngredientName(dish.name || "");
-                     return mainDishTokens.every((token) => normalizedName.includes(token));
-                   })
-                   : [];
-                 const limitedMainDishes = filteredMainDishes.slice(0, MAX_DISH_RESULTS);
-                 const hasExactMainDishMatch = mainDishTokens.length
-                   ? dishes.some(
-                     (dish) => normalizeIngredientName(dish.name || "") === normalizedMainDishQuery
-                   )
-                   : false;
-@@ -902,56 +898,55 @@ export default function WeekPage() {
-                             onClick={() => stopEditingDay(dayKey)}
-                           >
-                             Cancelar
-                           </button>
-                         </div>
-                       ) : null}
-                     </div>
-                   </>
-                 ) : null}
-               </div>
+ .kitchen-login-forgot-row {
+   display: flex;
+   justify-content: flex-end;
+ }
  
-               {!isEditing ? (
-                 isEmptyState ? (
-                   <div className="kitchen-day-empty">
-                     <div className="kitchen-day-empty-spacer" aria-hidden="true" />
-                     {canShowAssignCta ? (
-                       <button
-                         type="button"
-                         className="kitchen-button kitchen-day-empty-button"
-                         onClick={() => handleAssignCta(day, canEdit, isAssigned)}
-                       >
-                         Asignar plato
-                       </button>
-                     ) : null}
-                   </div>
--                ) : (
--                  <div className="kitchen-day-view">
--                    <img className="kitchen-day-illustration" src={dishIllustration} alt="Ilustración del plato" />
--                    <div className="kitchen-day-info">
--                      <span className="kitchen-day-info-label">Plato principal</span>
--                      <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>
-+                ) : (
-+                  <div className="kitchen-day-view">
-+                    <div className="kitchen-day-info">
-+                      <span className="kitchen-day-info-label">Plato principal</span>
-+                      <span className="kitchen-day-info-value">{mainDish?.name || "Sin plato"}</span>
-                     </div>
-                     {showSideDish ? (
-                       <div className="kitchen-day-info">
-                         <span className="kitchen-day-info-label">Guarnición</span>
-                         <span className="kitchen-day-info-value">{sideDish?.name}</span>
-                       </div>
-                     ) : null}
-                     {!isPlanned && canShowAssignCta ? (
-                       <button
-                         type="button"
-                         className="kitchen-button"
-                         onClick={() => handleAssignCta(day, canEdit, isAssigned)}
-                       >
-                         Asignar plato
-                       </button>
-                     ) : null}
-                     <div className="kitchen-day-ingredients">
-                       <span className="kitchen-label">Ingredientes</span>
-                       <div className="kitchen-day-ingredient-pills">
-                         {baseIngredients.length ? (
-                           baseIngredients.map((item) => (
-                             <span
-                               key={item.ingredientId || item.canonicalName || item.displayName}
-                               className="kitchen-ingredient-pill"
-                             >
+ .kitchen-login-link {
+   border: none;
+   background: transparent;
+   color: #4338ca;
+   font-weight: 600;
+   font-size: 0.95rem;
