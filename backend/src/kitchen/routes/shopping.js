@@ -8,32 +8,31 @@ import { combineDayIngredients } from "../utils/ingredients.js";
 import {
   buildScopedFilter,
   getEffectiveHouseholdId,
-  handleHouseholdError,
-  shouldUseLegacyFallback
+  handleHouseholdError
 } from "../householdScope.js";
 
 const router = express.Router();
 
-async function ensureShoppingList(weekStartDate, effectiveHouseholdId, includeLegacy) {
+async function ensureShoppingList(weekStartDate, effectiveHouseholdId) {
   const existing = await KitchenShoppingList.findOne(
-    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate }, { includeLegacy })
+    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
   );
   if (existing) return existing;
   return KitchenShoppingList.create({
     weekStart: weekStartDate,
     items: [],
-    ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
+    householdId: effectiveHouseholdId
   });
 }
 
-async function buildFromWeek(weekStartDate, effectiveHouseholdId, includeLegacy) {
+async function buildFromWeek(weekStartDate, effectiveHouseholdId) {
   const plan = await KitchenWeekPlan.findOne(
-    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate }, { includeLegacy })
+    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
   );
   if (!plan) return [];
 
   const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-  const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } }, { includeLegacy }));
+  const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } }));
   const dishMap = new Map(dishes.map((dish) => [dish._id.toString(), dish]));
 
   const ingredients = [];
@@ -58,9 +57,8 @@ router.get("/:weekStart", requireAuth, async (req, res) => {
     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const monday = getWeekStart(weekStart);
-    const list = await ensureShoppingList(monday, effectiveHouseholdId, includeLegacy);
+        const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
 
     res.json({ ok: true, weekStart: formatDateISO(monday), list });
   } catch (error) {
@@ -76,11 +74,10 @@ router.post("/:weekStart/rebuild", requireAuth, async (req, res) => {
     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const monday = getWeekStart(weekStart);
-    const list = await ensureShoppingList(monday, effectiveHouseholdId, includeLegacy);
+        const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
 
-    const ingredients = await buildFromWeek(monday, effectiveHouseholdId, includeLegacy);
+    const ingredients = await buildFromWeek(monday, effectiveHouseholdId);
     const merged = new Map();
 
     ingredients.forEach((item) => {
@@ -115,9 +112,8 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
     if (!canonicalName) return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const monday = getWeekStart(weekStart);
-    const list = await ensureShoppingList(monday, effectiveHouseholdId, includeLegacy);
+        const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
 
     const item = list.items.find((current) => current.canonicalName === canonicalName);
     if (!item) {

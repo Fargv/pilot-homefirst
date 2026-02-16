@@ -6,8 +6,7 @@ import { requireAuth, requireRole } from "../kitchen/middleware.js";
 import {
   buildScopedFilter,
   getEffectiveHouseholdId,
-  handleHouseholdError,
-  shouldUseLegacyFallback
+  handleHouseholdError
 } from "../kitchen/householdScope.js";
 import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "./utils.js";
 
@@ -74,8 +73,7 @@ router.post("/bootstrap", async (req, res) => {
 router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy })).sort({ createdAt: 1 });
+    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {})).sort({ createdAt: 1 });
     res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
@@ -115,7 +113,7 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       lastName: lastName ? String(lastName).trim() : undefined,
       displayName: safeDisplayName,
       role: normalizeRole(role),
-      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {}),
+      householdId: effectiveHouseholdId,
       passwordHash
     });
 

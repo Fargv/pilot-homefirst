@@ -6,15 +6,14 @@ import { formatDateISO, getWeekDates, getWeekStart, isSameDay, parseISODate } fr
 import {
   buildScopedFilter,
   getEffectiveHouseholdId,
-  handleHouseholdError,
-  shouldUseLegacyFallback
+  handleHouseholdError
 } from "../householdScope.js";
 
 const router = express.Router();
 
-async function ensureWeekPlan(weekStartDate, effectiveHouseholdId, includeLegacy) {
+async function ensureWeekPlan(weekStartDate, effectiveHouseholdId) {
   const existing = await KitchenWeekPlan.findOne(
-    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate }, { includeLegacy })
+    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
   );
   if (existing) return existing;
 
@@ -28,7 +27,7 @@ async function ensureWeekPlan(weekStartDate, effectiveHouseholdId, includeLegacy
   return KitchenWeekPlan.create({
     weekStart: weekStartDate,
     days,
-    ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
+    householdId: effectiveHouseholdId
   });
 }
 
@@ -38,9 +37,8 @@ router.get("/:weekStart", requireAuth, async (req, res) => {
     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
     const monday = getWeekStart(weekStart);
-    const plan = await ensureWeekPlan(monday, effectiveHouseholdId, includeLegacy);
+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
 
     res.json({
       ok: true,
@@ -61,9 +59,8 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
     const monday = getWeekStart(weekStart);
-    const plan = await ensureWeekPlan(monday, effectiveHouseholdId, includeLegacy);
+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
 
     const day = plan.days.find((item) => isSameDay(item.date, date));
     if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
@@ -94,12 +91,11 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
     }
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
     const monday = getWeekStart(weekStart);
     const sourceMonday = getWeekStart(otherWeekStart);
 
-    const sourcePlan = await ensureWeekPlan(sourceMonday, effectiveHouseholdId, includeLegacy);
-    const targetPlan = await ensureWeekPlan(monday, effectiveHouseholdId, includeLegacy);
+    const sourcePlan = await ensureWeekPlan(sourceMonday, effectiveHouseholdId);
+    const targetPlan = await ensureWeekPlan(monday, effectiveHouseholdId);
 
     targetPlan.days = sourcePlan.days.map((day) => ({
       date: new Date(day.date),
@@ -126,12 +122,11 @@ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
     const monday = getWeekStart(weekStart);
-    const plan = await ensureWeekPlan(monday, effectiveHouseholdId, includeLegacy);
+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
     const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
     const dishes = await KitchenDish.find(
-      buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } }, { includeLegacy })
+      buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
     );
 
     res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });

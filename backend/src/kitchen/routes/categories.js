@@ -4,8 +4,7 @@ import { requireAuth } from "../middleware.js";
 import {
   buildScopedFilter,
   getEffectiveHouseholdId,
-  handleHouseholdError,
-  shouldUseLegacyFallback
+  handleHouseholdError
 } from "../householdScope.js";
 
 const router = express.Router();
@@ -27,9 +26,8 @@ const slugifyCategory = (value = "") => {
 router.get("/", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
     const categories = await Category.find(
-      buildScopedFilter(effectiveHouseholdId, { active: true }, { includeLegacy })
+      buildScopedFilter(effectiveHouseholdId, { active: true })
     ).sort({ order: 1, name: 1 });
 
     return res.json({ ok: true, categories });
@@ -46,7 +44,6 @@ router.post("/", requireAuth, async (req, res) => {
     if (!name) return res.status(400).json({ ok: false, error: "El nombre de la categoría es obligatorio." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
     const trimmedName = String(name).trim();
     const slug = slugifyCategory(trimmedName);
     if (!slug) return res.status(400).json({ ok: false, error: "El nombre de la categoría no es válido." });
@@ -59,8 +56,7 @@ router.post("/", requireAuth, async (req, res) => {
             { slug: new RegExp(`^${escapeRegex(slug)}$`, "i") },
             { name: new RegExp(`^${escapeRegex(trimmedName)}$`, "i") }
           ]
-        },
-        { includeLegacy }
+        }
       )
     );
 
@@ -71,7 +67,7 @@ router.post("/", requireAuth, async (req, res) => {
       slug,
       colorBg: colorBg || DEFAULT_COLOR_BG,
       colorText: colorText || DEFAULT_COLOR_TEXT,
-      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
+      householdId: effectiveHouseholdId
     });
 
     return res.status(201).json({ ok: true, category, created: true });

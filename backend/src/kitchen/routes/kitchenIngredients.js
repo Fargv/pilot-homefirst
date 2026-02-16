@@ -6,8 +6,7 @@ import { normalizeIngredientName } from "../utils/normalize.js";
 import {
   buildScopedFilter,
   getEffectiveHouseholdId,
-  handleHouseholdError,
-  shouldUseLegacyFallback
+  handleHouseholdError
 } from "../householdScope.js";
 
 const router = express.Router();
@@ -38,9 +37,9 @@ const buildAccentInsensitiveRegex = (value) => {
   return new RegExp(pattern, "i");
 };
 
-async function ensureCategoryScope({ categoryId, effectiveHouseholdId, includeLegacy }) {
+async function ensureCategoryScope({ categoryId, effectiveHouseholdId }) {
   const category = await Category.findOne(
-    buildScopedFilter(effectiveHouseholdId, { _id: categoryId }, { includeLegacy })
+    buildScopedFilter(effectiveHouseholdId, { _id: categoryId })
   );
 
   return category;
@@ -50,8 +49,7 @@ router.get("/", requireAuth, async (req, res) => {
   try {
     const { q, includeInactive, limit } = req.query;
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const filters = buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy });
+    const filters = buildScopedFilter(effectiveHouseholdId, {});
     const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
     if (!shouldIncludeInactive) {
       filters.active = true;
@@ -105,8 +103,7 @@ router.post("/", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId, includeLegacy });
+        const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId });
     if (!category) {
       return res.status(404).json({ ok: false, error: "Categoría no encontrada para el hogar actual." });
     }
@@ -121,8 +118,7 @@ router.post("/", requireAuth, async (req, res) => {
         effectiveHouseholdId,
         {
           canonicalName: new RegExp(`^${escapeRegex(canonicalName)}$`, "i")
-        },
-        { includeLegacy }
+        }
       )
     ).populate("categoryId", "name colorBg colorText");
 
@@ -132,7 +128,7 @@ router.post("/", requireAuth, async (req, res) => {
       name: trimmedName,
       canonicalName,
       categoryId,
-      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
+      householdId: effectiveHouseholdId
     });
 
     const populatedIngredient = await KitchenIngredient.findById(ingredient._id).populate(
@@ -159,8 +155,7 @@ router.put("/:id", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Indica si el ingrediente está activo." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId, includeLegacy });
+        const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId });
     if (!category) {
       return res.status(404).json({ ok: false, error: "Categoría no encontrada para el hogar actual." });
     }
@@ -171,7 +166,7 @@ router.put("/:id", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "El nombre del ingrediente no es válido." });
 
     const ingredient = await KitchenIngredient.findOneAndUpdate(
-      buildScopedFilter(effectiveHouseholdId, { _id: id }, { includeLegacy }),
+      buildScopedFilter(effectiveHouseholdId, { _id: id }),
       {
         name: trimmedName,
         canonicalName,

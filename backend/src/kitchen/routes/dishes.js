@@ -5,8 +5,7 @@ import { requireAuth, requireRole } from "../middleware.js";
 import {
   buildScopedFilter,
   getEffectiveHouseholdId,
-  handleHouseholdError,
-  shouldUseLegacyFallback
+  handleHouseholdError
 } from "../householdScope.js";
 
 const router = express.Router();
@@ -15,9 +14,8 @@ router.get("/", requireAuth, async (req, res) => {
   try {
     const { sidedish } = req.query;
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
     const filter = sidedish === "true" ? { sidedish: true } : {};
-    const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, filter, { includeLegacy })).sort({
+    const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, filter)).sort({
       createdAt: -1
     });
 
@@ -41,7 +39,7 @@ router.post("/", requireAuth, async (req, res) => {
       ingredients: normalizedIngredients,
       sidedish: Boolean(sidedish),
       createdBy: req.kitchenUser._id,
-      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
+      householdId: effectiveHouseholdId
     });
 
     return res.status(201).json({ ok: true, dish });
@@ -56,8 +54,7 @@ router.put("/:id", requireAuth, async (req, res) => {
   try {
     const { name, ingredients, sidedish } = req.body;
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const dish = await KitchenDish.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }, { includeLegacy }));
+        const dish = await KitchenDish.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }));
     if (!dish) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
 
     if (name) dish.name = String(name).trim();
@@ -76,8 +73,7 @@ router.put("/:id", requireAuth, async (req, res) => {
 router.delete("/:id", requireAuth, requireRole("admin"), async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const dish = await KitchenDish.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }, { includeLegacy }));
+        const dish = await KitchenDish.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }));
     if (!dish) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
 
     await dish.deleteOne();

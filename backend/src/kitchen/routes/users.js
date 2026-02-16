@@ -3,15 +3,14 @@ import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { requireAuth, requireRole } from "../middleware.js";
 import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "../../users/utils.js";
-import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError, shouldUseLegacyFallback } from "../householdScope.js";
+import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 
 const router = express.Router();
 
 router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy })).sort({ createdAt: 1 });
+    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {})).sort({ createdAt: 1 });
     res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
@@ -23,8 +22,7 @@ router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
 router.get("/members", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy })).sort({ createdAt: 1 });
+    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {})).sort({ createdAt: 1 });
     res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
@@ -64,7 +62,7 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       lastName: lastName ? String(lastName).trim() : undefined,
       displayName: safeDisplayName,
       role: normalizeRole(req.body.role),
-      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {}),
+      householdId: effectiveHouseholdId,
       passwordHash
     });
 
