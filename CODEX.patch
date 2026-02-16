@@ -1,102 +1,677 @@
-diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
-index 0b4ddd06d7c8a4fe2327358b8bc5ef091350803f..b1fd5acde91ef7a1325949a14db8f03caa9982cf 100644
---- a/frontend/src/kitchen/kitchen.css
-+++ b/frontend/src/kitchen/kitchen.css
-@@ -2231,77 +2231,77 @@ body {
-   color: #98a2b3;
-   font-weight: 700;
-   letter-spacing: 0.06em;
- }
- 
- .kitchen-login-input-wrap {
-   position: relative;
-   display: flex;
-   align-items: center;
- }
- 
- .kitchen-login-input-icon {
-   width: 18px;
-   height: 18px;
-   color: #98a2b3;
- }
- 
- .kitchen-login-input-wrap > .kitchen-login-input-icon {
-   position: absolute;
-   left: 16px;
-   top: 50%;
-   transform: translateY(-50%);
-   pointer-events: none;
- }
- 
--.kitchen-login-input {
--  width: 100%;
--  padding: 15px 16px;
--  padding-left: 52px;
--  border-radius: 999px;
--  border-color: transparent;
--  background: #f8fafc;
--  color: #334155;
--  font-size: 16px;
--  line-height: 1.3;
--  font-weight: 500;
+diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
+index e25441044f00f745f9994bbf3353281be992a2c4..cfd8c56e5255235238f93bbfc4e74bb1fb386dc5 100644
+--- a/frontend/src/App.jsx
++++ b/frontend/src/App.jsx
+@@ -1,142 +1,144 @@
+-import React, { useEffect } from "react";
+-import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+-import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
+-import { buildApiUrl } from "./kitchen/api.js";
+-import KitchenLayout from "./kitchen/Layout.jsx";
+-import RequireAuth from "./kitchen/RequireAuth.jsx";
+-import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
+-import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
+-import LoginPage from "./kitchen/pages/LoginPage.jsx";
+-import WeekPage from "./kitchen/pages/WeekPage.jsx";
+-import DishesPage from "./kitchen/pages/DishesPage.jsx";
+-import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
+-import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
+-import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
+-import "./kitchen/kitchen.css";
+-
+-function HomeRedirect() {
+-  const { user, loading } = useAuth();
+-  const navigate = useNavigate();
+-
+-  useEffect(() => {
+-    if (loading) return;
+-    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/kitchen/login";
+-    navigate(destination, { replace: true });
+-  }, [loading, navigate, user]);
+-
+-  return (
+-    <div className="kitchen-app">
+-      <div className="kitchen-container" style={{ maxWidth: 520 }}>
+-        <div className="kitchen-card">
+-          <h2>Cargando Lunchfy...</h2>
+-          <p className="kitchen-muted">
+-            Estamos preparando tu acceso a Lunchfy. En unos segundos te redirigimos.
+-          </p>
+-        </div>
+-      </div>
+-    </div>
+-  );
 -}
 -
--.kitchen-login-input::placeholder {
--  color: #94a3b8;
--  font-weight: 400;
+-function BootstrapRedirect() {
+-  const navigate = useNavigate();
+-  const location = useLocation();
+-
+-  useEffect(() => {
+-    let active = true;
+-    const checkBootstrap = async () => {
+-      try {
+-        const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
+-        const data = await response.json().catch(() => ({}));
+-        if (!active || !response.ok) return;
+-        if (data.needed && location.pathname !== "/bootstrap") {
+-          navigate("/bootstrap", { replace: true });
+-        }
+-        if (!data.needed && location.pathname === "/bootstrap") {
+-          navigate("/kitchen/login", { replace: true });
+-        }
+-      } catch {
+-        // Sin bloqueo si el backend no responde.
+-      }
+-    };
+-    checkBootstrap();
+-    return () => {
+-      active = false;
+-    };
+-  }, [location.pathname, navigate]);
+-
+-  return null;
 -}
-+.kitchen-ui-input.kitchen-login-input {
-+  width: 100%;
-+  padding: 15px 16px;
-+  padding-left: 52px;
-+  border-radius: 999px;
-+  border-color: transparent;
-+  background: #f8fafc;
-+  color: #334155;
-+  font-size: 16px;
-+  line-height: 1.3;
-+  font-weight: 500;
+-
+-export default function App() {
+-  return (
+-    <BrowserRouter>
+-      <AuthProvider>
+-        <BootstrapRedirect />
+-        <Routes>
+-          <Route path="/" element={<HomeRedirect />} />
+-          <Route path="/bootstrap" element={<BootstrapPage />} />
+-          <Route path="/kitchen/login" element={<LoginPage />} />
+-          <Route
+-            path="/kitchen/semana"
+-            element={(
+-              <RequireAuth>
+-                <WeekPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/kitchen/platos"
+-            element={(
+-              <RequireAuth>
+-                <DishesPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/kitchen/compra"
+-            element={(
+-              <RequireAuth>
+-                <ShoppingPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/kitchen/cambios"
+-            element={(
+-              <RequireAuth>
+-                <SwapsPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/kitchen/configuracion"
+-            element={(
+-              <RequireAuth>
+-                <SettingsPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/admin/usuarios"
+-            element={(
+-              <RequireAuth roles={["admin"]}>
+-                <AdminUsersPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/kitchen"
+-            element={(
+-              <RequireAuth>
+-                <KitchenLayout>
+-                  <div className="kitchen-card">Selecciona una sección.</div>
+-                </KitchenLayout>
+-              </RequireAuth>
+-            )}
+-          />
+-        </Routes>
+-      </AuthProvider>
+-    </BrowserRouter>
+-  );
+-}
++import React, { useEffect } from "react";
++import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
++import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
++import { buildApiUrl } from "./kitchen/api.js";
++import KitchenLayout from "./kitchen/Layout.jsx";
++import RequireAuth from "./kitchen/RequireAuth.jsx";
++import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
++import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
++import LoginPage from "./kitchen/pages/LoginPage.jsx";
++import WeekPage from "./kitchen/pages/WeekPage.jsx";
++import DishesPage from "./kitchen/pages/DishesPage.jsx";
++import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
++import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
++import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
++import "./kitchen/kitchen.css";
++
++function HomeRedirect() {
++  const { user, loading } = useAuth();
++  const navigate = useNavigate();
++
++  useEffect(() => {
++    if (loading) return;
++    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
++    navigate(destination, { replace: true });
++  }, [loading, navigate, user]);
++
++  return (
++    <div className="kitchen-app">
++      <div className="kitchen-container" style={{ maxWidth: 520 }}>
++        <div className="kitchen-card">
++          <h2>Cargando Lunchfy...</h2>
++          <p className="kitchen-muted">
++            Estamos preparando tu acceso a Lunchfy. En unos segundos te redirigimos.
++          </p>
++        </div>
++      </div>
++    </div>
++  );
 +}
 +
-+.kitchen-ui-input.kitchen-login-input::placeholder {
-+  color: #94a3b8;
-+  font-weight: 400;
++function BootstrapRedirect() {
++  const navigate = useNavigate();
++  const location = useLocation();
++
++  useEffect(() => {
++    let active = true;
++    const checkBootstrap = async () => {
++      try {
++        const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
++        const data = await response.json().catch(() => ({}));
++        if (!active || !response.ok) return;
++        if (data.needed && location.pathname !== "/bootstrap") {
++          navigate("/bootstrap", { replace: true });
++        }
++        if (!data.needed && location.pathname === "/bootstrap") {
++          navigate("/login", { replace: true });
++        }
++      } catch {
++        // Sin bloqueo si el backend no responde.
++      }
++    };
++    checkBootstrap();
++    return () => {
++      active = false;
++    };
++  }, [location.pathname, navigate]);
++
++  return null;
 +}
- 
- .kitchen-login-input:focus-visible {
-   border-color: #4338ca;
-   outline: 2px solid rgba(67, 56, 202, 0.2);
-   outline-offset: 1px;
- }
- 
--.kitchen-login-password-input {
--  padding-right: 52px;
--}
-+.kitchen-ui-input.kitchen-login-password-input {
-+  padding-right: 52px;
++
++export default function App() {
++  return (
++    <BrowserRouter>
++      <AuthProvider>
++        <BootstrapRedirect />
++        <Routes>
++          <Route path="/" element={<HomeRedirect />} />
++          <Route path="/bootstrap" element={<BootstrapPage />} />
++          <Route path="/login" element={<LoginPage />} />
++          <Route path="/kitchen/login" element={<LoginPage />} />
++          <Route
++            path="/kitchen/semana"
++            element={(
++              <RequireAuth>
++                <WeekPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/platos"
++            element={(
++              <RequireAuth>
++                <DishesPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/compra"
++            element={(
++              <RequireAuth>
++                <ShoppingPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/cambios"
++            element={(
++              <RequireAuth>
++                <SwapsPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/configuracion"
++            element={(
++              <RequireAuth>
++                <SettingsPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/admin/usuarios"
++            element={(
++              <RequireAuth roles={["admin"]}>
++                <AdminUsersPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen"
++            element={(
++              <RequireAuth>
++                <KitchenLayout>
++                  <div className="kitchen-card">Selecciona una sección.</div>
++                </KitchenLayout>
++              </RequireAuth>
++            )}
++          />
++          <Route path="*" element={<HomeRedirect />} />
++        </Routes>
++      </AuthProvider>
++    </BrowserRouter>
++  );
 +}
+diff --git a/frontend/src/kitchen/RequireAuth.jsx b/frontend/src/kitchen/RequireAuth.jsx
+index a57599e62b79939d59320da2c83090ddba561b70..9831e8ec586ca0749a4097abb6fa98a912781df1 100644
+--- a/frontend/src/kitchen/RequireAuth.jsx
++++ b/frontend/src/kitchen/RequireAuth.jsx
+@@ -1,25 +1,25 @@
+ import React from "react";
+ import { Navigate } from "react-router-dom";
+-import { isUserAuthenticated, useAuth } from "./auth";
++import { isUserAuthenticated, useAuth } from "./auth";
  
- .kitchen-login-eye {
-   position: absolute;
-   right: 16px;
-   top: 50%;
-   transform: translateY(-50%);
-   border: none;
-   background: transparent;
-   padding: 6px;
-   border-radius: 999px;
-   display: grid;
-   place-items: center;
+-export default function RequireAuth({ children, roles }) {
++export default function RequireAuth({ children, roles }) {
+   const { user, loading } = useAuth();
+-  const isAuthenticated = isUserAuthenticated(user);
++  const isAuthenticated = isUserAuthenticated(user);
+ 
+   if (loading) {
+     return (
+       <div className="kitchen-card">
+         <h3>Cargando sesión...</h3>
+         <p className="kitchen-muted">Estamos preparando tu módulo Kitchen.</p>
+       </div>
+     );
+   }
+ 
+-  if (!isAuthenticated) return <Navigate to="/kitchen/login" replace />;
++  if (!isAuthenticated) return <Navigate to="/login" replace />;
++
++  if (roles && !roles.includes(user.role)) {
++    return <Navigate to="/kitchen/semana" replace />;
++  }
+ 
+-  if (roles && !roles.includes(user.role)) {
+-    return <Navigate to="/kitchen/semana" replace />;
+-  }
+-
+   return children;
+ }
+diff --git a/frontend/src/kitchen/api.js b/frontend/src/kitchen/api.js
+index a4f73309ec1245ed7a8a82805adf0b174af5678f..1a7e3c83a1890c8dcb39636069c9a89065433443 100644
+--- a/frontend/src/kitchen/api.js
++++ b/frontend/src/kitchen/api.js
+@@ -1,39 +1,44 @@
+ const API = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+ 
+ export function buildApiUrl(path = "") {
+   if (!path) return API;
+   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+   return `${API}${normalizedPath}`;
  }
  
- .kitchen-login-forgot-row {
-   display: flex;
-   justify-content: flex-end;
+ export function getToken() {
+-  return localStorage.getItem("kitchen_token");
++  return localStorage.getItem("kitchen_token") || sessionStorage.getItem("kitchen_token");
  }
  
- .kitchen-login-link {
-   border: none;
-   background: transparent;
-   color: #4338ca;
-   font-weight: 600;
-   font-size: 0.95rem;
+ export function setToken(token) {
+-  if (token) localStorage.setItem("kitchen_token", token);
+-  else localStorage.removeItem("kitchen_token");
++  if (token) {
++    localStorage.setItem("kitchen_token", token);
++    sessionStorage.removeItem("kitchen_token");
++    return;
++  }
++  localStorage.removeItem("kitchen_token");
++  sessionStorage.removeItem("kitchen_token");
+ }
+ 
+ export async function apiRequest(path, options = {}) {
+   const token = getToken();
+   const headers = {
+     "Content-Type": "application/json",
+     ...(options.headers || {})
+   };
+ 
+   if (token) headers.Authorization = `Bearer ${token}`;
+ 
+   const response = await fetch(buildApiUrl(path), {
+     ...options,
+     headers
+   });
+ 
+   const data = await response.json().catch(() => ({}));
+   if (!response.ok) {
+     const message = data?.error || "Error inesperado";
+     throw new Error(message);
+   }
+ 
+   return data;
+ }
+diff --git a/frontend/src/kitchen/auth.jsx b/frontend/src/kitchen/auth.jsx
+index 89846a05bdb96034e182224bb4ad42ebafe72a31..cf8cd5ea60345e3b72bd7598a46a9e46097433c0 100644
+--- a/frontend/src/kitchen/auth.jsx
++++ b/frontend/src/kitchen/auth.jsx
+@@ -9,54 +9,65 @@ export function isUserAuthenticated(user) {
+ 
+ export function AuthProvider({ children }) {
+   const [user, setUser] = useState(null);
+   const [loading, setLoading] = useState(true);
+ 
+   const fetchMe = useCallback(async () => {
+     try {
+       const data = await apiRequest("/api/kitchen/auth/me");
+       setUser(data.user);
+     } catch {
+       setUser(null);
+       setToken(null);
+     } finally {
+       setLoading(false);
+     }
+   }, []);
+ 
+   useEffect(() => {
+     if (getToken()) {
+       fetchMe();
+     } else {
+       setLoading(false);
+     }
+   }, [fetchMe]);
+ 
+-  const login = async (email, password) => {
++  const login = async (email, password) => {
+     const data = await apiRequest("/api/kitchen/auth/login", {
+       method: "POST",
+       body: JSON.stringify({ email, password })
+     });
+     setToken(data.token);
+     setUser(data.user);
+     return data.user;
+   };
+ 
+-  const logout = async () => {
+-    try {
+-      await apiRequest("/api/kitchen/auth/logout", { method: "POST" });
+-    } finally {
+-      setToken(null);
+-      setUser(null);
+-    }
+-  };
++  const clearSession = useCallback(() => {
++    setToken(null);
++    setUser(null);
++    setLoading(false);
++  }, []);
++
++  const logout = useCallback(() => {
++    const token = getToken();
++    clearSession();
++
++    if (!token) return;
++
++    void apiRequest("/api/kitchen/auth/logout", {
++      method: "POST",
++      headers: { Authorization: `Bearer ${token}` }
++    }).catch(() => {
++      // La sesión local ya quedó invalidada; ignoramos errores remotos.
++    });
++  }, [clearSession]);
+ 
+-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading]);
++  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, logout]);
+ 
+   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+ }
+ 
+ export function useAuth() {
+   const context = useContext(AuthContext);
+   if (!context) throw new Error("AuthProvider faltante");
+   return context;
+ }
+diff --git a/frontend/src/kitchen/pages/LoginPage.jsx b/frontend/src/kitchen/pages/LoginPage.jsx
+index 9897b1b7ea87ac2df965f1e6e94b25bed952d97c..ed0c0fe2cda3ad43d4b2196f626ddd7ff704dedc 100644
+--- a/frontend/src/kitchen/pages/LoginPage.jsx
++++ b/frontend/src/kitchen/pages/LoginPage.jsx
+@@ -1,120 +1,120 @@
+ import React, { useState } from "react";
+ import { useNavigate } from "react-router-dom";
+ import { useAuth } from "../auth";
+-import Card from "../components/ui/Card";
+-import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
++import Card from "../components/ui/Card";
++import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
+ 
+ export default function LoginPage() {
+   const { login } = useAuth();
+   const navigate = useNavigate();
+-  const [form, setForm] = useState({ email: "", password: "" });
++  const [form, setForm] = useState({ email: "", password: "" });
+   const [error, setError] = useState("");
+   const [loading, setLoading] = useState(false);
+ 
+   const onSubmit = async (event) => {
+     event.preventDefault();
+     setError("");
+     setLoading(true);
+     try {
+-      await login(form.email, form.password);
+-      navigate("/kitchen/semana");
++      await login(form.email, form.password);
++      navigate("/kitchen/semana", { replace: true });
+     } catch (err) {
+       setError(err.message || "No se pudo iniciar sesión.");
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   return (
+     <div className="kitchen-app">
+-      <div className="kitchen-container kitchen-login-wrap">
+-        <Card className="kitchen-login-card">
+-          <p className="kitchen-login-brand">Lunchfy</p>
+-          <div className="kitchen-login-badge" aria-hidden="true">
+-            <div className="kitchen-login-badge-icon">
+-              <img className="kitchen-login-icon" src={lunchfyIcon} alt="" />
+-            </div>
+-          </div>
+-          <h2 className="kitchen-login-title">¡Bienvenido de nuevo!</h2>
+-          <p className="kitchen-login-subtitle">Hay planes deliciosos esperándote.</p>
+-          <form onSubmit={onSubmit} className="kitchen-login-form">
+-            <div className="kitchen-login-fields">
+-              <label className="kitchen-ui-input-group" htmlFor="login-email">
+-                <span className="kitchen-login-label">CORREO ELECTRÓNICO</span>
+-                <div className="kitchen-login-input-wrap">
+-                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
+-                    <path d="M3.5 7.5h17v9h-17z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+-                    <path d="m4.5 8.5 7.5 5 7.5-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+-                  </svg>
+-                  <input
+-                    id="login-email"
+-                    className="kitchen-ui-input kitchen-login-input"
+-                    type="email"
+-                    value={form.email}
+-                    onChange={(event) => setForm({ ...form, email: event.target.value })}
+-                    placeholder="tunombre@email.com"
+-                    required
+-                  />
+-                </div>
+-              </label>
+-              <label className="kitchen-ui-input-group" htmlFor="login-password">
+-                <span className="kitchen-login-label">CONTRASEÑA</span>
+-                <div className="kitchen-login-input-wrap">
+-                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
+-                    <path d="M7.5 11V8a4.5 4.5 0 0 1 9 0v3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+-                    <rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7" />
+-                  </svg>
+-                  <input
+-                    id="login-password"
+-                    className="kitchen-ui-input kitchen-login-input kitchen-login-password-input"
+-                    type="password"
+-                    value={form.password}
+-                    onChange={(event) => setForm({ ...form, password: event.target.value })}
+-                    placeholder="••••••••"
+-                    required
+-                  />
+-                  <button type="button" className="kitchen-login-eye" aria-label="Mostrar contraseña">
+-                    <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
+-                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+-                      <circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" strokeWidth="1.7" />
+-                    </svg>
+-                  </button>
+-                </div>
+-              </label>
+-              <div className="kitchen-login-forgot-row">
+-                <button type="button" className="kitchen-login-link">¿Olvidaste tu contraseña?</button>
+-              </div>
+-            </div>
+-            {error ? <div className="kitchen-login-error">{error}</div> : null}
+-            <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={loading}>
+-              {loading ? "Entrando..." : "Iniciar sesión →"}
+-            </button>
+-            <div className="kitchen-login-divider">O CONTINUAR CON</div>
+-            <div className="kitchen-login-socials">
+-              <button type="button" className="kitchen-login-social-button">
+-                <span className="kitchen-login-social-icon" aria-hidden="true">
+-                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-social-svg kitchen-login-social-svg-google">
+-                    <path fill="#EA4335" d="M12.24 10.28v3.92h5.52c-.24 1.26-.96 2.33-2.04 3.04l3.3 2.56c1.92-1.77 3.03-4.37 3.03-7.44 0-.71-.06-1.4-.18-2.08h-9.63z" />
+-                    <path fill="#34A853" d="M12 22c2.76 0 5.08-.91 6.78-2.46l-3.3-2.56c-.92.62-2.1.99-3.48.99-2.68 0-4.94-1.81-5.75-4.24H2.84v2.66A10 10 0 0 0 12 22z" />
+-                    <path fill="#4A90E2" d="M6.25 13.73a5.96 5.96 0 0 1 0-3.8V7.27H2.84a10 10 0 0 0 0 9.12l3.41-2.66z" />
+-                    <path fill="#FBBC05" d="M12 5.98c1.5 0 2.85.51 3.91 1.52l2.93-2.93C17.08 2.93 14.76 2 12 2a10 10 0 0 0-9.16 5.27l3.41 2.66c.8-2.43 3.07-4.24 5.75-4.24z" />
+-                  </svg>
+-                </span>
+-                Google
+-              </button>
+-              <button type="button" className="kitchen-login-social-button">
+-                <span className="kitchen-login-social-icon" aria-hidden="true">
+-                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-social-svg kitchen-login-social-svg-apple">
+-                    <path fill="currentColor" d="M16.74 12.48c.03 3.26 2.86 4.35 2.89 4.36-.02.08-.45 1.56-1.47 3.08-.89 1.32-1.81 2.64-3.27 2.67-1.44.03-1.9-.86-3.54-.86-1.65 0-2.16.83-3.51.89-1.41.05-2.49-1.41-3.39-2.73-1.84-2.67-3.25-7.56-1.36-10.86.94-1.64 2.62-2.68 4.43-2.7 1.38-.03 2.68.93 3.52.93.84 0 2.42-1.15 4.08-.98.69.03 2.63.28 3.88 2.1-.1.06-2.31 1.35-2.26 4.1ZM14.67 4.91c.75-.91 1.25-2.16 1.11-3.41-1.08.04-2.38.72-3.16 1.63-.69.8-1.3 2.09-1.13 3.31 1.21.09 2.43-.62 3.18-1.53Z" />
+-                  </svg>
+-                </span>
+-                Apple
+-              </button>
+-            </div>
++      <div className="kitchen-container kitchen-login-wrap">
++        <Card className="kitchen-login-card">
++          <p className="kitchen-login-brand">Lunchfy</p>
++          <div className="kitchen-login-badge" aria-hidden="true">
++            <div className="kitchen-login-badge-icon">
++              <img className="kitchen-login-icon" src={lunchfyIcon} alt="" />
++            </div>
++          </div>
++          <h2 className="kitchen-login-title">¡Bienvenido de nuevo!</h2>
++          <p className="kitchen-login-subtitle">Hay planes deliciosos esperándote.</p>
++          <form onSubmit={onSubmit} className="kitchen-login-form">
++            <div className="kitchen-login-fields">
++              <label className="kitchen-ui-input-group" htmlFor="login-email">
++                <span className="kitchen-login-label">CORREO ELECTRÓNICO</span>
++                <div className="kitchen-login-input-wrap">
++                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
++                    <path d="M3.5 7.5h17v9h-17z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
++                    <path d="m4.5 8.5 7.5 5 7.5-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
++                  </svg>
++                  <input
++                    id="login-email"
++                    className="kitchen-ui-input kitchen-login-input"
++                    type="email"
++                    value={form.email}
++                    onChange={(event) => setForm({ ...form, email: event.target.value })}
++                    placeholder="tunombre@email.com"
++                    required
++                  />
++                </div>
++              </label>
++              <label className="kitchen-ui-input-group" htmlFor="login-password">
++                <span className="kitchen-login-label">CONTRASEÑA</span>
++                <div className="kitchen-login-input-wrap">
++                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
++                    <path d="M7.5 11V8a4.5 4.5 0 0 1 9 0v3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
++                    <rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7" />
++                  </svg>
++                  <input
++                    id="login-password"
++                    className="kitchen-ui-input kitchen-login-input kitchen-login-password-input"
++                    type="password"
++                    value={form.password}
++                    onChange={(event) => setForm({ ...form, password: event.target.value })}
++                    placeholder="••••••••"
++                    required
++                  />
++                  <button type="button" className="kitchen-login-eye" aria-label="Mostrar contraseña">
++                    <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
++                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
++                      <circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" strokeWidth="1.7" />
++                    </svg>
++                  </button>
++                </div>
++              </label>
++              <div className="kitchen-login-forgot-row">
++                <button type="button" className="kitchen-login-link">¿Olvidaste tu contraseña?</button>
++              </div>
++            </div>
++            {error ? <div className="kitchen-login-error">{error}</div> : null}
++            <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={loading}>
++              {loading ? "Entrando..." : "Iniciar sesión →"}
++            </button>
++            <div className="kitchen-login-divider">O CONTINUAR CON</div>
++            <div className="kitchen-login-socials">
++              <button type="button" className="kitchen-login-social-button">
++                <span className="kitchen-login-social-icon" aria-hidden="true">
++                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-social-svg kitchen-login-social-svg-google">
++                    <path fill="#EA4335" d="M12.24 10.28v3.92h5.52c-.24 1.26-.96 2.33-2.04 3.04l3.3 2.56c1.92-1.77 3.03-4.37 3.03-7.44 0-.71-.06-1.4-.18-2.08h-9.63z" />
++                    <path fill="#34A853" d="M12 22c2.76 0 5.08-.91 6.78-2.46l-3.3-2.56c-.92.62-2.1.99-3.48.99-2.68 0-4.94-1.81-5.75-4.24H2.84v2.66A10 10 0 0 0 12 22z" />
++                    <path fill="#4A90E2" d="M6.25 13.73a5.96 5.96 0 0 1 0-3.8V7.27H2.84a10 10 0 0 0 0 9.12l3.41-2.66z" />
++                    <path fill="#FBBC05" d="M12 5.98c1.5 0 2.85.51 3.91 1.52l2.93-2.93C17.08 2.93 14.76 2 12 2a10 10 0 0 0-9.16 5.27l3.41 2.66c.8-2.43 3.07-4.24 5.75-4.24z" />
++                  </svg>
++                </span>
++                Google
++              </button>
++              <button type="button" className="kitchen-login-social-button">
++                <span className="kitchen-login-social-icon" aria-hidden="true">
++                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-social-svg kitchen-login-social-svg-apple">
++                    <path fill="currentColor" d="M16.74 12.48c.03 3.26 2.86 4.35 2.89 4.36-.02.08-.45 1.56-1.47 3.08-.89 1.32-1.81 2.64-3.27 2.67-1.44.03-1.9-.86-3.54-.86-1.65 0-2.16.83-3.51.89-1.41.05-2.49-1.41-3.39-2.73-1.84-2.67-3.25-7.56-1.36-10.86.94-1.64 2.62-2.68 4.43-2.7 1.38-.03 2.68.93 3.52.93.84 0 2.42-1.15 4.08-.98.69.03 2.63.28 3.88 2.1-.1.06-2.31 1.35-2.26 4.1ZM14.67 4.91c.75-.91 1.25-2.16 1.11-3.41-1.08.04-2.38.72-3.16 1.63-.69.8-1.3 2.09-1.13 3.31 1.21.09 2.43-.62 3.18-1.53Z" />
++                  </svg>
++                </span>
++                Apple
++              </button>
++            </div>
+           </form>
+-          <p className="kitchen-login-footer">¿No tienes cuenta? <button type="button" className="kitchen-login-link">Regístrate</button></p>
+-        </Card>
++          <p className="kitchen-login-footer">¿No tienes cuenta? <button type="button" className="kitchen-login-link">Regístrate</button></p>
++        </Card>
+       </div>
+     </div>
+   );
+ }

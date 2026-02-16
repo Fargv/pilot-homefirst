@@ -7,12 +7,17 @@ export function buildApiUrl(path = "") {
 }
 
 export function getToken() {
-  return localStorage.getItem("kitchen_token");
+  return localStorage.getItem("kitchen_token") || sessionStorage.getItem("kitchen_token");
 }
 
 export function setToken(token) {
-  if (token) localStorage.setItem("kitchen_token", token);
-  else localStorage.removeItem("kitchen_token");
+  if (token) {
+    localStorage.setItem("kitchen_token", token);
+    sessionStorage.removeItem("kitchen_token");
+    return;
+  }
+  localStorage.removeItem("kitchen_token");
+  sessionStorage.removeItem("kitchen_token");
 }
 
 export async function apiRequest(path, options = {}) {

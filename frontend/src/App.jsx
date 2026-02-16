@@ -20,7 +20,7 @@ function HomeRedirect() {
 
   useEffect(() => {
     if (loading) return;
-    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/kitchen/login";
+    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
     navigate(destination, { replace: true });
   }, [loading, navigate, user]);
 
@@ -53,7 +53,7 @@ function BootstrapRedirect() {
           navigate("/bootstrap", { replace: true });
         }
         if (!data.needed && location.pathname === "/bootstrap") {
-          navigate("/kitchen/login", { replace: true });
+          navigate("/login", { replace: true });
         }
       } catch {
         // Sin bloqueo si el backend no responde.
@@ -76,6 +76,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/bootstrap" element={<BootstrapPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/kitchen/login" element={<LoginPage />} />
           <Route
             path="/kitchen/semana"
@@ -135,6 +136,7 @@ export default function App() {
               </RequireAuth>
             )}
           />
+          <Route path="*" element={<HomeRedirect />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

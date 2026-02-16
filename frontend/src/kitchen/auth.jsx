@@ -41,16 +41,27 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
-  const logout = async () => {
-    try {
-      await apiRequest("/api/kitchen/auth/logout", { method: "POST" });
-    } finally {
-      setToken(null);
-      setUser(null);
-    }
-  };
+  const clearSession = useCallback(() => {
+    setToken(null);
+    setUser(null);
+    setLoading(false);
+  }, []);
 
-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading]);
+  const logout = useCallback(() => {
+    const token = getToken();
+    clearSession();
+
+    if (!token) return;
+
+    void apiRequest("/api/kitchen/auth/logout", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    }).catch(() => {
+      // La sesión local ya quedó invalidada; ignoramos errores remotos.
+    });
+  }, [clearSession]);
+
+  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
