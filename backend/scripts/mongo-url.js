@@ -1,6 +1,18 @@
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
-dotenv.config({ path: new URL("../.env", import.meta.url).pathname });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Carga backend/.env de forma robusta (Windows-safe)
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+// Debug útil (temporal)
+console.log("ℹ️ dotenv path:", path.resolve(__dirname, "../.env"));
+console.log("ℹ️ MONGODB_URL present:", Boolean(process.env.MONGODB_URL));
+console.log("ℹ️ MONGODB_URI present:", Boolean(process.env.MONGODB_URI));
+
 
 export function resolveMongoUrl() {
   const directUrl = process.env.MONGODB_URL || process.env.MONGODB_URI;
@@ -27,11 +39,25 @@ export function resolveMongoUrl() {
 }
 
 function logMongoTarget(uri, source) {
-  const hostMatch = uri.match(/@([^/?]+)|^mongodb(?:\+srv)?:\/\/([^:/?]+)/i);
-  const host = hostMatch?.[1] || hostMatch?.[2] || "desconocido";
   const isSrv = uri.startsWith("mongodb+srv://");
+  let host = "desconocido";
+
+  try {
+    if (isSrv) {
+      // URL() no soporta mongodb+srv, parse manual suave
+      const at = uri.split("@")[1];
+      host = at ? at.split("/")[0] : "desconocido";
+    } else {
+      const u = new URL(uri);
+      host = u.host; // si hay lista de hosts, u.host puede no ser perfecto, pero vale para log
+    }
+  } catch {
+    const at = uri.split("@")[1];
+    host = at ? at.split("/")[0] : "desconocido";
+  }
 
   console.log(`ℹ️ Mongo URI source: ${source}`);
-  console.log(`ℹ️ Mongo host: ${host}`);
+  console.log(`ℹ️ Mongo host(s): ${host}`);
   console.log(`ℹ️ Mongo SRV: ${isSrv ? "sí" : "no"}`);
 }
+
