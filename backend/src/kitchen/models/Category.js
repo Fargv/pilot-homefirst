@@ -7,7 +7,8 @@ const CategorySchema = new mongoose.Schema(
     colorBg: { type: String, required: true },
     colorText: { type: String, required: true },
     order: { type: Number, default: 0 },
-    active: { type: Boolean, default: true }
+    active: { type: Boolean, default: true },
+    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true }
   },
   { timestamps: true }
 );

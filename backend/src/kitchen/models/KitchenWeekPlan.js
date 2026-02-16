@@ -25,10 +25,16 @@ const WeekDaySchema = new mongoose.Schema(
 
 const KitchenWeekPlanSchema = new mongoose.Schema(
   {
-    weekStart: { type: Date, required: true, unique: true },
+    weekStart: { type: Date, required: true },
+    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true },
     days: { type: [WeekDaySchema], default: [] }
   },
   { timestamps: true }
+);
+
+KitchenWeekPlanSchema.index(
+  { householdId: 1, weekStart: 1 },
+  { unique: true, partialFilterExpression: { householdId: { $exists: true } } }
 );
 
 export const KitchenWeekPlan = mongoose.model("KitchenWeekPlan", KitchenWeekPlanSchema);

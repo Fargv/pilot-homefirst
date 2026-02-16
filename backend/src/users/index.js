@@ -3,6 +3,12 @@ import bcrypt from "bcryptjs";
 import { KitchenUser } from "../kitchen/models/KitchenUser.js";
 import { Household } from "../kitchen/models/Household.js";
 import { requireAuth, requireRole } from "../kitchen/middleware.js";
+import {
+  buildScopedFilter,
+  getEffectiveHouseholdId,
+  handleHouseholdError,
+  shouldUseLegacyFallback
+} from "../kitchen/householdScope.js";
 import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "./utils.js";
 
 const router = express.Router();
@@ -67,9 +73,13 @@ router.post("/bootstrap", async (req, res) => {
 
 router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
   try {
-    const users = await KitchenUser.find().sort({ createdAt: 1 });
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
+    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy })).sort({ createdAt: 1 });
     res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
   } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
     res.status(500).json({ ok: false, error: "No se pudieron cargar los usuarios." });
   }
 });
@@ -96,6 +106,7 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
     }
 
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await KitchenUser.create({
       username: normalizedEmail,
@@ -104,12 +115,14 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       lastName: lastName ? String(lastName).trim() : undefined,
       displayName: safeDisplayName,
       role: normalizeRole(role),
-      householdId: req.kitchenUser.householdId,
+      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {}),
       passwordHash
     });
 
     return res.status(201).json({ ok: true, user: user.toSafeJSON() });
   } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo crear el usuario." });
   }
 });

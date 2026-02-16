@@ -11,10 +11,16 @@ const ShoppingItemSchema = new mongoose.Schema(
 
 const KitchenShoppingListSchema = new mongoose.Schema(
   {
-    weekStart: { type: Date, required: true, unique: true },
+    weekStart: { type: Date, required: true },
+    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true },
     items: { type: [ShoppingItemSchema], default: [] }
   },
   { timestamps: true }
+);
+
+KitchenShoppingListSchema.index(
+  { householdId: 1, weekStart: 1 },
+  { unique: true, partialFilterExpression: { householdId: { $exists: true } } }
 );
 
 export const KitchenShoppingList = mongoose.model("KitchenShoppingList", KitchenShoppingListSchema);

@@ -12,9 +12,9 @@ function buildAuthUser(user, payload) {
   return {
     id: user._id.toString(),
     role: user.role,
-    householdId: payload.householdId ?? null,
-    globalRole: payload.globalRole ?? null,
-    activeHouseholdId: payload.activeHouseholdId ?? null
+    householdId: user.householdId ? user.householdId.toString() : payload.householdId ?? null,
+    globalRole: user.globalRole ?? payload.globalRole ?? null,
+    activeHouseholdId: user.activeHouseholdId ? user.activeHouseholdId.toString() : payload.activeHouseholdId ?? null
   };
 }
 

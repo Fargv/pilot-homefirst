@@ -8,7 +8,8 @@ const KitchenSwapSchema = new mongoose.Schema(
     fromDate: { type: Date, required: true },
     toDate: { type: Date, required: true },
     status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" },
-    resolvedAt: { type: Date }
+    resolvedAt: { type: Date },
+    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true }
   },
   { timestamps: true }
 );

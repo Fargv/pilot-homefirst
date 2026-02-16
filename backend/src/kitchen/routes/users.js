@@ -3,17 +3,34 @@ import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { requireAuth, requireRole } from "../middleware.js";
 import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "../../users/utils.js";
+import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError, shouldUseLegacyFallback } from "../householdScope.js";
 
 const router = express.Router();
 
 router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
-  const users = await KitchenUser.find().sort({ createdAt: 1 });
-  res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
+    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy })).sort({ createdAt: 1 });
+    res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudieron cargar los usuarios." });
+  }
 });
 
 router.get("/members", requireAuth, async (req, res) => {
-  const users = await KitchenUser.find().sort({ createdAt: 1 });
-  res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
+    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy })).sort({ createdAt: 1 });
+    res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudieron cargar los miembros." });
+  }
 });
 
 router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
@@ -38,6 +55,7 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
     }
 
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await KitchenUser.create({
       username: normalizedEmail,
@@ -46,12 +64,14 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       lastName: lastName ? String(lastName).trim() : undefined,
       displayName: safeDisplayName,
       role: normalizeRole(req.body.role),
-      householdId: req.kitchenUser.householdId,
+      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {}),
       passwordHash
     });
 
     return res.status(201).json({ ok: true, user: user.toSafeJSON() });
   } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo crear el usuario." });
   }
 });

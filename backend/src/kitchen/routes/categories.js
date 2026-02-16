@@ -1,6 +1,12 @@
 import express from "express";
 import { Category } from "../models/Category.js";
 import { requireAuth } from "../middleware.js";
+import {
+  buildScopedFilter,
+  getEffectiveHouseholdId,
+  handleHouseholdError,
+  shouldUseLegacyFallback
+} from "../householdScope.js";
 
 const router = express.Router();
 
@@ -19,8 +25,19 @@ const slugifyCategory = (value = "") => {
 };
 
 router.get("/", requireAuth, async (req, res) => {
-  const categories = await Category.find({ active: true }).sort({ order: 1, name: 1 });
-  return res.json({ ok: true, categories });
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
+    const categories = await Category.find(
+      buildScopedFilter(effectiveHouseholdId, { active: true }, { includeLegacy })
+    ).sort({ order: 1, name: 1 });
+
+    return res.json({ ok: true, categories });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudieron cargar las categorías." });
+  }
 });
 
 router.post("/", requireAuth, async (req, res) => {
@@ -28,16 +45,24 @@ router.post("/", requireAuth, async (req, res) => {
     const { name, colorBg, colorText } = req.body;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre de la categoría es obligatorio." });
 
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
     const trimmedName = String(name).trim();
     const slug = slugifyCategory(trimmedName);
     if (!slug) return res.status(400).json({ ok: false, error: "El nombre de la categoría no es válido." });
 
-    const existing = await Category.findOne({
-      $or: [
-        { slug: new RegExp(`^${escapeRegex(slug)}$`, "i") },
-        { name: new RegExp(`^${escapeRegex(trimmedName)}$`, "i") }
-      ]
-    });
+    const existing = await Category.findOne(
+      buildScopedFilter(
+        effectiveHouseholdId,
+        {
+          $or: [
+            { slug: new RegExp(`^${escapeRegex(slug)}$`, "i") },
+            { name: new RegExp(`^${escapeRegex(trimmedName)}$`, "i") }
+          ]
+        },
+        { includeLegacy }
+      )
+    );
 
     if (existing) return res.json({ ok: true, category: existing, created: false });
 
@@ -45,11 +70,14 @@ router.post("/", requireAuth, async (req, res) => {
       name: trimmedName,
       slug,
       colorBg: colorBg || DEFAULT_COLOR_BG,
-      colorText: colorText || DEFAULT_COLOR_TEXT
+      colorText: colorText || DEFAULT_COLOR_TEXT,
+      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
     });
 
     return res.status(201).json({ ok: true, category, created: true });
   } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo crear la categoría." });
   }
 });

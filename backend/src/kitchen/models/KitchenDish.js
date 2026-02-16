@@ -14,7 +14,8 @@ const KitchenDishSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     ingredients: { type: [IngredientSchema], default: [] },
     sidedish: { type: Boolean, default: false },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" }
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" },
+    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true }
   },
   { timestamps: true }
 );
