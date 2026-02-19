@@ -1,418 +1,81 @@
-diff --git a/backend/src/kitchen/routes/auth.js b/backend/src/kitchen/routes/auth.js
-index 5b37ee15cd5dd7b27555f4220d42750e44fd3e61..8f452c75447212f363a8f175212f91db0b2514e5 100644
---- a/backend/src/kitchen/routes/auth.js
-+++ b/backend/src/kitchen/routes/auth.js
-@@ -1,130 +1,180 @@
- import express from "express";
- import crypto from "crypto";
- import bcrypt from "bcryptjs";
- import { KitchenUser } from "../models/KitchenUser.js";
--import { Invitation } from "../models/Invitation.js";
-+import { Invitation } from "../models/Invitation.js";
-+import { Household } from "../models/Household.js";
- import { createToken, requireAuth } from "../middleware.js";
- import { normalizeEmail } from "../../users/utils.js";
+diff --git a/frontend/src/kitchen/auth.jsx b/frontend/src/kitchen/auth.jsx
+index c1f720d1da8f43c2f9e6beb9d633d4f9dc3d1440..832fe6671ca2d88b60753e7a7fff0333593403b6 100644
+--- a/frontend/src/kitchen/auth.jsx
++++ b/frontend/src/kitchen/auth.jsx
+@@ -9,65 +9,74 @@ export function isUserAuthenticated(user) {
  
- const DIOD_EMAIL = "admin@admin.com";
+ export function AuthProvider({ children }) {
+   const [user, setUser] = useState(null);
+   const [loading, setLoading] = useState(true);
  
- const router = express.Router();
- 
- 
--function hashInviteToken(token) {
--  return crypto.createHash("sha256").update(token).digest("hex");
--}
-+function hashInviteToken(token) {
-+  return crypto.createHash("sha256").update(token).digest("hex");
-+}
-+
-+async function findActiveInvitationByToken(token) {
-+  return Invitation.findOne({
-+    tokenHash: hashInviteToken(token),
-+    usedAt: null,
-+    expiresAt: { $gt: new Date() }
-+  });
-+}
-+
-+router.get("/invite/:token", async (req, res) => {
-+  try {
-+    const { token } = req.params;
-+    if (!token) {
-+      return res.status(400).json({ ok: false, error: "Token de invitación inválido." });
-+    }
-+
-+    const invitation = await findActiveInvitationByToken(token);
-+    if (!invitation) {
-+      return res.status(404).json({ ok: false, error: "La invitación no es válida o expiró." });
-+    }
-+
-+    const household = await Household.findById(invitation.householdId).select("name");
-+    return res.json({
-+      ok: true,
-+      role: invitation.role,
-+      householdName: household?.name || "",
-+      expiresAt: invitation.expiresAt
-+    });
-+  } catch (error) {
-+    return res.status(500).json({ ok: false, error: "No se pudo validar la invitación." });
-+  }
-+});
- 
- 
- router.post("/login", async (req, res) => {
-   try {
-     const { email, password, username } = req.body;
-     const loginValue = normalizeEmail(email || username);
-     if (!loginValue || !password) {
-       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
-     }
- 
-     const user = await KitchenUser.findOne({ email: loginValue });
-     if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
- 
-     if (!user.passwordHash || user.isPlaceholder) {
-       return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
-     }
- 
-     const ok = await bcrypt.compare(password, user.passwordHash);
-     if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
- 
-     const isDiod = loginValue === DIOD_EMAIL;
-     const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
-     if (shouldUpdateGlobalRole) {
-       user.globalRole = isDiod ? "diod" : null;
-       await user.save();
-     }
- 
-     const token = createToken(user);
-     const safeUser = {
-       ...user.toSafeJSON(),
-       migrationPending: !user.householdId
-     };
-     return res.json({ ok: true, token, user: safeUser });
-   } catch (error) {
-     return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
-   }
- });
- 
--router.post("/accept-invite", async (req, res) => {
--  try {
--    const { token, email, password, displayName } = req.body;
--    const normalizedEmail = normalizeEmail(email);
--
--    if (!token || !normalizedEmail || !password || !displayName) {
--      return res.status(400).json({
--        ok: false,
--        error: "Token, email, contraseña y nombre son obligatorios."
--      });
--    }
-+router.post("/accept-invite", async (req, res) => {
-+  try {
-+    const { token, email, password, displayName } = req.body;
-+    const normalizedEmail = normalizeEmail(email);
-+
-+    if (!token || !normalizedEmail || !password) {
-+      return res.status(400).json({
-+        ok: false,
-+        error: "Token, email y contraseña son obligatorios."
-+      });
-+    }
- 
-     if (String(password).length < 8) {
-       return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
-     }
- 
--    const invitation = await Invitation.findOne({
--      tokenHash: hashInviteToken(token),
--      usedAt: null,
--      expiresAt: { $gt: new Date() }
--    });
--
--    if (!invitation) {
--      return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
--    }
-+    const invitation = await findActiveInvitationByToken(token);
-+
-+    if (!invitation) {
-+      return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
-+    }
- 
-     let user = await KitchenUser.findOne({ email: normalizedEmail });
- 
-     if (user) {
-       if (user.householdId && user.householdId.toString() !== invitation.householdId.toString()) {
-         return res.status(409).json({
-           ok: false,
-           error: "Ese email ya pertenece a otro hogar y no se puede unir con esta invitación."
-         });
-       }
- 
--      if (!user.householdId) {
--        user.householdId = invitation.householdId;
--      }
--      if (user.isPlaceholder) {
--        user.isPlaceholder = false;
--        user.claimedAt = new Date();
--      }
--      user.displayName = String(displayName).trim();
--      user.passwordHash = await bcrypt.hash(password, 10);
--      user.role = invitation.role || "member";
--      await user.save();
--    } else {
--      user = await KitchenUser.create({
--        username: normalizedEmail,
--        email: normalizedEmail,
-+      if (!user.householdId) {
-+        user.householdId = invitation.householdId;
-+      }
-+
-+      if (!user.passwordHash || user.isPlaceholder) {
-+        if (!displayName || !String(displayName).trim()) {
-+          return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para activar la cuenta." });
-+        }
-+        user.displayName = String(displayName).trim();
-+        user.passwordHash = await bcrypt.hash(password, 10);
-+      } else {
-+        const passwordOk = await bcrypt.compare(password, user.passwordHash);
-+        if (!passwordOk) {
-+          return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
-+        }
-+      }
-+
-+      if (user.isPlaceholder) {
-+        user.isPlaceholder = false;
-+        user.claimedAt = new Date();
-+      }
-+
-+      if (displayName && String(displayName).trim()) {
-+        user.displayName = String(displayName).trim();
-+      }
-+
-+      user.role = invitation.role || "member";
-+      await user.save();
-+    } else {
-+      if (!displayName || !String(displayName).trim()) {
-+        return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para crear la cuenta." });
-+      }
-+
-+      user = await KitchenUser.create({
-+        username: normalizedEmail,
-+        email: normalizedEmail,
-         displayName: String(displayName).trim(),
-         passwordHash: await bcrypt.hash(password, 10),
-         role: invitation.role || "member",
-         householdId: invitation.householdId,
-         isPlaceholder: false
-       });
-     }
- 
-     invitation.usedAt = new Date();
-     invitation.usedByUserId = user._id;
-     await invitation.save();
- 
-     const jwt = createToken(user);
-     return res.json({ ok: true, token: jwt, user: user.toSafeJSON() });
-   } catch (error) {
-     return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitación." });
-   }
- });
- 
- router.post("/logout", (req, res) => {
-   res.json({ ok: true });
- });
- 
- router.get("/me", requireAuth, (req, res) => {
-   res.json({
-diff --git a/frontend/src/kitchen/pages/InviteLandingPage.jsx b/frontend/src/kitchen/pages/InviteLandingPage.jsx
-index 19c87f87049be7e9a8224ba11ac7ab6e465f405d..789ba60fc7ffac1132f424a2fc4c8822bb67552c 100644
---- a/frontend/src/kitchen/pages/InviteLandingPage.jsx
-+++ b/frontend/src/kitchen/pages/InviteLandingPage.jsx
-@@ -1,124 +1,127 @@
- import React, { useEffect, useState } from "react";
- import { useNavigate, useParams } from "react-router-dom";
- import { apiRequest } from "../api.js";
- import { useAuth } from "../auth.jsx";
- 
- export default function InviteLandingPage() {
-   const { token } = useParams();
-   const navigate = useNavigate();
-   const { establishSession } = useAuth();
- 
-   const [mode, setMode] = useState("signup");
-   const [loadingInvite, setLoadingInvite] = useState(true);
-+  const [inviteValid, setInviteValid] = useState(false);
-   const [submitting, setSubmitting] = useState(false);
-   const [error, setError] = useState("");
-   const [householdName, setHouseholdName] = useState("");
-   const [expiresAt, setExpiresAt] = useState("");
-   const [form, setForm] = useState({
-     email: "",
-     password: "",
-     displayName: ""
-   });
- 
--  useEffect(() => {
--    let active = true;
--    const validate = async () => {
--      setLoadingInvite(true);
--      setError("");
--      try {
--        const data = await apiRequest(`/api/kitchen/auth/invite/${token}`);
--        if (!active) return;
--        setHouseholdName(data.householdName || "");
--        setExpiresAt(data.expiresAt || "");
--      } catch (err) {
--        if (!active) return;
--        setError(err.message || "No se pudo validar la invitación.");
--      } finally {
--        if (active) setLoadingInvite(false);
--      }
--    };
--
--    if (token) {
--      void validate();
--    } else {
-+  const validateInvite = async () => {
-+    setLoadingInvite(true);
-+    setError("");
-+    setInviteValid(false);
-+
-+    if (!token) {
-       setLoadingInvite(false);
-       setError("Token de invitación inválido.");
-+      return;
-+    }
-+
-+    try {
-+      const data = await apiRequest(`/api/kitchen/auth/invite/${token}`);
-+      setHouseholdName(data.householdName || "");
-+      setExpiresAt(data.expiresAt || "");
-+      setInviteValid(true);
-+    } catch (err) {
-+      setError(err.message || "No se pudo validar la invitación.");
-+      setHouseholdName("");
-+      setExpiresAt("");
-+      setInviteValid(false);
-+    } finally {
-+      setLoadingInvite(false);
-     }
-+  };
- 
--    return () => {
--      active = false;
--    };
-+  useEffect(() => {
-+    void validateInvite();
-   }, [token]);
- 
-   const onSubmit = async (event) => {
-     event.preventDefault();
-     setSubmitting(true);
-     setError("");
- 
+   const fetchMe = useCallback(async () => {
      try {
-       const payload = {
-         token,
-         email: form.email,
-         password: form.password,
-         displayName: mode === "signup" ? form.displayName : undefined
-       };
-       const data = await apiRequest("/api/kitchen/auth/accept-invite", {
-         method: "POST",
-         body: JSON.stringify(payload)
-       });
-       establishSession(data.token, data.user);
-       navigate("/kitchen/semana", { replace: true });
-     } catch (err) {
-       setError(err.message || "No se pudo aceptar la invitación.");
+       const data = await apiRequest("/api/kitchen/auth/me");
+       setUser(data.user);
+     } catch {
+       setUser(null);
+       setToken(null);
      } finally {
-       setSubmitting(false);
+       setLoading(false);
      }
+   }, []);
+ 
+   useEffect(() => {
+     if (getToken()) {
+       fetchMe();
+     } else {
+       setLoading(false);
+     }
+   }, [fetchMe]);
+ 
+-  const login = async (email, password) => {
++  const login = async (email, password) => {
+     const data = await apiRequest("/api/kitchen/auth/login", {
+       method: "POST",
+       body: JSON.stringify({ email, password })
+     });
+     setToken(data.token);
+     setUser(data.user);
+     return data.user;
    };
  
--  const canSubmit = form.email.trim() && form.password && (mode === "existing" || form.displayName.trim());
-+  const canSubmit = inviteValid && form.email.trim() && form.password && (mode === "existing" || form.displayName.trim());
- 
-   return (
-     <div className="kitchen-app">
-       <div className="kitchen-container" style={{ maxWidth: 520 }}>
-         <div className="kitchen-card kitchen-block-gap">
-           <h2>Invitación al hogar</h2>
-           {householdName ? <p className="kitchen-muted">Te invitaron a unirte a <strong>{householdName}</strong>.</p> : null}
-           {expiresAt ? <p className="kitchen-muted">Válida hasta {new Date(expiresAt).toLocaleString()}.</p> : null}
- 
-           <div className="kitchen-actions">
-             <button
-               type="button"
-               className={`kitchen-button ${mode === "signup" ? "" : "secondary"}`}
-               onClick={() => setMode("signup")}
-+              disabled={!inviteValid}
-             >
-               Crear cuenta
-             </button>
-             <button
-               type="button"
-               className={`kitchen-button ${mode === "existing" ? "" : "secondary"}`}
-               onClick={() => setMode("existing")}
-+              disabled={!inviteValid}
-             >
-               Ya tengo cuenta
-             </button>
-           </div>
- 
-           {loadingInvite ? <p className="kitchen-muted">Validando invitación...</p> : null}
-           {error ? <div className="kitchen-alert error">{error}</div> : null}
- 
-           {!loadingInvite && !error ? (
-             <form className="kitchen-block-gap" onSubmit={onSubmit}>
-               <label className="kitchen-ui-input-group" htmlFor="invite-email">
-                 <span>Email</span>
-                 <input
-                   id="invite-email"
-                   type="email"
-                   className="kitchen-input"
-                   value={form.email}
-                   onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-                   required
-                 />
-               </label>
- 
-               <label className="kitchen-ui-input-group" htmlFor="invite-password">
-                 <span>Contraseña</span>
-                 <input
-@@ -128,30 +131,36 @@ export default function InviteLandingPage() {
-                   value={form.password}
-                   onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-                   required
-                 />
-               </label>
- 
-               {mode === "signup" ? (
-                 <label className="kitchen-ui-input-group" htmlFor="invite-display-name">
-                   <span>Nombre para mostrar</span>
-                   <input
-                     id="invite-display-name"
-                     type="text"
-                     className="kitchen-input"
-                     value={form.displayName}
-                     onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
-                     required
-                   />
-                 </label>
-               ) : null}
- 
-               <button type="submit" className="kitchen-button" disabled={!canSubmit || submitting}>
-                 {submitting ? "Uniendo al hogar..." : "Aceptar invitación"}
-               </button>
-             </form>
-           ) : null}
++  const establishSession = useCallback((token, nextUser) => {
++    setToken(token ?? null);
++    setUser(nextUser ?? null);
++    setLoading(false);
++  }, []);
 +
-+          {!loadingInvite && error ? (
-+            <button type="button" className="kitchen-button secondary" onClick={() => void validateInvite()}>
-+              Reintentar validación
-+            </button>
-+          ) : null}
-         </div>
-       </div>
-     </div>
-   );
+   const clearSession = useCallback(() => {
+     setToken(null);
+     setUser(null);
+     setLoading(false);
+   }, []);
+ 
+   const logout = useCallback(() => {
+     const token = getToken();
+     clearSession();
+ 
+     if (!token) return;
+ 
+     void apiRequest("/api/kitchen/auth/logout", {
+       method: "POST",
+       headers: { Authorization: `Bearer ${token}` }
+     }).catch(() => {
+       // La sesión local ya quedó invalidada; ignoramos errores remotos.
+     });
+   }, [clearSession]);
+ 
+-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, logout]);
++  const value = useMemo(
++    () => ({ user, loading, login, logout, establishSession }),
++    [user, loading, logout, establishSession]
++  );
+ 
+   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+ }
+ 
+ export function useAuth() {
+   const context = useContext(AuthContext);
+   if (!context) throw new Error("AuthProvider faltante");
+   return context;
  }

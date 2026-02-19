@@ -41,6 +41,12 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
+  const establishSession = useCallback((token, nextUser) => {
+    setToken(token ?? null);
+    setUser(nextUser ?? null);
+    setLoading(false);
+  }, []);
+
   const clearSession = useCallback(() => {
     setToken(null);
     setUser(null);
@@ -61,7 +67,10 @@ export function AuthProvider({ children }) {
     });
   }, [clearSession]);
 
-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, logout]);
+  const value = useMemo(
+    () => ({ user, loading, login, logout, establishSession }),
+    [user, loading, logout, establishSession]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
