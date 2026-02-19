@@ -1,35 +1,15 @@
 import express from "express";
-import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { requireAuth, requireRole } from "../middleware.js";
-import { formatDateISO, getWeekDates, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
+import { formatDateISO, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
 import {
   buildScopedFilter,
   getEffectiveHouseholdId,
   handleHouseholdError
 } from "../householdScope.js";
+import { ensureWeekPlan } from "../weekPlanService.js";
 
 const router = express.Router();
-
-async function ensureWeekPlan(weekStartDate, effectiveHouseholdId) {
-  const existing = await KitchenWeekPlan.findOne(
-    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
-  );
-  if (existing) return existing;
-
-  const days = getWeekDates(weekStartDate).map((date) => ({
-    date,
-    cookTiming: "previous_day",
-    servings: 4,
-    ingredientOverrides: []
-  }));
-
-  return KitchenWeekPlan.create({
-    weekStart: weekStartDate,
-    days,
-    householdId: effectiveHouseholdId
-  });
-}
 
 router.get("/:weekStart", requireAuth, async (req, res) => {
   try {

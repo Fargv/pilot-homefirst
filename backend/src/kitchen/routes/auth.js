@@ -7,6 +7,8 @@ import { Household } from "../models/Household.js";
 import { createToken, requireAuth } from "../middleware.js";
 import { buildDisplayName, isValidEmail, normalizeEmail } from "../../users/utils.js";
 import { generateUniqueHouseholdInviteCode, isValidInviteCodeFormat } from "../householdInviteCode.js";
+import { getWeekStart } from "../utils/dates.js";
+import { ensureWeekPlan } from "../weekPlanService.js";
 
 const DIOD_EMAIL = "admin@admin.com";
 
@@ -172,6 +174,8 @@ router.post("/register", async (req, res) => {
 
     user.householdId = household._id;
     await user.save();
+
+    await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
 
     const token = createToken(user);
     return res.status(201).json({
