@@ -175,7 +175,13 @@ router.post("/register", async (req, res) => {
     user.householdId = household._id;
     await user.save();
 
-    await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
+    if (mode === "create") {
+      try {
+        await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
+      } catch (error) {
+        console.error("No se pudo crear automáticamente el plan semanal durante el registro:", error?.message || error);
+      }
+    }
 
     const token = createToken(user);
     return res.status(201).json({

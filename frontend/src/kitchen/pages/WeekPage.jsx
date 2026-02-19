@@ -93,6 +93,7 @@ export default function WeekPage() {
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [creatingPlan, setCreatingPlan] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [dayStatus, setDayStatus] = useState({});
   const [dayErrors, setDayErrors] = useState({});
@@ -125,6 +126,10 @@ export default function WeekPage() {
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
 
   const loadData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setLoadError("");
     try {
@@ -133,14 +138,12 @@ export default function WeekPage() {
         apiRequest("/api/kitchen/dishes"),
         apiRequest("/api/kitchen/dishes?sidedish=true")
       ]);
-      setPlan(planData.plan);
+      setPlan(planData.plan || null);
       setDishes(dishesData.dishes || []);
       setSideDishes(sideDishesData.dishes || []);
-      if (user) {
-        const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
-        const usersData = await apiRequest(usersEndpoint);
-        setUsers(usersData.users || []);
-      }
+      const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
+      const usersData = await apiRequest(usersEndpoint);
+      setUsers(usersData.users || []);
     } catch (err) {
       setLoadError(err.message || "No se pudo cargar la semana.");
     } finally {
@@ -150,7 +153,7 @@ export default function WeekPage() {
 
   useEffect(() => {
     loadData();
-  }, [weekStart]);
+  }, [user, weekStart]);
 
   const loadCategories = async () => {
     try {
@@ -631,6 +634,21 @@ export default function WeekPage() {
     }
   };
 
+  const handleCreatePlan = async () => {
+    setCreatingPlan(true);
+    setLoadError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}`, {
+        method: "POST"
+      });
+      setPlan(data.plan || null);
+    } catch (err) {
+      setLoadError(err.message || "No se pudo crear la planificación semanal.");
+    } finally {
+      setCreatingPlan(false);
+    }
+  };
+
   const handleCategoryCreated = useCallback(async (name, color) => {
     const payload = { name };
     if (color?.colorBg) {
@@ -664,7 +682,15 @@ export default function WeekPage() {
       <KitchenLayout>
         <div className="kitchen-card kitchen-empty">
           <h3>No hay planificación todavía</h3>
-          <p>Cuando guardes un día aparecerá aquí.</p>
+          <p>Esta semana aún no tiene plan creado para tu hogar.</p>
+          <button
+            type="button"
+            className="kitchen-button"
+            onClick={handleCreatePlan}
+            disabled={creatingPlan}
+          >
+            {creatingPlan ? "Creando..." : "Crear planificación de esta semana"}
+          </button>
           {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
         </div>
       </KitchenLayout>

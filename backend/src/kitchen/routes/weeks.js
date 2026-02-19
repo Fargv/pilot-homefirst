@@ -7,7 +7,7 @@ import {
   getEffectiveHouseholdId,
   handleHouseholdError
 } from "../householdScope.js";
-import { ensureWeekPlan } from "../weekPlanService.js";
+import { ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.get("/:weekStart", requireAuth, async (req, res) => {
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
-    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+    const plan = await findWeekPlan(monday, effectiveHouseholdId);
 
     res.json({
       ok: true,
@@ -93,6 +93,27 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo copiar el plan semanal." });
+  }
+});
+
+router.post("/:weekStart", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+
+    return res.status(201).json({
+      ok: true,
+      weekStart: formatDateISO(monday),
+      plan
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo crear el plan semanal." });
   }
 });
 

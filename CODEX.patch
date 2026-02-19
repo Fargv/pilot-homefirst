@@ -1,613 +1,361 @@
 diff --git a/backend/src/kitchen/routes/auth.js b/backend/src/kitchen/routes/auth.js
-index 02544c9d781a4f5fec2c2fde0e234fc87f2d6124..36b1ce8cf661d1e6482828e0f23dcac9b37deb44 100644
+index 5582c3954611f1eea372c9f269d0b2cf4892c0a3..6bebcc296821a9583bb6f2bf8907d061feb17387 100644
 --- a/backend/src/kitchen/routes/auth.js
 +++ b/backend/src/kitchen/routes/auth.js
-@@ -1,297 +1,301 @@
- import express from "express";
--import crypto from "crypto";
-+import crypto from "crypto";
- import bcrypt from "bcryptjs";
- import { KitchenUser } from "../models/KitchenUser.js";
--import { Invitation } from "../models/Invitation.js";
--import { Household } from "../models/Household.js";
-+import { Invitation } from "../models/Invitation.js";
-+import { Household } from "../models/Household.js";
- import { createToken, requireAuth } from "../middleware.js";
--import { buildDisplayName, isValidEmail, normalizeEmail } from "../../users/utils.js";
--import { generateUniqueHouseholdInviteCode, isValidInviteCodeFormat } from "../householdInviteCode.js";
-+import { buildDisplayName, isValidEmail, normalizeEmail } from "../../users/utils.js";
-+import { generateUniqueHouseholdInviteCode, isValidInviteCodeFormat } from "../householdInviteCode.js";
-+import { getWeekStart } from "../utils/dates.js";
-+import { ensureWeekPlan } from "../weekPlanService.js";
+@@ -1,115 +1,115 @@
+-import express from "express";
++import express from "express";
+ import crypto from "crypto";
+-import bcrypt from "bcryptjs";
+-import { KitchenUser } from "../models/KitchenUser.js";
++import bcrypt from "bcryptjs";
++import { KitchenUser } from "../models/KitchenUser.js";
+ import { Invitation } from "../models/Invitation.js";
+ import { Household } from "../models/Household.js";
+-import { createToken, requireAuth } from "../middleware.js";
++import { createToken, requireAuth } from "../middleware.js";
+ import { buildDisplayName, isValidEmail, normalizeEmail } from "../../users/utils.js";
+ import { generateUniqueHouseholdInviteCode, isValidInviteCodeFormat } from "../householdInviteCode.js";
+ import { getWeekStart } from "../utils/dates.js";
+ import { ensureWeekPlan } from "../weekPlanService.js";
+-
+-const DIOD_EMAIL = "admin@admin.com";
+-
+-const router = express.Router();
+-
++
++const DIOD_EMAIL = "admin@admin.com";
++
++const router = express.Router();
++
  
- const DIOD_EMAIL = "admin@admin.com";
+ function hashInviteToken(token) {
+   return crypto.createHash("sha256").update(token).digest("hex");
+ }
  
- const router = express.Router();
+ async function findActiveInvitationByToken(token) {
+   return Invitation.findOne({
+     tokenHash: hashInviteToken(token),
+     usedAt: null,
+     expiresAt: { $gt: new Date() }
+   });
+ }
  
--
--function hashInviteToken(token) {
--  return crypto.createHash("sha256").update(token).digest("hex");
--}
--
--async function findActiveInvitationByToken(token) {
--  return Invitation.findOne({
--    tokenHash: hashInviteToken(token),
--    usedAt: null,
--    expiresAt: { $gt: new Date() }
--  });
--}
--
--router.get("/invite/:token", async (req, res) => {
--  try {
--    const { token } = req.params;
--    if (!token) {
--      return res.status(400).json({ ok: false, error: "Token de invitación inválido." });
--    }
--
--    const invitation = await findActiveInvitationByToken(token);
--    if (!invitation) {
--      return res.status(404).json({ ok: false, error: "La invitación no es válida o expiró." });
--    }
--
--    const household = await Household.findById(invitation.householdId).select("name");
--    return res.json({
--      ok: true,
--      role: invitation.role,
--      householdName: household?.name || "",
--      expiresAt: invitation.expiresAt
--    });
--  } catch (error) {
--    return res.status(500).json({ ok: false, error: "No se pudo validar la invitación." });
--  }
--});
--
--
-+
-+function hashInviteToken(token) {
-+  return crypto.createHash("sha256").update(token).digest("hex");
-+}
-+
-+async function findActiveInvitationByToken(token) {
-+  return Invitation.findOne({
-+    tokenHash: hashInviteToken(token),
-+    usedAt: null,
-+    expiresAt: { $gt: new Date() }
-+  });
-+}
-+
-+router.get("/invite/:token", async (req, res) => {
-+  try {
-+    const { token } = req.params;
-+    if (!token) {
-+      return res.status(400).json({ ok: false, error: "Token de invitación inválido." });
-+    }
-+
-+    const invitation = await findActiveInvitationByToken(token);
-+    if (!invitation) {
-+      return res.status(404).json({ ok: false, error: "La invitación no es válida o expiró." });
-+    }
-+
-+    const household = await Household.findById(invitation.householdId).select("name");
-+    return res.json({
-+      ok: true,
-+      role: invitation.role,
-+      householdName: household?.name || "",
-+      expiresAt: invitation.expiresAt
-+    });
-+  } catch (error) {
-+    return res.status(500).json({ ok: false, error: "No se pudo validar la invitación." });
-+  }
-+});
-+
-+
- router.post("/login", async (req, res) => {
+ router.get("/invite/:token", async (req, res) => {
    try {
-     const { email, password, username } = req.body;
-     const loginValue = normalizeEmail(email || username);
-     if (!loginValue || !password) {
-       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
+     const { token } = req.params;
+     if (!token) {
+       return res.status(400).json({ ok: false, error: "Token de invitación inválido." });
      }
  
-     const user = await KitchenUser.findOne({ email: loginValue });
-     if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
- 
--    if (!user.passwordHash || user.isPlaceholder) {
--      return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
--    }
--
-+    if (!user.passwordHash || user.isPlaceholder) {
-+      return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
-+    }
-+
-     const ok = await bcrypt.compare(password, user.passwordHash);
-     if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
- 
-     const isDiod = loginValue === DIOD_EMAIL;
-     const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
-     if (shouldUpdateGlobalRole) {
-       user.globalRole = isDiod ? "diod" : null;
-       await user.save();
+     const invitation = await findActiveInvitationByToken(token);
+     if (!invitation) {
+       return res.status(404).json({ ok: false, error: "La invitación no es válida o expiró." });
      }
  
-     const token = createToken(user);
-     const safeUser = {
-       ...user.toSafeJSON(),
-       migrationPending: !user.householdId
-     };
-     return res.json({ ok: true, token, user: safeUser });
+     const household = await Household.findById(invitation.householdId).select("name");
+     return res.json({
+       ok: true,
+       role: invitation.role,
+       householdName: household?.name || "",
+       expiresAt: invitation.expiresAt
+     });
    } catch (error) {
-     return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
+     return res.status(500).json({ ok: false, error: "No se pudo validar la invitación." });
    }
  });
  
--
--router.get("/resolve-household/:inviteCode", async (req, res) => {
+ 
+-router.post("/login", async (req, res) => {
 -  try {
--    const inviteCode = String(req.params.inviteCode || "").trim();
--    if (!isValidInviteCodeFormat(inviteCode)) {
--      return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
+-    const { email, password, username } = req.body;
+-    const loginValue = normalizeEmail(email || username);
+-    if (!loginValue || !password) {
+-      return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
 -    }
 -
--    const household = await Household.findOne({ inviteCode }).select("_id name");
--    if (!household) {
--      return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
+-    const user = await KitchenUser.findOne({ email: loginValue });
+-    if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+-
++router.post("/login", async (req, res) => {
++  try {
++    const { email, password, username } = req.body;
++    const loginValue = normalizeEmail(email || username);
++    if (!loginValue || !password) {
++      return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
++    }
++
++    const user = await KitchenUser.findOne({ email: loginValue });
++    if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
++
+     if (!user.passwordHash || user.isPlaceholder) {
+       return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+     }
+ 
+-    const ok = await bcrypt.compare(password, user.passwordHash);
+-    if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+-
+-    const isDiod = loginValue === DIOD_EMAIL;
+-    const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
+-    if (shouldUpdateGlobalRole) {
+-      user.globalRole = isDiod ? "diod" : null;
+-      await user.save();
 -    }
--
--    return res.json({
--      ok: true,
--      household: {
--        id: household._id,
--        name: household.name
--      }
--    });
--  } catch (error) {
--    return res.status(500).json({ ok: false, error: "No se pudo validar el código del hogar." });
--  }
--});
--
--router.post("/register", async (req, res) => {
--  try {
--    const { email, password, displayName, householdName, inviteCode } = req.body;
--    const normalizedEmail = normalizeEmail(email);
--    const safeDisplayName = buildDisplayName({ displayName, name: displayName });
--    const normalizedInviteCode = String(inviteCode || "").trim();
--
--    if (!normalizedEmail || !password || !safeDisplayName) {
--      return res.status(400).json({ ok: false, error: "Nombre, email y contraseña son obligatorios." });
--    }
--
--    if (!isValidEmail(normalizedEmail)) {
--      return res.status(400).json({ ok: false, error: "El email no es válido." });
--    }
--
--    if (String(password).length < 8) {
--      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
--    }
--
--    const existingUser = await KitchenUser.findOne({ email: normalizedEmail });
--    if (existingUser) {
--      return res.status(409).json({ ok: false, error: "El email ya está registrado." });
--    }
--
--    const mode = normalizedInviteCode ? "join" : "create";
--    let household = null;
--    let role = "owner";
--
--    if (mode === "join") {
--      if (!isValidInviteCodeFormat(normalizedInviteCode)) {
--        return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
--      }
--
--      household = await Household.findOne({ inviteCode: normalizedInviteCode });
--      if (!household) {
--        return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
--      }
--      role = "member";
--    }
--
--    const user = await KitchenUser.create({
--      username: normalizedEmail,
--      email: normalizedEmail,
--      displayName: safeDisplayName,
--      passwordHash: await bcrypt.hash(password, 10),
--      role,
--      householdId: null,
--      isPlaceholder: false
--    });
--
--    if (mode === "create") {
--      const finalHouseholdName = String(householdName || "").trim() || `${safeDisplayName} - Hogar`;
--      household = await Household.create({
--        name: finalHouseholdName,
--        ownerUserId: user._id,
--        inviteCode: await generateUniqueHouseholdInviteCode()
--      });
--    }
--
--    user.householdId = household._id;
--    await user.save();
 -
 -    const token = createToken(user);
--    return res.status(201).json({
--      ok: true,
--      token,
--      user: user.toSafeJSON(),
--      household: {
--        id: household._id,
--        name: household.name,
--        inviteCode: household.inviteCode || null
--      }
--    });
+-    const safeUser = {
+-      ...user.toSafeJSON(),
+-      migrationPending: !user.householdId
+-    };
+-    return res.json({ ok: true, token, user: safeUser });
 -  } catch (error) {
--    if (error?.code === 11000) {
--      return res.status(409).json({ ok: false, error: "No se pudo completar el registro. Intenta nuevamente." });
--    }
--    return res.status(500).json({ ok: false, error: "No se pudo completar el registro." });
+-    return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
 -  }
 -});
 -
--router.post("/accept-invite", async (req, res) => {
--  try {
--    const { token, email, password, displayName } = req.body;
--    const normalizedEmail = normalizeEmail(email);
--
--    if (!token || !normalizedEmail || !password) {
--      return res.status(400).json({
--        ok: false,
--        error: "Token, email y contraseña son obligatorios."
--      });
--    }
--
--    if (String(password).length < 8) {
--      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
--    }
--
--    const invitation = await findActiveInvitationByToken(token);
--
--    if (!invitation) {
--      return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
--    }
--
--    let user = await KitchenUser.findOne({ email: normalizedEmail });
--
--    if (user) {
--      if (user.householdId && user.householdId.toString() !== invitation.householdId.toString()) {
--        return res.status(409).json({
--          ok: false,
--          error: "Ese email ya pertenece a otro hogar y no se puede unir con esta invitación."
--        });
--      }
--
--      if (!user.householdId) {
--        user.householdId = invitation.householdId;
--      }
--
--      if (!user.passwordHash || user.isPlaceholder) {
--        if (!displayName || !String(displayName).trim()) {
--          return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para activar la cuenta." });
--        }
--        user.displayName = String(displayName).trim();
--        user.passwordHash = await bcrypt.hash(password, 10);
--      } else {
--        const passwordOk = await bcrypt.compare(password, user.passwordHash);
--        if (!passwordOk) {
--          return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
--        }
--      }
--
--      if (user.isPlaceholder) {
--        user.isPlaceholder = false;
--        user.claimedAt = new Date();
--      }
--
--      if (displayName && String(displayName).trim()) {
--        user.displayName = String(displayName).trim();
--      }
--
--      user.role = invitation.role || "member";
--      await user.save();
--    } else {
--      if (!displayName || !String(displayName).trim()) {
--        return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para crear la cuenta." });
--      }
--
--      user = await KitchenUser.create({
--        username: normalizedEmail,
--        email: normalizedEmail,
--        displayName: String(displayName).trim(),
--        passwordHash: await bcrypt.hash(password, 10),
--        role: invitation.role || "member",
--        householdId: invitation.householdId,
--        isPlaceholder: false
--      });
--    }
--
--    invitation.usedAt = new Date();
--    invitation.usedByUserId = user._id;
--    await invitation.save();
--
--    const jwt = createToken(user);
--    return res.json({ ok: true, token: jwt, user: user.toSafeJSON() });
--  } catch (error) {
--    return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitación." });
--  }
--});
--
++    const ok = await bcrypt.compare(password, user.passwordHash);
++    if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
 +
-+router.get("/resolve-household/:inviteCode", async (req, res) => {
-+  try {
-+    const inviteCode = String(req.params.inviteCode || "").trim();
-+    if (!isValidInviteCodeFormat(inviteCode)) {
-+      return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
++    const isDiod = loginValue === DIOD_EMAIL;
++    const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
++    if (shouldUpdateGlobalRole) {
++      user.globalRole = isDiod ? "diod" : null;
++      await user.save();
 +    }
-+
-+    const household = await Household.findOne({ inviteCode }).select("_id name");
-+    if (!household) {
-+      return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
-+    }
-+
-+    return res.json({
-+      ok: true,
-+      household: {
-+        id: household._id,
-+        name: household.name
-+      }
-+    });
-+  } catch (error) {
-+    return res.status(500).json({ ok: false, error: "No se pudo validar el código del hogar." });
-+  }
-+});
-+
-+router.post("/register", async (req, res) => {
-+  try {
-+    const { email, password, displayName, householdName, inviteCode } = req.body;
-+    const normalizedEmail = normalizeEmail(email);
-+    const safeDisplayName = buildDisplayName({ displayName, name: displayName });
-+    const normalizedInviteCode = String(inviteCode || "").trim();
-+
-+    if (!normalizedEmail || !password || !safeDisplayName) {
-+      return res.status(400).json({ ok: false, error: "Nombre, email y contraseña son obligatorios." });
-+    }
-+
-+    if (!isValidEmail(normalizedEmail)) {
-+      return res.status(400).json({ ok: false, error: "El email no es válido." });
-+    }
-+
-+    if (String(password).length < 8) {
-+      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
-+    }
-+
-+    const existingUser = await KitchenUser.findOne({ email: normalizedEmail });
-+    if (existingUser) {
-+      return res.status(409).json({ ok: false, error: "El email ya está registrado." });
-+    }
-+
-+    const mode = normalizedInviteCode ? "join" : "create";
-+    let household = null;
-+    let role = "owner";
-+
-+    if (mode === "join") {
-+      if (!isValidInviteCodeFormat(normalizedInviteCode)) {
-+        return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
-+      }
-+
-+      household = await Household.findOne({ inviteCode: normalizedInviteCode });
-+      if (!household) {
-+        return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
-+      }
-+      role = "member";
-+    }
-+
-+    const user = await KitchenUser.create({
-+      username: normalizedEmail,
-+      email: normalizedEmail,
-+      displayName: safeDisplayName,
-+      passwordHash: await bcrypt.hash(password, 10),
-+      role,
-+      householdId: null,
-+      isPlaceholder: false
-+    });
-+
-+    if (mode === "create") {
-+      const finalHouseholdName = String(householdName || "").trim() || `${safeDisplayName} - Hogar`;
-+      household = await Household.create({
-+        name: finalHouseholdName,
-+        ownerUserId: user._id,
-+        inviteCode: await generateUniqueHouseholdInviteCode()
-+      });
-+    }
-+
-+    user.householdId = household._id;
-+    await user.save();
-+
-+    await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
 +
 +    const token = createToken(user);
-+    return res.status(201).json({
-+      ok: true,
-+      token,
-+      user: user.toSafeJSON(),
-+      household: {
-+        id: household._id,
-+        name: household.name,
-+        inviteCode: household.inviteCode || null
-+      }
-+    });
++    const safeUser = {
++      ...user.toSafeJSON(),
++      migrationPending: !user.householdId
++    };
++    return res.json({ ok: true, token, user: safeUser });
 +  } catch (error) {
-+    if (error?.code === 11000) {
-+      return res.status(409).json({ ok: false, error: "No se pudo completar el registro. Intenta nuevamente." });
-+    }
-+    return res.status(500).json({ ok: false, error: "No se pudo completar el registro." });
++    return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
 +  }
 +});
 +
-+router.post("/accept-invite", async (req, res) => {
-+  try {
-+    const { token, email, password, displayName } = req.body;
-+    const normalizedEmail = normalizeEmail(email);
-+
-+    if (!token || !normalizedEmail || !password) {
-+      return res.status(400).json({
-+        ok: false,
-+        error: "Token, email y contraseña son obligatorios."
-+      });
+ 
+ router.get("/resolve-household/:inviteCode", async (req, res) => {
+   try {
+     const inviteCode = String(req.params.inviteCode || "").trim();
+     if (!isValidInviteCodeFormat(inviteCode)) {
+       return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
+     }
+ 
+     const household = await Household.findOne({ inviteCode }).select("_id name");
+     if (!household) {
+       return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
+     }
+ 
+     return res.json({
+       ok: true,
+       household: {
+         id: household._id,
+         name: household.name
+       }
+     });
+   } catch (error) {
+     return res.status(500).json({ ok: false, error: "No se pudo validar el código del hogar." });
+   }
+ });
+ 
+@@ -153,51 +153,57 @@ router.post("/register", async (req, res) => {
+       role = "member";
+     }
+ 
+     const user = await KitchenUser.create({
+       username: normalizedEmail,
+       email: normalizedEmail,
+       displayName: safeDisplayName,
+       passwordHash: await bcrypt.hash(password, 10),
+       role,
+       householdId: null,
+       isPlaceholder: false
+     });
+ 
+     if (mode === "create") {
+       const finalHouseholdName = String(householdName || "").trim() || `${safeDisplayName} - Hogar`;
+       household = await Household.create({
+         name: finalHouseholdName,
+         ownerUserId: user._id,
+         inviteCode: await generateUniqueHouseholdInviteCode()
+       });
+     }
+ 
+     user.householdId = household._id;
+     await user.save();
+ 
+-    await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
++    if (mode === "create") {
++      try {
++        await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
++      } catch (error) {
++        console.error("No se pudo crear automáticamente el plan semanal durante el registro:", error?.message || error);
++      }
 +    }
-+
-+    if (String(password).length < 8) {
-+      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
-+    }
-+
-+    const invitation = await findActiveInvitationByToken(token);
-+
-+    if (!invitation) {
-+      return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
-+    }
-+
-+    let user = await KitchenUser.findOne({ email: normalizedEmail });
-+
-+    if (user) {
-+      if (user.householdId && user.householdId.toString() !== invitation.householdId.toString()) {
-+        return res.status(409).json({
-+          ok: false,
-+          error: "Ese email ya pertenece a otro hogar y no se puede unir con esta invitación."
-+        });
-+      }
-+
-+      if (!user.householdId) {
-+        user.householdId = invitation.householdId;
-+      }
-+
-+      if (!user.passwordHash || user.isPlaceholder) {
-+        if (!displayName || !String(displayName).trim()) {
-+          return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para activar la cuenta." });
-+        }
-+        user.displayName = String(displayName).trim();
-+        user.passwordHash = await bcrypt.hash(password, 10);
-+      } else {
-+        const passwordOk = await bcrypt.compare(password, user.passwordHash);
-+        if (!passwordOk) {
-+          return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
-+        }
-+      }
-+
-+      if (user.isPlaceholder) {
-+        user.isPlaceholder = false;
-+        user.claimedAt = new Date();
-+      }
-+
-+      if (displayName && String(displayName).trim()) {
-+        user.displayName = String(displayName).trim();
-+      }
-+
-+      user.role = invitation.role || "member";
-+      await user.save();
-+    } else {
-+      if (!displayName || !String(displayName).trim()) {
-+        return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para crear la cuenta." });
-+      }
-+
-+      user = await KitchenUser.create({
-+        username: normalizedEmail,
-+        email: normalizedEmail,
-+        displayName: String(displayName).trim(),
-+        passwordHash: await bcrypt.hash(password, 10),
-+        role: invitation.role || "member",
-+        householdId: invitation.householdId,
-+        isPlaceholder: false
-+      });
-+    }
-+
-+    invitation.usedAt = new Date();
-+    invitation.usedByUserId = user._id;
-+    await invitation.save();
-+
-+    const jwt = createToken(user);
-+    return res.json({ ok: true, token: jwt, user: user.toSafeJSON() });
-+  } catch (error) {
-+    return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitación." });
-+  }
+ 
+     const token = createToken(user);
+     return res.status(201).json({
+       ok: true,
+       token,
+       user: user.toSafeJSON(),
+       household: {
+         id: household._id,
+         name: household.name,
+         inviteCode: household.inviteCode || null
+       }
+     });
+   } catch (error) {
+     if (error?.code === 11000) {
+       return res.status(409).json({ ok: false, error: "No se pudo completar el registro. Intenta nuevamente." });
+     }
+     return res.status(500).json({ ok: false, error: "No se pudo completar el registro." });
+   }
+ });
+ 
+ router.post("/accept-invite", async (req, res) => {
+   try {
+     const { token, email, password, displayName } = req.body;
+     const normalizedEmail = normalizeEmail(email);
+ 
+@@ -261,41 +267,41 @@ router.post("/accept-invite", async (req, res) => {
+         return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para crear la cuenta." });
+       }
+ 
+       user = await KitchenUser.create({
+         username: normalizedEmail,
+         email: normalizedEmail,
+         displayName: String(displayName).trim(),
+         passwordHash: await bcrypt.hash(password, 10),
+         role: invitation.role || "member",
+         householdId: invitation.householdId,
+         isPlaceholder: false
+       });
+     }
+ 
+     invitation.usedAt = new Date();
+     invitation.usedByUserId = user._id;
+     await invitation.save();
+ 
+     const jwt = createToken(user);
+     return res.json({ ok: true, token: jwt, user: user.toSafeJSON() });
+   } catch (error) {
+     return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitación." });
+   }
+ });
+ 
+-router.post("/logout", (req, res) => {
+-  res.json({ ok: true });
+-});
+-
+-router.get("/me", requireAuth, (req, res) => {
+-  res.json({
+-    ok: true,
+-    user: {
+-      ...req.kitchenUser.toSafeJSON(),
+-      migrationPending: !req.kitchenUser.householdId
+-    },
+-    auth: req.user
+-  });
+-});
+-
+-export default router;
++router.post("/logout", (req, res) => {
++  res.json({ ok: true });
 +});
 +
- router.post("/logout", (req, res) => {
-   res.json({ ok: true });
- });
- 
- router.get("/me", requireAuth, (req, res) => {
-   res.json({
-     ok: true,
-     user: {
-       ...req.kitchenUser.toSafeJSON(),
-       migrationPending: !req.kitchenUser.householdId
-     },
-     auth: req.user
-   });
- });
- 
- export default router;
++router.get("/me", requireAuth, (req, res) => {
++  res.json({
++    ok: true,
++    user: {
++      ...req.kitchenUser.toSafeJSON(),
++      migrationPending: !req.kitchenUser.householdId
++    },
++    auth: req.user
++  });
++});
++
++export default router;
 diff --git a/backend/src/kitchen/routes/weeks.js b/backend/src/kitchen/routes/weeks.js
-index e34839db46ed6df8f0d4363672a784f2af5edc48..3a7ddc5031067a6d80e86c517f3759275074a738 100644
+index 3cb08ae406c52e3785c1339e5d5a95f8f4f41870..f53828099a23e80f7eb23e674664011289dd4552 100644
 --- a/backend/src/kitchen/routes/weeks.js
 +++ b/backend/src/kitchen/routes/weeks.js
-@@ -1,140 +1,120 @@
+@@ -1,46 +1,46 @@
  import express from "express";
--import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
  import { KitchenDish } from "../models/KitchenDish.js";
  import { requireAuth, requireRole } from "../middleware.js";
--import { formatDateISO, getWeekDates, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
--import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError
--} from "../householdScope.js";
-+import { formatDateISO, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
-+import {
-+  buildScopedFilter,
-+  getEffectiveHouseholdId,
-+  handleHouseholdError
-+} from "../householdScope.js";
-+import { ensureWeekPlan } from "../weekPlanService.js";
+ import { formatDateISO, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
+ import {
+   buildScopedFilter,
+   getEffectiveHouseholdId,
+   handleHouseholdError
+ } from "../householdScope.js";
+-import { ensureWeekPlan } from "../weekPlanService.js";
++import { ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
  
  const router = express.Router();
  
--async function ensureWeekPlan(weekStartDate, effectiveHouseholdId) {
--  const existing = await KitchenWeekPlan.findOne(
--    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
--  );
--  if (existing) return existing;
--
--  const days = getWeekDates(weekStartDate).map((date) => ({
--    date,
--    cookTiming: "previous_day",
--    servings: 4,
--    ingredientOverrides: []
--  }));
--
--  return KitchenWeekPlan.create({
--    weekStart: weekStartDate,
--    days,
--    householdId: effectiveHouseholdId
--  });
--}
--
  router.get("/:weekStart", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const monday = getWeekStart(weekStart);
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
+ 
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
 -    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
--
--    res.json({
--      ok: true,
--      weekStart: formatDateISO(monday),
--      plan
--    });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo cargar el plan semanal." });
--  }
++    const plan = await findWeekPlan(monday, effectiveHouseholdId);
+ 
+     res.json({
+       ok: true,
+       weekStart: formatDateISO(monday),
+       plan
+     });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudo cargar el plan semanal." });
+   }
+ });
+ 
+ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     const date = parseISODate(req.params.date);
+     if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+ 
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
+     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+ 
+     const day = plan.days.find((item) => isSameDay(item.date, date));
+     if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
+@@ -74,47 +74,68 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
+     const monday = getWeekStart(weekStart);
+     const sourceMonday = getWeekStart(otherWeekStart);
+ 
+     const sourcePlan = await ensureWeekPlan(sourceMonday, effectiveHouseholdId);
+     const targetPlan = await ensureWeekPlan(monday, effectiveHouseholdId);
+ 
+     targetPlan.days = sourcePlan.days.map((day) => ({
+       date: new Date(day.date),
+       cookUserId: day.cookUserId,
+       cookTiming: day.cookTiming,
+       servings: day.servings,
+       mainDishId: day.mainDishId,
+       sideDishId: day.sideDishId,
+       ingredientOverrides: day.ingredientOverrides
+     }));
+ 
+     await targetPlan.save();
+     return res.json({ ok: true, plan: targetPlan });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudo copiar el plan semanal." });
+   }
+ });
+ 
++router.post("/:weekStart", requireAuth, async (req, res) => {
 +  try {
 +    const weekStart = parseISODate(req.params.weekStart);
 +    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
@@ -616,7 +364,7 @@ index e34839db46ed6df8f0d4363672a784f2af5edc48..3a7ddc5031067a6d80e86c517f375927
 +    const monday = getWeekStart(weekStart);
 +    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
 +
-+    res.json({
++    return res.status(201).json({
 +      ok: true,
 +      weekStart: formatDateISO(monday),
 +      plan
@@ -624,168 +372,752 @@ index e34839db46ed6df8f0d4363672a784f2af5edc48..3a7ddc5031067a6d80e86c517f375927
 +  } catch (error) {
 +    const handled = handleHouseholdError(res, error);
 +    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo cargar el plan semanal." });
++    return res.status(500).json({ ok: false, error: "No se pudo crear el plan semanal." });
 +  }
- });
++});
++
+ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
  
- router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    const date = parseISODate(req.params.date);
--    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const monday = getWeekStart(weekStart);
--    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
--
--    const day = plan.days.find((item) => isSameDay(item.date, date));
--    if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
--
--    const { cookUserId, cookTiming, servings, mainDishId, sideDishId, ingredientOverrides } = req.body;
--    if (cookUserId !== undefined) day.cookUserId = cookUserId || null;
--    if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
--    if (servings) day.servings = Number(servings) || 4;
--    if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
--    if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
--    if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
--
--    await plan.save();
--    return res.json({ ok: true, plan });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
--  }
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    const date = parseISODate(req.params.date);
-+    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
-+
-+    const day = plan.days.find((item) => isSameDay(item.date, date));
-+    if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
-+
-+    const { cookUserId, cookTiming, servings, mainDishId, sideDishId, ingredientOverrides } = req.body;
-+    if (cookUserId !== undefined) day.cookUserId = cookUserId || null;
-+    if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
-+    if (servings) day.servings = Number(servings) || 4;
-+    if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
-+    if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
-+    if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
-+
-+    await plan.save();
-+    return res.json({ ok: true, plan });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
-+  }
- });
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
+     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+     const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
+     const dishes = await KitchenDish.find(
+       buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
+     );
  
- router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("admin"), async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    const otherWeekStart = parseISODate(req.params.otherWeekStart);
--    if (!weekStart || !otherWeekStart) {
--      return res.status(400).json({ ok: false, error: "Fecha inválida." });
--    }
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const monday = getWeekStart(weekStart);
--    const sourceMonday = getWeekStart(otherWeekStart);
--
--    const sourcePlan = await ensureWeekPlan(sourceMonday, effectiveHouseholdId);
--    const targetPlan = await ensureWeekPlan(monday, effectiveHouseholdId);
--
--    targetPlan.days = sourcePlan.days.map((day) => ({
--      date: new Date(day.date),
--      cookUserId: day.cookUserId,
--      cookTiming: day.cookTiming,
--      servings: day.servings,
--      mainDishId: day.mainDishId,
--      sideDishId: day.sideDishId,
--      ingredientOverrides: day.ingredientOverrides
--    }));
--
--    await targetPlan.save();
--    return res.json({ ok: true, plan: targetPlan });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo copiar el plan semanal." });
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    const otherWeekStart = parseISODate(req.params.otherWeekStart);
-+    if (!weekStart || !otherWeekStart) {
-+      return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+    }
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const sourceMonday = getWeekStart(otherWeekStart);
-+
-+    const sourcePlan = await ensureWeekPlan(sourceMonday, effectiveHouseholdId);
-+    const targetPlan = await ensureWeekPlan(monday, effectiveHouseholdId);
-+
-+    targetPlan.days = sourcePlan.days.map((day) => ({
-+      date: new Date(day.date),
-+      cookUserId: day.cookUserId,
-+      cookTiming: day.cookTiming,
-+      servings: day.servings,
-+      mainDishId: day.mainDishId,
-+      sideDishId: day.sideDishId,
-+      ingredientOverrides: day.ingredientOverrides
-+    }));
-+
-+    await targetPlan.save();
-+    return res.json({ ok: true, plan: targetPlan });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo copiar el plan semanal." });
+     res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudo cargar el resumen semanal." });
    }
  });
  
- router.get("/:weekStart/summary", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const monday = getWeekStart(weekStart);
--    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
--    const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
--    const dishes = await KitchenDish.find(
--      buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
--    );
--
--    res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo cargar el resumen semanal." });
--  }
+ export default router;
+diff --git a/backend/src/kitchen/weekPlanService.js b/backend/src/kitchen/weekPlanService.js
+index 207d1db41bd9a8b9de628455cdd5b2f58697cd86..e79175d0e6f3848b57a7134cb114d634f1ec211f 100644
+--- a/backend/src/kitchen/weekPlanService.js
++++ b/backend/src/kitchen/weekPlanService.js
+@@ -1,33 +1,48 @@
+ import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
+ import { buildScopedFilter } from "./householdScope.js";
+ import { getWeekDates } from "./utils/dates.js";
+ 
+ function buildDefaultDays(weekStartDate) {
+   return getWeekDates(weekStartDate).map((date) => ({
+     date,
+     cookTiming: "previous_day",
+     servings: 4,
+     ingredientOverrides: []
+   }));
+ }
+ 
+ export async function ensureWeekPlan(weekStartDate, effectiveHouseholdId) {
+   const filter = buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate });
+ 
+-  const plan = await KitchenWeekPlan.findOneAndUpdate(
+-    filter,
+-    {
+-      $setOnInsert: {
+-        weekStart: weekStartDate,
+-        householdId: effectiveHouseholdId,
+-        days: buildDefaultDays(weekStartDate)
 +  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
-+    const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-+    const dishes = await KitchenDish.find(
-+      buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
++    const plan = await KitchenWeekPlan.findOneAndUpdate(
++      filter,
++      {
++        $setOnInsert: {
++          weekStart: weekStartDate,
++          householdId: effectiveHouseholdId,
++          days: buildDefaultDays(weekStartDate)
++        }
++      },
++      {
++        upsert: true,
++        new: true
++      }
 +    );
 +
-+    res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
++    return plan;
 +  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo cargar el resumen semanal." });
++    if (error?.code === 11000) {
++      const existingPlan = await KitchenWeekPlan.findOne(filter);
++      if (existingPlan) {
++        return existingPlan;
+       }
+-    },
+-    {
+-      upsert: true,
+-      new: true
+     }
+-  );
++    throw error;
 +  }
- });
++}
  
- export default router;
+-  return plan;
++export async function findWeekPlan(weekStartDate, effectiveHouseholdId) {
++  const filter = buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate });
++  return KitchenWeekPlan.findOne(filter);
+ }
+diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
+index 4b54db7d208b4448a6998568f6e3bad92fd854ff..8a2c85b46f546ff7ef4db5d6f7d693f5c82a99c9 100644
+--- a/frontend/src/kitchen/pages/WeekPage.jsx
++++ b/frontend/src/kitchen/pages/WeekPage.jsx
+@@ -1,198 +1,201 @@
+ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+ import { useSearchParams } from "react-router-dom";
+-import { apiRequest } from "../api.js";
+-import { useAuth } from "../auth";
++import { apiRequest } from "../api.js";
++import { useAuth } from "../auth";
+ import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
+ import IngredientPicker from "../components/IngredientPicker.jsx";
+ import DishModal from "../components/DishModal.jsx";
+-import KitchenLayout from "../Layout.jsx";
++import KitchenLayout from "../Layout.jsx";
+ import { normalizeIngredientName } from "../utils/normalize.js";
+ import { getUserColor } from "../utils/userColors";
+ 
+ const DAY_CARD_STYLES = [
+   { background: "#eef2ff", color: "#1f2a60" },
+   { background: "#ecfeff", color: "#134e4a" },
+   { background: "#fef9c3", color: "#713f12" },
+   { background: "#fce7f3", color: "#831843" },
+   { background: "#dcfce7", color: "#14532d" },
+   { background: "#ffedd5", color: "#7c2d12" },
+   { background: "#ede9fe", color: "#4c1d95" }
+ ];
+-
+-function getMondayISO(date = new Date()) {
+-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+-  const day = d.getUTCDay();
+-  const diff = (day === 0 ? -6 : 1) - day;
+-  d.setUTCDate(d.getUTCDate() + diff);
+-  return d.toISOString().slice(0, 10);
+-}
+-
+-function formatDateLabel(dateString) {
++
++function getMondayISO(date = new Date()) {
++  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
++  const day = d.getUTCDay();
++  const diff = (day === 0 ? -6 : 1) - day;
++  d.setUTCDate(d.getUTCDate() + diff);
++  return d.toISOString().slice(0, 10);
++}
++
++function formatDateLabel(dateString) {
+   if (!dateString) {
+     return "Sin fecha";
+   }
+-  const date = new Date(dateString);
++  const date = new Date(dateString);
+   if (Number.isNaN(date.getTime())) {
+     return "Sin fecha";
+   }
+-  return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" });
+-}
+-
++  return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" });
++}
++
+ function addDaysToISO(dateString, days) {
+   const [year, month, day] = dateString.split("-").map(Number);
+   const date = new Date(Date.UTC(year, month - 1, day));
+   date.setUTCDate(date.getUTCDate() + days);
+   return date.toISOString().slice(0, 10);
+ }
+ 
+ function ChevronIcon(props) {
+   return (
+     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+       <path d="M15 18l-6-6 6-6" />
+     </svg>
+   );
+ }
+ 
+ function getInitials(name) {
+   if (!name) return "";
+   const parts = name.trim().split(/\s+/).filter(Boolean);
+   if (!parts.length) return "";
+   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+ }
+ 
+ const MAX_DISH_RESULTS = 8;
+ 
+ function mergeIngredientLists(...lists) {
+   const merged = new Map();
+   lists.flat().filter(Boolean).forEach((item) => {
+     const displayName = String(item?.displayName || "").trim();
+     const canonicalName = String(
+       item?.canonicalName || normalizeIngredientName(displayName)
+     ).trim();
+     if (!displayName || !canonicalName) return;
+     const key = item?.ingredientId || canonicalName;
+     if (!merged.has(key)) {
+       merged.set(key, {
+         ...item,
+         displayName,
+         canonicalName
+       });
+     }
+   });
+   return Array.from(merged.values());
+ }
+ 
+-export default function WeekPage() {
+-  const { user } = useAuth();
++export default function WeekPage() {
++  const { user } = useAuth();
+   const [searchParams, setSearchParams] = useSearchParams();
+-  const [weekStart, setWeekStart] = useState(getMondayISO());
+-  const [plan, setPlan] = useState(null);
+-  const [dishes, setDishes] = useState([]);
++  const [weekStart, setWeekStart] = useState(getMondayISO());
++  const [plan, setPlan] = useState(null);
++  const [dishes, setDishes] = useState([]);
+   const [sideDishes, setSideDishes] = useState([]);
+-  const [users, setUsers] = useState([]);
++  const [users, setUsers] = useState([]);
+   const [categories, setCategories] = useState([]);
+-  const [loading, setLoading] = useState(true);
++  const [loading, setLoading] = useState(true);
++  const [creatingPlan, setCreatingPlan] = useState(false);
+   const [loadError, setLoadError] = useState("");
+   const [dayStatus, setDayStatus] = useState({});
+   const [dayErrors, setDayErrors] = useState({});
+   const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
+   const [extraIngredientsEnabled, setExtraIngredientsEnabled] = useState({});
+   const [selectedDay, setSelectedDay] = useState("");
+   const [editingDays, setEditingDays] = useState({});
+   const [sideDishEnabled, setSideDishEnabled] = useState({});
+   const [showCarouselControls, setShowCarouselControls] = useState(false);
+   const [activeIndex, setActiveIndex] = useState(0);
+   const [mainDishQueries, setMainDishQueries] = useState({});
+   const [mainDishOpen, setMainDishOpen] = useState({});
+   const [sideDishQueries, setSideDishQueries] = useState({});
+   const [sideDishOpen, setSideDishOpen] = useState({});
+   const [assigneeOpen, setAssigneeOpen] = useState({});
+   const [dishModalOpen, setDishModalOpen] = useState(false);
+   const [dishModalName, setDishModalName] = useState("");
+   const [dishModalDayKey, setDishModalDayKey] = useState(null);
+   const [dishModalMode, setDishModalMode] = useState("main");
+   const [dishModalSidedish, setDishModalSidedish] = useState(false);
+   const ingredientCache = useRef(new Map());
+   const saveTimers = useRef({});
+   const carouselRef = useRef(null);
+   const dayRefs = useRef(new Map());
+   const mainDishRefs = useRef(new Map());
+   const sideDishRefs = useRef(new Map());
+   const selectedDayRef = useRef(selectedDay);
+   const hasInitializedRef = useRef(false);
+   const assignIntentRef = useRef(null);
+   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
+-
+-  const loadData = async () => {
+-    setLoading(true);
++
++  const loadData = async () => {
++    if (!user) {
++      setLoading(false);
++      return;
++    }
++    setLoading(true);
+     setLoadError("");
+-    try {
++    try {
+       const [planData, dishesData, sideDishesData] = await Promise.all([
+-        apiRequest(`/api/kitchen/weeks/${weekStart}`),
++        apiRequest(`/api/kitchen/weeks/${weekStart}`),
+         apiRequest("/api/kitchen/dishes"),
+         apiRequest("/api/kitchen/dishes?sidedish=true")
+-      ]);
+-      setPlan(planData.plan);
+-      setDishes(dishesData.dishes || []);
++      ]);
++      setPlan(planData.plan || null);
++      setDishes(dishesData.dishes || []);
+       setSideDishes(sideDishesData.dishes || []);
+-      if (user) {
+-        const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
+-        const usersData = await apiRequest(usersEndpoint);
+-        setUsers(usersData.users || []);
+-      }
+-    } catch (err) {
++      const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
++      const usersData = await apiRequest(usersEndpoint);
++      setUsers(usersData.users || []);
++    } catch (err) {
+       setLoadError(err.message || "No se pudo cargar la semana.");
+-    } finally {
+-      setLoading(false);
+-    }
+-  };
+-
+-  useEffect(() => {
+-    loadData();
+-  }, [weekStart]);
+-
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  useEffect(() => {
++    loadData();
++  }, [user, weekStart]);
++
+   const loadCategories = async () => {
+     try {
+       const data = await apiRequest("/api/categories");
+       setCategories(data.categories || []);
+     } catch (err) {
+       setLoadError(err.message || "No se pudieron cargar las categorías.");
+     }
+   };
+ 
+   useEffect(() => {
+     loadCategories();
+   }, []);
+ 
+-  const userMap = useMemo(() => {
+-    const map = new Map();
+-    users.forEach((u) => map.set(u.id, u));
+-    return map;
+-  }, [users]);
+-
++  const userMap = useMemo(() => {
++    const map = new Map();
++    users.forEach((u) => map.set(u.id, u));
++    return map;
++  }, [users]);
++
+   const fetchIngredientMatch = useCallback(async (canonicalName) => {
+     if (!canonicalName) return null;
+     if (ingredientCache.current.has(canonicalName)) {
+       return ingredientCache.current.get(canonicalName);
+     }
+     try {
+       const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(canonicalName)}`);
+       const match = (data.ingredients || []).find((item) => item.canonicalName === canonicalName);
+       ingredientCache.current.set(canonicalName, match || null);
+       return match || null;
+     } catch (err) {
+       return null;
+     }
+   }, []);
+ 
+   const resolveIngredients = useCallback(
+     async (ingredients = []) => {
+       const resolved = await Promise.all(
+         ingredients.map(async (item) => {
+           const displayName = String(item?.displayName || "").trim();
+           const canonicalName = String(
+             item?.canonicalName || normalizeIngredientName(displayName)
+           ).trim();
+           const match = await fetchIngredientMatch(canonicalName);
+           const ingredientId = item?.ingredientId || match?._id;
+@@ -347,96 +350,96 @@ export default function WeekPage() {
+           const nodeCenter = node.offsetLeft + node.offsetWidth / 2;
+           const distance = Math.abs(center - nodeCenter);
+           if (distance < closestDistance) {
+             closestDistance = distance;
+             closestIndex = index;
+           }
+         });
+         const nextKey = dayKeys[closestIndex];
+         setActiveIndex(closestIndex);
+         if (nextKey && nextKey !== selectedDayRef.current) {
+           setSelectedDay(nextKey);
+         }
+       });
+     };
+ 
+     element.addEventListener("scroll", handleScroll, { passive: true });
+     handleScroll();
+     return () => {
+       element.removeEventListener("scroll", handleScroll);
+       if (frame) {
+         cancelAnimationFrame(frame);
+       }
+     };
+   }, [dayKeys]);
+ 
+-  const updateDay = async (day, updates) => {
++  const updateDay = async (day, updates) => {
+     const dayKey = day.date.slice(0, 10);
+     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
+     setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
+-    try {
++    try {
+       const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
+-        method: "PUT",
+-        body: JSON.stringify(updates)
+-      });
+-      setPlan(data.plan);
++        method: "PUT",
++        body: JSON.stringify(updates)
++      });
++      setPlan(data.plan);
+       setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
+       if (saveTimers.current[dayKey]) {
+         clearTimeout(saveTimers.current[dayKey]);
+       }
+       saveTimers.current[dayKey] = window.setTimeout(() => {
+         setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
+       }, 2000);
+       return data.plan;
+-    } catch (err) {
++    } catch (err) {
+       const message = err.message || "No se pudo actualizar el día.";
+       setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
+       setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
+       return null;
+-    }
+-  };
+-
++    }
++  };
++
+   const onAssignSelf = async (day) => {
+     return updateDay(day, { cookUserId: user?.id || user?._id });
+   };
+ 
+   const startEditingDay = (day) => {
+     const dayKey = day.date.slice(0, 10);
+     const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
+     const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
+     setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
+     setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
+     setExtraIngredientsEnabled((prev) => ({
+       ...prev,
+       [dayKey]: Boolean(day.ingredientOverrides?.length)
+     }));
+     setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
+     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+     setSideDishQueries((prev) => ({ ...prev, [dayKey]: sideDishName || "" }));
+     setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+-  };
+-
++  };
++
+   const stopEditingDay = (dayKey) => {
+     setEditingDays((prev) => ({ ...prev, [dayKey]: false }));
+     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+     setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+   };
+ 
+   const focusMainDish = (dayKey) => {
+     window.requestAnimationFrame(() => {
+       const node = mainDishRefs.current.get(dayKey);
+       if (node) {
+         node.focus();
+       }
+     });
+   };
+ 
+   const focusSideDish = (dayKey) => {
+     window.requestAnimationFrame(() => {
+       const node = sideDishRefs.current.get(dayKey);
+       if (node) {
+         node.focus();
+       }
+     });
+   };
+ 
+   const openDayEditor = useCallback(
+@@ -609,116 +612,139 @@ export default function WeekPage() {
+       if (!isSide) {
+         return prev.filter((item) => item._id !== dish._id);
+       }
+       if (exists) {
+         return prev.map((item) => (item._id === dish._id ? dish : item));
+       }
+       return [dish, ...prev];
+     });
+     if (dishModalDayKey) {
+       const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === dishModalDayKey);
+       if (targetDay) {
+         if (dishModalMode === "side") {
+           updateDay(targetDay, { sideDishId: dish._id });
+           setSideDishEnabled((prev) => ({ ...prev, [dishModalDayKey]: true }));
+           setSideDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
+           setSideDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
+         } else {
+           updateDay(targetDay, { mainDishId: dish._id });
+           setMainDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
+           setMainDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
+         }
+       }
+     }
+   };
+ 
++  const handleCreatePlan = async () => {
++    setCreatingPlan(true);
++    setLoadError("");
++    try {
++      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}`, {
++        method: "POST"
++      });
++      setPlan(data.plan || null);
++    } catch (err) {
++      setLoadError(err.message || "No se pudo crear la planificación semanal.");
++    } finally {
++      setCreatingPlan(false);
++    }
++  };
++
+   const handleCategoryCreated = useCallback(async (name, color) => {
+     const payload = { name };
+     if (color?.colorBg) {
+       payload.colorBg = color.colorBg;
+       payload.colorText = color.colorText;
+     }
+     const data = await apiRequest("/api/categories", {
+       method: "POST",
+       body: JSON.stringify(payload)
+     });
+     const category = data.category;
+     setCategories((prev) => {
+       if (prev.some((item) => item._id === category._id)) {
+         return prev;
+       }
+       return [...prev, category];
+     });
+     return category;
+   }, []);
+ 
+-  if (loading) {
+-    return (
+-      <KitchenLayout>
+-        <div className="kitchen-card">Cargando semana...</div>
+-      </KitchenLayout>
+-    );
+-  }
+-
+-  if (!plan) {
+-    return (
+-      <KitchenLayout>
+-        <div className="kitchen-card kitchen-empty">
+-          <h3>No hay planificación todavía</h3>
+-          <p>Cuando guardes un día aparecerá aquí.</p>
++  if (loading) {
++    return (
++      <KitchenLayout>
++        <div className="kitchen-card">Cargando semana...</div>
++      </KitchenLayout>
++    );
++  }
++
++  if (!plan) {
++    return (
++      <KitchenLayout>
++        <div className="kitchen-card kitchen-empty">
++          <h3>No hay planificación todavía</h3>
++          <p>Esta semana aún no tiene plan creado para tu hogar.</p>
++          <button
++            type="button"
++            className="kitchen-button"
++            onClick={handleCreatePlan}
++            disabled={creatingPlan}
++          >
++            {creatingPlan ? "Creando..." : "Crear planificación de esta semana"}
++          </button>
+           {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
+-        </div>
+-      </KitchenLayout>
+-    );
+-  }
+-
++        </div>
++      </KitchenLayout>
++    );
++  }
++
+   const handleWeekShift = (days) => {
+     setWeekStart((prev) => addDaysToISO(prev, days));
+   };
+ 
+   const handleSelectDay = (dayKey) => {
+     setSelectedDay(dayKey);
+     const target = dayRefs.current.get(dayKey) || document.getElementById(`daycard-${dayKey}`);
+     if (target) {
+       target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+       target.focus?.({ preventScroll: true });
+     }
+   };
+ 
+   const handleCreateDishFromStrip = (dayKey) => {
+     setSelectedDay(dayKey);
+     openDishModal(dayKey, "", { mode: "main", sidedish: false });
+   };
+ 
+   const handleCarouselScroll = (direction) => {
+     const element = carouselRef.current;
+     if (!element) return;
+     element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
+   };
+ 
+-  return (
+-    <KitchenLayout>
++  return (
++    <KitchenLayout>
+       <div className="kitchen-week-controls">
+         <WeekDaysStrip
+           days={safeDays}
+           userMap={userMap}
+           selectedDay={selectedDay}
+           onSelectDay={handleSelectDay}
+           onCreateDish={handleCreateDishFromStrip}
+         />
+         <div className="kitchen-week-mobile-frame">
+           <section className="kitchen-week-header">
+             <div className="kitchen-week-header-actions">
+               <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
+                 <button
+                   className="kitchen-week-arrow"
+                   type="button"
+                   onClick={() => handleWeekShift(-7)}
+                   aria-label="Ir a la semana anterior"
+                 >
+                   <ChevronIcon className="kitchen-week-arrow-icon" />
+                 </button>
+                 <label className="kitchen-field kitchen-week-picker">
+                   <input
+                     className="kitchen-input"
+                     type="date"
+                     value={weekStart}
+@@ -815,51 +841,51 @@ export default function WeekPage() {
+                 const sideDishTokens = normalizedSideDishQuery.split(" ").filter(Boolean);
+           const filteredSideDishes = sideDishTokens.length
+             ? sideDishes.filter((dish) => {
+               const normalizedName = normalizeIngredientName(dish.name || "");
+               return sideDishTokens.every((token) => normalizedName.includes(token));
+             })
+             : [];
+           const limitedSideDishes = filteredSideDishes.slice(0, MAX_DISH_RESULTS);
+           const hasExactSideDishMatch = sideDishTokens.length
+             ? sideDishes.some(
+               (dish) => normalizeIngredientName(dish.name || "") === normalizedSideDishQuery
+             )
+             : false;
+           const extrasOn = extraIngredientsEnabled[dayKey] ?? Boolean(extraIngredients.length);
+           const extrasToggleId = `extras-toggle-${dayKey}`;
+           const statusLabels = [];
+           if (isAssigned) {
+             statusLabels.push({
+               label: isAssignedToSelf ? "Asignado a ti" : "Asignado",
+               type: "assigned"
+             });
+           }
+           if (isPlanned) {
+             statusLabels.push({ label: "Planificado", type: "planned" });
+           }
+-          return (
++          return (
+             <div
+               key={day.date}
+               id={`daycard-${dayKey}`}
+               style={{ "--day-card-bg": dayVisual.background, "--day-card-text": dayVisual.color }}
+               className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""}`}
+               tabIndex={-1}
+               ref={(node) => {
+                 if (!node) {
+                   dayRefs.current.delete(dayKey);
+                   return;
+                 }
+                 dayRefs.current.set(dayKey, node);
+               }}
+             >
+               <div className="kitchen-day-header">
+                 <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
+                 {!isEmptyState ? (
+                   <>
+                     <div className="kitchen-day-meta">
+                       {showCookTiming ? (
+                         <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
+                       ) : null}
+                       {cookUser?.displayName ? (
+                         <span>Cocinero: {cookUser.displayName}</span>
+                       ) : null}
+@@ -1349,68 +1375,68 @@ export default function WeekPage() {
+                                       {initials || "+"}
+                                     </span>
+                                     <span className="kitchen-assignee-name">{person.displayName}</span>
+                                   </button>
+                                 );
+                               })}
+                             </div>
+                           ) : null}
+                         </div>
+                       </div>
+                     ) : null}
+                   </div>
+                 </>
+               )}
+               <div className="kitchen-day-feedback" aria-live="polite">
+                 {dayStatus[dayKey] === "saving" ? (
+                   <span className="kitchen-day-feedback-text saving">Guardando...</span>
+                 ) : null}
+                 {dayStatus[dayKey] === "saved" ? (
+                   <span className="kitchen-day-feedback-text saved">Guardado</span>
+                 ) : null}
+                 {dayErrors[dayKey] ? (
+                   <span className="kitchen-day-feedback-text error" role="alert">{dayErrors[dayKey]}</span>
+                 ) : null}
+               </div>
+-            </div>
+-          );
++            </div>
++          );
+               })}
+             </div>
+             {showCarouselControls ? (
+               <button
+                 className="kitchen-week-carousel-arrow is-right"
+                 type="button"
+                 onClick={() => handleCarouselScroll(1)}
+                 aria-label="Mostrar día siguiente"
+               >
+                 <ChevronIcon className="kitchen-week-carousel-arrow-icon is-next" />
+               </button>
+             ) : null}
+           </div>
+           {dayKeys.length > 1 ? (
+             <div className="kitchen-week-carousel-dots" role="tablist" aria-label="Días de la semana">
+               {dayKeys.map((key, index) => (
+                 <button
+                   key={key}
+                   type="button"
+                   className={`kitchen-week-carousel-dot ${activeIndex === index ? "is-active" : ""}`}
+                   onClick={() => handleSelectDay(key)}
+                   aria-label={`Ir a ${formatDateLabel(key)}`}
+                   aria-current={activeIndex === index ? "true" : undefined}
+                 />
+               ))}
+             </div>
+           ) : null}
+         </div>
+-      </div>
++      </div>
+       <DishModal
+         isOpen={dishModalOpen}
+         onClose={closeDishModal}
+         onSaved={handleDishSaved}
+         categories={categories}
+         onCategoryCreated={handleCategoryCreated}
+         initialName={dishModalName}
+         initialSidedish={dishModalSidedish}
+       />
+-    </KitchenLayout>
+-  );
+-}
++    </KitchenLayout>
++  );
++}
