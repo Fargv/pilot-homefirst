@@ -112,7 +112,7 @@ export default function LoginPage() {
               </button>
             </div>
           </form>
-          <p className="kitchen-login-footer">¿No tienes cuenta? <button type="button" className="kitchen-login-link">Regístrate</button></p>
+          <p className="kitchen-login-footer">¿No tienes cuenta? <button type="button" className="kitchen-login-link" onClick={() => navigate("/register")}>Regístrate</button></p>
         </Card>
       </div>
     </div>

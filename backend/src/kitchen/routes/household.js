@@ -7,12 +7,47 @@ import { requireAuth, requireRole } from "../middleware.js";
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { buildDisplayName, isValidEmail, normalizeEmail } from "../../users/utils.js";
 import { config } from "../../config.js";
+import { Household } from "../models/Household.js";
+import { ensureHouseholdInviteCode } from "../householdInviteCode.js";
 
 const router = express.Router();
 
 function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
+
+
+router.get("/invite-code", requireAuth, requireRole("owner"), async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const household = await Household.findById(effectiveHouseholdId).select("inviteCode");
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
+    return res.json({ ok: true, inviteCode: household.inviteCode || null });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo cargar el código del hogar." });
+  }
+});
+
+router.post("/invite-code", requireAuth, requireRole("owner"), async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const household = await Household.findById(effectiveHouseholdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
+
+    const inviteCode = await ensureHouseholdInviteCode(household);
+    return res.status(201).json({ ok: true, inviteCode });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo generar el código del hogar." });
+  }
+});
 
 router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) => {
   try {

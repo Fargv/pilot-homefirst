@@ -10,6 +10,7 @@ export default function SettingsPage() {
   const [members, setMembers] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [inviteLink, setInviteLink] = useState("");
+  const [householdCode, setHouseholdCode] = useState("");
   const [placeholderName, setPlaceholderName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,8 +26,12 @@ export default function SettingsPage() {
       setMembers(membersResponse.users || []);
 
       if (isOwner) {
-        const inviteResponse = await apiRequest("/api/kitchen/household/invitations");
+        const [inviteResponse, codeResponse] = await Promise.all([
+          apiRequest("/api/kitchen/household/invitations"),
+          apiRequest("/api/kitchen/household/invite-code")
+        ]);
         setInvitations(inviteResponse.invitations || []);
+        setHouseholdCode(codeResponse.inviteCode || "");
       }
     } catch (err) {
       setError(err.message || "No se pudo cargar la configuración del hogar.");
@@ -67,6 +72,29 @@ export default function SettingsPage() {
       setSuccess("Enlace copiado al portapapeles.");
     } catch {
       setError("No pudimos copiar el enlace automáticamente.");
+    }
+  };
+
+
+  const generateHouseholdCode = async () => {
+    setError("");
+    setSuccess("");
+    try {
+      const data = await apiRequest("/api/kitchen/household/invite-code", { method: "POST" });
+      setHouseholdCode(data.inviteCode || "");
+      setSuccess("Código de hogar generado correctamente.");
+    } catch (err) {
+      setError(err.message || "No se pudo generar el código del hogar.");
+    }
+  };
+
+  const copyHouseholdCode = async () => {
+    if (!householdCode) return;
+    try {
+      await navigator.clipboard.writeText(householdCode);
+      setSuccess("Código copiado al portapapeles.");
+    } catch {
+      setError("No pudimos copiar el código automáticamente.");
     }
   };
 
@@ -116,7 +144,24 @@ export default function SettingsPage() {
 
         {isOwner ? (
           <>
-            <h3>Invitar</h3>
+            <h3>Invitar miembros</h3>
+            <div className="kitchen-actions">
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                onClick={copyHouseholdCode}
+                disabled={!householdCode}
+              >
+                Copiar código
+              </button>
+              <button type="button" className="kitchen-button" onClick={generateHouseholdCode}>
+                {householdCode ? "Regenerar código" : "Generar código"}
+              </button>
+            </div>
+            <p className="kitchen-muted">
+              Código del hogar: <strong>{householdCode || "No generado"}</strong>
+            </p>
+
             <div className="kitchen-actions">
               <button type="button" className="kitchen-button" onClick={generateInvite}>
                 Generar enlace
@@ -127,7 +172,7 @@ export default function SettingsPage() {
                 onClick={copyInvite}
                 disabled={!inviteLink}
               >
-                Copiar
+                Copiar enlace
               </button>
             </div>
             {inviteLink ? <p className="kitchen-muted">{inviteLink}</p> : null}

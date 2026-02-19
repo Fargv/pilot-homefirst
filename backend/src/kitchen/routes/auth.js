@@ -5,7 +5,8 @@ import { KitchenUser } from "../models/KitchenUser.js";
 import { Invitation } from "../models/Invitation.js";
 import { Household } from "../models/Household.js";
 import { createToken, requireAuth } from "../middleware.js";
-import { normalizeEmail } from "../../users/utils.js";
+import { buildDisplayName, isValidEmail, normalizeEmail } from "../../users/utils.js";
+import { generateUniqueHouseholdInviteCode, isValidInviteCodeFormat } from "../householdInviteCode.js";
 
 const DIOD_EMAIL = "admin@admin.com";
 
@@ -82,6 +83,112 @@ router.post("/login", async (req, res) => {
     return res.json({ ok: true, token, user: safeUser });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
+  }
+});
+
+
+router.get("/resolve-household/:inviteCode", async (req, res) => {
+  try {
+    const inviteCode = String(req.params.inviteCode || "").trim();
+    if (!isValidInviteCodeFormat(inviteCode)) {
+      return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
+    }
+
+    const household = await Household.findOne({ inviteCode }).select("_id name");
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
+    }
+
+    return res.json({
+      ok: true,
+      household: {
+        id: household._id,
+        name: household.name
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudo validar el código del hogar." });
+  }
+});
+
+router.post("/register", async (req, res) => {
+  try {
+    const { email, password, displayName, householdName, inviteCode } = req.body;
+    const normalizedEmail = normalizeEmail(email);
+    const safeDisplayName = buildDisplayName({ displayName, name: displayName });
+    const normalizedInviteCode = String(inviteCode || "").trim();
+
+    if (!normalizedEmail || !password || !safeDisplayName) {
+      return res.status(400).json({ ok: false, error: "Nombre, email y contraseña son obligatorios." });
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ ok: false, error: "El email no es válido." });
+    }
+
+    if (String(password).length < 8) {
+      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
+    }
+
+    const existingUser = await KitchenUser.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(409).json({ ok: false, error: "El email ya está registrado." });
+    }
+
+    const mode = normalizedInviteCode ? "join" : "create";
+    let household = null;
+    let role = "owner";
+
+    if (mode === "join") {
+      if (!isValidInviteCodeFormat(normalizedInviteCode)) {
+        return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
+      }
+
+      household = await Household.findOne({ inviteCode: normalizedInviteCode });
+      if (!household) {
+        return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
+      }
+      role = "member";
+    }
+
+    const user = await KitchenUser.create({
+      username: normalizedEmail,
+      email: normalizedEmail,
+      displayName: safeDisplayName,
+      passwordHash: await bcrypt.hash(password, 10),
+      role,
+      householdId: null,
+      isPlaceholder: false
+    });
+
+    if (mode === "create") {
+      const finalHouseholdName = String(householdName || "").trim() || `${safeDisplayName} - Hogar`;
+      household = await Household.create({
+        name: finalHouseholdName,
+        ownerUserId: user._id,
+        inviteCode: await generateUniqueHouseholdInviteCode()
+      });
+    }
+
+    user.householdId = household._id;
+    await user.save();
+
+    const token = createToken(user);
+    return res.status(201).json({
+      ok: true,
+      token,
+      user: user.toSafeJSON(),
+      household: {
+        id: household._id,
+        name: household.name,
+        inviteCode: household.inviteCode || null
+      }
+    });
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({ ok: false, error: "No se pudo completar el registro. Intenta nuevamente." });
+    }
+    return res.status(500).json({ ok: false, error: "No se pudo completar el registro." });
   }
 });
 

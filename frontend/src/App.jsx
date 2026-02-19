@@ -7,6 +7,7 @@ import RequireAuth from "./kitchen/RequireAuth.jsx";
 import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
 import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
 import LoginPage from "./kitchen/pages/LoginPage.jsx";
+import SignupPage from "./kitchen/pages/SignupPage.jsx";
 import WeekPage from "./kitchen/pages/WeekPage.jsx";
 import DishesPage from "./kitchen/pages/DishesPage.jsx";
 import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
@@ -79,6 +80,8 @@ export default function App() {
           <Route path="/bootstrap" element={<BootstrapPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/kitchen/login" element={<LoginPage />} />
+          <Route path="/register" element={<SignupPage />} />
+          <Route path="/kitchen/register" element={<SignupPage />} />
           <Route path="/invite/:token" element={<InviteLandingPage />} />
           <Route
             path="/kitchen/semana"
