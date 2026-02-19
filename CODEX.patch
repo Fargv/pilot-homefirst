@@ -1,458 +1,418 @@
-diff --git a/backend/src/config.js b/backend/src/config.js
-index aeb6d7f86137d78e6948af83f443d55b9260dfa2..b26c18f7b587a49139cc2ef68dcd552b2d5ae2e3 100644
---- a/backend/src/config.js
-+++ b/backend/src/config.js
-@@ -1,26 +1,27 @@
- import dotenv from "dotenv";
- dotenv.config();
- 
- export const config = {
-   nodeEnv: process.env.NODE_ENV || "development",
-   port: Number(process.env.PORT || 3000),
- 
-   mongodbUri: process.env.MONGODB_URI,
- 
-   corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
-+  frontendUrl: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || "http://localhost:5173",
- 
-   jwtSecret: process.env.JWT_SECRET || "dev-kitchen-secret",
- 
-   brevo: {
-     host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
-     port: Number(process.env.BREVO_SMTP_PORT || 587),
-     user: process.env.BREVO_SMTP_USER,
-     pass: process.env.BREVO_SMTP_PASS
-   },
- 
-   mailFrom: process.env.MAIL_FROM || "Pilot <no-reply@example.com>"
- };
- 
- if (!config.mongodbUri) {
-   console.warn("⚠️ Falta MONGODB_URI (configuración pendiente).");
- }
-diff --git a/backend/src/index.js b/backend/src/index.js
-index ddc06e2488b79a4c03a576f6f814c73b01293667..3bd80858ccc2cc5c2471de4b5e4eaa9ab181f368 100644
---- a/backend/src/index.js
-+++ b/backend/src/index.js
-@@ -1,46 +1,51 @@
+diff --git a/backend/src/kitchen/routes/auth.js b/backend/src/kitchen/routes/auth.js
+index 5b37ee15cd5dd7b27555f4220d42750e44fd3e61..8f452c75447212f363a8f175212f91db0b2514e5 100644
+--- a/backend/src/kitchen/routes/auth.js
++++ b/backend/src/kitchen/routes/auth.js
+@@ -1,130 +1,180 @@
  import express from "express";
- import cors from "cors";
- import { config } from "./config.js";
- import { connectDb } from "./db.js";
- import { sendTestEmail } from "./mailer.js";
--import kitchenRouter from "./kitchen/index.js";
--import categoriesRouter from "./kitchen/routes/categories.js";
--import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
--import usersRouter from "./users/index.js";
--import adminRouter from "./kitchen/routes/admin.js";
-+import kitchenRouter from "./kitchen/index.js";
-+import categoriesRouter from "./kitchen/routes/categories.js";
-+import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
-+import usersRouter from "./users/index.js";
-+import adminRouter from "./kitchen/routes/admin.js";
- 
- const app = express();
- 
- app.use(cors({ origin: config.corsOrigin }));
- app.use(express.json());
- 
- app.get("/health", (req, res) => {
-   res.json({ ok: true, env: config.nodeEnv, time: new Date().toISOString() });
- });
- 
-+app.get("/invite/:token", (req, res) => {
-+  const frontendBaseUrl = String(config.frontendUrl || "").replace(/\/$/, "");
-+  return res.redirect(302, `${frontendBaseUrl}/invite/${req.params.token}`);
-+});
-+
- app.post("/api/email/test", async (req, res) => {
-   try {
-     const { to } = req.body;
-     if (!to) return res.status(400).json({ ok: false, error: "Falta 'to' en body" });
- 
-     const messageId = await sendTestEmail({ to });
-     res.json({ ok: true, messageId });
-   } catch (e) {
-     res.status(500).json({ ok: false, error: e.message });
-   }
- });
- 
--app.use("/api/kitchen", kitchenRouter);
--app.use("/api/admin", adminRouter);
--app.use("/api/categories", categoriesRouter);
--app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
--app.use("/api/users", usersRouter);
--
-+app.use("/api/kitchen", kitchenRouter);
-+app.use("/api/admin", adminRouter);
-+app.use("/api/categories", categoriesRouter);
-+app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
-+app.use("/api/users", usersRouter);
-+
- connectDb()
-   .then(() => {
-     app.listen(config.port, () => console.log(`🚀 API escuchando en :${config.port}`));
-   })
-   .catch((e) => {
-     console.error("❌ Error conectando DB", e);
-     process.exit(1);
-   });
-diff --git a/backend/src/kitchen/routes/household.js b/backend/src/kitchen/routes/household.js
-index 4d4590e774062b1bd121634b09f81e1472bb733c..be08677473296245a4ded788f0ec742567f35977 100644
---- a/backend/src/kitchen/routes/household.js
-+++ b/backend/src/kitchen/routes/household.js
-@@ -1,56 +1,58 @@
  import crypto from "crypto";
- import express from "express";
  import bcrypt from "bcryptjs";
- import { Invitation } from "../models/Invitation.js";
  import { KitchenUser } from "../models/KitchenUser.js";
- import { requireAuth, requireRole } from "../middleware.js";
- import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
- import { buildDisplayName, isValidEmail, normalizeEmail } from "../../users/utils.js";
-+import { config } from "../../config.js";
+-import { Invitation } from "../models/Invitation.js";
++import { Invitation } from "../models/Invitation.js";
++import { Household } from "../models/Household.js";
+ import { createToken, requireAuth } from "../middleware.js";
+ import { normalizeEmail } from "../../users/utils.js";
+ 
+ const DIOD_EMAIL = "admin@admin.com";
  
  const router = express.Router();
  
- function hashToken(token) {
-   return crypto.createHash("sha256").update(token).digest("hex");
- }
  
- router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) => {
+-function hashInviteToken(token) {
+-  return crypto.createHash("sha256").update(token).digest("hex");
+-}
++function hashInviteToken(token) {
++  return crypto.createHash("sha256").update(token).digest("hex");
++}
++
++async function findActiveInvitationByToken(token) {
++  return Invitation.findOne({
++    tokenHash: hashInviteToken(token),
++    usedAt: null,
++    expiresAt: { $gt: new Date() }
++  });
++}
++
++router.get("/invite/:token", async (req, res) => {
++  try {
++    const { token } = req.params;
++    if (!token) {
++      return res.status(400).json({ ok: false, error: "Token de invitación inválido." });
++    }
++
++    const invitation = await findActiveInvitationByToken(token);
++    if (!invitation) {
++      return res.status(404).json({ ok: false, error: "La invitación no es válida o expiró." });
++    }
++
++    const household = await Household.findById(invitation.householdId).select("name");
++    return res.json({
++      ok: true,
++      role: invitation.role,
++      householdName: household?.name || "",
++      expiresAt: invitation.expiresAt
++    });
++  } catch (error) {
++    return res.status(500).json({ ok: false, error: "No se pudo validar la invitación." });
++  }
++});
+ 
+ 
+ router.post("/login", async (req, res) => {
    try {
-     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-     const rawToken = crypto.randomBytes(32).toString("hex");
-     const tokenHash = hashToken(rawToken);
-     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+     const { email, password, username } = req.body;
+     const loginValue = normalizeEmail(email || username);
+     if (!loginValue || !password) {
+       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
+     }
  
-     await Invitation.create({
-       householdId: effectiveHouseholdId,
-       tokenHash,
-       role: "member",
-       createdByUserId: req.kitchenUser._id,
-       expiresAt
-     });
+     const user = await KitchenUser.findOne({ email: loginValue });
+     if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
  
--    const inviteLink = `${req.protocol}://${req.get("host")}/invite/${rawToken}`;
-+    const frontendBaseUrl = String(config.frontendUrl || "").replace(/\/$/, "");
-+    const inviteLink = `${frontendBaseUrl}/invite/${rawToken}`;
-     return res.status(201).json({ ok: true, inviteLink, token: rawToken, expiresAt });
+     if (!user.passwordHash || user.isPlaceholder) {
+       return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+     }
+ 
+     const ok = await bcrypt.compare(password, user.passwordHash);
+     if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+ 
+     const isDiod = loginValue === DIOD_EMAIL;
+     const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
+     if (shouldUpdateGlobalRole) {
+       user.globalRole = isDiod ? "diod" : null;
+       await user.save();
+     }
+ 
+     const token = createToken(user);
+     const safeUser = {
+       ...user.toSafeJSON(),
+       migrationPending: !user.householdId
+     };
+     return res.json({ ok: true, token, user: safeUser });
    } catch (error) {
-     const handled = handleHouseholdError(res, error);
-     if (handled) return handled;
-     return res.status(500).json({ ok: false, error: "No se pudo crear la invitación." });
+     return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
    }
  });
  
- router.get("/invitations", requireAuth, requireRole("owner"), async (req, res) => {
-   try {
-     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-     const now = new Date();
-     const invitations = await Invitation.find(
-       buildScopedFilter(effectiveHouseholdId, {
-         usedAt: null,
-         expiresAt: { $gt: now }
-       })
-     )
-       .sort({ createdAt: -1 })
-       .lean();
+-router.post("/accept-invite", async (req, res) => {
+-  try {
+-    const { token, email, password, displayName } = req.body;
+-    const normalizedEmail = normalizeEmail(email);
+-
+-    if (!token || !normalizedEmail || !password || !displayName) {
+-      return res.status(400).json({
+-        ok: false,
+-        error: "Token, email, contraseña y nombre son obligatorios."
+-      });
+-    }
++router.post("/accept-invite", async (req, res) => {
++  try {
++    const { token, email, password, displayName } = req.body;
++    const normalizedEmail = normalizeEmail(email);
++
++    if (!token || !normalizedEmail || !password) {
++      return res.status(400).json({
++        ok: false,
++        error: "Token, email y contraseña son obligatorios."
++      });
++    }
  
-     return res.json({
-       ok: true,
-       invitations: invitations.map((invitation) => ({
-         id: invitation._id,
-diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
-index 2d8385f095d0dac7d3017dc6834e138ae65f59f4..b769f148cebb898772218f7e3ae9469173b37116 100644
---- a/frontend/src/App.jsx
-+++ b/frontend/src/App.jsx
-@@ -1,144 +1,146 @@
--import React, { useEffect } from "react";
--import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
--import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
--import { buildApiUrl } from "./kitchen/api.js";
--import KitchenLayout from "./kitchen/Layout.jsx";
--import RequireAuth from "./kitchen/RequireAuth.jsx";
--import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
--import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
--import LoginPage from "./kitchen/pages/LoginPage.jsx";
--import WeekPage from "./kitchen/pages/WeekPage.jsx";
--import DishesPage from "./kitchen/pages/DishesPage.jsx";
--import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
--import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
--import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
--import "./kitchen/kitchen.css";
+     if (String(password).length < 8) {
+       return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
+     }
+ 
+-    const invitation = await Invitation.findOne({
+-      tokenHash: hashInviteToken(token),
+-      usedAt: null,
+-      expiresAt: { $gt: new Date() }
+-    });
 -
--function HomeRedirect() {
--  const { user, loading } = useAuth();
--  const navigate = useNavigate();
--
--  useEffect(() => {
--    if (loading) return;
--    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
--    navigate(destination, { replace: true });
--  }, [loading, navigate, user]);
--
--  return (
--    <div className="kitchen-app">
--      <div className="kitchen-container" style={{ maxWidth: 520 }}>
--        <div className="kitchen-card">
--          <h2>Cargando Lunchfy...</h2>
--          <p className="kitchen-muted">
--            Estamos preparando tu acceso a Lunchfy. En unos segundos te redirigimos.
--          </p>
--        </div>
--      </div>
--    </div>
--  );
--}
--
--function BootstrapRedirect() {
--  const navigate = useNavigate();
--  const location = useLocation();
--
+-    if (!invitation) {
+-      return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
+-    }
++    const invitation = await findActiveInvitationByToken(token);
++
++    if (!invitation) {
++      return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
++    }
+ 
+     let user = await KitchenUser.findOne({ email: normalizedEmail });
+ 
+     if (user) {
+       if (user.householdId && user.householdId.toString() !== invitation.householdId.toString()) {
+         return res.status(409).json({
+           ok: false,
+           error: "Ese email ya pertenece a otro hogar y no se puede unir con esta invitación."
+         });
+       }
+ 
+-      if (!user.householdId) {
+-        user.householdId = invitation.householdId;
+-      }
+-      if (user.isPlaceholder) {
+-        user.isPlaceholder = false;
+-        user.claimedAt = new Date();
+-      }
+-      user.displayName = String(displayName).trim();
+-      user.passwordHash = await bcrypt.hash(password, 10);
+-      user.role = invitation.role || "member";
+-      await user.save();
+-    } else {
+-      user = await KitchenUser.create({
+-        username: normalizedEmail,
+-        email: normalizedEmail,
++      if (!user.householdId) {
++        user.householdId = invitation.householdId;
++      }
++
++      if (!user.passwordHash || user.isPlaceholder) {
++        if (!displayName || !String(displayName).trim()) {
++          return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para activar la cuenta." });
++        }
++        user.displayName = String(displayName).trim();
++        user.passwordHash = await bcrypt.hash(password, 10);
++      } else {
++        const passwordOk = await bcrypt.compare(password, user.passwordHash);
++        if (!passwordOk) {
++          return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
++        }
++      }
++
++      if (user.isPlaceholder) {
++        user.isPlaceholder = false;
++        user.claimedAt = new Date();
++      }
++
++      if (displayName && String(displayName).trim()) {
++        user.displayName = String(displayName).trim();
++      }
++
++      user.role = invitation.role || "member";
++      await user.save();
++    } else {
++      if (!displayName || !String(displayName).trim()) {
++        return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para crear la cuenta." });
++      }
++
++      user = await KitchenUser.create({
++        username: normalizedEmail,
++        email: normalizedEmail,
+         displayName: String(displayName).trim(),
+         passwordHash: await bcrypt.hash(password, 10),
+         role: invitation.role || "member",
+         householdId: invitation.householdId,
+         isPlaceholder: false
+       });
+     }
+ 
+     invitation.usedAt = new Date();
+     invitation.usedByUserId = user._id;
+     await invitation.save();
+ 
+     const jwt = createToken(user);
+     return res.json({ ok: true, token: jwt, user: user.toSafeJSON() });
+   } catch (error) {
+     return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitación." });
+   }
+ });
+ 
+ router.post("/logout", (req, res) => {
+   res.json({ ok: true });
+ });
+ 
+ router.get("/me", requireAuth, (req, res) => {
+   res.json({
+diff --git a/frontend/src/kitchen/pages/InviteLandingPage.jsx b/frontend/src/kitchen/pages/InviteLandingPage.jsx
+index 19c87f87049be7e9a8224ba11ac7ab6e465f405d..789ba60fc7ffac1132f424a2fc4c8822bb67552c 100644
+--- a/frontend/src/kitchen/pages/InviteLandingPage.jsx
++++ b/frontend/src/kitchen/pages/InviteLandingPage.jsx
+@@ -1,124 +1,127 @@
+ import React, { useEffect, useState } from "react";
+ import { useNavigate, useParams } from "react-router-dom";
+ import { apiRequest } from "../api.js";
+ import { useAuth } from "../auth.jsx";
+ 
+ export default function InviteLandingPage() {
+   const { token } = useParams();
+   const navigate = useNavigate();
+   const { establishSession } = useAuth();
+ 
+   const [mode, setMode] = useState("signup");
+   const [loadingInvite, setLoadingInvite] = useState(true);
++  const [inviteValid, setInviteValid] = useState(false);
+   const [submitting, setSubmitting] = useState(false);
+   const [error, setError] = useState("");
+   const [householdName, setHouseholdName] = useState("");
+   const [expiresAt, setExpiresAt] = useState("");
+   const [form, setForm] = useState({
+     email: "",
+     password: "",
+     displayName: ""
+   });
+ 
 -  useEffect(() => {
 -    let active = true;
--    const checkBootstrap = async () => {
+-    const validate = async () => {
+-      setLoadingInvite(true);
+-      setError("");
 -      try {
--        const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
--        const data = await response.json().catch(() => ({}));
--        if (!active || !response.ok) return;
--        if (data.needed && location.pathname !== "/bootstrap") {
--          navigate("/bootstrap", { replace: true });
--        }
--        if (!data.needed && location.pathname === "/bootstrap") {
--          navigate("/login", { replace: true });
--        }
--      } catch {
--        // Sin bloqueo si el backend no responde.
+-        const data = await apiRequest(`/api/kitchen/auth/invite/${token}`);
+-        if (!active) return;
+-        setHouseholdName(data.householdName || "");
+-        setExpiresAt(data.expiresAt || "");
+-      } catch (err) {
+-        if (!active) return;
+-        setError(err.message || "No se pudo validar la invitación.");
+-      } finally {
+-        if (active) setLoadingInvite(false);
 -      }
 -    };
--    checkBootstrap();
+-
+-    if (token) {
+-      void validate();
+-    } else {
++  const validateInvite = async () => {
++    setLoadingInvite(true);
++    setError("");
++    setInviteValid(false);
++
++    if (!token) {
+       setLoadingInvite(false);
+       setError("Token de invitación inválido.");
++      return;
++    }
++
++    try {
++      const data = await apiRequest(`/api/kitchen/auth/invite/${token}`);
++      setHouseholdName(data.householdName || "");
++      setExpiresAt(data.expiresAt || "");
++      setInviteValid(true);
++    } catch (err) {
++      setError(err.message || "No se pudo validar la invitación.");
++      setHouseholdName("");
++      setExpiresAt("");
++      setInviteValid(false);
++    } finally {
++      setLoadingInvite(false);
+     }
++  };
+ 
 -    return () => {
 -      active = false;
 -    };
--  }, [location.pathname, navigate]);
--
--  return null;
--}
--
--export default function App() {
--  return (
--    <BrowserRouter>
--      <AuthProvider>
--        <BootstrapRedirect />
--        <Routes>
--          <Route path="/" element={<HomeRedirect />} />
--          <Route path="/bootstrap" element={<BootstrapPage />} />
--          <Route path="/login" element={<LoginPage />} />
--          <Route path="/kitchen/login" element={<LoginPage />} />
--          <Route
--            path="/kitchen/semana"
--            element={(
--              <RequireAuth>
--                <WeekPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/kitchen/platos"
--            element={(
--              <RequireAuth>
--                <DishesPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/kitchen/compra"
--            element={(
--              <RequireAuth>
--                <ShoppingPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/kitchen/cambios"
--            element={(
--              <RequireAuth>
--                <SwapsPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/kitchen/configuracion"
--            element={(
--              <RequireAuth>
--                <SettingsPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/admin/usuarios"
--            element={(
--              <RequireAuth roles={["admin"]}>
--                <AdminUsersPage />
--              </RequireAuth>
--            )}
--          />
--          <Route
--            path="/kitchen"
--            element={(
--              <RequireAuth>
--                <KitchenLayout>
--                  <div className="kitchen-card">Selecciona una sección.</div>
--                </KitchenLayout>
--              </RequireAuth>
--            )}
--          />
--          <Route path="*" element={<HomeRedirect />} />
--        </Routes>
--      </AuthProvider>
--    </BrowserRouter>
--  );
--}
-+import React, { useEffect } from "react";
-+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-+import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
-+import { buildApiUrl } from "./kitchen/api.js";
-+import KitchenLayout from "./kitchen/Layout.jsx";
-+import RequireAuth from "./kitchen/RequireAuth.jsx";
-+import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
-+import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
-+import LoginPage from "./kitchen/pages/LoginPage.jsx";
-+import WeekPage from "./kitchen/pages/WeekPage.jsx";
-+import DishesPage from "./kitchen/pages/DishesPage.jsx";
-+import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
-+import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
-+import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
-+import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
-+import "./kitchen/kitchen.css";
-+
-+function HomeRedirect() {
-+  const { user, loading } = useAuth();
-+  const navigate = useNavigate();
-+
 +  useEffect(() => {
-+    if (loading) return;
-+    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
-+    navigate(destination, { replace: true });
-+  }, [loading, navigate, user]);
++    void validateInvite();
+   }, [token]);
+ 
+   const onSubmit = async (event) => {
+     event.preventDefault();
+     setSubmitting(true);
+     setError("");
+ 
+     try {
+       const payload = {
+         token,
+         email: form.email,
+         password: form.password,
+         displayName: mode === "signup" ? form.displayName : undefined
+       };
+       const data = await apiRequest("/api/kitchen/auth/accept-invite", {
+         method: "POST",
+         body: JSON.stringify(payload)
+       });
+       establishSession(data.token, data.user);
+       navigate("/kitchen/semana", { replace: true });
+     } catch (err) {
+       setError(err.message || "No se pudo aceptar la invitación.");
+     } finally {
+       setSubmitting(false);
+     }
+   };
+ 
+-  const canSubmit = form.email.trim() && form.password && (mode === "existing" || form.displayName.trim());
++  const canSubmit = inviteValid && form.email.trim() && form.password && (mode === "existing" || form.displayName.trim());
+ 
+   return (
+     <div className="kitchen-app">
+       <div className="kitchen-container" style={{ maxWidth: 520 }}>
+         <div className="kitchen-card kitchen-block-gap">
+           <h2>Invitación al hogar</h2>
+           {householdName ? <p className="kitchen-muted">Te invitaron a unirte a <strong>{householdName}</strong>.</p> : null}
+           {expiresAt ? <p className="kitchen-muted">Válida hasta {new Date(expiresAt).toLocaleString()}.</p> : null}
+ 
+           <div className="kitchen-actions">
+             <button
+               type="button"
+               className={`kitchen-button ${mode === "signup" ? "" : "secondary"}`}
+               onClick={() => setMode("signup")}
++              disabled={!inviteValid}
+             >
+               Crear cuenta
+             </button>
+             <button
+               type="button"
+               className={`kitchen-button ${mode === "existing" ? "" : "secondary"}`}
+               onClick={() => setMode("existing")}
++              disabled={!inviteValid}
+             >
+               Ya tengo cuenta
+             </button>
+           </div>
+ 
+           {loadingInvite ? <p className="kitchen-muted">Validando invitación...</p> : null}
+           {error ? <div className="kitchen-alert error">{error}</div> : null}
+ 
+           {!loadingInvite && !error ? (
+             <form className="kitchen-block-gap" onSubmit={onSubmit}>
+               <label className="kitchen-ui-input-group" htmlFor="invite-email">
+                 <span>Email</span>
+                 <input
+                   id="invite-email"
+                   type="email"
+                   className="kitchen-input"
+                   value={form.email}
+                   onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                   required
+                 />
+               </label>
+ 
+               <label className="kitchen-ui-input-group" htmlFor="invite-password">
+                 <span>Contraseña</span>
+                 <input
+@@ -128,30 +131,36 @@ export default function InviteLandingPage() {
+                   value={form.password}
+                   onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+                   required
+                 />
+               </label>
+ 
+               {mode === "signup" ? (
+                 <label className="kitchen-ui-input-group" htmlFor="invite-display-name">
+                   <span>Nombre para mostrar</span>
+                   <input
+                     id="invite-display-name"
+                     type="text"
+                     className="kitchen-input"
+                     value={form.displayName}
+                     onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
+                     required
+                   />
+                 </label>
+               ) : null}
+ 
+               <button type="submit" className="kitchen-button" disabled={!canSubmit || submitting}>
+                 {submitting ? "Uniendo al hogar..." : "Aceptar invitación"}
+               </button>
+             </form>
+           ) : null}
 +
-+  return (
-+    <div className="kitchen-app">
-+      <div className="kitchen-container" style={{ maxWidth: 520 }}>
-+        <div className="kitchen-card">
-+          <h2>Cargando Lunchfy...</h2>
-+          <p className="kitchen-muted">
-+            Estamos preparando tu acceso a Lunchfy. En unos segundos te redirigimos.
-+          </p>
-+        </div>
-+      </div>
-+    </div>
-+  );
-+}
-+
-+function BootstrapRedirect() {
-+  const navigate = useNavigate();
-+  const location = useLocation();
-+
-+  useEffect(() => {
-+    let active = true;
-+    const checkBootstrap = async () => {
-+      try {
-+        const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
-+        const data = await response.json().catch(() => ({}));
-+        if (!active || !response.ok) return;
-+        if (data.needed && location.pathname !== "/bootstrap") {
-+          navigate("/bootstrap", { replace: true });
-+        }
-+        if (!data.needed && location.pathname === "/bootstrap") {
-+          navigate("/login", { replace: true });
-+        }
-+      } catch {
-+        // Sin bloqueo si el backend no responde.
-+      }
-+    };
-+    checkBootstrap();
-+    return () => {
-+      active = false;
-+    };
-+  }, [location.pathname, navigate]);
-+
-+  return null;
-+}
-+
-+export default function App() {
-+  return (
-+    <BrowserRouter>
-+      <AuthProvider>
-+        <BootstrapRedirect />
-+        <Routes>
-+          <Route path="/" element={<HomeRedirect />} />
-+          <Route path="/bootstrap" element={<BootstrapPage />} />
-+          <Route path="/login" element={<LoginPage />} />
-+          <Route path="/kitchen/login" element={<LoginPage />} />
-+          <Route path="/invite/:token" element={<InviteLandingPage />} />
-+          <Route
-+            path="/kitchen/semana"
-+            element={(
-+              <RequireAuth>
-+                <WeekPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/kitchen/platos"
-+            element={(
-+              <RequireAuth>
-+                <DishesPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/kitchen/compra"
-+            element={(
-+              <RequireAuth>
-+                <ShoppingPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/kitchen/cambios"
-+            element={(
-+              <RequireAuth>
-+                <SwapsPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/kitchen/configuracion"
-+            element={(
-+              <RequireAuth>
-+                <SettingsPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/admin/usuarios"
-+            element={(
-+              <RequireAuth roles={["admin"]}>
-+                <AdminUsersPage />
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route
-+            path="/kitchen"
-+            element={(
-+              <RequireAuth>
-+                <KitchenLayout>
-+                  <div className="kitchen-card">Selecciona una sección.</div>
-+                </KitchenLayout>
-+              </RequireAuth>
-+            )}
-+          />
-+          <Route path="*" element={<HomeRedirect />} />
-+        </Routes>
-+      </AuthProvider>
-+    </BrowserRouter>
-+  );
-+}
++          {!loadingInvite && error ? (
++            <button type="button" className="kitchen-button secondary" onClick={() => void validateInvite()}>
++              Reintentar validación
++            </button>
++          ) : null}
+         </div>
+       </div>
+     </div>
+   );
+ }

@@ -10,6 +10,7 @@ export default function InviteLandingPage() {
 
   const [mode, setMode] = useState("signup");
   const [loadingInvite, setLoadingInvite] = useState(true);
+  const [inviteValid, setInviteValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [householdName, setHouseholdName] = useState("");
@@ -20,34 +21,34 @@ export default function InviteLandingPage() {
     displayName: ""
   });
 
-  useEffect(() => {
-    let active = true;
-    const validate = async () => {
-      setLoadingInvite(true);
-      setError("");
-      try {
-        const data = await apiRequest(`/api/kitchen/auth/invite/${token}`);
-        if (!active) return;
-        setHouseholdName(data.householdName || "");
-        setExpiresAt(data.expiresAt || "");
-      } catch (err) {
-        if (!active) return;
-        setError(err.message || "No se pudo validar la invitación.");
-      } finally {
-        if (active) setLoadingInvite(false);
-      }
-    };
+  const validateInvite = async () => {
+    setLoadingInvite(true);
+    setError("");
+    setInviteValid(false);
 
-    if (token) {
-      void validate();
-    } else {
+    if (!token) {
       setLoadingInvite(false);
       setError("Token de invitación inválido.");
+      return;
     }
 
-    return () => {
-      active = false;
-    };
+    try {
+      const data = await apiRequest(`/api/kitchen/auth/invite/${token}`);
+      setHouseholdName(data.householdName || "");
+      setExpiresAt(data.expiresAt || "");
+      setInviteValid(true);
+    } catch (err) {
+      setError(err.message || "No se pudo validar la invitación.");
+      setHouseholdName("");
+      setExpiresAt("");
+      setInviteValid(false);
+    } finally {
+      setLoadingInvite(false);
+    }
+  };
+
+  useEffect(() => {
+    void validateInvite();
   }, [token]);
 
   const onSubmit = async (event) => {
@@ -75,7 +76,7 @@ export default function InviteLandingPage() {
     }
   };
 
-  const canSubmit = form.email.trim() && form.password && (mode === "existing" || form.displayName.trim());
+  const canSubmit = inviteValid && form.email.trim() && form.password && (mode === "existing" || form.displayName.trim());
 
   return (
     <div className="kitchen-app">
@@ -90,6 +91,7 @@ export default function InviteLandingPage() {
               type="button"
               className={`kitchen-button ${mode === "signup" ? "" : "secondary"}`}
               onClick={() => setMode("signup")}
+              disabled={!inviteValid}
             >
               Crear cuenta
             </button>
@@ -97,6 +99,7 @@ export default function InviteLandingPage() {
               type="button"
               className={`kitchen-button ${mode === "existing" ? "" : "secondary"}`}
               onClick={() => setMode("existing")}
+              disabled={!inviteValid}
             >
               Ya tengo cuenta
             </button>
@@ -149,6 +152,12 @@ export default function InviteLandingPage() {
                 {submitting ? "Uniendo al hogar..." : "Aceptar invitación"}
               </button>
             </form>
+          ) : null}
+
+          {!loadingInvite && error ? (
+            <button type="button" className="kitchen-button secondary" onClick={() => void validateInvite()}>
+              Reintentar validación
+            </button>
           ) : null}
         </div>
       </div>

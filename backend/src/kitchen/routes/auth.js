@@ -3,6 +3,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { Invitation } from "../models/Invitation.js";
+import { Household } from "../models/Household.js";
 import { createToken, requireAuth } from "../middleware.js";
 import { normalizeEmail } from "../../users/utils.js";
 
@@ -14,6 +15,38 @@ const router = express.Router();
 function hashInviteToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
+
+async function findActiveInvitationByToken(token) {
+  return Invitation.findOne({
+    tokenHash: hashInviteToken(token),
+    usedAt: null,
+    expiresAt: { $gt: new Date() }
+  });
+}
+
+router.get("/invite/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) {
+      return res.status(400).json({ ok: false, error: "Token de invitación inválido." });
+    }
+
+    const invitation = await findActiveInvitationByToken(token);
+    if (!invitation) {
+      return res.status(404).json({ ok: false, error: "La invitación no es válida o expiró." });
+    }
+
+    const household = await Household.findById(invitation.householdId).select("name");
+    return res.json({
+      ok: true,
+      role: invitation.role,
+      householdName: household?.name || "",
+      expiresAt: invitation.expiresAt
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudo validar la invitación." });
+  }
+});
 
 
 router.post("/login", async (req, res) => {
@@ -57,10 +90,10 @@ router.post("/accept-invite", async (req, res) => {
     const { token, email, password, displayName } = req.body;
     const normalizedEmail = normalizeEmail(email);
 
-    if (!token || !normalizedEmail || !password || !displayName) {
+    if (!token || !normalizedEmail || !password) {
       return res.status(400).json({
         ok: false,
-        error: "Token, email, contraseña y nombre son obligatorios."
+        error: "Token, email y contraseña son obligatorios."
       });
     }
 
@@ -68,11 +101,7 @@ router.post("/accept-invite", async (req, res) => {
       return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
     }
 
-    const invitation = await Invitation.findOne({
-      tokenHash: hashInviteToken(token),
-      usedAt: null,
-      expiresAt: { $gt: new Date() }
-    });
+    const invitation = await findActiveInvitationByToken(token);
 
     if (!invitation) {
       return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
@@ -91,15 +120,36 @@ router.post("/accept-invite", async (req, res) => {
       if (!user.householdId) {
         user.householdId = invitation.householdId;
       }
+
+      if (!user.passwordHash || user.isPlaceholder) {
+        if (!displayName || !String(displayName).trim()) {
+          return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para activar la cuenta." });
+        }
+        user.displayName = String(displayName).trim();
+        user.passwordHash = await bcrypt.hash(password, 10);
+      } else {
+        const passwordOk = await bcrypt.compare(password, user.passwordHash);
+        if (!passwordOk) {
+          return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+        }
+      }
+
       if (user.isPlaceholder) {
         user.isPlaceholder = false;
         user.claimedAt = new Date();
       }
-      user.displayName = String(displayName).trim();
-      user.passwordHash = await bcrypt.hash(password, 10);
+
+      if (displayName && String(displayName).trim()) {
+        user.displayName = String(displayName).trim();
+      }
+
       user.role = invitation.role || "member";
       await user.save();
     } else {
+      if (!displayName || !String(displayName).trim()) {
+        return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para crear la cuenta." });
+      }
+
       user = await KitchenUser.create({
         username: normalizedEmail,
         email: normalizedEmail,
