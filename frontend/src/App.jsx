@@ -12,6 +12,7 @@ import DishesPage from "./kitchen/pages/DishesPage.jsx";
 import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
 import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
 import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
+import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
 import "./kitchen/kitchen.css";
 
 function HomeRedirect() {
@@ -78,6 +79,7 @@ export default function App() {
           <Route path="/bootstrap" element={<BootstrapPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/kitchen/login" element={<LoginPage />} />
+          <Route path="/invite/:token" element={<InviteLandingPage />} />
           <Route
             path="/kitchen/semana"
             element={(

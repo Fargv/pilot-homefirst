@@ -1,5 +1,5 @@
 diff --git a/backend/src/config.js b/backend/src/config.js
-index aeb6d7f86137d78e6948af83f443d55b9260dfa2..1e8ee08e005d7d55c801631322c762666557b567 100644
+index aeb6d7f86137d78e6948af83f443d55b9260dfa2..b26c18f7b587a49139cc2ef68dcd552b2d5ae2e3 100644
 --- a/backend/src/config.js
 +++ b/backend/src/config.js
 @@ -1,26 +1,27 @@
@@ -13,7 +13,7 @@ index aeb6d7f86137d78e6948af83f443d55b9260dfa2..1e8ee08e005d7d55c801631322c76266
    mongodbUri: process.env.MONGODB_URI,
  
    corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
-+  frontendUrl: (process.env.FRONTEND_URL || "https://homefirst-dev.netlify.app").replace(/\/+$/, ""),
++  frontendUrl: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || "http://localhost:5173",
  
    jwtSecret: process.env.JWT_SECRET || "dev-kitchen-secret",
  
@@ -31,13 +31,25 @@ index aeb6d7f86137d78e6948af83f443d55b9260dfa2..1e8ee08e005d7d55c801631322c76266
    console.warn("⚠️ Falta MONGODB_URI (configuración pendiente).");
  }
 diff --git a/backend/src/index.js b/backend/src/index.js
-index ddc06e2488b79a4c03a576f6f814c73b01293667..003e9e666bc5df778a47e2545363ac81257a2482 100644
+index ddc06e2488b79a4c03a576f6f814c73b01293667..3bd80858ccc2cc5c2471de4b5e4eaa9ab181f368 100644
 --- a/backend/src/index.js
 +++ b/backend/src/index.js
-@@ -8,39 +8,44 @@ import categoriesRouter from "./kitchen/routes/categories.js";
- import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
- import usersRouter from "./users/index.js";
- import adminRouter from "./kitchen/routes/admin.js";
+@@ -1,46 +1,51 @@
+ import express from "express";
+ import cors from "cors";
+ import { config } from "./config.js";
+ import { connectDb } from "./db.js";
+ import { sendTestEmail } from "./mailer.js";
+-import kitchenRouter from "./kitchen/index.js";
+-import categoriesRouter from "./kitchen/routes/categories.js";
+-import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
+-import usersRouter from "./users/index.js";
+-import adminRouter from "./kitchen/routes/admin.js";
++import kitchenRouter from "./kitchen/index.js";
++import categoriesRouter from "./kitchen/routes/categories.js";
++import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
++import usersRouter from "./users/index.js";
++import adminRouter from "./kitchen/routes/admin.js";
  
  const app = express();
  
@@ -48,6 +60,11 @@ index ddc06e2488b79a4c03a576f6f814c73b01293667..003e9e666bc5df778a47e2545363ac81
    res.json({ ok: true, env: config.nodeEnv, time: new Date().toISOString() });
  });
  
++app.get("/invite/:token", (req, res) => {
++  const frontendBaseUrl = String(config.frontendUrl || "").replace(/\/$/, "");
++  return res.redirect(302, `${frontendBaseUrl}/invite/${req.params.token}`);
++});
++
  app.post("/api/email/test", async (req, res) => {
    try {
      const { to } = req.body;
@@ -61,17 +78,17 @@ index ddc06e2488b79a4c03a576f6f814c73b01293667..003e9e666bc5df778a47e2545363ac81
  });
  
 -app.use("/api/kitchen", kitchenRouter);
-+app.get("/invite/:token", (req, res) => {
-+  const { token } = req.params;
-+  return res.redirect(302, `${config.frontendUrl}/invite/${token}`);
-+});
-+
+-app.use("/api/admin", adminRouter);
+-app.use("/api/categories", categoriesRouter);
+-app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
+-app.use("/api/users", usersRouter);
+-
 +app.use("/api/kitchen", kitchenRouter);
- app.use("/api/admin", adminRouter);
- app.use("/api/categories", categoriesRouter);
- app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
- app.use("/api/users", usersRouter);
- 
++app.use("/api/admin", adminRouter);
++app.use("/api/categories", categoriesRouter);
++app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
++app.use("/api/users", usersRouter);
++
  connectDb()
    .then(() => {
      app.listen(config.port, () => console.log(`🚀 API escuchando en :${config.port}`));
@@ -80,214 +97,11 @@ index ddc06e2488b79a4c03a576f6f814c73b01293667..003e9e666bc5df778a47e2545363ac81
      console.error("❌ Error conectando DB", e);
      process.exit(1);
    });
-diff --git a/backend/src/kitchen/routes/auth.js b/backend/src/kitchen/routes/auth.js
-index 5b37ee15cd5dd7b27555f4220d42750e44fd3e61..79f6f5be4a50192337d767b0e07fdad04348cb40 100644
---- a/backend/src/kitchen/routes/auth.js
-+++ b/backend/src/kitchen/routes/auth.js
-@@ -1,130 +1,169 @@
- import express from "express";
- import crypto from "crypto";
- import bcrypt from "bcryptjs";
- import { KitchenUser } from "../models/KitchenUser.js";
--import { Invitation } from "../models/Invitation.js";
-+import { Invitation } from "../models/Invitation.js";
-+import { Household } from "../models/Household.js";
- import { createToken, requireAuth } from "../middleware.js";
- import { normalizeEmail } from "../../users/utils.js";
- 
- const DIOD_EMAIL = "admin@admin.com";
- 
- const router = express.Router();
- 
- 
- function hashInviteToken(token) {
-   return crypto.createHash("sha256").update(token).digest("hex");
- }
- 
- 
- router.post("/login", async (req, res) => {
-   try {
-     const { email, password, username } = req.body;
-     const loginValue = normalizeEmail(email || username);
-     if (!loginValue || !password) {
-       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
-     }
- 
-     const user = await KitchenUser.findOne({ email: loginValue });
-     if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
- 
-     if (!user.passwordHash || user.isPlaceholder) {
-       return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
-     }
- 
-     const ok = await bcrypt.compare(password, user.passwordHash);
-     if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
- 
-     const isDiod = loginValue === DIOD_EMAIL;
-     const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
-     if (shouldUpdateGlobalRole) {
-       user.globalRole = isDiod ? "diod" : null;
-       await user.save();
-     }
- 
-     const token = createToken(user);
-     const safeUser = {
-       ...user.toSafeJSON(),
-       migrationPending: !user.householdId
-     };
-     return res.json({ ok: true, token, user: safeUser });
-   } catch (error) {
-     return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
-   }
- });
- 
--router.post("/accept-invite", async (req, res) => {
--  try {
--    const { token, email, password, displayName } = req.body;
--    const normalizedEmail = normalizeEmail(email);
--
--    if (!token || !normalizedEmail || !password || !displayName) {
--      return res.status(400).json({
--        ok: false,
--        error: "Token, email, contraseña y nombre son obligatorios."
--      });
--    }
-+router.get("/invite/:token", async (req, res) => {
-+  try {
-+    const invitation = await Invitation.findOne({
-+      tokenHash: hashInviteToken(req.params.token),
-+      usedAt: null,
-+      expiresAt: { $gt: new Date() }
-+    }).lean();
-+
-+    if (!invitation) {
-+      return res.status(404).json({ ok: false, error: "La invitación no es válida o expiró." });
-+    }
-+
-+    const household = await Household.findById(invitation.householdId, { name: 1 }).lean();
-+
-+    return res.json({
-+      ok: true,
-+      householdName: household?.name || null,
-+      expiresAt: invitation.expiresAt
-+    });
-+  } catch {
-+    return res.status(500).json({ ok: false, error: "No se pudo validar la invitación." });
-+  }
-+});
-+
-+router.post("/accept-invite", async (req, res) => {
-+  try {
-+    const { token, email, password, displayName } = req.body;
-+    const normalizedEmail = normalizeEmail(email);
-+
-+    if (!token || !normalizedEmail || !password) {
-+      return res.status(400).json({
-+        ok: false,
-+        error: "Token, email y contraseña son obligatorios."
-+      });
-+    }
- 
-     if (String(password).length < 8) {
-       return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
-     }
- 
-     const invitation = await Invitation.findOne({
-       tokenHash: hashInviteToken(token),
-       usedAt: null,
-       expiresAt: { $gt: new Date() }
-     });
- 
-     if (!invitation) {
-       return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
-     }
- 
-     let user = await KitchenUser.findOne({ email: normalizedEmail });
- 
--    if (user) {
--      if (user.householdId && user.householdId.toString() !== invitation.householdId.toString()) {
-+    if (user) {
-+      if (user.householdId && user.householdId.toString() !== invitation.householdId.toString()) {
-         return res.status(409).json({
-           ok: false,
-           error: "Ese email ya pertenece a otro hogar y no se puede unir con esta invitación."
-         });
-       }
- 
--      if (!user.householdId) {
--        user.householdId = invitation.householdId;
--      }
--      if (user.isPlaceholder) {
--        user.isPlaceholder = false;
--        user.claimedAt = new Date();
--      }
--      user.displayName = String(displayName).trim();
--      user.passwordHash = await bcrypt.hash(password, 10);
--      user.role = invitation.role || "member";
--      await user.save();
--    } else {
--      user = await KitchenUser.create({
--        username: normalizedEmail,
--        email: normalizedEmail,
-+      if (!user.householdId) {
-+        user.householdId = invitation.householdId;
-+      }
-+      const canSetPassword = !user.passwordHash || user.isPlaceholder;
-+      if (!canSetPassword) {
-+        const validPassword = await bcrypt.compare(password, user.passwordHash);
-+        if (!validPassword) {
-+          return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
-+        }
-+      }
-+      if (user.isPlaceholder) {
-+        user.isPlaceholder = false;
-+        user.claimedAt = new Date();
-+      }
-+      if (displayName && String(displayName).trim()) {
-+        user.displayName = String(displayName).trim();
-+      }
-+      if (canSetPassword) {
-+        user.passwordHash = await bcrypt.hash(password, 10);
-+      }
-+      user.role = invitation.role || "member";
-+      await user.save();
-+    } else {
-+      if (!displayName || !String(displayName).trim()) {
-+        return res.status(400).json({ ok: false, error: "El nombre es obligatorio para crear la cuenta." });
-+      }
-+      user = await KitchenUser.create({
-+        username: normalizedEmail,
-+        email: normalizedEmail,
-         displayName: String(displayName).trim(),
-         passwordHash: await bcrypt.hash(password, 10),
-         role: invitation.role || "member",
-         householdId: invitation.householdId,
-         isPlaceholder: false
-       });
-     }
- 
-     invitation.usedAt = new Date();
-     invitation.usedByUserId = user._id;
-     await invitation.save();
- 
-     const jwt = createToken(user);
-     return res.json({ ok: true, token: jwt, user: user.toSafeJSON() });
-   } catch (error) {
-     return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitación." });
-   }
- });
- 
- router.post("/logout", (req, res) => {
-   res.json({ ok: true });
- });
- 
- router.get("/me", requireAuth, (req, res) => {
-   res.json({
 diff --git a/backend/src/kitchen/routes/household.js b/backend/src/kitchen/routes/household.js
-index 4d4590e774062b1bd121634b09f81e1472bb733c..caa2fd4c9e9a075209ed0e1473d5b1805dbf85f1 100644
+index 4d4590e774062b1bd121634b09f81e1472bb733c..be08677473296245a4ded788f0ec742567f35977 100644
 --- a/backend/src/kitchen/routes/household.js
 +++ b/backend/src/kitchen/routes/household.js
-@@ -1,56 +1,57 @@
+@@ -1,56 +1,58 @@
  import crypto from "crypto";
  import express from "express";
  import bcrypt from "bcryptjs";
@@ -320,7 +134,8 @@ index 4d4590e774062b1bd121634b09f81e1472bb733c..caa2fd4c9e9a075209ed0e1473d5b180
      });
  
 -    const inviteLink = `${req.protocol}://${req.get("host")}/invite/${rawToken}`;
-+    const inviteLink = `${config.frontendUrl}/invite/${rawToken}`;
++    const frontendBaseUrl = String(config.frontendUrl || "").replace(/\/$/, "");
++    const inviteLink = `${frontendBaseUrl}/invite/${rawToken}`;
      return res.status(201).json({ ok: true, inviteLink, token: rawToken, expiresAt });
    } catch (error) {
      const handled = handleHouseholdError(res, error);
@@ -347,181 +162,297 @@ index 4d4590e774062b1bd121634b09f81e1472bb733c..caa2fd4c9e9a075209ed0e1473d5b180
        invitations: invitations.map((invitation) => ({
          id: invitation._id,
 diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
-index 2d8385f095d0dac7d3017dc6834e138ae65f59f4..0f6fe3bd82ba6e417c27caf23e9b7b66e7d7b29f 100644
+index 2d8385f095d0dac7d3017dc6834e138ae65f59f4..b769f148cebb898772218f7e3ae9469173b37116 100644
 --- a/frontend/src/App.jsx
 +++ b/frontend/src/App.jsx
-@@ -1,39 +1,40 @@
- import React, { useEffect } from "react";
- import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
- import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
- import { buildApiUrl } from "./kitchen/api.js";
- import KitchenLayout from "./kitchen/Layout.jsx";
- import RequireAuth from "./kitchen/RequireAuth.jsx";
- import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
- import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
- import LoginPage from "./kitchen/pages/LoginPage.jsx";
- import WeekPage from "./kitchen/pages/WeekPage.jsx";
- import DishesPage from "./kitchen/pages/DishesPage.jsx";
- import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
- import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
+@@ -1,144 +1,146 @@
+-import React, { useEffect } from "react";
+-import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+-import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
+-import { buildApiUrl } from "./kitchen/api.js";
+-import KitchenLayout from "./kitchen/Layout.jsx";
+-import RequireAuth from "./kitchen/RequireAuth.jsx";
+-import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
+-import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
+-import LoginPage from "./kitchen/pages/LoginPage.jsx";
+-import WeekPage from "./kitchen/pages/WeekPage.jsx";
+-import DishesPage from "./kitchen/pages/DishesPage.jsx";
+-import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
+-import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
 -import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
-+import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
-+import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
- import "./kitchen/kitchen.css";
- 
- function HomeRedirect() {
-   const { user, loading } = useAuth();
-   const navigate = useNavigate();
- 
-   useEffect(() => {
-     if (loading) return;
-     const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
-     navigate(destination, { replace: true });
-   }, [loading, navigate, user]);
- 
-   return (
-     <div className="kitchen-app">
-       <div className="kitchen-container" style={{ maxWidth: 520 }}>
-         <div className="kitchen-card">
-           <h2>Cargando Lunchfy...</h2>
-           <p className="kitchen-muted">
-             Estamos preparando tu acceso a Lunchfy. En unos segundos te redirigimos.
-           </p>
-         </div>
-       </div>
-     </div>
-   );
- }
-@@ -54,52 +55,53 @@ function BootstrapRedirect() {
-         }
-         if (!data.needed && location.pathname === "/bootstrap") {
-           navigate("/login", { replace: true });
-         }
-       } catch {
-         // Sin bloqueo si el backend no responde.
-       }
-     };
-     checkBootstrap();
-     return () => {
-       active = false;
-     };
-   }, [location.pathname, navigate]);
- 
-   return null;
- }
- 
- export default function App() {
-   return (
-     <BrowserRouter>
-       <AuthProvider>
-         <BootstrapRedirect />
-         <Routes>
-           <Route path="/" element={<HomeRedirect />} />
-           <Route path="/bootstrap" element={<BootstrapPage />} />
+-import "./kitchen/kitchen.css";
+-
+-function HomeRedirect() {
+-  const { user, loading } = useAuth();
+-  const navigate = useNavigate();
+-
+-  useEffect(() => {
+-    if (loading) return;
+-    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
+-    navigate(destination, { replace: true });
+-  }, [loading, navigate, user]);
+-
+-  return (
+-    <div className="kitchen-app">
+-      <div className="kitchen-container" style={{ maxWidth: 520 }}>
+-        <div className="kitchen-card">
+-          <h2>Cargando Lunchfy...</h2>
+-          <p className="kitchen-muted">
+-            Estamos preparando tu acceso a Lunchfy. En unos segundos te redirigimos.
+-          </p>
+-        </div>
+-      </div>
+-    </div>
+-  );
+-}
+-
+-function BootstrapRedirect() {
+-  const navigate = useNavigate();
+-  const location = useLocation();
+-
+-  useEffect(() => {
+-    let active = true;
+-    const checkBootstrap = async () => {
+-      try {
+-        const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
+-        const data = await response.json().catch(() => ({}));
+-        if (!active || !response.ok) return;
+-        if (data.needed && location.pathname !== "/bootstrap") {
+-          navigate("/bootstrap", { replace: true });
+-        }
+-        if (!data.needed && location.pathname === "/bootstrap") {
+-          navigate("/login", { replace: true });
+-        }
+-      } catch {
+-        // Sin bloqueo si el backend no responde.
+-      }
+-    };
+-    checkBootstrap();
+-    return () => {
+-      active = false;
+-    };
+-  }, [location.pathname, navigate]);
+-
+-  return null;
+-}
+-
+-export default function App() {
+-  return (
+-    <BrowserRouter>
+-      <AuthProvider>
+-        <BootstrapRedirect />
+-        <Routes>
+-          <Route path="/" element={<HomeRedirect />} />
+-          <Route path="/bootstrap" element={<BootstrapPage />} />
 -          <Route path="/login" element={<LoginPage />} />
 -          <Route path="/kitchen/login" element={<LoginPage />} />
+-          <Route
+-            path="/kitchen/semana"
+-            element={(
+-              <RequireAuth>
+-                <WeekPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/kitchen/platos"
+-            element={(
+-              <RequireAuth>
+-                <DishesPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/kitchen/compra"
+-            element={(
+-              <RequireAuth>
+-                <ShoppingPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/kitchen/cambios"
+-            element={(
+-              <RequireAuth>
+-                <SwapsPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/kitchen/configuracion"
+-            element={(
+-              <RequireAuth>
+-                <SettingsPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/admin/usuarios"
+-            element={(
+-              <RequireAuth roles={["admin"]}>
+-                <AdminUsersPage />
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route
+-            path="/kitchen"
+-            element={(
+-              <RequireAuth>
+-                <KitchenLayout>
+-                  <div className="kitchen-card">Selecciona una sección.</div>
+-                </KitchenLayout>
+-              </RequireAuth>
+-            )}
+-          />
+-          <Route path="*" element={<HomeRedirect />} />
+-        </Routes>
+-      </AuthProvider>
+-    </BrowserRouter>
+-  );
+-}
++import React, { useEffect } from "react";
++import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
++import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
++import { buildApiUrl } from "./kitchen/api.js";
++import KitchenLayout from "./kitchen/Layout.jsx";
++import RequireAuth from "./kitchen/RequireAuth.jsx";
++import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
++import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
++import LoginPage from "./kitchen/pages/LoginPage.jsx";
++import WeekPage from "./kitchen/pages/WeekPage.jsx";
++import DishesPage from "./kitchen/pages/DishesPage.jsx";
++import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
++import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
++import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
++import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
++import "./kitchen/kitchen.css";
++
++function HomeRedirect() {
++  const { user, loading } = useAuth();
++  const navigate = useNavigate();
++
++  useEffect(() => {
++    if (loading) return;
++    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
++    navigate(destination, { replace: true });
++  }, [loading, navigate, user]);
++
++  return (
++    <div className="kitchen-app">
++      <div className="kitchen-container" style={{ maxWidth: 520 }}>
++        <div className="kitchen-card">
++          <h2>Cargando Lunchfy...</h2>
++          <p className="kitchen-muted">
++            Estamos preparando tu acceso a Lunchfy. En unos segundos te redirigimos.
++          </p>
++        </div>
++      </div>
++    </div>
++  );
++}
++
++function BootstrapRedirect() {
++  const navigate = useNavigate();
++  const location = useLocation();
++
++  useEffect(() => {
++    let active = true;
++    const checkBootstrap = async () => {
++      try {
++        const response = await fetch(buildApiUrl("/api/users/bootstrap-needed"));
++        const data = await response.json().catch(() => ({}));
++        if (!active || !response.ok) return;
++        if (data.needed && location.pathname !== "/bootstrap") {
++          navigate("/bootstrap", { replace: true });
++        }
++        if (!data.needed && location.pathname === "/bootstrap") {
++          navigate("/login", { replace: true });
++        }
++      } catch {
++        // Sin bloqueo si el backend no responde.
++      }
++    };
++    checkBootstrap();
++    return () => {
++      active = false;
++    };
++  }, [location.pathname, navigate]);
++
++  return null;
++}
++
++export default function App() {
++  return (
++    <BrowserRouter>
++      <AuthProvider>
++        <BootstrapRedirect />
++        <Routes>
++          <Route path="/" element={<HomeRedirect />} />
++          <Route path="/bootstrap" element={<BootstrapPage />} />
 +          <Route path="/login" element={<LoginPage />} />
 +          <Route path="/kitchen/login" element={<LoginPage />} />
 +          <Route path="/invite/:token" element={<InviteLandingPage />} />
-           <Route
-             path="/kitchen/semana"
-             element={(
-               <RequireAuth>
-                 <WeekPage />
-               </RequireAuth>
-             )}
-           />
-           <Route
-             path="/kitchen/platos"
-             element={(
-               <RequireAuth>
-                 <DishesPage />
-               </RequireAuth>
-             )}
-           />
-           <Route
-             path="/kitchen/compra"
-             element={(
-               <RequireAuth>
-                 <ShoppingPage />
-               </RequireAuth>
-             )}
-           />
-           <Route
-diff --git a/frontend/src/kitchen/auth.jsx b/frontend/src/kitchen/auth.jsx
-index c1f720d1da8f43c2f9e6beb9d633d4f9dc3d1440..18a7129f8d781952f09b549b30b34df895da10e8 100644
---- a/frontend/src/kitchen/auth.jsx
-+++ b/frontend/src/kitchen/auth.jsx
-@@ -9,65 +9,70 @@ export function isUserAuthenticated(user) {
- 
- export function AuthProvider({ children }) {
-   const [user, setUser] = useState(null);
-   const [loading, setLoading] = useState(true);
- 
-   const fetchMe = useCallback(async () => {
-     try {
-       const data = await apiRequest("/api/kitchen/auth/me");
-       setUser(data.user);
-     } catch {
-       setUser(null);
-       setToken(null);
-     } finally {
-       setLoading(false);
-     }
-   }, []);
- 
-   useEffect(() => {
-     if (getToken()) {
-       fetchMe();
-     } else {
-       setLoading(false);
-     }
-   }, [fetchMe]);
- 
--  const login = async (email, password) => {
-+  const login = async (email, password) => {
-     const data = await apiRequest("/api/kitchen/auth/login", {
-       method: "POST",
-       body: JSON.stringify({ email, password })
-     });
-     setToken(data.token);
-     setUser(data.user);
-     return data.user;
-   };
- 
-+  const establishSession = useCallback((token, nextUser) => {
-+    setToken(token);
-+    setUser(nextUser);
-+  }, []);
-+
-   const clearSession = useCallback(() => {
-     setToken(null);
-     setUser(null);
-     setLoading(false);
-   }, []);
- 
-   const logout = useCallback(() => {
-     const token = getToken();
-     clearSession();
- 
-     if (!token) return;
- 
-     void apiRequest("/api/kitchen/auth/logout", {
-       method: "POST",
-       headers: { Authorization: `Bearer ${token}` }
-     }).catch(() => {
-       // La sesión local ya quedó invalidada; ignoramos errores remotos.
-     });
-   }, [clearSession]);
- 
--  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, logout]);
-+  const value = useMemo(() => ({ user, loading, login, logout, establishSession }), [user, loading, login, logout, establishSession]);
- 
-   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
- }
- 
- export function useAuth() {
-   const context = useContext(AuthContext);
-   if (!context) throw new Error("AuthProvider faltante");
-   return context;
- }
++          <Route
++            path="/kitchen/semana"
++            element={(
++              <RequireAuth>
++                <WeekPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/platos"
++            element={(
++              <RequireAuth>
++                <DishesPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/compra"
++            element={(
++              <RequireAuth>
++                <ShoppingPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/cambios"
++            element={(
++              <RequireAuth>
++                <SwapsPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen/configuracion"
++            element={(
++              <RequireAuth>
++                <SettingsPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/admin/usuarios"
++            element={(
++              <RequireAuth roles={["admin"]}>
++                <AdminUsersPage />
++              </RequireAuth>
++            )}
++          />
++          <Route
++            path="/kitchen"
++            element={(
++              <RequireAuth>
++                <KitchenLayout>
++                  <div className="kitchen-card">Selecciona una sección.</div>
++                </KitchenLayout>
++              </RequireAuth>
++            )}
++          />
++          <Route path="*" element={<HomeRedirect />} />
++        </Routes>
++      </AuthProvider>
++    </BrowserRouter>
++  );
++}

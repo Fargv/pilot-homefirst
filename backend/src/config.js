@@ -8,6 +8,7 @@ export const config = {
   mongodbUri: process.env.MONGODB_URI,
 
   corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  frontendUrl: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || "http://localhost:5173",
 
   jwtSecret: process.env.JWT_SECRET || "dev-kitchen-secret",
 

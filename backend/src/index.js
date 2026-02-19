@@ -18,6 +18,11 @@ app.get("/health", (req, res) => {
   res.json({ ok: true, env: config.nodeEnv, time: new Date().toISOString() });
 });
 
+app.get("/invite/:token", (req, res) => {
+  const frontendBaseUrl = String(config.frontendUrl || "").replace(/\/$/, "");
+  return res.redirect(302, `${frontendBaseUrl}/invite/${req.params.token}`);
+});
+
 app.post("/api/email/test", async (req, res) => {
   try {
     const { to } = req.body;

@@ -6,6 +6,7 @@ import { KitchenUser } from "../models/KitchenUser.js";
 import { requireAuth, requireRole } from "../middleware.js";
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { buildDisplayName, isValidEmail, normalizeEmail } from "../../users/utils.js";
+import { config } from "../../config.js";
 
 const router = express.Router();
 
@@ -28,7 +29,8 @@ router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) 
       expiresAt
     });
 
-    const inviteLink = `${req.protocol}://${req.get("host")}/invite/${rawToken}`;
+    const frontendBaseUrl = String(config.frontendUrl || "").replace(/\/$/, "");
+    const inviteLink = `${frontendBaseUrl}/invite/${rawToken}`;
     return res.status(201).json({ ok: true, inviteLink, token: rawToken, expiresAt });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
