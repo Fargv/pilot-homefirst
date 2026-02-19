@@ -6,6 +6,7 @@ import shoppingRoutes from "./routes/shopping.js";
 import swapRoutes from "./routes/swaps.js";
 import userRoutes from "./routes/users.js";
 import adminRoutes from "./routes/admin.js";
+import householdRoutes from "./routes/household.js";
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use("/shopping", shoppingRoutes);
 router.use("/swaps", swapRoutes);
 router.use("/users", userRoutes);
 router.use("/admin", adminRoutes);
+router.use("/household", householdRoutes);
 
 export default router;

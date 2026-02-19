@@ -1,1843 +1,423 @@
-diff --git a/backend/package.json b/backend/package.json
-index 605090e0240d52776243da72f0a9f1af3a9c5799..1f7cc0feb3769f6f6f439d415ddf42eafb158c4f 100644
---- a/backend/package.json
-+++ b/backend/package.json
-@@ -1,22 +1,23 @@
- {
-   "name": "pilot-backend",
-   "version": "1.0.0",
-   "type": "module",
-   "main": "src/index.js",
-   "scripts": {
-     "start": "node src/index.js",
-     "dev": "node --watch src/index.js",
-     "migrate:households": "node scripts/migrate-households.js",
-     "create:diod": "node scripts/create-diod.js",
--    "test:connection": "node scripts/test-connection.js"
-+    "test:connection": "node scripts/test-connection.js",
-+    "migrate:householdId": "node scripts/migrate-add-householdId.js"
-   },
-   "dependencies": {
-     "bcryptjs": "^2.4.3",
-     "cors": "^2.8.5",
-     "dotenv": "^16.4.5",
-     "express": "^4.19.2",
-     "jsonwebtoken": "^9.0.2",
-     "mongoose": "^8.6.1",
-     "nodemailer": "^6.9.14"
-   }
- }
-diff --git a/backend/src/kitchen/householdScope.js b/backend/src/kitchen/householdScope.js
-index 1c7cebf5c2f553b3e6436a078df08470248b4026..abd0e4ab10620a8ce2ebe4d91560cda66a61207f 100644
---- a/backend/src/kitchen/householdScope.js
-+++ b/backend/src/kitchen/householdScope.js
-@@ -1,60 +1,45 @@
--function legacyHouseholdCondition() {
--  return [{ householdId: { $exists: false } }, { householdId: null }];
--}
--
- export function getEffectiveHouseholdId(user) {
-   if (!user) return null;
- 
-   if (user.globalRole === "diod") {
-     if (!user.activeHouseholdId) {
-       const error = new Error("DIOD debe seleccionar un hogar activo para operar.");
-       error.code = "DIOD_ACTIVE_HOUSEHOLD_REQUIRED";
-       throw error;
-     }
-     return user.activeHouseholdId;
-   }
- 
--  return user.householdId ?? null;
-+  if (!user.householdId) {
-+    const error = new Error("El usuario no tiene hogar asignado.");
-+    error.code = "HOUSEHOLD_REQUIRED";
-+    throw error;
-+  }
-+
-+  return user.householdId;
- }
- 
- export function handleHouseholdError(res, error) {
--  if (error?.code === "DIOD_ACTIVE_HOUSEHOLD_REQUIRED") {
-+  if (error?.code === "DIOD_ACTIVE_HOUSEHOLD_REQUIRED" || error?.code === "HOUSEHOLD_REQUIRED") {
-     return res.status(400).json({ ok: false, error: error.message });
-   }
- 
-   return null;
- }
- 
--export function buildHouseholdFilter(effectiveHouseholdId, { includeLegacy = false } = {}) {
--  if (effectiveHouseholdId) {
--    return { householdId: effectiveHouseholdId };
--  }
--
--  if (includeLegacy) {
--    return { $or: legacyHouseholdCondition() };
--  }
--
--  return {};
--}
--
--export function buildScopedFilter(effectiveHouseholdId, extraFilter = {}, { includeLegacy = false } = {}) {
--  const householdFilter = buildHouseholdFilter(effectiveHouseholdId, { includeLegacy });
--
--  if (!Object.keys(householdFilter).length) {
--    return { ...extraFilter };
--  }
--
--  if (!Object.keys(extraFilter).length) {
--    return householdFilter;
--  }
--
--  if (householdFilter.$or) {
--    return { $and: [extraFilter, householdFilter] };
-+export function buildHouseholdFilter(effectiveHouseholdId) {
-+  if (!effectiveHouseholdId) {
-+    const error = new Error("householdId efectivo es obligatorio.");
-+    error.code = "HOUSEHOLD_REQUIRED";
-+    throw error;
-   }
- 
--  return { ...extraFilter, ...householdFilter };
-+  return { householdId: effectiveHouseholdId };
- }
- 
--export function shouldUseLegacyFallback(effectiveHouseholdId) {
--  return !effectiveHouseholdId;
-+export function buildScopedFilter(effectiveHouseholdId, extraFilter = {}) {
-+  return {
-+    ...extraFilter,
-+    ...buildHouseholdFilter(effectiveHouseholdId)
-+  };
- }
-diff --git a/backend/src/kitchen/routes/categories.js b/backend/src/kitchen/routes/categories.js
-index ce873fdb1e3d950c9441bbcf4fab8f08599883c9..afcf2fc84329f40742ee8b41223e04f5e856f0c3 100644
---- a/backend/src/kitchen/routes/categories.js
-+++ b/backend/src/kitchen/routes/categories.js
-@@ -1,85 +1,81 @@
+diff --git a/backend/src/kitchen/index.js b/backend/src/kitchen/index.js
+index fcf23896f64ae741cc3040db187d6310ca5f93b4..13b31104cf6576be40b097161a180836bc8785b0 100644
+--- a/backend/src/kitchen/index.js
++++ b/backend/src/kitchen/index.js
+@@ -1,20 +1,22 @@
  import express from "express";
- import { Category } from "../models/Category.js";
- import { requireAuth } from "../middleware.js";
--import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError,
--  shouldUseLegacyFallback
--} from "../householdScope.js";
-+import {
-+  buildScopedFilter,
-+  getEffectiveHouseholdId,
-+  handleHouseholdError
-+} from "../householdScope.js";
+ import authRoutes from "./routes/auth.js";
+ import dishRoutes from "./routes/dishes.js";
+ import weekRoutes from "./routes/weeks.js";
+ import shoppingRoutes from "./routes/shopping.js";
+ import swapRoutes from "./routes/swaps.js";
+ import userRoutes from "./routes/users.js";
+-import adminRoutes from "./routes/admin.js";
++import adminRoutes from "./routes/admin.js";
++import householdRoutes from "./routes/household.js";
  
  const router = express.Router();
  
--const DEFAULT_COLOR_BG = "#E8F1FF";
--const DEFAULT_COLOR_TEXT = "#1D4ED8";
-+const DEFAULT_COLOR_BG = "#E8F1FF";
-+const DEFAULT_COLOR_TEXT = "#1D4ED8";
+ router.use("/auth", authRoutes);
+ router.use("/dishes", dishRoutes);
+ router.use("/weeks", weekRoutes);
+ router.use("/shopping", shoppingRoutes);
+ router.use("/swaps", swapRoutes);
+ router.use("/users", userRoutes);
+-router.use("/admin", adminRoutes);
++router.use("/admin", adminRoutes);
++router.use("/household", householdRoutes);
  
- const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+ export default router;
+diff --git a/backend/src/kitchen/models/KitchenUser.js b/backend/src/kitchen/models/KitchenUser.js
+index e25c9b4718045e71ff49cf6e70ec8f5e72a59254..a1d5d75c9ae224dd50600edbe1b5d4c059a3925d 100644
+--- a/backend/src/kitchen/models/KitchenUser.js
++++ b/backend/src/kitchen/models/KitchenUser.js
+@@ -1,34 +1,38 @@
+ import mongoose from "mongoose";
  
- const slugifyCategory = (value = "") => {
-   const trimmed = value.trim().toLowerCase();
-   if (!trimmed) return "";
+ const KitchenUserSchema = new mongoose.Schema(
+   {
+     username: { type: String, required: true, unique: true, trim: true },
+-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+-    firstName: { type: String, trim: true },
+-    lastName: { type: String, trim: true },
++    email: { type: String, unique: true, sparse: true, lowercase: true, trim: true, default: null },
++    firstName: { type: String, trim: true },
++    lastName: { type: String, trim: true },
+     displayName: { type: String, required: true, trim: true },
+-    passwordHash: { type: String, required: true },
+-    role: { type: String, enum: ["owner", "member", "admin", "user"], default: "member" },
+-    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" },
+-    globalRole: { type: String, enum: ["diod", null], default: null },
+-    activeHouseholdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" }
++    isPlaceholder: { type: Boolean, default: false },
++    claimedAt: { type: Date, default: null },
++    passwordHash: { type: String, default: null },
++    role: { type: String, enum: ["owner", "member", "admin", "user"], default: "member" },
++    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" },
++    globalRole: { type: String, enum: ["diod", null], default: null },
++    activeHouseholdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" }
+   },
+   { timestamps: true }
+ );
  
-   const noAccents = trimmed.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-   const noPunctuation = noAccents.replace(/[^\w\s-]/g, "");
-   return noPunctuation.replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+ KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
+   return {
+     id: this._id,
+     username: this.username,
+-    email: this.email,
+-    firstName: this.firstName,
+-    lastName: this.lastName,
++    email: this.email,
++    firstName: this.firstName,
++    lastName: this.lastName,
+     displayName: this.displayName,
+-    role: this.role,
+-    householdId: this.householdId ?? null,
+-    globalRole: this.globalRole ?? null,
+-    activeHouseholdId: this.activeHouseholdId ?? null
++    isPlaceholder: this.isPlaceholder,
++    claimedAt: this.claimedAt ?? null,
++    role: this.role,
++    householdId: this.householdId ?? null,
++    globalRole: this.globalRole ?? null,
++    activeHouseholdId: this.activeHouseholdId ?? null
+   };
  };
  
- router.get("/", requireAuth, async (req, res) => {
--  try {
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const categories = await Category.find(
--      buildScopedFilter(effectiveHouseholdId, { active: true }, { includeLegacy })
--    ).sort({ order: 1, name: 1 });
--
--    return res.json({ ok: true, categories });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudieron cargar las categorías." });
--  }
-+  try {
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const categories = await Category.find(
-+      buildScopedFilter(effectiveHouseholdId, { active: true })
-+    ).sort({ order: 1, name: 1 });
-+
-+    return res.json({ ok: true, categories });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudieron cargar las categorías." });
-+  }
- });
- 
- router.post("/", requireAuth, async (req, res) => {
-   try {
-     const { name, colorBg, colorText } = req.body;
-     if (!name) return res.status(400).json({ ok: false, error: "El nombre de la categoría es obligatorio." });
- 
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-     const trimmedName = String(name).trim();
-     const slug = slugifyCategory(trimmedName);
-     if (!slug) return res.status(400).json({ ok: false, error: "El nombre de la categoría no es válido." });
- 
--    const existing = await Category.findOne(
--      buildScopedFilter(
--        effectiveHouseholdId,
--        {
--          $or: [
--            { slug: new RegExp(`^${escapeRegex(slug)}$`, "i") },
--            { name: new RegExp(`^${escapeRegex(trimmedName)}$`, "i") }
--          ]
--        },
--        { includeLegacy }
--      )
--    );
-+    const existing = await Category.findOne(
-+      buildScopedFilter(
-+        effectiveHouseholdId,
-+        {
-+          $or: [
-+            { slug: new RegExp(`^${escapeRegex(slug)}$`, "i") },
-+            { name: new RegExp(`^${escapeRegex(trimmedName)}$`, "i") }
-+          ]
-+        }
-+      )
-+    );
- 
-     if (existing) return res.json({ ok: true, category: existing, created: false });
- 
-     const category = await Category.create({
-       name: trimmedName,
-       slug,
-       colorBg: colorBg || DEFAULT_COLOR_BG,
--      colorText: colorText || DEFAULT_COLOR_TEXT,
--      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
-+      colorText: colorText || DEFAULT_COLOR_TEXT,
-+      householdId: effectiveHouseholdId
-     });
- 
-     return res.status(201).json({ ok: true, category, created: true });
-   } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-     return res.status(500).json({ ok: false, error: "No se pudo crear la categoría." });
-   }
- });
- 
- export default router;
-diff --git a/backend/src/kitchen/routes/dishes.js b/backend/src/kitchen/routes/dishes.js
-index ea6b6718d137821479a08be5bbb3e65e33ab3c60..9c680ecadefa8e9a44e568cdd41594638b2c9b6b 100644
---- a/backend/src/kitchen/routes/dishes.js
-+++ b/backend/src/kitchen/routes/dishes.js
-@@ -1,92 +1,88 @@
+ export const KitchenUser = mongoose.model("KitchenUser", KitchenUserSchema);
+diff --git a/backend/src/kitchen/routes/auth.js b/backend/src/kitchen/routes/auth.js
+index d3b173cc112cde697df22c76be53ff4c7d9b2a90..ff47abf1f3120eacfb80c6d364e23a71a8c73ff3 100644
+--- a/backend/src/kitchen/routes/auth.js
++++ b/backend/src/kitchen/routes/auth.js
+@@ -1,58 +1,140 @@
  import express from "express";
- import { KitchenDish } from "../models/KitchenDish.js";
- import { normalizeIngredientList } from "../utils/normalize.js";
- import { requireAuth, requireRole } from "../middleware.js";
--import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError,
--  shouldUseLegacyFallback
--} from "../householdScope.js";
-+import {
-+  buildScopedFilter,
-+  getEffectiveHouseholdId,
-+  handleHouseholdError
-+} from "../householdScope.js";
++import crypto from "crypto";
+ import bcrypt from "bcryptjs";
+ import { KitchenUser } from "../models/KitchenUser.js";
++import { Invitation } from "../models/Invitation.js";
+ import { createToken, requireAuth } from "../middleware.js";
+ import { normalizeEmail } from "../../users/utils.js";
+ 
+ const DIOD_EMAIL = "admin@admin.com";
  
  const router = express.Router();
  
- router.get("/", requireAuth, async (req, res) => {
--  try {
--    const { sidedish } = req.query;
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const filter = sidedish === "true" ? { sidedish: true } : {};
--    const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, filter, { includeLegacy })).sort({
--      createdAt: -1
--    });
--
--    res.json({ ok: true, dishes });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudieron cargar los platos." });
--  }
++
++function hashInviteToken(token) {
++  return crypto.createHash("sha256").update(token).digest("hex");
++}
++
++
+ router.post("/login", async (req, res) => {
+   try {
+     const { email, password, username } = req.body;
+     const loginValue = normalizeEmail(email || username);
+     if (!loginValue || !password) {
+       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
+     }
+ 
+     const user = await KitchenUser.findOne({ email: loginValue });
+     if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+ 
++    if (!user.passwordHash || user.isPlaceholder) {
++      return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
++    }
++
+     const ok = await bcrypt.compare(password, user.passwordHash);
+     if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+ 
+     const isDiod = loginValue === DIOD_EMAIL;
+     const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
+     if (shouldUpdateGlobalRole) {
+       user.globalRole = isDiod ? "diod" : null;
+       await user.save();
+     }
+ 
+     const token = createToken(user);
+     const safeUser = {
+       ...user.toSafeJSON(),
+       migrationPending: !user.householdId
+     };
+     return res.json({ ok: true, token, user: safeUser });
+   } catch (error) {
+     return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
+   }
+ });
+ 
++router.post("/accept-invite", async (req, res) => {
 +  try {
-+    const { sidedish } = req.query;
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const filter = sidedish === "true" ? { sidedish: true } : {};
-+    const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, filter)).sort({
-+      createdAt: -1
++    const { token, email, password, displayName } = req.body;
++    const normalizedEmail = normalizeEmail(email);
++
++    if (!token || !normalizedEmail || !password || !displayName) {
++      return res.status(400).json({
++        ok: false,
++        error: "Token, email, contraseña y nombre son obligatorios."
++      });
++    }
++
++    if (String(password).length < 8) {
++      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
++    }
++
++    const invitation = await Invitation.findOne({
++      tokenHash: hashInviteToken(token),
++      usedAt: null,
++      expiresAt: { $gt: new Date() }
 +    });
 +
-+    res.json({ ok: true, dishes });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudieron cargar los platos." });
-+  }
- });
- 
- router.post("/", requireAuth, async (req, res) => {
-   try {
--    const { name, ingredients, sidedish } = req.body;
-+    const { name, ingredients, sidedish } = req.body;
-     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
- 
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-     const normalizedIngredients = normalizeIngredientList(ingredients || []);
-     const dish = await KitchenDish.create({
-       name: String(name).trim(),
-       ingredients: normalizedIngredients,
--      sidedish: Boolean(sidedish),
--      createdBy: req.kitchenUser._id,
--      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
-+      sidedish: Boolean(sidedish),
-+      createdBy: req.kitchenUser._id,
-+      householdId: effectiveHouseholdId
-     });
- 
-     return res.status(201).json({ ok: true, dish });
-   } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-     return res.status(500).json({ ok: false, error: "No se pudo guardar el plato." });
-   }
- });
- 
- router.put("/:id", requireAuth, async (req, res) => {
-   try {
--    const { name, ingredients, sidedish } = req.body;
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const dish = await KitchenDish.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }, { includeLegacy }));
-+    const { name, ingredients, sidedish } = req.body;
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+        const dish = await KitchenDish.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }));
-     if (!dish) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
- 
-     if (name) dish.name = String(name).trim();
-     if (Array.isArray(ingredients)) dish.ingredients = normalizeIngredientList(ingredients);
--    if (typeof sidedish === "boolean") dish.sidedish = sidedish;
-+    if (typeof sidedish === "boolean") dish.sidedish = sidedish;
- 
-     await dish.save();
-     return res.json({ ok: true, dish });
-   } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-     return res.status(500).json({ ok: false, error: "No se pudo actualizar el plato." });
-   }
- });
- 
- router.delete("/:id", requireAuth, requireRole("admin"), async (req, res) => {
--  try {
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const dish = await KitchenDish.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }, { includeLegacy }));
--    if (!dish) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
-+  try {
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+        const dish = await KitchenDish.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }));
-+    if (!dish) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
- 
--    await dish.deleteOne();
--    return res.json({ ok: true });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo eliminar el plato." });
--  }
-+    await dish.deleteOne();
-+    return res.json({ ok: true });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo eliminar el plato." });
-+  }
- });
- 
- export default router;
-diff --git a/backend/src/kitchen/routes/kitchenIngredients.js b/backend/src/kitchen/routes/kitchenIngredients.js
-index 2fe5689fab353db7046314c04c71a041b8d41456..6ce6a3bf5090faf246073fbd9c196e9ae88f3c4d 100644
---- a/backend/src/kitchen/routes/kitchenIngredients.js
-+++ b/backend/src/kitchen/routes/kitchenIngredients.js
-@@ -1,196 +1,191 @@
- import express from "express";
- import { KitchenIngredient } from "../models/KitchenIngredient.js";
--import { Category } from "../models/Category.js";
-+import { Category } from "../models/Category.js";
- import { requireAuth } from "../middleware.js";
- import { normalizeIngredientName } from "../utils/normalize.js";
--import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError,
--  shouldUseLegacyFallback
--} from "../householdScope.js";
-+import {
-+  buildScopedFilter,
-+  getEffectiveHouseholdId,
-+  handleHouseholdError
-+} from "../householdScope.js";
- 
- const router = express.Router();
- const MAX_RESULTS = 15;
- const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
--const ACCENT_CHAR_MAP = {
--  a: "aàáâäãå",
--  e: "eèéêë",
--  i: "iìíîï",
--  o: "oòóôöõ",
--  u: "uùúûü",
--  n: "nñ",
--  c: "cç"
--};
--
--const buildAccentInsensitiveRegex = (value) => {
--  const escaped = escapeRegex(value);
--  const pattern = escaped
--    .split("")
--    .map((char) => {
--      const lower = char.toLowerCase();
--      if (ACCENT_CHAR_MAP[lower]) {
--        return `[${ACCENT_CHAR_MAP[lower]}]`;
--      }
--      return char;
--    })
--    .join("");
--  return new RegExp(pattern, "i");
--};
--
--async function ensureCategoryScope({ categoryId, effectiveHouseholdId, includeLegacy }) {
--  const category = await Category.findOne(
--    buildScopedFilter(effectiveHouseholdId, { _id: categoryId }, { includeLegacy })
--  );
--
--  return category;
--}
-+const ACCENT_CHAR_MAP = {
-+  a: "aàáâäãå",
-+  e: "eèéêë",
-+  i: "iìíîï",
-+  o: "oòóôöõ",
-+  u: "uùúûü",
-+  n: "nñ",
-+  c: "cç"
-+};
++    if (!invitation) {
++      return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
++    }
 +
-+const buildAccentInsensitiveRegex = (value) => {
-+  const escaped = escapeRegex(value);
-+  const pattern = escaped
-+    .split("")
-+    .map((char) => {
-+      const lower = char.toLowerCase();
-+      if (ACCENT_CHAR_MAP[lower]) {
-+        return `[${ACCENT_CHAR_MAP[lower]}]`;
++    let user = await KitchenUser.findOne({ email: normalizedEmail });
++
++    if (user) {
++      if (user.householdId && user.householdId.toString() !== invitation.householdId.toString()) {
++        return res.status(409).json({
++          ok: false,
++          error: "Ese email ya pertenece a otro hogar y no se puede unir con esta invitación."
++        });
 +      }
-+      return char;
-+    })
-+    .join("");
-+  return new RegExp(pattern, "i");
-+};
 +
-+async function ensureCategoryScope({ categoryId, effectiveHouseholdId }) {
-+  const category = await Category.findOne(
-+    buildScopedFilter(effectiveHouseholdId, { _id: categoryId })
-+  );
-+
-+  return category;
-+}
- 
- router.get("/", requireAuth, async (req, res) => {
--  try {
--    const { q, includeInactive, limit } = req.query;
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const filters = buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy });
--    const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
--    if (!shouldIncludeInactive) {
--      filters.active = true;
--    }
--
--    if (q) {
--      const trimmed = String(q).trim();
--      const normalized = normalizeIngredientName(trimmed);
--      const normalizedRegex = normalized ? new RegExp(escapeRegex(normalized), "i") : null;
--      const normalizedFallback =
--        normalized && normalized.length > 4 ? new RegExp(escapeRegex(normalized.slice(0, -1)), "i") : null;
--      const nameRegex = trimmed ? buildAccentInsensitiveRegex(trimmed) : null;
--      const orFilters = [];
--      if (normalizedRegex) orFilters.push({ canonicalName: normalizedRegex });
--      if (normalizedFallback) orFilters.push({ canonicalName: normalizedFallback });
--      if (nameRegex) orFilters.push({ name: nameRegex });
--      if (orFilters.length) {
--        if (Array.isArray(filters.$and)) {
--          filters.$and.push({ $or: orFilters });
--        } else {
--          Object.assign(filters, { $and: [{ $or: orFilters }] });
--        }
--      }
--    }
--
--    const limitValue = Number.parseInt(limit, 10);
--    let queryBuilder = KitchenIngredient.find(filters)
--      .populate("categoryId", "name colorBg colorText")
--      .sort({ name: 1 });
--    if (!Number.isNaN(limitValue) && limitValue > 0) {
--      queryBuilder = queryBuilder.limit(limitValue);
--    } else if (!limit) {
--      queryBuilder = queryBuilder.limit(MAX_RESULTS);
--    }
--
--    const ingredients = await queryBuilder;
--
--    return res.json({ ok: true, ingredients });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudieron cargar los ingredientes." });
--  }
-+  try {
-+    const { q, includeInactive, limit } = req.query;
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const filters = buildScopedFilter(effectiveHouseholdId, {});
-+    const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
-+    if (!shouldIncludeInactive) {
-+      filters.active = true;
-+    }
-+
-+    if (q) {
-+      const trimmed = String(q).trim();
-+      const normalized = normalizeIngredientName(trimmed);
-+      const normalizedRegex = normalized ? new RegExp(escapeRegex(normalized), "i") : null;
-+      const normalizedFallback =
-+        normalized && normalized.length > 4 ? new RegExp(escapeRegex(normalized.slice(0, -1)), "i") : null;
-+      const nameRegex = trimmed ? buildAccentInsensitiveRegex(trimmed) : null;
-+      const orFilters = [];
-+      if (normalizedRegex) orFilters.push({ canonicalName: normalizedRegex });
-+      if (normalizedFallback) orFilters.push({ canonicalName: normalizedFallback });
-+      if (nameRegex) orFilters.push({ name: nameRegex });
-+      if (orFilters.length) {
-+        if (Array.isArray(filters.$and)) {
-+          filters.$and.push({ $or: orFilters });
-+        } else {
-+          Object.assign(filters, { $and: [{ $or: orFilters }] });
-+        }
++      if (!user.householdId) {
++        user.householdId = invitation.householdId;
 +      }
++      if (user.isPlaceholder) {
++        user.isPlaceholder = false;
++        user.claimedAt = new Date();
++      }
++      user.displayName = String(displayName).trim();
++      user.passwordHash = await bcrypt.hash(password, 10);
++      user.role = invitation.role || "member";
++      await user.save();
++    } else {
++      user = await KitchenUser.create({
++        username: normalizedEmail,
++        email: normalizedEmail,
++        displayName: String(displayName).trim(),
++        passwordHash: await bcrypt.hash(password, 10),
++        role: invitation.role || "member",
++        householdId: invitation.householdId,
++        isPlaceholder: false
++      });
 +    }
 +
-+    const limitValue = Number.parseInt(limit, 10);
-+    let queryBuilder = KitchenIngredient.find(filters)
-+      .populate("categoryId", "name colorBg colorText")
-+      .sort({ name: 1 });
-+    if (!Number.isNaN(limitValue) && limitValue > 0) {
-+      queryBuilder = queryBuilder.limit(limitValue);
-+    } else if (!limit) {
-+      queryBuilder = queryBuilder.limit(MAX_RESULTS);
-+    }
++    invitation.usedAt = new Date();
++    invitation.usedByUserId = user._id;
++    await invitation.save();
 +
-+    const ingredients = await queryBuilder;
-+
-+    return res.json({ ok: true, ingredients });
++    const jwt = createToken(user);
++    return res.json({ ok: true, token: jwt, user: user.toSafeJSON() });
 +  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudieron cargar los ingredientes." });
-+  }
- });
- 
- router.post("/", requireAuth, async (req, res) => {
-   try {
--    const { name, categoryId, canonicalName: canonicalInput } = req.body;
-+    const { name, categoryId, canonicalName: canonicalInput } = req.body;
-     if (!name) return res.status(400).json({ ok: false, error: "El nombre del ingrediente es obligatorio." });
-     if (!categoryId)
-       return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
- 
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId, includeLegacy });
--    if (!category) {
--      return res.status(404).json({ ok: false, error: "Categoría no encontrada para el hogar actual." });
--    }
--
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+        const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId });
-+    if (!category) {
-+      return res.status(404).json({ ok: false, error: "Categoría no encontrada para el hogar actual." });
-+    }
-+
-     const trimmedName = String(name).trim();
--    const canonicalName = normalizeIngredientName(canonicalInput || trimmedName);
-+    const canonicalName = normalizeIngredientName(canonicalInput || trimmedName);
-     if (!canonicalName)
-       return res.status(400).json({ ok: false, error: "El nombre del ingrediente no es válido." });
- 
--    const existing = await KitchenIngredient.findOne(
--      buildScopedFilter(
--        effectiveHouseholdId,
--        {
--          canonicalName: new RegExp(`^${escapeRegex(canonicalName)}$`, "i")
--        },
--        { includeLegacy }
--      )
--    ).populate("categoryId", "name colorBg colorText");
-+    const existing = await KitchenIngredient.findOne(
-+      buildScopedFilter(
-+        effectiveHouseholdId,
-+        {
-+          canonicalName: new RegExp(`^${escapeRegex(canonicalName)}$`, "i")
-+        }
-+      )
-+    ).populate("categoryId", "name colorBg colorText");
- 
-     if (existing) return res.json({ ok: true, ingredient: existing, created: false });
- 
-     const ingredient = await KitchenIngredient.create({
-       name: trimmedName,
-       canonicalName,
--      categoryId,
--      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
-+      categoryId,
-+      householdId: effectiveHouseholdId
-     });
- 
-     const populatedIngredient = await KitchenIngredient.findById(ingredient._id).populate(
-       "categoryId",
-       "name colorBg colorText"
-     );
- 
-     return res.status(201).json({ ok: true, ingredient: populatedIngredient, created: true });
-   } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-     return res.status(500).json({ ok: false, error: "No se pudo crear el ingrediente." });
-   }
- });
- 
--router.put("/:id", requireAuth, async (req, res) => {
--  try {
--    const { id } = req.params;
--    const { name, categoryId, active, canonicalName: canonicalInput } = req.body;
--    if (!name) return res.status(400).json({ ok: false, error: "El nombre del ingrediente es obligatorio." });
--    if (!categoryId)
--      return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
--    if (typeof active !== "boolean")
--      return res.status(400).json({ ok: false, error: "Indica si el ingrediente está activo." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId, includeLegacy });
--    if (!category) {
--      return res.status(404).json({ ok: false, error: "Categoría no encontrada para el hogar actual." });
--    }
--
--    const trimmedName = String(name).trim();
--    const canonicalName = normalizeIngredientName(canonicalInput || trimmedName);
--    if (!canonicalName)
--      return res.status(400).json({ ok: false, error: "El nombre del ingrediente no es válido." });
--
--    const ingredient = await KitchenIngredient.findOneAndUpdate(
--      buildScopedFilter(effectiveHouseholdId, { _id: id }, { includeLegacy }),
--      {
--        name: trimmedName,
--        canonicalName,
--        categoryId,
--        active
--      },
--      { new: true }
--    ).populate("categoryId", "name colorBg colorText");
--
--    if (!ingredient) {
--      return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
--    }
--
--    return res.json({ ok: true, ingredient });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo actualizar el ingrediente." });
--  }
--});
--
-+router.put("/:id", requireAuth, async (req, res) => {
-+  try {
-+    const { id } = req.params;
-+    const { name, categoryId, active, canonicalName: canonicalInput } = req.body;
-+    if (!name) return res.status(400).json({ ok: false, error: "El nombre del ingrediente es obligatorio." });
-+    if (!categoryId)
-+      return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
-+    if (typeof active !== "boolean")
-+      return res.status(400).json({ ok: false, error: "Indica si el ingrediente está activo." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+        const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId });
-+    if (!category) {
-+      return res.status(404).json({ ok: false, error: "Categoría no encontrada para el hogar actual." });
-+    }
-+
-+    const trimmedName = String(name).trim();
-+    const canonicalName = normalizeIngredientName(canonicalInput || trimmedName);
-+    if (!canonicalName)
-+      return res.status(400).json({ ok: false, error: "El nombre del ingrediente no es válido." });
-+
-+    const ingredient = await KitchenIngredient.findOneAndUpdate(
-+      buildScopedFilter(effectiveHouseholdId, { _id: id }),
-+      {
-+        name: trimmedName,
-+        canonicalName,
-+        categoryId,
-+        active
-+      },
-+      { new: true }
-+    ).populate("categoryId", "name colorBg colorText");
-+
-+    if (!ingredient) {
-+      return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
-+    }
-+
-+    return res.json({ ok: true, ingredient });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el ingrediente." });
++    return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitación." });
 +  }
 +});
 +
- export default router;
-diff --git a/backend/src/kitchen/routes/shopping.js b/backend/src/kitchen/routes/shopping.js
-index d5c8864dfdf0cfc2439f9d3f5a52ae950b821661..426362af50c8a5e6bdf9d036b142af04b6b967dd 100644
---- a/backend/src/kitchen/routes/shopping.js
-+++ b/backend/src/kitchen/routes/shopping.js
-@@ -1,142 +1,138 @@
- import express from "express";
- import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
- import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
- import { KitchenDish } from "../models/KitchenDish.js";
- import { requireAuth } from "../middleware.js";
- import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
--import { combineDayIngredients } from "../utils/ingredients.js";
--import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError,
--  shouldUseLegacyFallback
--} from "../householdScope.js";
-+import { combineDayIngredients } from "../utils/ingredients.js";
-+import {
-+  buildScopedFilter,
-+  getEffectiveHouseholdId,
-+  handleHouseholdError
-+} from "../householdScope.js";
+ router.post("/logout", (req, res) => {
+   res.json({ ok: true });
+ });
  
- const router = express.Router();
- 
--async function ensureShoppingList(weekStartDate, effectiveHouseholdId, includeLegacy) {
--  const existing = await KitchenShoppingList.findOne(
--    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate }, { includeLegacy })
--  );
-+async function ensureShoppingList(weekStartDate, effectiveHouseholdId) {
-+  const existing = await KitchenShoppingList.findOne(
-+    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
-+  );
-   if (existing) return existing;
--  return KitchenShoppingList.create({
--    weekStart: weekStartDate,
--    items: [],
--    ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
--  });
-+  return KitchenShoppingList.create({
-+    weekStart: weekStartDate,
-+    items: [],
-+    householdId: effectiveHouseholdId
-+  });
- }
- 
--async function buildFromWeek(weekStartDate, effectiveHouseholdId, includeLegacy) {
--  const plan = await KitchenWeekPlan.findOne(
--    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate }, { includeLegacy })
--  );
-+async function buildFromWeek(weekStartDate, effectiveHouseholdId) {
-+  const plan = await KitchenWeekPlan.findOne(
-+    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
-+  );
-   if (!plan) return [];
- 
-   const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
--  const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } }, { includeLegacy }));
-+  const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } }));
-   const dishMap = new Map(dishes.map((dish) => [dish._id.toString(), dish]));
- 
-   const ingredients = [];
-   plan.days.forEach((day) => {
-     const main = day.mainDishId ? dishMap.get(day.mainDishId.toString()) : null;
-     const side = day.sideDishId ? dishMap.get(day.sideDishId.toString()) : null;
--    ingredients.push(
--      ...combineDayIngredients({
--        mainDish: main,
--        sideDish: side,
--        overrides: day.ingredientOverrides
--      })
--    );
-+    ingredients.push(
-+      ...combineDayIngredients({
-+        mainDish: main,
-+        sideDish: side,
-+        overrides: day.ingredientOverrides
-+      })
-+    );
+ router.get("/me", requireAuth, (req, res) => {
+   res.json({
+     ok: true,
+     user: {
+       ...req.kitchenUser.toSafeJSON(),
+       migrationPending: !req.kitchenUser.householdId
+     },
+     auth: req.user
    });
- 
-   return ingredients;
- }
- 
- router.get("/:weekStart", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const monday = getWeekStart(weekStart);
--    const list = await ensureShoppingList(monday, effectiveHouseholdId, includeLegacy);
--
--    res.json({ ok: true, weekStart: formatDateISO(monday), list });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo cargar la lista de compra." });
--  }
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+        const monday = getWeekStart(weekStart);
-+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
-+
-+    res.json({ ok: true, weekStart: formatDateISO(monday), list });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo cargar la lista de compra." });
-+  }
  });
  
- router.post("/:weekStart/rebuild", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+ export default router;
+diff --git a/frontend/src/kitchen/pages/SettingsPage.jsx b/frontend/src/kitchen/pages/SettingsPage.jsx
+index f4d058c5bf9f31a5e851a5928778236f89b8e65a..91636dc14b47b43eca68cd5e87cb1d4354cb2a19 100644
+--- a/frontend/src/kitchen/pages/SettingsPage.jsx
++++ b/frontend/src/kitchen/pages/SettingsPage.jsx
+@@ -1,29 +1,167 @@
+-import React from "react";
+-import { useNavigate } from "react-router-dom";
++import React, { useEffect, useState } from "react";
++import { useNavigate } from "react-router-dom";
+ import KitchenLayout from "../Layout.jsx";
+-import { useAuth } from "../auth";
++import { useAuth } from "../auth";
++import { apiRequest } from "../api.js";
+ 
+ export default function SettingsPage() {
+-  const { logout } = useAuth();
+-  const navigate = useNavigate();
 -
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const monday = getWeekStart(weekStart);
--    const list = await ensureShoppingList(monday, effectiveHouseholdId, includeLegacy);
+-  const handleLogout = async () => {
+-    try {
+-      await logout();
+-    } finally {
+-      navigate("/login", { replace: true });
+-    }
+-  };
 -
--    const ingredients = await buildFromWeek(monday, effectiveHouseholdId, includeLegacy);
--    const merged = new Map();
--
--    ingredients.forEach((item) => {
--      if (!item.canonicalName) return;
--      const existing = merged.get(item.canonicalName);
--      if (existing) return;
--      const previous = list.items.find((oldItem) => oldItem.canonicalName === item.canonicalName);
--      merged.set(item.canonicalName, {
--        displayName: item.displayName,
--        canonicalName: item.canonicalName,
--        status: previous?.status || "need"
--      });
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
++  const { user, logout } = useAuth();
++  const navigate = useNavigate();
++  const [members, setMembers] = useState([]);
++  const [invitations, setInvitations] = useState([]);
++  const [inviteLink, setInviteLink] = useState("");
++  const [placeholderName, setPlaceholderName] = useState("");
++  const [loading, setLoading] = useState(true);
++  const [error, setError] = useState("");
++  const [success, setSuccess] = useState("");
 +
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+        const monday = getWeekStart(weekStart);
-+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
++  const isOwner = user?.role === "owner" || user?.role === "admin";
 +
-+    const ingredients = await buildFromWeek(monday, effectiveHouseholdId);
-+    const merged = new Map();
++  const loadData = async () => {
++    setLoading(true);
++    setError("");
++    try {
++      const membersResponse = await apiRequest("/api/kitchen/users/members");
++      setMembers(membersResponse.users || []);
 +
-+    ingredients.forEach((item) => {
-+      if (!item.canonicalName) return;
-+      const existing = merged.get(item.canonicalName);
-+      if (existing) return;
-+      const previous = list.items.find((oldItem) => oldItem.canonicalName === item.canonicalName);
-+      merged.set(item.canonicalName, {
-+        displayName: item.displayName,
-+        canonicalName: item.canonicalName,
-+        status: previous?.status || "need"
++      if (isOwner) {
++        const inviteResponse = await apiRequest("/api/kitchen/household/invitations");
++        setInvitations(inviteResponse.invitations || []);
++      }
++    } catch (err) {
++      setError(err.message || "No se pudo cargar la configuración del hogar.");
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  useEffect(() => {
++    void loadData();
++  }, [isOwner]);
++
++  const handleLogout = async () => {
++    try {
++      await logout();
++    } finally {
++      navigate("/login", { replace: true });
++    }
++  };
++
++  const generateInvite = async () => {
++    setError("");
++    setSuccess("");
++    try {
++      const data = await apiRequest("/api/kitchen/household/invitations", { method: "POST" });
++      setInviteLink(data.inviteLink || "");
++      setSuccess("Enlace de invitación generado correctamente.");
++      await loadData();
++    } catch (err) {
++      setError(err.message || "No se pudo generar la invitación.");
++    }
++  };
++
++  const copyInvite = async () => {
++    if (!inviteLink) return;
++    try {
++      await navigator.clipboard.writeText(inviteLink);
++      setSuccess("Enlace copiado al portapapeles.");
++    } catch {
++      setError("No pudimos copiar el enlace automáticamente.");
++    }
++  };
++
++  const createPlaceholder = async () => {
++    const safeName = placeholderName.trim();
++    if (!safeName) {
++      setError("Debes indicar un nombre para el comensal.");
++      return;
++    }
++
++    setError("");
++    setSuccess("");
++    try {
++      await apiRequest("/api/kitchen/household/placeholders", {
++        method: "POST",
++        body: JSON.stringify({ displayName: safeName })
 +      });
-     });
- 
--    list.items = Array.from(merged.values());
--    await list.save();
-+    list.items = Array.from(merged.values());
-+    await list.save();
- 
--    res.json({ ok: true, list });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo reconstruir la lista de compra." });
--  }
-+    res.json({ ok: true, list });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo reconstruir la lista de compra." });
-+  }
- });
- 
- router.put("/:weekStart/item", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
--
--    const { canonicalName, status, displayName } = req.body;
--    if (!canonicalName) return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const monday = getWeekStart(weekStart);
--    const list = await ensureShoppingList(monday, effectiveHouseholdId, includeLegacy);
--
--    const item = list.items.find((current) => current.canonicalName === canonicalName);
--    if (!item) {
--      list.items.push({
--        canonicalName,
--        displayName: displayName || canonicalName,
--        status: status || "need"
--      });
--    } else {
--      item.status = status || item.status;
--    }
--
--    await list.save();
--    res.json({ ok: true, list });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo actualizar la lista de compra." });
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+
-+    const { canonicalName, status, displayName } = req.body;
-+    if (!canonicalName) return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+        const monday = getWeekStart(weekStart);
-+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
-+
-+    const item = list.items.find((current) => current.canonicalName === canonicalName);
-+    if (!item) {
-+      list.items.push({
-+        canonicalName,
-+        displayName: displayName || canonicalName,
-+        status: status || "need"
-+      });
-+    } else {
-+      item.status = status || item.status;
++      setPlaceholderName("");
++      setSuccess("Comensal sin cuenta creado correctamente.");
++      await loadData();
++    } catch (err) {
++      setError(err.message || "No se pudo crear el comensal.");
 +    }
++  };
 +
-+    await list.save();
-+    res.json({ ok: true, list });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo actualizar la lista de compra." });
-   }
- });
- 
- export default router;
-diff --git a/backend/src/kitchen/routes/swaps.js b/backend/src/kitchen/routes/swaps.js
-index d9d98b7a0e2abc386d5cc12972fc8957b85f8d09..91271595c1d1528e484317d44af2f466926e945c 100644
---- a/backend/src/kitchen/routes/swaps.js
-+++ b/backend/src/kitchen/routes/swaps.js
-@@ -1,184 +1,179 @@
- import express from "express";
- import { KitchenSwap } from "../models/KitchenSwap.js";
- import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
- import { KitchenAuditLog } from "../models/KitchenAuditLog.js";
- import { requireAuth, requireRole } from "../middleware.js";
- import { getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
--import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError,
--  shouldUseLegacyFallback
--} from "../householdScope.js";
-+import {
-+  buildScopedFilter,
-+  getEffectiveHouseholdId,
-+  handleHouseholdError
-+} from "../householdScope.js";
- 
- const router = express.Router();
- 
--function hasAdminAccess(user) {
--  return user.globalRole === "diod" || user.role === "admin" || user.role === "owner";
--}
--
--router.post("/", requireAuth, async (req, res) => {
--  try {
--    const { weekStart, toUserId, fromDate, toDate } = req.body;
--    if (!weekStart || !toUserId || !fromDate || !toDate) {
--      return res.status(400).json({ ok: false, error: "Faltan datos para el cambio." });
--    }
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const weekStartParsed = parseISODate(weekStart);
--    const fromDateObj = parseISODate(fromDate);
--    const toDateObj = parseISODate(toDate);
--    if (!weekStartParsed || !fromDateObj || !toDateObj) {
--      return res.status(400).json({ ok: false, error: "Fechas inválidas." });
--    }
--    const weekStartDate = getWeekStart(weekStartParsed);
--
--    const swap = await KitchenSwap.create({
--      weekStart: weekStartDate,
--      fromUserId: req.kitchenUser._id,
--      toUserId,
--      fromDate: fromDateObj,
--      toDate: toDateObj,
--      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
--    });
--
--    await KitchenAuditLog.create({
--      action: "swap_requested",
--      actorUserId: req.kitchenUser._id,
--      data: { swapId: swap._id },
--      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
--    });
--
--    res.status(201).json({ ok: true, swap });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo crear el cambio." });
-+function hasAdminAccess(user) {
-+  return user.globalRole === "diod" || user.role === "admin" || user.role === "owner";
-+}
+   return (
+     <KitchenLayout>
+-      <div className="kitchen-card">
++      <div className="kitchen-card kitchen-block-gap">
+         <h2>Configuración</h2>
+-        <p className="kitchen-muted">Personaliza tu experiencia en Kitchen.</p>
+-        <button type="button" className="kitchen-button secondary" onClick={handleLogout}>
+-          Cerrar sesión
+-        </button>
++        <p className="kitchen-muted">Gestiona tu hogar y tus miembros.</p>
++        {error ? <div className="kitchen-alert error">{error}</div> : null}
++        {success ? <div className="kitchen-alert success">{success}</div> : null}
 +
-+router.post("/", requireAuth, async (req, res) => {
-+  try {
-+    const { weekStart, toUserId, fromDate, toDate } = req.body;
-+    if (!weekStart || !toUserId || !fromDate || !toDate) {
-+      return res.status(400).json({ ok: false, error: "Faltan datos para el cambio." });
-+    }
++        <h3>Mi Hogar</h3>
++        {loading ? <p className="kitchen-muted">Cargando miembros...</p> : null}
++        {!loading ? (
++          <ul className="kitchen-list">
++            {members.map((member) => (
++              <li key={member.id}>
++                <strong>{member.displayName}</strong>{" "}
++                {member.isPlaceholder ? "(comensal sin cuenta)" : member.email ? `(${member.email})` : ""}
++              </li>
++            ))}
++            {members.length === 0 ? <li className="kitchen-muted">Todavía no hay miembros.</li> : null}
++          </ul>
++        ) : null}
 +
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const weekStartParsed = parseISODate(weekStart);
-+    const fromDateObj = parseISODate(fromDate);
-+    const toDateObj = parseISODate(toDate);
-+    if (!weekStartParsed || !fromDateObj || !toDateObj) {
-+      return res.status(400).json({ ok: false, error: "Fechas inválidas." });
-+    }
-+    const weekStartDate = getWeekStart(weekStartParsed);
++        {isOwner ? (
++          <>
++            <h3>Invitar</h3>
++            <div className="kitchen-actions">
++              <button type="button" className="kitchen-button" onClick={generateInvite}>
++                Generar enlace
++              </button>
++              <button
++                type="button"
++                className="kitchen-button secondary"
++                onClick={copyInvite}
++                disabled={!inviteLink}
++              >
++                Copiar
++              </button>
++            </div>
++            {inviteLink ? <p className="kitchen-muted">{inviteLink}</p> : null}
 +
-+    const swap = await KitchenSwap.create({
-+      weekStart: weekStartDate,
-+      fromUserId: req.kitchenUser._id,
-+      toUserId,
-+      fromDate: fromDateObj,
-+      toDate: toDateObj,
-+      householdId: effectiveHouseholdId
-+    });
++            {invitations.length > 0 ? (
++              <ul className="kitchen-list">
++                {invitations.map((invitation) => (
++                  <li key={invitation.id}>
++                    Invitación activa hasta {new Date(invitation.expiresAt).toLocaleString()}
++                  </li>
++                ))}
++              </ul>
++            ) : null}
 +
-+    await KitchenAuditLog.create({
-+      action: "swap_requested",
-+      actorUserId: req.kitchenUser._id,
-+      data: { swapId: swap._id },
-+      householdId: effectiveHouseholdId
-+    });
++            <h3>Añadir comensal (sin cuenta)</h3>
++            <div className="kitchen-actions">
++              <input
++                type="text"
++                className="kitchen-input"
++                placeholder="Nombre del comensal"
++                value={placeholderName}
++                onChange={(event) => setPlaceholderName(event.target.value)}
++              />
++              <button type="button" className="kitchen-button secondary" onClick={createPlaceholder}>
++                Añadir comensal sin cuenta
++              </button>
++            </div>
++          </>
++        ) : null}
 +
-+    res.status(201).json({ ok: true, swap });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo crear el cambio." });
-   }
- });
- 
- router.get("/", requireAuth, async (req, res) => {
--  try {
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const accessFilter = hasAdminAccess(req.kitchenUser)
--      ? {}
--      : { $or: [{ fromUserId: req.kitchenUser._id }, { toUserId: req.kitchenUser._id }] };
--
--    const swaps = await KitchenSwap.find(
--      buildScopedFilter(effectiveHouseholdId, accessFilter, { includeLegacy })
--    ).sort({ createdAt: -1 });
--    res.json({ ok: true, swaps });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudieron cargar los cambios." });
--  }
-+  try {
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const accessFilter = hasAdminAccess(req.kitchenUser)
-+      ? {}
-+      : { $or: [{ fromUserId: req.kitchenUser._id }, { toUserId: req.kitchenUser._id }] };
-+
-+    const swaps = await KitchenSwap.find(
-+      buildScopedFilter(effectiveHouseholdId, accessFilter)
-+    ).sort({ createdAt: -1 });
-+    res.json({ ok: true, swaps });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudieron cargar los cambios." });
-+  }
- });
- 
--async function applySwap({ swap, actor, effectiveHouseholdId, includeLegacy }) {
--  const plan = await KitchenWeekPlan.findOne(
--    buildScopedFilter(effectiveHouseholdId, { weekStart: swap.weekStart }, { includeLegacy })
--  );
-+async function applySwap({ swap, actor, effectiveHouseholdId }) {
-+  const plan = await KitchenWeekPlan.findOne(
-+    buildScopedFilter(effectiveHouseholdId, { weekStart: swap.weekStart })
-+  );
-   if (!plan) return;
- 
-   const fromDay = plan.days.find((day) => isSameDay(day.date, swap.fromDate));
-   const toDay = plan.days.find((day) => isSameDay(day.date, swap.toDate));
-   if (!fromDay || !toDay) return;
- 
-   const tempCook = fromDay.cookUserId;
-   fromDay.cookUserId = toDay.cookUserId;
-   toDay.cookUserId = tempCook;
- 
-   await plan.save();
-   await KitchenAuditLog.create({
-     action: "swap_applied",
-     actorUserId: actor,
--    data: { swapId: swap._id },
--    ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
-+    data: { swapId: swap._id },
-+    householdId: effectiveHouseholdId
-   });
++        <button type="button" className="kitchen-button secondary" onClick={handleLogout}>
++          Cerrar sesión
++        </button>
+       </div>
+     </KitchenLayout>
+   );
  }
- 
- router.post("/:id/accept", requireAuth, async (req, res) => {
--  try {
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const swap = await KitchenSwap.findOne(
--      buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }, { includeLegacy })
--    );
--    if (!swap) return res.status(404).json({ ok: false, error: "Cambio no encontrado." });
--    if (swap.status !== "pending") return res.status(400).json({ ok: false, error: "El cambio ya fue resuelto." });
--
--    if (!hasAdminAccess(req.kitchenUser) && swap.toUserId.toString() !== req.kitchenUser._id.toString()) {
--      return res.status(403).json({ ok: false, error: "No puedes aceptar este cambio." });
--    }
--
--    swap.status = "accepted";
--    swap.resolvedAt = new Date();
--    await swap.save();
--    await applySwap({ swap, actor: req.kitchenUser._id, effectiveHouseholdId, includeLegacy });
--
--    res.json({ ok: true, swap });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo aceptar el cambio." });
-+  try {
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const swap = await KitchenSwap.findOne(
-+      buildScopedFilter(effectiveHouseholdId, { _id: req.params.id })
-+    );
-+    if (!swap) return res.status(404).json({ ok: false, error: "Cambio no encontrado." });
-+    if (swap.status !== "pending") return res.status(400).json({ ok: false, error: "El cambio ya fue resuelto." });
-+
-+    if (!hasAdminAccess(req.kitchenUser) && swap.toUserId.toString() !== req.kitchenUser._id.toString()) {
-+      return res.status(403).json({ ok: false, error: "No puedes aceptar este cambio." });
-+    }
-+
-+    swap.status = "accepted";
-+    swap.resolvedAt = new Date();
-+    await swap.save();
-+    await applySwap({ swap, actor: req.kitchenUser._id, effectiveHouseholdId });
-+
-+    res.json({ ok: true, swap });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo aceptar el cambio." });
-   }
- });
- 
- router.post("/:id/reject", requireAuth, async (req, res) => {
--  try {
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const swap = await KitchenSwap.findOne(
--      buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }, { includeLegacy })
--    );
--    if (!swap) return res.status(404).json({ ok: false, error: "Cambio no encontrado." });
--    if (swap.status !== "pending") return res.status(400).json({ ok: false, error: "El cambio ya fue resuelto." });
--
--    if (!hasAdminAccess(req.kitchenUser) && swap.toUserId.toString() !== req.kitchenUser._id.toString()) {
--      return res.status(403).json({ ok: false, error: "No puedes rechazar este cambio." });
--    }
--
--    swap.status = "rejected";
--    swap.resolvedAt = new Date();
--    await swap.save();
--
--    await KitchenAuditLog.create({
--      action: "swap_rejected",
--      actorUserId: req.kitchenUser._id,
--      data: { swapId: swap._id },
--      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
--    });
--
--    res.json({ ok: true, swap });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo rechazar el cambio." });
-+  try {
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const swap = await KitchenSwap.findOne(
-+      buildScopedFilter(effectiveHouseholdId, { _id: req.params.id })
-+    );
-+    if (!swap) return res.status(404).json({ ok: false, error: "Cambio no encontrado." });
-+    if (swap.status !== "pending") return res.status(400).json({ ok: false, error: "El cambio ya fue resuelto." });
-+
-+    if (!hasAdminAccess(req.kitchenUser) && swap.toUserId.toString() !== req.kitchenUser._id.toString()) {
-+      return res.status(403).json({ ok: false, error: "No puedes rechazar este cambio." });
-+    }
-+
-+    swap.status = "rejected";
-+    swap.resolvedAt = new Date();
-+    await swap.save();
-+
-+    await KitchenAuditLog.create({
-+      action: "swap_rejected",
-+      actorUserId: req.kitchenUser._id,
-+      data: { swapId: swap._id },
-+      householdId: effectiveHouseholdId
-+    });
-+
-+    res.json({ ok: true, swap });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo rechazar el cambio." });
-   }
- });
- 
- router.post("/:id/force", requireAuth, requireRole("admin"), async (req, res) => {
--  try {
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const swap = await KitchenSwap.findOne(
--      buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }, { includeLegacy })
--    );
--    if (!swap) return res.status(404).json({ ok: false, error: "Cambio no encontrado." });
--
--    swap.status = "accepted";
--    swap.resolvedAt = new Date();
--    await swap.save();
--    await applySwap({ swap, actor: req.kitchenUser._id, effectiveHouseholdId, includeLegacy });
--
--    res.json({ ok: true, swap });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo forzar el cambio." });
--  }
-+  try {
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const swap = await KitchenSwap.findOne(
-+      buildScopedFilter(effectiveHouseholdId, { _id: req.params.id })
-+    );
-+    if (!swap) return res.status(404).json({ ok: false, error: "Cambio no encontrado." });
-+
-+    swap.status = "accepted";
-+    swap.resolvedAt = new Date();
-+    await swap.save();
-+    await applySwap({ swap, actor: req.kitchenUser._id, effectiveHouseholdId });
-+
-+    res.json({ ok: true, swap });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo forzar el cambio." });
-+  }
- });
- 
- export default router;
-diff --git a/backend/src/kitchen/routes/users.js b/backend/src/kitchen/routes/users.js
-index 0ead035d5dc4827d060f2c95d9fa519d1f6e67cb..2d4decc8dedec006f841706e541600eba454abf1 100644
---- a/backend/src/kitchen/routes/users.js
-+++ b/backend/src/kitchen/routes/users.js
-@@ -1,79 +1,77 @@
- import express from "express";
- import bcrypt from "bcryptjs";
- import { KitchenUser } from "../models/KitchenUser.js";
- import { requireAuth, requireRole } from "../middleware.js";
--import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "../../users/utils.js";
--import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError, shouldUseLegacyFallback } from "../householdScope.js";
-+import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "../../users/utils.js";
-+import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
- 
- const router = express.Router();
- 
- router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
--  try {
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy })).sort({ createdAt: 1 });
--    res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudieron cargar los usuarios." });
--  }
-+  try {
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {})).sort({ createdAt: 1 });
-+    res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudieron cargar los usuarios." });
-+  }
- });
- 
- router.get("/members", requireAuth, async (req, res) => {
--  try {
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy })).sort({ createdAt: 1 });
--    res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudieron cargar los miembros." });
--  }
-+  try {
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {})).sort({ createdAt: 1 });
-+    res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudieron cargar los miembros." });
-+  }
- });
- 
- router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
-   try {
--    const { email, password, firstName, lastName, name, displayName } = req.body;
--    const normalizedEmail = normalizeEmail(email);
--    if (!normalizedEmail || !password) {
--      return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
--    }
--    if (!isValidEmail(normalizedEmail)) {
--      return res.status(400).json({ ok: false, error: "El email no es válido." });
--    }
--    if (String(password).length < 8) {
--      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
-+    const { email, password, firstName, lastName, name, displayName } = req.body;
-+    const normalizedEmail = normalizeEmail(email);
-+    if (!normalizedEmail || !password) {
-+      return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
-+    }
-+    if (!isValidEmail(normalizedEmail)) {
-+      return res.status(400).json({ ok: false, error: "El email no es válido." });
-+    }
-+    if (String(password).length < 8) {
-+      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
-     }
- 
--    const exists = await KitchenUser.findOne({ email: normalizedEmail });
--    if (exists) return res.status(409).json({ ok: false, error: "El email ya está registrado." });
--
--    const safeDisplayName = buildDisplayName({ firstName, lastName, name, displayName });
--    if (!safeDisplayName) {
--      return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
--    }
-+    const exists = await KitchenUser.findOne({ email: normalizedEmail });
-+    if (exists) return res.status(409).json({ ok: false, error: "El email ya está registrado." });
-+
-+    const safeDisplayName = buildDisplayName({ firstName, lastName, name, displayName });
-+    if (!safeDisplayName) {
-+      return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
-+    }
- 
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-     const passwordHash = await bcrypt.hash(password, 10);
-     const user = await KitchenUser.create({
--      username: normalizedEmail,
--      email: normalizedEmail,
--      firstName: firstName ? String(firstName).trim() : undefined,
--      lastName: lastName ? String(lastName).trim() : undefined,
--      displayName: safeDisplayName,
--      role: normalizeRole(req.body.role),
--      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {}),
-+      username: normalizedEmail,
-+      email: normalizedEmail,
-+      firstName: firstName ? String(firstName).trim() : undefined,
-+      lastName: lastName ? String(lastName).trim() : undefined,
-+      displayName: safeDisplayName,
-+      role: normalizeRole(req.body.role),
-+      householdId: effectiveHouseholdId,
-       passwordHash
-     });
- 
-     return res.status(201).json({ ok: true, user: user.toSafeJSON() });
-   } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-     return res.status(500).json({ ok: false, error: "No se pudo crear el usuario." });
-   }
- });
- 
- export default router;
-diff --git a/backend/src/kitchen/routes/weeks.js b/backend/src/kitchen/routes/weeks.js
-index 2acaf3fec468a54f8d300c7b09a545c4f960063f..397c702574a21d997c52e4c9e4dd0071aa51b3ec 100644
---- a/backend/src/kitchen/routes/weeks.js
-+++ b/backend/src/kitchen/routes/weeks.js
-@@ -1,145 +1,140 @@
- import express from "express";
- import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
- import { KitchenDish } from "../models/KitchenDish.js";
- import { requireAuth, requireRole } from "../middleware.js";
- import { formatDateISO, getWeekDates, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
--import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError,
--  shouldUseLegacyFallback
--} from "../householdScope.js";
-+import {
-+  buildScopedFilter,
-+  getEffectiveHouseholdId,
-+  handleHouseholdError
-+} from "../householdScope.js";
- 
- const router = express.Router();
- 
--async function ensureWeekPlan(weekStartDate, effectiveHouseholdId, includeLegacy) {
--  const existing = await KitchenWeekPlan.findOne(
--    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate }, { includeLegacy })
--  );
-+async function ensureWeekPlan(weekStartDate, effectiveHouseholdId) {
-+  const existing = await KitchenWeekPlan.findOne(
-+    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
-+  );
-   if (existing) return existing;
- 
-   const days = getWeekDates(weekStartDate).map((date) => ({
-     date,
-     cookTiming: "previous_day",
-     servings: 4,
-     ingredientOverrides: []
-   }));
- 
--  return KitchenWeekPlan.create({
--    weekStart: weekStartDate,
--    days,
--    ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {})
--  });
-+  return KitchenWeekPlan.create({
-+    weekStart: weekStartDate,
-+    days,
-+    householdId: effectiveHouseholdId
-+  });
- }
- 
- router.get("/:weekStart", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const monday = getWeekStart(weekStart);
--    const plan = await ensureWeekPlan(monday, effectiveHouseholdId, includeLegacy);
--
--    res.json({
--      ok: true,
--      weekStart: formatDateISO(monday),
--      plan
--    });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo cargar el plan semanal." });
--  }
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
-+
-+    res.json({
-+      ok: true,
-+      weekStart: formatDateISO(monday),
-+      plan
-+    });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo cargar el plan semanal." });
-+  }
- });
- 
- router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    const date = parseISODate(req.params.date);
--    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const monday = getWeekStart(weekStart);
--    const plan = await ensureWeekPlan(monday, effectiveHouseholdId, includeLegacy);
--
--    const day = plan.days.find((item) => isSameDay(item.date, date));
--    if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
--
--    const { cookUserId, cookTiming, servings, mainDishId, sideDishId, ingredientOverrides } = req.body;
--    if (cookUserId !== undefined) day.cookUserId = cookUserId || null;
--    if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
--    if (servings) day.servings = Number(servings) || 4;
--    if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
--    if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
--    if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
--
--    await plan.save();
--    return res.json({ ok: true, plan });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
--  }
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    const date = parseISODate(req.params.date);
-+    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
-+
-+    const day = plan.days.find((item) => isSameDay(item.date, date));
-+    if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
-+
-+    const { cookUserId, cookTiming, servings, mainDishId, sideDishId, ingredientOverrides } = req.body;
-+    if (cookUserId !== undefined) day.cookUserId = cookUserId || null;
-+    if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
-+    if (servings) day.servings = Number(servings) || 4;
-+    if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
-+    if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
-+    if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
-+
-+    await plan.save();
-+    return res.json({ ok: true, plan });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
-+  }
- });
- 
- router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("admin"), async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    const otherWeekStart = parseISODate(req.params.otherWeekStart);
--    if (!weekStart || !otherWeekStart) {
--      return res.status(400).json({ ok: false, error: "Fecha inválida." });
--    }
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const monday = getWeekStart(weekStart);
--    const sourceMonday = getWeekStart(otherWeekStart);
--
--    const sourcePlan = await ensureWeekPlan(sourceMonday, effectiveHouseholdId, includeLegacy);
--    const targetPlan = await ensureWeekPlan(monday, effectiveHouseholdId, includeLegacy);
--
--    targetPlan.days = sourcePlan.days.map((day) => ({
--      date: new Date(day.date),
--      cookUserId: day.cookUserId,
--      cookTiming: day.cookTiming,
--      servings: day.servings,
--      mainDishId: day.mainDishId,
--      sideDishId: day.sideDishId,
--      ingredientOverrides: day.ingredientOverrides
--    }));
--
--    await targetPlan.save();
--    return res.json({ ok: true, plan: targetPlan });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo copiar el plan semanal." });
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    const otherWeekStart = parseISODate(req.params.otherWeekStart);
-+    if (!weekStart || !otherWeekStart) {
-+      return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+    }
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const sourceMonday = getWeekStart(otherWeekStart);
-+
-+    const sourcePlan = await ensureWeekPlan(sourceMonday, effectiveHouseholdId);
-+    const targetPlan = await ensureWeekPlan(monday, effectiveHouseholdId);
-+
-+    targetPlan.days = sourcePlan.days.map((day) => ({
-+      date: new Date(day.date),
-+      cookUserId: day.cookUserId,
-+      cookTiming: day.cookTiming,
-+      servings: day.servings,
-+      mainDishId: day.mainDishId,
-+      sideDishId: day.sideDishId,
-+      ingredientOverrides: day.ingredientOverrides
-+    }));
-+
-+    await targetPlan.save();
-+    return res.json({ ok: true, plan: targetPlan });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo copiar el plan semanal." });
-   }
- });
- 
- router.get("/:weekStart/summary", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const monday = getWeekStart(weekStart);
--    const plan = await ensureWeekPlan(monday, effectiveHouseholdId, includeLegacy);
--    const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
--    const dishes = await KitchenDish.find(
--      buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } }, { includeLegacy })
--    );
--
--    res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo cargar el resumen semanal." });
--  }
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
-+    const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-+    const dishes = await KitchenDish.find(
-+      buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
-+    );
-+
-+    res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo cargar el resumen semanal." });
-+  }
- });
- 
- export default router;
-diff --git a/backend/src/users/index.js b/backend/src/users/index.js
-index a4c11cec9e99f7cda2a79660eb311f77aa4ac7a0..ed539cbcd7ab2eaa8a0d47dc1dc59509199cc35e 100644
---- a/backend/src/users/index.js
-+++ b/backend/src/users/index.js
-@@ -1,130 +1,128 @@
- import express from "express";
- import bcrypt from "bcryptjs";
- import { KitchenUser } from "../kitchen/models/KitchenUser.js";
--import { Household } from "../kitchen/models/Household.js";
-+import { Household } from "../kitchen/models/Household.js";
- import { requireAuth, requireRole } from "../kitchen/middleware.js";
--import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError,
--  shouldUseLegacyFallback
--} from "../kitchen/householdScope.js";
-+import {
-+  buildScopedFilter,
-+  getEffectiveHouseholdId,
-+  handleHouseholdError
-+} from "../kitchen/householdScope.js";
- import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "./utils.js";
- 
- const router = express.Router();
- 
- router.get("/bootstrap-needed", async (req, res) => {
-   try {
-     const total = await KitchenUser.countDocuments();
-     res.json({ needed: total === 0 });
-   } catch (error) {
-     res.status(500).json({ ok: false, error: "No se pudo comprobar el estado de usuarios." });
-   }
- });
- 
- router.post("/bootstrap", async (req, res) => {
-   try {
-     const total = await KitchenUser.countDocuments();
-     if (total > 0) {
-       return res.status(403).json({ ok: false, error: "Ya existe un usuario creado." });
-     }
- 
-     const { email, password, firstName, lastName, name, displayName } = req.body;
-     const normalizedEmail = normalizeEmail(email);
-     if (!normalizedEmail || !password) {
-       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
-     }
-     if (!isValidEmail(normalizedEmail)) {
-       return res.status(400).json({ ok: false, error: "El email no es válido." });
-     }
-     if (String(password).length < 8) {
-       return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
-     }
- 
-     const safeDisplayName = buildDisplayName({ firstName, lastName, name, displayName });
-     if (!safeDisplayName) {
-       return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
-     }
- 
-     const passwordHash = await bcrypt.hash(password, 10);
-     const user = await KitchenUser.create({
-       username: normalizedEmail,
-       email: normalizedEmail,
-       firstName: firstName ? String(firstName).trim() : undefined,
-       lastName: lastName ? String(lastName).trim() : undefined,
-       displayName: safeDisplayName,
--      role: "owner",
-+      role: "owner",
-       passwordHash
-     });
- 
--    const household = await Household.create({
--      name: `Casa de ${safeDisplayName}`,
--      ownerUserId: user._id
--    });
--
--    user.householdId = household._id;
--    await user.save();
--
-+    const household = await Household.create({
-+      name: `Casa de ${safeDisplayName}`,
-+      ownerUserId: user._id
-+    });
-+
-+    user.householdId = household._id;
-+    await user.save();
-+
-     return res.status(201).json({ ok: true, user: user.toSafeJSON() });
-   } catch (error) {
-     return res.status(500).json({ ok: false, error: "No se pudo crear el primer usuario." });
-   }
- });
- 
- router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
-   try {
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const includeLegacy = shouldUseLegacyFallback(effectiveHouseholdId);
--    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}, { includeLegacy })).sort({ createdAt: 1 });
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {})).sort({ createdAt: 1 });
-     res.json({ ok: true, users: users.map((user) => user.toSafeJSON()) });
-   } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-     res.status(500).json({ ok: false, error: "No se pudieron cargar los usuarios." });
-   }
- });
- 
- router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
-   try {
-     const { email, password, firstName, lastName, name, displayName, role } = req.body;
-     const normalizedEmail = normalizeEmail(email);
-     if (!normalizedEmail || !password) {
-       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
-     }
-     if (!isValidEmail(normalizedEmail)) {
-       return res.status(400).json({ ok: false, error: "El email no es válido." });
-     }
-     if (String(password).length < 8) {
-       return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
-     }
- 
-     const exists = await KitchenUser.findOne({ email: normalizedEmail });
-     if (exists) return res.status(409).json({ ok: false, error: "El email ya está registrado." });
- 
-     const safeDisplayName = buildDisplayName({ firstName, lastName, name, displayName });
-     if (!safeDisplayName) {
-       return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
-     }
- 
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-     const passwordHash = await bcrypt.hash(password, 10);
-     const user = await KitchenUser.create({
-       username: normalizedEmail,
-       email: normalizedEmail,
-       firstName: firstName ? String(firstName).trim() : undefined,
-       lastName: lastName ? String(lastName).trim() : undefined,
-       displayName: safeDisplayName,
-       role: normalizeRole(role),
--      ...(effectiveHouseholdId ? { householdId: effectiveHouseholdId } : {}),
-+      householdId: effectiveHouseholdId,
-       passwordHash
-     });
- 
-     return res.status(201).json({ ok: true, user: user.toSafeJSON() });
-   } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-     return res.status(500).json({ ok: false, error: "No se pudo crear el usuario." });
-   }
- });
- 
- export default router;
