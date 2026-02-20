@@ -5,6 +5,12 @@ import { Household } from "../models/Household.js";
 
 const router = express.Router();
 
+function normalizeActiveHouseholdIdInput(rawHouseholdId) {
+  if (rawHouseholdId === null || rawHouseholdId === "") return null;
+  if (typeof rawHouseholdId === "undefined") return undefined;
+  return rawHouseholdId;
+}
+
 router.get("/households", requireAuth, requireDiod, async (req, res) => {
   try {
     const households = await Household.find({}, { name: 1 }).sort({ createdAt: 1 }).lean();
@@ -22,11 +28,15 @@ router.get("/households", requireAuth, requireDiod, async (req, res) => {
   }
 });
 
-router.post("/active-household", requireAuth, requireDiod, async (req, res) => {
+async function setActiveHousehold(req, res) {
   try {
-    const { householdId } = req.body;
+    const householdId = normalizeActiveHouseholdIdInput(req.body?.householdId);
 
-    if (householdId === null || householdId === "") {
+    if (householdId === undefined) {
+      return res.status(400).json({ ok: false, error: "Debes enviar householdId (string o null)." });
+    }
+
+    if (householdId === null) {
       req.kitchenUser.activeHouseholdId = null;
       await req.kitchenUser.save();
       return res.json({ ok: true, activeHouseholdId: null });
@@ -51,7 +61,10 @@ router.post("/active-household", requireAuth, requireDiod, async (req, res) => {
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo cambiar el hogar activo." });
   }
-});
+}
+
+router.post("/active-household", requireAuth, requireDiod, setActiveHousehold);
+router.put("/active-household", requireAuth, requireDiod, setActiveHousehold);
 
 
 router.delete("/active-household", requireAuth, requireDiod, async (req, res) => {
@@ -66,15 +79,15 @@ router.delete("/active-household", requireAuth, requireDiod, async (req, res) =>
 });
 
 router.get("/active-household", requireAuth, async (req, res) => {
-  if (req.kitchenUser.globalRole === "diod") {
-    return res.json({ ok: true, activeHouseholdId: req.kitchenUser.activeHouseholdId || null });
-  }
+  try {
+    if (req.kitchenUser.globalRole === "diod") {
+      return res.json({ ok: true, activeHouseholdId: req.kitchenUser.activeHouseholdId || null });
+    }
 
-  if (!req.kitchenUser.householdId) {
-    return res.status(400).json({ ok: false, error: "active household required" });
+    return res.json({ ok: true, activeHouseholdId: req.kitchenUser.householdId || null });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudo obtener el hogar activo." });
   }
-
-  return res.json({ ok: true, activeHouseholdId: req.kitchenUser.householdId });
 });
 
 export default router;

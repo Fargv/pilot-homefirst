@@ -89,14 +89,44 @@ function getInitials(name = "") {
 }
 
 export default function KitchenLayout({ children }) {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, setUser } = useAuth();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
   const [households, setHouseholds] = useState([]);
   const [switchingHousehold, setSwitchingHousehold] = useState(false);
   const [householdError, setHouseholdError] = useState("");
+  const activeHouseholdRequestKeyRef = useRef("");
   const isDiod = user?.globalRole === "diod";
+
+  useEffect(() => {
+    if (!isDiod || !user?.id) return;
+    const requestKey = `${user.id}:${user.activeHouseholdId || "none"}`;
+    if (activeHouseholdRequestKeyRef.current === requestKey) return;
+
+    let active = true;
+    activeHouseholdRequestKeyRef.current = requestKey;
+
+    apiRequest("/api/kitchen/admin/active-household")
+      .then((data) => {
+        if (!active) return;
+        const nextActiveHouseholdId = data.activeHouseholdId || null;
+        localStorage.setItem("kitchen_active_household_id", nextActiveHouseholdId || "");
+        setUser((prevUser) => {
+          if (!prevUser || prevUser.id !== user.id) return prevUser;
+          if ((prevUser.activeHouseholdId || null) === nextActiveHouseholdId) return prevUser;
+          return { ...prevUser, activeHouseholdId: nextActiveHouseholdId };
+        });
+      })
+      .catch((error) => {
+        if (!active) return;
+        setHouseholdError(error.message || "No se pudo obtener el hogar activo.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isDiod, setUser, user?.id, user?.activeHouseholdId]);
 
   const navLinks = useMemo(
     () => [
@@ -158,8 +188,10 @@ export default function KitchenLayout({ children }) {
           method: "POST",
           body: JSON.stringify({ householdId: nextHouseholdId })
         });
+        localStorage.setItem("kitchen_active_household_id", nextHouseholdId);
       } else {
         await apiRequest("/api/kitchen/admin/active-household", { method: "DELETE" });
+        localStorage.setItem("kitchen_active_household_id", "");
       }
       await refreshUser();
       setUserMenuOpen(false);
