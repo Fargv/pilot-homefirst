@@ -9,6 +9,7 @@ import {
   isDiodUser,
   resolveCatalogForHousehold
 } from "../utils/catalogScopes.js";
+import { slugifyCategory } from "../utils/categoryMatching.js";
 
 const router = express.Router();
 
@@ -16,15 +17,6 @@ const DEFAULT_COLOR_BG = "#E8F1FF";
 const DEFAULT_COLOR_TEXT = "#1D4ED8";
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const slugifyCategory = (value = "") => {
-  const trimmed = value.trim().toLowerCase();
-  if (!trimmed) return "";
-
-  const noAccents = trimmed.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-  const noPunctuation = noAccents.replace(/[^\w\s-]/g, "");
-  return noPunctuation.replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-};
 
 router.get("/", requireAuth, async (req, res) => {
   try {

@@ -1,6 +1,10 @@
 import express from "express";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { normalizeIngredientList } from "../utils/normalize.js";
+import { combineDayIngredients } from "../utils/ingredients.js";
+import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
+import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
+import { getWeekStart } from "../utils/dates.js";
 import { requireAuth } from "../middleware.js";
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import {
@@ -12,6 +16,55 @@ import {
 } from "../utils/catalogScopes.js";
 
 const router = express.Router();
+
+
+async function rebuildFutureShoppingLists({ householdId, dishId }) {
+  if (!householdId || !dishId) return;
+
+  const currentWeekStart = getWeekStart(new Date());
+  const plans = await KitchenWeekPlan.find({
+    householdId,
+    weekStart: { $gte: currentWeekStart },
+    $or: [{ "days.mainDishId": dishId }, { "days.sideDishId": dishId }]
+  });
+
+  for (const plan of plans) {
+    const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
+    const dishes = await KitchenDish.find(buildScopedFilter(householdId, { _id: { $in: dishIds } }));
+    const dishMap = new Map(dishes.map((entry) => [String(entry._id), entry]));
+
+    const merged = new Map();
+    plan.days.forEach((day) => {
+      const ingredients = combineDayIngredients({
+        mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
+        sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
+        overrides: day.ingredientOverrides
+      });
+
+      ingredients.forEach((item) => {
+        if (!item.canonicalName || merged.has(item.canonicalName)) return;
+        merged.set(item.canonicalName, {
+          displayName: item.displayName,
+          canonicalName: item.canonicalName,
+          status: "need"
+        });
+      });
+    });
+
+    const list = await KitchenShoppingList.findOneAndUpdate(
+      { householdId, weekStart: plan.weekStart },
+      { $setOnInsert: { householdId, weekStart: plan.weekStart, items: [] } },
+      { new: true, upsert: true }
+    );
+
+    const previousByCanonical = new Map((list.items || []).map((item) => [item.canonicalName, item.status]));
+    list.items = Array.from(merged.values()).map((item) => ({
+      ...item,
+      status: previousByCanonical.get(item.canonicalName) || "need"
+    }));
+    await list.save();
+  }
+}
 
 router.get("/", requireAuth, async (req, res) => {
   try {
@@ -94,6 +147,7 @@ router.put("/:id", requireAuth, async (req, res) => {
       if (isDiod) {
         Object.assign(dish, nextData);
         await dish.save();
+        await rebuildFutureShoppingLists({ householdId: effectiveHouseholdId, dishId: dish._id });
         return res.json({ ok: true, dish });
       }
 
@@ -114,6 +168,7 @@ router.put("/:id", requireAuth, async (req, res) => {
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
       await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
+      await rebuildFutureShoppingLists({ householdId: effectiveHouseholdId, dishId: override._id });
       return res.json({ ok: true, dish: override, overridden: true });
     }
 
@@ -123,6 +178,7 @@ router.put("/:id", requireAuth, async (req, res) => {
 
     Object.assign(dish, nextData);
     await dish.save();
+    await rebuildFutureShoppingLists({ householdId: effectiveHouseholdId, dishId: dish._id });
     return res.json({ ok: true, dish });
   } catch (error) {
     const handled = handleHouseholdError(res, error);

@@ -1,188 +1,50 @@
-diff --git a/backend/src/kitchen/models/Category.js b/backend/src/kitchen/models/Category.js
-index 208ddf50ea756eb74cff31c112dee5bf1e0fdf7b..127a68b6e7ddf8d6100b51f14616e6583891eab8 100644
---- a/backend/src/kitchen/models/Category.js
-+++ b/backend/src/kitchen/models/Category.js
-@@ -1,16 +1,30 @@
- import mongoose from "mongoose";
- 
- const CategorySchema = new mongoose.Schema(
-   {
-+    scope: {
-+      type: String,
-+      enum: ["master", "household", "override"],
-+      default: "household",
-+      index: true
-+    },
-+    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true },
-+    masterId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", index: true },
-     name: { type: String, required: true, trim: true },
-     slug: { type: String, required: true, index: true },
-     colorBg: { type: String, required: true },
-     colorText: { type: String, required: true },
-     order: { type: Number, default: 0 },
--    active: { type: Boolean, default: true },
--    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true }
-+    active: { type: Boolean, default: true },
-+    isArchived: { type: Boolean, default: false }
+diff --git a/backend/package.json b/backend/package.json
+index 820f5782b5a047727f6831e00e09166154b1368c..626898680e0e345532bc0ec76b0079e60466119c 100644
+--- a/backend/package.json
++++ b/backend/package.json
+@@ -1,23 +1,24 @@
+ {
+   "name": "pilot-backend",
+   "version": "1.0.0",
+   "type": "module",
+   "main": "src/index.js",
+   "scripts": {
+     "start": "node src/index.js",
+     "dev": "node --watch src/index.js",
+     "migrate:households": "node scripts/migrate-households.js",
+     "create:diod": "node scripts/create-diod.js",
+-    "test:connection": "node scripts/test-connection.js",
+-    "migrate:householdId": "node scripts/migrate-add-householdId.js"
++    "test:connection": "node scripts/test-connection.js",
++    "migrate:householdId": "node scripts/migrate-add-householdId.js",
++    "migrate:ingredientCategoryId": "node scripts/migrate-ingredient-category-id.js"
    },
-   { timestamps: true }
- );
- 
-+CategorySchema.index({ householdId: 1, scope: 1 });
-+CategorySchema.index(
-+  { householdId: 1, masterId: 1, scope: 1 },
-+  { unique: true, partialFilterExpression: { scope: "override" } }
-+);
-+
- export const Category = mongoose.model("Category", CategorySchema);
-diff --git a/backend/src/kitchen/models/KitchenDish.js b/backend/src/kitchen/models/KitchenDish.js
-index 5e522a07d4c78bcdad3445733781cc777ec365ad..acfbe0edb5cd010e67511060382b958628889200 100644
---- a/backend/src/kitchen/models/KitchenDish.js
-+++ b/backend/src/kitchen/models/KitchenDish.js
-@@ -1,23 +1,37 @@
- import mongoose from "mongoose";
- 
- const IngredientSchema = new mongoose.Schema(
-   {
--    ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient" },
-+    ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient" },
-     displayName: { type: String, required: true, trim: true },
-     canonicalName: { type: String, required: true, index: true }
-   },
-   { _id: false }
- );
- 
- const KitchenDishSchema = new mongoose.Schema(
-   {
-+    scope: {
-+      type: String,
-+      enum: ["master", "household", "override"],
-+      default: "household",
-+      index: true
-+    },
-+    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true },
-+    masterId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDish", index: true },
-     name: { type: String, required: true, trim: true },
-     ingredients: { type: [IngredientSchema], default: [] },
--    sidedish: { type: Boolean, default: false },
--    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" },
--    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true }
-+    sidedish: { type: Boolean, default: false },
-+    isArchived: { type: Boolean, default: false },
-+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" }
-   },
-   { timestamps: true }
- );
- 
-+KitchenDishSchema.index({ householdId: 1, scope: 1 });
-+KitchenDishSchema.index(
-+  { householdId: 1, masterId: 1, scope: 1 },
-+  { unique: true, partialFilterExpression: { scope: "override" } }
-+);
-+
- export const KitchenDish = mongoose.model("KitchenDish", KitchenDishSchema);
-diff --git a/backend/src/kitchen/models/KitchenIngredient.js b/backend/src/kitchen/models/KitchenIngredient.js
-index 11b5a4794eabd9ae8cd5dbf7156f7b20efed6cd2..1dda3b596deac08f5ced3ff804a76083eafd44f9 100644
---- a/backend/src/kitchen/models/KitchenIngredient.js
-+++ b/backend/src/kitchen/models/KitchenIngredient.js
-@@ -1,18 +1,32 @@
- import mongoose from "mongoose";
- 
- const KitchenIngredientSchema = new mongoose.Schema(
-   {
-+    scope: {
-+      type: String,
-+      enum: ["master", "household", "override"],
-+      default: "household",
-+      index: true
-+    },
-+    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true },
-+    masterId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient", index: true },
-     name: { type: String, required: true, trim: true },
-     canonicalName: { type: String, required: true, index: true },
-     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
--    active: { type: Boolean, default: true },
--    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true }
-+    active: { type: Boolean, default: true },
-+    isArchived: { type: Boolean, default: false }
-   },
-   { timestamps: true }
- );
- 
--export const KitchenIngredient = mongoose.model(
--  "KitchenIngredient",
--  KitchenIngredientSchema,
--  "kitchenIngredients"
--);
-+KitchenIngredientSchema.index({ householdId: 1, scope: 1 });
-+KitchenIngredientSchema.index(
-+  { householdId: 1, masterId: 1, scope: 1 },
-+  { unique: true, partialFilterExpression: { scope: "override" } }
-+);
-+
-+export const KitchenIngredient = mongoose.model(
-+  "KitchenIngredient",
-+  KitchenIngredientSchema,
-+  "kitchenIngredients"
-+);
-diff --git a/backend/src/kitchen/models/KitchenIngredient.js b/backend/src/kitchen/models/KitchenIngredient.js
-index 11b5a4794eabd9ae8cd5dbf7156f7b20efed6cd2..1dda3b596deac08f5ced3ff804a76083eafd44f9 100644
---- a/backend/src/kitchen/models/KitchenIngredient.js
-+++ b/backend/src/kitchen/models/KitchenIngredient.js
-@@ -1,18 +1,32 @@
- import mongoose from "mongoose";
- 
- const KitchenIngredientSchema = new mongoose.Schema(
-   {
-+    scope: {
-+      type: String,
-+      enum: ["master", "household", "override"],
-+      default: "household",
-+      index: true
-+    },
-+    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true },
-+    masterId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient", index: true },
-     name: { type: String, required: true, trim: true },
-     canonicalName: { type: String, required: true, index: true },
-     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
--    active: { type: Boolean, default: true },
--    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true }
-+    active: { type: Boolean, default: true },
-+    isArchived: { type: Boolean, default: false }
-   },
-   { timestamps: true }
- );
- 
--export const KitchenIngredient = mongoose.model(
--  "KitchenIngredient",
--  KitchenIngredientSchema,
--  "kitchenIngredients"
--);
-+KitchenIngredientSchema.index({ householdId: 1, scope: 1 });
-+KitchenIngredientSchema.index(
-+  { householdId: 1, masterId: 1, scope: 1 },
-+  { unique: true, partialFilterExpression: { scope: "override" } }
-+);
-+
-+export const KitchenIngredient = mongoose.model(
-+  "KitchenIngredient",
-+  KitchenIngredientSchema,
-+  "kitchenIngredients"
-+);
+   "dependencies": {
+     "bcryptjs": "^2.4.3",
+     "cors": "^2.8.5",
+     "dotenv": "^16.4.5",
+     "express": "^4.19.2",
+     "jsonwebtoken": "^9.0.2",
+     "mongoose": "^8.6.1",
+     "nodemailer": "^6.9.14"
+   }
+ }
 diff --git a/backend/src/kitchen/routes/categories.js b/backend/src/kitchen/routes/categories.js
-index 5c011960a0c72a645dad1b5e3bd04c999b4dcee0..f05e03b0f0a7d42b4da080239f44ca64fc81b1ce 100644
+index eccd3e1914ee3b03f5c3f4dd925acb1a5470fb26..0fc486563ecf6990f9d2454224af07994a8e9e9d 100644
 --- a/backend/src/kitchen/routes/categories.js
 +++ b/backend/src/kitchen/routes/categories.js
-@@ -1,81 +1,200 @@
+@@ -1,53 +1,45 @@
  import express from "express";
  import { Category } from "../models/Category.js";
  import { requireAuth } from "../middleware.js";
+ import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 -import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError
--} from "../householdScope.js";
-+import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
+-  CATALOG_SCOPES,
+-  clearHiddenMasterForHousehold,
+-  hideMasterForHousehold,
+-  isDiodUser,
+-  resolveCatalogForHousehold
+-} from "../utils/catalogScopes.js";
 +import {
 +  CATALOG_SCOPES,
 +  clearHiddenMasterForHousehold,
@@ -190,240 +52,70 @@ index 5c011960a0c72a645dad1b5e3bd04c999b4dcee0..f05e03b0f0a7d42b4da080239f44ca64
 +  isDiodUser,
 +  resolveCatalogForHousehold
 +} from "../utils/catalogScopes.js";
++import { slugifyCategory } from "../utils/categoryMatching.js";
  
  const router = express.Router();
  
--const DEFAULT_COLOR_BG = "#E8F1FF";
--const DEFAULT_COLOR_TEXT = "#1D4ED8";
-+const DEFAULT_COLOR_BG = "#E8F1FF";
-+const DEFAULT_COLOR_TEXT = "#1D4ED8";
+ const DEFAULT_COLOR_BG = "#E8F1FF";
+ const DEFAULT_COLOR_TEXT = "#1D4ED8";
  
  const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  
- const slugifyCategory = (value = "") => {
-   const trimmed = value.trim().toLowerCase();
-   if (!trimmed) return "";
- 
-   const noAccents = trimmed.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-   const noPunctuation = noAccents.replace(/[^\w\s-]/g, "");
-   return noPunctuation.replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
- };
- 
- router.get("/", requireAuth, async (req, res) => {
--  try {
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const categories = await Category.find(
--      buildScopedFilter(effectiveHouseholdId, { active: true })
--    ).sort({ order: 1, name: 1 });
+-const slugifyCategory = (value = "") => {
+-  const trimmed = value.trim().toLowerCase();
+-  if (!trimmed) return "";
 -
--    return res.json({ ok: true, categories });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudieron cargar las categorías." });
--  }
-+  try {
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const categories = await resolveCatalogForHousehold({
-+      Model: Category,
-+      householdId: effectiveHouseholdId,
-+      type: "category",
-+      masterFilter: { active: true },
-+      householdFilter: { active: true },
-+      overrideFilter: { active: true },
-+      sort: { order: 1, name: 1 }
-+    });
-+
-+    return res.json({ ok: true, categories });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudieron cargar las categorías." });
-+  }
+-  const noAccents = trimmed.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+-  const noPunctuation = noAccents.replace(/[^\w\s-]/g, "");
+-  return noPunctuation.replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+-};
+-
+ router.get("/", requireAuth, async (req, res) => {
+   try {
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const categories = await resolveCatalogForHousehold({
+       Model: Category,
+       householdId: effectiveHouseholdId,
+       type: "category",
+       masterFilter: { active: true },
+       householdFilter: { active: true },
+       overrideFilter: { active: true },
+       sort: { order: 1, name: 1 }
+     });
+ 
+     return res.json({ ok: true, categories });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudieron cargar las categorías." });
+   }
  });
  
  router.post("/", requireAuth, async (req, res) => {
    try {
--    const { name, colorBg, colorText } = req.body;
-+    const { name, colorBg, colorText, scope } = req.body;
+     const { name, colorBg, colorText, scope } = req.body;
      if (!name) return res.status(400).json({ ok: false, error: "El nombre de la categoría es obligatorio." });
- 
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const isDiod = isDiodUser(req.kitchenUser);
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const isMasterWrite = scope === CATALOG_SCOPES.MASTER;
-+
-+    if (isMasterWrite && !isDiod) {
-+      return res.status(403).json({ ok: false, error: "Solo DIOD puede crear categorías master." });
-+    }
-+
-     const trimmedName = String(name).trim();
-     const slug = slugifyCategory(trimmedName);
-     if (!slug) return res.status(400).json({ ok: false, error: "El nombre de la categoría no es válido." });
- 
--    const existing = await Category.findOne(
--      buildScopedFilter(
--        effectiveHouseholdId,
--        {
--          $or: [
--            { slug: new RegExp(`^${escapeRegex(slug)}$`, "i") },
--            { name: new RegExp(`^${escapeRegex(trimmedName)}$`, "i") }
--          ]
--        }
--      )
--    );
-+    const baseFilter = {
-+      $or: [{ slug: new RegExp(`^${escapeRegex(slug)}$`, "i") }, { name: new RegExp(`^${escapeRegex(trimmedName)}$`, "i") }],
-+      scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
-+      isArchived: { $ne: true }
-+    };
-+    if (!isMasterWrite) baseFilter.householdId = effectiveHouseholdId;
-+
-+    const existing = await Category.findOne(baseFilter);
- 
-     if (existing) return res.json({ ok: true, category: existing, created: false });
- 
-     const category = await Category.create({
-       name: trimmedName,
-       slug,
-       colorBg: colorBg || DEFAULT_COLOR_BG,
--      colorText: colorText || DEFAULT_COLOR_TEXT,
--      householdId: effectiveHouseholdId
-+      colorText: colorText || DEFAULT_COLOR_TEXT,
-+      scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
-+      householdId: isMasterWrite ? undefined : effectiveHouseholdId
-     });
- 
-+    if (!isMasterWrite) {
-+      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "category", masterId: category._id });
-+    }
-+
-     return res.status(201).json({ ok: true, category, created: true });
-   } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-     return res.status(500).json({ ok: false, error: "No se pudo crear la categoría." });
-   }
- });
- 
-+router.put("/:id", requireAuth, async (req, res) => {
-+  try {
-+    const { id } = req.params;
-+    const { name, colorBg, colorText, active } = req.body;
-+    if (!name) return res.status(400).json({ ok: false, error: "El nombre de la categoría es obligatorio." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const isDiod = isDiodUser(req.kitchenUser);
-+    const trimmedName = String(name).trim();
-+    const slug = slugifyCategory(trimmedName);
-+
-+    const target = await Category.findById(id);
-+    if (!target || target.isArchived) {
-+      return res.status(404).json({ ok: false, error: "Categoría no encontrada." });
-+    }
-+
-+    const nextData = {
-+      name: trimmedName,
-+      slug,
-+      colorBg: colorBg || DEFAULT_COLOR_BG,
-+      colorText: colorText || DEFAULT_COLOR_TEXT,
-+      active: typeof active === "boolean" ? active : target.active
-+    };
-+
-+    if (target.scope === CATALOG_SCOPES.MASTER) {
-+      if (isDiod) {
-+        Object.assign(target, nextData);
-+        await target.save();
-+        return res.json({ ok: true, category: target });
-+      }
-+
-+      const category = await Category.findOneAndUpdate(
-+        {
-+          householdId: effectiveHouseholdId,
-+          scope: CATALOG_SCOPES.OVERRIDE,
-+          masterId: target._id
-+        },
-+        {
-+          ...nextData,
-+          householdId: effectiveHouseholdId,
-+          masterId: target._id,
-+          scope: CATALOG_SCOPES.OVERRIDE,
-+          isArchived: false
-+        },
-+        { upsert: true, new: true, setDefaultsOnInsert: true }
-+      );
-+
-+      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "category", masterId: target._id });
-+      return res.json({ ok: true, category, overridden: true });
-+    }
-+
-+    if (!target.householdId || String(target.householdId) !== String(effectiveHouseholdId)) {
-+      return res.status(403).json({ ok: false, error: "No tienes permisos para modificar esta categoría." });
-+    }
-+
-+    Object.assign(target, nextData);
-+    await target.save();
-+
-+    return res.json({ ok: true, category: target });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo actualizar la categoría." });
-+  }
-+});
-+
-+router.delete("/:id", requireAuth, async (req, res) => {
-+  try {
-+    const { id } = req.params;
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const isDiod = isDiodUser(req.kitchenUser);
-+    const target = await Category.findById(id);
-+
-+    if (!target || target.isArchived) {
-+      return res.status(404).json({ ok: false, error: "Categoría no encontrada." });
-+    }
-+
-+    if (target.scope === CATALOG_SCOPES.MASTER) {
-+      if (isDiod) {
-+        target.isArchived = true;
-+        await target.save();
-+      } else {
-+        await hideMasterForHousehold({ householdId: effectiveHouseholdId, type: "category", masterId: target._id });
-+      }
-+      return res.json({ ok: true });
-+    }
-+
-+    if (!target.householdId || String(target.householdId) !== String(effectiveHouseholdId)) {
-+      return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar esta categoría." });
-+    }
-+
-+    target.isArchived = true;
-+    await target.save();
-+    return res.json({ ok: true });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo eliminar la categoría." });
-+  }
-+});
-+
- export default router;
 diff --git a/backend/src/kitchen/routes/dishes.js b/backend/src/kitchen/routes/dishes.js
-index d585b1898900998783972d2b0be03c900ede021d..151d9138011fcc6e52dcb655a8d3c3df49f4ca3a 100644
+index 2880e4bb040d15f841d7f2dd7a6ccec4152df096..6bacea4931cd11379b8e30bdaba9137e877f4ced 100644
 --- a/backend/src/kitchen/routes/dishes.js
 +++ b/backend/src/kitchen/routes/dishes.js
-@@ -1,88 +1,177 @@
+@@ -1,177 +1,233 @@
  import express from "express";
  import { KitchenDish } from "../models/KitchenDish.js";
  import { normalizeIngredientList } from "../utils/normalize.js";
--import { requireAuth, requireRole } from "../middleware.js";
+-import { requireAuth } from "../middleware.js";
+-import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 -import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError
--} from "../householdScope.js";
+-  CATALOG_SCOPES,
+-  clearHiddenMasterForHousehold,
+-  hideMasterForHousehold,
+-  isDiodUser,
+-  resolveCatalogForHousehold
+-} from "../utils/catalogScopes.js";
++import { combineDayIngredients } from "../utils/ingredients.js";
++import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
++import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
++import { getWeekStart } from "../utils/dates.js";
 +import { requireAuth } from "../middleware.js";
 +import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 +import {
@@ -436,12 +128,72 @@ index d585b1898900998783972d2b0be03c900ede021d..151d9138011fcc6e52dcb655a8d3c3df
  
  const router = express.Router();
  
++
++async function rebuildFutureShoppingLists({ householdId, dishId }) {
++  if (!householdId || !dishId) return;
++
++  const currentWeekStart = getWeekStart(new Date());
++  const plans = await KitchenWeekPlan.find({
++    householdId,
++    weekStart: { $gte: currentWeekStart },
++    $or: [{ "days.mainDishId": dishId }, { "days.sideDishId": dishId }]
++  });
++
++  for (const plan of plans) {
++    const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
++    const dishes = await KitchenDish.find(buildScopedFilter(householdId, { _id: { $in: dishIds } }));
++    const dishMap = new Map(dishes.map((entry) => [String(entry._id), entry]));
++
++    const merged = new Map();
++    plan.days.forEach((day) => {
++      const ingredients = combineDayIngredients({
++        mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
++        sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
++        overrides: day.ingredientOverrides
++      });
++
++      ingredients.forEach((item) => {
++        if (!item.canonicalName || merged.has(item.canonicalName)) return;
++        merged.set(item.canonicalName, {
++          displayName: item.displayName,
++          canonicalName: item.canonicalName,
++          status: "need"
++        });
++      });
++    });
++
++    const list = await KitchenShoppingList.findOneAndUpdate(
++      { householdId, weekStart: plan.weekStart },
++      { $setOnInsert: { householdId, weekStart: plan.weekStart, items: [] } },
++      { new: true, upsert: true }
++    );
++
++    const previousByCanonical = new Map((list.items || []).map((item) => [item.canonicalName, item.status]));
++    list.items = Array.from(merged.values()).map((item) => ({
++      ...item,
++      status: previousByCanonical.get(item.canonicalName) || "need"
++    }));
++    await list.save();
++  }
++}
++
  router.get("/", requireAuth, async (req, res) => {
 -  try {
 -    const { sidedish } = req.query;
 -    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const filter = sidedish === "true" ? { sidedish: true } : {};
--    const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, filter)).sort({
+-
+-    if (sidedish === "true") {
+-      const dishes = await resolveCatalogForHousehold({
+-        Model: KitchenDish,
+-        householdId: effectiveHouseholdId,
+-        type: "side",
+-        baseFilter: { sidedish: true },
+-        sort: { createdAt: -1 }
+-      });
+-      return res.json({ ok: true, dishes });
+-    }
+-
+-    const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, { sidedish: { $ne: true } })).sort({
 -      createdAt: -1
 -    });
 -
@@ -480,13 +232,21 @@ index d585b1898900998783972d2b0be03c900ede021d..151d9138011fcc6e52dcb655a8d3c3df
  
  router.post("/", requireAuth, async (req, res) => {
    try {
--    const { name, ingredients, sidedish } = req.body;
+-    const { name, ingredients, sidedish, scope } = req.body;
 +    const { name, ingredients, sidedish, scope } = req.body;
      if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
  
 -    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
 +    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
      const normalizedIngredients = normalizeIngredientList(ingredients || []);
+-    const isSideDish = Boolean(sidedish);
+-    const isDiod = isDiodUser(req.kitchenUser);
+-    const isMasterWrite = isSideDish && scope === CATALOG_SCOPES.MASTER;
+-
+-    if (isMasterWrite && !isDiod) {
+-      return res.status(403).json({ ok: false, error: "Solo DIOD puede crear guarniciones master." });
+-    }
+-
 +    const isSideDish = Boolean(sidedish);
 +    const isDiod = isDiodUser(req.kitchenUser);
 +    const isMasterWrite = isSideDish && scope === CATALOG_SCOPES.MASTER;
@@ -498,15 +258,20 @@ index d585b1898900998783972d2b0be03c900ede021d..151d9138011fcc6e52dcb655a8d3c3df
      const dish = await KitchenDish.create({
        name: String(name).trim(),
        ingredients: normalizedIngredients,
--      sidedish: Boolean(sidedish),
+-      sidedish: isSideDish,
+-      scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
 -      createdBy: req.kitchenUser._id,
--      householdId: effectiveHouseholdId
+-      householdId: isMasterWrite ? undefined : effectiveHouseholdId
 +      sidedish: isSideDish,
 +      scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
 +      createdBy: req.kitchenUser._id,
 +      householdId: isMasterWrite ? undefined : effectiveHouseholdId
      });
  
+-    if (isSideDish && !isMasterWrite) {
+-      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
+-    }
+-
 +    if (isSideDish && !isMasterWrite) {
 +      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
 +    }
@@ -525,8 +290,47 @@ index d585b1898900998783972d2b0be03c900ede021d..151d9138011fcc6e52dcb655a8d3c3df
    try {
 -    const { name, ingredients, sidedish } = req.body;
 -    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--        const dish = await KitchenDish.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }));
--    if (!dish) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
+-    const isDiod = isDiodUser(req.kitchenUser);
+-    const dish = await KitchenDish.findById(req.params.id);
+-    if (!dish || dish.isArchived) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
+-
+-    const nextData = {};
+-    if (name) nextData.name = String(name).trim();
+-    if (Array.isArray(ingredients)) nextData.ingredients = normalizeIngredientList(ingredients);
+-    if (typeof sidedish === "boolean") nextData.sidedish = sidedish;
+-
+-    if (dish.sidedish && dish.scope === CATALOG_SCOPES.MASTER) {
+-      if (isDiod) {
+-        Object.assign(dish, nextData);
+-        await dish.save();
+-        return res.json({ ok: true, dish });
+-      }
+-
+-      const override = await KitchenDish.findOneAndUpdate(
+-        {
+-          householdId: effectiveHouseholdId,
+-          scope: CATALOG_SCOPES.OVERRIDE,
+-          masterId: dish._id
+-        },
+-        {
+-          ...nextData,
+-          scope: CATALOG_SCOPES.OVERRIDE,
+-          masterId: dish._id,
+-          householdId: effectiveHouseholdId,
+-          sidedish: true,
+-          isArchived: false
+-        },
+-        { upsert: true, new: true, setDefaultsOnInsert: true }
+-      );
+-      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
+-      return res.json({ ok: true, dish: override, overridden: true });
+-    }
+-
+-    if (!dish.householdId || String(dish.householdId) !== String(effectiveHouseholdId)) {
+-      return res.status(403).json({ ok: false, error: "No tienes permisos para modificar este plato." });
+-    }
+-
+-    Object.assign(dish, nextData);
 +    const { name, ingredients, sidedish } = req.body;
 +    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
 +    const isDiod = isDiodUser(req.kitchenUser);
@@ -537,17 +341,15 @@ index d585b1898900998783972d2b0be03c900ede021d..151d9138011fcc6e52dcb655a8d3c3df
 +    if (name) nextData.name = String(name).trim();
 +    if (Array.isArray(ingredients)) nextData.ingredients = normalizeIngredientList(ingredients);
 +    if (typeof sidedish === "boolean") nextData.sidedish = sidedish;
- 
--    if (name) dish.name = String(name).trim();
--    if (Array.isArray(ingredients)) dish.ingredients = normalizeIngredientList(ingredients);
--    if (typeof sidedish === "boolean") dish.sidedish = sidedish;
++
 +    if (dish.sidedish && dish.scope === CATALOG_SCOPES.MASTER) {
 +      if (isDiod) {
 +        Object.assign(dish, nextData);
 +        await dish.save();
++        await rebuildFutureShoppingLists({ householdId: effectiveHouseholdId, dishId: dish._id });
 +        return res.json({ ok: true, dish });
 +      }
- 
++
 +      const override = await KitchenDish.findOneAndUpdate(
 +        {
 +          householdId: effectiveHouseholdId,
@@ -565,6 +367,7 @@ index d585b1898900998783972d2b0be03c900ede021d..151d9138011fcc6e52dcb655a8d3c3df
 +        { upsert: true, new: true, setDefaultsOnInsert: true }
 +      );
 +      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
++      await rebuildFutureShoppingLists({ householdId: effectiveHouseholdId, dishId: override._id });
 +      return res.json({ ok: true, dish: override, overridden: true });
 +    }
 +
@@ -574,6 +377,7 @@ index d585b1898900998783972d2b0be03c900ede021d..151d9138011fcc6e52dcb655a8d3c3df
 +
 +    Object.assign(dish, nextData);
      await dish.save();
++    await rebuildFutureShoppingLists({ householdId: effectiveHouseholdId, dishId: dish._id });
      return res.json({ ok: true, dish });
    } catch (error) {
 -    const handled = handleHouseholdError(res, error);
@@ -584,11 +388,39 @@ index d585b1898900998783972d2b0be03c900ede021d..151d9138011fcc6e52dcb655a8d3c3df
    }
  });
  
--router.delete("/:id", requireAuth, requireRole("admin"), async (req, res) => {
+-router.delete("/:id", requireAuth, async (req, res) => {
 -  try {
 -    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--        const dish = await KitchenDish.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }));
--    if (!dish) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
+-    const isDiod = isDiodUser(req.kitchenUser);
+-    const dish = await KitchenDish.findById(req.params.id);
+-    if (!dish || dish.isArchived) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
+-
+-    if (dish.sidedish && dish.scope === CATALOG_SCOPES.MASTER) {
+-      if (isDiod) {
+-        dish.isArchived = true;
+-        await dish.save();
+-      } else {
+-        await hideMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
+-      }
+-      return res.json({ ok: true });
+-    }
+-
+-    if (dish.sidedish) {
+-      if (!dish.householdId || String(dish.householdId) !== String(effectiveHouseholdId)) {
+-        return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar esta guarnición." });
+-      }
+-      dish.isArchived = true;
+-      await dish.save();
+-      return res.json({ ok: true });
+-    }
+-
+-    if (!isDiod && !["admin", "owner"].includes(req.kitchenUser.role)) {
+-      return res.status(403).json({ ok: false, error: "No tienes permisos para esta acción." });
+-    }
+-
+-    if (!dish.householdId || String(dish.householdId) !== String(effectiveHouseholdId)) {
+-      return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar este plato." });
+-    }
 -
 -    await dish.deleteOne();
 -    return res.json({ ok: true });
@@ -642,21 +474,24 @@ index d585b1898900998783972d2b0be03c900ede021d..151d9138011fcc6e52dcb655a8d3c3df
  
  export default router;
 diff --git a/backend/src/kitchen/routes/kitchenIngredients.js b/backend/src/kitchen/routes/kitchenIngredients.js
-index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd45142593deaf8d5 100644
+index 7857f618816114ed5425345ee90a2ee23361fc3e..6f2aeead7f293230614a02a91a0f297fd99248bc 100644
 --- a/backend/src/kitchen/routes/kitchenIngredients.js
 +++ b/backend/src/kitchen/routes/kitchenIngredients.js
-@@ -1,191 +1,279 @@
+@@ -1,279 +1,333 @@
  import express from "express";
  import { KitchenIngredient } from "../models/KitchenIngredient.js";
 -import { Category } from "../models/Category.js";
 +import { Category } from "../models/Category.js";
  import { requireAuth } from "../middleware.js";
  import { normalizeIngredientName } from "../utils/normalize.js";
+-import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 -import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError
--} from "../householdScope.js";
+-  CATALOG_SCOPES,
+-  clearHiddenMasterForHousehold,
+-  hideMasterForHousehold,
+-  isDiodUser,
+-  resolveCatalogForHousehold
+-} from "../utils/catalogScopes.js";
 +import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 +import {
 +  CATALOG_SCOPES,
@@ -665,6 +500,10 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 +  isDiodUser,
 +  resolveCatalogForHousehold
 +} from "../utils/catalogScopes.js";
++import { ensureDefaultCategory } from "../utils/categoryMatching.js";
++import { KitchenDish } from "../models/KitchenDish.js";
++import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
++import { getWeekStart } from "../utils/dates.js";
  
  const router = express.Router();
  const MAX_RESULTS = 15;
@@ -695,11 +534,32 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 -};
 -
 -async function ensureCategoryScope({ categoryId, effectiveHouseholdId }) {
--  const category = await Category.findOne(
--    buildScopedFilter(effectiveHouseholdId, { _id: categoryId })
--  );
+-  if (!categoryId) return null;
+-  const category = await Category.findOne({
+-    _id: categoryId,
+-    isArchived: { $ne: true },
+-    $or: [{ scope: CATALOG_SCOPES.MASTER }, { householdId: effectiveHouseholdId }]
+-  });
 -
 -  return category;
+-}
+-
+-function buildSearchFilter(q) {
+-  if (!q) return {};
+-
+-  const trimmed = String(q).trim();
+-  const normalized = normalizeIngredientName(trimmed);
+-  const normalizedRegex = normalized ? new RegExp(escapeRegex(normalized), "i") : null;
+-  const normalizedFallback =
+-    normalized && normalized.length > 4 ? new RegExp(escapeRegex(normalized.slice(0, -1)), "i") : null;
+-  const nameRegex = trimmed ? buildAccentInsensitiveRegex(trimmed) : null;
+-  const orFilters = [];
+-  if (normalizedRegex) orFilters.push({ canonicalName: normalizedRegex });
+-  if (normalizedFallback) orFilters.push({ canonicalName: normalizedFallback });
+-  if (nameRegex) orFilters.push({ name: nameRegex });
+-  if (!orFilters.length) return {};
+-
+-  return { $or: orFilters };
 -}
 +const ACCENT_CHAR_MAP = {
 +  a: "aàáâäãå",
@@ -727,7 +587,9 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 +};
 +
 +async function ensureCategoryScope({ categoryId, effectiveHouseholdId }) {
-+  if (!categoryId) return null;
++  if (!categoryId) {
++    return ensureDefaultCategory({ Category, householdId: effectiveHouseholdId });
++  }
 +  const category = await Category.findOne({
 +    _id: categoryId,
 +    isArchived: { $ne: true },
@@ -735,6 +597,54 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 +  });
 +
 +  return category;
++}
++
++async function syncIngredientReferences({ ingredientId, name, canonicalName, householdId }) {
++  const dishFilter = {
++    "ingredients.ingredientId": ingredientId,
++    isArchived: { $ne: true }
++  };
++
++  if (householdId) {
++    dishFilter.$or = [
++      { scope: CATALOG_SCOPES.MASTER },
++      { householdId },
++      { scope: CATALOG_SCOPES.OVERRIDE, householdId }
++    ];
++  }
++
++  await KitchenDish.updateMany(
++    dishFilter,
++    {
++      $set: {
++        "ingredients.$[entry].displayName": name,
++        "ingredients.$[entry].canonicalName": canonicalName
++      }
++    },
++    {
++      arrayFilters: [{ "entry.ingredientId": ingredientId }]
++    }
++  );
++
++  const todayWeekStart = getWeekStart(new Date());
++  const weekFilter = {
++    weekStart: { $gte: todayWeekStart },
++    "days.ingredientOverrides.ingredientId": ingredientId
++  };
++  if (householdId) weekFilter.householdId = householdId;
++
++  await KitchenWeekPlan.updateMany(
++    weekFilter,
++    {
++      $set: {
++        "days.$[].ingredientOverrides.$[entry].displayName": name,
++        "days.$[].ingredientOverrides.$[entry].canonicalName": canonicalName
++      }
++    },
++    {
++      arrayFilters: [{ "entry.ingredientId": ingredientId }]
++    }
++  );
 +}
 +
 +function buildSearchFilter(q) {
@@ -759,45 +669,29 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 -  try {
 -    const { q, includeInactive, limit } = req.query;
 -    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const filters = buildScopedFilter(effectiveHouseholdId, {});
 -    const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
--    if (!shouldIncludeInactive) {
--      filters.active = true;
--    }
 -
--    if (q) {
--      const trimmed = String(q).trim();
--      const normalized = normalizeIngredientName(trimmed);
--      const normalizedRegex = normalized ? new RegExp(escapeRegex(normalized), "i") : null;
--      const normalizedFallback =
--        normalized && normalized.length > 4 ? new RegExp(escapeRegex(normalized.slice(0, -1)), "i") : null;
--      const nameRegex = trimmed ? buildAccentInsensitiveRegex(trimmed) : null;
--      const orFilters = [];
--      if (normalizedRegex) orFilters.push({ canonicalName: normalizedRegex });
--      if (normalizedFallback) orFilters.push({ canonicalName: normalizedFallback });
--      if (nameRegex) orFilters.push({ name: nameRegex });
--      if (orFilters.length) {
--        if (Array.isArray(filters.$and)) {
--          filters.$and.push({ $or: orFilters });
--        } else {
--          Object.assign(filters, { $and: [{ $or: orFilters }] });
--        }
--      }
--    }
+-    const ingredients = await resolveCatalogForHousehold({
+-      Model: KitchenIngredient,
+-      householdId: effectiveHouseholdId,
+-      type: "ingredient",
+-      baseFilter: buildSearchFilter(q),
+-      masterFilter: shouldIncludeInactive ? {} : { active: true },
+-      householdFilter: shouldIncludeInactive ? {} : { active: true },
+-      overrideFilter: shouldIncludeInactive ? {} : { active: true },
+-      populate: { path: "categoryId", select: "name colorBg colorText" },
+-      sort: { name: 1 }
+-    });
 -
 -    const limitValue = Number.parseInt(limit, 10);
--    let queryBuilder = KitchenIngredient.find(filters)
--      .populate("categoryId", "name colorBg colorText")
--      .sort({ name: 1 });
--    if (!Number.isNaN(limitValue) && limitValue > 0) {
--      queryBuilder = queryBuilder.limit(limitValue);
--    } else if (!limit) {
--      queryBuilder = queryBuilder.limit(MAX_RESULTS);
--    }
+-    const resolvedIngredients =
+-      !Number.isNaN(limitValue) && limitValue > 0
+-        ? ingredients.slice(0, limitValue)
+-        : !limit
+-          ? ingredients.slice(0, MAX_RESULTS)
+-          : ingredients;
 -
--    const ingredients = await queryBuilder;
--
--    return res.json({ ok: true, ingredients });
+-    return res.json({ ok: true, ingredients: resolvedIngredients });
 -  } catch (error) {
 -    const handled = handleHouseholdError(res, error);
 -    if (handled) return handled;
@@ -816,7 +710,7 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 +      masterFilter: shouldIncludeInactive ? {} : { active: true },
 +      householdFilter: shouldIncludeInactive ? {} : { active: true },
 +      overrideFilter: shouldIncludeInactive ? {} : { active: true },
-+      populate: { path: "categoryId", select: "name colorBg colorText" },
++      populate: { path: "categoryId", select: "name slug colorBg colorText" },
 +      sort: { name: 1 }
 +    });
 +
@@ -838,18 +732,25 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
  
  router.post("/", requireAuth, async (req, res) => {
    try {
--    const { name, categoryId, canonicalName: canonicalInput } = req.body;
+-    const { name, categoryId, canonicalName: canonicalInput, scope } = req.body;
 +    const { name, categoryId, canonicalName: canonicalInput, scope } = req.body;
      if (!name) return res.status(400).json({ ok: false, error: "El nombre del ingrediente es obligatorio." });
-     if (!categoryId)
-       return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
- 
+-    if (!categoryId)
+-      return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
+-
+-    const isDiod = isDiodUser(req.kitchenUser);
+-    const isMasterWrite = scope === CATALOG_SCOPES.MASTER;
+-    if (isMasterWrite && !isDiod) {
+-      return res.status(403).json({ ok: false, error: "Solo DIOD puede crear ingredientes master." });
+-    }
+-
 -    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--        const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId });
+-    const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId });
 -    if (!category) {
 -      return res.status(404).json({ ok: false, error: "Categoría no encontrada para el hogar actual." });
 -    }
 -
++
 +    const isDiod = isDiodUser(req.kitchenUser);
 +    const isMasterWrite = scope === CATALOG_SCOPES.MASTER;
 +    if (isMasterWrite && !isDiod) {
@@ -868,14 +769,14 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
      if (!canonicalName)
        return res.status(400).json({ ok: false, error: "El nombre del ingrediente no es válido." });
  
--    const existing = await KitchenIngredient.findOne(
--      buildScopedFilter(
--        effectiveHouseholdId,
--        {
--          canonicalName: new RegExp(`^${escapeRegex(canonicalName)}$`, "i")
--        }
--      )
--    ).populate("categoryId", "name colorBg colorText");
+-    const duplicateFilter = {
+-      canonicalName: new RegExp(`^${escapeRegex(canonicalName)}$`, "i"),
+-      scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
+-      isArchived: { $ne: true }
+-    };
+-    if (!isMasterWrite) duplicateFilter.householdId = effectiveHouseholdId;
+-
+-    const existing = await KitchenIngredient.findOne(duplicateFilter).populate("categoryId", "name colorBg colorText");
 +    const duplicateFilter = {
 +      canonicalName: new RegExp(`^${escapeRegex(canonicalName)}$`, "i"),
 +      scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
@@ -883,7 +784,7 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 +    };
 +    if (!isMasterWrite) duplicateFilter.householdId = effectiveHouseholdId;
 +
-+    const existing = await KitchenIngredient.findOne(duplicateFilter).populate("categoryId", "name colorBg colorText");
++    const existing = await KitchenIngredient.findOne(duplicateFilter).populate("categoryId", "name slug colorBg colorText");
  
      if (existing) return res.json({ ok: true, ingredient: existing, created: false });
  
@@ -891,17 +792,23 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
        name: trimmedName,
        canonicalName,
 -      categoryId,
--      householdId: effectiveHouseholdId
-+      categoryId,
+-      scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
+-      householdId: isMasterWrite ? undefined : effectiveHouseholdId
++      categoryId: category._id,
 +      scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
 +      householdId: isMasterWrite ? undefined : effectiveHouseholdId
      });
  
      const populatedIngredient = await KitchenIngredient.findById(ingredient._id).populate(
        "categoryId",
-       "name colorBg colorText"
+-      "name colorBg colorText"
++      "name slug colorBg colorText"
      );
  
+-    if (!isMasterWrite) {
+-      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "ingredient", masterId: ingredient._id });
+-    }
+-
 +    if (!isMasterWrite) {
 +      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "ingredient", masterId: ingredient._id });
 +    }
@@ -927,7 +834,8 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 -      return res.status(400).json({ ok: false, error: "Indica si el ingrediente está activo." });
 -
 -    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--        const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId });
+-    const isDiod = isDiodUser(req.kitchenUser);
+-    const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId });
 -    if (!category) {
 -      return res.status(404).json({ ok: false, error: "Categoría no encontrada para el hogar actual." });
 -    }
@@ -937,20 +845,53 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 -    if (!canonicalName)
 -      return res.status(400).json({ ok: false, error: "El nombre del ingrediente no es válido." });
 -
--    const ingredient = await KitchenIngredient.findOneAndUpdate(
--      buildScopedFilter(effectiveHouseholdId, { _id: id }),
--      {
--        name: trimmedName,
--        canonicalName,
--        categoryId,
--        active
--      },
--      { new: true }
--    ).populate("categoryId", "name colorBg colorText");
--
--    if (!ingredient) {
+-    const target = await KitchenIngredient.findById(id);
+-    if (!target || target.isArchived) {
 -      return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
 -    }
+-
+-    const nextData = {
+-      name: trimmedName,
+-      canonicalName,
+-      categoryId,
+-      active
+-    };
+-
+-    if (target.scope === CATALOG_SCOPES.MASTER) {
+-      if (isDiod) {
+-        Object.assign(target, nextData);
+-        await target.save();
+-        const ingredient = await KitchenIngredient.findById(target._id).populate("categoryId", "name colorBg colorText");
+-        return res.json({ ok: true, ingredient });
+-      }
+-
+-      const ingredient = await KitchenIngredient.findOneAndUpdate(
+-        {
+-          householdId: effectiveHouseholdId,
+-          scope: CATALOG_SCOPES.OVERRIDE,
+-          masterId: target._id
+-        },
+-        {
+-          ...nextData,
+-          householdId: effectiveHouseholdId,
+-          scope: CATALOG_SCOPES.OVERRIDE,
+-          masterId: target._id,
+-          isArchived: false
+-        },
+-        { upsert: true, new: true, setDefaultsOnInsert: true }
+-      ).populate("categoryId", "name colorBg colorText");
+-
+-      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "ingredient", masterId: target._id });
+-      return res.json({ ok: true, ingredient, overridden: true });
+-    }
+-
+-    if (!target.householdId || String(target.householdId) !== String(effectiveHouseholdId)) {
+-      return res.status(403).json({ ok: false, error: "No tienes permisos para modificar este ingrediente." });
+-    }
+-
+-    Object.assign(target, nextData);
+-    await target.save();
+-    const ingredient = await KitchenIngredient.findById(target._id).populate("categoryId", "name colorBg colorText");
 -
 -    return res.json({ ok: true, ingredient });
 -  } catch (error) {
@@ -960,13 +901,46 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 -  }
 -});
 -
+-router.delete("/:id", requireAuth, async (req, res) => {
+-  try {
+-    const { id } = req.params;
+-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+-    const isDiod = isDiodUser(req.kitchenUser);
+-    const target = await KitchenIngredient.findById(id);
+-
+-    if (!target || target.isArchived) {
+-      return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
+-    }
+-
+-    if (target.scope === CATALOG_SCOPES.MASTER) {
+-      if (isDiod) {
+-        target.isArchived = true;
+-        await target.save();
+-      } else {
+-        await hideMasterForHousehold({ householdId: effectiveHouseholdId, type: "ingredient", masterId: target._id });
+-      }
+-      return res.json({ ok: true });
+-    }
+-
+-    if (!target.householdId || String(target.householdId) !== String(effectiveHouseholdId)) {
+-      return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar este ingrediente." });
+-    }
+-
+-    target.isArchived = true;
+-    await target.save();
+-    return res.json({ ok: true });
+-  } catch (error) {
+-    const handled = handleHouseholdError(res, error);
+-    if (handled) return handled;
+-    return res.status(500).json({ ok: false, error: "No se pudo eliminar el ingrediente." });
+-  }
+-});
+-
 +router.put("/:id", requireAuth, async (req, res) => {
 +  try {
 +    const { id } = req.params;
 +    const { name, categoryId, active, canonicalName: canonicalInput } = req.body;
 +    if (!name) return res.status(400).json({ ok: false, error: "El nombre del ingrediente es obligatorio." });
-+    if (!categoryId)
-+      return res.status(400).json({ ok: false, error: "Selecciona una categoría para el ingrediente." });
 +    if (typeof active !== "boolean")
 +      return res.status(400).json({ ok: false, error: "Indica si el ingrediente está activo." });
 +
@@ -990,7 +964,7 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 +    const nextData = {
 +      name: trimmedName,
 +      canonicalName,
-+      categoryId,
++      categoryId: category._id,
 +      active
 +    };
 +
@@ -998,7 +972,8 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 +      if (isDiod) {
 +        Object.assign(target, nextData);
 +        await target.save();
-+        const ingredient = await KitchenIngredient.findById(target._id).populate("categoryId", "name colorBg colorText");
++        await syncIngredientReferences({ ingredientId: target._id, name: trimmedName, canonicalName, householdId: effectiveHouseholdId });
++        const ingredient = await KitchenIngredient.findById(target._id).populate("categoryId", "name slug colorBg colorText");
 +        return res.json({ ok: true, ingredient });
 +      }
 +
@@ -1016,7 +991,9 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 +          isArchived: false
 +        },
 +        { upsert: true, new: true, setDefaultsOnInsert: true }
-+      ).populate("categoryId", "name colorBg colorText");
++      ).populate("categoryId", "name slug colorBg colorText");
++
++      await syncIngredientReferences({ ingredientId: ingredient._id, name: trimmedName, canonicalName, householdId: effectiveHouseholdId });
 +
 +      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "ingredient", masterId: target._id });
 +      return res.json({ ok: true, ingredient, overridden: true });
@@ -1028,7 +1005,8 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 +
 +    Object.assign(target, nextData);
 +    await target.save();
-+    const ingredient = await KitchenIngredient.findById(target._id).populate("categoryId", "name colorBg colorText");
++    await syncIngredientReferences({ ingredientId: target._id, name: trimmedName, canonicalName, householdId: effectiveHouseholdId });
++    const ingredient = await KitchenIngredient.findById(target._id).populate("categoryId", "name slug colorBg colorText");
 +
 +    return res.json({ ok: true, ingredient });
 +  } catch (error) {
@@ -1074,1434 +1052,3 @@ index e029180456eac2241815e4221c4dad12d76b7630..ff576c38cef9b7311ff56a3bd4514259
 +});
 +
  export default router;
-diff --git a/frontend/src/kitchen/pages/DishesPage.jsx b/frontend/src/kitchen/pages/DishesPage.jsx
-index 6e7ef09f983219fa664972d58b849dc6f40080d7..13265080af78d36266eeb2cc28b38ee76b78affd 100644
---- a/frontend/src/kitchen/pages/DishesPage.jsx
-+++ b/frontend/src/kitchen/pages/DishesPage.jsx
-@@ -1,729 +1,729 @@
--import React, { useCallback, useEffect, useMemo, useState } from "react";
--import { useNavigate } from "react-router-dom";
-+import React, { useCallback, useEffect, useMemo, useState } from "react";
-+import { useNavigate } from "react-router-dom";
- import { apiRequest } from "../api.js";
- import KitchenLayout from "../Layout.jsx";
- import { useAuth } from "../auth";
--import DishModal from "../components/DishModal.jsx";
--import IngredientModal from "../components/IngredientModal.jsx";
--import CategoryChip from "../components/CategoryChip.jsx";
--import { resolveCategoryColors } from "../components/categoryUtils.js";
--import { normalizeIngredientName } from "../utils/normalize.js";
--
--const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
--
--function getMondayISO(date = new Date()) {
--  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
--  const day = d.getUTCDay();
--  const diff = (day === 0 ? -6 : 1) - day;
--  d.setUTCDate(d.getUTCDate() + diff);
--  return d.toISOString().slice(0, 10);
--}
--
--function addDaysToISO(dateString, days) {
--  const [year, month, day] = dateString.split("-").map(Number);
--  const date = new Date(Date.UTC(year, month - 1, day));
--  date.setUTCDate(date.getUTCDate() + days);
--  return date.toISOString().slice(0, 10);
--}
--
--function buildAssignDays(weekStart) {
--  return Array.from({ length: 7 }, (_, index) => {
--    const date = addDaysToISO(weekStart, index);
--    return {
--      date,
--      label: getAssignDayLabel(date),
--      number: getAssignDayNumber(date)
--    };
--  });
--}
--
--function formatWeekLabel(dateString) {
--  if (!dateString) return "-";
--  const date = new Date(`${dateString}T00:00:00Z`);
--  if (Number.isNaN(date.getTime())) return "-";
--  return date.toLocaleDateString("es-ES", {
--    day: "2-digit",
--    month: "2-digit",
--    year: "numeric"
--  });
--}
--
--function getAssignDayLabel(dateString) {
--  if (!dateString) return "-";
--  const date = new Date(`${dateString}T00:00:00Z`);
--  const dayIndex = date.getUTCDay();
--  return ASSIGN_DAY_LABELS[dayIndex] || "-";
--}
--
--function getAssignDayNumber(dateString) {
--  if (!dateString) return "-";
--  const date = new Date(`${dateString}T00:00:00Z`);
--  return date.getUTCDate();
--}
--
--function ChevronIcon(props) {
--  return (
--    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
--      <path d="M15 18l-6-6 6-6" />
--    </svg>
--  );
--}
-+import DishModal from "../components/DishModal.jsx";
-+import IngredientModal from "../components/IngredientModal.jsx";
-+import CategoryChip from "../components/CategoryChip.jsx";
-+import { resolveCategoryColors } from "../components/categoryUtils.js";
-+import { normalizeIngredientName } from "../utils/normalize.js";
-+
-+const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
-+
-+function getMondayISO(date = new Date()) {
-+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-+  const day = d.getUTCDay();
-+  const diff = (day === 0 ? -6 : 1) - day;
-+  d.setUTCDate(d.getUTCDate() + diff);
-+  return d.toISOString().slice(0, 10);
-+}
-+
-+function addDaysToISO(dateString, days) {
-+  const [year, month, day] = dateString.split("-").map(Number);
-+  const date = new Date(Date.UTC(year, month - 1, day));
-+  date.setUTCDate(date.getUTCDate() + days);
-+  return date.toISOString().slice(0, 10);
-+}
-+
-+function buildAssignDays(weekStart) {
-+  return Array.from({ length: 7 }, (_, index) => {
-+    const date = addDaysToISO(weekStart, index);
-+    return {
-+      date,
-+      label: getAssignDayLabel(date),
-+      number: getAssignDayNumber(date)
-+    };
-+  });
-+}
-+
-+function formatWeekLabel(dateString) {
-+  if (!dateString) return "-";
-+  const date = new Date(`${dateString}T00:00:00Z`);
-+  if (Number.isNaN(date.getTime())) return "-";
-+  return date.toLocaleDateString("es-ES", {
-+    day: "2-digit",
-+    month: "2-digit",
-+    year: "numeric"
-+  });
-+}
-+
-+function getAssignDayLabel(dateString) {
-+  if (!dateString) return "-";
-+  const date = new Date(`${dateString}T00:00:00Z`);
-+  const dayIndex = date.getUTCDay();
-+  return ASSIGN_DAY_LABELS[dayIndex] || "-";
-+}
-+
-+function getAssignDayNumber(dateString) {
-+  if (!dateString) return "-";
-+  const date = new Date(`${dateString}T00:00:00Z`);
-+  return date.getUTCDate();
-+}
-+
-+function ChevronIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-+      <path d="M15 18l-6-6 6-6" />
-+    </svg>
-+  );
-+}
- 
- export default function DishesPage() {
-   const { user } = useAuth();
--  const navigate = useNavigate();
-+  const navigate = useNavigate();
-   const [dishes, setDishes] = useState([]);
--  const [categories, setCategories] = useState([]);
-+  const [categories, setCategories] = useState([]);
-   const [loading, setLoading] = useState(true);
--  const [dishError, setDishError] = useState("");
--  const [isModalOpen, setIsModalOpen] = useState(false);
--  const [activeDish, setActiveDish] = useState(null);
--  const [dishSearchTerm, setDishSearchTerm] = useState("");
--  const [activeTab, setActiveTab] = useState("main");
--  const [initialSidedish, setInitialSidedish] = useState(false);
--  const [ingredients, setIngredients] = useState([]);
--  const [ingredientsLoading, setIngredientsLoading] = useState(false);
--  const [ingredientsError, setIngredientsError] = useState("");
--  const [ingredientSearchTerm, setIngredientSearchTerm] = useState("");
--  const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
--  const [activeIngredient, setActiveIngredient] = useState(null);
--  const [assignModalOpen, setAssignModalOpen] = useState(false);
--  const [assignDish, setAssignDish] = useState(null);
--  const [assignDate, setAssignDate] = useState("");
--  const todayKey = new Date().toISOString().slice(0, 10);
--  const currentWeekStart = useMemo(
--    () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
--    [todayKey]
--  );
--  const [assignWeekStart, setAssignWeekStart] = useState(currentWeekStart);
--  const [assignWeekData, setAssignWeekData] = useState({
--    status: "idle",
--    occupied: {},
--    dishNames: {}
--  });
-+  const [dishError, setDishError] = useState("");
-+  const [isModalOpen, setIsModalOpen] = useState(false);
-+  const [activeDish, setActiveDish] = useState(null);
-+  const [dishSearchTerm, setDishSearchTerm] = useState("");
-+  const [activeTab, setActiveTab] = useState("main");
-+  const [initialSidedish, setInitialSidedish] = useState(false);
-+  const [ingredients, setIngredients] = useState([]);
-+  const [ingredientsLoading, setIngredientsLoading] = useState(false);
-+  const [ingredientsError, setIngredientsError] = useState("");
-+  const [ingredientSearchTerm, setIngredientSearchTerm] = useState("");
-+  const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
-+  const [activeIngredient, setActiveIngredient] = useState(null);
-+  const [assignModalOpen, setAssignModalOpen] = useState(false);
-+  const [assignDish, setAssignDish] = useState(null);
-+  const [assignDate, setAssignDate] = useState("");
-+  const todayKey = new Date().toISOString().slice(0, 10);
-+  const currentWeekStart = useMemo(
-+    () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
-+    [todayKey]
-+  );
-+  const [assignWeekStart, setAssignWeekStart] = useState(currentWeekStart);
-+  const [assignWeekData, setAssignWeekData] = useState({
-+    status: "idle",
-+    occupied: {},
-+    dishNames: {}
-+  });
- 
-   const loadDishes = async () => {
-     setLoading(true);
--    setDishError("");
-+    setDishError("");
-     try {
-       const data = await apiRequest("/api/kitchen/dishes");
-       setDishes(data.dishes || []);
-     } catch (err) {
--      setDishError(err.message || "No se pudieron cargar los platos.");
-+      setDishError(err.message || "No se pudieron cargar los platos.");
-     } finally {
-       setLoading(false);
-     }
-   };
- 
-   useEffect(() => {
-     loadDishes();
-   }, []);
- 
--  const loadCategories = async () => {
--    try {
--      const data = await apiRequest("/api/categories");
--      setCategories(data.categories || []);
--    } catch (err) {
--      setDishError(err.message || "No se pudieron cargar las categorías.");
--    }
--  };
--
--  useEffect(() => {
--    loadCategories();
--  }, []);
--
--  const startEdit = useCallback(
--    (dish) => {
--      setDishError("");
--      setActiveDish(dish);
--      setIsModalOpen(true);
--    },
--    []
--  );
--
--  const startCreate = () => {
--    setActiveDish(null);
--    setDishError("");
--    setInitialSidedish(activeTab === "side");
--    setIsModalOpen(true);
-+  const loadCategories = async () => {
-+    try {
-+      const data = await apiRequest("/api/categories");
-+      setCategories(data.categories || []);
-+    } catch (err) {
-+      setDishError(err.message || "No se pudieron cargar las categorías.");
-+    }
-+  };
-+
-+  useEffect(() => {
-+    loadCategories();
-+  }, []);
-+
-+  const startEdit = useCallback(
-+    (dish) => {
-+      setDishError("");
-+      setActiveDish(dish);
-+      setIsModalOpen(true);
-+    },
-+    []
-+  );
-+
-+  const startCreate = () => {
-+    setActiveDish(null);
-+    setDishError("");
-+    setInitialSidedish(activeTab === "side");
-+    setIsModalOpen(true);
-   };
- 
--  const closeModal = () => {
--    setIsModalOpen(false);
--    setActiveDish(null);
--  };
--
--  const onCategoryCreated = async (name, colors = null) => {
--    const data = await apiRequest("/api/categories", {
--      method: "POST",
--      body: JSON.stringify({
--        name,
--        colorBg: colors?.colorBg,
--        colorText: colors?.colorText
--      })
--    });
--    const category = data.category;
--    setCategories((prev) => {
--      const exists = prev.find((item) => item._id === category._id);
--      if (exists) return prev;
--      return [...prev, category];
--    });
--    return category;
--  };
--
--  const normalizedSearch = useMemo(
--    () => normalizeIngredientName(dishSearchTerm),
--    [dishSearchTerm]
--  );
--  const tabFilteredDishes = useMemo(() => {
--    const shouldShowSide = activeTab === "side";
--    return dishes.filter((dish) => Boolean(dish.sidedish) === shouldShowSide);
--  }, [activeTab, dishes]);
--  const visibleDishes = useMemo(() => {
--    if (!normalizedSearch) return tabFilteredDishes;
--    return tabFilteredDishes.filter((dish) => {
--      const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
--      if (nameMatch) return true;
--      return (dish.ingredients || []).some((item) => {
--        const displayName = normalizeIngredientName(item.displayName || "");
--        const canonicalName = normalizeIngredientName(item.canonicalName || "");
--        return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
--      });
--    });
--  }, [normalizedSearch, tabFilteredDishes]);
--  const dishMap = useMemo(() => {
--    const map = new Map();
--    dishes.forEach((dish) => {
--      if (dish?._id) map.set(dish._id, dish);
--    });
--    return map;
--  }, [dishes]);
--
--  const emptyMessage = useMemo(() => {
--    if (dishes.length === 0) {
--      return "No hay platos aún. Crea el primero.";
--    }
--    if (visibleDishes.length === 0) {
--      if (dishSearchTerm.trim()) {
--        return "No encontramos platos con ese criterio.";
--      }
--      return activeTab === "side"
--        ? "No hay guarniciones aún. Crea la primera."
--        : "No hay platos principales aún. Crea el primero.";
--    }
--    return "";
--  }, [activeTab, dishSearchTerm, dishes.length, visibleDishes.length]);
--
--  const loadIngredients = useCallback(async (query = "") => {
--    setIngredientsLoading(true);
--    setIngredientsError("");
--    try {
--      const params = new URLSearchParams({ includeInactive: "true", limit: "0" });
--      if (query.trim()) params.set("q", query.trim());
--      const data = await apiRequest(`/api/kitchenIngredients?${params.toString()}`);
--      setIngredients(data.ingredients || []);
--    } catch (err) {
--      setIngredientsError(err.message || "No se pudieron cargar los ingredientes.");
--    } finally {
--      setIngredientsLoading(false);
--    }
--  }, []);
--
--  useEffect(() => {
--    if (activeTab !== "ingredients") return;
--    const timeout = setTimeout(() => {
--      loadIngredients(ingredientSearchTerm);
--    }, 250);
--    return () => clearTimeout(timeout);
--  }, [activeTab, ingredientSearchTerm, loadIngredients]);
--
--  const startIngredientCreate = () => {
--    setActiveIngredient(null);
--    setIngredientsError("");
--    setIsIngredientModalOpen(true);
--  };
--
--  const startIngredientEdit = (ingredient) => {
--    setActiveIngredient(ingredient);
--    setIngredientsError("");
--    setIsIngredientModalOpen(true);
--  };
--
--  const closeIngredientModal = () => {
--    setIsIngredientModalOpen(false);
--    setActiveIngredient(null);
--  };
--
--  const assignDays = useMemo(() => {
--    return buildAssignDays(assignWeekStart);
--  }, [assignWeekStart]);
--
--  useEffect(() => {
--    if (!assignModalOpen) return;
--    let isActive = true;
--    setAssignWeekData({ status: "loading", occupied: {}, dishNames: {} });
--
--    apiRequest(`/api/kitchen/weeks/${assignWeekStart}`)
--      .then((data) => {
--        if (!isActive) return;
--        const occupied = {};
--        const dishNames = {};
--        (data?.plan?.days || []).forEach((day) => {
--          const dayKey = day?.date?.slice(0, 10);
--          if (!dayKey) return;
--          if (day.mainDishId) {
--            occupied[dayKey] = true;
--            const dishName = dishMap.get(day.mainDishId)?.name;
--            if (dishName) {
--              dishNames[dayKey] = dishName;
--            }
--          }
--        });
--        setAssignWeekData({ status: "ready", occupied, dishNames });
--      })
--      .catch(() => {
--        if (!isActive) return;
--        setAssignWeekData({ status: "error", occupied: {}, dishNames: {} });
--      });
--
--    return () => {
--      isActive = false;
--    };
--  }, [assignModalOpen, assignWeekStart, dishMap]);
--
--  useEffect(() => {
--    if (!assignModalOpen) return;
--    const occupancyReady = assignWeekData.status === "ready";
--    const isDateInWeek = assignDays.some((day) => day.date === assignDate);
--    const isCurrentValid =
--      assignDate &&
--      isDateInWeek &&
--      assignDate >= todayKey &&
--      (!occupancyReady || !assignWeekData.occupied[assignDate]);
--    if (isCurrentValid) return;
--    const nextDate =
--      assignDays.find(
--        (day) =>
--          day.date >= todayKey &&
--          (!occupancyReady || !assignWeekData.occupied[day.date])
--      )?.date || "";
--    if (nextDate !== assignDate) {
--      setAssignDate(nextDate);
--    }
--  }, [assignModalOpen, assignDate, assignDays, assignWeekData, todayKey]);
--
--  const openAssignModal = (dish) => {
--    if (!dish) return;
--    const initialWeekStart = getMondayISO();
--    const initialDays = buildAssignDays(initialWeekStart);
--    const initialDate = initialDays.find((day) => day.date >= todayKey)?.date || "";
--    setAssignDish(dish);
--    setAssignWeekStart(initialWeekStart);
--    setAssignDate(initialDate);
--    setAssignModalOpen(true);
--  };
--
--  const closeAssignModal = () => {
--    setAssignModalOpen(false);
--    setAssignDish(null);
--    setAssignDate("");
--    setAssignWeekData({ status: "idle", occupied: {}, dishNames: {} });
--  };
--
--  const confirmAssign = () => {
--    if (!assignDish?._id || !assignDate) return;
--    navigate(`/kitchen/semana?assignPlateId=${assignDish._id}&date=${assignDate}`);
--    closeAssignModal();
--  };
--
--  const ingredientEmptyMessage = useMemo(() => {
--    if (ingredients.length === 0) {
--      return "No hay ingredientes aún. Crea el primero.";
--    }
--    if (ingredientSearchTerm.trim()) {
--      return "No encontramos ingredientes con ese criterio.";
--    }
--    return "";
--  }, [ingredientSearchTerm, ingredients.length]);
--
--  const isIngredientsTab = activeTab === "ingredients";
--  const headerTitle = isIngredientsTab ? "Ingredientes" : "Platos";
--  const headerDescription = isIngredientsTab
--    ? "Gestiona el catálogo de ingredientes con sus categorías y estado."
--    : "Administra tus platos y sus ingredientes en un solo lugar.";
--  const headerActionLabel = isIngredientsTab
--    ? "Nuevo ingrediente"
--    : activeTab === "side"
--      ? "Nueva guarnición"
--      : "Nuevo plato";
--  const headerActionHandler = isIngredientsTab ? startIngredientCreate : startCreate;
--
-+  const closeModal = () => {
-+    setIsModalOpen(false);
-+    setActiveDish(null);
-+  };
-+
-+  const onCategoryCreated = async (name, colors = null) => {
-+    const data = await apiRequest("/api/categories", {
-+      method: "POST",
-+      body: JSON.stringify({
-+        name,
-+        colorBg: colors?.colorBg,
-+        colorText: colors?.colorText
-+      })
-+    });
-+    const category = data.category;
-+    setCategories((prev) => {
-+      const exists = prev.find((item) => item._id === category._id);
-+      if (exists) return prev;
-+      return [...prev, category];
-+    });
-+    return category;
-+  };
-+
-+  const normalizedSearch = useMemo(
-+    () => normalizeIngredientName(dishSearchTerm),
-+    [dishSearchTerm]
-+  );
-+  const tabFilteredDishes = useMemo(() => {
-+    const shouldShowSide = activeTab === "side";
-+    return dishes.filter((dish) => Boolean(dish.sidedish) === shouldShowSide);
-+  }, [activeTab, dishes]);
-+  const visibleDishes = useMemo(() => {
-+    if (!normalizedSearch) return tabFilteredDishes;
-+    return tabFilteredDishes.filter((dish) => {
-+      const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
-+      if (nameMatch) return true;
-+      return (dish.ingredients || []).some((item) => {
-+        const displayName = normalizeIngredientName(item.displayName || "");
-+        const canonicalName = normalizeIngredientName(item.canonicalName || "");
-+        return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
-+      });
-+    });
-+  }, [normalizedSearch, tabFilteredDishes]);
-+  const dishMap = useMemo(() => {
-+    const map = new Map();
-+    dishes.forEach((dish) => {
-+      if (dish?._id) map.set(dish._id, dish);
-+    });
-+    return map;
-+  }, [dishes]);
-+
-+  const emptyMessage = useMemo(() => {
-+    if (dishes.length === 0) {
-+      return "No hay platos aún. Crea el primero.";
-+    }
-+    if (visibleDishes.length === 0) {
-+      if (dishSearchTerm.trim()) {
-+        return "No encontramos platos con ese criterio.";
-+      }
-+      return activeTab === "side"
-+        ? "No hay guarniciones aún. Crea la primera."
-+        : "No hay platos principales aún. Crea el primero.";
-+    }
-+    return "";
-+  }, [activeTab, dishSearchTerm, dishes.length, visibleDishes.length]);
-+
-+  const loadIngredients = useCallback(async (query = "") => {
-+    setIngredientsLoading(true);
-+    setIngredientsError("");
-+    try {
-+      const params = new URLSearchParams({ includeInactive: "true", limit: "0" });
-+      if (query.trim()) params.set("q", query.trim());
-+      const data = await apiRequest(`/api/kitchenIngredients?${params.toString()}`);
-+      setIngredients(data.ingredients || []);
-+    } catch (err) {
-+      setIngredientsError(err.message || "No se pudieron cargar los ingredientes.");
-+    } finally {
-+      setIngredientsLoading(false);
-+    }
-+  }, []);
-+
-+  useEffect(() => {
-+    if (activeTab !== "ingredients") return;
-+    const timeout = setTimeout(() => {
-+      loadIngredients(ingredientSearchTerm);
-+    }, 250);
-+    return () => clearTimeout(timeout);
-+  }, [activeTab, ingredientSearchTerm, loadIngredients]);
-+
-+  const startIngredientCreate = () => {
-+    setActiveIngredient(null);
-+    setIngredientsError("");
-+    setIsIngredientModalOpen(true);
-+  };
-+
-+  const startIngredientEdit = (ingredient) => {
-+    setActiveIngredient(ingredient);
-+    setIngredientsError("");
-+    setIsIngredientModalOpen(true);
-+  };
-+
-+  const closeIngredientModal = () => {
-+    setIsIngredientModalOpen(false);
-+    setActiveIngredient(null);
-+  };
-+
-+  const assignDays = useMemo(() => {
-+    return buildAssignDays(assignWeekStart);
-+  }, [assignWeekStart]);
-+
-+  useEffect(() => {
-+    if (!assignModalOpen) return;
-+    let isActive = true;
-+    setAssignWeekData({ status: "loading", occupied: {}, dishNames: {} });
-+
-+    apiRequest(`/api/kitchen/weeks/${assignWeekStart}`)
-+      .then((data) => {
-+        if (!isActive) return;
-+        const occupied = {};
-+        const dishNames = {};
-+        (data?.plan?.days || []).forEach((day) => {
-+          const dayKey = day?.date?.slice(0, 10);
-+          if (!dayKey) return;
-+          if (day.mainDishId) {
-+            occupied[dayKey] = true;
-+            const dishName = dishMap.get(day.mainDishId)?.name;
-+            if (dishName) {
-+              dishNames[dayKey] = dishName;
-+            }
-+          }
-+        });
-+        setAssignWeekData({ status: "ready", occupied, dishNames });
-+      })
-+      .catch(() => {
-+        if (!isActive) return;
-+        setAssignWeekData({ status: "error", occupied: {}, dishNames: {} });
-+      });
-+
-+    return () => {
-+      isActive = false;
-+    };
-+  }, [assignModalOpen, assignWeekStart, dishMap]);
-+
-+  useEffect(() => {
-+    if (!assignModalOpen) return;
-+    const occupancyReady = assignWeekData.status === "ready";
-+    const isDateInWeek = assignDays.some((day) => day.date === assignDate);
-+    const isCurrentValid =
-+      assignDate &&
-+      isDateInWeek &&
-+      assignDate >= todayKey &&
-+      (!occupancyReady || !assignWeekData.occupied[assignDate]);
-+    if (isCurrentValid) return;
-+    const nextDate =
-+      assignDays.find(
-+        (day) =>
-+          day.date >= todayKey &&
-+          (!occupancyReady || !assignWeekData.occupied[day.date])
-+      )?.date || "";
-+    if (nextDate !== assignDate) {
-+      setAssignDate(nextDate);
-+    }
-+  }, [assignModalOpen, assignDate, assignDays, assignWeekData, todayKey]);
-+
-+  const openAssignModal = (dish) => {
-+    if (!dish) return;
-+    const initialWeekStart = getMondayISO();
-+    const initialDays = buildAssignDays(initialWeekStart);
-+    const initialDate = initialDays.find((day) => day.date >= todayKey)?.date || "";
-+    setAssignDish(dish);
-+    setAssignWeekStart(initialWeekStart);
-+    setAssignDate(initialDate);
-+    setAssignModalOpen(true);
-+  };
-+
-+  const closeAssignModal = () => {
-+    setAssignModalOpen(false);
-+    setAssignDish(null);
-+    setAssignDate("");
-+    setAssignWeekData({ status: "idle", occupied: {}, dishNames: {} });
-+  };
-+
-+  const confirmAssign = () => {
-+    if (!assignDish?._id || !assignDate) return;
-+    navigate(`/kitchen/semana?assignPlateId=${assignDish._id}&date=${assignDate}`);
-+    closeAssignModal();
-+  };
-+
-+  const ingredientEmptyMessage = useMemo(() => {
-+    if (ingredients.length === 0) {
-+      return "No hay ingredientes aún. Crea el primero.";
-+    }
-+    if (ingredientSearchTerm.trim()) {
-+      return "No encontramos ingredientes con ese criterio.";
-+    }
-+    return "";
-+  }, [ingredientSearchTerm, ingredients.length]);
-+
-+  const isIngredientsTab = activeTab === "ingredients";
-+  const headerTitle = isIngredientsTab ? "Ingredientes" : "Platos";
-+  const headerDescription = isIngredientsTab
-+    ? "Gestiona el catálogo de ingredientes con sus categorías y estado."
-+    : "Administra tus platos y sus ingredientes en un solo lugar.";
-+  const headerActionLabel = isIngredientsTab
-+    ? "Nuevo ingrediente"
-+    : activeTab === "side"
-+      ? "Nueva guarnición"
-+      : "Nuevo plato";
-+  const headerActionHandler = isIngredientsTab ? startIngredientCreate : startCreate;
-+
-   return (
-     <KitchenLayout>
--      <div className="kitchen-dishes-page">
--        <div className="kitchen-dishes-header">
--          <div>
--            <h2>{headerTitle}</h2>
--            <p className="kitchen-muted">{headerDescription}</p>
--          </div>
--          <button className="kitchen-button" type="button" onClick={headerActionHandler}>
--            {headerActionLabel}
--          </button>
--        </div>
--        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Secciones de cocina">
--          <button
--            className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
--            type="button"
--            role="tab"
--            aria-selected={activeTab === "main"}
--            onClick={() => setActiveTab("main")}
--          >
--            Platos
--          </button>
--          <button
--            className={`kitchen-tab-button ${activeTab === "side" ? "is-active" : ""}`}
--            type="button"
--            role="tab"
--            aria-selected={activeTab === "side"}
--            onClick={() => setActiveTab("side")}
--          >
--            Guarniciones
--          </button>
--          <button
--            className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
--            type="button"
--            role="tab"
--            aria-selected={activeTab === "ingredients"}
--            onClick={() => setActiveTab("ingredients")}
--          >
--            Ingredientes
--          </button>
--        </div>
--        <div className="kitchen-dishes-search">
--          <input
--            className="kitchen-input"
--            placeholder={
--              isIngredientsTab ? "Buscar ingrediente…" : "Buscar por plato o ingrediente…"
--            }
--            value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
--            onChange={(event) =>
--              isIngredientsTab
--                ? setIngredientSearchTerm(event.target.value)
--                : setDishSearchTerm(event.target.value)
--            }
--          />
-+      <div className="kitchen-dishes-page">
-+        <div className="kitchen-dishes-header">
-+          <div>
-+            <h2>{headerTitle}</h2>
-+            <p className="kitchen-muted">{headerDescription}</p>
-+          </div>
-+          <button className="kitchen-button" type="button" onClick={headerActionHandler}>
-+            {headerActionLabel}
-+          </button>
-+        </div>
-+        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Secciones de cocina">
-+          <button
-+            className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
-+            type="button"
-+            role="tab"
-+            aria-selected={activeTab === "main"}
-+            onClick={() => setActiveTab("main")}
-+          >
-+            Platos
-+          </button>
-+          <button
-+            className={`kitchen-tab-button ${activeTab === "side" ? "is-active" : ""}`}
-+            type="button"
-+            role="tab"
-+            aria-selected={activeTab === "side"}
-+            onClick={() => setActiveTab("side")}
-+          >
-+            Guarniciones
-+          </button>
-+          <button
-+            className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
-+            type="button"
-+            role="tab"
-+            aria-selected={activeTab === "ingredients"}
-+            onClick={() => setActiveTab("ingredients")}
-+          >
-+            Ingredientes
-+          </button>
-+        </div>
-+        <div className="kitchen-dishes-search">
-+          <input
-+            className="kitchen-input"
-+            placeholder={
-+              isIngredientsTab ? "Buscar ingrediente…" : "Buscar por plato o ingrediente…"
-+            }
-+            value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
-+            onChange={(event) =>
-+              isIngredientsTab
-+                ? setIngredientSearchTerm(event.target.value)
-+                : setDishSearchTerm(event.target.value)
-+            }
-+          />
-+        </div>
-+        {isIngredientsTab ? (
-+          ingredientsLoading ? (
-+            <div className="kitchen-card kitchen-dishes-loading">Cargando ingredientes...</div>
-+          ) : ingredients.length === 0 ? (
-+            <div className="kitchen-card kitchen-empty">
-+              <p>{ingredientEmptyMessage}</p>
-+            </div>
-+          ) : (
-+            <div className="kitchen-dishes-grid">
-+              {ingredients.map((ingredient) => {
-+                const category = ingredient.categoryId || null;
-+                const colors = resolveCategoryColors(category);
-+                return (
-+                  <article className="kitchen-dish-card kitchen-ingredient-card" key={ingredient._id}>
-+                    <div>
-+                      <div className="kitchen-dish-title-row">
-+                        <h3 className="kitchen-dish-name">{ingredient.name}</h3>
-+                        <span
-+                          className={`kitchen-status-pill ${
-+                            ingredient.active ? "active" : "inactive"
-+                          }`}
-+                        >
-+                          {ingredient.active ? "Activo" : "Inactivo"}
-+                        </span>
-+                      </div>
-+                      <p className="kitchen-ingredient-canonical">
-+                        Canonical: {ingredient.canonicalName}
-+                      </p>
-+                      {category ? (
-+                        <div className="kitchen-ingredient-tags">
-+                          <CategoryChip
-+                            label={category.name}
-+                            colorBg={category.colorBg || colors.colorBg}
-+                            colorText={category.colorText || colors.colorText}
-+                          />
-+                        </div>
-+                      ) : null}
-+                    </div>
-+                    <div className="kitchen-dish-actions">
-+                      <button
-+                        className="kitchen-icon-button"
-+                        type="button"
-+                        onClick={() => startIngredientEdit(ingredient)}
-+                        aria-label={`Editar ${ingredient.name}`}
-+                      >
-+                        <svg viewBox="0 0 24 24" aria-hidden="true">
-+                          <path
-+                            d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
-+                            fill="none"
-+                            stroke="currentColor"
-+                            strokeWidth="1.5"
-+                            strokeLinecap="round"
-+                            strokeLinejoin="round"
-+                          />
-+                          <path
-+                            d="M15.75 5.625 18.375 8.25"
-+                            fill="none"
-+                            stroke="currentColor"
-+                            strokeWidth="1.5"
-+                            strokeLinecap="round"
-+                          />
-+                        </svg>
-+                      </button>
-+                    </div>
-+                  </article>
-+                );
-+              })}
-+            </div>
-+          )
-+        ) : loading ? (
-+          <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
-+        ) : visibleDishes.length === 0 ? (
-+          <div className="kitchen-card kitchen-empty">
-+            <p>{emptyMessage}</p>
-+          </div>
-+        ) : (
-+          <div className="kitchen-dishes-grid">
-+            {visibleDishes.map((dish) => {
-+              const ingredientsText =
-+                (dish.ingredients || []).map((item) => item.displayName).join(", ") ||
-+                "Sin ingredientes";
-+              return (
-+                <article
-+                  className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
-+                  key={dish._id}
-+                >
-+                  <div>
-+                    <div className="kitchen-dish-title-row">
-+                      <h3 className="kitchen-dish-name">{dish.name}</h3>
-+                      {dish.sidedish ? <span className="kitchen-dish-badge">Guarnición</span> : null}
-+                    </div>
-+                    <p className="kitchen-dish-ingredients-text" title={ingredientsText}>
-+                      {ingredientsText}
-+                    </p>
-+                  </div>
-+                  <div className="kitchen-dish-actions">
-+                    <button
-+                      className="kitchen-icon-button"
-+                      type="button"
-+                      onClick={() => startEdit(dish)}
-+                      aria-label={`Editar ${dish.name}`}
-+                    >
-+                      <svg viewBox="0 0 24 24" aria-hidden="true">
-+                        <path
-+                          d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
-+                          fill="none"
-+                          stroke="currentColor"
-+                          strokeWidth="1.5"
-+                          strokeLinecap="round"
-+                          strokeLinejoin="round"
-+                        />
-+                        <path
-+                          d="M15.75 5.625 18.375 8.25"
-+                          fill="none"
-+                          stroke="currentColor"
-+                          strokeWidth="1.5"
-+                          strokeLinecap="round"
-+                        />
-+                      </svg>
-+                    </button>
-+                    <button
-+                      className="kitchen-icon-button assign"
-+                      type="button"
-+                      onClick={() => openAssignModal(dish)}
-+                      aria-label="Asignar"
-+                      title="Asignar"
-+                    >
-+                      <svg viewBox="0 0 24 24" aria-hidden="true">
-+                        <path
-+                          d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M5 10h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"
-+                          fill="none"
-+                          stroke="currentColor"
-+                          strokeWidth="1.5"
-+                          strokeLinecap="round"
-+                          strokeLinejoin="round"
-+                        />
-+                        <path
-+                          d="m8 15 2 2 4-4"
-+                          fill="none"
-+                          stroke="currentColor"
-+                          strokeWidth="1.5"
-+                          strokeLinecap="round"
-+                          strokeLinejoin="round"
-+                        />
-+                      </svg>
-+                    </button>
-+                    {dish.sidedish || user?.role === "admin" ? (
-+                      <button
-+                        className="kitchen-icon-button danger"
-+                        type="button"
-+                        onClick={async () => {
-+                          await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
-+                          if (activeDish?._id === dish._id) closeModal();
-+                          loadDishes();
-+                        }}
-+                        aria-label={`Eliminar ${dish.name}`}
-+                      >
-+                        <svg viewBox="0 0 24 24" aria-hidden="true">
-+                          <path
-+                            d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
-+                            fill="none"
-+                            stroke="currentColor"
-+                            strokeWidth="1.5"
-+                            strokeLinecap="round"
-+                            strokeLinejoin="round"
-+                          />
-+                          <path
-+                            d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
-+                            fill="none"
-+                            stroke="currentColor"
-+                            strokeWidth="1.5"
-+                            strokeLinecap="round"
-+                            strokeLinejoin="round"
-+                          />
-+                        </svg>
-+                      </button>
-+                    ) : null}
-+                  </div>
-+                </article>
-+              );
-+            })}
-+          </div>
-+        )}
-+        {dishError ? <div className="kitchen-alert error">{dishError}</div> : null}
-+        {ingredientsError && isIngredientsTab ? (
-+          <div className="kitchen-alert error">{ingredientsError}</div>
-+        ) : null}
-+      </div>
-+
-+      <DishModal
-+        isOpen={isModalOpen}
-+        onClose={closeModal}
-+        onSaved={async () => {
-+          await loadDishes();
-+        }}
-+        categories={categories}
-+        onCategoryCreated={onCategoryCreated}
-+        initialDish={activeDish}
-+        initialSidedish={initialSidedish}
-+      />
-+      <IngredientModal
-+        isOpen={isIngredientModalOpen}
-+        onClose={closeIngredientModal}
-+        onSaved={async () => {
-+          await loadIngredients(ingredientSearchTerm);
-+        }}
-+        categories={categories}
-+        onCategoryCreated={onCategoryCreated}
-+        initialIngredient={activeIngredient}
-+      />
-+      {assignModalOpen ? (
-+        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeAssignModal}>
-+          <div
-+            className="kitchen-modal kitchen-assign-modal"
-+            role="dialog"
-+            aria-modal="true"
-+            aria-label="Asignar plato"
-+            onClick={(event) => event.stopPropagation()}
-+          >
-+            <div className="kitchen-modal-header">
-+              <div>
-+                <h3>Asignar plato</h3>
-+                <p className="kitchen-muted">
-+                  Selecciona el día en el que quieres planificar {assignDish?.name}.
-+                </p>
-+              </div>
-+              <button
-+                className="kitchen-icon-button"
-+                type="button"
-+                onClick={closeAssignModal}
-+                aria-label="Cerrar"
-+              >
-+                <svg viewBox="0 0 24 24" aria-hidden="true">
-+                  <path
-+                    d="M6 6l12 12M18 6 6 18"
-+                    fill="none"
-+                    stroke="currentColor"
-+                    strokeWidth="1.5"
-+                    strokeLinecap="round"
-+                  />
-+                </svg>
-+              </button>
-+            </div>
-+            <div className="kitchen-assign-body">
-+              <div className="kitchen-assign-week-header" role="group" aria-label="Cambiar semana">
-+                <button
-+                  className="kitchen-assign-week-nav"
-+                  type="button"
-+                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, -7))}
-+                  aria-label="Ir a la semana anterior"
-+                  disabled={assignWeekStart <= currentWeekStart}
-+                >
-+                  <ChevronIcon className="kitchen-assign-week-icon" />
-+                </button>
-+                <span className="kitchen-assign-week-label">
-+                  Semana del {formatWeekLabel(assignWeekStart)}
-+                </span>
-+                <button
-+                  className="kitchen-assign-week-nav"
-+                  type="button"
-+                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, 7))}
-+                  aria-label="Ir a la semana siguiente"
-+                >
-+                  <ChevronIcon className="kitchen-assign-week-icon is-next" />
-+                </button>
-+              </div>
-+              <div className="kitchen-assign-days" role="group" aria-label="Selecciona el día">
-+                {assignDays.map((day) => {
-+                  const occupancyReady = assignWeekData.status === "ready";
-+                  const isOccupied = occupancyReady && assignWeekData.occupied[day.date];
-+                  const isDisabled = day.date < todayKey || isOccupied;
-+                  const isSelected = assignDate === day.date;
-+                  const occupiedDishName = isOccupied ? assignWeekData.dishNames[day.date] : "";
-+                  return (
-+                    <button
-+                      key={day.date}
-+                      type="button"
-+                      className={`kitchen-assign-day ${isSelected ? "is-selected" : ""} ${
-+                        isOccupied ? "is-occupied" : ""
-+                      }`}
-+                      onClick={() => setAssignDate(day.date)}
-+                      disabled={isDisabled}
-+                      aria-pressed={isSelected}
-+                      title={occupiedDishName ? `Ocupado: ${occupiedDishName}` : undefined}
-+                    >
-+                      <span className="kitchen-assign-day-label">{day.label}</span>
-+                      <span className="kitchen-assign-day-number">{day.number}</span>
-+                      {isOccupied ? (
-+                        <span className="kitchen-assign-day-status">
-+                          Ocupado
-+                          {occupiedDishName ? (
-+                            <span className="kitchen-assign-day-detail">{occupiedDishName}</span>
-+                          ) : null}
-+                        </span>
-+                      ) : null}
-+                    </button>
-+                  );
-+                })}
-+              </div>
-+            </div>
-+            <div className="kitchen-modal-actions">
-+              <button className="kitchen-button" type="button" onClick={confirmAssign} disabled={!assignDate}>
-+                Confirmar día
-+              </button>
-+              <button className="kitchen-button secondary" type="button" onClick={closeAssignModal}>
-+                Cancelar
-+              </button>
-+            </div>
-+          </div>
-         </div>
--        {isIngredientsTab ? (
--          ingredientsLoading ? (
--            <div className="kitchen-card kitchen-dishes-loading">Cargando ingredientes...</div>
--          ) : ingredients.length === 0 ? (
--            <div className="kitchen-card kitchen-empty">
--              <p>{ingredientEmptyMessage}</p>
--            </div>
--          ) : (
--            <div className="kitchen-dishes-grid">
--              {ingredients.map((ingredient) => {
--                const category = ingredient.categoryId || null;
--                const colors = resolveCategoryColors(category);
--                return (
--                  <article className="kitchen-dish-card kitchen-ingredient-card" key={ingredient._id}>
--                    <div>
--                      <div className="kitchen-dish-title-row">
--                        <h3 className="kitchen-dish-name">{ingredient.name}</h3>
--                        <span
--                          className={`kitchen-status-pill ${
--                            ingredient.active ? "active" : "inactive"
--                          }`}
--                        >
--                          {ingredient.active ? "Activo" : "Inactivo"}
--                        </span>
--                      </div>
--                      <p className="kitchen-ingredient-canonical">
--                        Canonical: {ingredient.canonicalName}
--                      </p>
--                      {category ? (
--                        <div className="kitchen-ingredient-tags">
--                          <CategoryChip
--                            label={category.name}
--                            colorBg={category.colorBg || colors.colorBg}
--                            colorText={category.colorText || colors.colorText}
--                          />
--                        </div>
--                      ) : null}
--                    </div>
--                    <div className="kitchen-dish-actions">
--                      <button
--                        className="kitchen-icon-button"
--                        type="button"
--                        onClick={() => startIngredientEdit(ingredient)}
--                        aria-label={`Editar ${ingredient.name}`}
--                      >
--                        <svg viewBox="0 0 24 24" aria-hidden="true">
--                          <path
--                            d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
--                            fill="none"
--                            stroke="currentColor"
--                            strokeWidth="1.5"
--                            strokeLinecap="round"
--                            strokeLinejoin="round"
--                          />
--                          <path
--                            d="M15.75 5.625 18.375 8.25"
--                            fill="none"
--                            stroke="currentColor"
--                            strokeWidth="1.5"
--                            strokeLinecap="round"
--                          />
--                        </svg>
--                      </button>
--                    </div>
--                  </article>
--                );
--              })}
--            </div>
--          )
--        ) : loading ? (
--          <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
--        ) : visibleDishes.length === 0 ? (
--          <div className="kitchen-card kitchen-empty">
--            <p>{emptyMessage}</p>
--          </div>
--        ) : (
--          <div className="kitchen-dishes-grid">
--            {visibleDishes.map((dish) => {
--              const ingredientsText =
--                (dish.ingredients || []).map((item) => item.displayName).join(", ") ||
--                "Sin ingredientes";
--              return (
--                <article
--                  className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
--                  key={dish._id}
--                >
--                  <div>
--                    <div className="kitchen-dish-title-row">
--                      <h3 className="kitchen-dish-name">{dish.name}</h3>
--                      {dish.sidedish ? <span className="kitchen-dish-badge">Guarnición</span> : null}
--                    </div>
--                    <p className="kitchen-dish-ingredients-text" title={ingredientsText}>
--                      {ingredientsText}
--                    </p>
--                  </div>
--                  <div className="kitchen-dish-actions">
--                    <button
--                      className="kitchen-icon-button"
--                      type="button"
--                      onClick={() => startEdit(dish)}
--                      aria-label={`Editar ${dish.name}`}
--                    >
--                      <svg viewBox="0 0 24 24" aria-hidden="true">
--                        <path
--                          d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
--                          fill="none"
--                          stroke="currentColor"
--                          strokeWidth="1.5"
--                          strokeLinecap="round"
--                          strokeLinejoin="round"
--                        />
--                        <path
--                          d="M15.75 5.625 18.375 8.25"
--                          fill="none"
--                          stroke="currentColor"
--                          strokeWidth="1.5"
--                          strokeLinecap="round"
--                        />
--                      </svg>
--                    </button>
--                    <button
--                      className="kitchen-icon-button assign"
--                      type="button"
--                      onClick={() => openAssignModal(dish)}
--                      aria-label="Asignar"
--                      title="Asignar"
--                    >
--                      <svg viewBox="0 0 24 24" aria-hidden="true">
--                        <path
--                          d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M5 10h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"
--                          fill="none"
--                          stroke="currentColor"
--                          strokeWidth="1.5"
--                          strokeLinecap="round"
--                          strokeLinejoin="round"
--                        />
--                        <path
--                          d="m8 15 2 2 4-4"
--                          fill="none"
--                          stroke="currentColor"
--                          strokeWidth="1.5"
--                          strokeLinecap="round"
--                          strokeLinejoin="round"
--                        />
--                      </svg>
--                    </button>
--                    {user?.role === "admin" ? (
--                      <button
--                        className="kitchen-icon-button danger"
--                        type="button"
--                        onClick={async () => {
--                          await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
--                          if (activeDish?._id === dish._id) closeModal();
--                          loadDishes();
--                        }}
--                        aria-label={`Eliminar ${dish.name}`}
--                      >
--                        <svg viewBox="0 0 24 24" aria-hidden="true">
--                          <path
--                            d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
--                            fill="none"
--                            stroke="currentColor"
--                            strokeWidth="1.5"
--                            strokeLinecap="round"
--                            strokeLinejoin="round"
--                          />
--                          <path
--                            d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
--                            fill="none"
--                            stroke="currentColor"
--                            strokeWidth="1.5"
--                            strokeLinecap="round"
--                            strokeLinejoin="round"
--                          />
--                        </svg>
--                      </button>
--                    ) : null}
--                  </div>
--                </article>
--              );
--            })}
--          </div>
--        )}
--        {dishError ? <div className="kitchen-alert error">{dishError}</div> : null}
--        {ingredientsError && isIngredientsTab ? (
--          <div className="kitchen-alert error">{ingredientsError}</div>
--        ) : null}
--      </div>
--
--      <DishModal
--        isOpen={isModalOpen}
--        onClose={closeModal}
--        onSaved={async () => {
--          await loadDishes();
--        }}
--        categories={categories}
--        onCategoryCreated={onCategoryCreated}
--        initialDish={activeDish}
--        initialSidedish={initialSidedish}
--      />
--      <IngredientModal
--        isOpen={isIngredientModalOpen}
--        onClose={closeIngredientModal}
--        onSaved={async () => {
--          await loadIngredients(ingredientSearchTerm);
--        }}
--        categories={categories}
--        onCategoryCreated={onCategoryCreated}
--        initialIngredient={activeIngredient}
--      />
--      {assignModalOpen ? (
--        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeAssignModal}>
--          <div
--            className="kitchen-modal kitchen-assign-modal"
--            role="dialog"
--            aria-modal="true"
--            aria-label="Asignar plato"
--            onClick={(event) => event.stopPropagation()}
--          >
--            <div className="kitchen-modal-header">
--              <div>
--                <h3>Asignar plato</h3>
--                <p className="kitchen-muted">
--                  Selecciona el día en el que quieres planificar {assignDish?.name}.
--                </p>
--              </div>
--              <button
--                className="kitchen-icon-button"
--                type="button"
--                onClick={closeAssignModal}
--                aria-label="Cerrar"
--              >
--                <svg viewBox="0 0 24 24" aria-hidden="true">
--                  <path
--                    d="M6 6l12 12M18 6 6 18"
--                    fill="none"
--                    stroke="currentColor"
--                    strokeWidth="1.5"
--                    strokeLinecap="round"
--                  />
--                </svg>
--              </button>
--            </div>
--            <div className="kitchen-assign-body">
--              <div className="kitchen-assign-week-header" role="group" aria-label="Cambiar semana">
--                <button
--                  className="kitchen-assign-week-nav"
--                  type="button"
--                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, -7))}
--                  aria-label="Ir a la semana anterior"
--                  disabled={assignWeekStart <= currentWeekStart}
--                >
--                  <ChevronIcon className="kitchen-assign-week-icon" />
--                </button>
--                <span className="kitchen-assign-week-label">
--                  Semana del {formatWeekLabel(assignWeekStart)}
--                </span>
--                <button
--                  className="kitchen-assign-week-nav"
--                  type="button"
--                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, 7))}
--                  aria-label="Ir a la semana siguiente"
--                >
--                  <ChevronIcon className="kitchen-assign-week-icon is-next" />
--                </button>
--              </div>
--              <div className="kitchen-assign-days" role="group" aria-label="Selecciona el día">
--                {assignDays.map((day) => {
--                  const occupancyReady = assignWeekData.status === "ready";
--                  const isOccupied = occupancyReady && assignWeekData.occupied[day.date];
--                  const isDisabled = day.date < todayKey || isOccupied;
--                  const isSelected = assignDate === day.date;
--                  const occupiedDishName = isOccupied ? assignWeekData.dishNames[day.date] : "";
--                  return (
--                    <button
--                      key={day.date}
--                      type="button"
--                      className={`kitchen-assign-day ${isSelected ? "is-selected" : ""} ${
--                        isOccupied ? "is-occupied" : ""
--                      }`}
--                      onClick={() => setAssignDate(day.date)}
--                      disabled={isDisabled}
--                      aria-pressed={isSelected}
--                      title={occupiedDishName ? `Ocupado: ${occupiedDishName}` : undefined}
--                    >
--                      <span className="kitchen-assign-day-label">{day.label}</span>
--                      <span className="kitchen-assign-day-number">{day.number}</span>
--                      {isOccupied ? (
--                        <span className="kitchen-assign-day-status">
--                          Ocupado
--                          {occupiedDishName ? (
--                            <span className="kitchen-assign-day-detail">{occupiedDishName}</span>
--                          ) : null}
--                        </span>
--                      ) : null}
--                    </button>
--                  );
--                })}
--              </div>
--            </div>
--            <div className="kitchen-modal-actions">
--              <button className="kitchen-button" type="button" onClick={confirmAssign} disabled={!assignDate}>
--                Confirmar día
--              </button>
--              <button className="kitchen-button secondary" type="button" onClick={closeAssignModal}>
--                Cancelar
--              </button>
--            </div>
--          </div>
--        </div>
--      ) : null}
-+      ) : null}
-     </KitchenLayout>
-   );
- }

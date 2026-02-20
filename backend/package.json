@@ -9,7 +9,8 @@
     "migrate:households": "node scripts/migrate-households.js",
     "create:diod": "node scripts/create-diod.js",
     "test:connection": "node scripts/test-connection.js",
-    "migrate:householdId": "node scripts/migrate-add-householdId.js"
+    "migrate:householdId": "node scripts/migrate-add-householdId.js",
+    "migrate:ingredientCategoryId": "node scripts/migrate-ingredient-category-id.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
