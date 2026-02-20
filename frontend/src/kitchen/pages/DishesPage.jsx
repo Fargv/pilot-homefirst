@@ -559,7 +559,7 @@ export default function DishesPage() {
                         />
                       </svg>
                     </button>
-                    {user?.role === "admin" ? (
+                    {dish.sidedish || user?.role === "admin" ? (
                       <button
                         className="kitchen-icon-button danger"
                         type="button"
