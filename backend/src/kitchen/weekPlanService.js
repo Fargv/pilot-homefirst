@@ -11,35 +11,46 @@ function buildDefaultDays(weekStartDate) {
   }));
 }
 
-export async function ensureWeekPlan(weekStartDate, effectiveHouseholdId) {
+function isDuplicateKeyError(error) {
+  return error?.code === 11000;
+}
+
+export async function createOrGetWeekPlan(weekStartDate, effectiveHouseholdId) {
   const filter = buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate });
+  const existingPlan = await KitchenWeekPlan.findOne(filter);
+  if (existingPlan) {
+    return { plan: existingPlan, created: false };
+  }
 
   try {
-    const plan = await KitchenWeekPlan.findOneAndUpdate(
-      filter,
-      {
-        $setOnInsert: {
-          weekStart: weekStartDate,
-          householdId: effectiveHouseholdId,
-          days: buildDefaultDays(weekStartDate)
-        }
-      },
-      {
-        upsert: true,
-        new: true
-      }
-    );
+    const createdPlan = await KitchenWeekPlan.create({
+      weekStart: weekStartDate,
+      householdId: effectiveHouseholdId,
+      days: buildDefaultDays(weekStartDate)
+    });
 
-    return plan;
+    return { plan: createdPlan, created: true };
   } catch (error) {
-    if (error?.code === 11000) {
-      const existingPlan = await KitchenWeekPlan.findOne(filter);
-      if (existingPlan) {
-        return existingPlan;
+    if (isDuplicateKeyError(error)) {
+      const concurrentPlan = await KitchenWeekPlan.findOne(filter);
+      if (concurrentPlan) {
+        return { plan: concurrentPlan, created: false };
       }
+
+      const conflictError = new Error(
+        "No se pudo crear el plan semanal por un conflicto de índices en la base de datos."
+      );
+      conflictError.code = "WEEK_PLAN_INDEX_CONFLICT";
+      throw conflictError;
     }
+
     throw error;
   }
+}
+
+export async function ensureWeekPlan(weekStartDate, effectiveHouseholdId) {
+  const { plan } = await createOrGetWeekPlan(weekStartDate, effectiveHouseholdId);
+  return plan;
 }
 
 export async function findWeekPlan(weekStartDate, effectiveHouseholdId) {

@@ -7,7 +7,7 @@ import {
   getEffectiveHouseholdId,
   handleHouseholdError
 } from "../householdScope.js";
-import { ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
+import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
 
 const router = express.Router();
 
@@ -103,9 +103,9 @@ router.post("/:weekStart", requireAuth, async (req, res) => {
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
-    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+    const { plan, created } = await createOrGetWeekPlan(monday, effectiveHouseholdId);
 
-    return res.status(201).json({
+    return res.status(created ? 201 : 200).json({
       ok: true,
       weekStart: formatDateISO(monday),
       plan
@@ -113,6 +113,9 @@ router.post("/:weekStart", requireAuth, async (req, res) => {
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
+    if (error?.code === "WEEK_PLAN_INDEX_CONFLICT") {
+      return res.status(409).json({ ok: false, error: error.message });
+    }
     return res.status(500).json({ ok: false, error: "No se pudo crear el plan semanal." });
   }
 });
