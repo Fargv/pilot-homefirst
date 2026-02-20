@@ -126,10 +126,15 @@ export default function WeekPage() {
   const assignIntentRef = useRef(null);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
   const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
+  const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
 
   const loadData = async () => {
-    if (!user) {
+    if (!user || isDiodGlobalMode) {
       setLoading(false);
+      setPlan(null);
+      setDishes([]);
+      setSideDishes([]);
+      setUsers([]);
       return;
     }
     setLoading(true);
@@ -155,9 +160,15 @@ export default function WeekPage() {
 
   useEffect(() => {
     loadData();
-  }, [user, weekStart, isOwnerAdmin]);
+  }, [user, weekStart, isOwnerAdmin, isDiodGlobalMode]);
+
+  useEffect(() => {
+    if (!isDiodGlobalMode) return;
+    setCategories([]);
+  }, [isDiodGlobalMode]);
 
   const loadCategories = async () => {
+    if (isDiodGlobalMode) return;
     try {
       const data = await apiRequest("/api/categories");
       setCategories(data.categories || []);
@@ -168,7 +179,7 @@ export default function WeekPage() {
 
   useEffect(() => {
     loadCategories();
-  }, []);
+  }, [isDiodGlobalMode]);
 
   const userMap = useMemo(() => {
     const map = new Map();
@@ -762,6 +773,17 @@ export default function WeekPage() {
     if (!element) return;
     element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
   };
+
+  if (isDiodGlobalMode) {
+    return (
+      <KitchenLayout>
+        <div className="kitchen-card">
+          <h3>Selecciona un hogar para ver la semana</h3>
+          <p className="kitchen-muted">En modo global DIOD no mostramos planificación semanal ni asignaciones de hogar.</p>
+        </div>
+      </KitchenLayout>
+    );
+  }
 
   return (
     <KitchenLayout>

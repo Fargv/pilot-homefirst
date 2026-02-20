@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { Household } from "../models/Household.js";
 
@@ -24,8 +25,15 @@ router.get("/households", requireAuth, requireDiod, async (req, res) => {
 router.post("/active-household", requireAuth, requireDiod, async (req, res) => {
   try {
     const { householdId } = req.body;
-    if (!householdId) {
-      return res.status(400).json({ ok: false, error: "householdId es obligatorio." });
+
+    if (householdId === null || householdId === "") {
+      req.kitchenUser.activeHouseholdId = null;
+      await req.kitchenUser.save();
+      return res.json({ ok: true, activeHouseholdId: null });
+    }
+
+    if (!householdId || !mongoose.isValidObjectId(householdId)) {
+      return res.status(400).json({ ok: false, error: "householdId no es válido." });
     }
 
     const household = await Household.findById(householdId);
@@ -55,6 +63,18 @@ router.delete("/active-household", requireAuth, requireDiod, async (req, res) =>
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo limpiar el hogar activo." });
   }
+});
+
+router.get("/active-household", requireAuth, async (req, res) => {
+  if (req.kitchenUser.globalRole === "diod") {
+    return res.json({ ok: true, activeHouseholdId: req.kitchenUser.activeHouseholdId || null });
+  }
+
+  if (!req.kitchenUser.householdId) {
+    return res.status(400).json({ ok: false, error: "active household required" });
+  }
+
+  return res.json({ ok: true, activeHouseholdId: req.kitchenUser.householdId });
 });
 
 export default router;

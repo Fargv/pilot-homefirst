@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import KitchenLayout from "../Layout.jsx";
 import { apiRequest } from "../api.js";
+import { useAuth } from "../auth";
 
 function getMondayISO(date = new Date()) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -11,12 +12,18 @@ function getMondayISO(date = new Date()) {
 }
 
 export default function ShoppingPage() {
+  const { user } = useAuth();
   const [weekStart, setWeekStart] = useState(getMondayISO());
   const [list, setList] = useState(null);
   const [filter, setFilter] = useState("need");
   const [error, setError] = useState("");
+  const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
 
   const loadList = async () => {
+    if (isDiodGlobalMode) {
+      setList(null);
+      return;
+    }
     setError("");
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
@@ -28,9 +35,10 @@ export default function ShoppingPage() {
 
   useEffect(() => {
     loadList();
-  }, [weekStart]);
+  }, [weekStart, isDiodGlobalMode]);
 
   const rebuild = async () => {
+    if (isDiodGlobalMode) return;
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/rebuild`, { method: "POST" });
       setList(data.list);
@@ -40,6 +48,7 @@ export default function ShoppingPage() {
   };
 
   const updateStatus = async (item, status) => {
+    if (isDiodGlobalMode) return;
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
         method: "PUT",
@@ -52,6 +61,17 @@ export default function ShoppingPage() {
   };
 
   const items = (list?.items || []).filter((item) => (filter ? item.status === filter : true));
+
+  if (isDiodGlobalMode) {
+    return (
+      <KitchenLayout>
+        <div className="kitchen-card">
+          <h3>Selecciona un hogar para ver la lista de la compra</h3>
+          <p className="kitchen-muted">En modo global DIOD no hay lista de compra asociada.</p>
+        </div>
+      </KitchenLayout>
+    );
+  }
 
   return (
     <KitchenLayout>

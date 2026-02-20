@@ -3,7 +3,7 @@ export function getEffectiveHouseholdId(user) {
 
   if (user.globalRole === "diod") {
     if (!user.activeHouseholdId) {
-      const error = new Error("DIOD debe seleccionar un hogar activo para operar.");
+      const error = new Error("active household required");
       error.code = "DIOD_ACTIVE_HOUSEHOLD_REQUIRED";
       throw error;
     }

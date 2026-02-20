@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
@@ -15,24 +15,60 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
+  const isDiod = user?.globalRole === "diod";
+  const isDiodGlobalMode = isDiod && !user?.activeHouseholdId;
+  const canManageCategories = isDiod || isOwner;
+  const canManageHousehold = isOwner && !isDiodGlobalMode;
+
+  const categoriesTitle = useMemo(() => (
+    isDiod ? "Categorías MASTER" : "Categorías del hogar"
+  ), [isDiod]);
+
+  const loadCategories = async () => {
+    if (!canManageCategories) {
+      setCategories([]);
+      return;
+    }
+    setCategoriesLoading(true);
+    try {
+      const data = await apiRequest("/api/categories");
+      setCategories(data.categories || []);
+    } catch (err) {
+      setError(err.message || "No se pudieron cargar las categorías.");
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
     setError("");
     try {
-      const membersResponse = await apiRequest("/api/kitchen/users/members");
-      setMembers(membersResponse.users || []);
+      if (!isDiodGlobalMode) {
+        const membersResponse = await apiRequest("/api/kitchen/users/members");
+        setMembers(membersResponse.users || []);
+      } else {
+        setMembers([]);
+      }
 
-      if (isOwner) {
+      if (canManageHousehold) {
         const [inviteResponse, codeResponse] = await Promise.all([
           apiRequest("/api/kitchen/household/invitations"),
           apiRequest("/api/kitchen/household/invite-code")
         ]);
         setInvitations(inviteResponse.invitations || []);
         setHouseholdCode(codeResponse.inviteCode || "");
+      } else {
+        setInvitations([]);
+        setHouseholdCode("");
       }
+
+      await loadCategories();
     } catch (err) {
       setError(err.message || "No se pudo cargar la configuración del hogar.");
     } finally {
@@ -42,7 +78,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     void loadData();
-  }, [isOwner]);
+  }, [canManageHousehold, canManageCategories, isDiodGlobalMode]);
 
   const handleLogout = async () => {
     try {
@@ -120,6 +156,64 @@ export default function SettingsPage() {
     }
   };
 
+
+  const createCategory = async () => {
+    const safeName = categoryName.trim();
+    if (!safeName) return;
+    setError("");
+    setSuccess("");
+    try {
+      await apiRequest("/api/categories", {
+        method: "POST",
+        body: JSON.stringify({
+          name: safeName,
+          ...(isDiod ? { scope: "master" } : {})
+        })
+      });
+      setCategoryName("");
+      setSuccess("Categoría guardada correctamente.");
+      await loadCategories();
+    } catch (err) {
+      setError(err.message || "No se pudo crear la categoría.");
+    }
+  };
+
+  const updateCategory = async (category) => {
+    const nextName = window.prompt("Nuevo nombre de la categoría", category.name || "");
+    if (!nextName || !nextName.trim()) return;
+    setError("");
+    setSuccess("");
+    try {
+      await apiRequest(`/api/categories/${category._id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: nextName.trim(),
+          colorBg: category.colorBg,
+          colorText: category.colorText,
+          active: category.active
+        })
+      });
+      setSuccess("Categoría actualizada correctamente.");
+      await loadCategories();
+    } catch (err) {
+      setError(err.message || "No se pudo actualizar la categoría.");
+    }
+  };
+
+  const removeCategory = async (category) => {
+    const confirmed = window.confirm(`¿Eliminar la categoría “${category.name}”?`);
+    if (!confirmed) return;
+    setError("");
+    setSuccess("");
+    try {
+      await apiRequest(`/api/categories/${category._id}`, { method: "DELETE" });
+      setSuccess("Categoría eliminada correctamente.");
+      await loadCategories();
+    } catch (err) {
+      setError(err.message || "No se pudo eliminar la categoría.");
+    }
+  };
+
   return (
     <KitchenLayout>
       <div className="kitchen-card kitchen-block-gap">
@@ -127,6 +221,9 @@ export default function SettingsPage() {
         <p className="kitchen-muted">Gestiona tu hogar y tus miembros.</p>
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}
+        {isDiodGlobalMode ? (
+          <div className="kitchen-alert">Modo global DIOD activo: selecciona un hogar para configuración de miembros e invitaciones.</div>
+        ) : null}
 
         <h3>Mi Hogar</h3>
         {loading ? <p className="kitchen-muted">Cargando miembros...</p> : null}
@@ -142,7 +239,7 @@ export default function SettingsPage() {
           </ul>
         ) : null}
 
-        {isOwner ? (
+        {canManageHousehold ? (
           <>
             <h3>Invitar miembros</h3>
             <div className="kitchen-actions">
@@ -200,6 +297,48 @@ export default function SettingsPage() {
                 Añadir comensal sin cuenta
               </button>
             </div>
+          </>
+        ) : null}
+
+        {canManageCategories ? (
+          <>
+            <h3>{categoriesTitle}</h3>
+            <p className="kitchen-muted">
+              {isDiod
+                ? "Gestiona las categorías globales del catálogo MASTER."
+                : "Puedes crear categorías del hogar y sobrescribir las categorías master."}
+            </p>
+            <div className="kitchen-actions">
+              <input
+                type="text"
+                className="kitchen-input"
+                placeholder="Nombre de categoría"
+                value={categoryName}
+                onChange={(event) => setCategoryName(event.target.value)}
+              />
+              <button type="button" className="kitchen-button" onClick={createCategory} disabled={!categoryName.trim()}>
+                Añadir categoría
+              </button>
+            </div>
+            {categoriesLoading ? <p className="kitchen-muted">Cargando categorías...</p> : null}
+            {!categoriesLoading ? (
+              <ul className="kitchen-list">
+                {categories.map((category) => (
+                  <li key={category._id}>
+                    <strong>{category.name}</strong> <span className="kitchen-muted">({category.scope || "household"})</span>
+                    <div className="kitchen-actions" style={{ marginTop: 8 }}>
+                      <button type="button" className="kitchen-button secondary" onClick={() => updateCategory(category)}>
+                        Editar
+                      </button>
+                      <button type="button" className="kitchen-button secondary" onClick={() => removeCategory(category)}>
+                        Eliminar
+                      </button>
+                    </div>
+                  </li>
+                ))}
+                {categories.length === 0 ? <li className="kitchen-muted">No hay categorías disponibles.</li> : null}
+              </ul>
+            ) : null}
           </>
         ) : null}
 
