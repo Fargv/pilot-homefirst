@@ -104,6 +104,11 @@ export default function DishesPage() {
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
 
   const loadDishes = async () => {
+    if (isDiodGlobalMode) {
+      setDishes([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setDishError("");
     try {
@@ -118,7 +123,7 @@ export default function DishesPage() {
 
   useEffect(() => {
     loadDishes();
-  }, []);
+  }, [isDiodGlobalMode, user?.activeHouseholdId, user?.id]);
 
   const loadCategories = async () => {
     try {
@@ -262,6 +267,10 @@ export default function DishesPage() {
 
   useEffect(() => {
     if (!assignModalOpen) return;
+    if (isDiodGlobalMode) {
+      setAssignWeekData({ status: "error", occupied: {}, dishNames: {} });
+      return;
+    }
     let isActive = true;
     setAssignWeekData({ status: "loading", occupied: {}, dishNames: {} });
 
@@ -291,7 +300,7 @@ export default function DishesPage() {
     return () => {
       isActive = false;
     };
-  }, [assignModalOpen, assignWeekStart, dishMap]);
+  }, [assignModalOpen, assignWeekStart, dishMap, isDiodGlobalMode]);
 
   useEffect(() => {
     if (!assignModalOpen) return;
@@ -315,7 +324,7 @@ export default function DishesPage() {
   }, [assignModalOpen, assignDate, assignDays, assignWeekData, todayKey]);
 
   const openAssignModal = (dish) => {
-    if (!dish) return;
+    if (!dish || isDiodGlobalMode) return;
     const initialWeekStart = getMondayISO();
     const initialDays = buildAssignDays(initialWeekStart);
     const initialDate = initialDays.find((day) => day.date >= todayKey)?.date || "";
@@ -333,10 +342,22 @@ export default function DishesPage() {
   };
 
   const confirmAssign = () => {
+    if (isDiodGlobalMode) return;
     if (!assignDish?._id || !assignDate) return;
     navigate(`/kitchen/semana?assignPlateId=${assignDish._id}&date=${assignDate}`);
     closeAssignModal();
   };
+
+  if (isDiodGlobalMode) {
+    return (
+      <KitchenLayout>
+        <div className="kitchen-card">
+          <h3>Selecciona un hogar para gestionar platos</h3>
+          <p className="kitchen-muted">En modo global DIOD solo está disponible el catálogo master.</p>
+        </div>
+      </KitchenLayout>
+    );
+  }
 
   const ingredientEmptyMessage = useMemo(() => {
     if (ingredients.length === 0) {
@@ -363,9 +384,6 @@ export default function DishesPage() {
   return (
     <KitchenLayout>
       <div className="kitchen-dishes-page">
-        {isDiodGlobalMode ? (
-          <div className="kitchen-alert">Modo global DIOD: estás editando catálogo master sin hogar activo.</div>
-        ) : null}
         <div className="kitchen-dishes-header">
           <div>
             <h2>{headerTitle}</h2>

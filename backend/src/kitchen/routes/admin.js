@@ -5,7 +5,13 @@ import { Household } from "../models/Household.js";
 
 const router = express.Router();
 
-function normalizeActiveHouseholdIdInput(rawHouseholdId) {
+function normalizeActiveHouseholdIdInput(body = {}) {
+  const hasActiveHouseholdId = Object.prototype.hasOwnProperty.call(body, "activeHouseholdId");
+  const hasHouseholdId = Object.prototype.hasOwnProperty.call(body, "householdId");
+
+  if (!hasActiveHouseholdId && !hasHouseholdId) return undefined;
+
+  const rawHouseholdId = hasActiveHouseholdId ? body.activeHouseholdId : body.householdId;
   if (rawHouseholdId === null || rawHouseholdId === "") return null;
   if (typeof rawHouseholdId === "undefined") return undefined;
   return rawHouseholdId;
@@ -30,10 +36,17 @@ router.get("/households", requireAuth, requireDiod, async (req, res) => {
 
 async function setActiveHousehold(req, res) {
   try {
-    const householdId = normalizeActiveHouseholdIdInput(req.body?.householdId);
+    if (!req.kitchenUser) {
+      return res.status(401).json({ ok: false, error: "No hay sesión activa." });
+    }
+
+    const householdId = normalizeActiveHouseholdIdInput(req.body || {});
 
     if (householdId === undefined) {
-      return res.status(400).json({ ok: false, error: "Debes enviar householdId (string o null)." });
+      return res.status(400).json({
+        ok: false,
+        error: "Debes enviar activeHouseholdId (string válido, null o \"\")."
+      });
     }
 
     if (householdId === null) {
@@ -42,8 +55,8 @@ async function setActiveHousehold(req, res) {
       return res.json({ ok: true, activeHouseholdId: null });
     }
 
-    if (!householdId || !mongoose.isValidObjectId(householdId)) {
-      return res.status(400).json({ ok: false, error: "householdId no es válido." });
+    if (typeof householdId !== "string" || !mongoose.isValidObjectId(householdId)) {
+      return res.status(400).json({ ok: false, error: "activeHouseholdId no es válido." });
     }
 
     const household = await Household.findById(householdId);
@@ -59,6 +72,11 @@ async function setActiveHousehold(req, res) {
       activeHouseholdId: req.kitchenUser.activeHouseholdId
     });
   } catch (error) {
+    console.error("[kitchen/admin] setActiveHousehold failed", {
+      userId: req.kitchenUser?._id?.toString?.(),
+      body: req.body,
+      error
+    });
     return res.status(500).json({ ok: false, error: "No se pudo cambiar el hogar activo." });
   }
 }

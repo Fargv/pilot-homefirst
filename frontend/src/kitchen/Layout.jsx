@@ -97,11 +97,12 @@ export default function KitchenLayout({ children }) {
   const [switchingHousehold, setSwitchingHousehold] = useState(false);
   const [householdError, setHouseholdError] = useState("");
   const activeHouseholdRequestKeyRef = useRef("");
+  const pendingActiveHouseholdRef = useRef(null);
   const isDiod = user?.globalRole === "diod";
 
   useEffect(() => {
     if (!isDiod || !user?.id) return;
-    const requestKey = `${user.id}:${user.activeHouseholdId || "none"}`;
+    const requestKey = `${user.id}`;
     if (activeHouseholdRequestKeyRef.current === requestKey) return;
 
     let active = true;
@@ -126,7 +127,7 @@ export default function KitchenLayout({ children }) {
     return () => {
       active = false;
     };
-  }, [isDiod, setUser, user?.id, user?.activeHouseholdId]);
+  }, [isDiod, setUser, user?.id]);
 
   const navLinks = useMemo(
     () => [
@@ -154,8 +155,8 @@ export default function KitchenLayout({ children }) {
         setUserMenuOpen(false);
       }
     };
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
   }, []);
 
   useEffect(() => {
@@ -180,25 +181,30 @@ export default function KitchenLayout({ children }) {
 
   const onChangeActiveHousehold = async (event) => {
     const nextHouseholdId = event.target.value;
+    const normalizedCurrentHousehold = user?.activeHouseholdId || "";
+    if (switchingHousehold) return;
+    if (nextHouseholdId === normalizedCurrentHousehold) {
+      setUserMenuOpen(false);
+      return;
+    }
+    if (pendingActiveHouseholdRef.current === nextHouseholdId) return;
+
+    pendingActiveHouseholdRef.current = nextHouseholdId;
     setSwitchingHousehold(true);
     setHouseholdError("");
     try {
-      if (nextHouseholdId) {
-        await apiRequest("/api/kitchen/admin/active-household", {
-          method: "POST",
-          body: JSON.stringify({ householdId: nextHouseholdId })
-        });
-        localStorage.setItem("kitchen_active_household_id", nextHouseholdId);
-      } else {
-        await apiRequest("/api/kitchen/admin/active-household", { method: "DELETE" });
-        localStorage.setItem("kitchen_active_household_id", "");
-      }
+      await apiRequest("/api/kitchen/admin/active-household", {
+        method: "POST",
+        body: JSON.stringify({ activeHouseholdId: nextHouseholdId || null })
+      });
+      localStorage.setItem("kitchen_active_household_id", nextHouseholdId || "");
       await refreshUser();
       setUserMenuOpen(false);
       navigate("/kitchen/platos");
     } catch (error) {
       setHouseholdError(error.message || "No se pudo actualizar el hogar activo.");
     } finally {
+      pendingActiveHouseholdRef.current = null;
       setSwitchingHousehold(false);
     }
   };
@@ -253,7 +259,7 @@ export default function KitchenLayout({ children }) {
               <ChevronDownIcon className="kitchen-user-chevron" />
             </button>
             {userMenuOpen ? (
-              <div className="kitchen-user-menu" role="menu">
+              <div className="kitchen-user-menu" role="menu" onPointerDown={(event) => event.stopPropagation()}>
                 {isDiod ? (
                   <label className="kitchen-user-menu-household">
                     <span>Hogar activo</span>
