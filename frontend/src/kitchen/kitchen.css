@@ -2736,3 +2736,15 @@ body {
     padding: 14px 14px 88px;
   }
 }
+
+.kitchen-user-menu-household {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+.kitchen-user-menu-household span {
+  font-size: 12px;
+  color: #64748b;
+}

@@ -19,6 +19,16 @@ export function getEffectiveHouseholdId(user) {
   return user.householdId;
 }
 
+export function getOptionalHouseholdId(user) {
+  if (!user) return null;
+
+  if (user.globalRole === "diod") {
+    return user.activeHouseholdId || null;
+  }
+
+  return getEffectiveHouseholdId(user);
+}
+
 export function handleHouseholdError(res, error) {
   if (error?.code === "DIOD_ACTIVE_HOUSEHOLD_REQUIRED" || error?.code === "HOUSEHOLD_REQUIRED") {
     return res.status(400).json({ ok: false, error: error.message });

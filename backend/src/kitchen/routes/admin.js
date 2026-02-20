@@ -9,7 +9,12 @@ router.get("/households", requireAuth, requireDiod, async (req, res) => {
     const households = await Household.find({}, { name: 1 }).sort({ createdAt: 1 }).lean();
     return res.json({
       ok: true,
-      households: households.map((household) => ({ id: household._id, name: household.name }))
+      households: households.map((household) => ({
+        id: household._id,
+        name: household.name,
+        isActive: String(household._id) === String(req.kitchenUser.activeHouseholdId || "")
+      })),
+      activeHouseholdId: req.kitchenUser.activeHouseholdId || null
     });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudieron cargar los hogares." });
@@ -37,6 +42,18 @@ router.post("/active-household", requireAuth, requireDiod, async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo cambiar el hogar activo." });
+  }
+});
+
+
+router.delete("/active-household", requireAuth, requireDiod, async (req, res) => {
+  try {
+    req.kitchenUser.activeHouseholdId = null;
+    await req.kitchenUser.save();
+
+    return res.json({ ok: true, activeHouseholdId: null });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudo limpiar el hogar activo." });
   }
 });
 

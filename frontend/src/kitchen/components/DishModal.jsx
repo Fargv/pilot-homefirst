@@ -13,7 +13,8 @@ export default function DishModal({
   onCategoryCreated,
   initialDish = null,
   initialName = "",
-  initialSidedish = false
+  initialSidedish = false,
+  scope = undefined
 }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
@@ -111,6 +112,7 @@ export default function DishModal({
       const payload = {
         name: form.name,
         sidedish: form.sidedish,
+        ...(scope ? { scope } : {}),
         ingredients: (form.ingredients || []).map((item) => ({
           ingredientId: item.ingredientId,
           displayName: item.displayName,

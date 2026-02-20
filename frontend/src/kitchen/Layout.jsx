@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import Header from "./components/ui/Header";
 import BottomNav from "./components/ui/BottomNav";
 import { useAuth } from "./auth";
+import { apiRequest } from "./api.js";
 import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
 import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
 
@@ -88,10 +89,14 @@ function getInitials(name = "") {
 }
 
 export default function KitchenLayout({ children }) {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
+  const [households, setHouseholds] = useState([]);
+  const [switchingHousehold, setSwitchingHousehold] = useState(false);
+  const [householdError, setHouseholdError] = useState("");
+  const isDiod = user?.globalRole === "diod";
 
   const navLinks = useMemo(
     () => [
@@ -122,6 +127,49 @@ export default function KitchenLayout({ children }) {
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, []);
+
+  useEffect(() => {
+    if (!isDiod || !userMenuOpen) return;
+    let active = true;
+    setHouseholdError("");
+
+    apiRequest("/api/kitchen/admin/households")
+      .then((data) => {
+        if (!active) return;
+        setHouseholds(data.households || []);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setHouseholdError(error.message || "No se pudieron cargar los hogares.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isDiod, userMenuOpen]);
+
+  const onChangeActiveHousehold = async (event) => {
+    const nextHouseholdId = event.target.value;
+    setSwitchingHousehold(true);
+    setHouseholdError("");
+    try {
+      if (nextHouseholdId) {
+        await apiRequest("/api/kitchen/admin/active-household", {
+          method: "POST",
+          body: JSON.stringify({ householdId: nextHouseholdId })
+        });
+      } else {
+        await apiRequest("/api/kitchen/admin/active-household", { method: "DELETE" });
+      }
+      await refreshUser();
+      setUserMenuOpen(false);
+      navigate("/kitchen/platos");
+    } catch (error) {
+      setHouseholdError(error.message || "No se pudo actualizar el hogar activo.");
+    } finally {
+      setSwitchingHousehold(false);
+    }
+  };
 
   const onLogout = async () => {
     try {
@@ -174,6 +222,23 @@ export default function KitchenLayout({ children }) {
             </button>
             {userMenuOpen ? (
               <div className="kitchen-user-menu" role="menu">
+                {isDiod ? (
+                  <label className="kitchen-user-menu-household">
+                    <span>Hogar activo</span>
+                    <select
+                      className="kitchen-input"
+                      value={user?.activeHouseholdId || ""}
+                      onChange={onChangeActiveHousehold}
+                      disabled={switchingHousehold}
+                    >
+                      <option value="">Sin hogar (modo global)</option>
+                      {households.map((household) => (
+                        <option key={household.id} value={household.id}>{household.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                {householdError ? <div className="kitchen-alert error">{householdError}</div> : null}
                 <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion?section=perfil")}>
                   <UserIcon className="kitchen-user-menu-icon" />
                   Editar mi perfil

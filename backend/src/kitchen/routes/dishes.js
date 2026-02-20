@@ -6,7 +6,7 @@ import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
 import { getWeekStart } from "../utils/dates.js";
 import { requireAuth } from "../middleware.js";
-import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
+import { buildScopedFilter, getEffectiveHouseholdId, getOptionalHouseholdId, handleHouseholdError } from "../householdScope.js";
 import {
   CATALOG_SCOPES,
   clearHiddenMasterForHousehold,
@@ -69,12 +69,12 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
 router.get("/", requireAuth, async (req, res) => {
   try {
     const { sidedish } = req.query;
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const optionalHouseholdId = getOptionalHouseholdId(req.user);
 
     if (sidedish === "true") {
       const dishes = await resolveCatalogForHousehold({
         Model: KitchenDish,
-        householdId: effectiveHouseholdId,
+        householdId: optionalHouseholdId,
         type: "side",
         baseFilter: { sidedish: true },
         sort: { createdAt: -1 }
@@ -82,9 +82,13 @@ router.get("/", requireAuth, async (req, res) => {
       return res.json({ ok: true, dishes });
     }
 
-    const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, { sidedish: { $ne: true } })).sort({
-      createdAt: -1
-    });
+    const dishes = optionalHouseholdId
+      ? await KitchenDish.find(buildScopedFilter(optionalHouseholdId, { sidedish: { $ne: true } })).sort({
+          createdAt: -1
+        })
+      : await KitchenDish.find({ scope: CATALOG_SCOPES.MASTER, sidedish: { $ne: true }, isArchived: { $ne: true } }).sort({
+          createdAt: -1
+        });
 
     res.json({ ok: true, dishes });
   } catch (error) {
@@ -99,14 +103,14 @@ router.post("/", requireAuth, async (req, res) => {
     const { name, ingredients, sidedish, scope } = req.body;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
 
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const normalizedIngredients = normalizeIngredientList(ingredients || []);
     const isSideDish = Boolean(sidedish);
     const isDiod = isDiodUser(req.kitchenUser);
-    const isMasterWrite = isSideDish && scope === CATALOG_SCOPES.MASTER;
+    const isMasterWrite = scope === CATALOG_SCOPES.MASTER;
+    const effectiveHouseholdId = isMasterWrite ? getOptionalHouseholdId(req.user) : getEffectiveHouseholdId(req.user);
 
     if (isMasterWrite && !isDiod) {
-      return res.status(403).json({ ok: false, error: "Solo DIOD puede crear guarniciones master." });
+      return res.status(403).json({ ok: false, error: "Solo DIOD puede crear platos master." });
     }
 
     const dish = await KitchenDish.create({
@@ -118,7 +122,7 @@ router.post("/", requireAuth, async (req, res) => {
       householdId: isMasterWrite ? undefined : effectiveHouseholdId
     });
 
-    if (isSideDish && !isMasterWrite) {
+    if (!isMasterWrite && isSideDish) {
       await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
     }
 
@@ -133,7 +137,7 @@ router.post("/", requireAuth, async (req, res) => {
 router.put("/:id", requireAuth, async (req, res) => {
   try {
     const { name, ingredients, sidedish } = req.body;
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const optionalHouseholdId = getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const dish = await KitchenDish.findById(req.params.id);
     if (!dish || dish.isArchived) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
@@ -143,17 +147,18 @@ router.put("/:id", requireAuth, async (req, res) => {
     if (Array.isArray(ingredients)) nextData.ingredients = normalizeIngredientList(ingredients);
     if (typeof sidedish === "boolean") nextData.sidedish = sidedish;
 
-    if (dish.sidedish && dish.scope === CATALOG_SCOPES.MASTER) {
+    if (dish.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {
         Object.assign(dish, nextData);
         await dish.save();
-        await rebuildFutureShoppingLists({ householdId: effectiveHouseholdId, dishId: dish._id });
+        await rebuildFutureShoppingLists({ householdId: optionalHouseholdId, dishId: dish._id });
         return res.json({ ok: true, dish });
       }
 
+      const requiredHouseholdId = getEffectiveHouseholdId(req.user);
       const override = await KitchenDish.findOneAndUpdate(
         {
-          householdId: effectiveHouseholdId,
+          householdId: requiredHouseholdId,
           scope: CATALOG_SCOPES.OVERRIDE,
           masterId: dish._id
         },
@@ -161,24 +166,24 @@ router.put("/:id", requireAuth, async (req, res) => {
           ...nextData,
           scope: CATALOG_SCOPES.OVERRIDE,
           masterId: dish._id,
-          householdId: effectiveHouseholdId,
+          householdId: requiredHouseholdId,
           sidedish: true,
           isArchived: false
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
-      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
-      await rebuildFutureShoppingLists({ householdId: effectiveHouseholdId, dishId: override._id });
+      if (dish.sidedish) await clearHiddenMasterForHousehold({ householdId: requiredHouseholdId, type: "side", masterId: dish._id });
+      await rebuildFutureShoppingLists({ householdId: requiredHouseholdId, dishId: override._id });
       return res.json({ ok: true, dish: override, overridden: true });
     }
 
-    if (!dish.householdId || String(dish.householdId) !== String(effectiveHouseholdId)) {
+    if (!dish.householdId || String(dish.householdId) !== String(getEffectiveHouseholdId(req.user))) {
       return res.status(403).json({ ok: false, error: "No tienes permisos para modificar este plato." });
     }
 
     Object.assign(dish, nextData);
     await dish.save();
-    await rebuildFutureShoppingLists({ householdId: effectiveHouseholdId, dishId: dish._id });
+    await rebuildFutureShoppingLists({ householdId: getEffectiveHouseholdId(req.user), dishId: dish._id });
     return res.json({ ok: true, dish });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
@@ -189,23 +194,23 @@ router.put("/:id", requireAuth, async (req, res) => {
 
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const optionalHouseholdId = getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const dish = await KitchenDish.findById(req.params.id);
     if (!dish || dish.isArchived) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
 
-    if (dish.sidedish && dish.scope === CATALOG_SCOPES.MASTER) {
+    if (dish.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {
         dish.isArchived = true;
         await dish.save();
       } else {
-        await hideMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
+        if (dish.sidedish) await hideMasterForHousehold({ householdId: getEffectiveHouseholdId(req.user), type: "side", masterId: dish._id });
       }
       return res.json({ ok: true });
     }
 
     if (dish.sidedish) {
-      if (!dish.householdId || String(dish.householdId) !== String(effectiveHouseholdId)) {
+      if (!dish.householdId || String(dish.householdId) !== String(getEffectiveHouseholdId(req.user))) {
         return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar esta guarnición." });
       }
       dish.isArchived = true;
@@ -217,7 +222,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ ok: false, error: "No tienes permisos para esta acción." });
     }
 
-    if (!dish.householdId || String(dish.householdId) !== String(effectiveHouseholdId)) {
+    if (!dish.householdId || String(dish.householdId) !== String(getEffectiveHouseholdId(req.user))) {
       return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar este plato." });
     }
 

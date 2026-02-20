@@ -1,7 +1,7 @@
 import express from "express";
 import { Category } from "../models/Category.js";
 import { requireAuth } from "../middleware.js";
-import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
+import { getEffectiveHouseholdId, getOptionalHouseholdId, handleHouseholdError } from "../householdScope.js";
 import {
   CATALOG_SCOPES,
   clearHiddenMasterForHousehold,
@@ -20,7 +20,7 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 router.get("/", requireAuth, async (req, res) => {
   try {
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const effectiveHouseholdId = getOptionalHouseholdId(req.user);
     const categories = await resolveCatalogForHousehold({
       Model: Category,
       householdId: effectiveHouseholdId,
@@ -45,8 +45,9 @@ router.post("/", requireAuth, async (req, res) => {
     if (!name) return res.status(400).json({ ok: false, error: "El nombre de la categoría es obligatorio." });
 
     const isDiod = isDiodUser(req.kitchenUser);
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const isMasterWrite = scope === CATALOG_SCOPES.MASTER;
+
+    const effectiveHouseholdId = isMasterWrite ? getOptionalHouseholdId(req.user) : getEffectiveHouseholdId(req.user);
 
     if (isMasterWrite && !isDiod) {
       return res.status(403).json({ ok: false, error: "Solo DIOD puede crear categorías master." });
@@ -94,7 +95,7 @@ router.put("/:id", requireAuth, async (req, res) => {
     const { name, colorBg, colorText, active } = req.body;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre de la categoría es obligatorio." });
 
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const trimmedName = String(name).trim();
     const slug = slugifyCategory(trimmedName);
@@ -121,13 +122,13 @@ router.put("/:id", requireAuth, async (req, res) => {
 
       const category = await Category.findOneAndUpdate(
         {
-          householdId: effectiveHouseholdId,
+          householdId: getEffectiveHouseholdId(req.user),
           scope: CATALOG_SCOPES.OVERRIDE,
           masterId: target._id
         },
         {
           ...nextData,
-          householdId: effectiveHouseholdId,
+          householdId: getEffectiveHouseholdId(req.user),
           masterId: target._id,
           scope: CATALOG_SCOPES.OVERRIDE,
           isArchived: false
@@ -135,11 +136,11 @@ router.put("/:id", requireAuth, async (req, res) => {
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
 
-      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "category", masterId: target._id });
+      await clearHiddenMasterForHousehold({ householdId: getEffectiveHouseholdId(req.user), type: "category", masterId: target._id });
       return res.json({ ok: true, category, overridden: true });
     }
 
-    if (!target.householdId || String(target.householdId) !== String(effectiveHouseholdId)) {
+    if (!target.householdId || String(target.householdId) !== String(getEffectiveHouseholdId(req.user))) {
       return res.status(403).json({ ok: false, error: "No tienes permisos para modificar esta categoría." });
     }
 
@@ -157,7 +158,7 @@ router.put("/:id", requireAuth, async (req, res) => {
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const target = await Category.findById(id);
 
@@ -170,12 +171,12 @@ router.delete("/:id", requireAuth, async (req, res) => {
         target.isArchived = true;
         await target.save();
       } else {
-        await hideMasterForHousehold({ householdId: effectiveHouseholdId, type: "category", masterId: target._id });
+        await hideMasterForHousehold({ householdId: getEffectiveHouseholdId(req.user), type: "category", masterId: target._id });
       }
       return res.json({ ok: true });
     }
 
-    if (!target.householdId || String(target.householdId) !== String(effectiveHouseholdId)) {
+    if (!target.householdId || String(target.householdId) !== String(getEffectiveHouseholdId(req.user))) {
       return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar esta categoría." });
     }
 

@@ -12,7 +12,8 @@ export default function IngredientModal({
   onSaved,
   categories = [],
   onCategoryCreated,
-  initialIngredient = null
+  initialIngredient = null,
+  scope = undefined
 }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -130,7 +131,8 @@ export default function IngredientModal({
         name: form.name.trim(),
         canonicalName: form.canonicalName.trim() || normalizeIngredientName(form.name),
         categoryId: form.categoryId,
-        active: Boolean(form.active)
+        active: Boolean(form.active),
+        ...(scope ? { scope } : {})
       };
       const data = editingId
         ? await apiRequest(`/api/kitchenIngredients/${editingId}`, {

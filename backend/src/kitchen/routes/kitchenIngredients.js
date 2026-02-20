@@ -3,7 +3,7 @@ import { KitchenIngredient } from "../models/KitchenIngredient.js";
 import { Category } from "../models/Category.js";
 import { requireAuth } from "../middleware.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
-import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
+import { getEffectiveHouseholdId, getOptionalHouseholdId, handleHouseholdError } from "../householdScope.js";
 import {
   CATALOG_SCOPES,
   clearHiddenMasterForHousehold,
@@ -44,14 +44,24 @@ const buildAccentInsensitiveRegex = (value) => {
   return new RegExp(pattern, "i");
 };
 
-async function ensureCategoryScope({ categoryId, effectiveHouseholdId }) {
+async function ensureCategoryScope({ categoryId, effectiveHouseholdId, isMasterWrite = false }) {
   if (!categoryId) {
-    return ensureDefaultCategory({ Category, householdId: effectiveHouseholdId });
+    return ensureDefaultCategory({
+      Category,
+      householdId: effectiveHouseholdId,
+      scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD
+    });
   }
+
+  const scopeFilters = [{ scope: CATALOG_SCOPES.MASTER }];
+  if (effectiveHouseholdId) {
+    scopeFilters.push({ householdId: effectiveHouseholdId });
+  }
+
   const category = await Category.findOne({
     _id: categoryId,
     isArchived: { $ne: true },
-    $or: [{ scope: CATALOG_SCOPES.MASTER }, { householdId: effectiveHouseholdId }]
+    $or: scopeFilters
   });
 
   return category;
@@ -126,7 +136,7 @@ function buildSearchFilter(q) {
 router.get("/", requireAuth, async (req, res) => {
   try {
     const { q, includeInactive, limit } = req.query;
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const effectiveHouseholdId = getOptionalHouseholdId(req.user);
     const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
 
     const ingredients = await resolveCatalogForHousehold({
@@ -168,7 +178,7 @@ router.post("/", requireAuth, async (req, res) => {
       return res.status(403).json({ ok: false, error: "Solo DIOD puede crear ingredientes master." });
     }
 
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const effectiveHouseholdId = isMasterWrite ? getOptionalHouseholdId(req.user) : getEffectiveHouseholdId(req.user);
     const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId });
     if (!category) {
       return res.status(404).json({ ok: false, error: "Categoría no encontrada para el hogar actual." });
@@ -223,8 +233,15 @@ router.put("/:id", requireAuth, async (req, res) => {
     if (typeof active !== "boolean")
       return res.status(400).json({ ok: false, error: "Indica si el ingrediente está activo." });
 
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const optionalHouseholdId = getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
+
+    const target = await KitchenIngredient.findById(id);
+    if (!target || target.isArchived) {
+      return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
+    }
+
+    const effectiveHouseholdId = target.scope === CATALOG_SCOPES.MASTER ? optionalHouseholdId : getEffectiveHouseholdId(req.user);
     const category = await ensureCategoryScope({ categoryId, effectiveHouseholdId });
     if (!category) {
       return res.status(404).json({ ok: false, error: "Categoría no encontrada para el hogar actual." });
@@ -234,11 +251,6 @@ router.put("/:id", requireAuth, async (req, res) => {
     const canonicalName = normalizeIngredientName(canonicalInput || trimmedName);
     if (!canonicalName)
       return res.status(400).json({ ok: false, error: "El nombre del ingrediente no es válido." });
-
-    const target = await KitchenIngredient.findById(id);
-    if (!target || target.isArchived) {
-      return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
-    }
 
     const nextData = {
       name: trimmedName,
@@ -251,20 +263,21 @@ router.put("/:id", requireAuth, async (req, res) => {
       if (isDiod) {
         Object.assign(target, nextData);
         await target.save();
-        await syncIngredientReferences({ ingredientId: target._id, name: trimmedName, canonicalName, householdId: effectiveHouseholdId });
+        await syncIngredientReferences({ ingredientId: target._id, name: trimmedName, canonicalName, householdId: optionalHouseholdId });
         const ingredient = await KitchenIngredient.findById(target._id).populate("categoryId", "name slug colorBg colorText");
         return res.json({ ok: true, ingredient });
       }
 
+      const requiredHouseholdId = getEffectiveHouseholdId(req.user);
       const ingredient = await KitchenIngredient.findOneAndUpdate(
         {
-          householdId: effectiveHouseholdId,
+          householdId: requiredHouseholdId,
           scope: CATALOG_SCOPES.OVERRIDE,
           masterId: target._id
         },
         {
           ...nextData,
-          householdId: effectiveHouseholdId,
+          householdId: requiredHouseholdId,
           scope: CATALOG_SCOPES.OVERRIDE,
           masterId: target._id,
           isArchived: false
@@ -272,19 +285,19 @@ router.put("/:id", requireAuth, async (req, res) => {
         { upsert: true, new: true, setDefaultsOnInsert: true }
       ).populate("categoryId", "name slug colorBg colorText");
 
-      await syncIngredientReferences({ ingredientId: ingredient._id, name: trimmedName, canonicalName, householdId: effectiveHouseholdId });
+      await syncIngredientReferences({ ingredientId: ingredient._id, name: trimmedName, canonicalName, householdId: requiredHouseholdId });
 
-      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "ingredient", masterId: target._id });
+      await clearHiddenMasterForHousehold({ householdId: requiredHouseholdId, type: "ingredient", masterId: target._id });
       return res.json({ ok: true, ingredient, overridden: true });
     }
 
-    if (!target.householdId || String(target.householdId) !== String(effectiveHouseholdId)) {
+    if (!target.householdId || String(target.householdId) !== String(getEffectiveHouseholdId(req.user))) {
       return res.status(403).json({ ok: false, error: "No tienes permisos para modificar este ingrediente." });
     }
 
     Object.assign(target, nextData);
     await target.save();
-    await syncIngredientReferences({ ingredientId: target._id, name: trimmedName, canonicalName, householdId: effectiveHouseholdId });
+    await syncIngredientReferences({ ingredientId: target._id, name: trimmedName, canonicalName, householdId: getEffectiveHouseholdId(req.user) });
     const ingredient = await KitchenIngredient.findById(target._id).populate("categoryId", "name slug colorBg colorText");
 
     return res.json({ ok: true, ingredient });
@@ -298,7 +311,7 @@ router.put("/:id", requireAuth, async (req, res) => {
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const target = await KitchenIngredient.findById(id);
 
@@ -311,12 +324,12 @@ router.delete("/:id", requireAuth, async (req, res) => {
         target.isArchived = true;
         await target.save();
       } else {
-        await hideMasterForHousehold({ householdId: effectiveHouseholdId, type: "ingredient", masterId: target._id });
+        await hideMasterForHousehold({ householdId: getEffectiveHouseholdId(req.user), type: "ingredient", masterId: target._id });
       }
       return res.json({ ok: true });
     }
 
-    if (!target.householdId || String(target.householdId) !== String(effectiveHouseholdId)) {
+    if (!target.householdId || String(target.householdId) !== String(getEffectiveHouseholdId(req.user))) {
       return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar este ingrediente." });
     }
 

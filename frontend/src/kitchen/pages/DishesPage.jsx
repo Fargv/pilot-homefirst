@@ -101,6 +101,7 @@ export default function DishesPage() {
     occupied: {},
     dishNames: {}
   });
+  const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
 
   const loadDishes = async () => {
     setLoading(true);
@@ -159,7 +160,8 @@ export default function DishesPage() {
       body: JSON.stringify({
         name,
         colorBg: colors?.colorBg,
-        colorText: colors?.colorText
+        colorText: colors?.colorText,
+        ...(isDiodGlobalMode ? { scope: "master" } : {})
       })
     });
     const category = data.category;
@@ -361,6 +363,9 @@ export default function DishesPage() {
   return (
     <KitchenLayout>
       <div className="kitchen-dishes-page">
+        {isDiodGlobalMode ? (
+          <div className="kitchen-alert">Modo global DIOD: estás editando catálogo master sin hogar activo.</div>
+        ) : null}
         <div className="kitchen-dishes-header">
           <div>
             <h2>{headerTitle}</h2>
@@ -533,6 +538,7 @@ export default function DishesPage() {
                         />
                       </svg>
                     </button>
+                    {!isDiodGlobalMode ? (
                     <button
                       className="kitchen-icon-button assign"
                       type="button"
@@ -559,7 +565,8 @@ export default function DishesPage() {
                         />
                       </svg>
                     </button>
-                    {dish.sidedish || user?.role === "admin" ? (
+                    ) : null}
+                    {dish.sidedish || user?.role === "admin" || user?.globalRole === "diod" ? (
                       <button
                         className="kitchen-icon-button danger"
                         type="button"
@@ -612,6 +619,7 @@ export default function DishesPage() {
         onCategoryCreated={onCategoryCreated}
         initialDish={activeDish}
         initialSidedish={initialSidedish}
+        scope={isDiodGlobalMode ? "master" : undefined}
       />
       <IngredientModal
         isOpen={isIngredientModalOpen}
@@ -622,6 +630,7 @@ export default function DishesPage() {
         categories={categories}
         onCategoryCreated={onCategoryCreated}
         initialIngredient={activeIngredient}
+        scope={isDiodGlobalMode ? "master" : undefined}
       />
       {assignModalOpen ? (
         <div className="kitchen-modal-backdrop" role="presentation" onClick={closeAssignModal}>
