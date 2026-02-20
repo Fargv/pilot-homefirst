@@ -1,466 +1,845 @@
-diff --git a/backend/src/db.js b/backend/src/db.js
-index 9f2c1b7130aa1e75c659ad2c50627b055a1c987f..8f2ed8e160c5be9a0403d2d35b85bcdeedee6630 100644
---- a/backend/src/db.js
-+++ b/backend/src/db.js
-@@ -1,15 +1,34 @@
- import mongoose from "mongoose";
- import { config } from "./config.js";
- 
-+async function ensureWeekPlanIndexes() {
-+  const collection = mongoose.connection.collection("kitchenweekplans");
-+  const indexes = await collection.indexes();
-+  const legacyWeekStartIndex = indexes.find(
-+    (index) => index.unique && index.key && Object.keys(index.key).length === 1 && index.key.weekStart === 1
-+  );
-+
-+  if (legacyWeekStartIndex) {
-+    await collection.dropIndex(legacyWeekStartIndex.name);
-+    console.log(`🧹 Índice legado eliminado en kitchenweekplans: ${legacyWeekStartIndex.name}`);
-+  }
-+
-+  await collection.createIndex(
-+    { householdId: 1, weekStart: 1 },
-+    { unique: true, partialFilterExpression: { householdId: { $exists: true } } }
-+  );
-+}
-+
- export async function connectDb() {
-   if (!config.mongodbUri) return;
- 
-   mongoose.set("strictQuery", true);
-   await mongoose.connect(config.mongodbUri);
--  const match = config.mongodbUri.match(/\/([^/?]+)(\?|$)/);
-+  await ensureWeekPlanIndexes();
-+  const match = config.mongodbUri.match(/\/([^/?]+)(\?|$)/);
-   const dbName = match ? match[1] : "desconocida";
-   console.log("✅ MongoDB conectado");
-   if (config.nodeEnv === "development") {
-     console.log(`🔎 MongoDB DB: ${dbName}`);
-   }
- }
-diff --git a/backend/src/index.js b/backend/src/index.js
-index c956338b282959c42e70cd57ed9f0c5cf11ecbc9..e394ab2c6ce4d25852082fb59888e71d5709698c 100644
---- a/backend/src/index.js
-+++ b/backend/src/index.js
-@@ -1,51 +1,54 @@
- import express from "express";
- import cors from "cors";
- import { config } from "./config.js";
- import { connectDb } from "./db.js";
- import { sendTestEmail } from "./mailer.js";
--import kitchenRouter from "./kitchen/index.js";
--import categoriesRouter from "./kitchen/routes/categories.js";
-+import kitchenRouter from "./kitchen/index.js";
-+import weekRoutes from "./kitchen/routes/weeks.js";
-+import categoriesRouter from "./kitchen/routes/categories.js";
- import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
- import usersRouter from "./users/index.js";
- import adminRouter from "./kitchen/routes/admin.js";
- 
- const app = express();
- 
- app.use(cors({ origin: config.corsOrigin }));
- app.use(express.json());
- 
- app.get("/health", (req, res) => {
-   res.json({ ok: true, env: config.nodeEnv, time: new Date().toISOString() });
- });
- 
- app.get("/invite/:token", (req, res) => {
-   const frontendBaseUrl = String(config.frontendUrl || "").replace(/\/$/, "");
-   return res.redirect(302, `${frontendBaseUrl}/invite/${req.params.token}`);
- });
- 
- app.post("/api/email/test", async (req, res) => {
-   try {
-     const { to } = req.body;
-     if (!to) return res.status(400).json({ ok: false, error: "Falta 'to' en body" });
- 
-     const messageId = await sendTestEmail({ to });
-     res.json({ ok: true, messageId });
-   } catch (e) {
-     res.status(500).json({ ok: false, error: e.message });
-   }
- });
- 
--app.use("/api/kitchen", kitchenRouter);
--app.use("/api/admin", adminRouter);
-+app.use("/api/kitchen", kitchenRouter);
-+app.use("/api/weeks", weekRoutes);
-+app.use("/weeks", weekRoutes);
-+app.use("/api/admin", adminRouter);
- app.use("/api/categories", categoriesRouter);
- app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
- app.use("/api/users", usersRouter);
- 
- connectDb()
-   .then(() => {
-     app.listen(config.port, () => console.log(`🚀 API escuchando en :${config.port}`));
-   })
-   .catch((e) => {
-     console.error("❌ Error conectando DB", e);
-     process.exit(1);
-   });
 diff --git a/backend/src/kitchen/routes/weeks.js b/backend/src/kitchen/routes/weeks.js
-index 492274ea900d6be58aa1a78a28bd2d558724e138..e432763a709b13baf3d9f9fda6d97e353b1266af 100644
+index 6dfcd08f331e377f5007cf41fde5a011bd9335fa..b86b75b9cb0898365d0c3bb1fbe5c505d1d73710 100644
 --- a/backend/src/kitchen/routes/weeks.js
 +++ b/backend/src/kitchen/routes/weeks.js
-@@ -1,141 +1,144 @@
+@@ -1,74 +1,142 @@
  import express from "express";
  import { KitchenDish } from "../models/KitchenDish.js";
++import { KitchenUser } from "../models/KitchenUser.js";
  import { requireAuth, requireRole } from "../middleware.js";
--import { formatDateISO, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
--import {
--  buildScopedFilter,
--  getEffectiveHouseholdId,
--  handleHouseholdError
--} from "../householdScope.js";
--import { ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
-+import { formatDateISO, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
-+import {
-+  buildScopedFilter,
-+  getEffectiveHouseholdId,
-+  handleHouseholdError
-+} from "../householdScope.js";
-+import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
+ import { formatDateISO, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
+ import {
+   buildScopedFilter,
+   getEffectiveHouseholdId,
+   handleHouseholdError
+ } from "../householdScope.js";
+ import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
  
  const router = express.Router();
  
- router.get("/:weekStart", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const monday = getWeekStart(weekStart);
--    const plan = await findWeekPlan(monday, effectiveHouseholdId);
--
--    res.json({
--      ok: true,
--      weekStart: formatDateISO(monday),
--      plan
--    });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo cargar el plan semanal." });
--  }
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
++function isHouseholdAdmin(user) {
++  return user?.globalRole === "diod" || user?.role === "owner" || user?.role === "admin";
++}
 +
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const plan = await findWeekPlan(monday, effectiveHouseholdId);
++function isSelfAssignment(req, userId) {
++  if (!userId) return false;
++  return String(userId) === String(req.kitchenUser?._id);
++}
 +
-+    res.json({
-+      ok: true,
-+      weekStart: formatDateISO(monday),
-+      plan
-+    });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo cargar el plan semanal." });
++function hasAdministrativePlanChange(req, day, updates) {
++  if (isHouseholdAdmin(req.kitchenUser)) return false;
++
++  if (Object.prototype.hasOwnProperty.call(updates, "cookUserId")) {
++    const requestedCook = updates.cookUserId || null;
++    if (!requestedCook || !isSelfAssignment(req, requestedCook)) {
++      return true;
++    }
 +  }
++
++  const clearsMainDish = Object.prototype.hasOwnProperty.call(updates, "mainDishId")
++    && !updates.mainDishId
++    && Boolean(day.mainDishId);
++  const clearsSideDish = Object.prototype.hasOwnProperty.call(updates, "sideDishId")
++    && !updates.sideDishId
++    && Boolean(day.sideDishId);
++
++  return clearsMainDish || clearsSideDish;
++}
++
+ router.get("/:weekStart", requireAuth, async (req, res) => {
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
+ 
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
+     const plan = await findWeekPlan(monday, effectiveHouseholdId);
+ 
+     res.json({
+       ok: true,
+       weekStart: formatDateISO(monday),
+       plan
+     });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudo cargar el plan semanal." });
+   }
  });
  
  router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    const date = parseISODate(req.params.date);
--    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const monday = getWeekStart(weekStart);
--    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
--
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     const date = parseISODate(req.params.date);
+     if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+ 
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
+     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+ 
 -    const day = plan.days.find((item) => isSameDay(item.date, date));
 -    if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
 -
 -    const { cookUserId, cookTiming, servings, mainDishId, sideDishId, ingredientOverrides } = req.body;
 -    if (cookUserId !== undefined) day.cookUserId = cookUserId || null;
--    if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
--    if (servings) day.servings = Number(servings) || 4;
--    if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
--    if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
--    if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
--
--    await plan.save();
--    return res.json({ ok: true, plan });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
--  }
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    const date = parseISODate(req.params.date);
-+    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
-+
 +    const day = plan.days.find((item) => isSameDay(item.date, date));
 +    if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
 +
 +    const { cookUserId, cookTiming, servings, mainDishId, sideDishId, ingredientOverrides } = req.body;
++
++    if (hasAdministrativePlanChange(req, day, req.body || {})) {
++      return res.status(403).json({
++        ok: false,
++        error: "Solo owner/admin puede reasignar a otros usuarios o quitar platos del día."
++      });
++    }
++
++    if (cookUserId) {
++      const assignedUser = await KitchenUser.findOne(
++        buildScopedFilter(effectiveHouseholdId, { _id: cookUserId })
++      ).select("_id");
++      if (!assignedUser) {
++        return res.status(400).json({ ok: false, error: "La persona asignada no pertenece a este hogar." });
++      }
++    }
++
++    if (mainDishId) {
++      const mainDish = await KitchenDish.findOne(
++        buildScopedFilter(effectiveHouseholdId, { _id: mainDishId, sidedish: { $ne: true } })
++      ).select("_id");
++      if (!mainDish) {
++        return res.status(400).json({ ok: false, error: "El plato principal no pertenece a este hogar." });
++      }
++    }
++
++    if (sideDishId) {
++      const sideDish = await KitchenDish.findOne(
++        buildScopedFilter(effectiveHouseholdId, { _id: sideDishId, sidedish: true })
++      ).select("_id");
++      if (!sideDish) {
++        return res.status(400).json({ ok: false, error: "La guarnición no pertenece a este hogar." });
++      }
++    }
++
 +    if (cookUserId !== undefined) day.cookUserId = cookUserId || null;
-+    if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
-+    if (servings) day.servings = Number(servings) || 4;
-+    if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
-+    if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
-+    if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
++    if (cookUserId === undefined && mainDishId && !day.cookUserId) {
++      day.cookUserId = req.kitchenUser._id;
++    }
+     if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
+     if (servings) day.servings = Number(servings) || 4;
+     if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
+     if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
+     if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
+ 
+     await plan.save();
+     return res.json({ ok: true, plan });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
+   }
+ });
+ 
+ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("admin"), async (req, res) => {
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     const otherWeekStart = parseISODate(req.params.otherWeekStart);
+     if (!weekStart || !otherWeekStart) {
+       return res.status(400).json({ ok: false, error: "Fecha inválida." });
+     }
+ 
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
+@@ -98,47 +166,101 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
+ 
+ router.post("/:weekStart", requireAuth, async (req, res) => {
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
+ 
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
+     const { plan, created } = await createOrGetWeekPlan(monday, effectiveHouseholdId);
+ 
+     return res.status(created ? 201 : 200).json({
+       ok: true,
+       weekStart: formatDateISO(monday),
+       plan
+     });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     if (error?.code === "WEEK_PLAN_INDEX_CONFLICT") {
+       return res.status(409).json({ ok: false, error: error.message });
+     }
+     return res.status(500).json({ ok: false, error: "No se pudo crear el plan semanal." });
+   }
+ });
+ 
++router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
++  try {
++    if (!isHouseholdAdmin(req.kitchenUser)) {
++      return res.status(403).json({ ok: false, error: "Solo owner/admin puede mover asignaciones entre días." });
++    }
++
++    const weekStart = parseISODate(req.params.weekStart);
++    const sourceDate = parseISODate(req.params.date);
++    const targetDate = parseISODate(req.body?.targetDate);
++    if (!weekStart || !sourceDate || !targetDate) {
++      return res.status(400).json({ ok: false, error: "Debes indicar fecha origen, destino y semana válidas." });
++    }
++
++    const monday = getWeekStart(weekStart);
++    if (getWeekStart(targetDate).getTime() !== monday.getTime()) {
++      return res.status(400).json({ ok: false, error: "Solo puedes mover platos dentro de la misma semana." });
++    }
++
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
++    const sourceDay = plan.days.find((item) => isSameDay(item.date, sourceDate));
++    const targetDay = plan.days.find((item) => isSameDay(item.date, targetDate));
++
++    if (!sourceDay || !targetDay) {
++      return res.status(404).json({ ok: false, error: "No encontramos los días de origen o destino en esa semana." });
++    }
++
++    targetDay.cookUserId = sourceDay.cookUserId || null;
++    targetDay.cookTiming = sourceDay.cookTiming || "previous_day";
++    targetDay.servings = sourceDay.servings || 4;
++    targetDay.mainDishId = sourceDay.mainDishId || null;
++    targetDay.sideDishId = sourceDay.sideDishId || null;
++    targetDay.ingredientOverrides = Array.isArray(sourceDay.ingredientOverrides)
++      ? sourceDay.ingredientOverrides.map((item) => ({
++        displayName: item.displayName,
++        canonicalName: item.canonicalName,
++        ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
++      }))
++      : [];
++
++    sourceDay.cookUserId = null;
++    sourceDay.mainDishId = null;
++    sourceDay.sideDishId = null;
++    sourceDay.ingredientOverrides = [];
 +
 +    await plan.save();
 +    return res.json({ ok: true, plan });
 +  } catch (error) {
 +    const handled = handleHouseholdError(res, error);
 +    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
-+  }
- });
- 
- router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("admin"), async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    const otherWeekStart = parseISODate(req.params.otherWeekStart);
--    if (!weekStart || !otherWeekStart) {
--      return res.status(400).json({ ok: false, error: "Fecha inválida." });
--    }
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const monday = getWeekStart(weekStart);
--    const sourceMonday = getWeekStart(otherWeekStart);
--
--    const sourcePlan = await ensureWeekPlan(sourceMonday, effectiveHouseholdId);
--    const targetPlan = await ensureWeekPlan(monday, effectiveHouseholdId);
--
--    targetPlan.days = sourcePlan.days.map((day) => ({
--      date: new Date(day.date),
--      cookUserId: day.cookUserId,
--      cookTiming: day.cookTiming,
--      servings: day.servings,
--      mainDishId: day.mainDishId,
--      sideDishId: day.sideDishId,
--      ingredientOverrides: day.ingredientOverrides
--    }));
--
--    await targetPlan.save();
--    return res.json({ ok: true, plan: targetPlan });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo copiar el plan semanal." });
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    const otherWeekStart = parseISODate(req.params.otherWeekStart);
-+    if (!weekStart || !otherWeekStart) {
-+      return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+    }
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const sourceMonday = getWeekStart(otherWeekStart);
-+
-+    const sourcePlan = await ensureWeekPlan(sourceMonday, effectiveHouseholdId);
-+    const targetPlan = await ensureWeekPlan(monday, effectiveHouseholdId);
-+
-+    targetPlan.days = sourcePlan.days.map((day) => ({
-+      date: new Date(day.date),
-+      cookUserId: day.cookUserId,
-+      cookTiming: day.cookTiming,
-+      servings: day.servings,
-+      mainDishId: day.mainDishId,
-+      sideDishId: day.sideDishId,
-+      ingredientOverrides: day.ingredientOverrides
-+    }));
-+
-+    await targetPlan.save();
-+    return res.json({ ok: true, plan: targetPlan });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo copiar el plan semanal." });
++    return res.status(500).json({ ok: false, error: "No se pudo mover la asignación de día." });
 +  }
 +});
 +
-+router.post("/:weekStart", requireAuth, async (req, res) => {
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const { plan, created } = await createOrGetWeekPlan(monday, effectiveHouseholdId);
-+
-+    return res.status(created ? 201 : 200).json({
-+      ok: true,
-+      weekStart: formatDateISO(monday),
-+      plan
-+    });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    if (error?.code === "WEEK_PLAN_INDEX_CONFLICT") {
-+      return res.status(409).json({ ok: false, error: error.message });
-+    }
-+    return res.status(500).json({ ok: false, error: "No se pudo crear el plan semanal." });
+ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+ 
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
+     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+     const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
+     const dishes = await KitchenDish.find(
+       buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
+     );
+ 
+     res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudo cargar el resumen semanal." });
    }
  });
  
--router.post("/:weekStart", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const monday = getWeekStart(weekStart);
--    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
--
--    return res.status(201).json({
--      ok: true,
--      weekStart: formatDateISO(monday),
--      plan
--    });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo crear el plan semanal." });
--  }
--});
--
- router.get("/:weekStart/summary", requireAuth, async (req, res) => {
--  try {
--    const weekStart = parseISODate(req.params.weekStart);
--    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
--
--    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
--    const monday = getWeekStart(weekStart);
--    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
--    const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
--    const dishes = await KitchenDish.find(
--      buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
--    );
--
--    res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo cargar el resumen semanal." });
--  }
-+  try {
-+    const weekStart = parseISODate(req.params.weekStart);
-+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
-+
-+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-+    const monday = getWeekStart(weekStart);
-+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
-+    const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-+    const dishes = await KitchenDish.find(
-+      buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
-+    );
-+
-+    res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
-+  } catch (error) {
-+    const handled = handleHouseholdError(res, error);
-+    if (handled) return handled;
-+    return res.status(500).json({ ok: false, error: "No se pudo cargar el resumen semanal." });
-+  }
- });
- 
  export default router;
-diff --git a/backend/src/kitchen/weekPlanService.js b/backend/src/kitchen/weekPlanService.js
-index a3c0d2e876ff0670e1af0b657f3d939a3ba1b4e1..0cf39e337ff9f86a2ae7a45f96f2b8d9d54b0375 100644
---- a/backend/src/kitchen/weekPlanService.js
-+++ b/backend/src/kitchen/weekPlanService.js
-@@ -1,48 +1,59 @@
- import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
- import { buildScopedFilter } from "./householdScope.js";
- import { getWeekDates } from "./utils/dates.js";
- 
- function buildDefaultDays(weekStartDate) {
-   return getWeekDates(weekStartDate).map((date) => ({
-     date,
-     cookTiming: "previous_day",
-     servings: 4,
-     ingredientOverrides: []
-   }));
+diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
+index 59497dd6788e7d73b04b463431ab88ddfebe8881..f415d6c840bfe3df3eaf58558d354ea0dc6b8215 100644
+--- a/frontend/src/kitchen/kitchen.css
++++ b/frontend/src/kitchen/kitchen.css
+@@ -943,60 +943,70 @@ body {
  }
  
--export async function ensureWeekPlan(weekStartDate, effectiveHouseholdId) {
-+function isDuplicateKeyError(error) {
-+  return error?.code === 11000;
-+}
-+
-+export async function createOrGetWeekPlan(weekStartDate, effectiveHouseholdId) {
-   const filter = buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate });
-+  const existingPlan = await KitchenWeekPlan.findOne(filter);
-+  if (existingPlan) {
-+    return { plan: existingPlan, created: false };
-+  }
+ .kitchen-pill {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   padding: 4px 10px;
+   border-radius: 999px;
+   background: #eef2ff;
+   color: #4338ca;
+   font-size: 12px;
+   font-weight: 600;
+ }
  
--  try {
--    const plan = await KitchenWeekPlan.findOneAndUpdate(
--      filter,
--      {
--        $setOnInsert: {
--          weekStart: weekStartDate,
--          householdId: effectiveHouseholdId,
--          days: buildDefaultDays(weekStartDate)
--        }
--      },
--      {
--        upsert: true,
--        new: true
--      }
--    );
--
--    return plan;
--  } catch (error) {
--    if (error?.code === 11000) {
--      const existingPlan = await KitchenWeekPlan.findOne(filter);
--      if (existingPlan) {
--        return existingPlan;
-+  try {
-+    const createdPlan = await KitchenWeekPlan.create({
-+      weekStart: weekStartDate,
-+      householdId: effectiveHouseholdId,
-+      days: buildDefaultDays(weekStartDate)
-+    });
-+
-+    return { plan: createdPlan, created: true };
-+  } catch (error) {
-+    if (isDuplicateKeyError(error)) {
-+      const concurrentPlan = await KitchenWeekPlan.findOne(filter);
-+      if (concurrentPlan) {
-+        return { plan: concurrentPlan, created: false };
-       }
-+
-+      const conflictError = new Error(
-+        "No se pudo crear el plan semanal por un conflicto de índices en la base de datos."
-+      );
-+      conflictError.code = "WEEK_PLAN_INDEX_CONFLICT";
-+      throw conflictError;
-     }
--    throw error;
--  }
+ .kitchen-empty {
+   text-align: center;
+   padding: 32px;
+   color: #475467;
+ }
+ 
+ .kitchen-muted {
+   color: #667085;
+   font-size: 14px;
+ }
+ 
+-.kitchen-actions {
+-  display: flex;
+-  flex-direction: column;
+-  gap: 12px;
+-  margin-top: 20px;
+-  width: 100%;
 -}
- 
--export async function findWeekPlan(weekStartDate, effectiveHouseholdId) {
--  const filter = buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate });
--  return KitchenWeekPlan.findOne(filter);
-+    throw error;
-+  }
+-
+-.kitchen-assignee-picker {
+-  position: relative;
++.kitchen-actions {
++  display: flex;
++  flex-direction: column;
++  gap: 12px;
++  margin-top: 20px;
++  width: 100%;
 +}
 +
-+export async function ensureWeekPlan(weekStartDate, effectiveHouseholdId) {
-+  const { plan } = await createOrGetWeekPlan(weekStartDate, effectiveHouseholdId);
-+  return plan;
++.kitchen-actions-inline {
++  display: flex;
++  gap: 8px;
++  align-items: center;
 +}
 +
-+export async function findWeekPlan(weekStartDate, effectiveHouseholdId) {
-+  const filter = buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate });
-+  return KitchenWeekPlan.findOne(filter);
++.kitchen-actions-inline .kitchen-select {
++  flex: 1;
++}
++
++.kitchen-assignee-picker {
++  position: relative;
+   display: flex;
+   flex-direction: column;
+   gap: 6px;
  }
+ 
+ .kitchen-assignee-button {
+   width: 100%;
+   border: 1px solid #d0d5dd;
+   border-radius: 12px;
+   background: #ffffff;
+   padding: 8px 12px;
+   display: inline-flex;
+   align-items: center;
+   gap: 10px;
+   font-size: 14px;
+   font-weight: 600;
+   color: #101828;
+   min-height: 48px;
+   cursor: pointer;
+   transition: border 0.2s ease, box-shadow 0.2s ease;
+ }
+ 
+ .kitchen-assignee-button:hover {
+   border-color: #c7d2fe;
+ }
+diff --git a/frontend/src/kitchen/pages/WeekPage.jsx b/frontend/src/kitchen/pages/WeekPage.jsx
+index 8a2c85b46f546ff7ef4db5d6f7d693f5c82a99c9..899ea78dad5a9a5afc0a7bd3aae9ae23b0a3804b 100644
+--- a/frontend/src/kitchen/pages/WeekPage.jsx
++++ b/frontend/src/kitchen/pages/WeekPage.jsx
+@@ -84,98 +84,100 @@ function mergeIngredientLists(...lists) {
+ }
+ 
+ export default function WeekPage() {
+   const { user } = useAuth();
+   const [searchParams, setSearchParams] = useSearchParams();
+   const [weekStart, setWeekStart] = useState(getMondayISO());
+   const [plan, setPlan] = useState(null);
+   const [dishes, setDishes] = useState([]);
+   const [sideDishes, setSideDishes] = useState([]);
+   const [users, setUsers] = useState([]);
+   const [categories, setCategories] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [creatingPlan, setCreatingPlan] = useState(false);
+   const [loadError, setLoadError] = useState("");
+   const [dayStatus, setDayStatus] = useState({});
+   const [dayErrors, setDayErrors] = useState({});
+   const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
+   const [extraIngredientsEnabled, setExtraIngredientsEnabled] = useState({});
+   const [selectedDay, setSelectedDay] = useState("");
+   const [editingDays, setEditingDays] = useState({});
+   const [sideDishEnabled, setSideDishEnabled] = useState({});
+   const [showCarouselControls, setShowCarouselControls] = useState(false);
+   const [activeIndex, setActiveIndex] = useState(0);
+   const [mainDishQueries, setMainDishQueries] = useState({});
+   const [mainDishOpen, setMainDishOpen] = useState({});
+-  const [sideDishQueries, setSideDishQueries] = useState({});
+-  const [sideDishOpen, setSideDishOpen] = useState({});
+-  const [assigneeOpen, setAssigneeOpen] = useState({});
++  const [sideDishQueries, setSideDishQueries] = useState({});
++  const [sideDishOpen, setSideDishOpen] = useState({});
++  const [assigneeOpen, setAssigneeOpen] = useState({});
++  const [moveTargetByDay, setMoveTargetByDay] = useState({});
+   const [dishModalOpen, setDishModalOpen] = useState(false);
+   const [dishModalName, setDishModalName] = useState("");
+   const [dishModalDayKey, setDishModalDayKey] = useState(null);
+   const [dishModalMode, setDishModalMode] = useState("main");
+   const [dishModalSidedish, setDishModalSidedish] = useState(false);
+   const ingredientCache = useRef(new Map());
+   const saveTimers = useRef({});
+   const carouselRef = useRef(null);
+   const dayRefs = useRef(new Map());
+   const mainDishRefs = useRef(new Map());
+   const sideDishRefs = useRef(new Map());
+   const selectedDayRef = useRef(selectedDay);
+   const hasInitializedRef = useRef(false);
+-  const assignIntentRef = useRef(null);
+-  const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
++  const assignIntentRef = useRef(null);
++  const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
++  const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
+ 
+   const loadData = async () => {
+     if (!user) {
+       setLoading(false);
+       return;
+     }
+     setLoading(true);
+     setLoadError("");
+     try {
+       const [planData, dishesData, sideDishesData] = await Promise.all([
+         apiRequest(`/api/kitchen/weeks/${weekStart}`),
+         apiRequest("/api/kitchen/dishes"),
+         apiRequest("/api/kitchen/dishes?sidedish=true")
+       ]);
+       setPlan(planData.plan || null);
+       setDishes(dishesData.dishes || []);
+       setSideDishes(sideDishesData.dishes || []);
+-      const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
+-      const usersData = await apiRequest(usersEndpoint);
+-      setUsers(usersData.users || []);
++      const usersEndpoint = isOwnerAdmin ? "/api/kitchen/users" : "/api/kitchen/users/members";
++      const usersData = await apiRequest(usersEndpoint);
++      setUsers(usersData.users || []);
+     } catch (err) {
+       setLoadError(err.message || "No se pudo cargar la semana.");
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+-  useEffect(() => {
+-    loadData();
+-  }, [user, weekStart]);
++  useEffect(() => {
++    loadData();
++  }, [user, weekStart, isOwnerAdmin]);
+ 
+   const loadCategories = async () => {
+     try {
+       const data = await apiRequest("/api/categories");
+       setCategories(data.categories || []);
+     } catch (err) {
+       setLoadError(err.message || "No se pudieron cargar las categorías.");
+     }
+   };
+ 
+   useEffect(() => {
+     loadCategories();
+   }, []);
+ 
+   const userMap = useMemo(() => {
+     const map = new Map();
+     users.forEach((u) => map.set(u.id, u));
+     return map;
+   }, [users]);
+ 
+   const fetchIngredientMatch = useCallback(async (canonicalName) => {
+     if (!canonicalName) return null;
+     if (ingredientCache.current.has(canonicalName)) {
+       return ingredientCache.current.get(canonicalName);
+     }
+@@ -376,53 +378,85 @@ export default function WeekPage() {
+     const dayKey = day.date.slice(0, 10);
+     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
+     setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
+     try {
+       const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
+         method: "PUT",
+         body: JSON.stringify(updates)
+       });
+       setPlan(data.plan);
+       setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
+       if (saveTimers.current[dayKey]) {
+         clearTimeout(saveTimers.current[dayKey]);
+       }
+       saveTimers.current[dayKey] = window.setTimeout(() => {
+         setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
+       }, 2000);
+       return data.plan;
+     } catch (err) {
+       const message = err.message || "No se pudo actualizar el día.";
+       setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
+       setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
+       return null;
+     }
+   };
+ 
+-  const onAssignSelf = async (day) => {
+-    return updateDay(day, { cookUserId: user?.id || user?._id });
+-  };
++  const onAssignSelf = async (day) => {
++    return updateDay(day, { cookUserId: user?.id || user?._id });
++  };
++
++  const removeDayAssignment = async (day) => {
++    return updateDay(day, {
++      cookUserId: null,
++      mainDishId: null,
++      sideDishId: null,
++      ingredientOverrides: []
++    });
++  };
++
++  const moveDayAssignment = async (day, targetDate) => {
++    const dayKey = day.date.slice(0, 10);
++    if (!targetDate || targetDate === dayKey) return null;
++
++    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
++    setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
++    try {
++      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${dayKey}/move`, {
++        method: "POST",
++        body: JSON.stringify({ targetDate })
++      });
++      setPlan(data.plan);
++      setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
++      setMoveTargetByDay((prev) => ({ ...prev, [dayKey]: "" }));
++      return data.plan;
++    } catch (err) {
++      const message = err.message || "No se pudo mover la asignación del día.";
++      setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
++      setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
++      return null;
++    }
++  };
+ 
+   const startEditingDay = (day) => {
+     const dayKey = day.date.slice(0, 10);
+     const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
+     const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
+     setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
+     setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
+     setExtraIngredientsEnabled((prev) => ({
+       ...prev,
+       [dayKey]: Boolean(day.ingredientOverrides?.length)
+     }));
+     setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
+     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+     setSideDishQueries((prev) => ({ ...prev, [dayKey]: sideDishName || "" }));
+     setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+   };
+ 
+   const stopEditingDay = (dayKey) => {
+     setEditingDays((prev) => ({ ...prev, [dayKey]: false }));
+     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+     setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+   };
+ 
+   const focusMainDish = (dayKey) => {
+     window.requestAnimationFrame(() => {
+@@ -542,56 +576,64 @@ export default function WeekPage() {
+     const planWeekStart = plan?.weekStart
+       ? getMondayISO(new Date(plan.weekStart))
+       : null;
+     if (planWeekStart && planWeekStart !== weekStart) return;
+ 
+     const { date: assignDate, plateId: assignPlateId, key: intentKey } = intent;
+     const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === assignDate);
+     if (!targetDay) {
+       assignIntentRef.current = { key: intentKey, handled: true };
+       clearAssignParams();
+       return;
+     }
+     openDayEditor(assignDate, assignPlateId);
+ 
+     assignIntentRef.current = { key: intentKey, handled: true };
+     clearAssignParams();
+   }, [
+     clearAssignParams,
+     loading,
+     openDayEditor,
+     plan,
+     safeDays,
+     weekStart
+   ]);
+ 
+-  const handleAssignCta = async (day, canEdit, isAssigned) => {
+-    const dayKey = day.date.slice(0, 10);
+-    if (canEdit) {
+-      startEditingDay(day);
+-      focusMainDish(dayKey);
+-      return;
++  const handleAssignCta = async (day, canEdit, isAssigned) => {
++    const dayKey = day.date.slice(0, 10);
++    if (canEdit) {
++      if (!isAssigned && user) {
++        const updatedPlan = await onAssignSelf(day);
++        if (updatedPlan) {
++          startEditingDay(day);
++          focusMainDish(dayKey);
++        }
++        return;
++      }
++      startEditingDay(day);
++      focusMainDish(dayKey);
++      return;
+     }
+     if (!isAssigned && user) {
+       const updatedPlan = await onAssignSelf(day);
+       if (updatedPlan) {
+         startEditingDay(day);
+         focusMainDish(dayKey);
+       }
+     }
+   };
+ 
+   const openDishModal = (dayKey, name, options = {}) => {
+     const { mode = "main", sidedish = false } = options;
+     setDishModalDayKey(dayKey);
+     setDishModalName(name);
+     setDishModalMode(mode);
+     setDishModalSidedish(sidedish);
+     setDishModalOpen(true);
+   };
+ 
+   const closeDishModal = () => {
+     setDishModalOpen(false);
+     setDishModalName("");
+     setDishModalDayKey(null);
+     setDishModalMode("main");
+     setDishModalSidedish(false);
+@@ -774,51 +816,51 @@ export default function WeekPage() {
+                 aria-label="Mostrar día anterior"
+               >
+                 <ChevronIcon className="kitchen-week-carousel-arrow-icon" />
+               </button>
+             ) : null}
+             <div className="kitchen-grid kitchen-week-days" id="week-grid" ref={carouselRef}>
+               {safeDays.map((day, index) => {
+                 if (!day?.date) {
+                   return (
+                     <div key={`day-${index}`} className="kitchen-card kitchen-day-card">
+                       <div className="kitchen-day-header">
+                         <h3 className="kitchen-day-title">Día sin fecha</h3>
+                         <p className="kitchen-muted">Falta la fecha de este día en la planificación.</p>
+                       </div>
+                     </div>
+                   );
+                 }
+                 const dayKey = day.date.slice(0, 10);
+                 const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
+                 const cookInitials = getInitials(cookUser?.displayName);
+                 const cookColors = getUserColor(day.cookUserId);
+                 const isAssigned = Boolean(day.cookUserId);
+                 const isPlanned = Boolean(day.mainDishId);
+                 const isAssignedToSelf = day.cookUserId
+                   && (day.cookUserId === user?.id || day.cookUserId === user?._id);
+-                const canEdit = user?.role === "admin" || isAssignedToSelf;
++                const canEdit = isOwnerAdmin || isAssignedToSelf;
+                 const isEditing = Boolean(editingDays[dayKey]);
+                 const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
+                 const sideDish = day.sideDishId ? dishMap.get(day.sideDishId) : null;
+                 const showSideDish = Boolean(sideDish);
+                 const sideDishOn = Boolean(sideDishEnabled[dayKey]);
+                 const sideToggleId = `side-toggle-${dayKey}`;
+                 const isEmptyState = !isPlanned && !isEditing;
+                 const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
+                 const dayVisual = DAY_CARD_STYLES[index % DAY_CARD_STYLES.length];
+                 const baseIngredients = mergeIngredientLists(
+                   mainDish?.ingredients || [],
+                   sideDish?.ingredients || []
+                 );
+                 const extraIngredients = day.ingredientOverrides || [];
+                 const extraIngredientsValue =
+                   extraIngredientsByDay[dayKey] ||
+                   extraIngredients.map((item) => ({
+                     ingredientId: item.ingredientId,
+                     displayName: item.displayName,
+                     canonicalName: item.canonicalName,
+                     status: item.ingredientId ? "resolved" : "pending"
+                   }));
+                 const mainDishQuery = mainDishQueries[dayKey] ?? mainDish?.name ?? "";
+                 const trimmedMainDishQuery = mainDishQuery.trim();
+                 const normalizedMainDishQuery = normalizeIngredientName(trimmedMainDishQuery);
+@@ -1281,131 +1323,171 @@ export default function WeekPage() {
+                   </div>
+ 
+                   {extrasOn ? (
+                     <div className="kitchen-field kitchen-day-ingredients">
+                       <span className="kitchen-label">Extras</span>
+                       <IngredientPicker
+                         value={extraIngredientsValue}
+                         onChange={(next) => {
+                           setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: next }));
+                           const overrides = next
+                             .map((item) => ({
+                               displayName: item.displayName,
+                               canonicalName: item.canonicalName,
+                               ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
+                             }))
+                             .filter((item) => item.displayName && item.canonicalName);
+                           updateDay(day, { ingredientOverrides: overrides });
+                         }}
+                         categories={categories}
+                         onCategoryCreated={handleCategoryCreated}
+                       />
+                     </div>
+                   ) : null}
+ 
+                   <div className="kitchen-actions">
+-                    {user?.role === "admin" ? (
++                    {isOwnerAdmin ? (
+                       <div className="kitchen-field">
+                         <span className="kitchen-label">Persona asignada</span>
+                         <div
+                           className="kitchen-assignee-picker"
+                           onBlur={(event) => {
+                             if (!event.currentTarget.contains(event.relatedTarget)) {
+                               setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+                             }
+                           }}
+                         >
+                           <button
+                             type="button"
+                             className="kitchen-assignee-button"
+                             onClick={() =>
+                               setAssigneeOpen((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))
+                             }
+                             aria-haspopup="listbox"
+                             aria-expanded={assigneeOpen[dayKey] ? "true" : "false"}
+                           >
+                             <span
+                               className="kitchen-assignee-avatar"
+                               style={{
+                                 background: cookColors.background,
+                                 color: cookColors.text
+                               }}
+                               aria-hidden="true"
+                             >
+                               {cookInitials || "+"}
+                             </span>
+                             <span className="kitchen-assignee-name">
+                               {cookUser?.displayName || "Sin asignar"}
+                             </span>
+                           </button>
+                           {assigneeOpen[dayKey] ? (
+                             <div className="kitchen-suggestion-list is-scrollable" role="listbox">
+                               <button
+                                 className="kitchen-suggestion"
+                                 type="button"
+                                 onMouseDown={(event) => {
+                                   event.preventDefault();
+                                   updateDay(day, { cookUserId: null });
+                                   setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+                                 }}
+                               >
+-                                Sin asignar
+-                              </button>
++                                Yo ({user?.displayName || "mi usuario"})
++                              </button>
+                               {users.map((person) => {
+                                 const initials = getInitials(person.displayName);
+                                 const colors = getUserColor(person.id);
+                                 return (
+                                   <button
+                                     className="kitchen-suggestion is-assignee"
+                                     key={person.id}
+                                     type="button"
+                                     onMouseDown={(event) => {
+                                       event.preventDefault();
+                                       updateDay(day, { cookUserId: person.id });
+                                       setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+                                     }}
+                                   >
+                                     <span
+                                       className="kitchen-assignee-avatar"
+                                       style={{
+                                         background: colors.background,
+                                         color: colors.text
+                                       }}
+                                       aria-hidden="true"
+                                     >
+                                       {initials || "+"}
+                                     </span>
+                                     <span className="kitchen-assignee-name">{person.displayName}</span>
+                                   </button>
+                                 );
+                               })}
+                             </div>
+                           ) : null}
+                         </div>
+                       </div>
+-                    ) : null}
+-                  </div>
++                    ) : null}
++                    {isOwnerAdmin ? (
++                      <>
++                        <div className="kitchen-field">
++                          <span className="kitchen-label">Mover a otro día</span>
++                          <div className="kitchen-actions-inline">
++                            <select
++                              className="kitchen-select"
++                              value={moveTargetByDay[dayKey] || ""}
++                              onChange={(event) => {
++                                setMoveTargetByDay((prev) => ({ ...prev, [dayKey]: event.target.value }));
++                              }}
++                            >
++                              <option value="">Seleccionar día</option>
++                              {safeDays
++                                .filter((item) => item?.date?.slice(0, 10) !== dayKey)
++                                .map((item) => (
++                                  <option key={item.date} value={item.date.slice(0, 10)}>
++                                    {formatDateLabel(item.date)}
++                                  </option>
++                                ))}
++                            </select>
++                            <button
++                              type="button"
++                              className="kitchen-button secondary is-small"
++                              onClick={() => moveDayAssignment(day, moveTargetByDay[dayKey])}
++                              disabled={!moveTargetByDay[dayKey]}
++                            >
++                              Mover
++                            </button>
++                          </div>
++                        </div>
++                        <button
++                          type="button"
++                          className="kitchen-button secondary is-small"
++                          onClick={() => removeDayAssignment(day)}
++                        >
++                          Quitar cocina del día
++                        </button>
++                      </>
++                    ) : null}
++                  </div>
+                 </>
+               )}
+               <div className="kitchen-day-feedback" aria-live="polite">
+                 {dayStatus[dayKey] === "saving" ? (
+                   <span className="kitchen-day-feedback-text saving">Guardando...</span>
+                 ) : null}
+                 {dayStatus[dayKey] === "saved" ? (
+                   <span className="kitchen-day-feedback-text saved">Guardado</span>
+                 ) : null}
+                 {dayErrors[dayKey] ? (
+                   <span className="kitchen-day-feedback-text error" role="alert">{dayErrors[dayKey]}</span>
+                 ) : null}
+               </div>
+             </div>
+           );
+               })}
+             </div>
+             {showCarouselControls ? (
+               <button
+                 className="kitchen-week-carousel-arrow is-right"
+                 type="button"
+                 onClick={() => handleCarouselScroll(1)}
+                 aria-label="Mostrar día siguiente"
+               >
+                 <ChevronIcon className="kitchen-week-carousel-arrow-icon is-next" />

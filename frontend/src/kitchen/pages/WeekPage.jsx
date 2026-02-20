@@ -109,6 +109,7 @@ export default function WeekPage() {
   const [sideDishQueries, setSideDishQueries] = useState({});
   const [sideDishOpen, setSideDishOpen] = useState({});
   const [assigneeOpen, setAssigneeOpen] = useState({});
+  const [moveTargetByDay, setMoveTargetByDay] = useState({});
   const [dishModalOpen, setDishModalOpen] = useState(false);
   const [dishModalName, setDishModalName] = useState("");
   const [dishModalDayKey, setDishModalDayKey] = useState(null);
@@ -124,6 +125,7 @@ export default function WeekPage() {
   const hasInitializedRef = useRef(false);
   const assignIntentRef = useRef(null);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
+  const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
 
   const loadData = async () => {
     if (!user) {
@@ -141,7 +143,7 @@ export default function WeekPage() {
       setPlan(planData.plan || null);
       setDishes(dishesData.dishes || []);
       setSideDishes(sideDishesData.dishes || []);
-      const usersEndpoint = user?.role === "admin" ? "/api/kitchen/users" : "/api/kitchen/users/members";
+      const usersEndpoint = isOwnerAdmin ? "/api/kitchen/users" : "/api/kitchen/users/members";
       const usersData = await apiRequest(usersEndpoint);
       setUsers(usersData.users || []);
     } catch (err) {
@@ -153,7 +155,7 @@ export default function WeekPage() {
 
   useEffect(() => {
     loadData();
-  }, [user, weekStart]);
+  }, [user, weekStart, isOwnerAdmin]);
 
   const loadCategories = async () => {
     try {
@@ -402,6 +404,38 @@ export default function WeekPage() {
     return updateDay(day, { cookUserId: user?.id || user?._id });
   };
 
+  const removeDayAssignment = async (day) => {
+    return updateDay(day, {
+      cookUserId: null,
+      mainDishId: null,
+      sideDishId: null,
+      ingredientOverrides: []
+    });
+  };
+
+  const moveDayAssignment = async (day, targetDate) => {
+    const dayKey = day.date.slice(0, 10);
+    if (!targetDate || targetDate === dayKey) return null;
+
+    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
+    setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
+    try {
+      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${dayKey}/move`, {
+        method: "POST",
+        body: JSON.stringify({ targetDate })
+      });
+      setPlan(data.plan);
+      setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
+      setMoveTargetByDay((prev) => ({ ...prev, [dayKey]: "" }));
+      return data.plan;
+    } catch (err) {
+      const message = err.message || "No se pudo mover la asignación del día.";
+      setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
+      setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
+      return null;
+    }
+  };
+
   const startEditingDay = (day) => {
     const dayKey = day.date.slice(0, 10);
     const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
@@ -567,6 +601,14 @@ export default function WeekPage() {
   const handleAssignCta = async (day, canEdit, isAssigned) => {
     const dayKey = day.date.slice(0, 10);
     if (canEdit) {
+      if (!isAssigned && user) {
+        const updatedPlan = await onAssignSelf(day);
+        if (updatedPlan) {
+          startEditingDay(day);
+          focusMainDish(dayKey);
+        }
+        return;
+      }
       startEditingDay(day);
       focusMainDish(dayKey);
       return;
@@ -796,7 +838,7 @@ export default function WeekPage() {
                 const isPlanned = Boolean(day.mainDishId);
                 const isAssignedToSelf = day.cookUserId
                   && (day.cookUserId === user?.id || day.cookUserId === user?._id);
-                const canEdit = user?.role === "admin" || isAssignedToSelf;
+                const canEdit = isOwnerAdmin || isAssignedToSelf;
                 const isEditing = Boolean(editingDays[dayKey]);
                 const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
                 const sideDish = day.sideDishId ? dishMap.get(day.sideDishId) : null;
@@ -1303,7 +1345,7 @@ export default function WeekPage() {
                   ) : null}
 
                   <div className="kitchen-actions">
-                    {user?.role === "admin" ? (
+                    {isOwnerAdmin ? (
                       <div className="kitchen-field">
                         <span className="kitchen-label">Persona asignada</span>
                         <div
@@ -1348,7 +1390,7 @@ export default function WeekPage() {
                                   setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
                                 }}
                               >
-                                Sin asignar
+                                Yo ({user?.displayName || "mi usuario"})
                               </button>
                               {users.map((person) => {
                                 const initials = getInitials(person.displayName);
@@ -1382,6 +1424,46 @@ export default function WeekPage() {
                           ) : null}
                         </div>
                       </div>
+                    ) : null}
+                    {isOwnerAdmin ? (
+                      <>
+                        <div className="kitchen-field">
+                          <span className="kitchen-label">Mover a otro día</span>
+                          <div className="kitchen-actions-inline">
+                            <select
+                              className="kitchen-select"
+                              value={moveTargetByDay[dayKey] || ""}
+                              onChange={(event) => {
+                                setMoveTargetByDay((prev) => ({ ...prev, [dayKey]: event.target.value }));
+                              }}
+                            >
+                              <option value="">Seleccionar día</option>
+                              {safeDays
+                                .filter((item) => item?.date?.slice(0, 10) !== dayKey)
+                                .map((item) => (
+                                  <option key={item.date} value={item.date.slice(0, 10)}>
+                                    {formatDateLabel(item.date)}
+                                  </option>
+                                ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="kitchen-button secondary is-small"
+                              onClick={() => moveDayAssignment(day, moveTargetByDay[dayKey])}
+                              disabled={!moveTargetByDay[dayKey]}
+                            >
+                              Mover
+                            </button>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="kitchen-button secondary is-small"
+                          onClick={() => removeDayAssignment(day)}
+                        >
+                          Quitar cocina del día
+                        </button>
+                      </>
                     ) : null}
                   </div>
                 </>

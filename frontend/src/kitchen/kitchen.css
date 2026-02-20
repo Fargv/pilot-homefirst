@@ -973,6 +973,16 @@ body {
   width: 100%;
 }
 
+.kitchen-actions-inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.kitchen-actions-inline .kitchen-select {
+  flex: 1;
+}
+
 .kitchen-assignee-picker {
   position: relative;
   display: flex;
