@@ -144,7 +144,7 @@ export default function ShoppingPage() {
     try {
       const data = await apiRequest("/api/kitchen/shopping/trip/active", {
         method: "PUT",
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ ...payload, weekStart })
       });
       setActiveTrip(data.activeTrip || null);
       await loadList({ silent: true });
@@ -168,14 +168,17 @@ export default function ShoppingPage() {
     }
   };
 
-  const canCloseTrip = Boolean(activeTrip) && activeTripPurchasedCount > 0;
+  const canCloseTrip = activeTripPurchasedCount > 0;
   const closeDisabledReason = canCloseTrip ? "" : "Marca algún ítem para cerrar compra";
 
   const closeTrip = async () => {
     if (!canCloseTrip) return;
     try {
-      await apiRequest("/api/kitchen/shopping/trip/active/close", { method: "POST" });
-      setSuccess("Compra guardada");
+      await apiRequest("/api/kitchen/shopping/trip/active/close", {
+        method: "POST",
+        body: JSON.stringify({ weekStart })
+      });
+      setSuccess("Compra registrada");
       await loadList();
     } catch (err) {
       setError(err.message || "No se pudo cerrar la compra.");
@@ -202,7 +205,7 @@ export default function ShoppingPage() {
           <div className="shopping-header-row">
             <div>
               <h3>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h3>
-              <p className="kitchen-muted">Marca productos y cierra cada compra para registrar los tickets.</p>
+              <p className="kitchen-muted">Marca productos y se registra automáticamente quién compró y cuándo.</p>
             </div>
             <button className="kitchen-button secondary" type="button" onClick={refreshList} disabled={isRefreshing}>Refrescar</button>
           </div>

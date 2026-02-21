@@ -4,7 +4,6 @@ import { Store } from "../models/Store.js";
 import { ShoppingTrip } from "../models/ShoppingTrip.js";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { KitchenIngredient } from "../models/KitchenIngredient.js";
-import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
 import {
@@ -22,7 +21,6 @@ import {
 } from "../utils/categoryMatching.js";
 
 const router = express.Router();
-const AUTO_CLOSE_MS = 2 * 60 * 60 * 1000;
 
 function normalizeStoreName(value = "") {
   return String(value).trim().toLowerCase();
@@ -47,26 +45,6 @@ async function getActiveTrip(effectiveHouseholdId) {
   return ShoppingTrip.findOne(
     buildScopedFilter(effectiveHouseholdId, { closedAt: null })
   ).sort({ startedAt: -1 });
-}
-
-async function autoCloseExpiredTrip(effectiveHouseholdId) {
-  const trip = await getActiveTrip(effectiveHouseholdId);
-  if (!trip) return null;
-  const isExpired = Date.now() - new Date(trip.startedAt).getTime() > AUTO_CLOSE_MS;
-  if (!isExpired) return trip;
-  trip.closedAt = new Date();
-  await trip.save();
-  return null;
-}
-
-async function ensureActiveTrip(effectiveHouseholdId, userId) {
-  const current = await autoCloseExpiredTrip(effectiveHouseholdId);
-  if (current) return current;
-  return ShoppingTrip.create({
-    householdId: effectiveHouseholdId,
-    createdBy: userId,
-    startedAt: new Date()
-  });
 }
 
 function buildStoreVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
@@ -119,7 +97,7 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
       .select("_id name order scope householdId")
       .lean()
   );
-  const activeTrip = await autoCloseExpiredTrip(effectiveHouseholdId);
+  const activeTrip = await getActiveTrip(effectiveHouseholdId);
 
   const purchasedTripIds = list.items
     .filter((item) => item.tripId)
@@ -195,9 +173,7 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
     list,
     stores,
     activeTrip,
-    activeTripPurchasedCount: activeTrip
-      ? list.items.filter((item) => item.status === "purchased" && item.tripId && String(item.tripId) === String(activeTrip._id)).length
-      : 0,
+    activeTripPurchasedCount: list.items.filter((item) => item.status === "purchased" && !item.tripId).length,
     pendingByCategory: Array.from(pendingByCategory.values()),
     purchasedByTrip: Array.from(purchasedByTrip.values()).sort(
       (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
@@ -264,10 +240,9 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
     const normalizedStatus = status === "purchased" ? "purchased" : "pending";
     item.status = normalizedStatus;
     if (normalizedStatus === "purchased") {
-      const activeTrip = await ensureActiveTrip(effectiveHouseholdId, req.kitchenUser._id);
       item.purchasedBy = req.kitchenUser._id;
       item.purchasedAt = new Date();
-      item.tripId = activeTrip?._id || null;
+      item.tripId = null;
     } else {
       item.purchasedBy = null;
       item.purchasedAt = null;
@@ -366,10 +341,11 @@ router.delete("/stores/master/:storeId", requireAuth, requireDiod, async (req, r
 router.put("/trip/active", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const weekStart = parseISODate(req.body?.weekStart);
     const storeId = req.body?.storeId || null;
     const totalAmount = normalizeAmount(req.body?.totalAmount);
 
-    let trip = await autoCloseExpiredTrip(effectiveHouseholdId);
+    let trip = await getActiveTrip(effectiveHouseholdId);
     if (!trip && (storeId || totalAmount !== null)) {
       trip = await ShoppingTrip.create({
         householdId: effectiveHouseholdId,
@@ -384,6 +360,19 @@ router.put("/trip/active", requireAuth, async (req, res) => {
       await trip.save();
     }
 
+    if (trip && weekStart) {
+      const monday = getWeekStart(weekStart);
+      const list = await ensureShoppingList(monday, effectiveHouseholdId);
+      let changed = false;
+      for (const item of list.items) {
+        if (item.status === "purchased" && !item.tripId) {
+          item.tripId = trip._id;
+          changed = true;
+        }
+      }
+      if (changed) await list.save();
+    }
+
     return res.json({ ok: true, activeTrip: trip });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
@@ -395,15 +384,30 @@ router.put("/trip/active", requireAuth, async (req, res) => {
 router.post("/trip/active/close", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const trip = await getActiveTrip(effectiveHouseholdId);
-    if (!trip) return res.status(404).json({ ok: false, error: "No hay compra activa." });
+    const weekStart = parseISODate(req.body?.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
 
-    const openList = await KitchenShoppingList.findOne(
-      buildScopedFilter(effectiveHouseholdId, { "items.tripId": trip._id, "items.status": "purchased" })
-    );
-    if (!openList) {
+    const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+    const ungroupedPurchased = list.items.filter((item) => item.status === "purchased" && !item.tripId);
+
+    if (!ungroupedPurchased.length) {
       return res.status(400).json({ ok: false, error: "Marca algún ítem para cerrar compra." });
     }
+
+    let trip = await getActiveTrip(effectiveHouseholdId);
+    if (!trip) {
+      trip = await ShoppingTrip.create({
+        householdId: effectiveHouseholdId,
+        createdBy: req.kitchenUser._id,
+        startedAt: new Date()
+      });
+    }
+
+    for (const item of ungroupedPurchased) {
+      item.tripId = trip._id;
+    }
+    await list.save();
 
     trip.closedAt = new Date();
     await trip.save();
