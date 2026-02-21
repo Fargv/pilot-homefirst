@@ -1,37 +1,498 @@
 diff --git a/backend/src/kitchen/routes/shopping.js b/backend/src/kitchen/routes/shopping.js
-index 26127879b7d5141a68945dca50488a457aa094cc..ebb6efb0968b35f2c92773c27622f92311169e4c 100644
+index e86324d1f91b001ef2228aaf9ff105ceb112ba39..05da834127d9419035a8fb4d4eb3221fdac9332e 100644
 --- a/backend/src/kitchen/routes/shopping.js
 +++ b/backend/src/kitchen/routes/shopping.js
-@@ -42,176 +42,195 @@ function sortStores(stores = []) {
-     return String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base" });
-   });
- }
- 
- function buildStoreVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
-   return {
-     ...extraFilter,
-     $or: [
-       { scope: "master", householdId: null },
-       { scope: "household", householdId: effectiveHouseholdId }
-     ]
-   };
- }
- 
- function buildCategoryVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
-   return {
-     ...extraFilter,
-     $or: [
-       { scope: CATALOG_SCOPES.MASTER, householdId: null },
-       { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
-       { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
-     ]
-   };
- }
- 
+@@ -1,424 +1,427 @@
+-import express from "express";
+-import { Category } from "../models/Category.js";
+-import { Store } from "../models/Store.js";
+-import { KitchenUser } from "../models/KitchenUser.js";
+-import { requireAuth, requireDiod } from "../middleware.js";
+-import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
+-import {
+-  buildScopedFilter,
+-  getEffectiveHouseholdId,
+-  handleHouseholdError
+-} from "../householdScope.js";
+-import { ensureShoppingList, rebuildShoppingList, resolveShoppingItemIngredientData } from "../shoppingService.js";
+-import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
+-import {
+-  DEFAULT_CATEGORY_COLOR_BG,
+-  DEFAULT_CATEGORY_COLOR_TEXT,
+-  DEFAULT_CATEGORY_NAME,
+-  DEFAULT_CATEGORY_SLUG,
+-  ensureDefaultCategory
+-} from "../utils/categoryMatching.js";
+-
+-const router = express.Router();
+-
+-function logShoppingError(context, error, extra = {}) {
+-  console.error(`[kitchen][shopping] ${context}`, {
+-    ...extra,
+-    message: error?.message,
+-    stack: error?.stack
+-  });
+-}
+-
+-
+-function normalizeStoreName(value = "") {
+-  return String(value).trim().toLowerCase();
+-}
+-
+-function sortStores(stores = []) {
+-  return [...stores].sort((a, b) => {
+-    const orderA = Number.isFinite(a.order) ? a.order : Number.POSITIVE_INFINITY;
+-    const orderB = Number.isFinite(b.order) ? b.order : Number.POSITIVE_INFINITY;
+-    if (orderA !== orderB) return orderA - orderB;
+-    return String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base" });
+-  });
+-}
+-
+-function buildStoreVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
+-  return {
+-    ...extraFilter,
+-    $or: [
+-      { scope: "master", householdId: null },
+-      { scope: "household", householdId: effectiveHouseholdId }
+-    ]
+-  };
+-}
+-
+-function buildCategoryVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
+-  return {
+-    ...extraFilter,
+-    $or: [
+-      { scope: CATALOG_SCOPES.MASTER, householdId: null },
+-      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
+-      { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
+-    ]
+-  };
+-}
+-
 -function toDateGroup(value) {
 -  if (!value) return "sin-fecha";
 -  return new Date(value).toISOString().slice(0, 10);
 -}
+-
+-function isValidObjectId(value) {
+-  return Boolean(value) && /^[a-f\d]{24}$/i.test(String(value));
+-}
+-
+-function normalizeShoppingItemForResponse(item, purchaserById) {
+-  const normalized = item.toObject ? item.toObject() : { ...item };
+-  return {
+-    ...normalized,
+-    categoryId: normalized.categoryId || null,
+-    storeId: normalized.storeId || null,
+-    purchasedBy: normalized.purchasedBy || null,
+-    purchasedAt: normalized.purchasedAt || null,
+-    purchasedByName: normalized.purchasedBy && isValidObjectId(normalized.purchasedBy)
+-      ? purchaserById.get(String(normalized.purchasedBy)) || "Usuario"
+-      : null
+-  };
+-}
+-
+-async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
+-  const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
+-
+-  const fallbackCategory = await ensureDefaultCategory({
+-    Category,
+-    householdId: effectiveHouseholdId
+-  });
+-
+-  const resolved = await resolveShoppingItemIngredientData(
+-    list.items.map((item) => item.toObject()),
+-    effectiveHouseholdId,
+-    { fallbackCategoryId: fallbackCategory?._id || null }
+-  );
+-  if (resolved.changed) {
+-    list.items = resolved.resolvedItems;
+-    await list.save();
+-  }
+-
+-  const categories = await Category.find(buildCategoryVisibilityFilter(effectiveHouseholdId, { isArchived: { $ne: true } })).select(
+-    "_id name slug colorBg colorText"
+-  );
+-  const stores = sortStores(
+-    await Store.find(buildStoreVisibilityFilter(effectiveHouseholdId, { active: true }))
+-      .select("_id name order scope householdId")
+-      .lean()
+-  );
+-
+-  const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
+-  const categoryById = new Map(categories.map((category) => [String(category._id), category]));
+-  const purchaserIds = Array.from(new Set(
+-    list.items
+-      .map((item) => item.purchasedBy)
+-      .filter((value) => isValidObjectId(value))
+-      .map((value) => String(value))
+-  ));
+-  const purchasers = purchaserIds.length
+-    ? await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: purchaserIds } })).select("_id displayName")
+-    : [];
+-  const purchaserById = new Map(purchasers.map((person) => [String(person._id), person.displayName]));
+-
+-  const pendingByCategory = list.items
+-    .filter((item) => item.status === "pending")
+-    .reduce((acc, item) => {
+-      const key = item.categoryId ? String(item.categoryId) : "uncategorized";
+-      const resolvedCategory = item.categoryId
+-        ? categoryById.get(String(item.categoryId)) || null
+-        : fallbackCategory || null;
+-
+-      if (!acc.has(key)) {
+-        acc.set(key, {
+-          categoryId: resolvedCategory?._id || item.categoryId || null,
+-          categoryInfo: {
+-            name: resolvedCategory?.name || DEFAULT_CATEGORY_NAME,
+-            slug: resolvedCategory?.slug || DEFAULT_CATEGORY_SLUG,
+-            colorBg: resolvedCategory?.colorBg || DEFAULT_CATEGORY_COLOR_BG,
+-            colorText: resolvedCategory?.colorText || DEFAULT_CATEGORY_COLOR_TEXT
+-          },
+-          items: []
+-        });
+-      }
+-      acc.get(key).items.push(normalizeShoppingItemForResponse(item, purchaserById));
+-      return acc;
+-    }, new Map());
+-
+-  const purchasedByStoreDay = list.items
+-    .filter((item) => item.status === "purchased")
+-    .reduce((acc, item) => {
+-      const dateKey = toDateGroup(item.purchasedAt);
+-      const storeKey = item.storeId ? String(item.storeId) : "no-store";
+-      const key = `${dateKey}::${storeKey}`;
+-      if (!acc.has(key)) {
+-        const purchasedByName = item.purchasedBy && isValidObjectId(item.purchasedBy)
+-          ? purchaserById.get(String(item.purchasedBy)) || "Usuario"
+-          : "Usuario";
+-        acc.set(key, {
+-          storeId: item.storeId || null,
+-          storeName: item.storeId ? storeById.get(String(item.storeId)) || "Supermercado no definido" : "Supermercado no definido",
+-          purchasedDate: dateKey,
+-          startedAt: item.purchasedAt,
+-          purchasedByName,
+-          items: []
+-        });
+-      }
+-      acc.get(key).items.push(normalizeShoppingItemForResponse(item, purchaserById));
+-      return acc;
+-    }, new Map());
+-
+-  return {
+-    list,
+-    stores,
+-    pendingByCategory: Array.from(pendingByCategory.values()),
+-    purchasedByStoreDay: Array.from(purchasedByStoreDay.values()).sort(
+-      (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
+-    )
+-  };
+-}
+-
+-async function validateStoreSelection(storeId, effectiveHouseholdId) {
+-  if (!storeId) return null;
+-  const store = await Store.findOne(buildStoreVisibilityFilter(effectiveHouseholdId, { _id: storeId, active: true }))
+-    .select("_id")
+-    .lean();
+-  return store ? store._id : null;
+-}
+-
+-router.get("/:weekStart", requireAuth, async (req, res) => {
+-  try {
+-    const weekStart = parseISODate(req.params.weekStart);
+-    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+-
+-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+-    const monday = getWeekStart(weekStart);
+-    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+-
+-    res.json({ ok: true, weekStart: formatDateISO(monday), ...payload });
+-  } catch (error) {
+-    const handled = handleHouseholdError(res, error);
+-    if (handled) return handled;
+-    logShoppingError("get-list", error, { weekStart: req.params.weekStart, userId: String(req.kitchenUser?._id || "") });
+-    return res.status(500).json({ ok: false, error: "No se pudo cargar la lista de compra." });
+-  }
+-});
+-
+-router.post("/:weekStart/rebuild", requireAuth, async (req, res) => {
+-  try {
+-    const weekStart = parseISODate(req.params.weekStart);
+-    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+-
+-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+-    const monday = getWeekStart(weekStart);
+-    await rebuildShoppingList(monday, effectiveHouseholdId);
+-    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+-
+-    res.json({ ok: true, ...payload });
+-  } catch (error) {
+-    const handled = handleHouseholdError(res, error);
+-    if (handled) return handled;
+-    logShoppingError("rebuild", error, { weekStart: req.params.weekStart, userId: String(req.kitchenUser?._id || "") });
+-    if (error?.name === "ValidationError" || error?.name === "CastError") {
+-      return res.status(400).json({ ok: false, error: "Datos inválidos al reconstruir la lista." });
+-    }
+-    return res.status(500).json({ ok: false, error: "No se pudo reconstruir la lista de compra." });
+-  }
+-});
+-
+-router.put("/:weekStart/item", requireAuth, async (req, res) => {
+-  try {
+-    const weekStart = parseISODate(req.params.weekStart);
+-    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+-
+-    const { canonicalName, status, ingredientId, storeId } = req.body;
+-    if (!canonicalName && !ingredientId) {
+-      return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
+-    }
+-
+-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+-    const monday = getWeekStart(weekStart);
+-    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+-
+-    const item = list.items.find((current) => {
+-      if (ingredientId && current.ingredientId) return String(current.ingredientId) === String(ingredientId);
+-      return current.canonicalName === canonicalName;
+-    });
+-
+-    if (!item) return res.status(404).json({ ok: false, error: "Ingrediente no encontrado en la lista." });
+-
+-    const normalizedStatus = status === "purchased" ? "purchased" : "pending";
+-    item.status = normalizedStatus;
+-    if (normalizedStatus === "purchased") {
+-      const validatedStoreId = await validateStoreSelection(storeId, effectiveHouseholdId);
+-      item.purchasedBy = req.kitchenUser._id;
+-      item.purchasedAt = new Date();
+-      item.storeId = validatedStoreId;
+-    } else {
+-      item.purchasedBy = null;
+-      item.purchasedAt = null;
+-      item.storeId = null;
+-    }
+-
+-    await list.save();
+-    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+-    res.json({ ok: true, ...payload });
+-  } catch (error) {
+-    const handled = handleHouseholdError(res, error);
+-    if (handled) return handled;
+-    return res.status(500).json({ ok: false, error: "No se pudo actualizar la lista de compra." });
+-  }
+-});
+-
+-router.put("/:weekStart/item/store", requireAuth, async (req, res) => {
+-  try {
+-    const weekStart = parseISODate(req.params.weekStart);
+-    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+-
+-    const { canonicalName, ingredientId, storeId } = req.body;
+-    if (!canonicalName && !ingredientId) {
+-      return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
+-    }
+-
+-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+-    const monday = getWeekStart(weekStart);
+-    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+-
+-    const item = list.items.find((current) => {
+-      if (ingredientId && current.ingredientId) return String(current.ingredientId) === String(ingredientId);
+-      return current.canonicalName === canonicalName;
+-    });
+-
+-    if (!item || item.status !== "purchased") {
+-      return res.status(404).json({ ok: false, error: "Ingrediente comprado no encontrado." });
+-    }
+-
+-    item.storeId = await validateStoreSelection(storeId, effectiveHouseholdId);
+-    await list.save();
+-
+-    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+-    return res.json({ ok: true, ...payload });
+-  } catch (error) {
+-    const handled = handleHouseholdError(res, error);
+-    if (handled) return handled;
+-    return res.status(500).json({ ok: false, error: "No se pudo actualizar el supermercado." });
+-  }
+-});
+-
+-router.post("/:weekStart/purchased/assign-store", requireAuth, async (req, res) => {
+-  try {
+-    const weekStart = parseISODate(req.params.weekStart);
+-    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+-
+-    const { storeId } = req.body;
+-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+-    const monday = getWeekStart(weekStart);
+-    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+-    const validatedStoreId = await validateStoreSelection(storeId, effectiveHouseholdId);
+-
+-    const today = new Date().toISOString().slice(0, 10);
+-    let changed = false;
+-    for (const item of list.items) {
+-      if (item.status !== "purchased" || item.storeId || !item.purchasedAt) continue;
+-      if (toDateGroup(item.purchasedAt) !== today) continue;
+-      item.storeId = validatedStoreId;
+-      changed = true;
+-    }
+-
+-    if (changed) await list.save();
+-
+-    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+-    return res.json({ ok: true, updated: changed, ...payload });
+-  } catch (error) {
+-    const handled = handleHouseholdError(res, error);
+-    if (handled) return handled;
+-    return res.status(500).json({ ok: false, error: "No se pudo asignar el supermercado." });
+-  }
+-});
+-
+-router.post("/stores", requireAuth, async (req, res) => {
+-  try {
+-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+-    const name = String(req.body?.name || "").trim();
+-    if (!name) return res.status(400).json({ ok: false, error: "Debes indicar un nombre." });
+-    const canonicalName = normalizeStoreName(name);
+-
+-    const store = await Store.findOneAndUpdate(
+-      { scope: "household", householdId: effectiveHouseholdId, canonicalName },
+-      { $setOnInsert: { scope: "household", householdId: effectiveHouseholdId, name, canonicalName } },
+-      { new: true, upsert: true }
+-    );
+-
+-    return res.status(201).json({ ok: true, store });
+-  } catch (error) {
+-    const handled = handleHouseholdError(res, error);
+-    if (handled) return handled;
+-    return res.status(500).json({ ok: false, error: "No se pudo crear la tienda." });
+-  }
+-});
+-
+-router.get("/stores/master", requireAuth, requireDiod, async (req, res) => {
+-  const stores = sortStores(
+-    await Store.find({ scope: "master", householdId: null }).select("_id name canonicalName active order scope")
+-  );
+-  return res.json({ ok: true, stores });
+-});
+-
+-router.post("/stores/master", requireAuth, requireDiod, async (req, res) => {
+-  const name = String(req.body?.name || "").trim();
+-  if (!name) return res.status(400).json({ ok: false, error: "Debes indicar un nombre." });
+-  const canonicalName = normalizeStoreName(name);
+-  const requestedOrder = Number(req.body?.order);
+-
+-  const store = await Store.findOneAndUpdate(
+-    { scope: "master", householdId: null, canonicalName },
+-    {
+-      $set: {
+-        name,
+-        canonicalName,
+-        active: req.body?.active !== false,
+-        order: Number.isFinite(requestedOrder) ? requestedOrder : null,
+-        scope: "master",
+-        householdId: null
+-      }
+-    },
+-    { new: true, upsert: true }
+-  );
+-  return res.status(201).json({ ok: true, store });
+-});
+-
+-router.put("/stores/master/:storeId", requireAuth, requireDiod, async (req, res) => {
+-  const store = await Store.findOne({ _id: req.params.storeId, scope: "master", householdId: null });
+-  if (!store) return res.status(404).json({ ok: false, error: "Supermercado no encontrado." });
+-
+-  if (req.body?.name !== undefined) {
+-    const name = String(req.body.name || "").trim();
+-    if (!name) return res.status(400).json({ ok: false, error: "Nombre inválido." });
+-    store.name = name;
+-    store.canonicalName = normalizeStoreName(name);
+-  }
+-  if (req.body?.active !== undefined) store.active = Boolean(req.body.active);
+-  if (req.body?.order !== undefined) {
+-    const requestedOrder = Number(req.body.order);
+-    store.order = Number.isFinite(requestedOrder) ? requestedOrder : null;
+-  }
+-
+-  await store.save();
+-  return res.json({ ok: true, store });
+-});
+-
+-router.delete("/stores/master/:storeId", requireAuth, requireDiod, async (req, res) => {
+-  const store = await Store.findOne({ _id: req.params.storeId, scope: "master", householdId: null });
+-  if (!store) return res.status(404).json({ ok: false, error: "Supermercado no encontrado." });
+-  store.active = false;
+-  await store.save();
+-  return res.json({ ok: true, store });
+-});
+-
+-export default router;
++import express from "express";
++import { Category } from "../models/Category.js";
++import { Store } from "../models/Store.js";
++import { KitchenUser } from "../models/KitchenUser.js";
++import { requireAuth, requireDiod } from "../middleware.js";
++import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
++import {
++  buildScopedFilter,
++  getEffectiveHouseholdId,
++  handleHouseholdError
++} from "../householdScope.js";
++import { ensureShoppingList, rebuildShoppingList, repairShoppingListItems } from "../shoppingService.js";
++import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
++import {
++  DEFAULT_CATEGORY_COLOR_BG,
++  DEFAULT_CATEGORY_COLOR_TEXT,
++  DEFAULT_CATEGORY_NAME,
++  DEFAULT_CATEGORY_SLUG,
++  ensureDefaultCategory
++} from "../utils/categoryMatching.js";
++
++const router = express.Router();
++
++function logShoppingError(context, error, extra = {}) {
++  console.error(`[kitchen][shopping] ${context}`, {
++    ...extra,
++    message: error?.message,
++    stack: error?.stack
++  });
++}
++
++
++function normalizeStoreName(value = "") {
++  return String(value).trim().toLowerCase();
++}
++
++function sortStores(stores = []) {
++  return [...stores].sort((a, b) => {
++    const orderA = Number.isFinite(a.order) ? a.order : Number.POSITIVE_INFINITY;
++    const orderB = Number.isFinite(b.order) ? b.order : Number.POSITIVE_INFINITY;
++    if (orderA !== orderB) return orderA - orderB;
++    return String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base" });
++  });
++}
++
++function buildStoreVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
++  return {
++    ...extraFilter,
++    $or: [
++      { scope: "master", householdId: null },
++      { scope: "household", householdId: effectiveHouseholdId }
++    ]
++  };
++}
++
++function buildCategoryVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
++  return {
++    ...extraFilter,
++    $or: [
++      { scope: CATALOG_SCOPES.MASTER, householdId: null },
++      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
++      { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
++    ]
++  };
++}
++
 +function toDateGroup(value) {
 +  if (!value) return "sin-fecha";
 +  return new Date(value).toISOString().slice(0, 10);
@@ -54,102 +515,71 @@ index 26127879b7d5141a68945dca50488a457aa094cc..ebb6efb0968b35f2c92773c27622f923
 +      : null
 +  };
 +}
- 
- async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
-   const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
- 
-   const fallbackCategory = await ensureDefaultCategory({
-     Category,
-     householdId: effectiveHouseholdId
-   });
- 
-   const resolved = await resolveShoppingItemIngredientData(
-     list.items.map((item) => item.toObject()),
-     effectiveHouseholdId,
-     { fallbackCategoryId: fallbackCategory?._id || null }
-   );
-   if (resolved.changed) {
-     list.items = resolved.resolvedItems;
-     await list.save();
-   }
- 
-   const categories = await Category.find(buildCategoryVisibilityFilter(effectiveHouseholdId, { isArchived: { $ne: true } })).select(
-     "_id name slug colorBg colorText"
-   );
-   const stores = sortStores(
-     await Store.find(buildStoreVisibilityFilter(effectiveHouseholdId, { active: true }))
-       .select("_id name order scope householdId")
-       .lean()
-   );
- 
-   const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
-   const categoryById = new Map(categories.map((category) => [String(category._id), category]));
--  const purchaserIds = list.items
--    .filter((item) => item.purchasedBy)
--    .map((item) => String(item.purchasedBy));
++
++async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
++  const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
++
++  const fallbackCategory = await ensureDefaultCategory({
++    Category,
++    householdId: effectiveHouseholdId
++  });
++  await repairShoppingListItems(list, effectiveHouseholdId, {
++    fallbackCategory,
++    context: "getShoppingPayload"
++  });
++
++  const categories = await Category.find(buildCategoryVisibilityFilter(effectiveHouseholdId, { isArchived: { $ne: true } })).select(
++    "_id name slug colorBg colorText"
++  );
++  const stores = sortStores(
++    await Store.find(buildStoreVisibilityFilter(effectiveHouseholdId, { active: true }))
++      .select("_id name order scope householdId")
++      .lean()
++  );
++
++  const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
++  const categoryById = new Map(categories.map((category) => [String(category._id), category]));
 +  const purchaserIds = Array.from(new Set(
 +    list.items
 +      .map((item) => item.purchasedBy)
 +      .filter((value) => isValidObjectId(value))
 +      .map((value) => String(value))
 +  ));
-   const purchasers = purchaserIds.length
-     ? await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: purchaserIds } })).select("_id displayName")
-     : [];
-   const purchaserById = new Map(purchasers.map((person) => [String(person._id), person.displayName]));
- 
-   const pendingByCategory = list.items
-     .filter((item) => item.status === "pending")
-     .reduce((acc, item) => {
-       const key = item.categoryId ? String(item.categoryId) : "uncategorized";
-       const resolvedCategory = item.categoryId
-         ? categoryById.get(String(item.categoryId)) || null
-         : fallbackCategory || null;
- 
-       if (!acc.has(key)) {
-         acc.set(key, {
-           categoryId: resolvedCategory?._id || item.categoryId || null,
-           categoryInfo: {
-             name: resolvedCategory?.name || DEFAULT_CATEGORY_NAME,
-             slug: resolvedCategory?.slug || DEFAULT_CATEGORY_SLUG,
-             colorBg: resolvedCategory?.colorBg || DEFAULT_CATEGORY_COLOR_BG,
-             colorText: resolvedCategory?.colorText || DEFAULT_CATEGORY_COLOR_TEXT
-           },
-           items: []
-         });
-       }
--      acc.get(key).items.push({
--        ...item.toObject(),
--        purchasedByName: item.purchasedBy ? purchaserById.get(String(item.purchasedBy)) || "Usuario" : null
--      });
--      return acc;
--    }, new Map());
++  const purchasers = purchaserIds.length
++    ? await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: purchaserIds } })).select("_id displayName")
++    : [];
++  const purchaserById = new Map(purchasers.map((person) => [String(person._id), person.displayName]));
++
++  const pendingByCategory = list.items
++    .filter((item) => item.status === "pending")
++    .reduce((acc, item) => {
++      const key = item.categoryId ? String(item.categoryId) : "uncategorized";
++      const resolvedCategory = item.categoryId
++        ? categoryById.get(String(item.categoryId)) || null
++        : fallbackCategory || null;
++
++      if (!acc.has(key)) {
++        acc.set(key, {
++          categoryId: resolvedCategory?._id || item.categoryId || null,
++          categoryInfo: {
++            name: resolvedCategory?.name || DEFAULT_CATEGORY_NAME,
++            slug: resolvedCategory?.slug || DEFAULT_CATEGORY_SLUG,
++            colorBg: resolvedCategory?.colorBg || DEFAULT_CATEGORY_COLOR_BG,
++            colorText: resolvedCategory?.colorText || DEFAULT_CATEGORY_COLOR_TEXT
++          },
++          items: []
++        });
++      }
 +      acc.get(key).items.push(normalizeShoppingItemForResponse(item, purchaserById));
 +      return acc;
 +    }, new Map());
- 
-   const purchasedByStoreDay = list.items
-     .filter((item) => item.status === "purchased")
-     .reduce((acc, item) => {
-       const dateKey = toDateGroup(item.purchasedAt);
-       const storeKey = item.storeId ? String(item.storeId) : "no-store";
-       const key = `${dateKey}::${storeKey}`;
--      if (!acc.has(key)) {
--        acc.set(key, {
--          storeId: item.storeId || null,
--          storeName: item.storeId ? storeById.get(String(item.storeId)) || "Supermercado no definido" : "Supermercado no definido",
--          purchasedDate: dateKey,
--          startedAt: item.purchasedAt,
--          purchasedByName: item.purchasedBy ? purchaserById.get(String(item.purchasedBy)) || "Usuario" : "Usuario",
--          items: []
--        });
--      }
--      acc.get(key).items.push({
--        ...item.toObject(),
--        purchasedByName: item.purchasedBy ? purchaserById.get(String(item.purchasedBy)) || "Usuario" : null
--      });
--      return acc;
--    }, new Map());
++
++  const purchasedByStoreDay = list.items
++    .filter((item) => item.status === "purchased")
++    .reduce((acc, item) => {
++      const dateKey = toDateGroup(item.purchasedAt);
++      const storeKey = item.storeId ? String(item.storeId) : "no-store";
++      const key = `${dateKey}::${storeKey}`;
 +      if (!acc.has(key)) {
 +        const purchasedByName = item.purchasedBy && isValidObjectId(item.purchasedBy)
 +          ? purchaserById.get(String(item.purchasedBy)) || "Usuario"
@@ -166,41 +596,35 @@ index 26127879b7d5141a68945dca50488a457aa094cc..ebb6efb0968b35f2c92773c27622f923
 +      acc.get(key).items.push(normalizeShoppingItemForResponse(item, purchaserById));
 +      return acc;
 +    }, new Map());
- 
-   return {
-     list,
-     stores,
-     pendingByCategory: Array.from(pendingByCategory.values()),
-     purchasedByStoreDay: Array.from(purchasedByStoreDay.values()).sort(
-       (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
-     )
-   };
- }
- 
- async function validateStoreSelection(storeId, effectiveHouseholdId) {
-   if (!storeId) return null;
-   const store = await Store.findOne(buildStoreVisibilityFilter(effectiveHouseholdId, { _id: storeId, active: true }))
-     .select("_id")
-     .lean();
-   return store ? store._id : null;
- }
- 
- router.get("/:weekStart", requireAuth, async (req, res) => {
-   try {
-     const weekStart = parseISODate(req.params.weekStart);
-     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
- 
-     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-     const monday = getWeekStart(weekStart);
-     const payload = await getShoppingPayload(monday, effectiveHouseholdId);
- 
-     res.json({ ok: true, weekStart: formatDateISO(monday), ...payload });
--  } catch (error) {
--    const handled = handleHouseholdError(res, error);
--    if (handled) return handled;
--    return res.status(500).json({ ok: false, error: "No se pudo cargar la lista de compra." });
--  }
--});
++
++  return {
++    list,
++    stores,
++    pendingByCategory: Array.from(pendingByCategory.values()),
++    purchasedByStoreDay: Array.from(purchasedByStoreDay.values()).sort(
++      (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
++    )
++  };
++}
++
++async function validateStoreSelection(storeId, effectiveHouseholdId) {
++  if (!storeId) return null;
++  const store = await Store.findOne(buildStoreVisibilityFilter(effectiveHouseholdId, { _id: storeId, active: true }))
++    .select("_id")
++    .lean();
++  return store ? store._id : null;
++}
++
++router.get("/:weekStart", requireAuth, async (req, res) => {
++  try {
++    const weekStart = parseISODate(req.params.weekStart);
++    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
++
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const monday = getWeekStart(weekStart);
++    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
++
++    res.json({ ok: true, weekStart: formatDateISO(monday), ...payload });
 +  } catch (error) {
 +    const handled = handleHouseholdError(res, error);
 +    if (handled) return handled;
@@ -208,38 +632,259 @@ index 26127879b7d5141a68945dca50488a457aa094cc..ebb6efb0968b35f2c92773c27622f923
 +    return res.status(500).json({ ok: false, error: "No se pudo cargar la lista de compra." });
 +  }
 +});
- 
- router.post("/:weekStart/rebuild", requireAuth, async (req, res) => {
-   try {
-     const weekStart = parseISODate(req.params.weekStart);
-     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
- 
-     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-     const monday = getWeekStart(weekStart);
-     await rebuildShoppingList(monday, effectiveHouseholdId);
-     const payload = await getShoppingPayload(monday, effectiveHouseholdId);
- 
-     res.json({ ok: true, ...payload });
-   } catch (error) {
-     const handled = handleHouseholdError(res, error);
-     if (handled) return handled;
-     logShoppingError("rebuild", error, { weekStart: req.params.weekStart, userId: String(req.kitchenUser?._id || "") });
-     if (error?.name === "ValidationError" || error?.name === "CastError") {
-       return res.status(400).json({ ok: false, error: "Datos inválidos al reconstruir la lista." });
-     }
-     return res.status(500).json({ ok: false, error: "No se pudo reconstruir la lista de compra." });
-   }
- });
- 
- router.put("/:weekStart/item", requireAuth, async (req, res) => {
-   try {
++
++router.post("/:weekStart/rebuild", requireAuth, async (req, res) => {
++  try {
++    const weekStart = parseISODate(req.params.weekStart);
++    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
++
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const monday = getWeekStart(weekStart);
++    await rebuildShoppingList(monday, effectiveHouseholdId);
++    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
++
++    res.json({ ok: true, ...payload });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    logShoppingError("rebuild", error, { weekStart: req.params.weekStart, userId: String(req.kitchenUser?._id || "") });
++    if (error?.name === "ValidationError" || error?.name === "CastError") {
++      return res.status(400).json({ ok: false, error: "Datos inválidos al reconstruir la lista." });
++    }
++    return res.status(500).json({ ok: false, error: "No se pudo reconstruir la lista de compra." });
++  }
++});
++
++router.put("/:weekStart/item", requireAuth, async (req, res) => {
++  try {
++    const weekStart = parseISODate(req.params.weekStart);
++    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
++
++    const { canonicalName, status, ingredientId, storeId } = req.body;
++    if (!canonicalName && !ingredientId) {
++      return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
++    }
++
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const monday = getWeekStart(weekStart);
++    const list = await ensureShoppingList(monday, effectiveHouseholdId);
++    await repairShoppingListItems(list, effectiveHouseholdId, {
++      context: "update-item"
++    });
++
++    const item = list.items.find((current) => {
++      if (ingredientId && current.ingredientId) return String(current.ingredientId) === String(ingredientId);
++      return current.canonicalName === canonicalName;
++    });
++
++    if (!item) return res.status(404).json({ ok: false, error: "Ingrediente no encontrado en la lista." });
++
++    const normalizedStatus = status === "purchased" ? "purchased" : "pending";
++    item.status = normalizedStatus;
++    if (normalizedStatus === "purchased") {
++      const validatedStoreId = await validateStoreSelection(storeId, effectiveHouseholdId);
++      item.purchasedBy = req.kitchenUser._id;
++      item.purchasedAt = new Date();
++      item.storeId = validatedStoreId;
++    } else {
++      item.purchasedBy = null;
++      item.purchasedAt = null;
++      item.storeId = null;
++    }
++
++    await list.save();
++    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
++    res.json({ ok: true, ...payload });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    return res.status(500).json({ ok: false, error: "No se pudo actualizar la lista de compra." });
++  }
++});
++
++router.put("/:weekStart/item/store", requireAuth, async (req, res) => {
++  try {
++    const weekStart = parseISODate(req.params.weekStart);
++    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
++
++    const { canonicalName, ingredientId, storeId } = req.body;
++    if (!canonicalName && !ingredientId) {
++      return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
++    }
++
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const monday = getWeekStart(weekStart);
++    const list = await ensureShoppingList(monday, effectiveHouseholdId);
++    await repairShoppingListItems(list, effectiveHouseholdId, {
++      context: "update-item-store"
++    });
++
++    const item = list.items.find((current) => {
++      if (ingredientId && current.ingredientId) return String(current.ingredientId) === String(ingredientId);
++      return current.canonicalName === canonicalName;
++    });
++
++    if (!item || item.status !== "purchased") {
++      return res.status(404).json({ ok: false, error: "Ingrediente comprado no encontrado." });
++    }
++
++    item.storeId = await validateStoreSelection(storeId, effectiveHouseholdId);
++    await list.save();
++
++    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
++    return res.json({ ok: true, ...payload });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    return res.status(500).json({ ok: false, error: "No se pudo actualizar el supermercado." });
++  }
++});
++
++router.post("/:weekStart/purchased/assign-store", requireAuth, async (req, res) => {
++  try {
++    const weekStart = parseISODate(req.params.weekStart);
++    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
++
++    const { storeId } = req.body;
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const monday = getWeekStart(weekStart);
++    const list = await ensureShoppingList(monday, effectiveHouseholdId);
++    await repairShoppingListItems(list, effectiveHouseholdId, {
++      context: "assign-store"
++    });
++    const validatedStoreId = await validateStoreSelection(storeId, effectiveHouseholdId);
++
++    const today = new Date().toISOString().slice(0, 10);
++    let changed = false;
++    for (const item of list.items) {
++      if (item.status !== "purchased" || item.storeId || !item.purchasedAt) continue;
++      if (toDateGroup(item.purchasedAt) !== today) continue;
++      item.storeId = validatedStoreId;
++      changed = true;
++    }
++
++    if (changed) await list.save();
++
++    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
++    return res.json({ ok: true, updated: changed, ...payload });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    return res.status(500).json({ ok: false, error: "No se pudo asignar el supermercado." });
++  }
++});
++
++router.post("/stores", requireAuth, async (req, res) => {
++  try {
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const name = String(req.body?.name || "").trim();
++    if (!name) return res.status(400).json({ ok: false, error: "Debes indicar un nombre." });
++    const canonicalName = normalizeStoreName(name);
++
++    const store = await Store.findOneAndUpdate(
++      { scope: "household", householdId: effectiveHouseholdId, canonicalName },
++      { $setOnInsert: { scope: "household", householdId: effectiveHouseholdId, name, canonicalName } },
++      { new: true, upsert: true }
++    );
++
++    return res.status(201).json({ ok: true, store });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    return res.status(500).json({ ok: false, error: "No se pudo crear la tienda." });
++  }
++});
++
++router.get("/stores/master", requireAuth, requireDiod, async (req, res) => {
++  const stores = sortStores(
++    await Store.find({ scope: "master", householdId: null }).select("_id name canonicalName active order scope")
++  );
++  return res.json({ ok: true, stores });
++});
++
++router.post("/stores/master", requireAuth, requireDiod, async (req, res) => {
++  const name = String(req.body?.name || "").trim();
++  if (!name) return res.status(400).json({ ok: false, error: "Debes indicar un nombre." });
++  const canonicalName = normalizeStoreName(name);
++  const requestedOrder = Number(req.body?.order);
++
++  const store = await Store.findOneAndUpdate(
++    { scope: "master", householdId: null, canonicalName },
++    {
++      $set: {
++        name,
++        canonicalName,
++        active: req.body?.active !== false,
++        order: Number.isFinite(requestedOrder) ? requestedOrder : null,
++        scope: "master",
++        householdId: null
++      }
++    },
++    { new: true, upsert: true }
++  );
++  return res.status(201).json({ ok: true, store });
++});
++
++router.put("/stores/master/:storeId", requireAuth, requireDiod, async (req, res) => {
++  const store = await Store.findOne({ _id: req.params.storeId, scope: "master", householdId: null });
++  if (!store) return res.status(404).json({ ok: false, error: "Supermercado no encontrado." });
++
++  if (req.body?.name !== undefined) {
++    const name = String(req.body.name || "").trim();
++    if (!name) return res.status(400).json({ ok: false, error: "Nombre inválido." });
++    store.name = name;
++    store.canonicalName = normalizeStoreName(name);
++  }
++  if (req.body?.active !== undefined) store.active = Boolean(req.body.active);
++  if (req.body?.order !== undefined) {
++    const requestedOrder = Number(req.body.order);
++    store.order = Number.isFinite(requestedOrder) ? requestedOrder : null;
++  }
++
++  await store.save();
++  return res.json({ ok: true, store });
++});
++
++router.delete("/stores/master/:storeId", requireAuth, requireDiod, async (req, res) => {
++  const store = await Store.findOne({ _id: req.params.storeId, scope: "master", householdId: null });
++  if (!store) return res.status(404).json({ ok: false, error: "Supermercado no encontrado." });
++  store.active = false;
++  await store.save();
++  return res.json({ ok: true, store });
++});
++
++export default router;
 diff --git a/backend/src/kitchen/shoppingService.js b/backend/src/kitchen/shoppingService.js
-index ce6aeb8bae0758406caa6c56b0cb647b219d3c1f..576a295544f311d5bf5a669668cce33e43bf81ab 100644
+index babedaa5cec86e783679fff5f570e04173f4b9ae..2f5801756c6db6a2d12f6a37f0ba8fc5e8ec8bcb 100644
 --- a/backend/src/kitchen/shoppingService.js
 +++ b/backend/src/kitchen/shoppingService.js
-@@ -24,115 +24,119 @@ function compareByScopePriority(a, b) {
+@@ -1,144 +1,199 @@
+ import { KitchenShoppingList } from "./models/KitchenShoppingList.js";
+ import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
+ import { KitchenDish } from "./models/KitchenDish.js";
+ import { KitchenIngredient } from "./models/KitchenIngredient.js";
+ import { Category } from "./models/Category.js";
+ import { buildScopedFilter } from "./householdScope.js";
+ import { combineDayIngredients } from "./utils/ingredients.js";
+ import { normalizeIngredientName } from "./utils/normalize.js";
+ import { CATALOG_SCOPES } from "./utils/catalogScopes.js";
+ import { ensureDefaultCategory } from "./utils/categoryMatching.js";
+ import mongoose from "mongoose";
  
- function buildIngredientVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
+ const INGREDIENT_SCOPE_PRIORITY = {
+   [CATALOG_SCOPES.OVERRIDE]: 0,
+   [CATALOG_SCOPES.HOUSEHOLD]: 1,
+   [CATALOG_SCOPES.MASTER]: 2
+ };
+ 
+ function compareByScopePriority(a, b) {
+   const left = INGREDIENT_SCOPE_PRIORITY[a.scope] ?? 99;
+   const right = INGREDIENT_SCOPE_PRIORITY[b.scope] ?? 99;
+   return left - right;
+ }
+ 
+-function buildIngredientVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
++function buildIngredientVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
    return {
      ...extraFilter,
      isArchived: { $ne: true },
@@ -264,6 +909,53 @@ index ce6aeb8bae0758406caa6c56b0cb647b219d3c1f..576a295544f311d5bf5a669668cce33e
  }
  
 -export async function resolveShoppingItemIngredientData(items, effectiveHouseholdId, options = {}) {
++function deriveCanonicalName(item, fallbackSeed = "") {
++  const normalized = normalizeIngredientName(
++    item?.canonicalName || item?.displayName || fallbackSeed || ""
++  );
++  if (normalized) return normalized;
++  if (item?.ingredientId) return `item-${String(item.ingredientId).toLowerCase()}`;
++  return `item-${fallbackSeed || "sin-nombre"}`;
++}
++
++function ensureValidShoppingItemShape(item, index, fallbackCategoryId = null) {
++  const next = { ...(item || {}) };
++  const canonicalName = deriveCanonicalName(next, String(index + 1));
++  const displayName = String(
++    next.displayName || next.name || canonicalName || `Ingrediente ${index + 1}`
++  ).trim();
++
++  return {
++    ...next,
++    displayName,
++    canonicalName,
++    categoryId: next.categoryId || fallbackCategoryId || null
++  };
++}
++
++function filterValidShoppingItems(items = [], context = "unknown") {
++  const valid = [];
++  let filteredCount = 0;
++
++  items.forEach((rawItem, index) => {
++    const item = rawItem || {};
++    if (!item.displayName || !item.canonicalName) {
++      filteredCount += 1;
++      console.warn("[kitchen][shopping] filtering invalid item before save", {
++        context,
++        index,
++        displayName: item.displayName,
++        canonicalName: item.canonicalName,
++        ingredientId: item.ingredientId ? String(item.ingredientId) : null
++      });
++      return;
++    }
++    valid.push(item);
++  });
++
++  return { valid, filteredCount };
++}
++
 +export async function resolveShoppingItemIngredientData(items, effectiveHouseholdId, options = {}) {
    const fallbackCategoryId = options.fallbackCategoryId || null;
    const byId = new Map();
@@ -305,19 +997,33 @@ index ce6aeb8bae0758406caa6c56b0cb647b219d3c1f..576a295544f311d5bf5a669668cce33e
  
    let changed = false;
 -  const resolvedItems = items.map((item) => {
-+  const resolvedItems = items.map((item) => {
-     const normalizedCanonical = normalizeIngredientName(item?.canonicalName || item?.displayName || "");
-     const byExistingId = item?.ingredientId ? ingredientById.get(String(item.ingredientId)) : null;
-     const byName = normalizedCanonical ? ingredientByCanonical.get(normalizedCanonical) : null;
-     const resolved = byExistingId || byName || null;
--    if (!resolved) return item;
+-    const normalizedCanonical = normalizeIngredientName(item?.canonicalName || item?.displayName || "");
+-    const byExistingId = item?.ingredientId ? ingredientById.get(String(item.ingredientId)) : null;
+-    const byName = normalizedCanonical ? ingredientByCanonical.get(normalizedCanonical) : null;
+-    const resolved = byExistingId || byName || null;
+-    if (!resolved) {
+-      if (item?.categoryId || !fallbackCategoryId) return item;
+-      changed = true;
+-      return { ...item, categoryId: fallbackCategoryId };
+-    }
+-
+-    const next = { ...item };
++  const resolvedItems = items.map((item, index) => {
++    const normalizedCanonical = normalizeIngredientName(item?.canonicalName || item?.displayName || "");
++    const byExistingId = item?.ingredientId ? ingredientById.get(String(item.ingredientId)) : null;
++    const byName = normalizedCanonical ? ingredientByCanonical.get(normalizedCanonical) : null;
++    const resolved = byExistingId || byName || null;
 +    if (!resolved) {
-+      if (item?.categoryId || !fallbackCategoryId) return item;
-+      changed = true;
-+      return { ...item, categoryId: fallbackCategoryId };
++      const ensuredItem = ensureValidShoppingItemShape(item, index, fallbackCategoryId);
++      const previousCanonical = String(item?.canonicalName || "").trim();
++      const previousDisplayName = String(item?.displayName || "").trim();
++      if (!item?.categoryId || previousCanonical !== ensuredItem.canonicalName || previousDisplayName !== ensuredItem.displayName) {
++        changed = true;
++      }
++      return ensuredItem;
 +    }
- 
-     const next = { ...item };
++
++    const next = { ...item };
      if (!next.ingredientId || String(next.ingredientId) !== String(resolved._id)) {
        next.ingredientId = resolved._id;
        changed = true;
@@ -326,21 +1032,28 @@ index ce6aeb8bae0758406caa6c56b0cb647b219d3c1f..576a295544f311d5bf5a669668cce33e
        next.canonicalName = resolved.canonicalName;
        changed = true;
      }
-     if (!next.displayName) {
-       next.displayName = resolved.name;
-       changed = true;
-     }
-     const resolvedCategoryId = resolved.categoryId || fallbackCategoryId || null;
--    if (!next.categoryId || String(next.categoryId) !== String(resolvedCategoryId || "")) {
--      next.categoryId = resolvedCategoryId;
+-    if (!next.displayName) {
+-      next.displayName = resolved.name;
 -      changed = true;
 -    }
-+    if (!next.categoryId || String(next.categoryId) !== String(resolvedCategoryId || "")) {
-+      next.categoryId = resolvedCategoryId;
+-    const resolvedCategoryId = resolved.categoryId || fallbackCategoryId || null;
++    if (!next.displayName) {
++      next.displayName = resolved.name;
 +      changed = true;
 +    }
-     return next;
-   });
++    if (!next.canonicalName) {
++      next.canonicalName = deriveCanonicalName(next, String(index + 1));
++      changed = true;
++    }
++    const resolvedCategoryId = resolved.categoryId || fallbackCategoryId || null;
+     if (!next.categoryId || String(next.categoryId) !== String(resolvedCategoryId || "")) {
+       next.categoryId = resolvedCategoryId;
+       changed = true;
+     }
+-    return next;
+-  });
++    return ensureValidShoppingItemShape(next, index, fallbackCategoryId);
++  });
  
    return { changed, resolvedItems };
  }
@@ -364,732 +1077,80 @@ index ce6aeb8bae0758406caa6c56b0cb647b219d3c1f..576a295544f311d5bf5a669668cce33e
        sideDish: side,
        overrides: day.ingredientOverrides
      });
-diff --git a/frontend/src/kitchen/api.js b/frontend/src/kitchen/api.js
-index 5211635843b55d8d1f5b458bf8a2125d31384930..e9b9f8e403a25942fa51d3602bd3f4d88348f71c 100644
---- a/frontend/src/kitchen/api.js
-+++ b/frontend/src/kitchen/api.js
-@@ -1,44 +1,61 @@
--const API = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
--
--export function buildApiUrl(path = "") {
--  if (!path) return API;
--  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
--  return `${API}${normalizedPath}`;
--}
-+const API = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
-+
-+export class ApiRequestError extends Error {
-+  constructor(message, details = {}) {
-+    super(message);
-+    this.name = "ApiRequestError";
-+    this.path = details.path || "";
-+    this.url = details.url || "";
-+    this.status = details.status || 0;
-+    this.body = details.body || {};
-+  }
-+}
-+
-+export function buildApiUrl(path = "") {
-+  if (!path) return API;
-+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-+  return `${API}${normalizedPath}`;
-+}
  
- export function getToken() {
--  return localStorage.getItem("kitchen_token") || sessionStorage.getItem("kitchen_token");
-+  return localStorage.getItem("kitchen_token") || sessionStorage.getItem("kitchen_token");
- }
+     for (const ingredient of ingredients) {
+@@ -154,42 +209,69 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
+         unit: null,
+         occurrences: 0,
+         fromDishes: []
+       };
  
- export function setToken(token) {
--  if (token) {
--    localStorage.setItem("kitchen_token", token);
--    sessionStorage.removeItem("kitchen_token");
--    return;
--  }
--  localStorage.removeItem("kitchen_token");
--  sessionStorage.removeItem("kitchen_token");
-+  if (token) {
-+    localStorage.setItem("kitchen_token", token);
-+    sessionStorage.removeItem("kitchen_token");
-+    return;
-+  }
-+  localStorage.removeItem("kitchen_token");
-+  sessionStorage.removeItem("kitchen_token");
- }
- 
- export async function apiRequest(path, options = {}) {
-   const token = getToken();
-   const headers = {
-     "Content-Type": "application/json",
-     ...(options.headers || {})
-   };
- 
-   if (token) headers.Authorization = `Bearer ${token}`;
- 
--  const response = await fetch(buildApiUrl(path), {
-+  const url = buildApiUrl(path);
-+  const response = await fetch(url, {
-     ...options,
-     headers
-   });
- 
-   const data = await response.json().catch(() => ({}));
-   if (!response.ok) {
-     const message = data?.error || "Error inesperado";
--    throw new Error(message);
-+    throw new ApiRequestError(message, {
-+      path,
-+      url,
-+      status: response.status,
-+      body: data
-+    });
+       current.occurrences += 1;
+       const dayDishIds = [day.mainDishId, day.sideDishId].filter(Boolean).map(String);
+       current.fromDishes = Array.from(new Set([...current.fromDishes.map(String), ...dayDishIds]));
+       merged.set(key, current);
+     }
    }
  
-   return data;
+   const unresolved = await resolveShoppingItemIngredientData(Array.from(merged.values()), effectiveHouseholdId);
+   return unresolved.resolvedItems;
  }
-diff --git a/frontend/src/kitchen/pages/ShoppingPage.jsx b/frontend/src/kitchen/pages/ShoppingPage.jsx
-index 352e15f7c2f4680fabe66ece8851b5662b683d1e..5b6769a70bff1ef112bd6bba5f6193719f52db77 100644
---- a/frontend/src/kitchen/pages/ShoppingPage.jsx
-+++ b/frontend/src/kitchen/pages/ShoppingPage.jsx
-@@ -1,308 +1,333 @@
--import React, { useEffect, useMemo, useRef, useState } from "react";
--import KitchenLayout from "../Layout.jsx";
--import { apiRequest } from "../api.js";
--import { useAuth } from "../auth";
--import { useActiveWeek } from "../weekContext.jsx";
--
--function ChevronIcon(props) {
--  return (
--    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
--      <path d="M11.75 4.5 6.25 10l5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
--    </svg>
--  );
--}
--
--function RefreshIcon(props) {
--  return (
--    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
--      <path d="M20 12a8 8 0 1 1-2.343-5.657" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
--      <path d="M20 4v4h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
--    </svg>
--  );
--}
--
--function addDaysToISO(iso, days) {
--  const date = new Date(`${iso}T00:00:00Z`);
--  date.setUTCDate(date.getUTCDate() + days);
--  return date.toISOString().slice(0, 10);
--}
--
--function normalizeWeekStartInput(value) {
--  if (!value) return "";
--  const d = new Date(`${value}T00:00:00Z`);
--  const day = d.getUTCDay();
--  const diff = (day === 0 ? -6 : 1) - day;
--  d.setUTCDate(d.getUTCDate() + diff);
--  return d.toISOString().slice(0, 10);
--}
--
--function formatWeekTitle(iso) {
--  if (!iso) return "";
--  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("es-ES", {
--    day: "2-digit",
--    month: "2-digit",
--    year: "numeric"
--  });
--}
--
--function formatTripDate(value) {
--  if (!value || value === "sin-fecha") return "Sin fecha";
--  return new Date(`${value}T00:00:00Z`).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
--}
--
--function slugColor(slug = "") {
--  const normalized = String(slug || "otros");
--  const seed = normalized.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
--  const hue = seed % 360;
--  return {
--    colorBg: `hsl(${hue} 70% 95%)`,
--    colorText: `hsl(${hue} 55% 35%)`
--  };
--}
--
--function itemKey(item) {
--  return `${item.ingredientId || "no-id"}-${item.canonicalName}`;
--}
--
--export default function ShoppingPage() {
--  const { user } = useAuth();
--  const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
--  const [tab, setTab] = useState("pending");
--  const [error, setError] = useState("");
--  const [success, setSuccess] = useState("");
--  const [isRefreshing, setIsRefreshing] = useState(false);
--  const [stores, setStores] = useState([]);
--  const [selectedStoreId, setSelectedStoreId] = useState("");
--  const selectedStoreRef = useRef("");
--  const [pendingByCategory, setPendingByCategory] = useState([]);
--  const [purchasedByStoreDay, setPurchasedByStoreDay] = useState([]);
--  const [transitioningItemKey, setTransitioningItemKey] = useState(null);
--  const [recentlyMovedItemKey, setRecentlyMovedItemKey] = useState(null);
--  const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
--
--  const applyPayload = (data) => {
--    setStores(data.stores || []);
--    setPendingByCategory(data.pendingByCategory || []);
--    setPurchasedByStoreDay(data.purchasedByStoreDay || []);
--  };
--
--  const loadList = async ({ silent = false } = {}) => {
--    if (isDiodGlobalMode) return;
--    if (!silent) setIsRefreshing(true);
--    setError("");
--    try {
--      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
--      applyPayload(data);
--    } catch (err) {
--      setError(err.message || "No se pudo cargar la lista.");
--    } finally {
--      if (!silent) setIsRefreshing(false);
--    }
--  };
--
--  useEffect(() => {
--    void loadList();
--  }, [weekStart, isDiodGlobalMode]);
--
--  useEffect(() => {
--    if (!recentlyMovedItemKey) return undefined;
--    const timer = setTimeout(() => setRecentlyMovedItemKey(null), 650);
--    return () => clearTimeout(timer);
--  }, [recentlyMovedItemKey]);
--
--  const refreshList = async () => {
--    if (isDiodGlobalMode) return;
--    setIsRefreshing(true);
--    try {
--      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/rebuild`, { method: "POST" });
--      applyPayload(data);
--      setSuccess("Lista reconstruida");
--    } catch (err) {
--      setError(err.message || "No se pudo refrescar la lista.");
--    } finally {
--      setIsRefreshing(false);
--    }
--  };
--
--  const setItemStatus = async (item, status) => {
--    if (isDiodGlobalMode) return;
--    const key = itemKey(item);
--    setTransitioningItemKey(key);
--    try {
--      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
--        method: "PUT",
--        body: JSON.stringify({
--          canonicalName: item.canonicalName,
--          ingredientId: item.ingredientId,
--          status,
--          storeId: status === "purchased" ? selectedStoreRef.current || null : null
--        })
--      });
--      applyPayload(data);
--      setRecentlyMovedItemKey(key);
--    } catch (err) {
--      setError(err.message || "No se pudo actualizar.");
--    } finally {
--      setTransitioningItemKey(null);
--    }
--  };
--
--  const updatePurchasedItemStore = async (item, storeId) => {
--    try {
--      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item/store`, {
--        method: "PUT",
--        body: JSON.stringify({ canonicalName: item.canonicalName, ingredientId: item.ingredientId, storeId: storeId || null })
--      });
--      applyPayload(data);
--    } catch (err) {
--      setError(err.message || "No se pudo cambiar el supermercado.");
--    }
--  };
--
--  const assignStoreToTodayUnassigned = async () => {
--    try {
--      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/purchased/assign-store`, {
--        method: "POST",
--        body: JSON.stringify({ storeId: selectedStoreId || null })
--      });
--      applyPayload(data);
--      setSuccess(data.updated ? "Supermercado asignado" : "No había comprados de hoy sin supermercado");
--    } catch (err) {
--      setError(err.message || "No se pudo asignar supermercado en bloque.");
--    }
--  };
--
--  const createStoreFromDropdown = async () => {
--    const name = window.prompt("Nombre del supermercado");
--    if (!name || !name.trim()) return;
--    setError("");
--    try {
--      await apiRequest("/api/kitchen/shopping/stores", {
--        method: "POST",
--        body: JSON.stringify({ name: name.trim() })
--      });
--      await loadList({ silent: true });
--    } catch (err) {
--      setError(err.message || "No se pudo crear el supermercado.");
--    }
--  };
--
--  const pendingCount = useMemo(
--    () => pendingByCategory.reduce((acc, group) => acc + (group.items?.length || 0), 0),
--    [pendingByCategory]
--  );
--
--  if (isDiodGlobalMode) {
--    return (
--      <KitchenLayout>
--        <div className="kitchen-card">Selecciona un hogar activo para ver su lista de la compra.</div>
--      </KitchenLayout>
--    );
--  }
--
--  return (
--    <KitchenLayout>
--      <div className="kitchen-stack-lg">
--        <div className="kitchen-card shopping-header-card">
--          <div className="shopping-header-row">
--            <div>
--              <h3>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h3>
--            </div>
--            <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
--              <RefreshIcon className="shopping-week-arrow-icon" />
--            </button>
--          </div>
--
--          <div className="shopping-week-nav">
--            <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, -7))}><ChevronIcon className="shopping-week-arrow-icon" /></button>
--            <input className="kitchen-input" type="date" value={weekStart} onChange={(event) => setWeekStart(normalizeWeekStartInput(event.target.value))} />
--            <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, 7))}><ChevronIcon className="shopping-week-arrow-icon is-next" /></button>
--          </div>
--
--          <div className="shopping-toolbar">
--            <select
--              className="kitchen-select"
--              value={selectedStoreId}
--              onChange={(event) => {
--                const value = event.target.value;
--                if (value === "__add__") {
--                  void createStoreFromDropdown();
--                  return;
--                }
--                selectedStoreRef.current = value;
--                setSelectedStoreId(value);
--              }}
--            >
--              <option value="">Supermercado (opcional)</option>
--              {stores.map((store) => (
--                <option key={store._id} value={store._id}>{store.name}</option>
--              ))}
--              <option value="__add__">Añadir supermercado…</option>
--            </select>
--            <button className="kitchen-button secondary" type="button" onClick={assignStoreToTodayUnassigned}>Asignar a comprados de hoy sin supermercado</button>
--          </div>
--          {success ? <div className="kitchen-alert success">{success}</div> : null}
--          {error ? <div className="kitchen-alert error">{error}</div> : null}
--        </div>
--
--        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Estado de la compra">
--          <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount})</button>
--          <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
--        </div>
--
--        {tab === "pending" ? (
--          <div className="shopping-categories">
--            {pendingByCategory.length === 0 ? (
--              <div className="kitchen-card kitchen-empty"><h4>No hay pendientes para esta semana.</h4></div>
--            ) : pendingByCategory.map((group) => {
--              const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
--              return (
--                <div className="kitchen-card shopping-category-card" key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name} style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}>
--                  <div className="shopping-category-head"><h4>{category.name.toUpperCase()}</h4><span className="shopping-category-count">{group.items.length} items</span></div>
--                  <div className="shopping-items-list">
--                    {group.items.map((item) => {
--                      const key = itemKey(item);
--                      return (
--                        <div className={`shopping-item ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
--                          <button className="shopping-check" type="button" onClick={() => setItemStatus(item, "purchased")}><span className="shopping-check-dot">✓</span></button>
--                          <span className="shopping-item-text">{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
--                        </div>
--                      );
--                    })}
--                  </div>
--                </div>
--              );
--            })}
--          </div>
--        ) : (
--          <div className="shopping-categories">
--            {purchasedByStoreDay.length === 0 ? (
--              <div className="kitchen-card kitchen-empty"><h4>Aún no hay ingredientes comprados.</h4></div>
--            ) : purchasedByStoreDay.map((group) => (
--              <div className="kitchen-card shopping-category-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
--                <h4>Comprado por {group.purchasedByName || "Usuario"} · {group.storeName || "Supermercado no definido"} · {formatTripDate(group.purchasedDate)}</h4>
--                <div className="shopping-items-list">
--                  {group.items.map((item) => {
--                    const key = itemKey(item);
--                    return (
--                      <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
--                        <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
--                        <span className="shopping-item-text">{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
--                        <select className="kitchen-select shopping-store-select-compact" value={item.storeId || ""} onChange={(event) => updatePurchasedItemStore(item, event.target.value)}>
--                          <option value="">Sin supermercado</option>
--                          {stores.map((store) => (
--                            <option key={store._id} value={store._id}>{store.name}</option>
--                          ))}
--                        </select>
--                      </div>
--                    );
--                  })}
--                </div>
--              </div>
--            ))}
--          </div>
--        )}
--      </div>
--    </KitchenLayout>
--  );
--}
-+import React, { useEffect, useMemo, useRef, useState } from "react";
-+import KitchenLayout from "../Layout.jsx";
-+import { ApiRequestError, apiRequest } from "../api.js";
-+import { useAuth } from "../auth";
-+import { useActiveWeek } from "../weekContext.jsx";
+ 
+ export async function rebuildShoppingList(weekStartDate, effectiveHouseholdId) {
+   const fallbackCategory = await ensureDefaultCategory({ Category, householdId: effectiveHouseholdId });
+   const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
+   const builtItems = await buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId);
+   const resolvedBuiltItems = await resolveShoppingItemIngredientData(builtItems, effectiveHouseholdId, {
+     fallbackCategoryId: fallbackCategory?._id || null
+   });
+ 
+   const previousMap = new Map(list.items.map((item) => [item.ingredientId ? String(item.ingredientId) : item.canonicalName, item]));
+-  list.items = resolvedBuiltItems.resolvedItems.map((item) => {
++  const rebuiltItems = resolvedBuiltItems.resolvedItems.map((item, index) => {
++    const normalizedItem = ensureValidShoppingItemShape(item, index, fallbackCategory?._id || null);
+     const previous = previousMap.get(item.ingredientId ? String(item.ingredientId) : item.canonicalName);
+     const nextStatus = previous?.status === "purchased" ? "purchased" : "pending";
+     return {
+-      ...item,
+-      categoryId: item.categoryId || fallbackCategory?._id || null,
+-      fromDishes: item.fromDishes,
++      ...normalizedItem,
++      categoryId: normalizedItem.categoryId || fallbackCategory?._id || null,
++      fromDishes: normalizedItem.fromDishes,
+       status: nextStatus,
+       purchasedBy: nextStatus === "purchased" ? previous?.purchasedBy || null : null,
+       purchasedAt: nextStatus === "purchased" ? previous?.purchasedAt || null : null,
+-      storeId: nextStatus === "purchased" ? previous?.storeId || null : null
++      storeId: nextStatus === "purchased" ? previous?.storeId || null : null
+     };
+   });
+ 
++  const { valid } = filterValidShoppingItems(rebuiltItems, "rebuildShoppingList");
++  list.items = valid;
 +
-+function ChevronIcon(props) {
-+  return (
-+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
-+      <path d="M11.75 4.5 6.25 10l5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-+    </svg>
+   await list.save();
+   return list;
+ }
++
++export async function repairShoppingListItems(list, effectiveHouseholdId, options = {}) {
++  const fallbackCategory = options.fallbackCategory || null;
++  const resolved = await resolveShoppingItemIngredientData(
++    (list.items || []).map((item) => (item?.toObject ? item.toObject() : item)),
++    effectiveHouseholdId,
++    { fallbackCategoryId: fallbackCategory?._id || null }
 +  );
-+}
 +
-+function RefreshIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-+      <path d="M20 12a8 8 0 1 1-2.343-5.657" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-+      <path d="M20 4v4h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-+    </svg>
++  const normalizedItems = resolved.resolvedItems.map((item, index) =>
++    ensureValidShoppingItemShape(item, index, fallbackCategory?._id || null)
 +  );
-+}
++  const { valid, filteredCount } = filterValidShoppingItems(normalizedItems, options.context || "repairShoppingListItems");
 +
-+function addDaysToISO(iso, days) {
-+  const date = new Date(`${iso}T00:00:00Z`);
-+  date.setUTCDate(date.getUTCDate() + days);
-+  return date.toISOString().slice(0, 10);
-+}
-+
-+function normalizeWeekStartInput(value) {
-+  if (!value) return "";
-+  const d = new Date(`${value}T00:00:00Z`);
-+  const day = d.getUTCDay();
-+  const diff = (day === 0 ? -6 : 1) - day;
-+  d.setUTCDate(d.getUTCDate() + diff);
-+  return d.toISOString().slice(0, 10);
-+}
-+
-+function formatWeekTitle(iso) {
-+  if (!iso) return "";
-+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("es-ES", {
-+    day: "2-digit",
-+    month: "2-digit",
-+    year: "numeric"
-+  });
-+}
-+
-+function formatTripDate(value) {
-+  if (!value || value === "sin-fecha") return "Sin fecha";
-+  return new Date(`${value}T00:00:00Z`).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
-+}
-+
-+function slugColor(slug = "") {
-+  const normalized = String(slug || "otros");
-+  const seed = normalized.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-+  const hue = seed % 360;
-+  return {
-+    colorBg: `hsl(${hue} 70% 95%)`,
-+    colorText: `hsl(${hue} 55% 35%)`
-+  };
-+}
-+
-+function itemKey(item) {
-+  return `${item.ingredientId || "no-id"}-${item.canonicalName}`;
-+}
-+
-+export default function ShoppingPage() {
-+  const { user } = useAuth();
-+  const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
-+  const [tab, setTab] = useState("pending");
-+  const [error, setError] = useState("");
-+  const [success, setSuccess] = useState("");
-+  const [isRefreshing, setIsRefreshing] = useState(false);
-+  const [stores, setStores] = useState([]);
-+  const [selectedStoreId, setSelectedStoreId] = useState("");
-+  const selectedStoreRef = useRef("");
-+  const [pendingByCategory, setPendingByCategory] = useState(null);
-+  const [purchasedByStoreDay, setPurchasedByStoreDay] = useState(null);
-+  const [transitioningItemKey, setTransitioningItemKey] = useState(null);
-+  const [recentlyMovedItemKey, setRecentlyMovedItemKey] = useState(null);
-+  const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
-+
-+  const applyPayload = (data) => {
-+    setStores(data.stores || []);
-+    setPendingByCategory(data.pendingByCategory || []);
-+    setPurchasedByStoreDay(data.purchasedByStoreDay || []);
-+  };
-+
-+  const logShoppingApiError = (context, endpoint, err) => {
-+    if (err instanceof ApiRequestError) {
-+      console.error(`[shopping] ${context} failed`, {
-+        endpoint,
-+        status: err.status,
-+        body: err.body,
-+        message: err.message
-+      });
-+      return;
-+    }
-+    console.error(`[shopping] ${context} failed`, { endpoint, message: err?.message || err });
-+  };
-+
-+  const loadList = async ({ silent = false } = {}) => {
-+    if (isDiodGlobalMode) return;
-+    if (!silent) setIsRefreshing(true);
-+    setError("");
-+    try {
-+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
-+      applyPayload(data);
-+    } catch (err) {
-+      logShoppingApiError("loadList", `/api/kitchen/shopping/${weekStart}`, err);
-+      setPendingByCategory(null);
-+      setPurchasedByStoreDay(null);
-+      setError(err.message || "No se pudo cargar la lista.");
-+    } finally {
-+      if (!silent) setIsRefreshing(false);
-+    }
-+  };
-+
-+  useEffect(() => {
-+    void loadList();
-+  }, [weekStart, isDiodGlobalMode]);
-+
-+  useEffect(() => {
-+    if (!recentlyMovedItemKey) return undefined;
-+    const timer = setTimeout(() => setRecentlyMovedItemKey(null), 650);
-+    return () => clearTimeout(timer);
-+  }, [recentlyMovedItemKey]);
-+
-+  const refreshList = async () => {
-+    if (isDiodGlobalMode) return;
-+    setIsRefreshing(true);
-+    try {
-+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/rebuild`, { method: "POST" });
-+      applyPayload(data);
-+      setSuccess("Lista reconstruida");
-+    } catch (err) {
-+      logShoppingApiError("refreshList", `/api/kitchen/shopping/${weekStart}/rebuild`, err);
-+      setError(err.message || "No se pudo refrescar la lista.");
-+    } finally {
-+      setIsRefreshing(false);
-+    }
-+  };
-+
-+  const setItemStatus = async (item, status) => {
-+    if (isDiodGlobalMode) return;
-+    const key = itemKey(item);
-+    setTransitioningItemKey(key);
-+    try {
-+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
-+        method: "PUT",
-+        body: JSON.stringify({
-+          canonicalName: item.canonicalName,
-+          ingredientId: item.ingredientId,
-+          status,
-+          storeId: status === "purchased" ? selectedStoreRef.current || null : null
-+        })
-+      });
-+      applyPayload(data);
-+      setRecentlyMovedItemKey(key);
-+    } catch (err) {
-+      logShoppingApiError("setItemStatus", `/api/kitchen/shopping/${weekStart}/item`, err);
-+      setError(err.message || "No se pudo actualizar.");
-+    } finally {
-+      setTransitioningItemKey(null);
-+    }
-+  };
-+
-+  const updatePurchasedItemStore = async (item, storeId) => {
-+    try {
-+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item/store`, {
-+        method: "PUT",
-+        body: JSON.stringify({ canonicalName: item.canonicalName, ingredientId: item.ingredientId, storeId: storeId || null })
-+      });
-+      applyPayload(data);
-+    } catch (err) {
-+      logShoppingApiError("updatePurchasedItemStore", `/api/kitchen/shopping/${weekStart}/item/store`, err);
-+      setError(err.message || "No se pudo cambiar el supermercado.");
-+    }
-+  };
-+
-+  const assignStoreToTodayUnassigned = async () => {
-+    try {
-+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/purchased/assign-store`, {
-+        method: "POST",
-+        body: JSON.stringify({ storeId: selectedStoreId || null })
-+      });
-+      applyPayload(data);
-+      setSuccess(data.updated ? "Supermercado asignado" : "No había comprados de hoy sin supermercado");
-+    } catch (err) {
-+      logShoppingApiError("assignStoreToTodayUnassigned", `/api/kitchen/shopping/${weekStart}/purchased/assign-store`, err);
-+      setError(err.message || "No se pudo asignar supermercado en bloque.");
-+    }
-+  };
-+
-+  const createStoreFromDropdown = async () => {
-+    const name = window.prompt("Nombre del supermercado");
-+    if (!name || !name.trim()) return;
-+    setError("");
-+    try {
-+      await apiRequest("/api/kitchen/shopping/stores", {
-+        method: "POST",
-+        body: JSON.stringify({ name: name.trim() })
-+      });
-+      await loadList({ silent: true });
-+    } catch (err) {
-+      logShoppingApiError("createStoreFromDropdown", "/api/kitchen/shopping/stores", err);
-+      setError(err.message || "No se pudo crear el supermercado.");
-+    }
-+  };
-+
-+  const pendingCount = useMemo(() => {
-+    if (!Array.isArray(pendingByCategory)) return null;
-+    return pendingByCategory.reduce((acc, group) => acc + (group.items?.length || 0), 0);
-+  }, [pendingByCategory]);
-+
-+  if (isDiodGlobalMode) {
-+    return (
-+      <KitchenLayout>
-+        <div className="kitchen-card">Selecciona un hogar activo para ver su lista de la compra.</div>
-+      </KitchenLayout>
-+    );
++  const changedByCount = valid.length !== (list.items || []).length;
++  const changed = resolved.changed || filteredCount > 0 || changedByCount;
++  if (changed) {
++    list.items = valid;
++    await list.save();
 +  }
 +
-+  return (
-+    <KitchenLayout>
-+      <div className="kitchen-stack-lg">
-+        <div className="kitchen-card shopping-header-card">
-+          <div className="shopping-header-row">
-+            <div>
-+              <h3>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h3>
-+            </div>
-+            <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
-+              <RefreshIcon className="shopping-week-arrow-icon" />
-+            </button>
-+          </div>
-+
-+          <div className="shopping-week-nav">
-+            <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, -7))}><ChevronIcon className="shopping-week-arrow-icon" /></button>
-+            <input className="kitchen-input" type="date" value={weekStart} onChange={(event) => setWeekStart(normalizeWeekStartInput(event.target.value))} />
-+            <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, 7))}><ChevronIcon className="shopping-week-arrow-icon is-next" /></button>
-+          </div>
-+
-+          <div className="shopping-toolbar">
-+            <select
-+              className="kitchen-select"
-+              value={selectedStoreId}
-+              onChange={(event) => {
-+                const value = event.target.value;
-+                if (value === "__add__") {
-+                  void createStoreFromDropdown();
-+                  return;
-+                }
-+                selectedStoreRef.current = value;
-+                setSelectedStoreId(value);
-+              }}
-+            >
-+              <option value="">Supermercado (opcional)</option>
-+              {stores.map((store) => (
-+                <option key={store._id} value={store._id}>{store.name}</option>
-+              ))}
-+              <option value="__add__">Añadir supermercado…</option>
-+            </select>
-+            <button className="kitchen-button secondary" type="button" onClick={assignStoreToTodayUnassigned}>Asignar a comprados de hoy sin supermercado</button>
-+          </div>
-+          {success ? <div className="kitchen-alert success">{success}</div> : null}
-+          {error ? <div className="kitchen-alert error">{error}</div> : null}
-+        </div>
-+
-+        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Estado de la compra">
-+          <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-+          <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-+        </div>
-+
-+        {tab === "pending" ? (
-+          <div className="shopping-categories">
-+            {!Array.isArray(pendingByCategory) ? (
-+              <div className="kitchen-card kitchen-empty"><h4>No se pudo cargar la lista.</h4></div>
-+            ) : pendingByCategory.length === 0 ? (
-+              <div className="kitchen-card kitchen-empty"><h4>No hay pendientes para esta semana.</h4></div>
-+            ) : pendingByCategory.map((group) => {
-+              const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
-+              return (
-+                <div className="kitchen-card shopping-category-card" key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name} style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}>
-+                  <div className="shopping-category-head"><h4>{category.name.toUpperCase()}</h4><span className="shopping-category-count">{group.items.length} items</span></div>
-+                  <div className="shopping-items-list">
-+                    {group.items.map((item) => {
-+                      const key = itemKey(item);
-+                      return (
-+                        <div className={`shopping-item ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
-+                          <button className="shopping-check" type="button" onClick={() => setItemStatus(item, "purchased")}><span className="shopping-check-dot">✓</span></button>
-+                          <span className="shopping-item-text">{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
-+                        </div>
-+                      );
-+                    })}
-+                  </div>
-+                </div>
-+              );
-+            })}
-+          </div>
-+        ) : (
-+          <div className="shopping-categories">
-+            {!Array.isArray(purchasedByStoreDay) ? (
-+              <div className="kitchen-card kitchen-empty"><h4>No se pudo cargar la lista.</h4></div>
-+            ) : purchasedByStoreDay.length === 0 ? (
-+              <div className="kitchen-card kitchen-empty"><h4>Aún no hay ingredientes comprados.</h4></div>
-+            ) : purchasedByStoreDay.map((group) => (
-+              <div className="kitchen-card shopping-category-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
-+                <h4>Comprado por {group.purchasedByName || "Usuario"} · {group.storeName || "Supermercado no definido"} · {formatTripDate(group.purchasedDate)}</h4>
-+                <div className="shopping-items-list">
-+                  {group.items.map((item) => {
-+                    const key = itemKey(item);
-+                    return (
-+                      <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
-+                        <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
-+                        <span className="shopping-item-text">{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
-+                        <select className="kitchen-select shopping-store-select-compact" value={item.storeId || ""} onChange={(event) => updatePurchasedItemStore(item, event.target.value)}>
-+                          <option value="">Sin supermercado</option>
-+                          {stores.map((store) => (
-+                            <option key={store._id} value={store._id}>{store.name}</option>
-+                          ))}
-+                        </select>
-+                      </div>
-+                    );
-+                  })}
-+                </div>
-+              </div>
-+            ))}
-+          </div>
-+        )}
-+      </div>
-+    </KitchenLayout>
-+  );
++  return { changed, filteredCount };
 +}

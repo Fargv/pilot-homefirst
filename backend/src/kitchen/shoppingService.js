@@ -46,6 +46,53 @@ export async function ensureShoppingList(weekStartDate, effectiveHouseholdId) {
   });
 }
 
+function deriveCanonicalName(item, fallbackSeed = "") {
+  const normalized = normalizeIngredientName(
+    item?.canonicalName || item?.displayName || fallbackSeed || ""
+  );
+  if (normalized) return normalized;
+  if (item?.ingredientId) return `item-${String(item.ingredientId).toLowerCase()}`;
+  return `item-${fallbackSeed || "sin-nombre"}`;
+}
+
+function ensureValidShoppingItemShape(item, index, fallbackCategoryId = null) {
+  const next = { ...(item || {}) };
+  const canonicalName = deriveCanonicalName(next, String(index + 1));
+  const displayName = String(
+    next.displayName || next.name || canonicalName || `Ingrediente ${index + 1}`
+  ).trim();
+
+  return {
+    ...next,
+    displayName,
+    canonicalName,
+    categoryId: next.categoryId || fallbackCategoryId || null
+  };
+}
+
+function filterValidShoppingItems(items = [], context = "unknown") {
+  const valid = [];
+  let filteredCount = 0;
+
+  items.forEach((rawItem, index) => {
+    const item = rawItem || {};
+    if (!item.displayName || !item.canonicalName) {
+      filteredCount += 1;
+      console.warn("[kitchen][shopping] filtering invalid item before save", {
+        context,
+        index,
+        displayName: item.displayName,
+        canonicalName: item.canonicalName,
+        ingredientId: item.ingredientId ? String(item.ingredientId) : null
+      });
+      return;
+    }
+    valid.push(item);
+  });
+
+  return { valid, filteredCount };
+}
+
 export async function resolveShoppingItemIngredientData(items, effectiveHouseholdId, options = {}) {
   const fallbackCategoryId = options.fallbackCategoryId || null;
   const byId = new Map();
@@ -86,15 +133,19 @@ export async function resolveShoppingItemIngredientData(items, effectiveHousehol
   });
 
   let changed = false;
-  const resolvedItems = items.map((item) => {
+  const resolvedItems = items.map((item, index) => {
     const normalizedCanonical = normalizeIngredientName(item?.canonicalName || item?.displayName || "");
     const byExistingId = item?.ingredientId ? ingredientById.get(String(item.ingredientId)) : null;
     const byName = normalizedCanonical ? ingredientByCanonical.get(normalizedCanonical) : null;
     const resolved = byExistingId || byName || null;
     if (!resolved) {
-      if (item?.categoryId || !fallbackCategoryId) return item;
-      changed = true;
-      return { ...item, categoryId: fallbackCategoryId };
+      const ensuredItem = ensureValidShoppingItemShape(item, index, fallbackCategoryId);
+      const previousCanonical = String(item?.canonicalName || "").trim();
+      const previousDisplayName = String(item?.displayName || "").trim();
+      if (!item?.categoryId || previousCanonical !== ensuredItem.canonicalName || previousDisplayName !== ensuredItem.displayName) {
+        changed = true;
+      }
+      return ensuredItem;
     }
 
     const next = { ...item };
@@ -110,12 +161,16 @@ export async function resolveShoppingItemIngredientData(items, effectiveHousehol
       next.displayName = resolved.name;
       changed = true;
     }
+    if (!next.canonicalName) {
+      next.canonicalName = deriveCanonicalName(next, String(index + 1));
+      changed = true;
+    }
     const resolvedCategoryId = resolved.categoryId || fallbackCategoryId || null;
     if (!next.categoryId || String(next.categoryId) !== String(resolvedCategoryId || "")) {
       next.categoryId = resolvedCategoryId;
       changed = true;
     }
-    return next;
+    return ensureValidShoppingItemShape(next, index, fallbackCategoryId);
   });
 
   return { changed, resolvedItems };
@@ -176,13 +231,14 @@ export async function rebuildShoppingList(weekStartDate, effectiveHouseholdId) {
   });
 
   const previousMap = new Map(list.items.map((item) => [item.ingredientId ? String(item.ingredientId) : item.canonicalName, item]));
-  list.items = resolvedBuiltItems.resolvedItems.map((item) => {
+  const rebuiltItems = resolvedBuiltItems.resolvedItems.map((item, index) => {
+    const normalizedItem = ensureValidShoppingItemShape(item, index, fallbackCategory?._id || null);
     const previous = previousMap.get(item.ingredientId ? String(item.ingredientId) : item.canonicalName);
     const nextStatus = previous?.status === "purchased" ? "purchased" : "pending";
     return {
-      ...item,
-      categoryId: item.categoryId || fallbackCategory?._id || null,
-      fromDishes: item.fromDishes,
+      ...normalizedItem,
+      categoryId: normalizedItem.categoryId || fallbackCategory?._id || null,
+      fromDishes: normalizedItem.fromDishes,
       status: nextStatus,
       purchasedBy: nextStatus === "purchased" ? previous?.purchasedBy || null : null,
       purchasedAt: nextStatus === "purchased" ? previous?.purchasedAt || null : null,
@@ -190,6 +246,32 @@ export async function rebuildShoppingList(weekStartDate, effectiveHouseholdId) {
     };
   });
 
+  const { valid } = filterValidShoppingItems(rebuiltItems, "rebuildShoppingList");
+  list.items = valid;
+
   await list.save();
   return list;
+}
+
+export async function repairShoppingListItems(list, effectiveHouseholdId, options = {}) {
+  const fallbackCategory = options.fallbackCategory || null;
+  const resolved = await resolveShoppingItemIngredientData(
+    (list.items || []).map((item) => (item?.toObject ? item.toObject() : item)),
+    effectiveHouseholdId,
+    { fallbackCategoryId: fallbackCategory?._id || null }
+  );
+
+  const normalizedItems = resolved.resolvedItems.map((item, index) =>
+    ensureValidShoppingItemShape(item, index, fallbackCategory?._id || null)
+  );
+  const { valid, filteredCount } = filterValidShoppingItems(normalizedItems, options.context || "repairShoppingListItems");
+
+  const changedByCount = valid.length !== (list.items || []).length;
+  const changed = resolved.changed || filteredCount > 0 || changedByCount;
+  if (changed) {
+    list.items = valid;
+    await list.save();
+  }
+
+  return { changed, filteredCount };
 }

@@ -9,7 +9,7 @@ import {
   getEffectiveHouseholdId,
   handleHouseholdError
 } from "../householdScope.js";
-import { ensureShoppingList, rebuildShoppingList, resolveShoppingItemIngredientData } from "../shoppingService.js";
+import { ensureShoppingList, rebuildShoppingList, repairShoppingListItems } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import {
   DEFAULT_CATEGORY_COLOR_BG,
@@ -94,16 +94,10 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
     Category,
     householdId: effectiveHouseholdId
   });
-
-  const resolved = await resolveShoppingItemIngredientData(
-    list.items.map((item) => item.toObject()),
-    effectiveHouseholdId,
-    { fallbackCategoryId: fallbackCategory?._id || null }
-  );
-  if (resolved.changed) {
-    list.items = resolved.resolvedItems;
-    await list.save();
-  }
+  await repairShoppingListItems(list, effectiveHouseholdId, {
+    fallbackCategory,
+    context: "getShoppingPayload"
+  });
 
   const categories = await Category.find(buildCategoryVisibilityFilter(effectiveHouseholdId, { isArchived: { $ne: true } })).select(
     "_id name slug colorBg colorText"
@@ -245,6 +239,9 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
     const list = await ensureShoppingList(monday, effectiveHouseholdId);
+    await repairShoppingListItems(list, effectiveHouseholdId, {
+      context: "update-item"
+    });
 
     const item = list.items.find((current) => {
       if (ingredientId && current.ingredientId) return String(current.ingredientId) === String(ingredientId);
@@ -289,6 +286,9 @@ router.put("/:weekStart/item/store", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
     const list = await ensureShoppingList(monday, effectiveHouseholdId);
+    await repairShoppingListItems(list, effectiveHouseholdId, {
+      context: "update-item-store"
+    });
 
     const item = list.items.find((current) => {
       if (ingredientId && current.ingredientId) return String(current.ingredientId) === String(ingredientId);
@@ -320,6 +320,9 @@ router.post("/:weekStart/purchased/assign-store", requireAuth, async (req, res) 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
     const list = await ensureShoppingList(monday, effectiveHouseholdId);
+    await repairShoppingListItems(list, effectiveHouseholdId, {
+      context: "assign-store"
+    });
     const validatedStoreId = await validateStoreSelection(storeId, effectiveHouseholdId);
 
     const today = new Date().toISOString().slice(0, 10);
