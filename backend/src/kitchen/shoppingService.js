@@ -2,10 +2,13 @@ import { KitchenShoppingList } from "./models/KitchenShoppingList.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { KitchenDish } from "./models/KitchenDish.js";
 import { KitchenIngredient } from "./models/KitchenIngredient.js";
+import { Category } from "./models/Category.js";
 import { buildScopedFilter } from "./householdScope.js";
 import { combineDayIngredients } from "./utils/ingredients.js";
 import { normalizeIngredientName } from "./utils/normalize.js";
 import { CATALOG_SCOPES } from "./utils/catalogScopes.js";
+import { ensureDefaultCategory } from "./utils/categoryMatching.js";
+import mongoose from "mongoose";
 
 const INGREDIENT_SCOPE_PRIORITY = {
   [CATALOG_SCOPES.OVERRIDE]: 0,
@@ -43,7 +46,8 @@ export async function ensureShoppingList(weekStartDate, effectiveHouseholdId) {
   });
 }
 
-export async function resolveShoppingItemIngredientData(items, effectiveHouseholdId) {
+export async function resolveShoppingItemIngredientData(items, effectiveHouseholdId, options = {}) {
+  const fallbackCategoryId = options.fallbackCategoryId || null;
   const byId = new Map();
   const byCanonical = new Map();
 
@@ -54,11 +58,17 @@ export async function resolveShoppingItemIngredientData(items, effectiveHousehol
   }
 
   const ingredientFilters = [];
-  const ids = Array.from(byId.keys());
+  const ids = Array.from(byId.keys()).filter((id) => mongoose.isValidObjectId(id));
   const canonicalNames = Array.from(byCanonical.keys());
   if (ids.length) ingredientFilters.push({ _id: { $in: ids } });
   if (canonicalNames.length) ingredientFilters.push({ canonicalName: { $in: canonicalNames } });
-  if (!ingredientFilters.length) return { changed: false, resolvedItems: items };
+  if (!ingredientFilters.length) {
+    const resolvedWithoutLookup = items.map((item) => {
+      if (item?.categoryId || !fallbackCategoryId) return item;
+      return { ...item, categoryId: fallbackCategoryId };
+    });
+    return { changed: resolvedWithoutLookup.some((item, index) => item !== items[index]), resolvedItems: resolvedWithoutLookup };
+  }
 
   const ingredientDocs = await KitchenIngredient.find(
     buildIngredientVisibilityFilter(effectiveHouseholdId, { $or: ingredientFilters })
@@ -96,8 +106,9 @@ export async function resolveShoppingItemIngredientData(items, effectiveHousehol
       next.displayName = resolved.name;
       changed = true;
     }
-    if (!next.categoryId || String(next.categoryId) !== String(resolved.categoryId || "")) {
-      next.categoryId = resolved.categoryId || null;
+    const resolvedCategoryId = resolved.categoryId || fallbackCategoryId || null;
+    if (!next.categoryId || String(next.categoryId) !== String(resolvedCategoryId || "")) {
+      next.categoryId = resolvedCategoryId;
       changed = true;
     }
     return next;
@@ -153,15 +164,20 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
 }
 
 export async function rebuildShoppingList(weekStartDate, effectiveHouseholdId) {
+  const fallbackCategory = await ensureDefaultCategory({ Category, householdId: effectiveHouseholdId });
   const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
   const builtItems = await buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId);
+  const resolvedBuiltItems = await resolveShoppingItemIngredientData(builtItems, effectiveHouseholdId, {
+    fallbackCategoryId: fallbackCategory?._id || null
+  });
 
   const previousMap = new Map(list.items.map((item) => [item.ingredientId ? String(item.ingredientId) : item.canonicalName, item]));
-  list.items = builtItems.map((item) => {
+  list.items = resolvedBuiltItems.resolvedItems.map((item) => {
     const previous = previousMap.get(item.ingredientId ? String(item.ingredientId) : item.canonicalName);
     const nextStatus = previous?.status === "purchased" ? "purchased" : "pending";
     return {
       ...item,
+      categoryId: item.categoryId || fallbackCategory?._id || null,
       fromDishes: item.fromDishes,
       status: nextStatus,
       purchasedBy: nextStatus === "purchased" ? previous?.purchasedBy || null : null,

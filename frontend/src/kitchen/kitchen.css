@@ -2945,3 +2945,11 @@ body {
     transform: translateY(0) scale(1);
   }
 }
+
+.shopping-store-select-compact {
+  width: auto;
+  min-width: 150px;
+  max-width: 220px;
+  padding-right: 28px;
+  font-size: 13px;
+}

@@ -12,6 +12,15 @@ function ChevronIcon(props) {
   );
 }
 
+function RefreshIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M20 12a8 8 0 1 1-2.343-5.657" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      <path d="M20 4v4h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 function addDaysToISO(iso, days) {
   const date = new Date(`${iso}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
@@ -198,9 +207,10 @@ export default function ShoppingPage() {
           <div className="shopping-header-row">
             <div>
               <h3>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h3>
-              <p className="kitchen-muted">Marca productos y se registra automáticamente quién compró y cuándo.</p>
             </div>
-            <button className="kitchen-button secondary" type="button" onClick={refreshList} disabled={isRefreshing}>Refrescar</button>
+            <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
+              <RefreshIcon className="shopping-week-arrow-icon" />
+            </button>
           </div>
 
           <div className="shopping-week-nav">
@@ -270,7 +280,7 @@ export default function ShoppingPage() {
               <div className="kitchen-card kitchen-empty"><h4>Aún no hay ingredientes comprados.</h4></div>
             ) : purchasedByStoreDay.map((group) => (
               <div className="kitchen-card shopping-category-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
-                <h4>{group.storeName} · {formatTripDate(group.purchasedDate)}</h4>
+                <h4>Comprado por {group.purchasedByName || "Usuario"} · {group.storeName || "Supermercado no definido"} · {formatTripDate(group.purchasedDate)}</h4>
                 <div className="shopping-items-list">
                   {group.items.map((item) => {
                     const key = itemKey(item);
@@ -278,7 +288,7 @@ export default function ShoppingPage() {
                       <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
                         <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
                         <span className="shopping-item-text">{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
-                        <select className="kitchen-select" value={item.storeId || ""} onChange={(event) => updatePurchasedItemStore(item, event.target.value)}>
+                        <select className="kitchen-select shopping-store-select-compact" value={item.storeId || ""} onChange={(event) => updatePurchasedItemStore(item, event.target.value)}>
                           <option value="">Sin supermercado</option>
                           {stores.map((store) => (
                             <option key={store._id} value={store._id}>{store.name}</option>

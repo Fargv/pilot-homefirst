@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { requireAuth, requireRole } from "../middleware.js";
@@ -12,6 +13,43 @@ import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanSe
 import { rebuildShoppingList } from "../shoppingService.js";
 
 const router = express.Router();
+
+function logKitchenError(context, error, extra = {}) {
+  console.error(`[kitchen][weeks] ${context}`, {
+    ...extra,
+    message: error?.message,
+    stack: error?.stack
+  });
+}
+
+function validateObjectId(value, fieldName) {
+  if (value === undefined || value === null || value === "") return null;
+  if (!mongoose.isValidObjectId(value)) {
+    return `${fieldName} no es un identificador válido.`;
+  }
+  return null;
+}
+
+function normalizeIngredientOverrides(ingredientOverrides = []) {
+  return ingredientOverrides.map((item) => ({
+    displayName: String(item?.displayName || "").trim(),
+    canonicalName: String(item?.canonicalName || "").trim(),
+    ...(item?.ingredientId ? { ingredientId: item.ingredientId } : {})
+  }));
+}
+
+async function rebuildShoppingListBestEffort({ monday, effectiveHouseholdId, context }) {
+  try {
+    await rebuildShoppingList(monday, effectiveHouseholdId);
+    return null;
+  } catch (error) {
+    logKitchenError(`${context}:rebuild-shopping-list`, error, {
+      weekStart: formatDateISO(monday),
+      householdId: String(effectiveHouseholdId)
+    });
+    return "El plan se guardó, pero no se pudo reconstruir la lista de compra.";
+  }
+}
 
 function isHouseholdAdmin(user) {
   return user?.globalRole === "diod" || user?.role === "owner" || user?.role === "admin";
@@ -78,6 +116,23 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
 
     const { cookUserId, cookTiming, servings, mainDishId, sideDishId, ingredientOverrides } = req.body;
 
+    const invalidIdMessage =
+      validateObjectId(cookUserId, "cookUserId")
+      || validateObjectId(mainDishId, "mainDishId")
+      || validateObjectId(sideDishId, "sideDishId");
+    if (invalidIdMessage) {
+      return res.status(400).json({ ok: false, error: invalidIdMessage });
+    }
+
+    if (Array.isArray(ingredientOverrides)) {
+      const invalidOverride = ingredientOverrides.find((item) =>
+        item?.ingredientId && !mongoose.isValidObjectId(item.ingredientId)
+      );
+      if (invalidOverride) {
+        return res.status(400).json({ ok: false, error: "Algún ingredientId de ingredientes extra no es válido." });
+      }
+    }
+
     if (hasAdministrativePlanChange(req, day, req.body || {})) {
       return res.status(403).json({
         ok: false,
@@ -120,14 +175,26 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     if (servings) day.servings = Number(servings) || 4;
     if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
     if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
-    if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
+    if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = normalizeIngredientOverrides(ingredientOverrides);
 
     await plan.save();
-    await rebuildShoppingList(monday, effectiveHouseholdId);
-    return res.json({ ok: true, plan });
+    const warning = await rebuildShoppingListBestEffort({
+      monday,
+      effectiveHouseholdId,
+      context: "update-day"
+    });
+    return res.json({ ok: true, plan, ...(warning ? { warning } : {}) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
+    logKitchenError("update-day", error, {
+      weekStart: req.params.weekStart,
+      date: req.params.date,
+      userId: String(req.kitchenUser?._id || "")
+    });
+    if (error?.name === "ValidationError" || error?.name === "CastError") {
+      return res.status(400).json({ ok: false, error: "Datos inválidos al actualizar el día del plan." });
+    }
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
   }
 });
@@ -158,8 +225,12 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
     }));
 
     await targetPlan.save();
-    await rebuildShoppingList(monday, effectiveHouseholdId);
-    return res.json({ ok: true, plan: targetPlan });
+    const warning = await rebuildShoppingListBestEffort({
+      monday,
+      effectiveHouseholdId,
+      context: "copy-week"
+    });
+    return res.json({ ok: true, plan: targetPlan, ...(warning ? { warning } : {}) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
@@ -237,11 +308,23 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     sourceDay.ingredientOverrides = [];
 
     await plan.save();
-    await rebuildShoppingList(monday, effectiveHouseholdId);
-    return res.json({ ok: true, plan });
+    const warning = await rebuildShoppingListBestEffort({
+      monday,
+      effectiveHouseholdId,
+      context: "move-day"
+    });
+    return res.json({ ok: true, plan, ...(warning ? { warning } : {}) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
+    logKitchenError("move-day", error, {
+      weekStart: req.params.weekStart,
+      date: req.params.date,
+      userId: String(req.kitchenUser?._id || "")
+    });
+    if (error?.name === "ValidationError" || error?.name === "CastError") {
+      return res.status(400).json({ ok: false, error: "Datos inválidos al mover la asignación." });
+    }
     return res.status(500).json({ ok: false, error: "No se pudo mover la asignación de día." });
   }
 });

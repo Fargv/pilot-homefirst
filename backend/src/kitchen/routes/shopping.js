@@ -21,6 +21,15 @@ import {
 
 const router = express.Router();
 
+function logShoppingError(context, error, extra = {}) {
+  console.error(`[kitchen][shopping] ${context}`, {
+    ...extra,
+    message: error?.message,
+    stack: error?.stack
+  });
+}
+
+
 function normalizeStoreName(value = "") {
   return String(value).trim().toLowerCase();
 }
@@ -63,16 +72,20 @@ function toDateGroup(value) {
 async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
 
-  const resolved = await resolveShoppingItemIngredientData(list.items.map((item) => item.toObject()), effectiveHouseholdId);
-  if (resolved.changed) {
-    list.items = resolved.resolvedItems;
-    await list.save();
-  }
-
   const fallbackCategory = await ensureDefaultCategory({
     Category,
     householdId: effectiveHouseholdId
   });
+
+  const resolved = await resolveShoppingItemIngredientData(
+    list.items.map((item) => item.toObject()),
+    effectiveHouseholdId,
+    { fallbackCategoryId: fallbackCategory?._id || null }
+  );
+  if (resolved.changed) {
+    list.items = resolved.resolvedItems;
+    await list.save();
+  }
 
   const categories = await Category.find(buildCategoryVisibilityFilter(effectiveHouseholdId, { isArchived: { $ne: true } })).select(
     "_id name slug colorBg colorText"
@@ -129,9 +142,10 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
       if (!acc.has(key)) {
         acc.set(key, {
           storeId: item.storeId || null,
-          storeName: item.storeId ? storeById.get(String(item.storeId)) || "Supermercado" : "Sin supermercado",
+          storeName: item.storeId ? storeById.get(String(item.storeId)) || "Supermercado no definido" : "Supermercado no definido",
           purchasedDate: dateKey,
           startedAt: item.purchasedAt,
+          purchasedByName: item.purchasedBy ? purchaserById.get(String(item.purchasedBy)) || "Usuario" : "Usuario",
           items: []
         });
       }
@@ -191,6 +205,10 @@ router.post("/:weekStart/rebuild", requireAuth, async (req, res) => {
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
+    logShoppingError("rebuild", error, { weekStart: req.params.weekStart, userId: String(req.kitchenUser?._id || "") });
+    if (error?.name === "ValidationError" || error?.name === "CastError") {
+      return res.status(400).json({ ok: false, error: "Datos inválidos al reconstruir la lista." });
+    }
     return res.status(500).json({ ok: false, error: "No se pudo reconstruir la lista de compra." });
   }
 });
