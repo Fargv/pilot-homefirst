@@ -5,6 +5,31 @@ import { KitchenIngredient } from "./models/KitchenIngredient.js";
 import { buildScopedFilter } from "./householdScope.js";
 import { combineDayIngredients } from "./utils/ingredients.js";
 import { normalizeIngredientName } from "./utils/normalize.js";
+import { CATALOG_SCOPES } from "./utils/catalogScopes.js";
+
+const INGREDIENT_SCOPE_PRIORITY = {
+  [CATALOG_SCOPES.OVERRIDE]: 0,
+  [CATALOG_SCOPES.HOUSEHOLD]: 1,
+  [CATALOG_SCOPES.MASTER]: 2
+};
+
+function compareByScopePriority(a, b) {
+  const left = INGREDIENT_SCOPE_PRIORITY[a.scope] ?? 99;
+  const right = INGREDIENT_SCOPE_PRIORITY[b.scope] ?? 99;
+  return left - right;
+}
+
+function buildIngredientVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
+  return {
+    ...extraFilter,
+    isArchived: { $ne: true },
+    $or: [
+      { scope: CATALOG_SCOPES.MASTER },
+      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
+      { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
+    ]
+  };
+}
 
 export async function ensureShoppingList(weekStartDate, effectiveHouseholdId) {
   const existing = await KitchenShoppingList.findOne(
@@ -36,11 +61,19 @@ export async function resolveShoppingItemIngredientData(items, effectiveHousehol
   if (!ingredientFilters.length) return { changed: false, resolvedItems: items };
 
   const ingredientDocs = await KitchenIngredient.find(
-    buildScopedFilter(effectiveHouseholdId, { $or: ingredientFilters })
-  ).select("_id canonicalName categoryId name");
+    buildIngredientVisibilityFilter(effectiveHouseholdId, { $or: ingredientFilters })
+  )
+    .select("_id canonicalName categoryId name scope")
+    .lean();
 
-  const ingredientById = new Map(ingredientDocs.map((doc) => [String(doc._id), doc]));
-  const ingredientByCanonical = new Map(ingredientDocs.map((doc) => [doc.canonicalName, doc]));
+  const sortedIngredients = ingredientDocs.sort(compareByScopePriority);
+  const ingredientById = new Map(sortedIngredients.map((doc) => [String(doc._id), doc]));
+  const ingredientByCanonical = new Map();
+  sortedIngredients.forEach((doc) => {
+    if (doc.canonicalName && !ingredientByCanonical.has(doc.canonicalName)) {
+      ingredientByCanonical.set(doc.canonicalName, doc);
+    }
+  });
 
   let changed = false;
   const resolvedItems = items.map((item) => {
@@ -57,6 +90,10 @@ export async function resolveShoppingItemIngredientData(items, effectiveHousehol
     }
     if (next.canonicalName !== resolved.canonicalName) {
       next.canonicalName = resolved.canonicalName;
+      changed = true;
+    }
+    if (!next.displayName) {
+      next.displayName = resolved.name;
       changed = true;
     }
     if (!next.categoryId || String(next.categoryId) !== String(resolved.categoryId || "")) {

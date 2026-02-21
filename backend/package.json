@@ -11,7 +11,8 @@
     "test:connection": "node scripts/test-connection.js",
     "migrate:householdId": "node scripts/migrate-add-householdId.js",
     "migrate:ingredientCategoryId": "node scripts/migrate-ingredient-category-id.js",
-    "repair:shoppingItems": "node scripts/repair-shopping-list-items.js"
+    "repair:shoppingItems": "node scripts/repair-shopping-list-items.js",
+    "migrate:removeShoppingTripAmount": "node scripts/migrate-remove-shopping-trip-amount.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

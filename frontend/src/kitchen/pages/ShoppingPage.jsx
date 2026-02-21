@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import KitchenLayout from "../Layout.jsx";
 import { apiRequest } from "../api.js";
 import { useAuth } from "../auth";
@@ -64,6 +64,7 @@ export default function ShoppingPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState("");
+  const selectedStoreRef = useRef("");
   const [pendingByCategory, setPendingByCategory] = useState([]);
   const [purchasedByStoreDay, setPurchasedByStoreDay] = useState([]);
   const [transitioningItemKey, setTransitioningItemKey] = useState(null);
@@ -125,7 +126,7 @@ export default function ShoppingPage() {
           canonicalName: item.canonicalName,
           ingredientId: item.ingredientId,
           status,
-          storeId: status === "purchased" ? selectedStoreId || null : null
+          storeId: status === "purchased" ? selectedStoreRef.current || null : null
         })
       });
       applyPayload(data);
@@ -218,6 +219,7 @@ export default function ShoppingPage() {
                   void createStoreFromDropdown();
                   return;
                 }
+                selectedStoreRef.current = value;
                 setSelectedStoreId(value);
               }}
             >

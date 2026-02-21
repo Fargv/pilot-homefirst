@@ -10,6 +10,7 @@ import {
   handleHouseholdError
 } from "../householdScope.js";
 import { ensureShoppingList, rebuildShoppingList, resolveShoppingItemIngredientData } from "../shoppingService.js";
+import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import {
   DEFAULT_CATEGORY_COLOR_BG,
   DEFAULT_CATEGORY_COLOR_TEXT,
@@ -43,6 +44,17 @@ function buildStoreVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
   };
 }
 
+function buildCategoryVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
+  return {
+    ...extraFilter,
+    $or: [
+      { scope: CATALOG_SCOPES.MASTER, householdId: null },
+      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
+      { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
+    ]
+  };
+}
+
 function toDateGroup(value) {
   if (!value) return "sin-fecha";
   return new Date(value).toISOString().slice(0, 10);
@@ -62,7 +74,7 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
     householdId: effectiveHouseholdId
   });
 
-  const categories = await Category.find(buildScopedFilter(effectiveHouseholdId, {})).select(
+  const categories = await Category.find(buildCategoryVisibilityFilter(effectiveHouseholdId, { isArchived: { $ne: true } })).select(
     "_id name slug colorBg colorText"
   );
   const stores = sortStores(
@@ -140,6 +152,14 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   };
 }
 
+async function validateStoreSelection(storeId, effectiveHouseholdId) {
+  if (!storeId) return null;
+  const store = await Store.findOne(buildStoreVisibilityFilter(effectiveHouseholdId, { _id: storeId, active: true }))
+    .select("_id")
+    .lean();
+  return store ? store._id : null;
+}
+
 router.get("/:weekStart", requireAuth, async (req, res) => {
   try {
     const weekStart = parseISODate(req.params.weekStart);
@@ -199,9 +219,10 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
     const normalizedStatus = status === "purchased" ? "purchased" : "pending";
     item.status = normalizedStatus;
     if (normalizedStatus === "purchased") {
+      const validatedStoreId = await validateStoreSelection(storeId, effectiveHouseholdId);
       item.purchasedBy = req.kitchenUser._id;
       item.purchasedAt = new Date();
-      item.storeId = storeId || null;
+      item.storeId = validatedStoreId;
     } else {
       item.purchasedBy = null;
       item.purchasedAt = null;
@@ -241,7 +262,7 @@ router.put("/:weekStart/item/store", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Ingrediente comprado no encontrado." });
     }
 
-    item.storeId = storeId || null;
+    item.storeId = await validateStoreSelection(storeId, effectiveHouseholdId);
     await list.save();
 
     const payload = await getShoppingPayload(monday, effectiveHouseholdId);
@@ -262,13 +283,14 @@ router.post("/:weekStart/purchased/assign-store", requireAuth, async (req, res) 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
     const list = await ensureShoppingList(monday, effectiveHouseholdId);
+    const validatedStoreId = await validateStoreSelection(storeId, effectiveHouseholdId);
 
     const today = new Date().toISOString().slice(0, 10);
     let changed = false;
     for (const item of list.items) {
       if (item.status !== "purchased" || item.storeId || !item.purchasedAt) continue;
       if (toDateGroup(item.purchasedAt) !== today) continue;
-      item.storeId = storeId || null;
+      item.storeId = validatedStoreId;
       changed = true;
     }
 
