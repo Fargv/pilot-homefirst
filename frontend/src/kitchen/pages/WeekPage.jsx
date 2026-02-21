@@ -45,6 +45,19 @@ function addDaysToISO(dateString, days) {
   return date.toISOString().slice(0, 10);
 }
 
+function parseISODateInput(dateString) {
+  const [year, month, day] = String(dateString || "").split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function normalizeWeekStart(dateString) {
+  const parsed = parseISODateInput(dateString);
+  if (!parsed) return getMondayISO();
+  return getMondayISO(parsed);
+}
+
 function ChevronIcon(props) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -124,6 +137,8 @@ export default function WeekPage() {
   const selectedDayRef = useRef(selectedDay);
   const hasInitializedRef = useRef(false);
   const assignIntentRef = useRef(null);
+  const dismissedMissingWeekPromptRef = useRef(new Set());
+  const [missingWeekPromptOpen, setMissingWeekPromptOpen] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
   const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
@@ -139,6 +154,7 @@ export default function WeekPage() {
     }
     setLoading(true);
     setLoadError("");
+    setMissingWeekPromptOpen(false);
     try {
       const [planData, dishesData, sideDishesData] = await Promise.all([
         apiRequest(`/api/kitchen/weeks/${weekStart}`),
@@ -146,6 +162,9 @@ export default function WeekPage() {
         apiRequest("/api/kitchen/dishes?sidedish=true")
       ]);
       setPlan(planData.plan || null);
+      if (!planData.plan && !dismissedMissingWeekPromptRef.current.has(weekStart)) {
+        setMissingWeekPromptOpen(true);
+      }
       setDishes(dishesData.dishes || []);
       setSideDishes(sideDishesData.dishes || []);
       const usersEndpoint = isOwnerAdmin ? "/api/kitchen/users" : "/api/kitchen/users/members";
@@ -263,27 +282,18 @@ export default function WeekPage() {
       return;
     }
     const todayKey = new Date().toISOString().slice(0, 10);
-    const todayWeekStart = getMondayISO();
     const fallbackDay = safeDays[0]?.date?.slice(0, 10) || "";
     const todayIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === todayKey);
     const containsToday = todayIndex !== -1;
 
     if (!hasInitializedRef.current) {
-      if (!containsToday) {
-        if (weekStart !== todayWeekStart) {
-          setWeekStart(todayWeekStart);
-        }
-        return;
-      }
-      const nextDay = todayKey || fallbackDay;
+      const nextDay = containsToday ? todayKey : fallbackDay;
       setSelectedDay(nextDay);
-      if (todayIndex >= 0) {
-        setActiveIndex(todayIndex);
-      }
+      const targetIndex = containsToday && todayIndex >= 0 ? todayIndex : 0;
+      setActiveIndex(targetIndex);
       requestAnimationFrame(() => {
         const element = carouselRef.current;
         if (!element) return;
-        const targetIndex = todayIndex >= 0 ? todayIndex : 0;
         element.scrollTo({ left: targetIndex * element.clientWidth, behavior: "auto" });
       });
       hasInitializedRef.current = true;
@@ -722,6 +732,15 @@ export default function WeekPage() {
     return category;
   }, []);
 
+  const handleWeekShift = (days) => {
+    setWeekStart((prev) => addDaysToISO(prev, days));
+  };
+
+  const handleDismissMissingWeekPrompt = () => {
+    dismissedMissingWeekPromptRef.current.add(weekStart);
+    setMissingWeekPromptOpen(false);
+  };
+
   if (loading) {
     return (
       <KitchenLayout>
@@ -729,30 +748,6 @@ export default function WeekPage() {
       </KitchenLayout>
     );
   }
-
-  if (!plan) {
-    return (
-      <KitchenLayout>
-        <div className="kitchen-card kitchen-empty">
-          <h3>No hay planificación todavía</h3>
-          <p>Esta semana aún no tiene plan creado para tu hogar.</p>
-          <button
-            type="button"
-            className="kitchen-button"
-            onClick={handleCreatePlan}
-            disabled={creatingPlan}
-          >
-            {creatingPlan ? "Creando..." : "Crear planificación de esta semana"}
-          </button>
-          {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
-        </div>
-      </KitchenLayout>
-    );
-  }
-
-  const handleWeekShift = (days) => {
-    setWeekStart((prev) => addDaysToISO(prev, days));
-  };
 
   const handleSelectDay = (dayKey) => {
     setSelectedDay(dayKey);
@@ -812,7 +807,7 @@ export default function WeekPage() {
                     className="kitchen-input"
                     type="date"
                     value={weekStart}
-                    onChange={(event) => setWeekStart(event.target.value)}
+                    onChange={(event) => setWeekStart(normalizeWeekStart(event.target.value))}
                     aria-label="Semana"
                   />
                 </label>
@@ -841,6 +836,20 @@ export default function WeekPage() {
               </button>
             ) : null}
             <div className="kitchen-grid kitchen-week-days" id="week-grid" ref={carouselRef}>
+              {!plan ? (
+                <div className="kitchen-card kitchen-empty">
+                  <h3>No hay planificación para esta semana</h3>
+                  <p>La semana {formatDateLabel(weekStart)} todavía no tiene plan creado para tu hogar.</p>
+                  <button
+                    type="button"
+                    className="kitchen-button"
+                    onClick={handleCreatePlan}
+                    disabled={creatingPlan}
+                  >
+                    {creatingPlan ? "Creando..." : "Crear planificación de esta semana"}
+                  </button>
+                </div>
+              ) : null}
               {safeDays.map((day, index) => {
                 if (!day?.date) {
                   return (
@@ -1532,6 +1541,41 @@ export default function WeekPage() {
           ) : null}
         </div>
       </div>
+      {missingWeekPromptOpen && !plan ? (
+        <div
+          className="kitchen-modal-backdrop"
+          role="presentation"
+          onClick={handleDismissMissingWeekPrompt}
+        >
+          <div
+            className="kitchen-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Crear planificación semanal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <h3>No existe planificación para esta semana</h3>
+              <p className="kitchen-muted">
+                Semana de {formatDateLabel(weekStart)}. ¿Quieres crearla ahora?
+              </p>
+            </div>
+            <div className="kitchen-modal-actions">
+              <button type="button" className="kitchen-button kitchen-button-ghost" onClick={handleDismissMissingWeekPrompt}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="kitchen-button"
+                onClick={handleCreatePlan}
+                disabled={creatingPlan}
+              >
+                {creatingPlan ? "Creando..." : "Crear"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <DishModal
         isOpen={dishModalOpen}
         onClose={closeDishModal}
