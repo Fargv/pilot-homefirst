@@ -37,13 +37,8 @@ function formatWeekTitle(iso) {
 }
 
 function formatTripDate(value) {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
-
-function formatAmount(value) {
-  if (value === null || value === undefined || value === "") return "";
-  return `${Number(value).toFixed(2)} €`;
+  if (!value || value === "sin-fecha") return "Sin fecha";
+  return new Date(`${value}T00:00:00Z`).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function slugColor(slug = "") {
@@ -68,20 +63,17 @@ export default function ShoppingPage() {
   const [success, setSuccess] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [stores, setStores] = useState([]);
-  const [activeTrip, setActiveTrip] = useState(null);
-  const [activeTripPurchasedCount, setActiveTripPurchasedCount] = useState(0);
+  const [selectedStoreId, setSelectedStoreId] = useState("");
   const [pendingByCategory, setPendingByCategory] = useState([]);
-  const [purchasedByTrip, setPurchasedByTrip] = useState([]);
+  const [purchasedByStoreDay, setPurchasedByStoreDay] = useState([]);
   const [transitioningItemKey, setTransitioningItemKey] = useState(null);
   const [recentlyMovedItemKey, setRecentlyMovedItemKey] = useState(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
 
   const applyPayload = (data) => {
     setStores(data.stores || []);
-    setActiveTrip(data.activeTrip || null);
-    setActiveTripPurchasedCount(data.activeTripPurchasedCount || 0);
     setPendingByCategory(data.pendingByCategory || []);
-    setPurchasedByTrip(data.purchasedByTrip || []);
+    setPurchasedByStoreDay(data.purchasedByStoreDay || []);
   };
 
   const loadList = async ({ silent = false } = {}) => {
@@ -114,6 +106,7 @@ export default function ShoppingPage() {
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/rebuild`, { method: "POST" });
       applyPayload(data);
+      setSuccess("Lista reconstruida");
     } catch (err) {
       setError(err.message || "No se pudo refrescar la lista.");
     } finally {
@@ -128,7 +121,12 @@ export default function ShoppingPage() {
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
         method: "PUT",
-        body: JSON.stringify({ canonicalName: item.canonicalName, ingredientId: item.ingredientId, status })
+        body: JSON.stringify({
+          canonicalName: item.canonicalName,
+          ingredientId: item.ingredientId,
+          status,
+          storeId: status === "purchased" ? selectedStoreId || null : null
+        })
       });
       applyPayload(data);
       setRecentlyMovedItemKey(key);
@@ -139,17 +137,28 @@ export default function ShoppingPage() {
     }
   };
 
-  const updateTrip = async (payload) => {
-    if (isDiodGlobalMode) return;
+  const updatePurchasedItemStore = async (item, storeId) => {
     try {
-      const data = await apiRequest("/api/kitchen/shopping/trip/active", {
+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item/store`, {
         method: "PUT",
-        body: JSON.stringify({ ...payload, weekStart })
+        body: JSON.stringify({ canonicalName: item.canonicalName, ingredientId: item.ingredientId, storeId: storeId || null })
       });
-      setActiveTrip(data.activeTrip || null);
-      await loadList({ silent: true });
+      applyPayload(data);
     } catch (err) {
-      setError(err.message || "No se pudo actualizar la compra activa.");
+      setError(err.message || "No se pudo cambiar el supermercado.");
+    }
+  };
+
+  const assignStoreToTodayUnassigned = async () => {
+    try {
+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/purchased/assign-store`, {
+        method: "POST",
+        body: JSON.stringify({ storeId: selectedStoreId || null })
+      });
+      applyPayload(data);
+      setSuccess(data.updated ? "Supermercado asignado" : "No había comprados de hoy sin supermercado");
+    } catch (err) {
+      setError(err.message || "No se pudo asignar supermercado en bloque.");
     }
   };
 
@@ -165,23 +174,6 @@ export default function ShoppingPage() {
       await loadList({ silent: true });
     } catch (err) {
       setError(err.message || "No se pudo crear el supermercado.");
-    }
-  };
-
-  const canCloseTrip = activeTripPurchasedCount > 0;
-  const closeDisabledReason = canCloseTrip ? "" : "Marca algún ítem para cerrar compra";
-
-  const closeTrip = async () => {
-    if (!canCloseTrip) return;
-    try {
-      await apiRequest("/api/kitchen/shopping/trip/active/close", {
-        method: "POST",
-        body: JSON.stringify({ weekStart })
-      });
-      setSuccess("Compra registrada");
-      await loadList();
-    } catch (err) {
-      setError(err.message || "No se pudo cerrar la compra.");
     }
   };
 
@@ -219,14 +211,14 @@ export default function ShoppingPage() {
           <div className="shopping-toolbar">
             <select
               className="kitchen-select"
-              value={activeTrip?.storeId || ""}
+              value={selectedStoreId}
               onChange={(event) => {
                 const value = event.target.value;
                 if (value === "__add__") {
                   void createStoreFromDropdown();
                   return;
                 }
-                void updateTrip({ storeId: value || null, totalAmount: activeTrip?.totalAmount ?? null });
+                setSelectedStoreId(value);
               }}
             >
               <option value="">Supermercado (opcional)</option>
@@ -235,18 +227,8 @@ export default function ShoppingPage() {
               ))}
               <option value="__add__">Añadir supermercado…</option>
             </select>
-            <input
-              className="kitchen-input"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Importe total €"
-              value={activeTrip?.totalAmount ?? ""}
-              onChange={(event) => updateTrip({ storeId: activeTrip?.storeId || null, totalAmount: event.target.value })}
-            />
-            <button className="kitchen-button secondary" onClick={closeTrip} disabled={!canCloseTrip} title={closeDisabledReason}>Cerrar compra</button>
+            <button className="kitchen-button secondary" type="button" onClick={assignStoreToTodayUnassigned}>Asignar a comprados de hoy sin supermercado</button>
           </div>
-          {!canCloseTrip ? <p className="kitchen-muted">Marca algún ítem para cerrar compra.</p> : null}
           {success ? <div className="kitchen-alert success">{success}</div> : null}
           {error ? <div className="kitchen-alert error">{error}</div> : null}
         </div>
@@ -282,18 +264,24 @@ export default function ShoppingPage() {
           </div>
         ) : (
           <div className="shopping-categories">
-            {purchasedByTrip.length === 0 ? (
+            {purchasedByStoreDay.length === 0 ? (
               <div className="kitchen-card kitchen-empty"><h4>Aún no hay ingredientes comprados.</h4></div>
-            ) : purchasedByTrip.map((trip) => (
-              <div className="kitchen-card shopping-category-card" key={trip.tripId || `trip-${trip.startedAt}`}>
-                <h4>{trip.storeName} · {formatTripDate(trip.startedAt)} {trip.totalAmount !== null ? `· ${formatAmount(trip.totalAmount)}` : ""}</h4>
+            ) : purchasedByStoreDay.map((group) => (
+              <div className="kitchen-card shopping-category-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
+                <h4>{group.storeName} · {formatTripDate(group.purchasedDate)}</h4>
                 <div className="shopping-items-list">
-                  {trip.items.map((item) => {
+                  {group.items.map((item) => {
                     const key = itemKey(item);
                     return (
                       <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
                         <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
                         <span className="shopping-item-text">{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
+                        <select className="kitchen-select" value={item.storeId || ""} onChange={(event) => updatePurchasedItemStore(item, event.target.value)}>
+                          <option value="">Sin supermercado</option>
+                          {stores.map((store) => (
+                            <option key={store._id} value={store._id}>{store.name}</option>
+                          ))}
+                        </select>
                       </div>
                     );
                   })}

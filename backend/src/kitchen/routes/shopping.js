@@ -1,9 +1,7 @@
 import express from "express";
 import { Category } from "../models/Category.js";
 import { Store } from "../models/Store.js";
-import { ShoppingTrip } from "../models/ShoppingTrip.js";
 import { KitchenUser } from "../models/KitchenUser.js";
-import { KitchenIngredient } from "../models/KitchenIngredient.js";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
 import {
@@ -11,7 +9,7 @@ import {
   getEffectiveHouseholdId,
   handleHouseholdError
 } from "../householdScope.js";
-import { ensureShoppingList, rebuildShoppingList } from "../shoppingService.js";
+import { ensureShoppingList, rebuildShoppingList, resolveShoppingItemIngredientData } from "../shoppingService.js";
 import {
   DEFAULT_CATEGORY_COLOR_BG,
   DEFAULT_CATEGORY_COLOR_TEXT,
@@ -35,18 +33,6 @@ function sortStores(stores = []) {
   });
 }
 
-function normalizeAmount(value) {
-  if (value === null || value === undefined || value === "") return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-async function getActiveTrip(effectiveHouseholdId) {
-  return ShoppingTrip.findOne(
-    buildScopedFilter(effectiveHouseholdId, { closedAt: null })
-  ).sort({ startedAt: -1 });
-}
-
 function buildStoreVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
   return {
     ...extraFilter,
@@ -57,31 +43,18 @@ function buildStoreVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
   };
 }
 
+function toDateGroup(value) {
+  if (!value) return "sin-fecha";
+  return new Date(value).toISOString().slice(0, 10);
+}
+
 async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
 
-  const missingCategoryIngredientIds = list.items
-    .filter((item) => !item.categoryId && item.ingredientId)
-    .map((item) => item.ingredientId);
-
-  if (missingCategoryIngredientIds.length) {
-    const ingredientDocs = await KitchenIngredient.find(
-      buildScopedFilter(effectiveHouseholdId, { _id: { $in: missingCategoryIngredientIds } })
-    ).select("_id categoryId");
-    const categoryByIngredientId = new Map(ingredientDocs.map((item) => [String(item._id), item.categoryId || null]));
-    let changed = false;
-    for (const item of list.items) {
-      if (!item.categoryId && item.ingredientId) {
-        const resolvedCategoryId = categoryByIngredientId.get(String(item.ingredientId)) || null;
-        if (resolvedCategoryId) {
-          item.categoryId = resolvedCategoryId;
-          changed = true;
-        }
-      }
-    }
-    if (changed) {
-      await list.save();
-    }
+  const resolved = await resolveShoppingItemIngredientData(list.items.map((item) => item.toObject()), effectiveHouseholdId);
+  if (resolved.changed) {
+    list.items = resolved.resolvedItems;
+    await list.save();
   }
 
   const fallbackCategory = await ensureDefaultCategory({
@@ -97,21 +70,8 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
       .select("_id name order scope householdId")
       .lean()
   );
-  const activeTrip = await getActiveTrip(effectiveHouseholdId);
-
-  const purchasedTripIds = list.items
-    .filter((item) => item.tripId)
-    .map((item) => String(item.tripId));
-
-  const trips = purchasedTripIds.length
-    ? await ShoppingTrip.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: purchasedTripIds } }))
-        .sort({ startedAt: -1 })
-        .lean()
-    : [];
 
   const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
-  const tripById = new Map(trips.map((trip) => [String(trip._id), trip]));
-
   const categoryById = new Map(categories.map((category) => [String(category._id), category]));
   const purchaserIds = list.items
     .filter((item) => item.purchasedBy)
@@ -148,17 +108,18 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
       return acc;
     }, new Map());
 
-  const purchasedByTrip = list.items
+  const purchasedByStoreDay = list.items
     .filter((item) => item.status === "purchased")
     .reduce((acc, item) => {
-      const key = item.tripId ? String(item.tripId) : "no-trip";
+      const dateKey = toDateGroup(item.purchasedAt);
+      const storeKey = item.storeId ? String(item.storeId) : "no-store";
+      const key = `${dateKey}::${storeKey}`;
       if (!acc.has(key)) {
-        const trip = item.tripId ? tripById.get(String(item.tripId)) : null;
         acc.set(key, {
-          tripId: trip?._id || null,
-          storeName: trip?.storeId ? storeById.get(String(trip.storeId)) || "Tienda" : "Sin tienda",
-          totalAmount: trip?.totalAmount ?? null,
-          startedAt: trip?.startedAt || item.purchasedAt,
+          storeId: item.storeId || null,
+          storeName: item.storeId ? storeById.get(String(item.storeId)) || "Supermercado" : "Sin supermercado",
+          purchasedDate: dateKey,
+          startedAt: item.purchasedAt,
           items: []
         });
       }
@@ -172,10 +133,8 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   return {
     list,
     stores,
-    activeTrip,
-    activeTripPurchasedCount: list.items.filter((item) => item.status === "purchased" && !item.tripId).length,
     pendingByCategory: Array.from(pendingByCategory.values()),
-    purchasedByTrip: Array.from(purchasedByTrip.values()).sort(
+    purchasedByStoreDay: Array.from(purchasedByStoreDay.values()).sort(
       (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
     )
   };
@@ -221,7 +180,7 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
     const weekStart = parseISODate(req.params.weekStart);
     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
 
-    const { canonicalName, status, ingredientId } = req.body;
+    const { canonicalName, status, ingredientId, storeId } = req.body;
     if (!canonicalName && !ingredientId) {
       return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
     }
@@ -242,11 +201,11 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
     if (normalizedStatus === "purchased") {
       item.purchasedBy = req.kitchenUser._id;
       item.purchasedAt = new Date();
-      item.tripId = null;
+      item.storeId = storeId || null;
     } else {
       item.purchasedBy = null;
       item.purchasedAt = null;
-      item.tripId = null;
+      item.storeId = null;
     }
 
     await list.save();
@@ -256,6 +215,71 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo actualizar la lista de compra." });
+  }
+});
+
+router.put("/:weekStart/item/store", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+    const { canonicalName, ingredientId, storeId } = req.body;
+    if (!canonicalName && !ingredientId) {
+      return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
+    }
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+
+    const item = list.items.find((current) => {
+      if (ingredientId && current.ingredientId) return String(current.ingredientId) === String(ingredientId);
+      return current.canonicalName === canonicalName;
+    });
+
+    if (!item || item.status !== "purchased") {
+      return res.status(404).json({ ok: false, error: "Ingrediente comprado no encontrado." });
+    }
+
+    item.storeId = storeId || null;
+    await list.save();
+
+    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+    return res.json({ ok: true, ...payload });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el supermercado." });
+  }
+});
+
+router.post("/:weekStart/purchased/assign-store", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+    const { storeId } = req.body;
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+
+    const today = new Date().toISOString().slice(0, 10);
+    let changed = false;
+    for (const item of list.items) {
+      if (item.status !== "purchased" || item.storeId || !item.purchasedAt) continue;
+      if (toDateGroup(item.purchasedAt) !== today) continue;
+      item.storeId = storeId || null;
+      changed = true;
+    }
+
+    if (changed) await list.save();
+
+    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+    return res.json({ ok: true, updated: changed, ...payload });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo asignar el supermercado." });
   }
 });
 
@@ -336,88 +360,6 @@ router.delete("/stores/master/:storeId", requireAuth, requireDiod, async (req, r
   store.active = false;
   await store.save();
   return res.json({ ok: true, store });
-});
-
-router.put("/trip/active", requireAuth, async (req, res) => {
-  try {
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const weekStart = parseISODate(req.body?.weekStart);
-    const storeId = req.body?.storeId || null;
-    const totalAmount = normalizeAmount(req.body?.totalAmount);
-
-    let trip = await getActiveTrip(effectiveHouseholdId);
-    if (!trip && (storeId || totalAmount !== null)) {
-      trip = await ShoppingTrip.create({
-        householdId: effectiveHouseholdId,
-        storeId,
-        totalAmount,
-        createdBy: req.kitchenUser._id,
-        startedAt: new Date()
-      });
-    } else if (trip) {
-      trip.storeId = storeId;
-      trip.totalAmount = totalAmount;
-      await trip.save();
-    }
-
-    if (trip && weekStart) {
-      const monday = getWeekStart(weekStart);
-      const list = await ensureShoppingList(monday, effectiveHouseholdId);
-      let changed = false;
-      for (const item of list.items) {
-        if (item.status === "purchased" && !item.tripId) {
-          item.tripId = trip._id;
-          changed = true;
-        }
-      }
-      if (changed) await list.save();
-    }
-
-    return res.json({ ok: true, activeTrip: trip });
-  } catch (error) {
-    const handled = handleHouseholdError(res, error);
-    if (handled) return handled;
-    return res.status(500).json({ ok: false, error: "No se pudo actualizar la compra activa." });
-  }
-});
-
-router.post("/trip/active/close", requireAuth, async (req, res) => {
-  try {
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const weekStart = parseISODate(req.body?.weekStart);
-    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
-
-    const monday = getWeekStart(weekStart);
-    const list = await ensureShoppingList(monday, effectiveHouseholdId);
-    const ungroupedPurchased = list.items.filter((item) => item.status === "purchased" && !item.tripId);
-
-    if (!ungroupedPurchased.length) {
-      return res.status(400).json({ ok: false, error: "Marca algún ítem para cerrar compra." });
-    }
-
-    let trip = await getActiveTrip(effectiveHouseholdId);
-    if (!trip) {
-      trip = await ShoppingTrip.create({
-        householdId: effectiveHouseholdId,
-        createdBy: req.kitchenUser._id,
-        startedAt: new Date()
-      });
-    }
-
-    for (const item of ungroupedPurchased) {
-      item.tripId = trip._id;
-    }
-    await list.save();
-
-    trip.closedAt = new Date();
-    await trip.save();
-
-    return res.json({ ok: true, trip });
-  } catch (error) {
-    const handled = handleHouseholdError(res, error);
-    if (handled) return handled;
-    return res.status(500).json({ ok: false, error: "No se pudo cerrar la compra." });
-  }
 });
 
 export default router;

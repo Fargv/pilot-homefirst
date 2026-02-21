@@ -10,7 +10,8 @@
     "create:diod": "node scripts/create-diod.js",
     "test:connection": "node scripts/test-connection.js",
     "migrate:householdId": "node scripts/migrate-add-householdId.js",
-    "migrate:ingredientCategoryId": "node scripts/migrate-ingredient-category-id.js"
+    "migrate:ingredientCategoryId": "node scripts/migrate-ingredient-category-id.js",
+    "repair:shoppingItems": "node scripts/repair-shopping-list-items.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

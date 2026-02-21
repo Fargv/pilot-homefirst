@@ -13,7 +13,7 @@ const ShoppingItemSchema = new mongoose.Schema(
     status: { type: String, enum: ["pending", "purchased"], default: "pending" },
     purchasedBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },
     purchasedAt: { type: Date, default: null },
-    tripId: { type: mongoose.Schema.Types.ObjectId, ref: "ShoppingTrip", default: null }
+    storeId: { type: mongoose.Schema.Types.ObjectId, ref: "Store", default: null }
   },
   { _id: false }
 );
