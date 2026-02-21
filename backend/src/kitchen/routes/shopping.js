@@ -3,6 +3,7 @@ import { Category } from "../models/Category.js";
 import { Store } from "../models/Store.js";
 import { ShoppingTrip } from "../models/ShoppingTrip.js";
 import { KitchenUser } from "../models/KitchenUser.js";
+import { KitchenIngredient } from "../models/KitchenIngredient.js";
 import { requireAuth } from "../middleware.js";
 import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
 import {
@@ -11,6 +12,13 @@ import {
   handleHouseholdError
 } from "../householdScope.js";
 import { ensureShoppingList, rebuildShoppingList } from "../shoppingService.js";
+import {
+  DEFAULT_CATEGORY_COLOR_BG,
+  DEFAULT_CATEGORY_COLOR_TEXT,
+  DEFAULT_CATEGORY_NAME,
+  DEFAULT_CATEGORY_SLUG,
+  ensureDefaultCategory
+} from "../utils/categoryMatching.js";
 
 const router = express.Router();
 
@@ -28,7 +36,39 @@ async function getActiveTrip(effectiveHouseholdId) {
 
 async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
-  const categories = await Category.find(buildScopedFilter(effectiveHouseholdId, {})).select("_id name");
+
+  const missingCategoryIngredientIds = list.items
+    .filter((item) => !item.categoryId && item.ingredientId)
+    .map((item) => item.ingredientId);
+
+  if (missingCategoryIngredientIds.length) {
+    const ingredientDocs = await KitchenIngredient.find(
+      buildScopedFilter(effectiveHouseholdId, { _id: { $in: missingCategoryIngredientIds } })
+    ).select("_id categoryId");
+    const categoryByIngredientId = new Map(ingredientDocs.map((item) => [String(item._id), item.categoryId || null]));
+    let changed = false;
+    for (const item of list.items) {
+      if (!item.categoryId && item.ingredientId) {
+        const resolvedCategoryId = categoryByIngredientId.get(String(item.ingredientId)) || null;
+        if (resolvedCategoryId) {
+          item.categoryId = resolvedCategoryId;
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      await list.save();
+    }
+  }
+
+  const fallbackCategory = await ensureDefaultCategory({
+    Category,
+    householdId: effectiveHouseholdId
+  });
+
+  const categories = await Category.find(buildScopedFilter(effectiveHouseholdId, {})).select(
+    "_id name slug colorBg colorText"
+  );
   const stores = await Store.find(buildScopedFilter(effectiveHouseholdId, { active: true }))
     .sort({ name: 1 })
     .select("_id name");
@@ -47,7 +87,7 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
   const tripById = new Map(trips.map((trip) => [String(trip._id), trip]));
 
-  const categoryById = new Map(categories.map((category) => [String(category._id), category.name]));
+  const categoryById = new Map(categories.map((category) => [String(category._id), category]));
   const purchaserIds = list.items
     .filter((item) => item.purchasedBy)
     .map((item) => String(item.purchasedBy));
@@ -60,10 +100,19 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
     .filter((item) => item.status === "pending")
     .reduce((acc, item) => {
       const key = item.categoryId ? String(item.categoryId) : "uncategorized";
+      const resolvedCategory = item.categoryId
+        ? categoryById.get(String(item.categoryId)) || null
+        : fallbackCategory || null;
+
       if (!acc.has(key)) {
         acc.set(key, {
-          categoryId: item.categoryId || null,
-          categoryName: item.categoryId ? categoryById.get(String(item.categoryId)) || "Sin categoría" : "Sin categoría",
+          categoryId: resolvedCategory?._id || item.categoryId || null,
+          categoryInfo: {
+            name: resolvedCategory?.name || DEFAULT_CATEGORY_NAME,
+            slug: resolvedCategory?.slug || DEFAULT_CATEGORY_SLUG,
+            colorBg: resolvedCategory?.colorBg || DEFAULT_CATEGORY_COLOR_BG,
+            colorText: resolvedCategory?.colorText || DEFAULT_CATEGORY_COLOR_TEXT
+          },
           items: []
         });
       }
