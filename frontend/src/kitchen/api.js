@@ -1,5 +1,16 @@
 const API = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
+export class ApiRequestError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.path = details.path || "";
+    this.url = details.url || "";
+    this.status = details.status || 0;
+    this.body = details.body || {};
+  }
+}
+
 export function buildApiUrl(path = "") {
   if (!path) return API;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -29,7 +40,8 @@ export async function apiRequest(path, options = {}) {
 
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(buildApiUrl(path), {
+  const url = buildApiUrl(path);
+  const response = await fetch(url, {
     ...options,
     headers
   });
@@ -37,7 +49,12 @@ export async function apiRequest(path, options = {}) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = data?.error || "Error inesperado";
-    throw new Error(message);
+    throw new ApiRequestError(message, {
+      path,
+      url,
+      status: response.status,
+      body: data
+    });
   }
 
   return data;

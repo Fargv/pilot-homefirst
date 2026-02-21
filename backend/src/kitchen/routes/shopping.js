@@ -69,6 +69,24 @@ function toDateGroup(value) {
   return new Date(value).toISOString().slice(0, 10);
 }
 
+function isValidObjectId(value) {
+  return Boolean(value) && /^[a-f\d]{24}$/i.test(String(value));
+}
+
+function normalizeShoppingItemForResponse(item, purchaserById) {
+  const normalized = item.toObject ? item.toObject() : { ...item };
+  return {
+    ...normalized,
+    categoryId: normalized.categoryId || null,
+    storeId: normalized.storeId || null,
+    purchasedBy: normalized.purchasedBy || null,
+    purchasedAt: normalized.purchasedAt || null,
+    purchasedByName: normalized.purchasedBy && isValidObjectId(normalized.purchasedBy)
+      ? purchaserById.get(String(normalized.purchasedBy)) || "Usuario"
+      : null
+  };
+}
+
 async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
 
@@ -98,9 +116,12 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
 
   const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
   const categoryById = new Map(categories.map((category) => [String(category._id), category]));
-  const purchaserIds = list.items
-    .filter((item) => item.purchasedBy)
-    .map((item) => String(item.purchasedBy));
+  const purchaserIds = Array.from(new Set(
+    list.items
+      .map((item) => item.purchasedBy)
+      .filter((value) => isValidObjectId(value))
+      .map((value) => String(value))
+  ));
   const purchasers = purchaserIds.length
     ? await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: purchaserIds } })).select("_id displayName")
     : [];
@@ -126,10 +147,7 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
           items: []
         });
       }
-      acc.get(key).items.push({
-        ...item.toObject(),
-        purchasedByName: item.purchasedBy ? purchaserById.get(String(item.purchasedBy)) || "Usuario" : null
-      });
+      acc.get(key).items.push(normalizeShoppingItemForResponse(item, purchaserById));
       return acc;
     }, new Map());
 
@@ -140,19 +158,19 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
       const storeKey = item.storeId ? String(item.storeId) : "no-store";
       const key = `${dateKey}::${storeKey}`;
       if (!acc.has(key)) {
+        const purchasedByName = item.purchasedBy && isValidObjectId(item.purchasedBy)
+          ? purchaserById.get(String(item.purchasedBy)) || "Usuario"
+          : "Usuario";
         acc.set(key, {
           storeId: item.storeId || null,
           storeName: item.storeId ? storeById.get(String(item.storeId)) || "Supermercado no definido" : "Supermercado no definido",
           purchasedDate: dateKey,
           startedAt: item.purchasedAt,
-          purchasedByName: item.purchasedBy ? purchaserById.get(String(item.purchasedBy)) || "Usuario" : "Usuario",
+          purchasedByName,
           items: []
         });
       }
-      acc.get(key).items.push({
-        ...item.toObject(),
-        purchasedByName: item.purchasedBy ? purchaserById.get(String(item.purchasedBy)) || "Usuario" : null
-      });
+      acc.get(key).items.push(normalizeShoppingItemForResponse(item, purchaserById));
       return acc;
     }, new Map());
 
@@ -187,6 +205,7 @@ router.get("/:weekStart", requireAuth, async (req, res) => {
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
+    logShoppingError("get-list", error, { weekStart: req.params.weekStart, userId: String(req.kitchenUser?._id || "") });
     return res.status(500).json({ ok: false, error: "No se pudo cargar la lista de compra." });
   }
 });

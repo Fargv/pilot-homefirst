@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import KitchenLayout from "../Layout.jsx";
-import { apiRequest } from "../api.js";
+import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
 import { useActiveWeek } from "../weekContext.jsx";
 
@@ -74,8 +74,8 @@ export default function ShoppingPage() {
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const selectedStoreRef = useRef("");
-  const [pendingByCategory, setPendingByCategory] = useState([]);
-  const [purchasedByStoreDay, setPurchasedByStoreDay] = useState([]);
+  const [pendingByCategory, setPendingByCategory] = useState(null);
+  const [purchasedByStoreDay, setPurchasedByStoreDay] = useState(null);
   const [transitioningItemKey, setTransitioningItemKey] = useState(null);
   const [recentlyMovedItemKey, setRecentlyMovedItemKey] = useState(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
@@ -86,6 +86,19 @@ export default function ShoppingPage() {
     setPurchasedByStoreDay(data.purchasedByStoreDay || []);
   };
 
+  const logShoppingApiError = (context, endpoint, err) => {
+    if (err instanceof ApiRequestError) {
+      console.error(`[shopping] ${context} failed`, {
+        endpoint,
+        status: err.status,
+        body: err.body,
+        message: err.message
+      });
+      return;
+    }
+    console.error(`[shopping] ${context} failed`, { endpoint, message: err?.message || err });
+  };
+
   const loadList = async ({ silent = false } = {}) => {
     if (isDiodGlobalMode) return;
     if (!silent) setIsRefreshing(true);
@@ -94,6 +107,9 @@ export default function ShoppingPage() {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
       applyPayload(data);
     } catch (err) {
+      logShoppingApiError("loadList", `/api/kitchen/shopping/${weekStart}`, err);
+      setPendingByCategory(null);
+      setPurchasedByStoreDay(null);
       setError(err.message || "No se pudo cargar la lista.");
     } finally {
       if (!silent) setIsRefreshing(false);
@@ -118,6 +134,7 @@ export default function ShoppingPage() {
       applyPayload(data);
       setSuccess("Lista reconstruida");
     } catch (err) {
+      logShoppingApiError("refreshList", `/api/kitchen/shopping/${weekStart}/rebuild`, err);
       setError(err.message || "No se pudo refrescar la lista.");
     } finally {
       setIsRefreshing(false);
@@ -141,6 +158,7 @@ export default function ShoppingPage() {
       applyPayload(data);
       setRecentlyMovedItemKey(key);
     } catch (err) {
+      logShoppingApiError("setItemStatus", `/api/kitchen/shopping/${weekStart}/item`, err);
       setError(err.message || "No se pudo actualizar.");
     } finally {
       setTransitioningItemKey(null);
@@ -155,6 +173,7 @@ export default function ShoppingPage() {
       });
       applyPayload(data);
     } catch (err) {
+      logShoppingApiError("updatePurchasedItemStore", `/api/kitchen/shopping/${weekStart}/item/store`, err);
       setError(err.message || "No se pudo cambiar el supermercado.");
     }
   };
@@ -168,6 +187,7 @@ export default function ShoppingPage() {
       applyPayload(data);
       setSuccess(data.updated ? "Supermercado asignado" : "No había comprados de hoy sin supermercado");
     } catch (err) {
+      logShoppingApiError("assignStoreToTodayUnassigned", `/api/kitchen/shopping/${weekStart}/purchased/assign-store`, err);
       setError(err.message || "No se pudo asignar supermercado en bloque.");
     }
   };
@@ -183,14 +203,15 @@ export default function ShoppingPage() {
       });
       await loadList({ silent: true });
     } catch (err) {
+      logShoppingApiError("createStoreFromDropdown", "/api/kitchen/shopping/stores", err);
       setError(err.message || "No se pudo crear el supermercado.");
     }
   };
 
-  const pendingCount = useMemo(
-    () => pendingByCategory.reduce((acc, group) => acc + (group.items?.length || 0), 0),
-    [pendingByCategory]
-  );
+  const pendingCount = useMemo(() => {
+    if (!Array.isArray(pendingByCategory)) return null;
+    return pendingByCategory.reduce((acc, group) => acc + (group.items?.length || 0), 0);
+  }, [pendingByCategory]);
 
   if (isDiodGlobalMode) {
     return (
@@ -246,13 +267,15 @@ export default function ShoppingPage() {
         </div>
 
         <div className="kitchen-dishes-tabs" role="tablist" aria-label="Estado de la compra">
-          <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount})</button>
+          <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
           <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
         </div>
 
         {tab === "pending" ? (
           <div className="shopping-categories">
-            {pendingByCategory.length === 0 ? (
+            {!Array.isArray(pendingByCategory) ? (
+              <div className="kitchen-card kitchen-empty"><h4>No se pudo cargar la lista.</h4></div>
+            ) : pendingByCategory.length === 0 ? (
               <div className="kitchen-card kitchen-empty"><h4>No hay pendientes para esta semana.</h4></div>
             ) : pendingByCategory.map((group) => {
               const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
@@ -276,7 +299,9 @@ export default function ShoppingPage() {
           </div>
         ) : (
           <div className="shopping-categories">
-            {purchasedByStoreDay.length === 0 ? (
+            {!Array.isArray(purchasedByStoreDay) ? (
+              <div className="kitchen-card kitchen-empty"><h4>No se pudo cargar la lista.</h4></div>
+            ) : purchasedByStoreDay.length === 0 ? (
               <div className="kitchen-card kitchen-empty"><h4>Aún no hay ingredientes comprados.</h4></div>
             ) : purchasedByStoreDay.map((group) => (
               <div className="kitchen-card shopping-category-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>

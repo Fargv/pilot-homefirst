@@ -91,7 +91,11 @@ export async function resolveShoppingItemIngredientData(items, effectiveHousehol
     const byExistingId = item?.ingredientId ? ingredientById.get(String(item.ingredientId)) : null;
     const byName = normalizedCanonical ? ingredientByCanonical.get(normalizedCanonical) : null;
     const resolved = byExistingId || byName || null;
-    if (!resolved) return item;
+    if (!resolved) {
+      if (item?.categoryId || !fallbackCategoryId) return item;
+      changed = true;
+      return { ...item, categoryId: fallbackCategoryId };
+    }
 
     const next = { ...item };
     if (!next.ingredientId || String(next.ingredientId) !== String(resolved._id)) {
