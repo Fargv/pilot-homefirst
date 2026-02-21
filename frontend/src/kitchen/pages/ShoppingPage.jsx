@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import KitchenLayout from "../Layout.jsx";
 import { apiRequest } from "../api.js";
 import { useAuth } from "../auth";
+import { useActiveWeek } from "../weekContext.jsx";
 
 function ChevronIcon(props) {
   return (
@@ -11,14 +12,6 @@ function ChevronIcon(props) {
   );
 }
 
-function getMondayISO(date = new Date()) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const day = d.getUTCDay();
-  const diff = (day === 0 ? -6 : 1) - day;
-  d.setUTCDate(d.getUTCDate() + diff);
-  return d.toISOString().slice(0, 10);
-}
-
 function addDaysToISO(iso, days) {
   const date = new Date(`${iso}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
@@ -26,8 +19,12 @@ function addDaysToISO(iso, days) {
 }
 
 function normalizeWeekStartInput(value) {
-  if (!value) return getMondayISO();
-  return getMondayISO(new Date(`${value}T00:00:00Z`));
+  if (!value) return "";
+  const d = new Date(`${value}T00:00:00Z`);
+  const day = d.getUTCDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().slice(0, 10);
 }
 
 function formatWeekTitle(iso) {
@@ -65,12 +62,14 @@ function itemKey(item) {
 
 export default function ShoppingPage() {
   const { user } = useAuth();
-  const [weekStart, setWeekStart] = useState(getMondayISO());
+  const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [tab, setTab] = useState("pending");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [stores, setStores] = useState([]);
   const [activeTrip, setActiveTrip] = useState(null);
+  const [activeTripPurchasedCount, setActiveTripPurchasedCount] = useState(0);
   const [pendingByCategory, setPendingByCategory] = useState([]);
   const [purchasedByTrip, setPurchasedByTrip] = useState([]);
   const [transitioningItemKey, setTransitioningItemKey] = useState(null);
@@ -80,6 +79,7 @@ export default function ShoppingPage() {
   const applyPayload = (data) => {
     setStores(data.stores || []);
     setActiveTrip(data.activeTrip || null);
+    setActiveTripPurchasedCount(data.activeTripPurchasedCount || 0);
     setPendingByCategory(data.pendingByCategory || []);
     setPurchasedByTrip(data.purchasedByTrip || []);
   };
@@ -99,13 +99,7 @@ export default function ShoppingPage() {
   };
 
   useEffect(() => {
-    loadList();
-  }, [weekStart, isDiodGlobalMode]);
-
-  useEffect(() => {
-    if (isDiodGlobalMode) return undefined;
-    const pollId = setInterval(() => loadList({ silent: true }), 15000);
-    return () => clearInterval(pollId);
+    void loadList();
   }, [weekStart, isDiodGlobalMode]);
 
   useEffect(() => {
@@ -159,10 +153,29 @@ export default function ShoppingPage() {
     }
   };
 
+  const createStoreFromDropdown = async () => {
+    const name = window.prompt("Nombre del supermercado");
+    if (!name || !name.trim()) return;
+    setError("");
+    try {
+      await apiRequest("/api/kitchen/shopping/stores", {
+        method: "POST",
+        body: JSON.stringify({ name: name.trim() })
+      });
+      await loadList({ silent: true });
+    } catch (err) {
+      setError(err.message || "No se pudo crear el supermercado.");
+    }
+  };
+
+  const canCloseTrip = Boolean(activeTrip) && activeTripPurchasedCount > 0;
+  const closeDisabledReason = canCloseTrip ? "" : "Marca algún ítem para cerrar compra";
+
   const closeTrip = async () => {
-    if (!activeTrip) return;
+    if (!canCloseTrip) return;
     try {
       await apiRequest("/api/kitchen/shopping/trip/active/close", { method: "POST" });
+      setSuccess("Compra guardada");
       await loadList();
     } catch (err) {
       setError(err.message || "No se pudo cerrar la compra.");
@@ -177,100 +190,84 @@ export default function ShoppingPage() {
   if (isDiodGlobalMode) {
     return (
       <KitchenLayout>
-        <div className="kitchen-card">
-          <h3>Selecciona un hogar para ver la lista de la compra</h3>
-          <p className="kitchen-muted">En modo global DIOD no hay lista de compra asociada.</p>
-        </div>
+        <div className="kitchen-card">Selecciona un hogar activo para ver su lista de la compra.</div>
       </KitchenLayout>
     );
   }
 
   return (
     <KitchenLayout>
-      <div className="kitchen-card shopping-header-card">
-        <div className="shopping-header-row">
-          <div>
-            <h3>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h3>
-          </div>
-          <button className="shopping-refresh-icon" onClick={refreshList} title="Refrescar" disabled={isRefreshing}>↻</button>
-        </div>
-
-        <div className="shopping-week-nav" role="group" aria-label="Cambiar semana de la lista de la compra">
-          <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, -7))}>
-            <ChevronIcon className="shopping-week-arrow-icon" />
-          </button>
-          <input className="kitchen-input" type="date" value={weekStart} onChange={(event) => setWeekStart(normalizeWeekStartInput(event.target.value))} />
-          <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, 7))}>
-            <ChevronIcon className="shopping-week-arrow-icon is-next" />
-          </button>
-        </div>
-
-        <div className="shopping-toolbar">
-          <select
-            className="kitchen-select"
-            value={activeTrip?.storeId || ""}
-            onChange={(event) => updateTrip({ storeId: event.target.value || null, totalAmount: activeTrip?.totalAmount ?? null })}
-          >
-            <option value="">Supermercado (opcional)</option>
-            {stores.map((store) => (
-              <option key={store._id} value={store._id}>{store.name}</option>
-            ))}
-          </select>
-          <input
-            className="kitchen-input"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="Importe total €"
-            value={activeTrip?.totalAmount ?? ""}
-            onChange={(event) => updateTrip({ storeId: activeTrip?.storeId || null, totalAmount: event.target.value })}
-          />
-          {activeTrip ? (
-            <button className="kitchen-button secondary" onClick={closeTrip}>Cerrar compra</button>
-          ) : null}
-        </div>
-
-        <div className="shopping-tabs">
-          <button className={`shopping-tab ${tab === "pending" ? "active" : ""}`} onClick={() => setTab("pending")}>🛒 Pendiente ({pendingCount})</button>
-          <button className={`shopping-tab ${tab === "purchased" ? "active" : ""}`} onClick={() => setTab("purchased")}>✅ Comprado</button>
-        </div>
-
-        {error ? <div style={{ color: "#b42318", marginTop: 8 }}>{error}</div> : null}
-      </div>
-
-      {tab === "pending" ? (
-        <div className="shopping-categories">
-          {pendingByCategory.length === 0 ? (
-            <div className="kitchen-card kitchen-empty">
-              <h4>No hay pendientes para esta semana.</h4>
+      <div className="kitchen-stack-lg">
+        <div className="kitchen-card shopping-header-card">
+          <div className="shopping-header-row">
+            <div>
+              <h3>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h3>
+              <p className="kitchen-muted">Marca productos y cierra cada compra para registrar los tickets.</p>
             </div>
-          ) : (
-            pendingByCategory.map((group) => {
-              const category = {
-                name: group.categoryInfo?.name || "Sin categoría",
-                ...slugColor(group.categoryInfo?.slug),
-                ...group.categoryInfo
-              };
+            <button className="kitchen-button secondary" type="button" onClick={refreshList} disabled={isRefreshing}>Refrescar</button>
+          </div>
 
+          <div className="shopping-week-nav">
+            <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, -7))}><ChevronIcon className="shopping-week-arrow-icon" /></button>
+            <input className="kitchen-input" type="date" value={weekStart} onChange={(event) => setWeekStart(normalizeWeekStartInput(event.target.value))} />
+            <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, 7))}><ChevronIcon className="shopping-week-arrow-icon is-next" /></button>
+          </div>
+
+          <div className="shopping-toolbar">
+            <select
+              className="kitchen-select"
+              value={activeTrip?.storeId || ""}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (value === "__add__") {
+                  void createStoreFromDropdown();
+                  return;
+                }
+                void updateTrip({ storeId: value || null, totalAmount: activeTrip?.totalAmount ?? null });
+              }}
+            >
+              <option value="">Supermercado (opcional)</option>
+              {stores.map((store) => (
+                <option key={store._id} value={store._id}>{store.name}</option>
+              ))}
+              <option value="__add__">Añadir supermercado…</option>
+            </select>
+            <input
+              className="kitchen-input"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Importe total €"
+              value={activeTrip?.totalAmount ?? ""}
+              onChange={(event) => updateTrip({ storeId: activeTrip?.storeId || null, totalAmount: event.target.value })}
+            />
+            <button className="kitchen-button secondary" onClick={closeTrip} disabled={!canCloseTrip} title={closeDisabledReason}>Cerrar compra</button>
+          </div>
+          {!canCloseTrip ? <p className="kitchen-muted">Marca algún ítem para cerrar compra.</p> : null}
+          {success ? <div className="kitchen-alert success">{success}</div> : null}
+          {error ? <div className="kitchen-alert error">{error}</div> : null}
+        </div>
+
+        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Estado de la compra">
+          <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount})</button>
+          <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+        </div>
+
+        {tab === "pending" ? (
+          <div className="shopping-categories">
+            {pendingByCategory.length === 0 ? (
+              <div className="kitchen-card kitchen-empty"><h4>No hay pendientes para esta semana.</h4></div>
+            ) : pendingByCategory.map((group) => {
+              const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
               return (
-                <div
-                  className="kitchen-card shopping-category-card"
-                  key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name}
-                  style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}
-                >
-                  <div className="shopping-category-head">
-                    <h4>{category.name.toUpperCase()}</h4>
-                    <span className="shopping-category-count">{group.items.length} items</span>
-                  </div>
+                <div className="kitchen-card shopping-category-card" key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name} style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}>
+                  <div className="shopping-category-head"><h4>{category.name.toUpperCase()}</h4><span className="shopping-category-count">{group.items.length} items</span></div>
                   <div className="shopping-items-list">
                     {group.items.map((item) => {
                       const key = itemKey(item);
-                      const leaving = transitioningItemKey === key;
                       return (
-                        <div className={`shopping-item ${leaving ? "is-leaving" : ""}`} key={key}>
-                          <button className="shopping-check" type="button" onClick={() => setItemStatus(item, "purchased")} aria-label={`Marcar ${item.displayName}`}>
-                            <span className="shopping-check-dot">✓</span>
-                          </button>
+                        <div className={`shopping-item ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
+                          <button className="shopping-check" type="button" onClick={() => setItemStatus(item, "purchased")}><span className="shopping-check-dot">✓</span></button>
                           <span className="shopping-item-text">{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
                         </div>
                       );
@@ -278,42 +275,31 @@ export default function ShoppingPage() {
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
-      ) : (
-        <div className="shopping-categories">
-          {purchasedByTrip.length === 0 ? (
-            <div className="kitchen-card kitchen-empty">
-              <h4>Aún no hay ingredientes comprados.</h4>
-            </div>
-          ) : (
-            purchasedByTrip.map((trip) => (
+            })}
+          </div>
+        ) : (
+          <div className="shopping-categories">
+            {purchasedByTrip.length === 0 ? (
+              <div className="kitchen-card kitchen-empty"><h4>Aún no hay ingredientes comprados.</h4></div>
+            ) : purchasedByTrip.map((trip) => (
               <div className="kitchen-card shopping-category-card" key={trip.tripId || `trip-${trip.startedAt}`}>
                 <h4>{trip.storeName} · {formatTripDate(trip.startedAt)} {trip.totalAmount !== null ? `· ${formatAmount(trip.totalAmount)}` : ""}</h4>
                 <div className="shopping-items-list">
                   {trip.items.map((item) => {
                     const key = itemKey(item);
-                    const returning = transitioningItemKey === key;
-                    const entering = recentlyMovedItemKey === key;
                     return (
-                      <div className={`shopping-item purchased ${returning ? "is-leaving" : ""} ${entering ? "is-entering" : ""}`} key={key}>
-                        <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")} aria-label={`Desmarcar ${item.displayName}`}>
-                          <span className="shopping-check-dot">✓</span>
-                        </button>
-                        <span className="shopping-item-text">
-                          {item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}
-                          <small className="kitchen-muted"> · marcado por {item.purchasedByName || "Usuario"} {item.purchasedAt ? new Date(item.purchasedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}</small>
-                        </span>
+                      <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
+                        <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
+                        <span className="shopping-item-text">{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
                       </div>
                     );
                   })}
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </KitchenLayout>
   );
 }

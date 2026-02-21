@@ -18,6 +18,9 @@ export default function SettingsPage() {
   const [categories, setCategories] = useState([]);
   const [categoryName, setCategoryName] = useState("");
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [masterStores, setMasterStores] = useState([]);
+  const [storesLoading, setStoresLoading] = useState(false);
+  const [storeName, setStoreName] = useState("");
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
@@ -45,6 +48,22 @@ export default function SettingsPage() {
     }
   };
 
+  const loadMasterStores = async () => {
+    if (!isDiod) {
+      setMasterStores([]);
+      return;
+    }
+    setStoresLoading(true);
+    try {
+      const data = await apiRequest("/api/kitchen/shopping/stores/master");
+      setMasterStores(data.stores || []);
+    } catch (err) {
+      setError(err.message || "No se pudieron cargar los supermercados master.");
+    } finally {
+      setStoresLoading(false);
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
     setError("");
@@ -68,7 +87,7 @@ export default function SettingsPage() {
         setHouseholdCode("");
       }
 
-      await loadCategories();
+      await Promise.all([loadCategories(), loadMasterStores()]);
     } catch (err) {
       setError(err.message || "No se pudo cargar la configuración del hogar.");
     } finally {
@@ -172,7 +191,7 @@ export default function SettingsPage() {
       });
       setCategoryName("");
       setSuccess("Categoría guardada correctamente.");
-      await loadCategories();
+      await Promise.all([loadCategories(), loadMasterStores()]);
     } catch (err) {
       setError(err.message || "No se pudo crear la categoría.");
     }
@@ -194,7 +213,7 @@ export default function SettingsPage() {
         })
       });
       setSuccess("Categoría actualizada correctamente.");
-      await loadCategories();
+      await Promise.all([loadCategories(), loadMasterStores()]);
     } catch (err) {
       setError(err.message || "No se pudo actualizar la categoría.");
     }
@@ -208,9 +227,70 @@ export default function SettingsPage() {
     try {
       await apiRequest(`/api/categories/${category._id}`, { method: "DELETE" });
       setSuccess("Categoría eliminada correctamente.");
-      await loadCategories();
+      await Promise.all([loadCategories(), loadMasterStores()]);
     } catch (err) {
       setError(err.message || "No se pudo eliminar la categoría.");
+    }
+  };
+
+  const createMasterStore = async () => {
+    const safeName = storeName.trim();
+    if (!safeName) return;
+    setError("");
+    setSuccess("");
+    try {
+      await apiRequest("/api/kitchen/shopping/stores/master", {
+        method: "POST",
+        body: JSON.stringify({ name: safeName })
+      });
+      setStoreName("");
+      setSuccess("Supermercado master guardado.");
+      await loadMasterStores();
+    } catch (err) {
+      setError(err.message || "No se pudo guardar el supermercado master.");
+    }
+  };
+
+  const editMasterStore = async (store) => {
+    const nextName = window.prompt("Nombre del supermercado", store.name || "");
+    if (!nextName || !nextName.trim()) return;
+    setError("");
+    try {
+      await apiRequest(`/api/kitchen/shopping/stores/master/${store._id}`, {
+        method: "PUT",
+        body: JSON.stringify({ name: nextName.trim() })
+      });
+      await loadMasterStores();
+    } catch (err) {
+      setError(err.message || "No se pudo actualizar el supermercado.");
+    }
+  };
+
+  const archiveMasterStore = async (store) => {
+    if (!window.confirm(`¿Archivar ${store.name}?`)) return;
+    setError("");
+    try {
+      await apiRequest(`/api/kitchen/shopping/stores/master/${store._id}`, { method: "DELETE" });
+      await loadMasterStores();
+    } catch (err) {
+      setError(err.message || "No se pudo archivar el supermercado.");
+    }
+  };
+
+  const moveMasterStore = async (store, direction) => {
+    const sorted = [...masterStores];
+    const index = sorted.findIndex((item) => item._id === store._id);
+    const targetIndex = index + direction;
+    if (index < 0 || targetIndex < 0 || targetIndex >= sorted.length) return;
+    [sorted[index], sorted[targetIndex]] = [sorted[targetIndex], sorted[index]];
+    try {
+      await Promise.all(sorted.map((item, idx) => apiRequest(`/api/kitchen/shopping/stores/master/${item._id}`, {
+        method: "PUT",
+        body: JSON.stringify({ order: idx + 1 })
+      })));
+      await loadMasterStores();
+    } catch (err) {
+      setError(err.message || "No se pudo reordenar.");
     }
   };
 
@@ -337,6 +417,42 @@ export default function SettingsPage() {
                   </li>
                 ))}
                 {categories.length === 0 ? <li className="kitchen-muted">No hay categorías disponibles.</li> : null}
+              </ul>
+            ) : null}
+          </>
+        ) : null}
+
+
+        {isDiod ? (
+          <>
+            <h3>Supermercados (master)</h3>
+            <div className="kitchen-actions">
+              <input
+                type="text"
+                className="kitchen-input"
+                placeholder="Nombre de supermercado"
+                value={storeName}
+                onChange={(event) => setStoreName(event.target.value)}
+              />
+              <button type="button" className="kitchen-button" onClick={createMasterStore} disabled={!storeName.trim()}>
+                Añadir supermercado
+              </button>
+            </div>
+            {storesLoading ? <p className="kitchen-muted">Cargando supermercados...</p> : null}
+            {!storesLoading ? (
+              <ul className="kitchen-list">
+                {masterStores.map((store) => (
+                  <li key={store._id}>
+                    <strong>{store.name}</strong> <span className="kitchen-muted">#{store.order ?? "-"} · {store.active ? "activo" : "archivado"}</span>
+                    <div className="kitchen-actions" style={{ marginTop: 8 }}>
+                      <button type="button" className="kitchen-button secondary" onClick={() => moveMasterStore(store, -1)}>↑</button>
+                      <button type="button" className="kitchen-button secondary" onClick={() => moveMasterStore(store, 1)}>↓</button>
+                      <button type="button" className="kitchen-button secondary" onClick={() => editMasterStore(store)}>Editar</button>
+                      <button type="button" className="kitchen-button secondary" onClick={() => archiveMasterStore(store)}>Archivar</button>
+                    </div>
+                  </li>
+                ))}
+                {masterStores.length === 0 ? <li className="kitchen-muted">No hay supermercados master.</li> : null}
               </ul>
             ) : null}
           </>

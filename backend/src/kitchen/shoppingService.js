@@ -59,13 +59,34 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
   }
 
   const ingredientIds = Array.from(merged.values()).map((item) => item.ingredientId).filter(Boolean);
-  if (ingredientIds.length) {
-    const ingredientDocs = await KitchenIngredient.find(
-      buildScopedFilter(effectiveHouseholdId, { _id: { $in: ingredientIds } })
-    ).select("_id categoryId");
-    const categoryByIngredientId = new Map(ingredientDocs.map((item) => [String(item._id), item.categoryId || null]));
-    for (const item of merged.values()) {
-      if (item.ingredientId) item.categoryId = categoryByIngredientId.get(String(item.ingredientId)) || null;
+  const unresolvedByCanonical = Array.from(merged.values())
+    .filter((item) => !item.ingredientId && item.canonicalName)
+    .map((item) => item.canonicalName);
+
+  const ingredientFilters = [
+    ...(ingredientIds.length ? [{ _id: { $in: ingredientIds } }] : []),
+    ...(unresolvedByCanonical.length ? [{ canonicalName: { $in: unresolvedByCanonical } }] : [])
+  ];
+  const ingredientDocs = ingredientFilters.length
+    ? await KitchenIngredient.find(buildScopedFilter(effectiveHouseholdId, { $or: ingredientFilters }))
+        .select("_id canonicalName categoryId")
+    : [];
+
+  const categoryByIngredientId = new Map(ingredientDocs.map((item) => [String(item._id), item.categoryId || null]));
+  const ingredientByCanonical = new Map(ingredientDocs.map((item) => [item.canonicalName, item]));
+
+  for (const item of merged.values()) {
+    if (!item.ingredientId && item.canonicalName) {
+      const resolved = ingredientByCanonical.get(item.canonicalName) || null;
+      if (resolved) {
+        item.ingredientId = resolved._id;
+      } else {
+        console.warn(`[shopping] ingredientId no resuelto para canonicalName="${item.canonicalName}" household=${effectiveHouseholdId}`);
+      }
+    }
+
+    if (item.ingredientId) {
+      item.categoryId = categoryByIngredientId.get(String(item.ingredientId)) || null;
     }
   }
 

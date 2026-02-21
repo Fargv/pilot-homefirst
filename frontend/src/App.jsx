@@ -15,6 +15,7 @@ import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
 import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
 import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
 import "./kitchen/kitchen.css";
+import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 
 function HomeRedirect() {
   const { user, loading } = useAuth();
@@ -74,6 +75,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ActiveWeekProvider>
         <BootstrapRedirect />
         <Routes>
           <Route path="/" element={<HomeRedirect />} />
@@ -143,6 +145,7 @@ export default function App() {
           />
           <Route path="*" element={<HomeRedirect />} />
         </Routes>
+        </ActiveWeekProvider>
       </AuthProvider>
     </BrowserRouter>
   );

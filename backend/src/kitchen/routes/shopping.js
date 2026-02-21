@@ -4,7 +4,8 @@ import { Store } from "../models/Store.js";
 import { ShoppingTrip } from "../models/ShoppingTrip.js";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { KitchenIngredient } from "../models/KitchenIngredient.js";
-import { requireAuth } from "../middleware.js";
+import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
+import { requireAuth, requireDiod } from "../middleware.js";
 import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
 import {
   buildScopedFilter,
@@ -21,6 +22,20 @@ import {
 } from "../utils/categoryMatching.js";
 
 const router = express.Router();
+const AUTO_CLOSE_MS = 2 * 60 * 60 * 1000;
+
+function normalizeStoreName(value = "") {
+  return String(value).trim().toLowerCase();
+}
+
+function sortStores(stores = []) {
+  return [...stores].sort((a, b) => {
+    const orderA = Number.isFinite(a.order) ? a.order : Number.POSITIVE_INFINITY;
+    const orderB = Number.isFinite(b.order) ? b.order : Number.POSITIVE_INFINITY;
+    if (orderA !== orderB) return orderA - orderB;
+    return String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base" });
+  });
+}
 
 function normalizeAmount(value) {
   if (value === null || value === undefined || value === "") return null;
@@ -32,6 +47,36 @@ async function getActiveTrip(effectiveHouseholdId) {
   return ShoppingTrip.findOne(
     buildScopedFilter(effectiveHouseholdId, { closedAt: null })
   ).sort({ startedAt: -1 });
+}
+
+async function autoCloseExpiredTrip(effectiveHouseholdId) {
+  const trip = await getActiveTrip(effectiveHouseholdId);
+  if (!trip) return null;
+  const isExpired = Date.now() - new Date(trip.startedAt).getTime() > AUTO_CLOSE_MS;
+  if (!isExpired) return trip;
+  trip.closedAt = new Date();
+  await trip.save();
+  return null;
+}
+
+async function ensureActiveTrip(effectiveHouseholdId, userId) {
+  const current = await autoCloseExpiredTrip(effectiveHouseholdId);
+  if (current) return current;
+  return ShoppingTrip.create({
+    householdId: effectiveHouseholdId,
+    createdBy: userId,
+    startedAt: new Date()
+  });
+}
+
+function buildStoreVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
+  return {
+    ...extraFilter,
+    $or: [
+      { scope: "master", householdId: null },
+      { scope: "household", householdId: effectiveHouseholdId }
+    ]
+  };
 }
 
 async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
@@ -69,10 +114,12 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   const categories = await Category.find(buildScopedFilter(effectiveHouseholdId, {})).select(
     "_id name slug colorBg colorText"
   );
-  const stores = await Store.find(buildScopedFilter(effectiveHouseholdId, { active: true }))
-    .sort({ name: 1 })
-    .select("_id name");
-  const activeTrip = await getActiveTrip(effectiveHouseholdId);
+  const stores = sortStores(
+    await Store.find(buildStoreVisibilityFilter(effectiveHouseholdId, { active: true }))
+      .select("_id name order scope householdId")
+      .lean()
+  );
+  const activeTrip = await autoCloseExpiredTrip(effectiveHouseholdId);
 
   const purchasedTripIds = list.items
     .filter((item) => item.tripId)
@@ -148,6 +195,9 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
     list,
     stores,
     activeTrip,
+    activeTripPurchasedCount: activeTrip
+      ? list.items.filter((item) => item.status === "purchased" && item.tripId && String(item.tripId) === String(activeTrip._id)).length
+      : 0,
     pendingByCategory: Array.from(pendingByCategory.values()),
     purchasedByTrip: Array.from(purchasedByTrip.values()).sort(
       (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
@@ -214,7 +264,7 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
     const normalizedStatus = status === "purchased" ? "purchased" : "pending";
     item.status = normalizedStatus;
     if (normalizedStatus === "purchased") {
-      const activeTrip = await getActiveTrip(effectiveHouseholdId);
+      const activeTrip = await ensureActiveTrip(effectiveHouseholdId, req.kitchenUser._id);
       item.purchasedBy = req.kitchenUser._id;
       item.purchasedAt = new Date();
       item.tripId = activeTrip?._id || null;
@@ -239,11 +289,11 @@ router.post("/stores", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const name = String(req.body?.name || "").trim();
     if (!name) return res.status(400).json({ ok: false, error: "Debes indicar un nombre." });
-    const canonicalName = name.toLowerCase();
+    const canonicalName = normalizeStoreName(name);
 
     const store = await Store.findOneAndUpdate(
-      buildScopedFilter(effectiveHouseholdId, { canonicalName }),
-      { $setOnInsert: { householdId: effectiveHouseholdId, name, canonicalName } },
+      { scope: "household", householdId: effectiveHouseholdId, canonicalName },
+      { $setOnInsert: { scope: "household", householdId: effectiveHouseholdId, name, canonicalName } },
       { new: true, upsert: true }
     );
 
@@ -255,13 +305,71 @@ router.post("/stores", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/stores/master", requireAuth, requireDiod, async (req, res) => {
+  const stores = sortStores(
+    await Store.find({ scope: "master", householdId: null }).select("_id name canonicalName active order scope")
+  );
+  return res.json({ ok: true, stores });
+});
+
+router.post("/stores/master", requireAuth, requireDiod, async (req, res) => {
+  const name = String(req.body?.name || "").trim();
+  if (!name) return res.status(400).json({ ok: false, error: "Debes indicar un nombre." });
+  const canonicalName = normalizeStoreName(name);
+  const requestedOrder = Number(req.body?.order);
+
+  const store = await Store.findOneAndUpdate(
+    { scope: "master", householdId: null, canonicalName },
+    {
+      $set: {
+        name,
+        canonicalName,
+        active: req.body?.active !== false,
+        order: Number.isFinite(requestedOrder) ? requestedOrder : null,
+        scope: "master",
+        householdId: null
+      }
+    },
+    { new: true, upsert: true }
+  );
+  return res.status(201).json({ ok: true, store });
+});
+
+router.put("/stores/master/:storeId", requireAuth, requireDiod, async (req, res) => {
+  const store = await Store.findOne({ _id: req.params.storeId, scope: "master", householdId: null });
+  if (!store) return res.status(404).json({ ok: false, error: "Supermercado no encontrado." });
+
+  if (req.body?.name !== undefined) {
+    const name = String(req.body.name || "").trim();
+    if (!name) return res.status(400).json({ ok: false, error: "Nombre inválido." });
+    store.name = name;
+    store.canonicalName = normalizeStoreName(name);
+  }
+  if (req.body?.active !== undefined) store.active = Boolean(req.body.active);
+  if (req.body?.order !== undefined) {
+    const requestedOrder = Number(req.body.order);
+    store.order = Number.isFinite(requestedOrder) ? requestedOrder : null;
+  }
+
+  await store.save();
+  return res.json({ ok: true, store });
+});
+
+router.delete("/stores/master/:storeId", requireAuth, requireDiod, async (req, res) => {
+  const store = await Store.findOne({ _id: req.params.storeId, scope: "master", householdId: null });
+  if (!store) return res.status(404).json({ ok: false, error: "Supermercado no encontrado." });
+  store.active = false;
+  await store.save();
+  return res.json({ ok: true, store });
+});
+
 router.put("/trip/active", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const storeId = req.body?.storeId || null;
     const totalAmount = normalizeAmount(req.body?.totalAmount);
 
-    let trip = await getActiveTrip(effectiveHouseholdId);
+    let trip = await autoCloseExpiredTrip(effectiveHouseholdId);
     if (!trip && (storeId || totalAmount !== null)) {
       trip = await ShoppingTrip.create({
         householdId: effectiveHouseholdId,
@@ -289,6 +397,13 @@ router.post("/trip/active/close", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const trip = await getActiveTrip(effectiveHouseholdId);
     if (!trip) return res.status(404).json({ ok: false, error: "No hay compra activa." });
+
+    const openList = await KitchenShoppingList.findOne(
+      buildScopedFilter(effectiveHouseholdId, { "items.tripId": trip._id, "items.status": "purchased" })
+    );
+    if (!openList) {
+      return res.status(400).json({ ok: false, error: "Marca algún ítem para cerrar compra." });
+    }
 
     trip.closedAt = new Date();
     await trip.save();

@@ -8,6 +8,7 @@ import DishModal from "../components/DishModal.jsx";
 import KitchenLayout from "../Layout.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { getUserColor } from "../utils/userColors";
+import { useActiveWeek } from "../weekContext.jsx";
 
 const DAY_CARD_STYLES = [
   { background: "#eef2ff", color: "#1f2a60" },
@@ -99,7 +100,7 @@ function mergeIngredientLists(...lists) {
 export default function WeekPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [weekStart, setWeekStart] = useState(getMondayISO());
+  const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [plan, setPlan] = useState(null);
   const [dishes, setDishes] = useState([]);
   const [sideDishes, setSideDishes] = useState([]);
