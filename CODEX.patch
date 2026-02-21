@@ -1,1852 +1,1046 @@
-diff --git a/backend/src/kitchen/routes/admin.js b/backend/src/kitchen/routes/admin.js
-index ffa0fd95e425ff0e0d3ec6abc3cd175df0e289b3..31a85194f47e59bba5a57697874eb54a038f997f 100644
---- a/backend/src/kitchen/routes/admin.js
-+++ b/backend/src/kitchen/routes/admin.js
-@@ -1,89 +1,107 @@
- import express from "express";
+diff --git a/backend/src/kitchen/models/KitchenShoppingList.js b/backend/src/kitchen/models/KitchenShoppingList.js
+index d20e5ffc1104ec424f7c31326a8829bdb68d004d..b6f3dae4895d85cd92e57908b5cff5a4d60105ac 100644
+--- a/backend/src/kitchen/models/KitchenShoppingList.js
++++ b/backend/src/kitchen/models/KitchenShoppingList.js
+@@ -1,26 +1,35 @@
  import mongoose from "mongoose";
- import { requireAuth, requireDiod } from "../middleware.js";
- import { Household } from "../models/Household.js";
+ 
+ const ShoppingItemSchema = new mongoose.Schema(
+   {
++    ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient", default: null },
++    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", default: null },
+     displayName: { type: String, required: true, trim: true },
+     canonicalName: { type: String, required: true, index: true },
+-    status: { type: String, enum: ["need", "have", "bought"], default: "need" }
++    quantity: { type: Number, default: null },
++    unit: { type: String, default: null },
++    occurrences: { type: Number, default: 1 },
++    fromDishes: { type: [mongoose.Schema.Types.ObjectId], ref: "KitchenDish", default: [] },
++    status: { type: String, enum: ["pending", "purchased"], default: "pending" },
++    purchasedBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },
++    purchasedAt: { type: Date, default: null },
++    tripId: { type: mongoose.Schema.Types.ObjectId, ref: "ShoppingTrip", default: null }
+   },
+   { _id: false }
+ );
+ 
+ const KitchenShoppingListSchema = new mongoose.Schema(
+   {
+-    weekStart: { type: Date, required: true },
+-    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true },
++    weekStart: { type: Date, required: true },
++    householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true },
+     items: { type: [ShoppingItemSchema], default: [] }
+   },
+   { timestamps: true }
+ );
+ 
+-KitchenShoppingListSchema.index(
+-  { householdId: 1, weekStart: 1 },
+-  { unique: true, partialFilterExpression: { householdId: { $exists: true } } }
+-);
+-
++KitchenShoppingListSchema.index(
++  { householdId: 1, weekStart: 1 },
++  { unique: true, partialFilterExpression: { householdId: { $exists: true } } }
++);
++
+ export const KitchenShoppingList = mongoose.model("KitchenShoppingList", KitchenShoppingListSchema);
+diff --git a/backend/src/kitchen/routes/shopping.js b/backend/src/kitchen/routes/shopping.js
+index ed1653185d5ce3a83831c2d0e10242d8e151c5bd..ffbf44fa68680776e5a24beb25ffdf0925ed6224 100644
+--- a/backend/src/kitchen/routes/shopping.js
++++ b/backend/src/kitchen/routes/shopping.js
+@@ -1,138 +1,255 @@
+ import express from "express";
+-import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
+-import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
+-import { KitchenDish } from "../models/KitchenDish.js";
++import { Category } from "../models/Category.js";
++import { Store } from "../models/Store.js";
++import { ShoppingTrip } from "../models/ShoppingTrip.js";
++import { KitchenUser } from "../models/KitchenUser.js";
+ import { requireAuth } from "../middleware.js";
+ import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
+-import { combineDayIngredients } from "../utils/ingredients.js";
+-import {
+-  buildScopedFilter,
+-  getEffectiveHouseholdId,
+-  handleHouseholdError
+-} from "../householdScope.js";
++import {
++  buildScopedFilter,
++  getEffectiveHouseholdId,
++  handleHouseholdError
++} from "../householdScope.js";
++import { ensureShoppingList, rebuildShoppingList } from "../shoppingService.js";
  
  const router = express.Router();
  
--function normalizeActiveHouseholdIdInput(rawHouseholdId) {
--  if (rawHouseholdId === null || rawHouseholdId === "") return null;
--  if (typeof rawHouseholdId === "undefined") return undefined;
--  return rawHouseholdId;
--}
-+function normalizeActiveHouseholdIdInput(body = {}) {
-+  const hasActiveHouseholdId = Object.prototype.hasOwnProperty.call(body, "activeHouseholdId");
-+  const hasHouseholdId = Object.prototype.hasOwnProperty.call(body, "householdId");
-+
-+  if (!hasActiveHouseholdId && !hasHouseholdId) return undefined;
-+
-+  const rawHouseholdId = hasActiveHouseholdId ? body.activeHouseholdId : body.householdId;
-+  if (rawHouseholdId === null || rawHouseholdId === "") return null;
-+  if (typeof rawHouseholdId === "undefined") return undefined;
-+  return rawHouseholdId;
-+}
+-async function ensureShoppingList(weekStartDate, effectiveHouseholdId) {
+-  const existing = await KitchenShoppingList.findOne(
+-    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
+-  );
+-  if (existing) return existing;
+-  return KitchenShoppingList.create({
+-    weekStart: weekStartDate,
+-    items: [],
+-    householdId: effectiveHouseholdId
+-  });
++function normalizeAmount(value) {
++  if (value === null || value === undefined || value === "") return null;
++  const parsed = Number(value);
++  return Number.isFinite(parsed) ? parsed : null;
+ }
  
- router.get("/households", requireAuth, requireDiod, async (req, res) => {
-   try {
-     const households = await Household.find({}, { name: 1 }).sort({ createdAt: 1 }).lean();
-     return res.json({
-       ok: true,
-       households: households.map((household) => ({
-         id: household._id,
-         name: household.name,
-         isActive: String(household._id) === String(req.kitchenUser.activeHouseholdId || "")
-       })),
-       activeHouseholdId: req.kitchenUser.activeHouseholdId || null
-     });
-   } catch (error) {
-     return res.status(500).json({ ok: false, error: "No se pudieron cargar los hogares." });
-   }
- });
- 
--async function setActiveHousehold(req, res) {
-+async function setActiveHousehold(req, res) {
-   try {
--    const householdId = normalizeActiveHouseholdIdInput(req.body?.householdId);
+-async function buildFromWeek(weekStartDate, effectiveHouseholdId) {
+-  const plan = await KitchenWeekPlan.findOne(
+-    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
+-  );
+-  if (!plan) return [];
 -
--    if (householdId === undefined) {
--      return res.status(400).json({ ok: false, error: "Debes enviar householdId (string o null)." });
--    }
-+    if (!req.kitchenUser) {
-+      return res.status(401).json({ ok: false, error: "No hay sesión activa." });
-+    }
-+
-+    const householdId = normalizeActiveHouseholdIdInput(req.body || {});
-+
-+    if (householdId === undefined) {
-+      return res.status(400).json({
-+        ok: false,
-+        error: "Debes enviar activeHouseholdId (string válido, null o \"\")."
-+      });
-+    }
- 
-     if (householdId === null) {
-       req.kitchenUser.activeHouseholdId = null;
-       await req.kitchenUser.save();
-       return res.json({ ok: true, activeHouseholdId: null });
-     }
- 
--    if (!householdId || !mongoose.isValidObjectId(householdId)) {
--      return res.status(400).json({ ok: false, error: "householdId no es válido." });
-+    if (typeof householdId !== "string" || !mongoose.isValidObjectId(householdId)) {
-+      return res.status(400).json({ ok: false, error: "activeHouseholdId no es válido." });
-     }
- 
-     const household = await Household.findById(householdId);
-     if (!household) {
-       return res.status(404).json({ ok: false, error: "El hogar no existe." });
-     }
- 
-     req.kitchenUser.activeHouseholdId = household._id;
-     await req.kitchenUser.save();
- 
-     return res.json({
-       ok: true,
-       activeHouseholdId: req.kitchenUser.activeHouseholdId
-     });
-   } catch (error) {
-+    console.error("[kitchen/admin] setActiveHousehold failed", {
-+      userId: req.kitchenUser?._id?.toString?.(),
-+      body: req.body,
-+      error
-+    });
-     return res.status(500).json({ ok: false, error: "No se pudo cambiar el hogar activo." });
-   }
--}
+-  const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
+-  const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } }));
+-  const dishMap = new Map(dishes.map((dish) => [dish._id.toString(), dish]));
+-
+-  const ingredients = [];
+-  plan.days.forEach((day) => {
+-    const main = day.mainDishId ? dishMap.get(day.mainDishId.toString()) : null;
+-    const side = day.sideDishId ? dishMap.get(day.sideDishId.toString()) : null;
+-    ingredients.push(
+-      ...combineDayIngredients({
+-        mainDish: main,
+-        sideDish: side,
+-        overrides: day.ingredientOverrides
+-      })
+-    );
+-  });
+-
+-  return ingredients;
++async function getActiveTrip(effectiveHouseholdId) {
++  return ShoppingTrip.findOne(
++    buildScopedFilter(effectiveHouseholdId, { closedAt: null })
++  ).sort({ startedAt: -1 });
 +}
- 
- router.post("/active-household", requireAuth, requireDiod, setActiveHousehold);
- router.put("/active-household", requireAuth, requireDiod, setActiveHousehold);
- 
- 
- router.delete("/active-household", requireAuth, requireDiod, async (req, res) => {
-   try {
-     req.kitchenUser.activeHouseholdId = null;
-     await req.kitchenUser.save();
- 
-     return res.json({ ok: true, activeHouseholdId: null });
-   } catch (error) {
-     return res.status(500).json({ ok: false, error: "No se pudo limpiar el hogar activo." });
-   }
- });
- 
- router.get("/active-household", requireAuth, async (req, res) => {
-   try {
-     if (req.kitchenUser.globalRole === "diod") {
-       return res.json({ ok: true, activeHouseholdId: req.kitchenUser.activeHouseholdId || null });
-     }
- 
-     return res.json({ ok: true, activeHouseholdId: req.kitchenUser.householdId || null });
-   } catch (error) {
-     return res.status(500).json({ ok: false, error: "No se pudo obtener el hogar activo." });
-diff --git a/frontend/src/kitchen/Layout.jsx b/frontend/src/kitchen/Layout.jsx
-index 5cb53bacfaba3af859f6a274c49667fe51be2b88..9f09611e762423d24afe97ed411eb7bedf13e6df 100644
---- a/frontend/src/kitchen/Layout.jsx
-+++ b/frontend/src/kitchen/Layout.jsx
-@@ -71,159 +71,165 @@ function UserIcon(props) {
- 
- function ChevronDownIcon(props) {
-   return (
-     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-       <path d="m6 9l6 6l6-6" />
-     </svg>
-   );
- }
- 
- function getFirstName(displayName = "") {
-   return String(displayName).trim().split(/\s+/)[0] || "";
- }
- 
- function getInitials(name = "") {
-   const parts = String(name).trim().split(/\s+/).filter(Boolean);
-   if (!parts.length) return "U";
-   if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
-   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
- }
- 
- export default function KitchenLayout({ children }) {
-   const { user, logout, refreshUser, setUser } = useAuth();
-   const navigate = useNavigate();
-   const [userMenuOpen, setUserMenuOpen] = useState(false);
-   const userMenuRef = useRef(null);
--  const [households, setHouseholds] = useState([]);
--  const [switchingHousehold, setSwitchingHousehold] = useState(false);
--  const [householdError, setHouseholdError] = useState("");
--  const activeHouseholdRequestKeyRef = useRef("");
-+  const [households, setHouseholds] = useState([]);
-+  const [switchingHousehold, setSwitchingHousehold] = useState(false);
-+  const [householdError, setHouseholdError] = useState("");
-+  const activeHouseholdRequestKeyRef = useRef("");
-+  const pendingActiveHouseholdRef = useRef(null);
-   const isDiod = user?.globalRole === "diod";
- 
--  useEffect(() => {
--    if (!isDiod || !user?.id) return;
--    const requestKey = `${user.id}:${user.activeHouseholdId || "none"}`;
--    if (activeHouseholdRequestKeyRef.current === requestKey) return;
-+  useEffect(() => {
-+    if (!isDiod || !user?.id) return;
-+    const requestKey = `${user.id}`;
-+    if (activeHouseholdRequestKeyRef.current === requestKey) return;
- 
-     let active = true;
-     activeHouseholdRequestKeyRef.current = requestKey;
- 
-     apiRequest("/api/kitchen/admin/active-household")
-       .then((data) => {
-         if (!active) return;
-         const nextActiveHouseholdId = data.activeHouseholdId || null;
-         localStorage.setItem("kitchen_active_household_id", nextActiveHouseholdId || "");
-         setUser((prevUser) => {
-           if (!prevUser || prevUser.id !== user.id) return prevUser;
-           if ((prevUser.activeHouseholdId || null) === nextActiveHouseholdId) return prevUser;
-           return { ...prevUser, activeHouseholdId: nextActiveHouseholdId };
-         });
-       })
-       .catch((error) => {
-         if (!active) return;
-         setHouseholdError(error.message || "No se pudo obtener el hogar activo.");
-       });
- 
-     return () => {
-       active = false;
-     };
--  }, [isDiod, setUser, user?.id, user?.activeHouseholdId]);
-+  }, [isDiod, setUser, user?.id]);
- 
-   const navLinks = useMemo(
-     () => [
-       { to: "/kitchen/semana", label: "Semana" },
-       { to: "/kitchen/platos", label: "Platos" },
-       { to: "/kitchen/compra", label: "Lista de la compra" },
-       { to: "/kitchen/configuracion", label: "Configuración" }
-     ],
-     []
-   );
- 
-   const bottomNavLinks = useMemo(
-     () => [
-       { to: "/kitchen/semana", label: "Semana", icon: CalendarIcon },
-       { to: "/kitchen/platos", label: "Platos", icon: UtensilsIcon },
-       { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
-       { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon }
-     ],
-     []
-   );
- 
-   useEffect(() => {
-     const onPointerDown = (event) => {
-       if (!userMenuRef.current?.contains(event.target)) {
-         setUserMenuOpen(false);
-       }
-     };
--    document.addEventListener("mousedown", onPointerDown);
--    return () => document.removeEventListener("mousedown", onPointerDown);
--  }, []);
-+    document.addEventListener("pointerdown", onPointerDown);
-+    return () => document.removeEventListener("pointerdown", onPointerDown);
-+  }, []);
- 
-   useEffect(() => {
-     if (!isDiod || !userMenuOpen) return;
-     let active = true;
-     setHouseholdError("");
- 
-     apiRequest("/api/kitchen/admin/households")
-       .then((data) => {
-         if (!active) return;
-         setHouseholds(data.households || []);
-       })
-       .catch((error) => {
-         if (!active) return;
-         setHouseholdError(error.message || "No se pudieron cargar los hogares.");
-       });
- 
-     return () => {
-       active = false;
-     };
-   }, [isDiod, userMenuOpen]);
- 
--  const onChangeActiveHousehold = async (event) => {
--    const nextHouseholdId = event.target.value;
--    setSwitchingHousehold(true);
--    setHouseholdError("");
--    try {
--      if (nextHouseholdId) {
--        await apiRequest("/api/kitchen/admin/active-household", {
--          method: "POST",
--          body: JSON.stringify({ householdId: nextHouseholdId })
--        });
--        localStorage.setItem("kitchen_active_household_id", nextHouseholdId);
--      } else {
--        await apiRequest("/api/kitchen/admin/active-household", { method: "DELETE" });
--        localStorage.setItem("kitchen_active_household_id", "");
--      }
--      await refreshUser();
--      setUserMenuOpen(false);
--      navigate("/kitchen/platos");
--    } catch (error) {
--      setHouseholdError(error.message || "No se pudo actualizar el hogar activo.");
--    } finally {
--      setSwitchingHousehold(false);
--    }
--  };
-+  const onChangeActiveHousehold = async (event) => {
-+    const nextHouseholdId = event.target.value;
-+    const normalizedCurrentHousehold = user?.activeHouseholdId || "";
-+    if (switchingHousehold) return;
-+    if (nextHouseholdId === normalizedCurrentHousehold) {
-+      setUserMenuOpen(false);
-+      return;
-+    }
-+    if (pendingActiveHouseholdRef.current === nextHouseholdId) return;
 +
-+    pendingActiveHouseholdRef.current = nextHouseholdId;
-+    setSwitchingHousehold(true);
-+    setHouseholdError("");
-+    try {
-+      await apiRequest("/api/kitchen/admin/active-household", {
-+        method: "POST",
-+        body: JSON.stringify({ activeHouseholdId: nextHouseholdId || null })
++async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
++  const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
++  const categories = await Category.find(buildScopedFilter(effectiveHouseholdId, {})).select("_id name");
++  const stores = await Store.find(buildScopedFilter(effectiveHouseholdId, { active: true }))
++    .sort({ name: 1 })
++    .select("_id name");
++  const activeTrip = await getActiveTrip(effectiveHouseholdId);
++
++  const purchasedTripIds = list.items
++    .filter((item) => item.tripId)
++    .map((item) => String(item.tripId));
++
++  const trips = purchasedTripIds.length
++    ? await ShoppingTrip.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: purchasedTripIds } }))
++        .sort({ startedAt: -1 })
++        .lean()
++    : [];
++
++  const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
++  const tripById = new Map(trips.map((trip) => [String(trip._id), trip]));
++
++  const categoryById = new Map(categories.map((category) => [String(category._id), category.name]));
++  const purchaserIds = list.items
++    .filter((item) => item.purchasedBy)
++    .map((item) => String(item.purchasedBy));
++  const purchasers = purchaserIds.length
++    ? await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: purchaserIds } })).select("_id displayName")
++    : [];
++  const purchaserById = new Map(purchasers.map((person) => [String(person._id), person.displayName]));
++
++  const pendingByCategory = list.items
++    .filter((item) => item.status === "pending")
++    .reduce((acc, item) => {
++      const key = item.categoryId ? String(item.categoryId) : "uncategorized";
++      if (!acc.has(key)) {
++        acc.set(key, {
++          categoryId: item.categoryId || null,
++          categoryName: item.categoryId ? categoryById.get(String(item.categoryId)) || "Sin categoría" : "Sin categoría",
++          items: []
++        });
++      }
++      acc.get(key).items.push({
++        ...item.toObject(),
++        purchasedByName: item.purchasedBy ? purchaserById.get(String(item.purchasedBy)) || "Usuario" : null
 +      });
-+      localStorage.setItem("kitchen_active_household_id", nextHouseholdId || "");
-+      await refreshUser();
-+      setUserMenuOpen(false);
-+      navigate("/kitchen/platos");
-+    } catch (error) {
-+      setHouseholdError(error.message || "No se pudo actualizar el hogar activo.");
-+    } finally {
-+      pendingActiveHouseholdRef.current = null;
-+      setSwitchingHousehold(false);
-+    }
++      return acc;
++    }, new Map());
++
++  const purchasedByTrip = list.items
++    .filter((item) => item.status === "purchased")
++    .reduce((acc, item) => {
++      const key = item.tripId ? String(item.tripId) : "no-trip";
++      if (!acc.has(key)) {
++        const trip = item.tripId ? tripById.get(String(item.tripId)) : null;
++        acc.set(key, {
++          tripId: trip?._id || null,
++          storeName: trip?.storeId ? storeById.get(String(trip.storeId)) || "Tienda" : "Sin tienda",
++          totalAmount: trip?.totalAmount ?? null,
++          startedAt: trip?.startedAt || item.purchasedAt,
++          items: []
++        });
++      }
++      acc.get(key).items.push({
++        ...item.toObject(),
++        purchasedByName: item.purchasedBy ? purchaserById.get(String(item.purchasedBy)) || "Usuario" : null
++      });
++      return acc;
++    }, new Map());
++
++  return {
++    list,
++    stores,
++    activeTrip,
++    pendingByCategory: Array.from(pendingByCategory.values()),
++    purchasedByTrip: Array.from(purchasedByTrip.values()).sort(
++      (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
++    )
 +  };
+ }
  
-   const onLogout = async () => {
-     try {
-       await logout();
-     } finally {
-       navigate("/login", { replace: true });
+ router.get("/:weekStart", requireAuth, async (req, res) => {
+-  try {
+-    const weekStart = parseISODate(req.params.weekStart);
+-    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+-
+-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+-        const monday = getWeekStart(weekStart);
+-    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+-
+-    res.json({ ok: true, weekStart: formatDateISO(monday), list });
+-  } catch (error) {
+-    const handled = handleHouseholdError(res, error);
+-    if (handled) return handled;
+-    return res.status(500).json({ ok: false, error: "No se pudo cargar la lista de compra." });
+-  }
++  try {
++    const weekStart = parseISODate(req.params.weekStart);
++    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
++
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const monday = getWeekStart(weekStart);
++    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
++
++    res.json({ ok: true, weekStart: formatDateISO(monday), ...payload });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    return res.status(500).json({ ok: false, error: "No se pudo cargar la lista de compra." });
++  }
+ });
+ 
+ router.post("/:weekStart/rebuild", requireAuth, async (req, res) => {
+-  try {
+-    const weekStart = parseISODate(req.params.weekStart);
+-    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+-
+-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+-        const monday = getWeekStart(weekStart);
+-    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+-
+-    const ingredients = await buildFromWeek(monday, effectiveHouseholdId);
+-    const merged = new Map();
+-
+-    ingredients.forEach((item) => {
+-      if (!item.canonicalName) return;
+-      const existing = merged.get(item.canonicalName);
+-      if (existing) return;
+-      const previous = list.items.find((oldItem) => oldItem.canonicalName === item.canonicalName);
+-      merged.set(item.canonicalName, {
+-        displayName: item.displayName,
+-        canonicalName: item.canonicalName,
+-        status: previous?.status || "need"
+-      });
+-    });
++  try {
++    const weekStart = parseISODate(req.params.weekStart);
++    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+ 
+-    list.items = Array.from(merged.values());
+-    await list.save();
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const monday = getWeekStart(weekStart);
++    await rebuildShoppingList(monday, effectiveHouseholdId);
++    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+ 
+-    res.json({ ok: true, list });
+-  } catch (error) {
+-    const handled = handleHouseholdError(res, error);
+-    if (handled) return handled;
+-    return res.status(500).json({ ok: false, error: "No se pudo reconstruir la lista de compra." });
+-  }
++    res.json({ ok: true, ...payload });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    return res.status(500).json({ ok: false, error: "No se pudo reconstruir la lista de compra." });
++  }
+ });
+ 
+ router.put("/:weekStart/item", requireAuth, async (req, res) => {
+-  try {
+-    const weekStart = parseISODate(req.params.weekStart);
+-    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+-
+-    const { canonicalName, status, displayName } = req.body;
+-    if (!canonicalName) return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
+-
+-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+-        const monday = getWeekStart(weekStart);
+-    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+-
+-    const item = list.items.find((current) => current.canonicalName === canonicalName);
+-    if (!item) {
+-      list.items.push({
+-        canonicalName,
+-        displayName: displayName || canonicalName,
+-        status: status || "need"
+-      });
+-    } else {
+-      item.status = status || item.status;
+-    }
+-
+-    await list.save();
+-    res.json({ ok: true, list });
+-  } catch (error) {
+-    const handled = handleHouseholdError(res, error);
+-    if (handled) return handled;
+-    return res.status(500).json({ ok: false, error: "No se pudo actualizar la lista de compra." });
++  try {
++    const weekStart = parseISODate(req.params.weekStart);
++    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
++
++    const { canonicalName, status, ingredientId } = req.body;
++    if (!canonicalName && !ingredientId) {
++      return res.status(400).json({ ok: false, error: "Ingrediente inválido." });
++    }
++
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const monday = getWeekStart(weekStart);
++    const list = await ensureShoppingList(monday, effectiveHouseholdId);
++
++    const item = list.items.find((current) => {
++      if (ingredientId && current.ingredientId) return String(current.ingredientId) === String(ingredientId);
++      return current.canonicalName === canonicalName;
++    });
++
++    if (!item) return res.status(404).json({ ok: false, error: "Ingrediente no encontrado en la lista." });
++
++    const normalizedStatus = status === "purchased" ? "purchased" : "pending";
++    item.status = normalizedStatus;
++    if (normalizedStatus === "purchased") {
++      const activeTrip = await getActiveTrip(effectiveHouseholdId);
++      item.purchasedBy = req.kitchenUser._id;
++      item.purchasedAt = new Date();
++      item.tripId = activeTrip?._id || null;
++    } else {
++      item.purchasedBy = null;
++      item.purchasedAt = null;
++      item.tripId = null;
++    }
++
++    await list.save();
++    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
++    res.json({ ok: true, ...payload });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    return res.status(500).json({ ok: false, error: "No se pudo actualizar la lista de compra." });
++  }
++});
++
++router.post("/stores", requireAuth, async (req, res) => {
++  try {
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const name = String(req.body?.name || "").trim();
++    if (!name) return res.status(400).json({ ok: false, error: "Debes indicar un nombre." });
++    const canonicalName = name.toLowerCase();
++
++    const store = await Store.findOneAndUpdate(
++      buildScopedFilter(effectiveHouseholdId, { canonicalName }),
++      { $setOnInsert: { householdId: effectiveHouseholdId, name, canonicalName } },
++      { new: true, upsert: true }
++    );
++
++    return res.status(201).json({ ok: true, store });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    return res.status(500).json({ ok: false, error: "No se pudo crear la tienda." });
++  }
++});
++
++router.put("/trip/active", requireAuth, async (req, res) => {
++  try {
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const storeId = req.body?.storeId || null;
++    const totalAmount = normalizeAmount(req.body?.totalAmount);
++
++    let trip = await getActiveTrip(effectiveHouseholdId);
++    if (!trip && (storeId || totalAmount !== null)) {
++      trip = await ShoppingTrip.create({
++        householdId: effectiveHouseholdId,
++        storeId,
++        totalAmount,
++        createdBy: req.kitchenUser._id,
++        startedAt: new Date()
++      });
++    } else if (trip) {
++      trip.storeId = storeId;
++      trip.totalAmount = totalAmount;
++      await trip.save();
++    }
++
++    return res.json({ ok: true, activeTrip: trip });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    return res.status(500).json({ ok: false, error: "No se pudo actualizar la compra activa." });
++  }
++});
++
++router.post("/trip/active/close", requireAuth, async (req, res) => {
++  try {
++    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
++    const trip = await getActiveTrip(effectiveHouseholdId);
++    if (!trip) return res.status(404).json({ ok: false, error: "No hay compra activa." });
++
++    trip.closedAt = new Date();
++    await trip.save();
++
++    return res.json({ ok: true, trip });
++  } catch (error) {
++    const handled = handleHouseholdError(res, error);
++    if (handled) return handled;
++    return res.status(500).json({ ok: false, error: "No se pudo cerrar la compra." });
+   }
+ });
+ 
+ export default router;
+diff --git a/backend/src/kitchen/routes/weeks.js b/backend/src/kitchen/routes/weeks.js
+index 33d6efdfd7030af15f5d2e8a0511e738e4d7d723..270a99077ffb45b8b7bbe7c88b0a349a7569eda4 100644
+--- a/backend/src/kitchen/routes/weeks.js
++++ b/backend/src/kitchen/routes/weeks.js
+@@ -1,36 +1,37 @@
+ import express from "express";
+ import { KitchenDish } from "../models/KitchenDish.js";
+ import { KitchenUser } from "../models/KitchenUser.js";
+ import { requireAuth, requireRole } from "../middleware.js";
+ import { formatDateISO, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
+-import {
+-  buildScopedFilter,
+-  getEffectiveHouseholdId,
+-  handleHouseholdError
+-} from "../householdScope.js";
+-import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
++import {
++  buildScopedFilter,
++  getEffectiveHouseholdId,
++  handleHouseholdError
++} from "../householdScope.js";
++import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
++import { rebuildShoppingList } from "../shoppingService.js";
+ 
+ const router = express.Router();
+ 
+ function isHouseholdAdmin(user) {
+   return user?.globalRole === "diod" || user?.role === "owner" || user?.role === "admin";
+ }
+ 
+ function isSelfAssignment(req, userId) {
+   if (!userId) return false;
+   return String(userId) === String(req.kitchenUser?._id);
+ }
+ 
+ function hasAdministrativePlanChange(req, day, updates) {
+   if (isHouseholdAdmin(req.kitchenUser)) return false;
+ 
+   if (Object.prototype.hasOwnProperty.call(updates, "cookUserId")) {
+     const requestedCook = updates.cookUserId || null;
+     if (!requestedCook || !isSelfAssignment(req, requestedCook)) {
+       return true;
      }
-     setUserMenuOpen(false);
-   };
+   }
  
-   const onNavigate = () => {
-     setUserMenuOpen(false);
-   };
+   const clearsMainDish = Object.prototype.hasOwnProperty.call(updates, "mainDishId")
+     && !updates.mainDishId
+     && Boolean(day.mainDishId);
+@@ -99,86 +100,88 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
+       ).select("_id");
+       if (!mainDish) {
+         return res.status(400).json({ ok: false, error: "El plato principal no pertenece a este hogar." });
+       }
+     }
  
-   const userName = getFirstName(user?.displayName || "");
-   const userInitials = getInitials(user?.displayName || "");
+     if (sideDishId) {
+       const sideDish = await KitchenDish.findOne(
+         buildScopedFilter(effectiveHouseholdId, { _id: sideDishId, sidedish: true })
+       ).select("_id");
+       if (!sideDish) {
+         return res.status(400).json({ ok: false, error: "La guarnición no pertenece a este hogar." });
+       }
+     }
  
-   return (
-     <div className="kitchen-app">
-       <Header
-         left={(
-           <div className="kitchen-brand">
-             <Link className="kitchen-brand-link" to="/kitchen/semana" onClick={onNavigate}>
-               <img className="kitchen-brand-icon" src={lunchfyIcon} alt="Lunchfy" />
-               <img className="kitchen-brand-logo" src={lunchfyLogo} alt="Lunchfy" />
-@@ -231,51 +237,51 @@ export default function KitchenLayout({ children }) {
-           </div>
-         )}
-         center={(
-           <nav className="kitchen-nav-desktop">
-             {navLinks.map((link) => (
-               <NavLink key={link.to} to={link.to} onClick={onNavigate}>
-                 {link.label}
-               </NavLink>
-             ))}
-           </nav>
-         )}
-         right={user ? (
-           <div className="kitchen-user" ref={userMenuRef}>
-             <button
-               className="kitchen-user-chip"
-               type="button"
-               onClick={() => setUserMenuOpen((open) => !open)}
-               aria-expanded={userMenuOpen}
-               aria-haspopup="menu"
-             >
-               <span className="kitchen-user-avatar">{userInitials}</span>
-               <span className="kitchen-user-name">{userName}</span>
-               <ChevronDownIcon className="kitchen-user-chevron" />
-             </button>
-             {userMenuOpen ? (
--              <div className="kitchen-user-menu" role="menu">
-+              <div className="kitchen-user-menu" role="menu" onPointerDown={(event) => event.stopPropagation()}>
-                 {isDiod ? (
-                   <label className="kitchen-user-menu-household">
-                     <span>Hogar activo</span>
-                     <select
-                       className="kitchen-input"
-                       value={user?.activeHouseholdId || ""}
-                       onChange={onChangeActiveHousehold}
-                       disabled={switchingHousehold}
-                     >
-                       <option value="">Sin hogar (modo global)</option>
-                       {households.map((household) => (
-                         <option key={household.id} value={household.id}>{household.name}</option>
-                       ))}
-                     </select>
-                   </label>
-                 ) : null}
-                 {householdError ? <div className="kitchen-alert error">{householdError}</div> : null}
-                 <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion?section=perfil")}>
-                   <UserIcon className="kitchen-user-menu-icon" />
-                   Editar mi perfil
-                 </button>
-                 <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion")}>
-                   <SettingsIcon className="kitchen-user-menu-icon" />
-                   Configuración
-                 </button>
-diff --git a/frontend/src/kitchen/pages/DishesPage.jsx b/frontend/src/kitchen/pages/DishesPage.jsx
-index c0363b5f122aea58009991b06e019dfb96772f1a..17f5022f3fcab6d9bc33225d54480f9270df2246 100644
---- a/frontend/src/kitchen/pages/DishesPage.jsx
-+++ b/frontend/src/kitchen/pages/DishesPage.jsx
-@@ -1,738 +1,756 @@
--import React, { useCallback, useEffect, useMemo, useState } from "react";
--import { useNavigate } from "react-router-dom";
-+import React, { useCallback, useEffect, useMemo, useState } from "react";
-+import { useNavigate } from "react-router-dom";
- import { apiRequest } from "../api.js";
+     if (cookUserId !== undefined) day.cookUserId = cookUserId || null;
+     if (cookUserId === undefined && mainDishId && !day.cookUserId) {
+       day.cookUserId = req.kitchenUser._id;
+     }
+     if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
+     if (servings) day.servings = Number(servings) || 4;
+     if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
+     if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
+     if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
+ 
+-    await plan.save();
+-    return res.json({ ok: true, plan });
++    await plan.save();
++    await rebuildShoppingList(monday, effectiveHouseholdId);
++    return res.json({ ok: true, plan });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
+   }
+ });
+ 
+ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("admin"), async (req, res) => {
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     const otherWeekStart = parseISODate(req.params.otherWeekStart);
+     if (!weekStart || !otherWeekStart) {
+       return res.status(400).json({ ok: false, error: "Fecha inválida." });
+     }
+ 
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
+     const sourceMonday = getWeekStart(otherWeekStart);
+ 
+     const sourcePlan = await ensureWeekPlan(sourceMonday, effectiveHouseholdId);
+     const targetPlan = await ensureWeekPlan(monday, effectiveHouseholdId);
+ 
+     targetPlan.days = sourcePlan.days.map((day) => ({
+       date: new Date(day.date),
+       cookUserId: day.cookUserId,
+       cookTiming: day.cookTiming,
+       servings: day.servings,
+       mainDishId: day.mainDishId,
+       sideDishId: day.sideDishId,
+       ingredientOverrides: day.ingredientOverrides
+     }));
+ 
+-    await targetPlan.save();
+-    return res.json({ ok: true, plan: targetPlan });
++    await targetPlan.save();
++    await rebuildShoppingList(monday, effectiveHouseholdId);
++    return res.json({ ok: true, plan: targetPlan });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudo copiar el plan semanal." });
+   }
+ });
+ 
+ router.post("/:weekStart", requireAuth, async (req, res) => {
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha de semana inválida." });
+ 
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
+     const { plan, created } = await createOrGetWeekPlan(monday, effectiveHouseholdId);
+ 
+     return res.status(created ? 201 : 200).json({
+       ok: true,
+       weekStart: formatDateISO(monday),
+       plan
+     });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     if (error?.code === "WEEK_PLAN_INDEX_CONFLICT") {
+@@ -211,52 +214,53 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
+     const sourceDay = plan.days.find((item) => isSameDay(item.date, sourceDate));
+     const targetDay = plan.days.find((item) => isSameDay(item.date, targetDate));
+ 
+     if (!sourceDay || !targetDay) {
+       return res.status(404).json({ ok: false, error: "No encontramos los días de origen o destino en esa semana." });
+     }
+ 
+     targetDay.cookUserId = sourceDay.cookUserId || null;
+     targetDay.cookTiming = sourceDay.cookTiming || "previous_day";
+     targetDay.servings = sourceDay.servings || 4;
+     targetDay.mainDishId = sourceDay.mainDishId || null;
+     targetDay.sideDishId = sourceDay.sideDishId || null;
+     targetDay.ingredientOverrides = Array.isArray(sourceDay.ingredientOverrides)
+       ? sourceDay.ingredientOverrides.map((item) => ({
+         displayName: item.displayName,
+         canonicalName: item.canonicalName,
+         ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
+       }))
+       : [];
+ 
+     sourceDay.cookUserId = null;
+     sourceDay.mainDishId = null;
+     sourceDay.sideDishId = null;
+     sourceDay.ingredientOverrides = [];
+ 
+-    await plan.save();
+-    return res.json({ ok: true, plan });
++    await plan.save();
++    await rebuildShoppingList(monday, effectiveHouseholdId);
++    return res.json({ ok: true, plan });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudo mover la asignación de día." });
+   }
+ });
+ 
+ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
+   try {
+     const weekStart = parseISODate(req.params.weekStart);
+     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+ 
+     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+     const monday = getWeekStart(weekStart);
+     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+     const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
+     const dishes = await KitchenDish.find(
+       buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
+     );
+ 
+     res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
+   } catch (error) {
+     const handled = handleHouseholdError(res, error);
+     if (handled) return handled;
+     return res.status(500).json({ ok: false, error: "No se pudo cargar el resumen semanal." });
+diff --git a/frontend/src/kitchen/kitchen.css b/frontend/src/kitchen/kitchen.css
+index 7141b3424166e184d03bced50365077a1c9bacce..3b297ec6510e92aed7a3f57aa4e8433ba3f9e57f 100644
+--- a/frontend/src/kitchen/kitchen.css
++++ b/frontend/src/kitchen/kitchen.css
+@@ -2726,25 +2726,96 @@ body {
+ .kitchen-week-mobile-frame { gap: 22px; }
+ 
+ .kitchen-ui-bottom-nav {
+   background: #eef2ff;
+   border-top: 1px solid #dbe3ff;
+ }
+ 
+ @media (max-width: 900px) {
+   .kitchen-ui-header { display: none; }
+   .kitchen-container {
+     padding: 14px 14px 88px;
+   }
+ }
+ 
+ .kitchen-user-menu-household {
+   display: flex;
+   flex-direction: column;
+   gap: 6px;
+   padding: 8px 10px;
+ }
+ 
+ .kitchen-user-menu-household span {
+   font-size: 12px;
+   color: #64748b;
+ }
++
++.shopping-header-card {
++  margin-bottom: 16px;
++}
++
++.shopping-header-row {
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++  gap: 12px;
++}
++
++.shopping-refresh-icon {
++  border: 1px solid var(--hf-border);
++  background: white;
++  border-radius: 10px;
++  width: 34px;
++  height: 34px;
++  cursor: pointer;
++}
++
++.shopping-toolbar {
++  margin-top: 12px;
++  display: grid;
++  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
++  gap: 10px;
++}
++
++.shopping-tabs {
++  margin-top: 12px;
++  display: flex;
++  gap: 8px;
++}
++
++.shopping-tab {
++  border: 1px solid var(--hf-border);
++  background: #fff;
++  border-radius: 999px;
++  padding: 8px 12px;
++  cursor: pointer;
++}
++
++.shopping-tab.active {
++  background: var(--hf-surface-soft);
++  border-color: var(--hf-brand);
++}
++
++.shopping-categories {
++  display: grid;
++  gap: 12px;
++}
++
++.shopping-items-list {
++  display: grid;
++  gap: 8px;
++  margin-top: 8px;
++}
++
++.shopping-item {
++  display: flex;
++  align-items: center;
++  gap: 8px;
++  padding: 8px;
++  border-radius: 10px;
++  transition: all 0.2s ease;
++}
++
++.shopping-item.purchased span {
++  text-decoration: line-through;
++  color: var(--hf-muted);
++}
+diff --git a/frontend/src/kitchen/pages/ShoppingPage.jsx b/frontend/src/kitchen/pages/ShoppingPage.jsx
+index 7df188bf9366b7f6ccbd85a70b9fea33bd6eeb24..53ca5db2dc3501cdba0f64da478b946b37a0bb6b 100644
+--- a/frontend/src/kitchen/pages/ShoppingPage.jsx
++++ b/frontend/src/kitchen/pages/ShoppingPage.jsx
+@@ -1,140 +1,230 @@
+-import React, { useEffect, useState } from "react";
++import React, { useEffect, useMemo, useState } from "react";
  import KitchenLayout from "../Layout.jsx";
- import { useAuth } from "../auth";
--import DishModal from "../components/DishModal.jsx";
--import IngredientModal from "../components/IngredientModal.jsx";
--import CategoryChip from "../components/CategoryChip.jsx";
--import { resolveCategoryColors } from "../components/categoryUtils.js";
--import { normalizeIngredientName } from "../utils/normalize.js";
--
--const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
--
--function getMondayISO(date = new Date()) {
--  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
--  const day = d.getUTCDay();
--  const diff = (day === 0 ? -6 : 1) - day;
--  d.setUTCDate(d.getUTCDate() + diff);
--  return d.toISOString().slice(0, 10);
--}
--
--function addDaysToISO(dateString, days) {
--  const [year, month, day] = dateString.split("-").map(Number);
--  const date = new Date(Date.UTC(year, month - 1, day));
--  date.setUTCDate(date.getUTCDate() + days);
--  return date.toISOString().slice(0, 10);
--}
--
--function buildAssignDays(weekStart) {
--  return Array.from({ length: 7 }, (_, index) => {
--    const date = addDaysToISO(weekStart, index);
--    return {
--      date,
--      label: getAssignDayLabel(date),
--      number: getAssignDayNumber(date)
--    };
--  });
--}
--
--function formatWeekLabel(dateString) {
--  if (!dateString) return "-";
--  const date = new Date(`${dateString}T00:00:00Z`);
--  if (Number.isNaN(date.getTime())) return "-";
--  return date.toLocaleDateString("es-ES", {
--    day: "2-digit",
--    month: "2-digit",
--    year: "numeric"
--  });
--}
--
--function getAssignDayLabel(dateString) {
--  if (!dateString) return "-";
--  const date = new Date(`${dateString}T00:00:00Z`);
--  const dayIndex = date.getUTCDay();
--  return ASSIGN_DAY_LABELS[dayIndex] || "-";
--}
--
--function getAssignDayNumber(dateString) {
--  if (!dateString) return "-";
--  const date = new Date(`${dateString}T00:00:00Z`);
--  return date.getUTCDate();
--}
--
--function ChevronIcon(props) {
--  return (
--    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
--      <path d="M15 18l-6-6 6-6" />
--    </svg>
--  );
--}
-+import DishModal from "../components/DishModal.jsx";
-+import IngredientModal from "../components/IngredientModal.jsx";
-+import CategoryChip from "../components/CategoryChip.jsx";
-+import { resolveCategoryColors } from "../components/categoryUtils.js";
-+import { normalizeIngredientName } from "../utils/normalize.js";
-+
-+const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
-+
-+function getMondayISO(date = new Date()) {
-+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-+  const day = d.getUTCDay();
-+  const diff = (day === 0 ? -6 : 1) - day;
-+  d.setUTCDate(d.getUTCDate() + diff);
-+  return d.toISOString().slice(0, 10);
-+}
-+
-+function addDaysToISO(dateString, days) {
-+  const [year, month, day] = dateString.split("-").map(Number);
-+  const date = new Date(Date.UTC(year, month - 1, day));
-+  date.setUTCDate(date.getUTCDate() + days);
-+  return date.toISOString().slice(0, 10);
-+}
-+
-+function buildAssignDays(weekStart) {
-+  return Array.from({ length: 7 }, (_, index) => {
-+    const date = addDaysToISO(weekStart, index);
-+    return {
-+      date,
-+      label: getAssignDayLabel(date),
-+      number: getAssignDayNumber(date)
-+    };
-+  });
-+}
-+
-+function formatWeekLabel(dateString) {
-+  if (!dateString) return "-";
-+  const date = new Date(`${dateString}T00:00:00Z`);
-+  if (Number.isNaN(date.getTime())) return "-";
-+  return date.toLocaleDateString("es-ES", {
-+    day: "2-digit",
-+    month: "2-digit",
-+    year: "numeric"
-+  });
-+}
-+
-+function getAssignDayLabel(dateString) {
-+  if (!dateString) return "-";
-+  const date = new Date(`${dateString}T00:00:00Z`);
-+  const dayIndex = date.getUTCDay();
-+  return ASSIGN_DAY_LABELS[dayIndex] || "-";
-+}
-+
-+function getAssignDayNumber(dateString) {
-+  if (!dateString) return "-";
-+  const date = new Date(`${dateString}T00:00:00Z`);
-+  return date.getUTCDate();
-+}
-+
-+function ChevronIcon(props) {
-+  return (
-+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-+      <path d="M15 18l-6-6 6-6" />
-+    </svg>
-+  );
-+}
+ import { apiRequest } from "../api.js";
+-import { useAuth } from "../auth";
++import { useAuth } from "../auth";
  
- export default function DishesPage() {
-   const { user } = useAuth();
--  const navigate = useNavigate();
-+  const navigate = useNavigate();
-   const [dishes, setDishes] = useState([]);
--  const [categories, setCategories] = useState([]);
-+  const [categories, setCategories] = useState([]);
-   const [loading, setLoading] = useState(true);
--  const [dishError, setDishError] = useState("");
--  const [isModalOpen, setIsModalOpen] = useState(false);
--  const [activeDish, setActiveDish] = useState(null);
--  const [dishSearchTerm, setDishSearchTerm] = useState("");
--  const [activeTab, setActiveTab] = useState("main");
--  const [initialSidedish, setInitialSidedish] = useState(false);
--  const [ingredients, setIngredients] = useState([]);
--  const [ingredientsLoading, setIngredientsLoading] = useState(false);
--  const [ingredientsError, setIngredientsError] = useState("");
--  const [ingredientSearchTerm, setIngredientSearchTerm] = useState("");
--  const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
--  const [activeIngredient, setActiveIngredient] = useState(null);
--  const [assignModalOpen, setAssignModalOpen] = useState(false);
--  const [assignDish, setAssignDish] = useState(null);
--  const [assignDate, setAssignDate] = useState("");
--  const todayKey = new Date().toISOString().slice(0, 10);
--  const currentWeekStart = useMemo(
--    () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
--    [todayKey]
--  );
--  const [assignWeekStart, setAssignWeekStart] = useState(currentWeekStart);
--  const [assignWeekData, setAssignWeekData] = useState({
--    status: "idle",
--    occupied: {},
--    dishNames: {}
--  });
+ function getMondayISO(date = new Date()) {
+   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+   const day = d.getUTCDay();
+   const diff = (day === 0 ? -6 : 1) - day;
+   d.setUTCDate(d.getUTCDate() + diff);
+   return d.toISOString().slice(0, 10);
+ }
+ 
++function formatTripDate(value) {
++  if (!value) return "";
++  return new Date(value).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
++}
++
++function formatAmount(value) {
++  if (value === null || value === undefined || value === "") return "";
++  return `${Number(value).toFixed(2)} €`;
++}
++
+ export default function ShoppingPage() {
+-  const { user } = useAuth();
++  const { user } = useAuth();
+   const [weekStart, setWeekStart] = useState(getMondayISO());
+-  const [list, setList] = useState(null);
+-  const [filter, setFilter] = useState("need");
++  const [tab, setTab] = useState("pending");
+   const [error, setError] = useState("");
 -  const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
-+  const [dishError, setDishError] = useState("");
-+  const [isModalOpen, setIsModalOpen] = useState(false);
-+  const [activeDish, setActiveDish] = useState(null);
-+  const [dishSearchTerm, setDishSearchTerm] = useState("");
-+  const [activeTab, setActiveTab] = useState("main");
-+  const [initialSidedish, setInitialSidedish] = useState(false);
-+  const [ingredients, setIngredients] = useState([]);
-+  const [ingredientsLoading, setIngredientsLoading] = useState(false);
-+  const [ingredientsError, setIngredientsError] = useState("");
-+  const [ingredientSearchTerm, setIngredientSearchTerm] = useState("");
-+  const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
-+  const [activeIngredient, setActiveIngredient] = useState(null);
-+  const [assignModalOpen, setAssignModalOpen] = useState(false);
-+  const [assignDish, setAssignDish] = useState(null);
-+  const [assignDate, setAssignDate] = useState("");
-+  const todayKey = new Date().toISOString().slice(0, 10);
-+  const currentWeekStart = useMemo(
-+    () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
-+    [todayKey]
-+  );
-+  const [assignWeekStart, setAssignWeekStart] = useState(currentWeekStart);
-+  const [assignWeekData, setAssignWeekData] = useState({
-+    status: "idle",
-+    occupied: {},
-+    dishNames: {}
-+  });
++  const [isRefreshing, setIsRefreshing] = useState(false);
++  const [stores, setStores] = useState([]);
++  const [activeTrip, setActiveTrip] = useState(null);
++  const [pendingByCategory, setPendingByCategory] = useState([]);
++  const [purchasedByTrip, setPurchasedByTrip] = useState([]);
 +  const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
  
-   const loadDishes = async () => {
+-  const loadList = async () => {
+-    if (isDiodGlobalMode) {
+-      setList(null);
+-      return;
+-    }
++  const applyPayload = (data) => {
++    setStores(data.stores || []);
++    setActiveTrip(data.activeTrip || null);
++    setPendingByCategory(data.pendingByCategory || []);
++    setPurchasedByTrip(data.purchasedByTrip || []);
++  };
++
++  const loadList = async ({ silent = false } = {}) => {
 +    if (isDiodGlobalMode) {
-+      setDishes([]);
-+      setLoading(false);
 +      return;
 +    }
-     setLoading(true);
--    setDishError("");
-+    setDishError("");
++    if (!silent) setIsRefreshing(true);
+     setError("");
      try {
-       const data = await apiRequest("/api/kitchen/dishes");
-       setDishes(data.dishes || []);
+       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
+-      setList(data.list);
++      applyPayload(data);
      } catch (err) {
--      setDishError(err.message || "No se pudieron cargar los platos.");
-+      setDishError(err.message || "No se pudieron cargar los platos.");
-     } finally {
-       setLoading(false);
+       setError(err.message || "No se pudo cargar la lista.");
++    } finally {
++      if (!silent) setIsRefreshing(false);
      }
    };
  
    useEffect(() => {
-     loadDishes();
-+  }, [isDiodGlobalMode, user?.activeHouseholdId, user?.id]);
-+
-+  const loadCategories = async () => {
-+    try {
-+      const data = await apiRequest("/api/categories");
-+      setCategories(data.categories || []);
-+    } catch (err) {
-+      setDishError(err.message || "No se pudieron cargar las categorías.");
-+    }
-+  };
+     loadList();
+-  }, [weekStart, isDiodGlobalMode]);
++  }, [weekStart, isDiodGlobalMode]);
 +
 +  useEffect(() => {
-+    loadCategories();
-   }, []);
++    if (isDiodGlobalMode) return undefined;
++    const pollId = setInterval(() => loadList({ silent: true }), 15000);
++    return () => clearInterval(pollId);
++  }, [weekStart, isDiodGlobalMode]);
  
--  const loadCategories = async () => {
--    try {
--      const data = await apiRequest("/api/categories");
--      setCategories(data.categories || []);
--    } catch (err) {
--      setDishError(err.message || "No se pudieron cargar las categorías.");
--    }
--  };
--
--  useEffect(() => {
--    loadCategories();
--  }, []);
--
--  const startEdit = useCallback(
--    (dish) => {
--      setDishError("");
--      setActiveDish(dish);
--      setIsModalOpen(true);
--    },
--    []
--  );
--
--  const startCreate = () => {
--    setActiveDish(null);
--    setDishError("");
--    setInitialSidedish(activeTab === "side");
--    setIsModalOpen(true);
-+  const startEdit = useCallback(
-+    (dish) => {
-+      setDishError("");
-+      setActiveDish(dish);
-+      setIsModalOpen(true);
-+    },
-+    []
-+  );
-+
-+  const startCreate = () => {
-+    setActiveDish(null);
-+    setDishError("");
-+    setInitialSidedish(activeTab === "side");
-+    setIsModalOpen(true);
+-  const rebuild = async () => {
+-    if (isDiodGlobalMode) return;
++  const refreshList = async () => {
++    if (isDiodGlobalMode) return;
++    setIsRefreshing(true);
+     try {
+       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/rebuild`, { method: "POST" });
+-      setList(data.list);
++      applyPayload(data);
+     } catch (err) {
+-      setError(err.message || "No se pudo regenerar la lista.");
++      setError(err.message || "No se pudo refrescar la lista.");
++    } finally {
++      setIsRefreshing(false);
+     }
    };
  
--  const closeModal = () => {
--    setIsModalOpen(false);
--    setActiveDish(null);
--  };
--
--  const onCategoryCreated = async (name, colors = null) => {
--    const data = await apiRequest("/api/categories", {
--      method: "POST",
--      body: JSON.stringify({
--        name,
--        colorBg: colors?.colorBg,
--        colorText: colors?.colorText,
--        ...(isDiodGlobalMode ? { scope: "master" } : {})
--      })
--    });
--    const category = data.category;
--    setCategories((prev) => {
--      const exists = prev.find((item) => item._id === category._id);
--      if (exists) return prev;
--      return [...prev, category];
--    });
--    return category;
--  };
--
--  const normalizedSearch = useMemo(
--    () => normalizeIngredientName(dishSearchTerm),
--    [dishSearchTerm]
--  );
--  const tabFilteredDishes = useMemo(() => {
--    const shouldShowSide = activeTab === "side";
--    return dishes.filter((dish) => Boolean(dish.sidedish) === shouldShowSide);
--  }, [activeTab, dishes]);
--  const visibleDishes = useMemo(() => {
--    if (!normalizedSearch) return tabFilteredDishes;
--    return tabFilteredDishes.filter((dish) => {
--      const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
--      if (nameMatch) return true;
--      return (dish.ingredients || []).some((item) => {
--        const displayName = normalizeIngredientName(item.displayName || "");
--        const canonicalName = normalizeIngredientName(item.canonicalName || "");
--        return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
--      });
--    });
--  }, [normalizedSearch, tabFilteredDishes]);
--  const dishMap = useMemo(() => {
--    const map = new Map();
--    dishes.forEach((dish) => {
--      if (dish?._id) map.set(dish._id, dish);
--    });
--    return map;
--  }, [dishes]);
--
--  const emptyMessage = useMemo(() => {
--    if (dishes.length === 0) {
--      return "No hay platos aún. Crea el primero.";
--    }
--    if (visibleDishes.length === 0) {
--      if (dishSearchTerm.trim()) {
--        return "No encontramos platos con ese criterio.";
--      }
--      return activeTab === "side"
--        ? "No hay guarniciones aún. Crea la primera."
--        : "No hay platos principales aún. Crea el primero.";
--    }
--    return "";
--  }, [activeTab, dishSearchTerm, dishes.length, visibleDishes.length]);
--
--  const loadIngredients = useCallback(async (query = "") => {
--    setIngredientsLoading(true);
--    setIngredientsError("");
--    try {
--      const params = new URLSearchParams({ includeInactive: "true", limit: "0" });
--      if (query.trim()) params.set("q", query.trim());
--      const data = await apiRequest(`/api/kitchenIngredients?${params.toString()}`);
--      setIngredients(data.ingredients || []);
--    } catch (err) {
--      setIngredientsError(err.message || "No se pudieron cargar los ingredientes.");
--    } finally {
--      setIngredientsLoading(false);
--    }
--  }, []);
--
--  useEffect(() => {
--    if (activeTab !== "ingredients") return;
--    const timeout = setTimeout(() => {
--      loadIngredients(ingredientSearchTerm);
--    }, 250);
--    return () => clearTimeout(timeout);
--  }, [activeTab, ingredientSearchTerm, loadIngredients]);
--
--  const startIngredientCreate = () => {
--    setActiveIngredient(null);
--    setIngredientsError("");
--    setIsIngredientModalOpen(true);
--  };
--
--  const startIngredientEdit = (ingredient) => {
--    setActiveIngredient(ingredient);
--    setIngredientsError("");
--    setIsIngredientModalOpen(true);
--  };
--
--  const closeIngredientModal = () => {
--    setIsIngredientModalOpen(false);
--    setActiveIngredient(null);
--  };
--
--  const assignDays = useMemo(() => {
--    return buildAssignDays(assignWeekStart);
--  }, [assignWeekStart]);
--
--  useEffect(() => {
--    if (!assignModalOpen) return;
--    let isActive = true;
--    setAssignWeekData({ status: "loading", occupied: {}, dishNames: {} });
--
--    apiRequest(`/api/kitchen/weeks/${assignWeekStart}`)
--      .then((data) => {
--        if (!isActive) return;
--        const occupied = {};
--        const dishNames = {};
--        (data?.plan?.days || []).forEach((day) => {
--          const dayKey = day?.date?.slice(0, 10);
--          if (!dayKey) return;
--          if (day.mainDishId) {
--            occupied[dayKey] = true;
--            const dishName = dishMap.get(day.mainDishId)?.name;
--            if (dishName) {
--              dishNames[dayKey] = dishName;
--            }
--          }
--        });
--        setAssignWeekData({ status: "ready", occupied, dishNames });
--      })
--      .catch(() => {
--        if (!isActive) return;
--        setAssignWeekData({ status: "error", occupied: {}, dishNames: {} });
--      });
--
--    return () => {
--      isActive = false;
--    };
--  }, [assignModalOpen, assignWeekStart, dishMap]);
--
--  useEffect(() => {
--    if (!assignModalOpen) return;
--    const occupancyReady = assignWeekData.status === "ready";
--    const isDateInWeek = assignDays.some((day) => day.date === assignDate);
--    const isCurrentValid =
--      assignDate &&
--      isDateInWeek &&
--      assignDate >= todayKey &&
--      (!occupancyReady || !assignWeekData.occupied[assignDate]);
--    if (isCurrentValid) return;
--    const nextDate =
--      assignDays.find(
--        (day) =>
--          day.date >= todayKey &&
--          (!occupancyReady || !assignWeekData.occupied[day.date])
--      )?.date || "";
--    if (nextDate !== assignDate) {
--      setAssignDate(nextDate);
--    }
--  }, [assignModalOpen, assignDate, assignDays, assignWeekData, todayKey]);
--
--  const openAssignModal = (dish) => {
--    if (!dish) return;
--    const initialWeekStart = getMondayISO();
--    const initialDays = buildAssignDays(initialWeekStart);
--    const initialDate = initialDays.find((day) => day.date >= todayKey)?.date || "";
--    setAssignDish(dish);
--    setAssignWeekStart(initialWeekStart);
--    setAssignDate(initialDate);
--    setAssignModalOpen(true);
--  };
--
--  const closeAssignModal = () => {
--    setAssignModalOpen(false);
--    setAssignDish(null);
--    setAssignDate("");
--    setAssignWeekData({ status: "idle", occupied: {}, dishNames: {} });
--  };
--
--  const confirmAssign = () => {
--    if (!assignDish?._id || !assignDate) return;
--    navigate(`/kitchen/semana?assignPlateId=${assignDish._id}&date=${assignDate}`);
--    closeAssignModal();
--  };
--
--  const ingredientEmptyMessage = useMemo(() => {
--    if (ingredients.length === 0) {
--      return "No hay ingredientes aún. Crea el primero.";
--    }
--    if (ingredientSearchTerm.trim()) {
--      return "No encontramos ingredientes con ese criterio.";
--    }
--    return "";
--  }, [ingredientSearchTerm, ingredients.length]);
--
--  const isIngredientsTab = activeTab === "ingredients";
--  const headerTitle = isIngredientsTab ? "Ingredientes" : "Platos";
--  const headerDescription = isIngredientsTab
--    ? "Gestiona el catálogo de ingredientes con sus categorías y estado."
--    : "Administra tus platos y sus ingredientes en un solo lugar.";
--  const headerActionLabel = isIngredientsTab
--    ? "Nuevo ingrediente"
--    : activeTab === "side"
--      ? "Nueva guarnición"
--      : "Nuevo plato";
--  const headerActionHandler = isIngredientsTab ? startIngredientCreate : startCreate;
--
-+  const closeModal = () => {
-+    setIsModalOpen(false);
-+    setActiveDish(null);
-+  };
-+
-+  const onCategoryCreated = async (name, colors = null) => {
-+    const data = await apiRequest("/api/categories", {
-+      method: "POST",
-+      body: JSON.stringify({
-+        name,
-+        colorBg: colors?.colorBg,
-+        colorText: colors?.colorText,
-+        ...(isDiodGlobalMode ? { scope: "master" } : {})
-+      })
-+    });
-+    const category = data.category;
-+    setCategories((prev) => {
-+      const exists = prev.find((item) => item._id === category._id);
-+      if (exists) return prev;
-+      return [...prev, category];
-+    });
-+    return category;
-+  };
-+
-+  const normalizedSearch = useMemo(
-+    () => normalizeIngredientName(dishSearchTerm),
-+    [dishSearchTerm]
-+  );
-+  const tabFilteredDishes = useMemo(() => {
-+    const shouldShowSide = activeTab === "side";
-+    return dishes.filter((dish) => Boolean(dish.sidedish) === shouldShowSide);
-+  }, [activeTab, dishes]);
-+  const visibleDishes = useMemo(() => {
-+    if (!normalizedSearch) return tabFilteredDishes;
-+    return tabFilteredDishes.filter((dish) => {
-+      const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
-+      if (nameMatch) return true;
-+      return (dish.ingredients || []).some((item) => {
-+        const displayName = normalizeIngredientName(item.displayName || "");
-+        const canonicalName = normalizeIngredientName(item.canonicalName || "");
-+        return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
-+      });
-+    });
-+  }, [normalizedSearch, tabFilteredDishes]);
-+  const dishMap = useMemo(() => {
-+    const map = new Map();
-+    dishes.forEach((dish) => {
-+      if (dish?._id) map.set(dish._id, dish);
-+    });
-+    return map;
-+  }, [dishes]);
-+
-+  const emptyMessage = useMemo(() => {
-+    if (dishes.length === 0) {
-+      return "No hay platos aún. Crea el primero.";
-+    }
-+    if (visibleDishes.length === 0) {
-+      if (dishSearchTerm.trim()) {
-+        return "No encontramos platos con ese criterio.";
-+      }
-+      return activeTab === "side"
-+        ? "No hay guarniciones aún. Crea la primera."
-+        : "No hay platos principales aún. Crea el primero.";
-+    }
-+    return "";
-+  }, [activeTab, dishSearchTerm, dishes.length, visibleDishes.length]);
-+
-+  const loadIngredients = useCallback(async (query = "") => {
-+    setIngredientsLoading(true);
-+    setIngredientsError("");
-+    try {
-+      const params = new URLSearchParams({ includeInactive: "true", limit: "0" });
-+      if (query.trim()) params.set("q", query.trim());
-+      const data = await apiRequest(`/api/kitchenIngredients?${params.toString()}`);
-+      setIngredients(data.ingredients || []);
-+    } catch (err) {
-+      setIngredientsError(err.message || "No se pudieron cargar los ingredientes.");
-+    } finally {
-+      setIngredientsLoading(false);
-+    }
-+  }, []);
-+
-+  useEffect(() => {
-+    if (activeTab !== "ingredients") return;
-+    const timeout = setTimeout(() => {
-+      loadIngredients(ingredientSearchTerm);
-+    }, 250);
-+    return () => clearTimeout(timeout);
-+  }, [activeTab, ingredientSearchTerm, loadIngredients]);
-+
-+  const startIngredientCreate = () => {
-+    setActiveIngredient(null);
-+    setIngredientsError("");
-+    setIsIngredientModalOpen(true);
-+  };
-+
-+  const startIngredientEdit = (ingredient) => {
-+    setActiveIngredient(ingredient);
-+    setIngredientsError("");
-+    setIsIngredientModalOpen(true);
-+  };
-+
-+  const closeIngredientModal = () => {
-+    setIsIngredientModalOpen(false);
-+    setActiveIngredient(null);
-+  };
-+
-+  const assignDays = useMemo(() => {
-+    return buildAssignDays(assignWeekStart);
-+  }, [assignWeekStart]);
-+
-+  useEffect(() => {
-+    if (!assignModalOpen) return;
-+    if (isDiodGlobalMode) {
-+      setAssignWeekData({ status: "error", occupied: {}, dishNames: {} });
-+      return;
-+    }
-+    let isActive = true;
-+    setAssignWeekData({ status: "loading", occupied: {}, dishNames: {} });
-+
-+    apiRequest(`/api/kitchen/weeks/${assignWeekStart}`)
-+      .then((data) => {
-+        if (!isActive) return;
-+        const occupied = {};
-+        const dishNames = {};
-+        (data?.plan?.days || []).forEach((day) => {
-+          const dayKey = day?.date?.slice(0, 10);
-+          if (!dayKey) return;
-+          if (day.mainDishId) {
-+            occupied[dayKey] = true;
-+            const dishName = dishMap.get(day.mainDishId)?.name;
-+            if (dishName) {
-+              dishNames[dayKey] = dishName;
-+            }
-+          }
-+        });
-+        setAssignWeekData({ status: "ready", occupied, dishNames });
-+      })
-+      .catch(() => {
-+        if (!isActive) return;
-+        setAssignWeekData({ status: "error", occupied: {}, dishNames: {} });
-+      });
-+
-+    return () => {
-+      isActive = false;
-+    };
-+  }, [assignModalOpen, assignWeekStart, dishMap, isDiodGlobalMode]);
-+
-+  useEffect(() => {
-+    if (!assignModalOpen) return;
-+    const occupancyReady = assignWeekData.status === "ready";
-+    const isDateInWeek = assignDays.some((day) => day.date === assignDate);
-+    const isCurrentValid =
-+      assignDate &&
-+      isDateInWeek &&
-+      assignDate >= todayKey &&
-+      (!occupancyReady || !assignWeekData.occupied[assignDate]);
-+    if (isCurrentValid) return;
-+    const nextDate =
-+      assignDays.find(
-+        (day) =>
-+          day.date >= todayKey &&
-+          (!occupancyReady || !assignWeekData.occupied[day.date])
-+      )?.date || "";
-+    if (nextDate !== assignDate) {
-+      setAssignDate(nextDate);
-+    }
-+  }, [assignModalOpen, assignDate, assignDays, assignWeekData, todayKey]);
-+
-+  const openAssignModal = (dish) => {
-+    if (!dish || isDiodGlobalMode) return;
-+    const initialWeekStart = getMondayISO();
-+    const initialDays = buildAssignDays(initialWeekStart);
-+    const initialDate = initialDays.find((day) => day.date >= todayKey)?.date || "";
-+    setAssignDish(dish);
-+    setAssignWeekStart(initialWeekStart);
-+    setAssignDate(initialDate);
-+    setAssignModalOpen(true);
-+  };
-+
-+  const closeAssignModal = () => {
-+    setAssignModalOpen(false);
-+    setAssignDish(null);
-+    setAssignDate("");
-+    setAssignWeekData({ status: "idle", occupied: {}, dishNames: {} });
-+  };
-+
-+  const confirmAssign = () => {
+-  const updateStatus = async (item, status) => {
+-    if (isDiodGlobalMode) return;
++  const setItemStatus = async (item, status) => {
 +    if (isDiodGlobalMode) return;
-+    if (!assignDish?._id || !assignDate) return;
-+    navigate(`/kitchen/semana?assignPlateId=${assignDish._id}&date=${assignDate}`);
-+    closeAssignModal();
+     try {
+       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
+         method: "PUT",
+-        body: JSON.stringify({ canonicalName: item.canonicalName, status, displayName: item.displayName })
++        body: JSON.stringify({ canonicalName: item.canonicalName, ingredientId: item.ingredientId, status })
+       });
+-      setList(data.list);
++      applyPayload(data);
+     } catch (err) {
+       setError(err.message || "No se pudo actualizar.");
+     }
+   };
+ 
+-  const items = (list?.items || []).filter((item) => (filter ? item.status === filter : true));
+-
+-  if (isDiodGlobalMode) {
+-    return (
+-      <KitchenLayout>
+-        <div className="kitchen-card">
+-          <h3>Selecciona un hogar para ver la lista de la compra</h3>
+-          <p className="kitchen-muted">En modo global DIOD no hay lista de compra asociada.</p>
+-        </div>
+-      </KitchenLayout>
+-    );
+-  }
+-
++  const updateTrip = async (payload) => {
++    if (isDiodGlobalMode) return;
++    try {
++      const data = await apiRequest("/api/kitchen/shopping/trip/active", {
++        method: "PUT",
++        body: JSON.stringify(payload)
++      });
++      setActiveTrip(data.activeTrip || null);
++      await loadList({ silent: true });
++    } catch (err) {
++      setError(err.message || "No se pudo actualizar la compra activa.");
++    }
 +  };
++
++  const closeTrip = async () => {
++    if (!activeTrip) return;
++    try {
++      await apiRequest("/api/kitchen/shopping/trip/active/close", { method: "POST" });
++      await loadList();
++    } catch (err) {
++      setError(err.message || "No se pudo cerrar la compra.");
++    }
++  };
++
++  const pendingCount = useMemo(
++    () => pendingByCategory.reduce((acc, group) => acc + (group.items?.length || 0), 0),
++    [pendingByCategory]
++  );
 +
 +  if (isDiodGlobalMode) {
 +    return (
 +      <KitchenLayout>
 +        <div className="kitchen-card">
-+          <h3>Selecciona un hogar para gestionar platos</h3>
-+          <p className="kitchen-muted">En modo global DIOD solo está disponible el catálogo master.</p>
++          <h3>Selecciona un hogar para ver la lista de la compra</h3>
++          <p className="kitchen-muted">En modo global DIOD no hay lista de compra asociada.</p>
 +        </div>
 +      </KitchenLayout>
 +    );
 +  }
 +
-+  const ingredientEmptyMessage = useMemo(() => {
-+    if (ingredients.length === 0) {
-+      return "No hay ingredientes aún. Crea el primero.";
-+    }
-+    if (ingredientSearchTerm.trim()) {
-+      return "No encontramos ingredientes con ese criterio.";
-+    }
-+    return "";
-+  }, [ingredientSearchTerm, ingredients.length]);
-+
-+  const isIngredientsTab = activeTab === "ingredients";
-+  const headerTitle = isIngredientsTab ? "Ingredientes" : "Platos";
-+  const headerDescription = isIngredientsTab
-+    ? "Gestiona el catálogo de ingredientes con sus categorías y estado."
-+    : "Administra tus platos y sus ingredientes en un solo lugar.";
-+  const headerActionLabel = isIngredientsTab
-+    ? "Nuevo ingrediente"
-+    : activeTab === "side"
-+      ? "Nueva guarnición"
-+      : "Nuevo plato";
-+  const headerActionHandler = isIngredientsTab ? startIngredientCreate : startCreate;
-+
    return (
      <KitchenLayout>
--      <div className="kitchen-dishes-page">
--        {isDiodGlobalMode ? (
--          <div className="kitchen-alert">Modo global DIOD: estás editando catálogo master sin hogar activo.</div>
--        ) : null}
--        <div className="kitchen-dishes-header">
--          <div>
--            <h2>{headerTitle}</h2>
--            <p className="kitchen-muted">{headerDescription}</p>
--          </div>
--          <button className="kitchen-button" type="button" onClick={headerActionHandler}>
--            {headerActionLabel}
--          </button>
--        </div>
--        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Secciones de cocina">
--          <button
--            className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
--            type="button"
--            role="tab"
--            aria-selected={activeTab === "main"}
--            onClick={() => setActiveTab("main")}
--          >
--            Platos
--          </button>
--          <button
--            className={`kitchen-tab-button ${activeTab === "side" ? "is-active" : ""}`}
--            type="button"
--            role="tab"
--            aria-selected={activeTab === "side"}
--            onClick={() => setActiveTab("side")}
--          >
--            Guarniciones
--          </button>
--          <button
--            className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
--            type="button"
--            role="tab"
--            aria-selected={activeTab === "ingredients"}
--            onClick={() => setActiveTab("ingredients")}
--          >
--            Ingredientes
--          </button>
--        </div>
--        <div className="kitchen-dishes-search">
--          <input
--            className="kitchen-input"
--            placeholder={
--              isIngredientsTab ? "Buscar ingrediente…" : "Buscar por plato o ingrediente…"
--            }
--            value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
--            onChange={(event) =>
--              isIngredientsTab
--                ? setIngredientSearchTerm(event.target.value)
--                : setDishSearchTerm(event.target.value)
--            }
--          />
--        </div>
--        {isIngredientsTab ? (
--          ingredientsLoading ? (
--            <div className="kitchen-card kitchen-dishes-loading">Cargando ingredientes...</div>
--          ) : ingredients.length === 0 ? (
--            <div className="kitchen-card kitchen-empty">
--              <p>{ingredientEmptyMessage}</p>
--            </div>
--          ) : (
--            <div className="kitchen-dishes-grid">
--              {ingredients.map((ingredient) => {
--                const category = ingredient.categoryId || null;
--                const colors = resolveCategoryColors(category);
--                return (
--                  <article className="kitchen-dish-card kitchen-ingredient-card" key={ingredient._id}>
--                    <div>
--                      <div className="kitchen-dish-title-row">
--                        <h3 className="kitchen-dish-name">{ingredient.name}</h3>
--                        <span
--                          className={`kitchen-status-pill ${
--                            ingredient.active ? "active" : "inactive"
--                          }`}
--                        >
--                          {ingredient.active ? "Activo" : "Inactivo"}
--                        </span>
--                      </div>
--                      <p className="kitchen-ingredient-canonical">
--                        Canonical: {ingredient.canonicalName}
--                      </p>
--                      {category ? (
--                        <div className="kitchen-ingredient-tags">
--                          <CategoryChip
--                            label={category.name}
--                            colorBg={category.colorBg || colors.colorBg}
--                            colorText={category.colorText || colors.colorText}
--                          />
--                        </div>
--                      ) : null}
--                    </div>
--                    <div className="kitchen-dish-actions">
--                      <button
--                        className="kitchen-icon-button"
--                        type="button"
--                        onClick={() => startIngredientEdit(ingredient)}
--                        aria-label={`Editar ${ingredient.name}`}
--                      >
--                        <svg viewBox="0 0 24 24" aria-hidden="true">
--                          <path
--                            d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
--                            fill="none"
--                            stroke="currentColor"
--                            strokeWidth="1.5"
--                            strokeLinecap="round"
--                            strokeLinejoin="round"
--                          />
--                          <path
--                            d="M15.75 5.625 18.375 8.25"
--                            fill="none"
--                            stroke="currentColor"
--                            strokeWidth="1.5"
--                            strokeLinecap="round"
--                          />
--                        </svg>
--                      </button>
--                    </div>
--                  </article>
--                );
--              })}
--            </div>
--          )
--        ) : loading ? (
--          <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
--        ) : visibleDishes.length === 0 ? (
--          <div className="kitchen-card kitchen-empty">
--            <p>{emptyMessage}</p>
--          </div>
--        ) : (
--          <div className="kitchen-dishes-grid">
--            {visibleDishes.map((dish) => {
--              const ingredientsText =
--                (dish.ingredients || []).map((item) => item.displayName).join(", ") ||
--                "Sin ingredientes";
--              return (
--                <article
--                  className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
--                  key={dish._id}
--                >
--                  <div>
--                    <div className="kitchen-dish-title-row">
--                      <h3 className="kitchen-dish-name">{dish.name}</h3>
--                      {dish.sidedish ? <span className="kitchen-dish-badge">Guarnición</span> : null}
--                    </div>
--                    <p className="kitchen-dish-ingredients-text" title={ingredientsText}>
--                      {ingredientsText}
--                    </p>
--                  </div>
--                  <div className="kitchen-dish-actions">
--                    <button
--                      className="kitchen-icon-button"
--                      type="button"
--                      onClick={() => startEdit(dish)}
--                      aria-label={`Editar ${dish.name}`}
--                    >
--                      <svg viewBox="0 0 24 24" aria-hidden="true">
--                        <path
--                          d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
--                          fill="none"
--                          stroke="currentColor"
--                          strokeWidth="1.5"
--                          strokeLinecap="round"
--                          strokeLinejoin="round"
--                        />
--                        <path
--                          d="M15.75 5.625 18.375 8.25"
--                          fill="none"
--                          stroke="currentColor"
--                          strokeWidth="1.5"
--                          strokeLinecap="round"
--                        />
--                      </svg>
--                    </button>
--                    {!isDiodGlobalMode ? (
--                    <button
--                      className="kitchen-icon-button assign"
--                      type="button"
--                      onClick={() => openAssignModal(dish)}
--                      aria-label="Asignar"
--                      title="Asignar"
--                    >
--                      <svg viewBox="0 0 24 24" aria-hidden="true">
--                        <path
--                          d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M5 10h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"
--                          fill="none"
--                          stroke="currentColor"
--                          strokeWidth="1.5"
--                          strokeLinecap="round"
--                          strokeLinejoin="round"
--                        />
--                        <path
--                          d="m8 15 2 2 4-4"
--                          fill="none"
--                          stroke="currentColor"
--                          strokeWidth="1.5"
--                          strokeLinecap="round"
--                          strokeLinejoin="round"
--                        />
--                      </svg>
--                    </button>
--                    ) : null}
--                    {dish.sidedish || user?.role === "admin" || user?.globalRole === "diod" ? (
--                      <button
--                        className="kitchen-icon-button danger"
--                        type="button"
--                        onClick={async () => {
--                          await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
--                          if (activeDish?._id === dish._id) closeModal();
--                          loadDishes();
--                        }}
--                        aria-label={`Eliminar ${dish.name}`}
--                      >
--                        <svg viewBox="0 0 24 24" aria-hidden="true">
--                          <path
--                            d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
--                            fill="none"
--                            stroke="currentColor"
--                            strokeWidth="1.5"
--                            strokeLinecap="round"
--                            strokeLinejoin="round"
--                          />
--                          <path
--                            d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
--                            fill="none"
--                            stroke="currentColor"
--                            strokeWidth="1.5"
--                            strokeLinecap="round"
--                            strokeLinejoin="round"
--                          />
--                        </svg>
--                      </button>
--                    ) : null}
--                  </div>
--                </article>
--              );
--            })}
--          </div>
--        )}
--        {dishError ? <div className="kitchen-alert error">{dishError}</div> : null}
--        {ingredientsError && isIngredientsTab ? (
--          <div className="kitchen-alert error">{ingredientsError}</div>
--        ) : null}
--      </div>
--
--      <DishModal
--        isOpen={isModalOpen}
--        onClose={closeModal}
--        onSaved={async () => {
--          await loadDishes();
--        }}
--        categories={categories}
--        onCategoryCreated={onCategoryCreated}
--        initialDish={activeDish}
--        initialSidedish={initialSidedish}
--        scope={isDiodGlobalMode ? "master" : undefined}
--      />
--      <IngredientModal
--        isOpen={isIngredientModalOpen}
--        onClose={closeIngredientModal}
--        onSaved={async () => {
--          await loadIngredients(ingredientSearchTerm);
--        }}
--        categories={categories}
--        onCategoryCreated={onCategoryCreated}
--        initialIngredient={activeIngredient}
--        scope={isDiodGlobalMode ? "master" : undefined}
--      />
--      {assignModalOpen ? (
--        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeAssignModal}>
--          <div
--            className="kitchen-modal kitchen-assign-modal"
--            role="dialog"
--            aria-modal="true"
--            aria-label="Asignar plato"
--            onClick={(event) => event.stopPropagation()}
--          >
--            <div className="kitchen-modal-header">
--              <div>
--                <h3>Asignar plato</h3>
--                <p className="kitchen-muted">
--                  Selecciona el día en el que quieres planificar {assignDish?.name}.
--                </p>
--              </div>
--              <button
--                className="kitchen-icon-button"
--                type="button"
--                onClick={closeAssignModal}
--                aria-label="Cerrar"
--              >
--                <svg viewBox="0 0 24 24" aria-hidden="true">
--                  <path
--                    d="M6 6l12 12M18 6 6 18"
--                    fill="none"
--                    stroke="currentColor"
--                    strokeWidth="1.5"
--                    strokeLinecap="round"
--                  />
--                </svg>
--              </button>
--            </div>
--            <div className="kitchen-assign-body">
--              <div className="kitchen-assign-week-header" role="group" aria-label="Cambiar semana">
--                <button
--                  className="kitchen-assign-week-nav"
--                  type="button"
--                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, -7))}
--                  aria-label="Ir a la semana anterior"
--                  disabled={assignWeekStart <= currentWeekStart}
--                >
--                  <ChevronIcon className="kitchen-assign-week-icon" />
--                </button>
--                <span className="kitchen-assign-week-label">
--                  Semana del {formatWeekLabel(assignWeekStart)}
--                </span>
--                <button
--                  className="kitchen-assign-week-nav"
--                  type="button"
--                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, 7))}
--                  aria-label="Ir a la semana siguiente"
--                >
--                  <ChevronIcon className="kitchen-assign-week-icon is-next" />
--                </button>
--              </div>
--              <div className="kitchen-assign-days" role="group" aria-label="Selecciona el día">
--                {assignDays.map((day) => {
--                  const occupancyReady = assignWeekData.status === "ready";
--                  const isOccupied = occupancyReady && assignWeekData.occupied[day.date];
--                  const isDisabled = day.date < todayKey || isOccupied;
--                  const isSelected = assignDate === day.date;
--                  const occupiedDishName = isOccupied ? assignWeekData.dishNames[day.date] : "";
--                  return (
--                    <button
--                      key={day.date}
--                      type="button"
--                      className={`kitchen-assign-day ${isSelected ? "is-selected" : ""} ${
--                        isOccupied ? "is-occupied" : ""
--                      }`}
--                      onClick={() => setAssignDate(day.date)}
--                      disabled={isDisabled}
--                      aria-pressed={isSelected}
--                      title={occupiedDishName ? `Ocupado: ${occupiedDishName}` : undefined}
--                    >
--                      <span className="kitchen-assign-day-label">{day.label}</span>
--                      <span className="kitchen-assign-day-number">{day.number}</span>
--                      {isOccupied ? (
--                        <span className="kitchen-assign-day-status">
--                          Ocupado
--                          {occupiedDishName ? (
--                            <span className="kitchen-assign-day-detail">{occupiedDishName}</span>
--                          ) : null}
--                        </span>
--                      ) : null}
--                    </button>
--                  );
--                })}
--              </div>
--            </div>
--            <div className="kitchen-modal-actions">
--              <button className="kitchen-button" type="button" onClick={confirmAssign} disabled={!assignDate}>
--                Confirmar día
--              </button>
--              <button className="kitchen-button secondary" type="button" onClick={closeAssignModal}>
--                Cancelar
--              </button>
--            </div>
--          </div>
-+      <div className="kitchen-dishes-page">
-+        <div className="kitchen-dishes-header">
+-      <div className="kitchen-card" style={{ marginBottom: 16 }}>
+-        <h3>Lista de la compra</h3>
+-        <p className="kitchen-muted">Generada desde la planificación semanal.</p>
+-        <div className="kitchen-actions">
+-          <button className="kitchen-button" onClick={rebuild}>Recalcular lista</button>
+-          <label>
+-            <input
+-              className="kitchen-input"
+-              type="date"
+-              value={weekStart}
+-              onChange={(event) => setWeekStart(event.target.value)}
+-              aria-label="Semana"
+-            />
+-          </label>
+-          <label>
+-            <span className="kitchen-label">Filtro</span>
+-            <select className="kitchen-select" value={filter} onChange={(event) => setFilter(event.target.value)}>
+-              <option value="need">Pendiente</option>
+-              <option value="have">Ya lo tenemos</option>
+-              <option value="bought">Comprado</option>
+-              <option value="">Todos</option>
+-            </select>
+-          </label>
++      <div className="kitchen-card shopping-header-card">
++        <div className="shopping-header-row">
 +          <div>
-+            <h2>{headerTitle}</h2>
-+            <p className="kitchen-muted">{headerDescription}</p>
++            <h3>Lista de la compra</h3>
++            <p className="kitchen-muted">Sincronizada automáticamente al asignar platos.</p>
 +          </div>
-+          <button className="kitchen-button" type="button" onClick={headerActionHandler}>
-+            {headerActionLabel}
-+          </button>
-+        </div>
-+        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Secciones de cocina">
-+          <button
-+            className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
-+            type="button"
-+            role="tab"
-+            aria-selected={activeTab === "main"}
-+            onClick={() => setActiveTab("main")}
++          <button className="shopping-refresh-icon" onClick={refreshList} title="Refrescar" disabled={isRefreshing}>↻</button>
+         </div>
++
++        <div className="shopping-toolbar">
++          <input className="kitchen-input" type="date" value={weekStart} onChange={(event) => setWeekStart(event.target.value)} />
++          <select
++            className="kitchen-select"
++            value={activeTrip?.storeId || ""}
++            onChange={(event) => updateTrip({ storeId: event.target.value || null, totalAmount: activeTrip?.totalAmount ?? null })}
 +          >
-+            Platos
-+          </button>
-+          <button
-+            className={`kitchen-tab-button ${activeTab === "side" ? "is-active" : ""}`}
-+            type="button"
-+            role="tab"
-+            aria-selected={activeTab === "side"}
-+            onClick={() => setActiveTab("side")}
-+          >
-+            Guarniciones
-+          </button>
-+          <button
-+            className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
-+            type="button"
-+            role="tab"
-+            aria-selected={activeTab === "ingredients"}
-+            onClick={() => setActiveTab("ingredients")}
-+          >
-+            Ingredientes
-+          </button>
-+        </div>
-+        <div className="kitchen-dishes-search">
++            <option value="">Supermercado (opcional)</option>
++            {stores.map((store) => (
++              <option key={store._id} value={store._id}>{store.name}</option>
++            ))}
++          </select>
 +          <input
 +            className="kitchen-input"
-+            placeholder={
-+              isIngredientsTab ? "Buscar ingrediente…" : "Buscar por plato o ingrediente…"
-+            }
-+            value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
-+            onChange={(event) =>
-+              isIngredientsTab
-+                ? setIngredientSearchTerm(event.target.value)
-+                : setDishSearchTerm(event.target.value)
-+            }
++            type="number"
++            min="0"
++            step="0.01"
++            placeholder="Importe total €"
++            value={activeTrip?.totalAmount ?? ""}
++            onChange={(event) => updateTrip({ storeId: activeTrip?.storeId || null, totalAmount: event.target.value })}
 +          />
++          {activeTrip ? (
++            <button className="kitchen-button secondary" onClick={closeTrip}>Cerrar compra</button>
++          ) : null}
 +        </div>
-+        {isIngredientsTab ? (
-+          ingredientsLoading ? (
-+            <div className="kitchen-card kitchen-dishes-loading">Cargando ingredientes...</div>
-+          ) : ingredients.length === 0 ? (
++
++        <div className="shopping-tabs">
++          <button className={`shopping-tab ${tab === "pending" ? "active" : ""}`} onClick={() => setTab("pending")}>🛒 Pendiente ({pendingCount})</button>
++          <button className={`shopping-tab ${tab === "purchased" ? "active" : ""}`} onClick={() => setTab("purchased")}>✅ Comprado</button>
++        </div>
++
+         {error ? <div style={{ color: "#b42318", marginTop: 8 }}>{error}</div> : null}
+       </div>
+ 
+-      <div className="kitchen-card">
+-        {items.length === 0 ? (
+-          <div className="kitchen-empty">
+-            <h4>No hay ingredientes en este estado.</h4>
+-            <p className="kitchen-muted">Recalcula la lista o cambia el filtro.</p>
+-          </div>
+-        ) : (
+-          <table className="kitchen-table">
+-            <thead>
+-              <tr>
+-                <th>Ingrediente</th>
+-                <th>Estado</th>
+-                <th>Acción rápida</th>
+-              </tr>
+-            </thead>
+-            <tbody>
+-              {items.map((item) => (
+-                <tr key={item.canonicalName}>
+-                  <td>{item.displayName}</td>
+-                  <td>{item.status}</td>
+-                  <td>
+-                    <div className="kitchen-actions">
+-                      <button className="kitchen-button secondary" onClick={() => updateStatus(item, "need")}>Pendiente</button>
+-                      <button className="kitchen-button secondary" onClick={() => updateStatus(item, "have")}>Tenemos</button>
+-                      <button className="kitchen-button secondary" onClick={() => updateStatus(item, "bought")}>Comprado</button>
+-                    </div>
+-                  </td>
+-                </tr>
+-              ))}
+-            </tbody>
+-          </table>
+-        )}
+-      </div>
++      {tab === "pending" ? (
++        <div className="shopping-categories">
++          {pendingByCategory.length === 0 ? (
 +            <div className="kitchen-card kitchen-empty">
-+              <p>{ingredientEmptyMessage}</p>
++              <h4>No hay pendientes para esta semana.</h4>
 +            </div>
 +          ) : (
-+            <div className="kitchen-dishes-grid">
-+              {ingredients.map((ingredient) => {
-+                const category = ingredient.categoryId || null;
-+                const colors = resolveCategoryColors(category);
-+                return (
-+                  <article className="kitchen-dish-card kitchen-ingredient-card" key={ingredient._id}>
-+                    <div>
-+                      <div className="kitchen-dish-title-row">
-+                        <h3 className="kitchen-dish-name">{ingredient.name}</h3>
-+                        <span
-+                          className={`kitchen-status-pill ${
-+                            ingredient.active ? "active" : "inactive"
-+                          }`}
-+                        >
-+                          {ingredient.active ? "Activo" : "Inactivo"}
-+                        </span>
-+                      </div>
-+                      <p className="kitchen-ingredient-canonical">
-+                        Canonical: {ingredient.canonicalName}
-+                      </p>
-+                      {category ? (
-+                        <div className="kitchen-ingredient-tags">
-+                          <CategoryChip
-+                            label={category.name}
-+                            colorBg={category.colorBg || colors.colorBg}
-+                            colorText={category.colorText || colors.colorText}
-+                          />
-+                        </div>
-+                      ) : null}
-+                    </div>
-+                    <div className="kitchen-dish-actions">
-+                      <button
-+                        className="kitchen-icon-button"
-+                        type="button"
-+                        onClick={() => startIngredientEdit(ingredient)}
-+                        aria-label={`Editar ${ingredient.name}`}
-+                      >
-+                        <svg viewBox="0 0 24 24" aria-hidden="true">
-+                          <path
-+                            d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
-+                            fill="none"
-+                            stroke="currentColor"
-+                            strokeWidth="1.5"
-+                            strokeLinecap="round"
-+                            strokeLinejoin="round"
-+                          />
-+                          <path
-+                            d="M15.75 5.625 18.375 8.25"
-+                            fill="none"
-+                            stroke="currentColor"
-+                            strokeWidth="1.5"
-+                            strokeLinecap="round"
-+                          />
-+                        </svg>
-+                      </button>
-+                    </div>
-+                  </article>
-+                );
-+              })}
-+            </div>
-+          )
-+        ) : loading ? (
-+          <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
-+        ) : visibleDishes.length === 0 ? (
-+          <div className="kitchen-card kitchen-empty">
-+            <p>{emptyMessage}</p>
-+          </div>
-+        ) : (
-+          <div className="kitchen-dishes-grid">
-+            {visibleDishes.map((dish) => {
-+              const ingredientsText =
-+                (dish.ingredients || []).map((item) => item.displayName).join(", ") ||
-+                "Sin ingredientes";
-+              return (
-+                <article
-+                  className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
-+                  key={dish._id}
-+                >
-+                  <div>
-+                    <div className="kitchen-dish-title-row">
-+                      <h3 className="kitchen-dish-name">{dish.name}</h3>
-+                      {dish.sidedish ? <span className="kitchen-dish-badge">Guarnición</span> : null}
-+                    </div>
-+                    <p className="kitchen-dish-ingredients-text" title={ingredientsText}>
-+                      {ingredientsText}
-+                    </p>
-+                  </div>
-+                  <div className="kitchen-dish-actions">
-+                    <button
-+                      className="kitchen-icon-button"
-+                      type="button"
-+                      onClick={() => startEdit(dish)}
-+                      aria-label={`Editar ${dish.name}`}
-+                    >
-+                      <svg viewBox="0 0 24 24" aria-hidden="true">
-+                        <path
-+                          d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
-+                          fill="none"
-+                          stroke="currentColor"
-+                          strokeWidth="1.5"
-+                          strokeLinecap="round"
-+                          strokeLinejoin="round"
-+                        />
-+                        <path
-+                          d="M15.75 5.625 18.375 8.25"
-+                          fill="none"
-+                          stroke="currentColor"
-+                          strokeWidth="1.5"
-+                          strokeLinecap="round"
-+                        />
-+                      </svg>
-+                    </button>
-+                    {!isDiodGlobalMode ? (
-+                    <button
-+                      className="kitchen-icon-button assign"
-+                      type="button"
-+                      onClick={() => openAssignModal(dish)}
-+                      aria-label="Asignar"
-+                      title="Asignar"
-+                    >
-+                      <svg viewBox="0 0 24 24" aria-hidden="true">
-+                        <path
-+                          d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M5 10h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"
-+                          fill="none"
-+                          stroke="currentColor"
-+                          strokeWidth="1.5"
-+                          strokeLinecap="round"
-+                          strokeLinejoin="round"
-+                        />
-+                        <path
-+                          d="m8 15 2 2 4-4"
-+                          fill="none"
-+                          stroke="currentColor"
-+                          strokeWidth="1.5"
-+                          strokeLinecap="round"
-+                          strokeLinejoin="round"
-+                        />
-+                      </svg>
-+                    </button>
-+                    ) : null}
-+                    {dish.sidedish || user?.role === "admin" || user?.globalRole === "diod" ? (
-+                      <button
-+                        className="kitchen-icon-button danger"
-+                        type="button"
-+                        onClick={async () => {
-+                          await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
-+                          if (activeDish?._id === dish._id) closeModal();
-+                          loadDishes();
-+                        }}
-+                        aria-label={`Eliminar ${dish.name}`}
-+                      >
-+                        <svg viewBox="0 0 24 24" aria-hidden="true">
-+                          <path
-+                            d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
-+                            fill="none"
-+                            stroke="currentColor"
-+                            strokeWidth="1.5"
-+                            strokeLinecap="round"
-+                            strokeLinejoin="round"
-+                          />
-+                          <path
-+                            d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
-+                            fill="none"
-+                            stroke="currentColor"
-+                            strokeWidth="1.5"
-+                            strokeLinecap="round"
-+                            strokeLinejoin="round"
-+                          />
-+                        </svg>
-+                      </button>
-+                    ) : null}
-+                  </div>
-+                </article>
-+              );
-+            })}
-+          </div>
-+        )}
-+        {dishError ? <div className="kitchen-alert error">{dishError}</div> : null}
-+        {ingredientsError && isIngredientsTab ? (
-+          <div className="kitchen-alert error">{ingredientsError}</div>
-+        ) : null}
-+      </div>
-+
-+      <DishModal
-+        isOpen={isModalOpen}
-+        onClose={closeModal}
-+        onSaved={async () => {
-+          await loadDishes();
-+        }}
-+        categories={categories}
-+        onCategoryCreated={onCategoryCreated}
-+        initialDish={activeDish}
-+        initialSidedish={initialSidedish}
-+        scope={isDiodGlobalMode ? "master" : undefined}
-+      />
-+      <IngredientModal
-+        isOpen={isIngredientModalOpen}
-+        onClose={closeIngredientModal}
-+        onSaved={async () => {
-+          await loadIngredients(ingredientSearchTerm);
-+        }}
-+        categories={categories}
-+        onCategoryCreated={onCategoryCreated}
-+        initialIngredient={activeIngredient}
-+        scope={isDiodGlobalMode ? "master" : undefined}
-+      />
-+      {assignModalOpen ? (
-+        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeAssignModal}>
-+          <div
-+            className="kitchen-modal kitchen-assign-modal"
-+            role="dialog"
-+            aria-modal="true"
-+            aria-label="Asignar plato"
-+            onClick={(event) => event.stopPropagation()}
-+          >
-+            <div className="kitchen-modal-header">
-+              <div>
-+                <h3>Asignar plato</h3>
-+                <p className="kitchen-muted">
-+                  Selecciona el día en el que quieres planificar {assignDish?.name}.
-+                </p>
++            pendingByCategory.map((group) => (
++              <div className="kitchen-card shopping-category-card" key={group.categoryName}>
++                <h4>{group.categoryName.toUpperCase()} ({group.items.length})</h4>
++                <div className="shopping-items-list">
++                  {group.items.map((item) => (
++                    <label className="shopping-item" key={`${item.canonicalName}-${item.ingredientId || "no-id"}`}>
++                      <input type="checkbox" checked={false} onChange={() => setItemStatus(item, "purchased")} />
++                      <span>{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
++                    </label>
++                  ))}
++                </div>
 +              </div>
-+              <button
-+                className="kitchen-icon-button"
-+                type="button"
-+                onClick={closeAssignModal}
-+                aria-label="Cerrar"
-+              >
-+                <svg viewBox="0 0 24 24" aria-hidden="true">
-+                  <path
-+                    d="M6 6l12 12M18 6 6 18"
-+                    fill="none"
-+                    stroke="currentColor"
-+                    strokeWidth="1.5"
-+                    strokeLinecap="round"
-+                  />
-+                </svg>
-+              </button>
++            ))
++          )}
++        </div>
++      ) : (
++        <div className="shopping-categories">
++          {purchasedByTrip.length === 0 ? (
++            <div className="kitchen-card kitchen-empty">
++              <h4>Aún no hay ingredientes comprados.</h4>
 +            </div>
-+            <div className="kitchen-assign-body">
-+              <div className="kitchen-assign-week-header" role="group" aria-label="Cambiar semana">
-+                <button
-+                  className="kitchen-assign-week-nav"
-+                  type="button"
-+                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, -7))}
-+                  aria-label="Ir a la semana anterior"
-+                  disabled={assignWeekStart <= currentWeekStart}
-+                >
-+                  <ChevronIcon className="kitchen-assign-week-icon" />
-+                </button>
-+                <span className="kitchen-assign-week-label">
-+                  Semana del {formatWeekLabel(assignWeekStart)}
-+                </span>
-+                <button
-+                  className="kitchen-assign-week-nav"
-+                  type="button"
-+                  onClick={() => setAssignWeekStart((prev) => addDaysToISO(prev, 7))}
-+                  aria-label="Ir a la semana siguiente"
-+                >
-+                  <ChevronIcon className="kitchen-assign-week-icon is-next" />
-+                </button>
++          ) : (
++            purchasedByTrip.map((trip) => (
++              <div className="kitchen-card shopping-category-card" key={trip.tripId || `trip-${trip.startedAt}`}>
++                <h4>{trip.storeName} · {formatTripDate(trip.startedAt)} {trip.totalAmount !== null ? `· ${formatAmount(trip.totalAmount)}` : ""}</h4>
++                <div className="shopping-items-list">
++                  {trip.items.map((item) => (
++                    <label className="shopping-item purchased" key={`${item.canonicalName}-${item.ingredientId || "no-id"}`}>
++                      <input type="checkbox" checked onChange={() => setItemStatus(item, "pending")} />
++                      <span>
++                        {item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}
++                        <small className="kitchen-muted"> · marcado por {item.purchasedByName || "Usuario"} {item.purchasedAt ? new Date(item.purchasedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}</small>
++                      </span>
++                    </label>
++                  ))}
++                </div>
 +              </div>
-+              <div className="kitchen-assign-days" role="group" aria-label="Selecciona el día">
-+                {assignDays.map((day) => {
-+                  const occupancyReady = assignWeekData.status === "ready";
-+                  const isOccupied = occupancyReady && assignWeekData.occupied[day.date];
-+                  const isDisabled = day.date < todayKey || isOccupied;
-+                  const isSelected = assignDate === day.date;
-+                  const occupiedDishName = isOccupied ? assignWeekData.dishNames[day.date] : "";
-+                  return (
-+                    <button
-+                      key={day.date}
-+                      type="button"
-+                      className={`kitchen-assign-day ${isSelected ? "is-selected" : ""} ${
-+                        isOccupied ? "is-occupied" : ""
-+                      }`}
-+                      onClick={() => setAssignDate(day.date)}
-+                      disabled={isDisabled}
-+                      aria-pressed={isSelected}
-+                      title={occupiedDishName ? `Ocupado: ${occupiedDishName}` : undefined}
-+                    >
-+                      <span className="kitchen-assign-day-label">{day.label}</span>
-+                      <span className="kitchen-assign-day-number">{day.number}</span>
-+                      {isOccupied ? (
-+                        <span className="kitchen-assign-day-status">
-+                          Ocupado
-+                          {occupiedDishName ? (
-+                            <span className="kitchen-assign-day-detail">{occupiedDishName}</span>
-+                          ) : null}
-+                        </span>
-+                      ) : null}
-+                    </button>
-+                  );
-+                })}
-+              </div>
-+            </div>
-+            <div className="kitchen-modal-actions">
-+              <button className="kitchen-button" type="button" onClick={confirmAssign} disabled={!assignDate}>
-+                Confirmar día
-+              </button>
-+              <button className="kitchen-button secondary" type="button" onClick={closeAssignModal}>
-+                Cancelar
-+              </button>
-+            </div>
-+          </div>
-         </div>
--      ) : null}
-+      ) : null}
++            ))
++          )}
++        </div>
++      )}
      </KitchenLayout>
    );
  }

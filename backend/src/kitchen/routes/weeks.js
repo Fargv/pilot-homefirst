@@ -9,6 +9,7 @@ import {
   handleHouseholdError
 } from "../householdScope.js";
 import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
+import { rebuildShoppingList } from "../shoppingService.js";
 
 const router = express.Router();
 
@@ -122,6 +123,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = ingredientOverrides;
 
     await plan.save();
+    await rebuildShoppingList(monday, effectiveHouseholdId);
     return res.json({ ok: true, plan });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
@@ -156,6 +158,7 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
     }));
 
     await targetPlan.save();
+    await rebuildShoppingList(monday, effectiveHouseholdId);
     return res.json({ ok: true, plan: targetPlan });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
@@ -234,6 +237,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     sourceDay.ingredientOverrides = [];
 
     await plan.save();
+    await rebuildShoppingList(monday, effectiveHouseholdId);
     return res.json({ ok: true, plan });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
