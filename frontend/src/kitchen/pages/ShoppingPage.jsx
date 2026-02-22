@@ -14,6 +14,14 @@ function RefreshIcon(props) {
   );
 }
 
+function MinusIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M6 12h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function EmptyStateIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
@@ -94,7 +102,7 @@ function slugColor(slug = "") {
 }
 
 function itemKey(item) {
-  return `${item.ingredientId || "no-id"}-${item.canonicalName}`;
+  return item.itemId || `${item.ingredientId || "no-id"}-${item.canonicalName}`;
 }
 
 function normalizeQuery(value = "") {
@@ -115,13 +123,13 @@ export default function ShoppingPage() {
   const [purchasedByStoreDay, setPurchasedByStoreDay] = useState(null);
   const [transitioningItemKey, setTransitioningItemKey] = useState(null);
   const [recentlyMovedItemKey, setRecentlyMovedItemKey] = useState(null);
-  const [manualOpen, setManualOpen] = useState(false);
-  const [manualQuery, setManualQuery] = useState("");
-  const [manualSuggestions, setManualSuggestions] = useState([]);
-  const [manualCategories, setManualCategories] = useState([]);
-  const [manualIngredient, setManualIngredient] = useState(null);
-  const [manualCategoryId, setManualCategoryId] = useState("");
-  const [manualSaving, setManualSaving] = useState(false);
+  const [quickQuery, setQuickQuery] = useState("");
+  const [quickSuggestions, setQuickSuggestions] = useState([]);
+  const [quickCategories, setQuickCategories] = useState([]);
+  const [quickCategoryId, setQuickCategoryId] = useState("");
+  const [quickBusy, setQuickBusy] = useState(false);
+  const [quickSearching, setQuickSearching] = useState(false);
+  const quickInputRef = useRef(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
 
   const applyPayload = (data) => {
@@ -171,46 +179,47 @@ export default function ShoppingPage() {
   }, [recentlyMovedItemKey]);
 
   useEffect(() => {
-    if (!manualOpen) return;
     let active = true;
-    const loadBase = async () => {
+    const loadCategories = async () => {
       try {
-        const [categoriesData, ingredientsData] = await Promise.all([
-          apiRequest("/api/categories"),
-          apiRequest("/api/kitchenIngredients?limit=30")
-        ]);
+        const categoriesData = await apiRequest("/api/categories");
         if (!active) return;
-        setManualCategories(categoriesData.categories || []);
-        setManualSuggestions(ingredientsData.ingredients || []);
-      } catch (err) {
+        setQuickCategories(categoriesData.categories || []);
+      } catch {
         if (!active) return;
-        setError(err.message || "No se pudo preparar el alta manual.");
+        setQuickCategories([]);
       }
     };
-    void loadBase();
+    void loadCategories();
     return () => {
       active = false;
     };
-  }, [manualOpen]);
+  }, []);
 
   useEffect(() => {
-    if (!manualOpen) return;
+    if (!quickQuery.trim()) {
+      setQuickSuggestions([]);
+      return;
+    }
     let active = true;
+    setQuickSearching(true);
     const timer = setTimeout(async () => {
       try {
-        const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(manualQuery)}&limit=30`);
+        const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(quickQuery)}&limit=20`);
         if (!active) return;
-        setManualSuggestions(data.ingredients || []);
+        setQuickSuggestions(data.ingredients || []);
       } catch {
         if (!active) return;
-        setManualSuggestions([]);
+        setQuickSuggestions([]);
+      } finally {
+        if (active) setQuickSearching(false);
       }
     }, 200);
     return () => {
       active = false;
       clearTimeout(timer);
     };
-  }, [manualOpen, manualQuery]);
+  }, [quickQuery]);
 
   const refreshList = async () => {
     if (isDiodGlobalMode) return;
@@ -224,6 +233,77 @@ export default function ShoppingPage() {
       setError(err.message || "No se pudo refrescar la lista.");
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const addIngredientToList = async (ingredientId, categoryId) => {
+    const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items`, {
+      method: "POST",
+      body: JSON.stringify({ ingredientId, categoryId: categoryId || null, storeId: selectedStoreRef.current || null })
+    });
+    applyPayload(data);
+  };
+
+  const createHouseholdIngredient = async (name, categoryId) => {
+    const data = await apiRequest("/api/kitchenIngredients", {
+      method: "POST",
+      body: JSON.stringify({
+        name: name.trim(),
+        categoryId,
+        scope: "household",
+        householdId: user?.activeHouseholdId || null
+      })
+    });
+    return data.ingredient || null;
+  };
+
+  const handleQuickSelect = async (ingredient) => {
+    if (!ingredient?._id || quickBusy) return;
+    setQuickBusy(true);
+    setError("");
+    try {
+      await addIngredientToList(ingredient._id, ingredient.categoryId?._id || ingredient.categoryId || quickCategoryId || null);
+      setQuickQuery("");
+      setQuickSuggestions([]);
+      setQuickCategoryId("");
+      quickInputRef.current?.focus();
+    } catch (err) {
+      setError(err.message || "No se pudo añadir el ingrediente a la lista.");
+    } finally {
+      setQuickBusy(false);
+    }
+  };
+
+  const handleQuickCreate = async () => {
+    if (!quickQuery.trim() || !quickCategoryId || quickBusy) return;
+    setQuickBusy(true);
+    setError("");
+    try {
+      const ingredient = await createHouseholdIngredient(quickQuery, quickCategoryId);
+      if (!ingredient?._id) throw new Error("No se pudo crear el ingrediente.");
+      await addIngredientToList(ingredient._id, quickCategoryId);
+      setQuickQuery("");
+      setQuickSuggestions([]);
+      setQuickCategoryId("");
+      quickInputRef.current?.focus();
+      setSuccess(`Creado y añadido: ${ingredient.name}`);
+    } catch (err) {
+      setError(err.message || "No se pudo crear y añadir el ingrediente.");
+    } finally {
+      setQuickBusy(false);
+    }
+  };
+
+  const removeItem = async (item) => {
+    if (!item?.itemId) {
+      setError("No se pudo eliminar: falta identificador del item.");
+      return;
+    }
+    try {
+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/${item.itemId}`, { method: "DELETE" });
+      applyPayload(data);
+    } catch (err) {
+      setError(err.message || "No se pudo eliminar el item.");
     }
   };
 
@@ -285,49 +365,6 @@ export default function ShoppingPage() {
     }
   };
 
-  const createManualIngredient = async () => {
-    if (!manualQuery.trim() || !manualCategoryId) return null;
-    const data = await apiRequest("/api/kitchenIngredients", {
-      method: "POST",
-      body: JSON.stringify({
-        name: manualQuery.trim(),
-        categoryId: manualCategoryId,
-        scope: "household",
-        householdId: user?.activeHouseholdId || null
-      })
-    });
-    return data.ingredient || null;
-  };
-
-  const submitManualItem = async () => {
-    if (manualSaving) return;
-    setManualSaving(true);
-    setError("");
-    try {
-      let ingredient = manualIngredient;
-      if (!ingredient) {
-        ingredient = await createManualIngredient();
-      }
-      if (!ingredient?._id || !manualCategoryId) {
-        throw new Error("Selecciona ingrediente y categoría.");
-      }
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/manual`, {
-        method: "POST",
-        body: JSON.stringify({ ingredientId: ingredient._id, categoryId: manualCategoryId })
-      });
-      applyPayload(data);
-      setManualOpen(false);
-      setManualQuery("");
-      setManualIngredient(null);
-      setManualCategoryId("");
-      setSuccess("Item añadido a la lista.");
-    } catch (err) {
-      setError(err.message || "No se pudo añadir el item manual.");
-    } finally {
-      setManualSaving(false);
-    }
-  };
-
   const createStoreFromDropdown = async () => {
     const name = window.prompt("Nombre del supermercado");
     if (!name || !name.trim()) return;
@@ -354,6 +391,8 @@ export default function ShoppingPage() {
     return purchasedByStoreDay.reduce((acc, group) => acc + (group.items?.length || 0), 0);
   }, [purchasedByStoreDay]);
 
+  const hasExactSuggestion = quickSuggestions.some((item) => normalizeQuery(item.name) === normalizeQuery(quickQuery));
+
   if (isDiodGlobalMode) {
     return (
       <KitchenLayout>
@@ -372,10 +411,9 @@ export default function ShoppingPage() {
                 <h1>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h1>
               </div>
               <div className="kitchen-actions">
-                <button className="kitchen-button" type="button" onClick={() => setManualOpen(true)}>+ Añadir</button>
                 <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
-                <RefreshIcon className="shopping-week-arrow-icon" />
-              </button>
+                  <RefreshIcon className="shopping-week-arrow-icon" />
+                </button>
               </div>
             </div>
 
@@ -427,6 +465,41 @@ export default function ShoppingPage() {
 
           {tab === "pending" ? (
             <div className="shopping-categories">
+              <div className="shopping-quick-add" role="region" aria-label="Añadir ingrediente rápido">
+                <div className="shopping-quick-add-row">
+                  <input
+                    ref={quickInputRef}
+                    className="kitchen-input shopping-quick-add-input"
+                    value={quickQuery}
+                    onChange={(event) => setQuickQuery(event.target.value)}
+                    placeholder="Añadir ingrediente a la lista..."
+                  />
+                  {!hasExactSuggestion && quickQuery.trim() ? (
+                    <select className="kitchen-select shopping-quick-category" value={quickCategoryId} onChange={(event) => setQuickCategoryId(event.target.value)}>
+                      <option value="">Categoría</option>
+                      {quickCategories.map((category) => (
+                        <option key={category._id} value={category._id}>{category.name}</option>
+                      ))}
+                    </select>
+                  ) : null}
+                </div>
+                {quickQuery ? (
+                  <div className="shopping-quick-suggestions">
+                    {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
+                    {!quickSearching ? quickSuggestions.slice(0, 8).map((item) => (
+                      <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => handleQuickSelect(item)} disabled={quickBusy}>
+                        <span className="kitchen-suggestion-name">{item.name}</span>
+                      </button>
+                    )) : null}
+                    {!quickSearching && !hasExactSuggestion && quickQuery.trim() ? (
+                      <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={handleQuickCreate} disabled={!quickCategoryId || quickBusy}>
+                        Crear “{quickQuery.trim()}”
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+
               <div className="shopping-bulk-actions">
                 <button className="kitchen-button ghost shopping-bulk-button" type="button" onClick={() => setAllItemsStatus("purchased")}>Marcar todo como comprado</button>
               </div>
@@ -438,24 +511,27 @@ export default function ShoppingPage() {
                   <h4>{purchasedCount ? "Todo comprado por esta semana." : "No hay nada por comprar todavía."}</h4>
                 </div>
               ) : pendingByCategory.map((group) => {
-              const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
-              return (
-                <div className="shopping-category-card" key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name} style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}>
-                  <div className="shopping-category-head"><h4>{category.name.toUpperCase()}</h4><span className="shopping-category-count">{group.items.length} items</span></div>
-                  <div className="shopping-items-list">
-                    {group.items.map((item) => {
-                      const key = itemKey(item);
-                      return (
-                        <div className={`shopping-item ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
-                          <button className="shopping-check" type="button" onClick={() => setItemStatus(item, "purchased")}><span className="shopping-check-dot">✓</span></button>
-                          <span className="shopping-item-text">{item.displayName}</span>
-                          {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
-                        </div>
-                      );
-                    })}
+                const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
+                return (
+                  <div className="shopping-category-card" key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name} style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}>
+                    <div className="shopping-category-head"><h4>{category.name.toUpperCase()}</h4><span className="shopping-category-count">{group.items.length} items</span></div>
+                    <div className="shopping-items-list">
+                      {group.items.map((item) => {
+                        const key = itemKey(item);
+                        return (
+                          <div className={`shopping-item ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
+                            <button className="shopping-check" type="button" onClick={() => setItemStatus(item, "purchased")}><span className="shopping-check-dot">✓</span></button>
+                            <span className="shopping-item-text">{item.displayName}</span>
+                            {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
+                            <button className="shopping-remove-item" type="button" onClick={() => removeItem(item)} aria-label={`Eliminar ${item.displayName}`} title="Eliminar">
+                              <MinusIcon />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
+                );
               })}
             </div>
           ) : (
@@ -478,68 +554,35 @@ export default function ShoppingPage() {
               ) : purchasedByStoreDay.length === 0 ? (
                 <div className="shopping-empty-state"><EmptyHistoryIcon /><h4>No hay nada comprado esta semana.</h4></div>
               ) : purchasedByStoreDay.map((group) => (
-              <div className="shopping-category-card shopping-purchased-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
-                <h4>Comprado por <span>{group.purchasedByName || "Usuario"}</span> · <em>{group.storeName || "Sin supermercado"}</em> · {formatTripDate(group.purchasedDate)}</h4>
-                <div className="shopping-items-list shopping-items-list-purchased">
-                  {group.items.map((item) => {
-                    const key = itemKey(item);
-                    return (
-                      <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
-                        <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
-                        <span className="shopping-item-text">{item.displayName}</span>
-                        {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
-                        <select className="kitchen-select shopping-store-select-compact" value={item.storeId || ""} onChange={(event) => updatePurchasedItemStore(item, event.target.value)}>
-                          <option value="">Sin supermercado</option>
-                          {stores.map((store) => (
-                            <option key={store._id} value={store._id}>{store.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    );
-                  })}
+                <div className="shopping-category-card shopping-purchased-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
+                  <h4>Comprado por <span>{group.purchasedByName || "Usuario"}</span> · <em>{group.storeName || "Sin supermercado"}</em> · {formatTripDate(group.purchasedDate)}</h4>
+                  <div className="shopping-items-list shopping-items-list-purchased">
+                    {group.items.map((item) => {
+                      const key = itemKey(item);
+                      return (
+                        <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
+                          <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
+                          <span className="shopping-item-text">{item.displayName}</span>
+                          {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
+                          <select className="kitchen-select shopping-store-select-compact" value={item.storeId || ""} onChange={(event) => updatePurchasedItemStore(item, event.target.value)}>
+                            <option value="">Sin supermercado</option>
+                            {stores.map((store) => (
+                              <option key={store._id} value={store._id}>{store.name}</option>
+                            ))}
+                          </select>
+                          <button className="shopping-remove-item" type="button" onClick={() => removeItem(item)} aria-label={`Eliminar ${item.displayName}`} title="Eliminar">
+                            <MinusIcon />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
             </div>
           )}
         </div>
       </div>
-      {manualOpen ? (
-        <div className="kitchen-modal-backdrop" role="presentation" onClick={() => setManualOpen(false)}>
-          <div className="kitchen-modal" role="dialog" aria-modal="true" aria-label="Añadir item manual" onClick={(event) => event.stopPropagation()}>
-            <div className="kitchen-modal-header"><h3>Añadir item manual</h3></div>
-            <div className="kitchen-form">
-              <label className="kitchen-field">
-                <span className="kitchen-label">Ingrediente</span>
-                <input className="kitchen-input" value={manualQuery} onChange={(event) => { setManualQuery(event.target.value); setManualIngredient(null); }} placeholder="Buscar ingrediente..." />
-              </label>
-              <div className="kitchen-suggestion-list">
-                {(manualSuggestions || []).slice(0, 8).map((item) => (
-                  <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => { setManualIngredient(item); setManualQuery(item.name || ""); setManualCategoryId(item.categoryId?._id || ""); }}>
-                    <span className="kitchen-suggestion-name">{item.name}</span>
-                  </button>
-                ))}
-              </div>
-              <label className="kitchen-field">
-                <span className="kitchen-label">Categoría</span>
-                <select className="kitchen-select" value={manualCategoryId} onChange={(event) => setManualCategoryId(event.target.value)}>
-                  <option value="">Selecciona categoría</option>
-                  {manualCategories.map((category) => (
-                    <option key={category._id} value={category._id}>{category.name}</option>
-                  ))}
-                </select>
-              </label>
-              {!manualIngredient && manualQuery.trim() && !manualSuggestions.some((item) => normalizeQuery(item.name) === normalizeQuery(manualQuery)) ? (
-                <div className="kitchen-muted">Se creará “{manualQuery.trim()}” en el hogar actual.</div>
-              ) : null}
-              <div className="kitchen-modal-actions">
-                <button className="kitchen-button" type="button" onClick={submitManualItem} disabled={manualSaving}>{manualSaving ? "Guardando..." : "Añadir"}</button>
-                <button className="kitchen-button ghost" type="button" onClick={() => setManualOpen(false)}>Cancelar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </KitchenLayout>
   );
 }

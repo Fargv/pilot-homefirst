@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const ShoppingItemSchema = new mongoose.Schema(
   {
+    itemId: { type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
     ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient", default: null },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", default: null },
     displayName: { type: String, required: true, trim: true },

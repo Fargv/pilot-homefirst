@@ -2932,6 +2932,41 @@ body {
   gap: 14px;
 }
 
+
+.shopping-quick-add {
+  border-radius: 16px;
+  padding: 10px;
+  border: 1px solid rgba(190, 201, 234, 0.82);
+  background: linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
+  box-shadow: 0 8px 16px rgba(79, 94, 170, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.shopping-quick-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.shopping-quick-add-input {
+  min-height: 42px;
+}
+
+.shopping-quick-category {
+  width: min(180px, 42vw);
+  min-height: 42px;
+  border-radius: 12px;
+}
+
+.shopping-quick-suggestions {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.shopping-quick-create {
+  justify-self: flex-start;
+}
+
 .shopping-category-card {
   border-radius: 18px;
   padding: 14px;
@@ -3061,6 +3096,36 @@ body {
   transform: scale(0.95);
 }
 
+
+.shopping-remove-item {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(160, 174, 214, 0.72);
+  background: rgba(255, 255, 255, 0.9);
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.shopping-remove-item:hover {
+  background: #f8fafc;
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #4f46e5;
+}
+
+.shopping-remove-item:active {
+  transform: scale(0.94);
+}
+
+.shopping-remove-item svg {
+  width: 14px;
+  height: 14px;
+}
+
 .shopping-purchased-card h4 {
   margin: 2px 0 10px;
   font-size: 14px;
@@ -3163,6 +3228,14 @@ body {
   .shopping-toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .shopping-quick-add-row {
+    flex-wrap: wrap;
+  }
+
+  .shopping-quick-category {
+    width: 100%;
   }
 
   .shopping-toolbar-alerts {

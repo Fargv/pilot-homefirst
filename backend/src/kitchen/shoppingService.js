@@ -64,6 +64,7 @@ function ensureValidShoppingItemShape(item, index, fallbackCategoryId = null) {
 
   return {
     ...next,
+    itemId: next.itemId || new mongoose.Types.ObjectId(),
     displayName,
     canonicalName,
     categoryId: next.categoryId || fallbackCategoryId || null

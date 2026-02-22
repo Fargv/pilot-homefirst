@@ -82,16 +82,11 @@ function compareCategoryGroups(a, b) {
   return String(a?.categoryInfo?.name || "").localeCompare(String(b?.categoryInfo?.name || ""), "es", { sensitivity: "base" });
 }
 
-function compareShoppingItems(a, b) {
-  const left = String(a?.canonicalName || a?.displayName || "");
-  const right = String(b?.canonicalName || b?.displayName || "");
-  return left.localeCompare(right, "es", { sensitivity: "base" });
-}
-
 function normalizeShoppingItemForResponse(item, purchaserById) {
   const normalized = item.toObject ? item.toObject() : { ...item };
   return {
     ...normalized,
+    itemId: normalized.itemId || normalized._id || null,
     categoryId: normalized.categoryId || null,
     storeId: normalized.storeId || null,
     purchasedBy: normalized.purchasedBy || null,
@@ -188,16 +183,11 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
     list,
     stores,
     pendingByCategory: Array.from(pendingByCategory.values())
-      .map((group) => ({
-        ...group,
-        items: [...group.items].sort(compareShoppingItems)
-      }))
       .sort(compareCategoryGroups),
     purchasedByStoreDay: Array.from(purchasedByStoreDay.values()).sort(
       (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
     ).map((group) => ({
-      ...group,
-      items: [...group.items].sort(compareShoppingItems)
+      ...group
     }))
   };
 }
@@ -251,14 +241,14 @@ router.post("/:weekStart/rebuild", requireAuth, async (req, res) => {
 });
 
 
-router.post("/:weekStart/items/manual", requireAuth, async (req, res) => {
+async function addShoppingItem(req, res) {
   try {
     const weekStart = parseISODate(req.params.weekStart);
     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
 
     const { ingredientId, categoryId, storeId, occurrences } = req.body || {};
-    if (!ingredientId || !categoryId) {
-      return res.status(400).json({ ok: false, error: "Debes indicar ingrediente y categoría." });
+    if (!ingredientId) {
+      return res.status(400).json({ ok: false, error: "Debes indicar ingrediente." });
     }
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
@@ -280,8 +270,14 @@ router.post("/:weekStart/items/manual", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
     }
 
+    const fallbackCategory = ingredient.categoryId || null;
+    const resolvedCategoryId = categoryId || fallbackCategory;
+    if (!resolvedCategoryId) {
+      return res.status(400).json({ ok: false, error: "Debes indicar una categoría válida." });
+    }
+
     const category = await Category.findOne(buildCategoryVisibilityFilter(effectiveHouseholdId, {
-      _id: categoryId,
+      _id: resolvedCategoryId,
       active: true,
       isArchived: { $ne: true }
     })).select("_id");
@@ -290,16 +286,27 @@ router.post("/:weekStart/items/manual", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Categoría no encontrada." });
     }
 
-    list.items.push({
-      ingredientId: ingredient._id,
-      categoryId: category._id,
-      displayName: ingredient.name,
-      canonicalName: normalizeIngredientName(ingredient.canonicalName || ingredient.name),
-      occurrences: Number.isFinite(Number(occurrences)) && Number(occurrences) > 0 ? Number(occurrences) : 1,
-      status: "pending",
-      storeId: await validateStoreSelection(storeId, effectiveHouseholdId),
-      fromDishes: []
-    });
+    const normalizedCanonicalName = normalizeIngredientName(ingredient.canonicalName || ingredient.name);
+    const existingItem = list.items.find((current) =>
+      current.status === "pending" && current.ingredientId && String(current.ingredientId) === String(ingredient._id)
+    );
+
+    if (existingItem) {
+      const increment = Number.isFinite(Number(occurrences)) && Number(occurrences) > 0 ? Number(occurrences) : 1;
+      existingItem.occurrences = Math.max(1, Number(existingItem.occurrences || 1) + increment);
+      existingItem.categoryId = existingItem.categoryId || category._id;
+    } else {
+      list.items.push({
+        ingredientId: ingredient._id,
+        categoryId: category._id,
+        displayName: ingredient.name,
+        canonicalName: normalizedCanonicalName,
+        occurrences: Number.isFinite(Number(occurrences)) && Number(occurrences) > 0 ? Number(occurrences) : 1,
+        status: "pending",
+        storeId: await validateStoreSelection(storeId, effectiveHouseholdId),
+        fromDishes: []
+      });
+    }
 
     await list.save();
 
@@ -309,6 +316,35 @@ router.post("/:weekStart/items/manual", requireAuth, async (req, res) => {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo añadir el item manual." });
+  }
+}
+
+router.post("/:weekStart/items", requireAuth, addShoppingItem);
+router.post("/:weekStart/items/manual", requireAuth, addShoppingItem);
+
+router.delete("/:weekStart/items/:itemId", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+
+    const previousLength = list.items.length;
+    list.items = list.items.filter((item) => String(item.itemId || item._id || "") !== String(req.params.itemId));
+
+    if (list.items.length === previousLength) {
+      return res.status(404).json({ ok: false, error: "Item no encontrado en la lista." });
+    }
+
+    await list.save();
+    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+    return res.json({ ok: true, ...payload });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo eliminar el item." });
   }
 });
 
