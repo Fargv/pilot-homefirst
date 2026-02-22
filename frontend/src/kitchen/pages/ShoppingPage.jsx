@@ -31,6 +31,36 @@ function EmptyStateIcon(props) {
   );
 }
 
+function EmptyCheckIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M7 12.5 10.5 16 17.5 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 21a9 9 0 1 0-9-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function EmptyListIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M8 7h10M8 12h10M8 17h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="5" cy="7" r="1" fill="currentColor" />
+      <circle cx="5" cy="12" r="1" fill="currentColor" />
+      <circle cx="5" cy="17" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function EmptyHistoryIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M12 7.5v5l3 1.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3.8 12a8.2 8.2 0 1 0 2.4-5.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M3.5 5.7v2.9h2.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function addDaysToISO(iso, days) {
   const date = new Date(`${iso}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
@@ -188,17 +218,24 @@ export default function ShoppingPage() {
     }
   };
 
-  const assignStoreToTodayUnassigned = async () => {
+  const setAllItemsStatus = async (status) => {
     try {
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/purchased/assign-store`, {
-        method: "POST",
-        body: JSON.stringify({ storeId: selectedStoreId || null })
+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/status`, {
+        method: "PUT",
+        body: JSON.stringify({
+          status,
+          storeId: status === "purchased" ? selectedStoreId || null : null
+        })
       });
       applyPayload(data);
-      setSuccess(data.updated ? "Supermercado asignado" : "No había comprados de hoy sin supermercado");
+      if (status === "purchased") {
+        setSuccess(data.updated ? "Todo marcado como comprado" : "No había elementos pendientes.");
+      } else {
+        setSuccess(data.updated ? "Todo volvió a pendiente" : "No había elementos comprados.");
+      }
     } catch (err) {
-      logShoppingApiError("assignStoreToTodayUnassigned", `/api/kitchen/shopping/${weekStart}/purchased/assign-store`, err);
-      setError(err.message || "No se pudo asignar supermercado en bloque.");
+      logShoppingApiError("setAllItemsStatus", `/api/kitchen/shopping/${weekStart}/items/status`, err);
+      setError(err.message || "No se pudo actualizar en bloque.");
     }
   };
 
@@ -223,6 +260,11 @@ export default function ShoppingPage() {
     return pendingByCategory.reduce((acc, group) => acc + (group.items?.length || 0), 0);
   }, [pendingByCategory]);
 
+  const purchasedCount = useMemo(() => {
+    if (!Array.isArray(purchasedByStoreDay)) return null;
+    return purchasedByStoreDay.reduce((acc, group) => acc + (group.items?.length || 0), 0);
+  }, [purchasedByStoreDay]);
+
   if (isDiodGlobalMode) {
     return (
       <KitchenLayout>
@@ -245,10 +287,12 @@ export default function ShoppingPage() {
               </button>
             </div>
 
-            <div className="shopping-week-nav">
-              <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, -7))}><ChevronIcon className="shopping-week-arrow-icon" /></button>
-              <input className="kitchen-input" type="date" value={weekStart} onChange={(event) => setWeekStart(normalizeWeekStartInput(event.target.value))} />
-              <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, 7))}><ChevronIcon className="shopping-week-arrow-icon is-next" /></button>
+            <div className="kitchen-week-nav shopping-week-nav" role="group" aria-label="Cambiar semana">
+              <button className="kitchen-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, -7))}><ChevronIcon className="kitchen-week-arrow-icon" /></button>
+              <label className="kitchen-field kitchen-week-picker">
+                <input className="kitchen-input" type="date" value={weekStart} onChange={(event) => setWeekStart(normalizeWeekStartInput(event.target.value))} />
+              </label>
+              <button className="kitchen-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, 7))}><ChevronIcon className="kitchen-week-arrow-icon is-next" /></button>
             </div>
 
             <div className="shopping-toolbar">
@@ -271,10 +315,9 @@ export default function ShoppingPage() {
                 ))}
                 <option value="__add__">Añadir supermercado…</option>
               </select>
-              <button className="kitchen-button ghost shopping-assign-button" type="button" onClick={assignStoreToTodayUnassigned}>Asignar a comprados sin supermercado</button>
             </div>
-            {success ? <div className="kitchen-alert success">{success}</div> : null}
-            {error ? <div className="kitchen-alert error">{error}</div> : null}
+            {success ? <div className="kitchen-alert success shopping-toolbar-alert">{success}</div> : null}
+            {error ? <div className="kitchen-alert error shopping-toolbar-alert">{error}</div> : null}
           </div>
 
           <div className="kitchen-dishes-tabs" role="tablist" aria-label="Estado de la compra">
@@ -284,10 +327,16 @@ export default function ShoppingPage() {
 
           {tab === "pending" ? (
             <div className="shopping-categories">
+              <div className="shopping-bulk-actions">
+                <button className="kitchen-button ghost shopping-bulk-button" type="button" onClick={() => setAllItemsStatus("purchased")}>Marcar todo como comprado</button>
+              </div>
               {!Array.isArray(pendingByCategory) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
               ) : pendingByCategory.length === 0 ? (
-                <div className="shopping-empty-state"><EmptyStateIcon /><h4>Todo listo por esta semana.</h4></div>
+                <div className="shopping-empty-state">
+                  {purchasedCount ? <EmptyCheckIcon /> : <EmptyListIcon />}
+                  <h4>{purchasedCount ? "Todo comprado por esta semana." : "No hay nada por comprar todavía."}</h4>
+                </div>
               ) : pendingByCategory.map((group) => {
               const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
               return (
@@ -311,10 +360,23 @@ export default function ShoppingPage() {
             </div>
           ) : (
             <div className="shopping-categories">
+              <div className="shopping-bulk-actions">
+                <button
+                  className="kitchen-button ghost shopping-bulk-button"
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm("¿Desmarcar todo lo comprado de esta semana?")) {
+                      void setAllItemsStatus("pending");
+                    }
+                  }}
+                >
+                  Desmarcar todo
+                </button>
+              </div>
               {!Array.isArray(purchasedByStoreDay) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
               ) : purchasedByStoreDay.length === 0 ? (
-                <div className="shopping-empty-state"><EmptyStateIcon /><h4>Aún no hay ingredientes comprados.</h4></div>
+                <div className="shopping-empty-state"><EmptyHistoryIcon /><h4>No hay nada comprado esta semana.</h4></div>
               ) : purchasedByStoreDay.map((group) => (
               <div className="shopping-category-card shopping-purchased-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
                 <h4>Comprado por <span>{group.purchasedByName || "Usuario"}</span> · <em>{group.storeName || "Sin supermercado"}</em> · {formatTripDate(group.purchasedDate)}</h4>

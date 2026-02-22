@@ -73,6 +73,19 @@ function isValidObjectId(value) {
   return Boolean(value) && /^[a-f\d]{24}$/i.test(String(value));
 }
 
+function compareCategoryGroups(a, b) {
+  const orderA = Number.isFinite(a?.categoryInfo?.order) ? a.categoryInfo.order : Number.POSITIVE_INFINITY;
+  const orderB = Number.isFinite(b?.categoryInfo?.order) ? b.categoryInfo.order : Number.POSITIVE_INFINITY;
+  if (orderA !== orderB) return orderA - orderB;
+  return String(a?.categoryInfo?.name || "").localeCompare(String(b?.categoryInfo?.name || ""), "es", { sensitivity: "base" });
+}
+
+function compareShoppingItems(a, b) {
+  const left = String(a?.canonicalName || a?.displayName || "");
+  const right = String(b?.canonicalName || b?.displayName || "");
+  return left.localeCompare(right, "es", { sensitivity: "base" });
+}
+
 function normalizeShoppingItemForResponse(item, purchaserById) {
   const normalized = item.toObject ? item.toObject() : { ...item };
   return {
@@ -100,7 +113,7 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   });
 
   const categories = await Category.find(buildCategoryVisibilityFilter(effectiveHouseholdId, { isArchived: { $ne: true } })).select(
-    "_id name slug colorBg colorText"
+    "_id name slug colorBg colorText order"
   );
   const stores = sortStores(
     await Store.find(buildStoreVisibilityFilter(effectiveHouseholdId, { active: true }))
@@ -136,7 +149,8 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
             name: resolvedCategory?.name || DEFAULT_CATEGORY_NAME,
             slug: resolvedCategory?.slug || DEFAULT_CATEGORY_SLUG,
             colorBg: resolvedCategory?.colorBg || DEFAULT_CATEGORY_COLOR_BG,
-            colorText: resolvedCategory?.colorText || DEFAULT_CATEGORY_COLOR_TEXT
+            colorText: resolvedCategory?.colorText || DEFAULT_CATEGORY_COLOR_TEXT,
+            order: Number.isFinite(resolvedCategory?.order) ? resolvedCategory.order : null
           },
           items: []
         });
@@ -171,10 +185,18 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   return {
     list,
     stores,
-    pendingByCategory: Array.from(pendingByCategory.values()),
+    pendingByCategory: Array.from(pendingByCategory.values())
+      .map((group) => ({
+        ...group,
+        items: [...group.items].sort(compareShoppingItems)
+      }))
+      .sort(compareCategoryGroups),
     purchasedByStoreDay: Array.from(purchasedByStoreDay.values()).sort(
       (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
-    )
+    ).map((group) => ({
+      ...group,
+      items: [...group.items].sort(compareShoppingItems)
+    }))
   };
 }
 
@@ -308,6 +330,59 @@ router.put("/:weekStart/item/store", requireAuth, async (req, res) => {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el supermercado." });
+  }
+});
+
+router.put("/:weekStart/items/status", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+    const normalizedStatus = req.body?.status === "purchased" ? "purchased" : req.body?.status === "pending" ? "pending" : null;
+    if (!normalizedStatus) {
+      return res.status(400).json({ ok: false, error: "Estado inválido." });
+    }
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+    await repairShoppingListItems(list, effectiveHouseholdId, {
+      context: "bulk-update-status"
+    });
+
+    let changed = false;
+    if (normalizedStatus === "purchased") {
+      const validatedStoreId = await validateStoreSelection(req.body?.storeId, effectiveHouseholdId);
+      const now = new Date();
+      for (const item of list.items) {
+        if (item.status !== "pending") continue;
+        item.status = "purchased";
+        item.purchasedBy = req.kitchenUser._id;
+        item.purchasedAt = now;
+        item.storeId = validatedStoreId;
+        changed = true;
+      }
+    } else {
+      for (const item of list.items) {
+        if (item.status !== "purchased") continue;
+        item.status = "pending";
+        item.purchasedBy = null;
+        item.purchasedAt = null;
+        item.storeId = null;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await list.save();
+    }
+
+    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+    return res.json({ ok: true, updated: changed, ...payload });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el estado en bloque." });
   }
 });
 
