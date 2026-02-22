@@ -1155,6 +1155,9 @@ body {
   box-shadow: none;
   gap: 16px;
   margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .kitchen-week-controls {
@@ -1170,6 +1173,7 @@ body {
   align-items: center;
   width: 100%;
   max-width: 100%;
+  overflow-x: hidden;
 }
 
 .kitchen-weekdays-carousel.is-carousel::before,
@@ -1952,6 +1956,7 @@ body {
 
   .kitchen-weekdays-strip {
     padding: 12px;
+    overflow-x: hidden;
   }
 
   .kitchen-weekdays-arrow {
@@ -1959,13 +1964,28 @@ body {
   }
 
   .kitchen-weekdays-list {
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    justify-items: stretch;
+  }
+
+  .kitchen-weekdays-list.is-carousel {
+    overflow-x: hidden;
+    scroll-snap-type: none;
+    padding: 0;
+    justify-content: initial;
   }
 
   .kitchen-weekdays-item {
-    min-width: 56px;
+    min-width: 0;
+    width: 100%;
     min-height: 72px;
     padding: 6px 4px;
+    overflow: hidden;
   }
 
   .kitchen-weekdays-circle {
@@ -1976,6 +1996,10 @@ body {
 
   .kitchen-weekdays-label {
     font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 
   .kitchen-topbar {
@@ -2714,13 +2738,19 @@ body {
 .kitchen-user-menu button:hover { background: #eef2ff; }
 
 .kitchen-weekdays-item {
-  min-width: 72px;
-  min-height: 92px;
+  min-width: 76px;
+  min-height: 96px;
   border-radius: 20px;
 }
 
 .kitchen-weekdays-circle {
+  width: 56px;
+  height: 56px;
   border-radius: 20px;
+}
+
+.kitchen-weekdays-label {
+  font-size: 13px;
 }
 
 .kitchen-day-card {
