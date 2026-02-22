@@ -21,6 +21,16 @@ function RefreshIcon(props) {
   );
 }
 
+function EmptyStateIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M4 7.5h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M6.5 7.5V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M7.5 10.5h9l-.75 7.1a2 2 0 0 1-1.99 1.8H10.24a2 2 0 0 1-1.99-1.8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function addDaysToISO(iso, days) {
   const date = new Date(`${iso}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
@@ -223,64 +233,65 @@ export default function ShoppingPage() {
 
   return (
     <KitchenLayout>
-      <div className="kitchen-stack-lg">
-        <div className="kitchen-card shopping-header-card">
-          <div className="shopping-header-row">
-            <div>
-              <h3>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h3>
+      <div className="shopping-page-shell">
+        <div className="kitchen-card shopping-main-card">
+          <div className="shopping-header-card">
+            <div className="shopping-header-row">
+              <div>
+                <h1>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h1>
+              </div>
+              <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
+                <RefreshIcon className="shopping-week-arrow-icon" />
+              </button>
             </div>
-            <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
-              <RefreshIcon className="shopping-week-arrow-icon" />
-            </button>
+
+            <div className="shopping-week-nav">
+              <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, -7))}><ChevronIcon className="shopping-week-arrow-icon" /></button>
+              <input className="kitchen-input" type="date" value={weekStart} onChange={(event) => setWeekStart(normalizeWeekStartInput(event.target.value))} />
+              <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, 7))}><ChevronIcon className="shopping-week-arrow-icon is-next" /></button>
+            </div>
+
+            <div className="shopping-toolbar">
+              <select
+                className="kitchen-select shopping-store-select"
+                value={selectedStoreId}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (value === "__add__") {
+                    void createStoreFromDropdown();
+                    return;
+                  }
+                  selectedStoreRef.current = value;
+                  setSelectedStoreId(value);
+                }}
+              >
+                <option value="">Supermercado (opcional)</option>
+                {stores.map((store) => (
+                  <option key={store._id} value={store._id}>{store.name}</option>
+                ))}
+                <option value="__add__">Añadir supermercado…</option>
+              </select>
+              <button className="kitchen-button ghost shopping-assign-button" type="button" onClick={assignStoreToTodayUnassigned}>Asignar a comprados sin supermercado</button>
+            </div>
+            {success ? <div className="kitchen-alert success">{success}</div> : null}
+            {error ? <div className="kitchen-alert error">{error}</div> : null}
           </div>
 
-          <div className="shopping-week-nav">
-            <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, -7))}><ChevronIcon className="shopping-week-arrow-icon" /></button>
-            <input className="kitchen-input" type="date" value={weekStart} onChange={(event) => setWeekStart(normalizeWeekStartInput(event.target.value))} />
-            <button className="shopping-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, 7))}><ChevronIcon className="shopping-week-arrow-icon is-next" /></button>
+          <div className="kitchen-dishes-tabs" role="tablist" aria-label="Estado de la compra">
+            <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
+            <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
           </div>
 
-          <div className="shopping-toolbar">
-            <select
-              className="kitchen-select"
-              value={selectedStoreId}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (value === "__add__") {
-                  void createStoreFromDropdown();
-                  return;
-                }
-                selectedStoreRef.current = value;
-                setSelectedStoreId(value);
-              }}
-            >
-              <option value="">Supermercado (opcional)</option>
-              {stores.map((store) => (
-                <option key={store._id} value={store._id}>{store.name}</option>
-              ))}
-              <option value="__add__">Añadir supermercado…</option>
-            </select>
-            <button className="kitchen-button secondary" type="button" onClick={assignStoreToTodayUnassigned}>Asignar a comprados de hoy sin supermercado</button>
-          </div>
-          {success ? <div className="kitchen-alert success">{success}</div> : null}
-          {error ? <div className="kitchen-alert error">{error}</div> : null}
-        </div>
-
-        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Estado de la compra">
-          <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-          <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-        </div>
-
-        {tab === "pending" ? (
-          <div className="shopping-categories">
-            {!Array.isArray(pendingByCategory) ? (
-              <div className="kitchen-card kitchen-empty"><h4>No se pudo cargar la lista.</h4></div>
-            ) : pendingByCategory.length === 0 ? (
-              <div className="kitchen-card kitchen-empty"><h4>No hay pendientes para esta semana.</h4></div>
-            ) : pendingByCategory.map((group) => {
+          {tab === "pending" ? (
+            <div className="shopping-categories">
+              {!Array.isArray(pendingByCategory) ? (
+                <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
+              ) : pendingByCategory.length === 0 ? (
+                <div className="shopping-empty-state"><EmptyStateIcon /><h4>Todo listo por esta semana.</h4></div>
+              ) : pendingByCategory.map((group) => {
               const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
               return (
-                <div className="kitchen-card shopping-category-card" key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name} style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}>
+                <div className="shopping-category-card" key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name} style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}>
                   <div className="shopping-category-head"><h4>{category.name.toUpperCase()}</h4><span className="shopping-category-count">{group.items.length} items</span></div>
                   <div className="shopping-items-list">
                     {group.items.map((item) => {
@@ -288,31 +299,33 @@ export default function ShoppingPage() {
                       return (
                         <div className={`shopping-item ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
                           <button className="shopping-check" type="button" onClick={() => setItemStatus(item, "purchased")}><span className="shopping-check-dot">✓</span></button>
-                          <span className="shopping-item-text">{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
+                          <span className="shopping-item-text">{item.displayName}</span>
+                          {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
                         </div>
                       );
                     })}
                   </div>
                 </div>
               );
-            })}
-          </div>
-        ) : (
-          <div className="shopping-categories">
-            {!Array.isArray(purchasedByStoreDay) ? (
-              <div className="kitchen-card kitchen-empty"><h4>No se pudo cargar la lista.</h4></div>
-            ) : purchasedByStoreDay.length === 0 ? (
-              <div className="kitchen-card kitchen-empty"><h4>Aún no hay ingredientes comprados.</h4></div>
-            ) : purchasedByStoreDay.map((group) => (
-              <div className="kitchen-card shopping-category-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
-                <h4>Comprado por {group.purchasedByName || "Usuario"} · {group.storeName || "Supermercado no definido"} · {formatTripDate(group.purchasedDate)}</h4>
-                <div className="shopping-items-list">
+              })}
+            </div>
+          ) : (
+            <div className="shopping-categories">
+              {!Array.isArray(purchasedByStoreDay) ? (
+                <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
+              ) : purchasedByStoreDay.length === 0 ? (
+                <div className="shopping-empty-state"><EmptyStateIcon /><h4>Aún no hay ingredientes comprados.</h4></div>
+              ) : purchasedByStoreDay.map((group) => (
+              <div className="shopping-category-card shopping-purchased-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
+                <h4>Comprado por <span>{group.purchasedByName || "Usuario"}</span> · <em>{group.storeName || "Sin supermercado"}</em> · {formatTripDate(group.purchasedDate)}</h4>
+                <div className="shopping-items-list shopping-items-list-purchased">
                   {group.items.map((item) => {
                     const key = itemKey(item);
                     return (
                       <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
                         <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
-                        <span className="shopping-item-text">{item.displayName} {item.occurrences > 1 ? `x${item.occurrences}` : ""}</span>
+                        <span className="shopping-item-text">{item.displayName}</span>
+                        {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
                         <select className="kitchen-select shopping-store-select-compact" value={item.storeId || ""} onChange={(event) => updatePurchasedItemStore(item, event.target.value)}>
                           <option value="">Sin supermercado</option>
                           {stores.map((store) => (
@@ -325,8 +338,9 @@ export default function ShoppingPage() {
                 </div>
               </div>
             ))}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </KitchenLayout>
   );
