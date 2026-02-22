@@ -295,6 +295,14 @@ export default function ShoppingPage() {
               <button className="kitchen-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, 7))}><ChevronIcon className="kitchen-week-arrow-icon is-next" /></button>
             </div>
 
+          </div>
+
+          <div className="kitchen-dishes-tabs" role="tablist" aria-label="Estado de la compra">
+            <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
+            <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+          </div>
+
+          {tab === "pending" ? (
             <div className="shopping-toolbar">
               <select
                 className="kitchen-select shopping-store-select"
@@ -316,14 +324,14 @@ export default function ShoppingPage() {
                 <option value="__add__">Añadir supermercado…</option>
               </select>
             </div>
-            {success ? <div className="kitchen-alert success shopping-toolbar-alert">{success}</div> : null}
-            {error ? <div className="kitchen-alert error shopping-toolbar-alert">{error}</div> : null}
-          </div>
+          ) : null}
 
-          <div className="kitchen-dishes-tabs" role="tablist" aria-label="Estado de la compra">
-            <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-            <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-          </div>
+          {(success || error) ? (
+            <div className="shopping-toolbar-alerts" aria-live="polite">
+              {success ? <div className="kitchen-alert success shopping-toolbar-alert">{success}</div> : null}
+              {error ? <div className="kitchen-alert error shopping-toolbar-alert">{error}</div> : null}
+            </div>
+          ) : null}
 
           {tab === "pending" ? (
             <div className="shopping-categories">

@@ -1062,11 +1062,12 @@ body {
 }
 
 .kitchen-week-nav {
+  --kitchen-week-nav-control-height: 44px;
   display: grid;
-  grid-template-columns: 44px minmax(200px, 260px) 44px;
+  grid-template-columns: var(--kitchen-week-nav-control-height) minmax(0, 260px) var(--kitchen-week-nav-control-height);
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
 }
 
@@ -1081,19 +1082,20 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid #d0d5dd;
-  background: #ffffff;
+  width: var(--kitchen-week-nav-control-height);
+  height: var(--kitchen-week-nav-control-height);
+  border-radius: 14px;
+  border: 1px solid rgba(176, 188, 229, 0.75);
+  background: linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
   color: #344054;
+  box-shadow: 0 8px 16px rgba(88, 100, 167, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .kitchen-week-picker .kitchen-input {
-  min-height: 44px;
-  height: 44px;
+  min-height: var(--kitchen-week-nav-control-height);
+  height: var(--kitchen-week-nav-control-height);
   text-align: center;
   width: 100%;
 }
@@ -1113,9 +1115,10 @@ body {
 }
 
 .kitchen-week-arrow:hover {
-  background: #f8fafc;
-  border-color: #c7ced6;
+  background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%);
+  border-color: rgba(147, 163, 221, 0.92);
   color: #1d2939;
+  box-shadow: 0 10px 20px rgba(88, 100, 167, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .kitchen-week-arrow:focus-visible {
@@ -1905,7 +1908,9 @@ body {
   }
 
   .kitchen-week-nav {
-    grid-template-columns: 44px 1fr 44px;
+    --kitchen-week-nav-control-height: 42px;
+    grid-template-columns: var(--kitchen-week-nav-control-height) minmax(0, 1fr) var(--kitchen-week-nav-control-height);
+    gap: 8px;
   }
 
   .kitchen-week-controls {
@@ -2505,7 +2510,6 @@ body {
 .kitchen-ui-button,
 .kitchen-button,
 .kitchen-assignee-button,
-.kitchen-week-arrow,
 .kitchen-weekdays-arrow,
 .kitchen-assign-week-nav,
 .kitchen-color-option,
@@ -2807,11 +2811,18 @@ body {
 }
 
 .shopping-toolbar {
-  margin-top: 12px;
+  margin-top: 14px;
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   gap: 10px;
+}
+
+.shopping-toolbar-alerts {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 18px;
 }
 
 .shopping-store-select {
@@ -2840,8 +2851,7 @@ body {
 }
 
 .shopping-toolbar-alert {
-  margin-top: 10px;
-  margin-bottom: 8px;
+  margin: 0;
 }
 
 .shopping-bulk-actions {
@@ -3100,6 +3110,10 @@ body {
     align-items: stretch;
   }
 
+  .shopping-toolbar-alerts {
+    margin-top: 12px;
+  }
+
   .shopping-store-select {
     width: 100%;
   }
@@ -3108,4 +3122,7 @@ body {
     min-width: 118px;
     margin-left: auto;
   }
+}
+.kitchen-week-arrow {
+  border-radius: 14px;
 }
