@@ -97,6 +97,10 @@ function itemKey(item) {
   return `${item.ingredientId || "no-id"}-${item.canonicalName}`;
 }
 
+function normalizeQuery(value = "") {
+  return String(value).trim().toLowerCase();
+}
+
 export default function ShoppingPage() {
   const { user } = useAuth();
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
@@ -111,6 +115,13 @@ export default function ShoppingPage() {
   const [purchasedByStoreDay, setPurchasedByStoreDay] = useState(null);
   const [transitioningItemKey, setTransitioningItemKey] = useState(null);
   const [recentlyMovedItemKey, setRecentlyMovedItemKey] = useState(null);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualQuery, setManualQuery] = useState("");
+  const [manualSuggestions, setManualSuggestions] = useState([]);
+  const [manualCategories, setManualCategories] = useState([]);
+  const [manualIngredient, setManualIngredient] = useState(null);
+  const [manualCategoryId, setManualCategoryId] = useState("");
+  const [manualSaving, setManualSaving] = useState(false);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
 
   const applyPayload = (data) => {
@@ -158,6 +169,48 @@ export default function ShoppingPage() {
     const timer = setTimeout(() => setRecentlyMovedItemKey(null), 650);
     return () => clearTimeout(timer);
   }, [recentlyMovedItemKey]);
+
+  useEffect(() => {
+    if (!manualOpen) return;
+    let active = true;
+    const loadBase = async () => {
+      try {
+        const [categoriesData, ingredientsData] = await Promise.all([
+          apiRequest("/api/categories"),
+          apiRequest("/api/kitchenIngredients?limit=30")
+        ]);
+        if (!active) return;
+        setManualCategories(categoriesData.categories || []);
+        setManualSuggestions(ingredientsData.ingredients || []);
+      } catch (err) {
+        if (!active) return;
+        setError(err.message || "No se pudo preparar el alta manual.");
+      }
+    };
+    void loadBase();
+    return () => {
+      active = false;
+    };
+  }, [manualOpen]);
+
+  useEffect(() => {
+    if (!manualOpen) return;
+    let active = true;
+    const timer = setTimeout(async () => {
+      try {
+        const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(manualQuery)}&limit=30`);
+        if (!active) return;
+        setManualSuggestions(data.ingredients || []);
+      } catch {
+        if (!active) return;
+        setManualSuggestions([]);
+      }
+    }, 200);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [manualOpen, manualQuery]);
 
   const refreshList = async () => {
     if (isDiodGlobalMode) return;
@@ -232,6 +285,49 @@ export default function ShoppingPage() {
     }
   };
 
+  const createManualIngredient = async () => {
+    if (!manualQuery.trim() || !manualCategoryId) return null;
+    const data = await apiRequest("/api/kitchenIngredients", {
+      method: "POST",
+      body: JSON.stringify({
+        name: manualQuery.trim(),
+        categoryId: manualCategoryId,
+        scope: "household",
+        householdId: user?.activeHouseholdId || null
+      })
+    });
+    return data.ingredient || null;
+  };
+
+  const submitManualItem = async () => {
+    if (manualSaving) return;
+    setManualSaving(true);
+    setError("");
+    try {
+      let ingredient = manualIngredient;
+      if (!ingredient) {
+        ingredient = await createManualIngredient();
+      }
+      if (!ingredient?._id || !manualCategoryId) {
+        throw new Error("Selecciona ingrediente y categoría.");
+      }
+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/manual`, {
+        method: "POST",
+        body: JSON.stringify({ ingredientId: ingredient._id, categoryId: manualCategoryId })
+      });
+      applyPayload(data);
+      setManualOpen(false);
+      setManualQuery("");
+      setManualIngredient(null);
+      setManualCategoryId("");
+      setSuccess("Item añadido a la lista.");
+    } catch (err) {
+      setError(err.message || "No se pudo añadir el item manual.");
+    } finally {
+      setManualSaving(false);
+    }
+  };
+
   const createStoreFromDropdown = async () => {
     const name = window.prompt("Nombre del supermercado");
     if (!name || !name.trim()) return;
@@ -275,9 +371,12 @@ export default function ShoppingPage() {
               <div>
                 <h1>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h1>
               </div>
-              <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
+              <div className="kitchen-actions">
+                <button className="kitchen-button" type="button" onClick={() => setManualOpen(true)}>+ Añadir</button>
+                <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
                 <RefreshIcon className="shopping-week-arrow-icon" />
               </button>
+              </div>
             </div>
 
             <WeekNavigator
@@ -405,6 +504,42 @@ export default function ShoppingPage() {
           )}
         </div>
       </div>
+      {manualOpen ? (
+        <div className="kitchen-modal-backdrop" role="presentation" onClick={() => setManualOpen(false)}>
+          <div className="kitchen-modal" role="dialog" aria-modal="true" aria-label="Añadir item manual" onClick={(event) => event.stopPropagation()}>
+            <div className="kitchen-modal-header"><h3>Añadir item manual</h3></div>
+            <div className="kitchen-form">
+              <label className="kitchen-field">
+                <span className="kitchen-label">Ingrediente</span>
+                <input className="kitchen-input" value={manualQuery} onChange={(event) => { setManualQuery(event.target.value); setManualIngredient(null); }} placeholder="Buscar ingrediente..." />
+              </label>
+              <div className="kitchen-suggestion-list">
+                {(manualSuggestions || []).slice(0, 8).map((item) => (
+                  <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => { setManualIngredient(item); setManualQuery(item.name || ""); setManualCategoryId(item.categoryId?._id || ""); }}>
+                    <span className="kitchen-suggestion-name">{item.name}</span>
+                  </button>
+                ))}
+              </div>
+              <label className="kitchen-field">
+                <span className="kitchen-label">Categoría</span>
+                <select className="kitchen-select" value={manualCategoryId} onChange={(event) => setManualCategoryId(event.target.value)}>
+                  <option value="">Selecciona categoría</option>
+                  {manualCategories.map((category) => (
+                    <option key={category._id} value={category._id}>{category.name}</option>
+                  ))}
+                </select>
+              </label>
+              {!manualIngredient && manualQuery.trim() && !manualSuggestions.some((item) => normalizeQuery(item.name) === normalizeQuery(manualQuery)) ? (
+                <div className="kitchen-muted">Se creará “{manualQuery.trim()}” en el hogar actual.</div>
+              ) : null}
+              <div className="kitchen-modal-actions">
+                <button className="kitchen-button" type="button" onClick={submitManualItem} disabled={manualSaving}>{manualSaving ? "Guardando..." : "Añadir"}</button>
+                <button className="kitchen-button ghost" type="button" onClick={() => setManualOpen(false)}>Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </KitchenLayout>
   );
 }

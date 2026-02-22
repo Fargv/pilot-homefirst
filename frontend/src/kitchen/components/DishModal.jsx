@@ -208,6 +208,7 @@ export default function DishModal({
               categories={categories}
               onCategoryCreated={onCategoryCreated}
               onCreateStateChange={setIsCreatingIngredient}
+              mode="recipe"
             />
             {pendingCount ? (
               <p className="kitchen-inline-warning">

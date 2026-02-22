@@ -15,6 +15,7 @@ const CategorySchema = new mongoose.Schema(
     colorBg: { type: String, required: true },
     colorText: { type: String, required: true },
     order: { type: Number, default: 0 },
+    forRecipes: { type: Boolean, default: true },
     active: { type: Boolean, default: true },
     isArchived: { type: Boolean, default: false }
   },

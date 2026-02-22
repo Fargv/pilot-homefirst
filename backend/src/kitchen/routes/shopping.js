@@ -1,6 +1,7 @@
 import express from "express";
 import { Category } from "../models/Category.js";
 import { Store } from "../models/Store.js";
+import { KitchenIngredient } from "../models/KitchenIngredient.js";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
@@ -11,6 +12,7 @@ import {
 } from "../householdScope.js";
 import { ensureShoppingList, rebuildShoppingList, repairShoppingListItems } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
+import { normalizeIngredientName } from "../utils/normalize.js";
 import {
   DEFAULT_CATEGORY_COLOR_BG,
   DEFAULT_CATEGORY_COLOR_TEXT,
@@ -245,6 +247,68 @@ router.post("/:weekStart/rebuild", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Datos inválidos al reconstruir la lista." });
     }
     return res.status(500).json({ ok: false, error: "No se pudo reconstruir la lista de compra." });
+  }
+});
+
+
+router.post("/:weekStart/items/manual", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+    const { ingredientId, categoryId, storeId, occurrences } = req.body || {};
+    if (!ingredientId || !categoryId) {
+      return res.status(400).json({ ok: false, error: "Debes indicar ingrediente y categoría." });
+    }
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+
+    const ingredient = await KitchenIngredient.findOne({
+      _id: ingredientId,
+      isArchived: { $ne: true },
+      active: true,
+      $or: [
+        { scope: CATALOG_SCOPES.MASTER, householdId: null },
+        { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
+        { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
+      ]
+    }).select("_id name canonicalName categoryId");
+
+    if (!ingredient) {
+      return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
+    }
+
+    const category = await Category.findOne(buildCategoryVisibilityFilter(effectiveHouseholdId, {
+      _id: categoryId,
+      active: true,
+      isArchived: { $ne: true }
+    })).select("_id");
+
+    if (!category) {
+      return res.status(404).json({ ok: false, error: "Categoría no encontrada." });
+    }
+
+    list.items.push({
+      ingredientId: ingredient._id,
+      categoryId: category._id,
+      displayName: ingredient.name,
+      canonicalName: normalizeIngredientName(ingredient.canonicalName || ingredient.name),
+      occurrences: Number.isFinite(Number(occurrences)) && Number(occurrences) > 0 ? Number(occurrences) : 1,
+      status: "pending",
+      storeId: await validateStoreSelection(storeId, effectiveHouseholdId),
+      fromDishes: []
+    });
+
+    await list.save();
+
+    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+    return res.status(201).json({ ok: true, ...payload });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo añadir el item manual." });
   }
 });
 

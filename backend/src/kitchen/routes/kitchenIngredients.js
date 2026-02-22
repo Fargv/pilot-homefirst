@@ -135,7 +135,7 @@ function buildSearchFilter(q) {
 
 router.get("/", requireAuth, async (req, res) => {
   try {
-    const { q, includeInactive, limit } = req.query;
+    const { q, includeInactive, limit, mode } = req.query;
     const effectiveHouseholdId = getOptionalHouseholdId(req.user);
     const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
 
@@ -151,13 +151,31 @@ router.get("/", requireAuth, async (req, res) => {
       sort: { name: 1 }
     });
 
+    let filteredIngredients = ingredients;
+    if (String(mode || "").toLowerCase() === "recipe") {
+      const allowedCategories = await resolveCatalogForHousehold({
+        Model: Category,
+        householdId: effectiveHouseholdId,
+        type: "category",
+        masterFilter: { active: true, forRecipes: true },
+        householdFilter: { active: true, forRecipes: true },
+        overrideFilter: { active: true, forRecipes: true },
+        sort: { order: 1, name: 1 }
+      });
+      const allowedIds = new Set(allowedCategories.map((category) => String(category._id)));
+      filteredIngredients = ingredients.filter((ingredient) => {
+        const categoryValue = ingredient?.categoryId?._id || ingredient?.categoryId;
+        return categoryValue && allowedIds.has(String(categoryValue));
+      });
+    }
+
     const limitValue = Number.parseInt(limit, 10);
     const resolvedIngredients =
       !Number.isNaN(limitValue) && limitValue > 0
-        ? ingredients.slice(0, limitValue)
+        ? filteredIngredients.slice(0, limitValue)
         : !limit
-          ? ingredients.slice(0, MAX_RESULTS)
-          : ingredients;
+          ? filteredIngredients.slice(0, MAX_RESULTS)
+          : filteredIngredients;
 
     return res.json({ ok: true, ingredients: resolvedIngredients });
   } catch (error) {
@@ -173,8 +191,9 @@ router.post("/", requireAuth, async (req, res) => {
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del ingrediente es obligatorio." });
 
     const isDiod = isDiodUser(req.kitchenUser);
-    const isMasterWrite = scope === CATALOG_SCOPES.MASTER;
-    if (isMasterWrite && !isDiod) {
+    const requestedMasterWrite = scope === CATALOG_SCOPES.MASTER;
+    const isMasterWrite = isDiod && requestedMasterWrite;
+    if (requestedMasterWrite && !isDiod) {
       return res.status(403).json({ ok: false, error: "Solo DIOD puede crear ingredientes master." });
     }
 

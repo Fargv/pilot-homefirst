@@ -219,6 +219,27 @@ export default function SettingsPage() {
     }
   };
 
+  const toggleCategoryRecipe = async (category) => {
+    setError("");
+    setSuccess("");
+    try {
+      await apiRequest(`/api/categories/${category._id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: category.name,
+          colorBg: category.colorBg,
+          colorText: category.colorText,
+          active: category.active,
+          forRecipes: !category.forRecipes
+        })
+      });
+      setSuccess("Categoría actualizada correctamente.");
+      await Promise.all([loadCategories(), loadMasterStores()]);
+    } catch (err) {
+      setError(err.message || "No se pudo actualizar la categoría.");
+    }
+  };
+
   const removeCategory = async (category) => {
     const confirmed = window.confirm(`¿Eliminar la categoría “${category.name}”?`);
     if (!confirmed) return;
@@ -405,10 +426,13 @@ export default function SettingsPage() {
               <ul className="kitchen-list">
                 {categories.map((category) => (
                   <li key={category._id}>
-                    <strong>{category.name}</strong> <span className="kitchen-muted">({category.scope || "household"})</span>
+                    <strong>{category.name}</strong> <span className="kitchen-muted">({category.scope || "household"} · {category.forRecipes === false ? "no receta" : "receta"})</span>
                     <div className="kitchen-actions" style={{ marginTop: 8 }}>
                       <button type="button" className="kitchen-button secondary" onClick={() => updateCategory(category)}>
                         Editar
+                      </button>
+                      <button type="button" className="kitchen-button secondary" onClick={() => toggleCategoryRecipe(category)}>
+                        {category.forRecipes === false ? "Usar en recetas" : "Excluir de recetas"}
                       </button>
                       <button type="button" className="kitchen-button secondary" onClick={() => removeCategory(category)}>
                         Eliminar

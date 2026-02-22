@@ -9,7 +9,8 @@ export default function IngredientPicker({
   onChange,
   categories = [],
   onCategoryCreated,
-  onCreateStateChange
+  onCreateStateChange,
+  mode = "all"
 }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -70,7 +71,7 @@ export default function IngredientPicker({
         if (import.meta.env.DEV) {
           console.debug("[IngredientPicker] buscando", { query });
         }
-        const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(query)}`);
+        const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(query)}${mode === "recipe" ? "&mode=recipe" : ""}`);
         if (!active) return;
         setSuggestions(data.ingredients || []);
       } catch (err) {
@@ -85,7 +86,7 @@ export default function IngredientPicker({
       active = false;
       clearTimeout(timeout);
     };
-  }, [query]);
+  }, [mode, query]);
 
   const normalizedQuery = useMemo(() => normalizeIngredientName(query), [query]);
 

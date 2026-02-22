@@ -41,7 +41,7 @@ router.get("/", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { name, colorBg, colorText, scope } = req.body;
+    const { name, colorBg, colorText, scope, forRecipes } = req.body;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre de la categoría es obligatorio." });
 
     const isDiod = isDiodUser(req.kitchenUser);
@@ -73,6 +73,7 @@ router.post("/", requireAuth, async (req, res) => {
       slug,
       colorBg: colorBg || DEFAULT_COLOR_BG,
       colorText: colorText || DEFAULT_COLOR_TEXT,
+      forRecipes: typeof forRecipes === "boolean" ? forRecipes : true,
       scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
       householdId: isMasterWrite ? undefined : effectiveHouseholdId
     });
@@ -92,7 +93,7 @@ router.post("/", requireAuth, async (req, res) => {
 router.put("/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, colorBg, colorText, active } = req.body;
+    const { name, colorBg, colorText, active, forRecipes } = req.body;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre de la categoría es obligatorio." });
 
     getOptionalHouseholdId(req.user);
@@ -110,7 +111,8 @@ router.put("/:id", requireAuth, async (req, res) => {
       slug,
       colorBg: colorBg || DEFAULT_COLOR_BG,
       colorText: colorText || DEFAULT_COLOR_TEXT,
-      active: typeof active === "boolean" ? active : target.active
+      active: typeof active === "boolean" ? active : target.active,
+      forRecipes: typeof forRecipes === "boolean" ? forRecipes : target.forRecipes
     };
 
     if (target.scope === CATALOG_SCOPES.MASTER) {
