@@ -1063,12 +1063,13 @@ body {
 
 .kitchen-week-nav {
   --kitchen-week-nav-control-height: 44px;
-  display: grid;
-  grid-template-columns: var(--kitchen-week-nav-control-height) minmax(0, 260px) var(--kitchen-week-nav-control-height);
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   width: 100%;
+  max-width: 420px;
+  margin-inline: auto;
 }
 
 .kitchen-week-picker {
@@ -1076,6 +1077,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .kitchen-week-arrow {
@@ -1084,6 +1087,7 @@ body {
   justify-content: center;
   width: var(--kitchen-week-nav-control-height);
   height: var(--kitchen-week-nav-control-height);
+  flex: 0 0 var(--kitchen-week-nav-control-height);
   border-radius: 14px;
   border: 1px solid rgba(176, 188, 229, 0.75);
   background: linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
@@ -1098,6 +1102,11 @@ body {
   height: var(--kitchen-week-nav-control-height);
   text-align: center;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kitchen-week-arrow-icon {
@@ -1909,8 +1918,8 @@ body {
 
   .kitchen-week-nav {
     --kitchen-week-nav-control-height: 42px;
-    grid-template-columns: var(--kitchen-week-nav-control-height) minmax(0, 1fr) var(--kitchen-week-nav-control-height);
     gap: 8px;
+    max-width: 100%;
   }
 
   .kitchen-week-controls {
@@ -2790,7 +2799,8 @@ body {
 
 .shopping-week-nav {
   margin-top: 12px;
-  max-width: 360px;
+  width: 100%;
+  max-width: 420px;
   margin-inline: auto;
 }
 
@@ -3089,6 +3099,18 @@ body {
   box-shadow: 0 6px 14px rgba(79, 94, 170, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
+
+@media (max-width: 390px) {
+  .kitchen-week-nav {
+    --kitchen-week-nav-control-height: 40px;
+    gap: 8px;
+  }
+
+  .kitchen-week-picker .kitchen-input {
+    font-size: 14px;
+    padding-inline: 10px;
+  }
+}
 @keyframes shoppingStrike {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }

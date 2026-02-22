@@ -5,6 +5,7 @@ import { useAuth } from "../auth";
 import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
 import IngredientPicker from "../components/IngredientPicker.jsx";
 import DishModal from "../components/DishModal.jsx";
+import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import KitchenLayout from "../Layout.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { getUserColor } from "../utils/userColors";
@@ -794,33 +795,12 @@ export default function WeekPage() {
         <div className="kitchen-week-mobile-frame">
           <section className="kitchen-week-header">
             <div className="kitchen-week-header-actions">
-              <div className="kitchen-week-nav" role="group" aria-label="Cambiar semana">
-                <button
-                  className="kitchen-week-arrow"
-                  type="button"
-                  onClick={() => handleWeekShift(-7)}
-                  aria-label="Ir a la semana anterior"
-                >
-                  <ChevronIcon className="kitchen-week-arrow-icon" />
-                </button>
-                <label className="kitchen-field kitchen-week-picker">
-                  <input
-                    className="kitchen-input"
-                    type="date"
-                    value={weekStart}
-                    onChange={(event) => setWeekStart(normalizeWeekStart(event.target.value))}
-                    aria-label="Semana"
-                  />
-                </label>
-                <button
-                  className="kitchen-week-arrow"
-                  type="button"
-                  onClick={() => handleWeekShift(7)}
-                  aria-label="Ir a la semana siguiente"
-                >
-                  <ChevronIcon className="kitchen-week-arrow-icon is-next" />
-                </button>
-              </div>
+              <WeekNavigator
+                value={weekStart}
+                onChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
+                onPrevious={() => handleWeekShift(-7)}
+                onNext={() => handleWeekShift(7)}
+              />
               {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
             </div>
           </section>

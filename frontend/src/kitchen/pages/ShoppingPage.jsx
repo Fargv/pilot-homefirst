@@ -3,14 +3,7 @@ import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
 import { useActiveWeek } from "../weekContext.jsx";
-
-function ChevronIcon(props) {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
-      <path d="M11.75 4.5 6.25 10l5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 
 function RefreshIcon(props) {
   return (
@@ -287,13 +280,13 @@ export default function ShoppingPage() {
               </button>
             </div>
 
-            <div className="kitchen-week-nav shopping-week-nav" role="group" aria-label="Cambiar semana">
-              <button className="kitchen-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, -7))}><ChevronIcon className="kitchen-week-arrow-icon" /></button>
-              <label className="kitchen-field kitchen-week-picker">
-                <input className="kitchen-input" type="date" value={weekStart} onChange={(event) => setWeekStart(normalizeWeekStartInput(event.target.value))} />
-              </label>
-              <button className="kitchen-week-arrow" type="button" onClick={() => setWeekStart((prev) => addDaysToISO(prev, 7))}><ChevronIcon className="kitchen-week-arrow-icon is-next" /></button>
-            </div>
+            <WeekNavigator
+              className="shopping-week-nav"
+              value={weekStart}
+              onChange={(nextValue) => setWeekStart(normalizeWeekStartInput(nextValue))}
+              onPrevious={() => setWeekStart((prev) => addDaysToISO(prev, -7))}
+              onNext={() => setWeekStart((prev) => addDaysToISO(prev, 7))}
+            />
 
           </div>
 
