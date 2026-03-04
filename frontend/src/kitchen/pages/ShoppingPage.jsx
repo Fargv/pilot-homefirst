@@ -428,8 +428,9 @@ export default function ShoppingPage() {
         <div className="kitchen-card shopping-main-card">
           <div className="shopping-header-card">
             <div className="shopping-header-row">
-              <div>
-                <h1>Lista de la compra · Semana {formatWeekTitle(weekStart)}</h1>
+              <div className="shopping-header-title">
+                <h1>Lista de la compra</h1>
+                <p className="shopping-week-label">Semana {formatWeekTitle(weekStart)}</p>
               </div>
               <div className="kitchen-actions">
                 <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
@@ -438,55 +439,45 @@ export default function ShoppingPage() {
               </div>
             </div>
 
-            <WeekNavigator
-              className="shopping-week-nav"
-              value={weekStart}
-              onChange={(nextValue) => setWeekStart(normalizeWeekStartInput(nextValue))}
-              onPrevious={() => setWeekStart((prev) => addDaysToISO(prev, -7))}
-              onNext={() => setWeekStart((prev) => addDaysToISO(prev, 7))}
-            />
+            <div className={`shopping-controls-row ${tab === "pending" ? "" : "is-no-store"}`}>
+              <WeekNavigator
+                className="shopping-week-nav"
+                value={weekStart}
+                onChange={(nextValue) => setWeekStart(normalizeWeekStartInput(nextValue))}
+                onPrevious={() => setWeekStart((prev) => addDaysToISO(prev, -7))}
+                onNext={() => setWeekStart((prev) => addDaysToISO(prev, 7))}
+              />
 
-          </div>
+              <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
+                <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
+                <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+              </div>
 
-          <div className="kitchen-dishes-tabs" role="tablist" aria-label="Estado de la compra">
-            <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-            <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-          </div>
-
-          {tab === "pending" ? (
-            <div className="shopping-toolbar">
-              <select
-                className="kitchen-select shopping-store-select"
-                value={selectedStoreId}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  if (value === "__add__") {
-                    void createStoreFromDropdown();
-                    return;
-                  }
-                  selectedStoreRef.current = value;
-                  setSelectedStoreId(value);
-                }}
-              >
-                <option value="">Supermercado (opcional)</option>
-                {stores.map((store) => (
-                  <option key={store._id} value={store._id}>{store.name}</option>
-                ))}
-                <option value="__add__">Añadir supermercado…</option>
-              </select>
+              {tab === "pending" ? (
+                <select
+                  className="kitchen-select shopping-store-select"
+                  value={selectedStoreId}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value === "__add__") {
+                      void createStoreFromDropdown();
+                      return;
+                    }
+                    selectedStoreRef.current = value;
+                    setSelectedStoreId(value);
+                  }}
+                >
+                  <option value="">Supermercado (opcional)</option>
+                  {stores.map((store) => (
+                    <option key={store._id} value={store._id}>{store.name}</option>
+                  ))}
+                  <option value="__add__">Añadir supermercado…</option>
+                </select>
+              ) : null}
             </div>
-          ) : null}
 
-          {(success || error) ? (
-            <div className="shopping-toolbar-alerts" aria-live="polite">
-              {success ? <div className="kitchen-alert success shopping-toolbar-alert">{success}</div> : null}
-              {error ? <div className="kitchen-alert error shopping-toolbar-alert">{error}</div> : null}
-            </div>
-          ) : null}
-
-          {tab === "pending" ? (
-            <div className="shopping-categories">
-              <div className="shopping-quick-add" role="region" aria-label="Añadir ingrediente rápido">
+            {tab === "pending" ? (
+              <div className="shopping-quick-add shopping-quick-add-header" role="region" aria-label="Añadir ingrediente rápido">
                 <div className="shopping-quick-add-row">
                   <input
                     ref={quickInputRef}
@@ -495,15 +486,17 @@ export default function ShoppingPage() {
                     onChange={(event) => setQuickQuery(event.target.value)}
                     placeholder="Añadir ingrediente a la lista..."
                   />
-                  {!hasExactSuggestion && quickQuery.trim() ? (
+                </div>
+                {!hasExactSuggestion && quickQuery.trim() ? (
+                  <div className="shopping-quick-category-row">
                     <select className="kitchen-select shopping-quick-category" value={quickCategoryId} onChange={(event) => setQuickCategoryId(event.target.value)}>
                       <option value="">Categoría</option>
                       {quickCategories.map((category) => (
                         <option key={category._id} value={category._id}>{category.name}</option>
                       ))}
                     </select>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
                 {quickQuery ? (
                   <div className="shopping-quick-suggestions">
                     {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
@@ -520,7 +513,18 @@ export default function ShoppingPage() {
                   </div>
                 ) : null}
               </div>
+            ) : null}
+          </div>
 
+          {(success || error) ? (
+            <div className="shopping-toolbar-alerts" aria-live="polite">
+              {success ? <div className="kitchen-alert success shopping-toolbar-alert">{success}</div> : null}
+              {error ? <div className="kitchen-alert error shopping-toolbar-alert">{error}</div> : null}
+            </div>
+          ) : null}
+
+          {tab === "pending" ? (
+            <div className="shopping-categories">
               <div className="shopping-bulk-actions">
                 <button className="kitchen-button ghost shopping-bulk-button" type="button" onClick={() => setAllItemsStatus("purchased")}>Marcar todo como comprado</button>
               </div>
@@ -624,4 +628,3 @@ export default function ShoppingPage() {
     </KitchenLayout>
   );
 }
-
