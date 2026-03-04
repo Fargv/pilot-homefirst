@@ -3468,3 +3468,117 @@ body {
     padding-top: 10px;
   }
 }
+/* Unified cards across Platos tabs */
+.kitchen-dish-card:not(.kitchen-ingredient-card),
+.kitchen-dish-card.kitchen-ingredient-card {
+  border-top: none !important;
+  box-shadow: var(--hf-shadow-soft);
+  background: var(--hf-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 154px;
+  padding: 16px;
+}
+
+.kitchen-dish-card .kitchen-dish-main {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 2px 8px 0;
+}
+
+.kitchen-dish-card .kitchen-dish-title-row {
+  width: 100%;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.kitchen-dish-card .kitchen-dish-name {
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--hf-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.kitchen-card-subtitle {
+  margin: 0;
+  text-align: center;
+  color: var(--hf-muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.kitchen-card-inactive {
+  margin: 0;
+  text-align: center;
+  color: var(--hf-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.kitchen-dish-card .kitchen-dish-actions-bar {
+  margin-top: auto;
+  width: 100%;
+  padding: 12px 6px 0;
+  border-top: 1px solid var(--hf-border);
+  display: flex;
+  justify-content: center;
+}
+
+.kitchen-dish-card .kitchen-dish-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button {
+  flex-shrink: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .kitchen-dish-card {
+    transition: transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .kitchen-dish-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+  }
+
+  .kitchen-dish-card:hover .kitchen-icon-button {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .kitchen-dish-card:not(.kitchen-ingredient-card),
+  .kitchen-dish-card.kitchen-ingredient-card {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .kitchen-dish-card .kitchen-dish-actions {
+    gap: 10px;
+  }
+
+  .kitchen-dish-card .kitchen-dish-actions-bar {
+    padding-top: 10px;
+  }
+}

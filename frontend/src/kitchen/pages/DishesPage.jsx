@@ -5,8 +5,6 @@ import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import DishModal from "../components/DishModal.jsx";
 import IngredientModal from "../components/IngredientModal.jsx";
-import CategoryChip from "../components/CategoryChip.jsx";
-import { resolveCategoryColors } from "../components/categoryUtils.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
 const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
@@ -87,13 +85,16 @@ export default function DishesPage() {
   const [ingredientSearchTerm, setIngredientSearchTerm] = useState("");
   const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
   const [activeIngredient, setActiveIngredient] = useState(null);
+  const [ingredientInfoOpenId, setIngredientInfoOpenId] = useState(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignDish, setAssignDish] = useState(null);
   const [assignDate, setAssignDate] = useState("");
   const [dishInfoOpenId, setDishInfoOpenId] = useState(null);
   const [isInfoMobile, setIsInfoMobile] = useState(false);
   const infoPopoverRef = useRef(null);
+  const ingredientInfoPopoverRef = useRef(null);
   const infoButtonRefs = useRef(new Map());
+  const ingredientInfoButtonRefs = useRef(new Map());
   const todayKey = new Date().toISOString().slice(0, 10);
   const currentWeekStart = useMemo(
     () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
@@ -275,6 +276,29 @@ export default function DishesPage() {
     setIsIngredientModalOpen(true);
   };
 
+  const duplicateIngredient = async (ingredient) => {
+    if (!ingredient?._id) return;
+    const sourceName = (ingredient.name || "Ingrediente").trim();
+    const duplicateName = `${sourceName} (copia)`;
+    await apiRequest("/api/kitchenIngredients", {
+      method: "POST",
+      body: JSON.stringify({
+        name: duplicateName,
+        categoryId: ingredient.categoryId?._id || ingredient.categoryId || undefined
+      })
+    });
+    await loadIngredients(ingredientSearchTerm);
+  };
+
+  const deleteIngredient = async (ingredient) => {
+    if (!ingredient?._id) return;
+    const confirmed = window.confirm(`¿Estás seguro de eliminar ${ingredient.name}?`);
+    if (!confirmed) return;
+    await apiRequest(`/api/kitchenIngredients/${ingredient._id}`, { method: "DELETE" });
+    if (activeIngredient?._id === ingredient._id) closeIngredientModal();
+    if (ingredientInfoOpenId === ingredient._id) setIngredientInfoOpenId(null);
+    await loadIngredients(ingredientSearchTerm);
+  };
   const closeIngredientModal = () => {
     setIsIngredientModalOpen(false);
     setActiveIngredient(null);
@@ -372,6 +396,7 @@ export default function DishesPage() {
   }, []);
 
   const toggleDishInfo = useCallback((dishId) => {
+    setIngredientInfoOpenId(null);
     setDishInfoOpenId((previousId) => (previousId === dishId ? null : dishId));
   }, []);
 
@@ -423,6 +448,67 @@ export default function DishesPage() {
     };
   }, [dishInfoOpenId, isInfoMobile]);
 
+  const closeIngredientInfo = useCallback(() => {
+    setIngredientInfoOpenId(null);
+  }, []);
+
+  const toggleIngredientInfo = useCallback((ingredientId) => {
+    setDishInfoOpenId(null);
+    setIngredientInfoOpenId((previousId) => (previousId === ingredientId ? null : ingredientId));
+  }, []);
+
+  const registerIngredientInfoButton = useCallback((ingredientId, node) => {
+    if (!ingredientId) return;
+    if (node) {
+      ingredientInfoButtonRefs.current.set(ingredientId, node);
+      return;
+    }
+    ingredientInfoButtonRefs.current.delete(ingredientId);
+  }, []);
+
+  useEffect(() => {
+    if (!ingredientInfoOpenId) return;
+    const exists = ingredients.some((ingredient) => ingredient?._id === ingredientInfoOpenId);
+    if (!exists) {
+      setIngredientInfoOpenId(null);
+    }
+  }, [ingredientInfoOpenId, ingredients]);
+
+  useEffect(() => {
+    if (activeTab !== "ingredients" && ingredientInfoOpenId) {
+      setIngredientInfoOpenId(null);
+    }
+  }, [activeTab, ingredientInfoOpenId]);
+
+  useEffect(() => {
+    if (!ingredientInfoOpenId) return;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIngredientInfoOpenId(null);
+      }
+    };
+    const onPointerDown = (event) => {
+      if (isInfoMobile) return;
+      const popoverNode = ingredientInfoPopoverRef.current;
+      const buttonNode = ingredientInfoButtonRefs.current.get(ingredientInfoOpenId);
+      const target = event.target;
+      if (popoverNode?.contains(target) || buttonNode?.contains(target)) return;
+      setIngredientInfoOpenId(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, [ingredientInfoOpenId, isInfoMobile]);
+
+  const activeInfoIngredient = useMemo(
+    () => ingredients.find((ingredient) => ingredient?._id === ingredientInfoOpenId) || null,
+    [ingredientInfoOpenId, ingredients]
+  );
   const activeInfoDish = useMemo(
     () => dishes.find((dish) => dish?._id === dishInfoOpenId) || null,
     [dishInfoOpenId, dishes]
@@ -525,59 +611,141 @@ export default function DishesPage() {
           ) : (
             <div className="kitchen-dishes-grid">
               {ingredients.map((ingredient) => {
-                const category = ingredient.categoryId || null;
-                const colors = resolveCategoryColors(category);
+                const categoryName = ingredient.categoryId?.name || "Sin categoría";
+                const isInfoOpen = ingredientInfoOpenId === ingredient._id && !isInfoMobile;
                 return (
                   <article className="kitchen-dish-card kitchen-ingredient-card" key={ingredient._id}>
-                    <div>
+                    <div className="kitchen-dish-main">
                       <div className="kitchen-dish-title-row">
                         <h3 className="kitchen-dish-name">{ingredient.name}</h3>
-                        <span
-                          className={`kitchen-status-pill ${
-                            ingredient.active ? "active" : "inactive"
-                          }`}
-                        >
-                          {ingredient.active ? "Activo" : "Inactivo"}
-                        </span>
                       </div>
-                      <p className="kitchen-ingredient-canonical">
-                        Canonical: {ingredient.canonicalName}
-                      </p>
-                      {category ? (
-                        <div className="kitchen-ingredient-tags">
-                          <CategoryChip
-                            label={category.name}
-                            colorBg={category.colorBg || colors.colorBg}
-                            colorText={category.colorText || colors.colorText}
-                          />
-                        </div>
-                      ) : null}
+                      <p className="kitchen-card-subtitle">{categoryName}</p>
+                      {!ingredient.active ? <p className="kitchen-card-inactive">Inactivo</p> : null}
                     </div>
-                    <div className="kitchen-dish-actions">
-                      <button
-                        className="kitchen-icon-button"
-                        type="button"
-                        onClick={() => startIngredientEdit(ingredient)}
-                        aria-label={`Editar ${ingredient.name}`}
-                      >
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                          <path
-                            d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M15.75 5.625 18.375 8.25"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      </button>
+                    <div className="kitchen-dish-actions-bar">
+                      <div className="kitchen-dish-actions">
+                        <div className="kitchen-dish-info-wrap">
+                          <button
+                            ref={(node) => registerIngredientInfoButton(ingredient._id, node)}
+                            className="kitchen-icon-button info"
+                            type="button"
+                            onClick={() => toggleIngredientInfo(ingredient._id)}
+                            aria-label={`Ver detalles de ${ingredient.name}`}
+                            aria-expanded={ingredientInfoOpenId === ingredient._id}
+                            aria-controls={`ingredient-info-${ingredient._id}`}
+                            title="Información"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path
+                                d="M12 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"
+                                fill="currentColor"
+                              />
+                              <path
+                                d="M12 11v6m9-5a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
+                          {isInfoOpen ? (
+                            <div
+                              id={`ingredient-info-${ingredient._id}`}
+                              className="kitchen-dish-info-popover"
+                              role="dialog"
+                              aria-label={`Información de ${ingredient.name}`}
+                              ref={ingredientInfoPopoverRef}
+                            >
+                              <h4 className="kitchen-dish-info-heading">{ingredient.name}</h4>
+                              <p className="kitchen-dish-info-empty">{categoryName}</p>
+                              {!ingredient.active ? (
+                                <p className="kitchen-dish-info-empty">Estado: Inactivo</p>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
+                        <button
+                          className="kitchen-icon-button"
+                          type="button"
+                          onClick={() => startIngredientEdit(ingredient)}
+                          aria-label={`Editar ${ingredient.name}`}
+                          title="Editar"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M15.75 5.625 18.375 8.25"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          className="kitchen-icon-button"
+                          type="button"
+                          onClick={() => duplicateIngredient(ingredient)}
+                          aria-label={`Duplicar ${ingredient.name}`}
+                          title="Duplicar"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <rect
+                              x="9"
+                              y="9"
+                              width="10"
+                              height="10"
+                              rx="2"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                            />
+                            <path
+                              d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          className="kitchen-icon-button danger"
+                          type="button"
+                          onClick={() => deleteIngredient(ingredient)}
+                          aria-label={`Eliminar ${ingredient.name}`}
+                          title="Eliminar"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </article>
                 );
@@ -605,7 +773,7 @@ export default function DishesPage() {
                   <div className="kitchen-dish-main">
                     <div className="kitchen-dish-title-row">
                       <h3 className="kitchen-dish-name">{dish.name}</h3>
-                      {dish.sidedish ? <span className="kitchen-dish-badge">Guarnicion</span> : null}
+                      
                     </div>
                   </div>
                   <div className="kitchen-dish-actions-bar">
@@ -777,25 +945,35 @@ export default function DishesPage() {
         initialIngredient={activeIngredient}
         scope={isDiodGlobalMode ? "master" : undefined}
       />
-      {isInfoMobile && activeInfoDish ? (
-        <div className="kitchen-ui-sheet-backdrop" role="presentation" onClick={closeDishInfo}>
+      {isInfoMobile && (activeInfoDish || activeInfoIngredient) ? (
+        <div
+          className="kitchen-ui-sheet-backdrop"
+          role="presentation"
+          onClick={() => {
+            closeDishInfo();
+            closeIngredientInfo();
+          }}
+        >
           <div
             className="kitchen-ui-sheet kitchen-dish-info-sheet"
             role="dialog"
             aria-modal="true"
-            aria-label={`Ingredientes de ${activeInfoDish.name}`}
+            aria-label={`Información de ${(activeInfoDish || activeInfoIngredient)?.name || "elemento"}`}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="kitchen-modal-header">
               <div>
-                <h3>{activeInfoDish.name}</h3>
-                <p className="kitchen-muted">Ingredientes</p>
+                <h3>{(activeInfoDish || activeInfoIngredient)?.name}</h3>
+                <p className="kitchen-muted">Información</p>
               </div>
               <button
                 className="kitchen-icon-button"
                 type="button"
-                onClick={closeDishInfo}
-                aria-label="Cerrar ingredientes"
+                onClick={() => {
+                  closeDishInfo();
+                  closeIngredientInfo();
+                }}
+                aria-label="Cerrar información"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path
@@ -808,15 +986,24 @@ export default function DishesPage() {
                 </svg>
               </button>
             </div>
-            {(activeInfoDish.ingredients || []).length > 0 ? (
-              <ul className="kitchen-dish-info-list is-sheet">
-                {(activeInfoDish.ingredients || []).map((item, index) => (
-                  <li key={`${activeInfoDish._id}-mobile-ingredient-${index}`}>{item.displayName}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
-            )}
+            {activeInfoDish ? (
+              (activeInfoDish.ingredients || []).length > 0 ? (
+                <ul className="kitchen-dish-info-list is-sheet">
+                  {(activeInfoDish.ingredients || []).map((item, index) => (
+                    <li key={`${activeInfoDish._id}-mobile-ingredient-${index}`}>{item.displayName}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
+              )
+            ) : activeInfoIngredient ? (
+              <div>
+                <p className="kitchen-dish-info-empty">{activeInfoIngredient.categoryId?.name || "Sin categoría"}</p>
+                {!activeInfoIngredient.active ? (
+                  <p className="kitchen-dish-info-empty">Estado: Inactivo</p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
