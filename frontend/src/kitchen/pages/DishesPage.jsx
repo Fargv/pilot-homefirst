@@ -522,7 +522,7 @@ export default function DishesPage() {
                   className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
                   key={dish._id}
                 >
-                  <div>
+                  <div className="kitchen-dish-main">
                     <div className="kitchen-dish-title-row">
                       <h3 className="kitchen-dish-name">{dish.name}</h3>
                       {dish.sidedish ? <span className="kitchen-dish-badge">Guarnición</span> : null}
