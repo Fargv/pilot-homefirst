@@ -545,16 +545,6 @@ export default function ShoppingPage() {
                             <span className="shopping-item-text">{item.displayName}</span>
                             <div className="shopping-item-controls">
                               <button
-                                className="shopping-qty-button"
-                                type="button"
-                                onClick={() => adjustItemOccurrences(item, 1)}
-                                aria-label={`Aumentar cantidad de ${item.displayName}`}
-                                title="Aumentar"
-                              >
-                                <PlusIcon />
-                              </button>
-                              <span className="shopping-item-amount">x{Math.max(1, Number(item.occurrences || 1))}</span>
-                              <button
                                 className="shopping-qty-button shopping-remove-item"
                                 type="button"
                                 onClick={() => adjustItemOccurrences(item, -1)}
@@ -562,6 +552,16 @@ export default function ShoppingPage() {
                                 title="Reducir"
                               >
                                 <MinusIcon />
+                              </button>
+                              <span className="shopping-item-amount">x{Math.max(1, Number(item.occurrences || 1))}</span>
+                              <button
+                                className="shopping-qty-button"
+                                type="button"
+                                onClick={() => adjustItemOccurrences(item, 1)}
+                                aria-label={`Aumentar cantidad de ${item.displayName}`}
+                                title="Aumentar"
+                              >
+                                <PlusIcon />
                               </button>
                             </div>
                           </div>
@@ -624,3 +624,4 @@ export default function ShoppingPage() {
     </KitchenLayout>
   );
 }
+
