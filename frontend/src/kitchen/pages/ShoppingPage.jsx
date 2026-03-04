@@ -22,6 +22,14 @@ function MinusIcon(props) {
   );
 }
 
+function PlusIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M12 6v12M6 12h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function EmptyStateIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
@@ -307,6 +315,19 @@ export default function ShoppingPage() {
     }
   };
 
+  const adjustItemOccurrences = async (item, delta) => {
+    if (!item?.itemId || !Number.isInteger(delta) || delta === 0) return;
+    try {
+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/${item.itemId}/occurrences`, {
+        method: "PUT",
+        body: JSON.stringify({ delta })
+      });
+      applyPayload(data);
+    } catch (err) {
+      setError(err.message || "No se pudo actualizar la cantidad.");
+    }
+  };
+
   const setItemStatus = async (item, status) => {
     if (isDiodGlobalMode) return;
     const key = itemKey(item);
@@ -522,10 +543,27 @@ export default function ShoppingPage() {
                           <div className={`shopping-item ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
                             <button className="shopping-check" type="button" onClick={() => setItemStatus(item, "purchased")}><span className="shopping-check-dot">✓</span></button>
                             <span className="shopping-item-text">{item.displayName}</span>
-                            {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
-                            <button className="shopping-remove-item" type="button" onClick={() => removeItem(item)} aria-label={`Eliminar ${item.displayName}`} title="Eliminar">
-                              <MinusIcon />
-                            </button>
+                            <div className="shopping-item-controls">
+                              <button
+                                className="shopping-qty-button"
+                                type="button"
+                                onClick={() => adjustItemOccurrences(item, 1)}
+                                aria-label={`Aumentar cantidad de ${item.displayName}`}
+                                title="Aumentar"
+                              >
+                                <PlusIcon />
+                              </button>
+                              <span className="shopping-item-amount">x{Math.max(1, Number(item.occurrences || 1))}</span>
+                              <button
+                                className="shopping-qty-button shopping-remove-item"
+                                type="button"
+                                onClick={() => adjustItemOccurrences(item, -1)}
+                                aria-label={`Reducir cantidad de ${item.displayName}`}
+                                title="Reducir"
+                              >
+                                <MinusIcon />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}

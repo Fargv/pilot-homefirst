@@ -348,6 +348,46 @@ router.delete("/:weekStart/items/:itemId", requireAuth, async (req, res) => {
   }
 });
 
+router.put("/:weekStart/items/:itemId/occurrences", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha invalida." });
+
+    const delta = Number(req.body?.delta);
+    if (!Number.isFinite(delta) || delta === 0 || !Number.isInteger(delta)) {
+      return res.status(400).json({ ok: false, error: "Debes indicar un delta entero distinto de 0." });
+    }
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+    await repairShoppingListItems(list, effectiveHouseholdId, {
+      context: "update-item-occurrences"
+    });
+
+    const index = list.items.findIndex((item) => String(item.itemId || item._id || "") === String(req.params.itemId));
+    if (index === -1) {
+      return res.status(404).json({ ok: false, error: "Item no encontrado en la lista." });
+    }
+
+    const item = list.items[index];
+    const nextOccurrences = Number(item.occurrences || 1) + delta;
+
+    if (nextOccurrences <= 0) {
+      list.items.splice(index, 1);
+    } else {
+      item.occurrences = Math.max(1, Math.trunc(nextOccurrences));
+    }
+
+    await list.save();
+    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+    return res.json({ ok: true, ...payload });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar la cantidad del item." });
+  }
+});
 router.put("/:weekStart/item", requireAuth, async (req, res) => {
   try {
     const weekStart = parseISODate(req.params.weekStart);

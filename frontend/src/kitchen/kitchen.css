@@ -3038,6 +3038,8 @@ body {
 }
 
 .shopping-item-text {
+  flex: 1;
+  min-width: 0;
   font-weight: 500;
   color: #1f2a58;
   position: relative;
@@ -3059,14 +3061,24 @@ body {
   color: var(--hf-muted);
 }
 
-.shopping-item-amount {
+.shopping-item-controls {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.shopping-item-amount {
+  min-width: 38px;
   padding: 4px 8px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
   color: #334155;
   background: #edf1ff;
+  text-align: center;
 }
 
 .shopping-check {
@@ -3110,9 +3122,10 @@ body {
 }
 
 
+.shopping-qty-button,
 .shopping-remove-item {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   border: 1px solid rgba(160, 174, 214, 0.72);
   background: rgba(255, 255, 255, 0.9);
@@ -3122,18 +3135,22 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+  flex-shrink: 0;
 }
 
+.shopping-qty-button:hover,
 .shopping-remove-item:hover {
   background: #f8fafc;
   border-color: rgba(99, 102, 241, 0.5);
   color: #4f46e5;
 }
 
+.shopping-qty-button:active,
 .shopping-remove-item:active {
   transform: scale(0.94);
 }
 
+.shopping-qty-button svg,
 .shopping-remove-item svg {
   width: 14px;
   height: 14px;
