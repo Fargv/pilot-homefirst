@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import KitchenLayout from "../Layout.jsx";
@@ -90,6 +90,10 @@ export default function DishesPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignDish, setAssignDish] = useState(null);
   const [assignDate, setAssignDate] = useState("");
+  const [dishInfoOpenId, setDishInfoOpenId] = useState(null);
+  const [isInfoMobile, setIsInfoMobile] = useState(false);
+  const infoPopoverRef = useRef(null);
+  const infoButtonRefs = useRef(new Map());
   const todayKey = new Date().toISOString().slice(0, 10);
   const currentWeekStart = useMemo(
     () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
@@ -102,6 +106,21 @@ export default function DishesPage() {
     dishNames: {}
   });
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const mediaQuery = window.matchMedia("(max-width: 600px)");
+    const updateMediaState = () => {
+      setIsInfoMobile(mediaQuery.matches);
+    };
+    updateMediaState();
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updateMediaState);
+      return () => mediaQuery.removeEventListener("change", updateMediaState);
+    }
+    mediaQuery.addListener(updateMediaState);
+    return () => mediaQuery.removeListener(updateMediaState);
+  }, []);
 
   const loadDishes = async () => {
     if (isDiodGlobalMode) {
@@ -348,6 +367,66 @@ export default function DishesPage() {
     closeAssignModal();
   };
 
+  const closeDishInfo = useCallback(() => {
+    setDishInfoOpenId(null);
+  }, []);
+
+  const toggleDishInfo = useCallback((dishId) => {
+    setDishInfoOpenId((previousId) => (previousId === dishId ? null : dishId));
+  }, []);
+
+  const registerInfoButton = useCallback((dishId, node) => {
+    if (!dishId) return;
+    if (node) {
+      infoButtonRefs.current.set(dishId, node);
+      return;
+    }
+    infoButtonRefs.current.delete(dishId);
+  }, []);
+
+  useEffect(() => {
+    if (!dishInfoOpenId) return;
+    const exists = dishes.some((dish) => dish?._id === dishInfoOpenId);
+    if (!exists) {
+      setDishInfoOpenId(null);
+    }
+  }, [dishInfoOpenId, dishes]);
+
+  useEffect(() => {
+    if (activeTab === "ingredients" && dishInfoOpenId) {
+      setDishInfoOpenId(null);
+    }
+  }, [activeTab, dishInfoOpenId]);
+
+  useEffect(() => {
+    if (!dishInfoOpenId) return;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setDishInfoOpenId(null);
+      }
+    };
+    const onPointerDown = (event) => {
+      if (isInfoMobile) return;
+      const popoverNode = infoPopoverRef.current;
+      const buttonNode = infoButtonRefs.current.get(dishInfoOpenId);
+      const target = event.target;
+      if (popoverNode?.contains(target) || buttonNode?.contains(target)) return;
+      setDishInfoOpenId(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, [dishInfoOpenId, isInfoMobile]);
+
+  const activeInfoDish = useMemo(
+    () => dishes.find((dish) => dish?._id === dishInfoOpenId) || null,
+    [dishInfoOpenId, dishes]
+  );
   if (isDiodGlobalMode) {
     return (
       <KitchenLayout>
@@ -514,9 +593,10 @@ export default function DishesPage() {
         ) : (
           <div className="kitchen-dishes-grid">
             {visibleDishes.map((dish) => {
-              const ingredientsText =
-                (dish.ingredients || []).map((item) => item.displayName).join(", ") ||
-                "Sin ingredientes";
+              const ingredientNames = (dish.ingredients || [])
+                .map((item) => item.displayName)
+                .filter(Boolean);
+              const isInfoOpen = dishInfoOpenId === dish._id && !isInfoMobile;
               return (
                 <article
                   className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
@@ -525,79 +605,67 @@ export default function DishesPage() {
                   <div className="kitchen-dish-main">
                     <div className="kitchen-dish-title-row">
                       <h3 className="kitchen-dish-name">{dish.name}</h3>
-                      {dish.sidedish ? <span className="kitchen-dish-badge">Guarnición</span> : null}
+                      {dish.sidedish ? <span className="kitchen-dish-badge">Guarnicion</span> : null}
                     </div>
-                    <p className="kitchen-dish-ingredients-text" title={ingredientsText}>
-                      {ingredientsText}
-                    </p>
                   </div>
-                  <div className="kitchen-dish-actions">
-                    <button
-                      className="kitchen-icon-button"
-                      type="button"
-                      onClick={() => startEdit(dish)}
-                      aria-label={`Editar ${dish.name}`}
-                    >
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M15.75 5.625 18.375 8.25"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </button>
-                    {!isDiodGlobalMode ? (
-                    <button
-                      className="kitchen-icon-button assign"
-                      type="button"
-                      onClick={() => openAssignModal(dish)}
-                      aria-label="Asignar"
-                      title="Asignar"
-                    >
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M5 10h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="m8 15 2 2 4-4"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
-                    ) : null}
-                    {dish.sidedish || user?.role === "admin" || user?.globalRole === "diod" ? (
+                  <div className="kitchen-dish-actions-bar">
+                    <div className="kitchen-dish-actions">
+                      <div className="kitchen-dish-info-wrap">
+                        <button
+                          ref={(node) => registerInfoButton(dish._id, node)}
+                          className="kitchen-icon-button info"
+                          type="button"
+                          onClick={() => toggleDishInfo(dish._id)}
+                          aria-label={`Ver ingredientes de ${dish.name}`}
+                          aria-expanded={dishInfoOpenId === dish._id}
+                          aria-controls={`dish-info-${dish._id}`}
+                          title="Ingredientes"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              d="M12 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"
+                              fill="currentColor"
+                            />
+                            <path
+                              d="M12 11v6m9-5a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                        {isInfoOpen ? (
+                          <div
+                            id={`dish-info-${dish._id}`}
+                            className="kitchen-dish-info-popover"
+                            role="dialog"
+                            aria-label={`Ingredientes de ${dish.name}`}
+                            ref={infoPopoverRef}
+                          >
+                            <h4 className="kitchen-dish-info-heading">Ingredientes</h4>
+                            {ingredientNames.length > 0 ? (
+                              <ul className="kitchen-dish-info-list">
+                                {ingredientNames.map((name, index) => (
+                                  <li key={`${dish._id}-ingredient-${index}`}>{name}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
                       <button
-                        className="kitchen-icon-button danger"
+                        className="kitchen-icon-button"
                         type="button"
-                        onClick={async () => {
-                          await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
-                          if (activeDish?._id === dish._id) closeModal();
-                          loadDishes();
-                        }}
-                        aria-label={`Eliminar ${dish.name}`}
+                        onClick={() => startEdit(dish)}
+                        aria-label={`Editar ${dish.name}`}
                       >
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                           <path
-                            d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
+                            d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="1.5"
@@ -605,16 +673,75 @@ export default function DishesPage() {
                             strokeLinejoin="round"
                           />
                           <path
-                            d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
+                            d="M15.75 5.625 18.375 8.25"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="1.5"
                             strokeLinecap="round"
-                            strokeLinejoin="round"
                           />
                         </svg>
                       </button>
-                    ) : null}
+                      {!isDiodGlobalMode ? (
+                        <button
+                          className="kitchen-icon-button assign"
+                          type="button"
+                          onClick={() => openAssignModal(dish)}
+                          aria-label="Asignar"
+                          title="Asignar"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M5 10h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="m8 15 2 2 4-4"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                      ) : null}
+                      {dish.sidedish || user?.role === "admin" || user?.globalRole === "diod" ? (
+                        <button
+                          className="kitchen-icon-button danger"
+                          type="button"
+                          onClick={async () => {
+                            await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
+                            if (activeDish?._id === dish._id) closeModal();
+                            if (dishInfoOpenId === dish._id) closeDishInfo();
+                            loadDishes();
+                          }}
+                          aria-label={`Eliminar ${dish.name}`}
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </article>
               );
@@ -650,6 +777,49 @@ export default function DishesPage() {
         initialIngredient={activeIngredient}
         scope={isDiodGlobalMode ? "master" : undefined}
       />
+      {isInfoMobile && activeInfoDish ? (
+        <div className="kitchen-ui-sheet-backdrop" role="presentation" onClick={closeDishInfo}>
+          <div
+            className="kitchen-ui-sheet kitchen-dish-info-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Ingredientes de ${activeInfoDish.name}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <div>
+                <h3>{activeInfoDish.name}</h3>
+                <p className="kitchen-muted">Ingredientes</p>
+              </div>
+              <button
+                className="kitchen-icon-button"
+                type="button"
+                onClick={closeDishInfo}
+                aria-label="Cerrar ingredientes"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M6 6l12 12M18 6 6 18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            {(activeInfoDish.ingredients || []).length > 0 ? (
+              <ul className="kitchen-dish-info-list is-sheet">
+                {(activeInfoDish.ingredients || []).map((item, index) => (
+                  <li key={`${activeInfoDish._id}-mobile-ingredient-${index}`}>{item.displayName}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
+            )}
+          </div>
+        </div>
+      ) : null}
       {assignModalOpen ? (
         <div className="kitchen-modal-backdrop" role="presentation" onClick={closeAssignModal}>
           <div
