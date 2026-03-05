@@ -99,6 +99,15 @@ function pickRandomItem(items = []) {
   return items[index] || null;
 }
 
+function shuffleArray(items = []) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 router.get("/:weekStart", requireAuth, async (req, res) => {
   try {
     const weekStart = parseISODate(req.params.weekStart);
@@ -266,6 +275,99 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       userId: String(req.kitchenUser?._id || "")
     });
     return res.status(500).json({ ok: false, error: "No se pudo seleccionar un plato aleatorio." });
+  }
+});
+
+router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+    const overwriteAll = Boolean(req.body?.overwriteAll);
+
+    const targetDays = overwriteAll
+      ? plan.days
+      : plan.days.filter((day) => !day.mainDishId);
+
+    if (!targetDays.length) {
+      return res.json({
+        ok: true,
+        plan,
+        assignedCount: 0,
+        targetCount: 0,
+        insufficient: false
+      });
+    }
+
+    const usedDishIds = new Set(
+      plan.days
+        .filter((day) => !targetDays.includes(day))
+        .map((day) => day?.mainDishId)
+        .filter(Boolean)
+        .map((dishId) => String(dishId))
+    );
+
+    const candidates = await KitchenDish.find(
+      buildDishVisibilityFilter(effectiveHouseholdId, {
+        sidedish: { $ne: true },
+        _id: { $nin: Array.from(usedDishIds) }
+      })
+    )
+      .select("_id")
+      .lean();
+
+    const shuffledDishIds = shuffleArray(candidates.map((dish) => String(dish._id)));
+    const assignedCount = Math.min(targetDays.length, shuffledDishIds.length);
+
+    const canDistributeUsers = isHouseholdAdmin(req.kitchenUser);
+    let userPool = [];
+    if (canDistributeUsers) {
+      const members = await KitchenUser.find(
+        buildScopedFilter(effectiveHouseholdId, {})
+      )
+        .select("_id")
+        .lean();
+      userPool = shuffleArray(members.map((member) => String(member._id)).filter(Boolean));
+    }
+    if (!userPool.length) {
+      userPool = [String(req.kitchenUser?._id || "")].filter(Boolean);
+    }
+
+    for (let index = 0; index < assignedCount; index += 1) {
+      const day = targetDays[index];
+      const dishId = shuffledDishIds[index];
+      day.mainDishId = dishId;
+      if (userPool.length) {
+        day.cookUserId = userPool[index % userPool.length];
+      }
+    }
+
+    await plan.save();
+    const warning = await rebuildShoppingListBestEffort({
+      monday,
+      effectiveHouseholdId,
+      context: "randomize-week"
+    });
+
+    return res.json({
+      ok: true,
+      plan,
+      assignedCount,
+      targetCount: targetDays.length,
+      insufficient: assignedCount < targetDays.length,
+      ...(warning ? { warning } : {})
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    logKitchenError("randomize-week", error, {
+      weekStart: req.params.weekStart,
+      userId: String(req.kitchenUser?._id || "")
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo randomizar la semana." });
   }
 });
 

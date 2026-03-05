@@ -123,6 +123,7 @@ export default function WeekPage() {
   const [dishesLoadedForHouseholdKey, setDishesLoadedForHouseholdKey] = useState("");
   const [creatingPlan, setCreatingPlan] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [weekNotice, setWeekNotice] = useState(null);
   const [dayStatus, setDayStatus] = useState({});
   const [dayErrors, setDayErrors] = useState({});
   const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
@@ -143,6 +144,8 @@ export default function WeekPage() {
   const [dishModalDayKey, setDishModalDayKey] = useState(null);
   const [dishModalMode, setDishModalMode] = useState("main");
   const [dishModalSidedish, setDishModalSidedish] = useState(false);
+  const [weekRandomizeConfirmOpen, setWeekRandomizeConfirmOpen] = useState(false);
+  const [weekRandomizing, setWeekRandomizing] = useState(false);
   const ingredientCache = useRef(new Map());
   const saveTimers = useRef({});
   const carouselRef = useRef(null);
@@ -163,6 +166,8 @@ export default function WeekPage() {
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
   const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
+  const hasAnyMainDishInWeek = safeDays.some((day) => Boolean(day?.mainDishId));
+  const canShowWeekRandomize = Boolean(plan && safeDays.length && !hasAnyMainDishInWeek);
   const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
   const currentHouseholdKey = currentHouseholdId ? String(currentHouseholdId) : "__no_household__";
   const dishesReadyForCurrentHousehold = !dishesLoading && dishesLoadedForHouseholdKey === currentHouseholdKey;
@@ -192,6 +197,35 @@ export default function WeekPage() {
     }
   }, [getCurrentHouseholdId]);
 
+  const handleConfirmWeekRandomize = useCallback(async () => {
+    setWeekRandomizing(true);
+    setWeekNotice(null);
+    try {
+      const data = await apiRequest(`/api/kitchen/weeks/${weekStartRef.current}/randomize`, {
+        method: "POST",
+        body: JSON.stringify({ overwriteAll: false })
+      });
+      setPlan(data.plan || null);
+      if (data.insufficient) {
+        setWeekNotice({
+          type: "error",
+          message: "No hay suficientes platos para completar todos los días sin repetir."
+        });
+      } else {
+        setWeekNotice({ type: "success", message: "Semana randomizada" });
+      }
+      setWeekRandomizeConfirmOpen(false);
+    } catch (err) {
+      setWeekNotice({
+        type: "error",
+        message: err.message || "No se pudo randomizar la semana."
+      });
+      setWeekRandomizeConfirmOpen(false);
+    } finally {
+      setWeekRandomizing(false);
+    }
+  }, []);
+
   const loadData = async () => {
     const requestSeq = loadRequestSeqRef.current + 1;
     loadRequestSeqRef.current = requestSeq;
@@ -201,6 +235,7 @@ export default function WeekPage() {
     if (!user || isDiodGlobalMode) {
       setLoading(false);
       setDishesLoading(false);
+      setWeekNotice(null);
       setPlan(null);
       setDishes([]);
       setSideDishes([]);
@@ -211,6 +246,7 @@ export default function WeekPage() {
     setLoading(true);
     setDishesLoading(true);
     setLoadError("");
+    setWeekNotice(null);
     setMissingWeekPromptOpen(false);
     setPlan(null);
     setDishes([]);
@@ -263,6 +299,14 @@ export default function WeekPage() {
   useEffect(() => {
     safeDaysRef.current = safeDays;
   }, [safeDays]);
+
+  useEffect(() => {
+    if (!weekNotice) return undefined;
+    const timer = window.setTimeout(() => {
+      setWeekNotice(null);
+    }, 3200);
+    return () => window.clearTimeout(timer);
+  }, [weekNotice]);
 
   useEffect(() => {
     if (!isDiodGlobalMode) return;
@@ -1020,6 +1064,22 @@ export default function WeekPage() {
                 onPrevious={() => handleWeekShift(-7)}
                 onNext={() => handleWeekShift(7)}
               />
+              {canShowWeekRandomize ? (
+                <button
+                  type="button"
+                  className="kitchen-button secondary is-small kitchen-week-randomize-button"
+                  onClick={() => setWeekRandomizeConfirmOpen(true)}
+                  disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+                  title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar semana"}
+                >
+                  <DiceIcon /> Randomizar semana
+                </button>
+              ) : null}
+              {weekNotice ? (
+                <div className={`kitchen-alert ${weekNotice.type === "success" ? "success" : "error"}`}>
+                  {weekNotice.message}
+                </div>
+              ) : null}
               {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
             </div>
           </section>
@@ -1776,6 +1836,47 @@ export default function WeekPage() {
           ) : null}
         </div>
       </div>
+      {weekRandomizeConfirmOpen ? (
+        <div
+          className="kitchen-modal-backdrop"
+          role="presentation"
+          onClick={() => {
+            if (weekRandomizing) return;
+            setWeekRandomizeConfirmOpen(false);
+          }}
+        >
+          <div
+            className="kitchen-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Randomizar semana"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <h3>¿Quieres randomizar la semana?</h3>
+              <p className="kitchen-muted">Se asignarán platos aleatorios sin repetir.</p>
+            </div>
+            <div className="kitchen-modal-actions">
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                onClick={() => setWeekRandomizeConfirmOpen(false)}
+                disabled={weekRandomizing}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="kitchen-button"
+                onClick={handleConfirmWeekRandomize}
+                disabled={weekRandomizing}
+              >
+                {weekRandomizing ? "Randomizando..." : "Randomizar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {missingWeekPromptOpen && !plan ? (
         <div
           className="kitchen-modal-backdrop"

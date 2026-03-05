@@ -865,6 +865,17 @@ body {
   color: #1e293b;
 }
 
+.kitchen-week-randomize-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kitchen-week-randomize-button svg {
+  width: 16px;
+  height: 16px;
+}
+
 .kitchen-input,
 .kitchen-select,
 .kitchen-textarea {
