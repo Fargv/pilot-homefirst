@@ -2,7 +2,14 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { requireAuth, requireRole } from "../middleware.js";
-import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "../../users/utils.js";
+import {
+  buildDisplayName,
+  isValidEmail,
+  normalizeEmail,
+  normalizeRole,
+  normalizeInitials,
+  normalizeColorId
+} from "../../users/utils.js";
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 
 const router = express.Router();
@@ -61,6 +68,8 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       firstName: firstName ? String(firstName).trim() : undefined,
       lastName: lastName ? String(lastName).trim() : undefined,
       displayName: safeDisplayName,
+      initials: normalizeInitials(req.body?.initials, safeDisplayName),
+      colorId: normalizeColorId(req.body?.colorId),
       role: normalizeRole(req.body.role),
       householdId: effectiveHouseholdId,
       passwordHash
@@ -89,6 +98,8 @@ router.patch("/me", requireAuth, async (req, res) => {
     req.kitchenUser.displayName = safeDisplayName;
     req.kitchenUser.firstName = req.body?.firstName ? String(req.body.firstName).trim() : req.kitchenUser.firstName;
     req.kitchenUser.lastName = req.body?.lastName ? String(req.body.lastName).trim() : req.kitchenUser.lastName;
+    req.kitchenUser.initials = normalizeInitials(req.body?.initials, safeDisplayName);
+    req.kitchenUser.colorId = normalizeColorId(req.body?.colorId);
     await req.kitchenUser.save();
 
     return res.json({ ok: true, user: req.kitchenUser.toSafeJSON() });
@@ -148,6 +159,12 @@ router.put("/members/:id", requireAuth, requireRole("owner"), async (req, res) =
         return res.status(400).json({ ok: false, error: "El nombre para mostrar no es válido." });
       }
       member.displayName = nextDisplayName;
+      member.initials = normalizeInitials(req.body?.initials, nextDisplayName);
+    } else if (typeof req.body?.initials !== "undefined") {
+      member.initials = normalizeInitials(req.body?.initials, member.displayName);
+    }
+    if (typeof req.body?.colorId !== "undefined") {
+      member.colorId = normalizeColorId(req.body?.colorId);
     }
 
     await member.save();

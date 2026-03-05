@@ -4,8 +4,8 @@ import Header from "./components/ui/Header";
 import BottomNav from "./components/ui/BottomNav";
 import { useAuth } from "./auth";
 import { apiRequest } from "./api.js";
-import { getUserColor } from "./utils/userColors.js";
-import { getUserInitials } from "./utils/userInitials.js";
+import { getUserColorById } from "./utils/userColors.js";
+import { getUserInitialsFromProfile } from "./utils/userInitials.js";
 import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
 import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
 
@@ -218,8 +218,12 @@ export default function KitchenLayout({ children }) {
   };
 
   const userName = getFirstName(user?.displayName || "");
-  const userInitials = getUserInitials(user?.id || user?.email || user?.username || "", user?.displayName || "");
-  const userColors = getUserColor(user?.id || user?.email || user?.username || "");
+  const userInitials = getUserInitialsFromProfile(
+    user?.initials,
+    user?.id || user?.email || user?.username || "",
+    user?.displayName || ""
+  );
+  const userColors = getUserColorById(user?.colorId, user?.id || user?.email || user?.username || "");
 
   return (
     <div className="kitchen-app">

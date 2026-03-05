@@ -46,3 +46,8 @@ export function getUserInitials(userId, displayName) {
   return defaultInitials(displayName);
 }
 
+export function getUserInitialsFromProfile(initials, userId, displayName) {
+  const safeInitials = String(initials || "").trim().slice(0, 3).toUpperCase();
+  if (safeInitials) return safeInitials;
+  return getUserInitials(userId, displayName);
+}

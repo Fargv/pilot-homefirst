@@ -21,3 +21,26 @@ export function buildDisplayName({ firstName, lastName, displayName, name }) {
   if (full) return full;
   return String(displayName || "").trim();
 }
+
+export function buildInitials(value) {
+  const safeValue = String(value || "").trim();
+  if (!safeValue) return "";
+  const parts = safeValue.split(/\s+/).filter(Boolean);
+  if (!parts.length) return "";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase().slice(0, 3);
+}
+
+export function normalizeInitials(initials, fallbackName = "") {
+  const safeInitials = String(initials || "").trim().toUpperCase().slice(0, 3);
+  if (safeInitials) return safeInitials;
+  return buildInitials(fallbackName);
+}
+
+const COLOR_IDS = new Set(["lavender", "mint", "coral", "sky", "sand", "peach", "sage", "mauve"]);
+
+export function normalizeColorId(colorId) {
+  const value = String(colorId || "").trim().toLowerCase();
+  if (!value) return "";
+  return COLOR_IDS.has(value) ? value : "";
+}

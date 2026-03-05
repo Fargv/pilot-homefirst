@@ -5,7 +5,7 @@ import { KitchenUser } from "../models/KitchenUser.js";
 import { Invitation } from "../models/Invitation.js";
 import { Household } from "../models/Household.js";
 import { createToken, requireAuth } from "../middleware.js";
-import { buildDisplayName, isValidEmail, normalizeEmail } from "../../users/utils.js";
+import { buildDisplayName, isValidEmail, normalizeEmail, normalizeInitials } from "../../users/utils.js";
 import { generateUniqueHouseholdInviteCode, isValidInviteCodeFormat } from "../householdInviteCode.js";
 import { getWeekStart } from "../utils/dates.js";
 import { ensureWeekPlan } from "../weekPlanService.js";
@@ -157,6 +157,7 @@ router.post("/register", async (req, res) => {
       username: normalizedEmail,
       email: normalizedEmail,
       displayName: safeDisplayName,
+      initials: normalizeInitials("", safeDisplayName),
       passwordHash: await bcrypt.hash(password, 10),
       role,
       householdId: null,
@@ -258,6 +259,7 @@ router.post("/accept-invite", async (req, res) => {
 
       if (displayName && String(displayName).trim()) {
         user.displayName = String(displayName).trim();
+        user.initials = normalizeInitials(user.initials, user.displayName);
       }
 
       user.role = invitation.role || "member";
@@ -271,6 +273,7 @@ router.post("/accept-invite", async (req, res) => {
         username: normalizedEmail,
         email: normalizedEmail,
         displayName: String(displayName).trim(),
+        initials: normalizeInitials("", String(displayName).trim()),
         passwordHash: await bcrypt.hash(password, 10),
         role: invitation.role || "member",
         householdId: invitation.householdId,

@@ -1,20 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import { apiRequest } from "../api.js";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
-import {
-  getColorPalette,
-  getUserColorPreference,
-  setUserColorPreference
-} from "../utils/userColors.js";
+import { getColorPalette, getUserColorById, getUserColorPreference, setUserColorPreference } from "../utils/userColors.js";
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 
 function initialsFromName(name = "") {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return "U";
-  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
@@ -24,49 +20,59 @@ function roleLabel(user, isOwner, isDiod) {
   return "Regular User";
 }
 
+function memberRoleLabel(member) {
+  if (member?.isPlaceholder) return "COMENSAL";
+  const role = String(member?.role || "").toLowerCase();
+  if (role === "owner" || role === "admin") return "OWNER";
+  return "USER";
+}
+
 export default function SettingsPage() {
   const { user, setUser, refreshUser, logout } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const palette = getColorPalette();
   const [members, setMembers] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [inviteLink, setInviteLink] = useState("");
   const [householdCode, setHouseholdCode] = useState("");
-  const [placeholderName, setPlaceholderName] = useState("");
   const [categories, setCategories] = useState([]);
   const [categoryName, setCategoryName] = useState("");
-  const [diodHouseholds, setDiodHouseholds] = useState([]);
-  const [globalUsers, setGlobalUsers] = useState([]);
-  const [newHouseholdName, setNewHouseholdName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [displayName, setDisplayName] = useState(user?.displayName || "");
-  const [profileInitials, setProfileInitials] = useState(getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: ""
-  });
+  const [profileInitials, setProfileInitials] = useState(user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
+  const [selectedColorId, setSelectedColorId] = useState(user?.colorId || getUserColorPreference(user?.id) || "lavender");
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [memberSearch, setMemberSearch] = useState("");
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [selectedColorId, setSelectedColorId] = useState(getUserColorPreference(user?.id));
   const [categoryModal, setCategoryModal] = useState({ open: false, mode: "create", category: null, name: "" });
-  const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", onConfirm: null });
+  const [memberModal, setMemberModal] = useState({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } });
+  const [dinerModal, setDinerModal] = useState({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } });
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" });
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
   const canManageCategories = isDiod || isOwner;
   const canManageHousehold = isOwner && !(isDiod && !user?.activeHouseholdId);
-  const palette = getColorPalette();
 
   const activePanel = (searchParams.get("section") || "").toLowerCase();
   const isHub = !activePanel;
-
-  const userInitials = (getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || "")).slice(0, 3);
+  const userInitials = (user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || "")).slice(0, 3);
   const selectedColor = useMemo(
     () => palette.find((item) => item.id === selectedColorId) || palette[0],
     [palette, selectedColorId]
   );
+
+  const filteredMembers = useMemo(() => {
+    const needle = memberSearch.trim().toLowerCase();
+    if (!needle) return members;
+    return members.filter((member) => {
+      const text = `${member.displayName || ""} ${member.email || ""}`.toLowerCase();
+      return text.includes(needle);
+    });
+  }, [members, memberSearch]);
 
   const setPanel = (panel) => {
     if (!panel) {
@@ -76,19 +82,21 @@ export default function SettingsPage() {
     setSearchParams({ section: panel });
   };
 
+  const updateSuccess = (message) => {
+    setSuccess(message);
+    setError("");
+  };
+
   const loadData = async () => {
     setLoading(true);
     setError("");
     try {
-      const requests = [];
-
-      requests.push(apiRequest("/api/categories"));
+      const requests = [apiRequest("/api/categories")];
       if (!isDiod || user?.activeHouseholdId) {
         requests.push(apiRequest("/api/kitchen/users/members"));
       } else {
         requests.push(Promise.resolve({ users: [] }));
       }
-
       if (canManageHousehold) {
         requests.push(apiRequest("/api/kitchen/household/invitations"));
         requests.push(apiRequest("/api/kitchen/household/invite-code"));
@@ -97,25 +105,14 @@ export default function SettingsPage() {
         requests.push(Promise.resolve({ inviteCode: "" }));
       }
 
-      if (isDiod) {
-        requests.push(apiRequest("/api/kitchen/admin/households"));
-        requests.push(apiRequest("/api/kitchen/admin/users"));
-      } else {
-        requests.push(Promise.resolve({ households: [] }));
-        requests.push(Promise.resolve({ users: [] }));
-      }
-
-      const [categoryData, memberData, invitationData, codeData, householdData, globalUserData] = await Promise.all(requests);
-
+      const [categoryData, memberData, invitationData, codeData] = await Promise.all(requests);
       setCategories(categoryData.categories || []);
       setMembers(memberData.users || []);
       setInvitations(invitationData.invitations || []);
       setHouseholdCode(codeData.inviteCode || "");
-      setDiodHouseholds(householdData.households || []);
-      setGlobalUsers(globalUserData.users || []);
       setDisplayName(user?.displayName || "");
-      setProfileInitials(getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
-      setSelectedColorId(getUserColorPreference(user?.id));
+      setProfileInitials(user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
+      setSelectedColorId(user?.colorId || getUserColorPreference(user?.id) || "lavender");
     } catch (err) {
       setError(err.message || "No se pudo cargar configuracion.");
     } finally {
@@ -127,11 +124,6 @@ export default function SettingsPage() {
     void loadData();
   }, [isDiod, canManageHousehold, user?.activeHouseholdId]);
 
-  const updateSuccess = (message) => {
-    setSuccess(message);
-    setError("");
-  };
-
   const saveProfile = async () => {
     const safeDisplayName = displayName.trim();
     if (!safeDisplayName) {
@@ -139,14 +131,13 @@ export default function SettingsPage() {
       return;
     }
     try {
+      const safeInitials = (profileInitials.trim().toUpperCase() || initialsFromName(safeDisplayName)).slice(0, 3);
       const data = await apiRequest("/api/kitchen/users/me", {
         method: "PATCH",
-        body: JSON.stringify({ displayName: safeDisplayName })
+        body: JSON.stringify({ displayName: safeDisplayName, initials: safeInitials, colorId: selectedColorId })
       });
-      if (data?.user) {
-        setUser((prev) => ({ ...prev, ...data.user }));
-      }
-      setUserInitialsPreference(user?.id, profileInitials);
+      if (data?.user) setUser((prev) => ({ ...prev, ...data.user }));
+      setUserInitialsPreference(user?.id, safeInitials);
       setUserColorPreference(user?.id, selectedColorId);
       await refreshUser();
       updateSuccess("Perfil actualizado.");
@@ -167,16 +158,23 @@ export default function SettingsPage() {
     try {
       await apiRequest("/api/kitchen/users/me/password", {
         method: "PUT",
-        body: JSON.stringify({
-          currentPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword
-        })
+        body: JSON.stringify({ currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword })
       });
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setPasswordModalOpen(false);
       updateSuccess("Contrasena actualizada.");
     } catch (err) {
       setError(err.message || "No se pudo cambiar la contrasena.");
+    }
+  };
+
+  const copyText = async (value, label) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      updateSuccess(`${label} copiado.`);
+    } catch {
+      setError(`No se pudo copiar ${label.toLowerCase()}.`);
     }
   };
 
@@ -201,59 +199,75 @@ export default function SettingsPage() {
     }
   };
 
-  const copyText = async (value, label) => {
-    if (!value) return;
+  const openMemberModal = (member) => {
+    if (!canManageHousehold && String(member.id) !== String(user?.id)) return;
+    setMemberModal({
+      open: true,
+      member,
+      form: {
+        displayName: member.displayName || "",
+        initials: (member.initials || initialsFromName(member.displayName || "")).slice(0, 3),
+        colorId: member.colorId || "lavender",
+        role: member.role || "member"
+      }
+    });
+  };
+
+  const saveMember = async () => {
+    if (!memberModal.member) return;
     try {
-      await navigator.clipboard.writeText(value);
-      updateSuccess(`${label} copiado.`);
-    } catch {
-      setError(`No se pudo copiar ${label.toLowerCase()}.`);
+      await apiRequest(`/api/kitchen/users/members/${memberModal.member.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          displayName: memberModal.form.displayName.trim(),
+          initials: memberModal.form.initials.trim().toUpperCase().slice(0, 3),
+          colorId: memberModal.form.colorId,
+          role: memberModal.form.role
+        })
+      });
+      setMemberModal({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } });
+      updateSuccess("Usuario actualizado.");
+      await loadData();
+    } catch (err) {
+      setError(err.message || "No se pudo actualizar el usuario.");
     }
   };
 
-  const createPlaceholder = async () => {
-    const safeName = placeholderName.trim();
+  const askDeleteMember = (member) => {
+    setConfirmModal({
+      open: true,
+      title: "Eliminar usuario",
+      message: `Seguro que quieres eliminar a ${member.displayName} del household?`,
+      dangerLabel: "Eliminar",
+      onConfirm: async () => {
+        await apiRequest(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
+        updateSuccess("Usuario eliminado.");
+        await loadData();
+      }
+    });
+  };
+
+  const createDiner = async () => {
+    const safeName = dinerModal.form.displayName.trim();
     if (!safeName) {
-      setError("Introduce nombre para el comensal.");
+      setError("El nombre del comensal es obligatorio.");
       return;
     }
     try {
       await apiRequest("/api/kitchen/household/placeholders", {
         method: "POST",
-        body: JSON.stringify({ displayName: safeName })
+        body: JSON.stringify({
+          displayName: safeName,
+          initials: dinerModal.form.initials.trim().toUpperCase().slice(0, 3),
+          colorId: dinerModal.form.colorId
+        })
       });
-      setPlaceholderName("");
+      setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } });
       updateSuccess("Comensal creado.");
       await loadData();
     } catch (err) {
       setError(err.message || "No se pudo crear el comensal.");
     }
-  };
-
-  const updateMemberRole = async (memberId, nextRole) => {
-    try {
-      await apiRequest(`/api/kitchen/users/members/${memberId}`, {
-        method: "PUT",
-        body: JSON.stringify({ role: nextRole })
-      });
-      updateSuccess("Rol actualizado.");
-      await loadData();
-    } catch (err) {
-      setError(err.message || "No se pudo actualizar el rol.");
-    }
-  };
-
-  const removeMember = async (member) => {
-    setConfirmModal({
-      open: true,
-      title: "Eliminar miembro",
-      message: `Se eliminara a ${member.displayName} del household.`,
-      onConfirm: async () => {
-        await apiRequest(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
-        updateSuccess("Miembro eliminado.");
-        await loadData();
-      }
-    });
   };
 
   const createCategory = async (sourceName) => {
@@ -300,59 +314,13 @@ export default function SettingsPage() {
       open: true,
       title: "Eliminar categoria",
       message: `Se eliminara la categoria "${category.name}".`,
+      dangerLabel: "Eliminar",
       onConfirm: async () => {
         await apiRequest(`/api/categories/${category._id}`, { method: "DELETE" });
         updateSuccess("Categoria eliminada.");
         await loadData();
       }
     });
-  };
-
-  const createHousehold = async (isTest = false) => {
-    const baseName = newHouseholdName.trim();
-    const name = baseName || (isTest ? `Test Household ${new Date().toLocaleString()}` : "");
-    if (!name) {
-      setError("Introduce nombre del household.");
-      return;
-    }
-    try {
-      await apiRequest("/api/kitchen/admin/households", {
-        method: "POST",
-        body: JSON.stringify({ name })
-      });
-      setNewHouseholdName("");
-      updateSuccess(isTest ? "Test household creado." : "Household creado.");
-      await loadData();
-    } catch (err) {
-      setError(err.message || "No se pudo crear el household.");
-    }
-  };
-
-  const deleteHousehold = async (household) => {
-    setConfirmModal({
-      open: true,
-      title: "Eliminar household",
-      message: `Se eliminara el household "${household.name}" y sus datos.`,
-      onConfirm: async () => {
-        await apiRequest(`/api/kitchen/admin/households/${household.id}`, { method: "DELETE" });
-        updateSuccess("Household eliminado.");
-        await loadData();
-      }
-    });
-  };
-
-  const assignOwner = async (household, ownerUserId) => {
-    if (!ownerUserId) return;
-    try {
-      await apiRequest(`/api/kitchen/admin/households/${household.id}/owner`, {
-        method: "PUT",
-        body: JSON.stringify({ ownerUserId })
-      });
-      updateSuccess("Owner asignado.");
-      await loadData();
-    } catch (err) {
-      setError(err.message || "No se pudo asignar owner.");
-    }
   };
 
   const CardButton = ({ title, subtitle, onClick, icon = ">" }) => (
@@ -372,13 +340,8 @@ export default function SettingsPage() {
         <h2>Perfil</h2>
       </div>
       <div className="settings-block">
-        <label className="kitchen-label" htmlFor="settings-display-name">Display name</label>
-        <input
-          id="settings-display-name"
-          className="kitchen-input"
-          value={displayName}
-          onChange={(event) => setDisplayName(event.target.value)}
-        />
+        <label className="kitchen-label" htmlFor="settings-display-name">Nombre</label>
+        <input id="settings-display-name" className="kitchen-input" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
         <p className="kitchen-muted">Email: {user?.email || "Sin email"}</p>
         <label className="kitchen-label" htmlFor="settings-initials">Iniciales</label>
         <input
@@ -392,7 +355,6 @@ export default function SettingsPage() {
       </div>
       <div className="settings-block">
         <h3 className="settings-subtitle">Color del usuario</h3>
-        <p className="kitchen-muted">Selecciona uno de 8 colores pastel para tus iniciales.</p>
         <div className="settings-color-grid">
           {palette.map((color) => (
             <button
@@ -401,7 +363,6 @@ export default function SettingsPage() {
               className={`settings-color-swatch ${selectedColorId === color.id ? "is-selected" : ""}`}
               style={{ background: color.background, color: color.text }}
               onClick={() => setSelectedColorId(color.id)}
-              aria-label={color.label}
             >
               {color.label}
             </button>
@@ -409,7 +370,6 @@ export default function SettingsPage() {
         </div>
       </div>
       <div className="settings-block">
-        <h3 className="settings-subtitle">Cambiar contrasena</h3>
         <button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(true)}>Cambiar contrasena</button>
       </div>
       <button type="button" className="kitchen-button" onClick={saveProfile}>Guardar perfil</button>
@@ -430,79 +390,69 @@ export default function SettingsPage() {
     </div>
   );
 
-  const HouseholdPanel = (
+  const HouseholdMembersPanel = (
     <div className="settings-panel">
       <div className="settings-panel-header">
         <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
-        <h2>Household</h2>
+        <h2>Miembros del hogar</h2>
       </div>
       <div className="settings-block">
-        <h3 className="settings-subtitle">Gestion de miembros</h3>
-        {members.map((member) => (
-          <div key={member.id} className="settings-row-card">
-            <div>
-              <strong>{member.displayName}</strong>
-              <p className="kitchen-muted">{member.email || "Comensal sin cuenta"}</p>
-            </div>
-            <div className="settings-row-actions">
-              <select
-                className="kitchen-select"
-                value={member.role || "member"}
-                onChange={(event) => updateMemberRole(member.id, event.target.value)}
-                disabled={String(member.id) === String(user?.id)}
-              >
-                <option value="member">User</option>
-                <option value="owner">Owner/Admin</option>
-              </select>
-              <button
-                type="button"
-                className="kitchen-button secondary"
-                onClick={() => removeMember(member)}
-                disabled={String(member.id) === String(user?.id)}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        ))}
+        <p className="settings-counter">Miembros ({members.length})</p>
+        <input className="kitchen-input" placeholder="Buscar usuario" value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} />
+        <div className="settings-members-actions">
+          <button type="button" className="kitchen-button" onClick={() => setPanel("household-invitations")}>Invitar</button>
+          <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender" } })}>Crear comensal</button>
+        </div>
       </div>
       <div className="settings-block">
-        <h3 className="settings-subtitle">Invitaciones</h3>
+        {filteredMembers.map((member) => {
+          const colors = getUserColorById(member.colorId, member.id);
+          const initials = (member.initials || initialsFromName(member.displayName || "")).slice(0, 3);
+          const isSelf = String(member.id) === String(user?.id);
+          return (
+            <button type="button" key={member.id} className="settings-member-row" onClick={() => openMemberModal(member)} disabled={!canManageHousehold && !isSelf}>
+              <span className="settings-member-avatar" style={{ background: colors.background, color: colors.text }}>{initials}</span>
+              <span className="settings-member-text">
+                <strong>{member.displayName}{isSelf ? " (Tu)" : ""}</strong>
+                <span>{memberRoleLabel(member)}</span>
+              </span>
+              <span className="settings-member-arrow">{">"}</span>
+            </button>
+          );
+        })}
+        {!filteredMembers.length ? <p className="kitchen-muted">No hay miembros que coincidan.</p> : null}
+      </div>
+    </div>
+  );
+
+  const HouseholdInvitesPanel = (
+    <div className="settings-panel">
+      <div className="settings-panel-header">
+        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("household-members")}>Volver</button>
+        <h2>Invitar usuario</h2>
+      </div>
+      <div className="settings-block">
         <p className="kitchen-muted">
-          Invita a alguien al household compartiendo enlace o codigo.
-          Cuando se registren podran entrar directamente en tu household.
+          Comparte este codigo o enlace con tus companeros.
+          Cuando se registren podran introducirlo y entraran directamente en tu household.
         </p>
         <div className="kitchen-actions-inline">
-          <button type="button" className="kitchen-button" onClick={generateHouseholdCode}>
-            {householdCode ? "Regenerar codigo" : "Generar codigo"}
-          </button>
-          <button type="button" className="kitchen-button secondary" onClick={() => copyText(householdCode, "Codigo")} disabled={!householdCode}>Copiar</button>
-        </div>
-        <p className="kitchen-muted">Codigo: <strong>{householdCode || "No generado"}</strong></p>
-        <div className="kitchen-actions-inline">
           <button type="button" className="kitchen-button" onClick={generateInvite}>Generar enlace</button>
-          <button type="button" className="kitchen-button secondary" onClick={() => copyText(inviteLink, "Enlace")} disabled={!inviteLink}>Copiar</button>
+          <button type="button" className="kitchen-button secondary" onClick={() => copyText(inviteLink, "Enlace")} disabled={!inviteLink}>Copiar enlace</button>
         </div>
         {inviteLink ? <p className="kitchen-muted">{inviteLink}</p> : null}
+        <div className="kitchen-actions-inline">
+          <button type="button" className="kitchen-button" onClick={generateHouseholdCode}>{householdCode ? "Regenerar codigo" : "Generar codigo"}</button>
+          <button type="button" className="kitchen-button secondary" onClick={() => copyText(householdCode, "Codigo")} disabled={!householdCode}>Copiar codigo</button>
+        </div>
+        <p className="kitchen-muted"><strong>{householdCode || "Sin codigo generado"}</strong></p>
         {invitations.length > 0 ? (
           <ul className="kitchen-list">
             {invitations.map((invitation) => (
-              <li key={invitation.id}>Valida hasta {new Date(invitation.expiresAt).toLocaleString()}</li>
+              <li key={invitation.id}>Invitacion activa hasta {new Date(invitation.expiresAt).toLocaleString()}</li>
             ))}
           </ul>
         ) : null}
-      </div>
-      <div className="settings-block">
-        <h3 className="settings-subtitle">Anadir comensal sin cuenta</h3>
-        <div className="kitchen-actions-inline">
-          <input
-            className="kitchen-input"
-            placeholder="Nombre del comensal"
-            value={placeholderName}
-            onChange={(event) => setPlaceholderName(event.target.value)}
-          />
-          <button type="button" className="kitchen-button secondary" onClick={createPlaceholder}>Crear</button>
-        </div>
       </div>
     </div>
   );
@@ -515,102 +465,20 @@ export default function SettingsPage() {
       </div>
       <div className="settings-block">
         <div className="kitchen-actions-inline">
-          <input
-            className="kitchen-input"
-            placeholder="Nombre de categoria"
-            value={categoryName}
-            onChange={(event) => setCategoryName(event.target.value)}
-          />
-          <button
-            type="button"
-            className="kitchen-button"
-            onClick={() => setCategoryModal({ open: true, mode: "create", category: null, name: categoryName })}
-            disabled={!categoryName.trim()}
-          >
-            Nueva categoria
-          </button>
+          <input className="kitchen-input" placeholder="Nombre de categoria" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} />
+          <button type="button" className="kitchen-button" onClick={() => setCategoryModal({ open: true, mode: "create", category: null, name: categoryName })} disabled={!categoryName.trim()}>Nueva categoria</button>
         </div>
       </div>
       <div className="settings-block">
         {categories.map((category) => (
           <div key={category._id} className="settings-row-card">
             <div>
-              <strong>
-                {category.name}
-                <span
-                  className="settings-category-dot"
-                  style={{ background: category.colorBg || "#E8F1FF", color: category.colorText || "#1D4ED8" }}
-                >
-                  ●
-                </span>
-              </strong>
+              <strong>{category.name}<span className="settings-category-dot">●</span></strong>
               <p className="kitchen-muted">{category.scope || "household"}</p>
             </div>
             <div className="settings-row-actions">
-              <button
-                type="button"
-                className="kitchen-button secondary"
-                onClick={() => setCategoryModal({ open: true, mode: "edit", category, name: category.name })}
-              >
-                Editar
-              </button>
+              <button type="button" className="kitchen-button secondary" onClick={() => setCategoryModal({ open: true, mode: "edit", category, name: category.name })}>Editar</button>
               <button type="button" className="kitchen-button secondary" onClick={() => removeCategory(category)}>Eliminar</button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const DiodPanel = (
-    <div className="settings-panel">
-      <div className="settings-panel-header">
-        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
-        <h2>DIOD Administration</h2>
-      </div>
-      <div className="settings-block">
-        <h3 className="settings-subtitle">Households</h3>
-        <div className="kitchen-actions-inline">
-          <input
-            className="kitchen-input"
-            placeholder="Nombre del household"
-            value={newHouseholdName}
-            onChange={(event) => setNewHouseholdName(event.target.value)}
-          />
-          <button type="button" className="kitchen-button" onClick={() => createHousehold(false)}>Crear</button>
-          <button type="button" className="kitchen-button secondary" onClick={() => createHousehold(true)}>Crear test</button>
-        </div>
-        {diodHouseholds.map((household) => (
-          <div key={household.id} className="settings-row-card">
-            <div>
-              <strong>{household.name}</strong>
-              <p className="kitchen-muted">{household.isActive ? "Activo" : "Inactivo"}</p>
-            </div>
-            <div className="settings-row-actions">
-              <select
-                className="kitchen-select"
-                defaultValue=""
-                onChange={(event) => assignOwner(household, event.target.value)}
-              >
-                <option value="">Asignar owner</option>
-                {globalUsers.map((globalUser) => (
-                  <option key={globalUser.id} value={globalUser.id}>
-                    {globalUser.displayName || globalUser.email}
-                  </option>
-                ))}
-              </select>
-              <button type="button" className="kitchen-button secondary" onClick={() => deleteHousehold(household)}>Eliminar</button>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="settings-block">
-        <h3 className="settings-subtitle">Global users</h3>
-        {globalUsers.map((globalUser) => (
-          <div key={globalUser.id} className="settings-row-card">
-            <div>
-              <strong>{globalUser.displayName || "Sin nombre"}</strong>
-              <p className="kitchen-muted">{globalUser.email || "Sin email"} · {globalUser.globalRole || globalUser.role}</p>
             </div>
           </div>
         ))}
@@ -634,24 +502,17 @@ export default function SettingsPage() {
 
         {!loading && isHub ? (
           <div className="settings-hub-grid">
-            <CardButton title="Perfil" subtitle="Informacion personal, password y color de usuario." onClick={() => setPanel("perfil")} />
+            <CardButton title="Perfil" subtitle="Informacion personal, password y color." onClick={() => setPanel("perfil")} />
             <CardButton title="Preferencias" subtitle="Idioma, dark mode y notificaciones." onClick={() => setPanel("preferencias")} />
-            {canManageHousehold ? (
-              <CardButton title="Household" subtitle="Miembros, invitaciones, roles y permisos." onClick={() => setPanel("household")} />
-            ) : null}
-            {canManageCategories ? (
-              <CardButton title="Categorias" subtitle="Gestion de categorias en pantalla dedicada." onClick={() => setPanel("categorias")} />
-            ) : null}
-            {isDiod ? (
-              <CardButton title="DIOD Administration" subtitle="Households, usuarios globales y categorias master." onClick={() => setPanel("administracion")} />
-            ) : null}
+            {canManageHousehold ? <CardButton title="Household" subtitle="Miembros e invitaciones." onClick={() => setPanel("household-members")} /> : null}
+            {canManageCategories ? <CardButton title="Categorias" subtitle="Gestion de categorias." onClick={() => setPanel("categorias")} /> : null}
             <div className="settings-upgrade-card">
               <h3>Upgrade to Pro</h3>
               <p className="kitchen-muted">Funciones premium proximamente:</p>
               <ul className="kitchen-list">
-                <li>Planificacion inteligente</li>
-                <li>Sugerencias de menu</li>
+                <li>Sugerencias automaticas</li>
                 <li>Estadisticas de cocina</li>
+                <li>Planificacion inteligente</li>
               </ul>
               <button type="button" className="kitchen-button secondary" disabled>Upgrade (coming soon)</button>
             </div>
@@ -660,117 +521,44 @@ export default function SettingsPage() {
 
         {!loading && activePanel === "perfil" ? ProfilePanel : null}
         {!loading && activePanel === "preferencias" ? PreferencesPanel : null}
-        {!loading && activePanel === "household" && canManageHousehold ? HouseholdPanel : null}
+        {!loading && activePanel === "household-members" && canManageHousehold ? HouseholdMembersPanel : null}
+        {!loading && activePanel === "household-invitations" && canManageHousehold ? HouseholdInvitesPanel : null}
         {!loading && activePanel === "categorias" && canManageCategories ? CategoriesPanel : null}
-        {!loading && activePanel === "administracion" && isDiod ? DiodPanel : null}
 
         <button type="button" className="kitchen-button secondary" onClick={logout}>Cerrar sesion</button>
       </div>
 
-      <ModalSheet
-        open={passwordModalOpen}
-        title="Cambiar contrasena"
-        onClose={() => setPasswordModalOpen(false)}
-        actions={(
-          <>
-            <button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(false)}>Cancelar</button>
-            <button type="button" className="kitchen-button" onClick={savePassword}>Guardar</button>
-          </>
-        )}
-      >
+      <ModalSheet open={passwordModalOpen} title="Cambiar contrasena" onClose={() => setPasswordModalOpen(false)} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(false)}>Cancelar</button><button type="button" className="kitchen-button" onClick={savePassword}>Guardar</button></>}>
         <div className="kitchen-actions">
-          <input
-            className="kitchen-input"
-            type="password"
-            placeholder="Contrasena actual"
-            value={passwordForm.currentPassword}
-            onChange={(event) => setPasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))}
-          />
-          <input
-            className="kitchen-input"
-            type="password"
-            placeholder="Nueva contrasena"
-            value={passwordForm.newPassword}
-            onChange={(event) => setPasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))}
-          />
-          <input
-            className="kitchen-input"
-            type="password"
-            placeholder="Repetir contrasena"
-            value={passwordForm.confirmPassword}
-            onChange={(event) => setPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
-          />
+          <input className="kitchen-input" type="password" placeholder="Contrasena actual" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))} />
+          <input className="kitchen-input" type="password" placeholder="Nueva contrasena" value={passwordForm.newPassword} onChange={(event) => setPasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))} />
+          <input className="kitchen-input" type="password" placeholder="Repetir contrasena" value={passwordForm.confirmPassword} onChange={(event) => setPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))} />
         </div>
       </ModalSheet>
 
-      <ModalSheet
-        open={categoryModal.open}
-        title={categoryModal.mode === "edit" ? "Editar categoria" : "Nueva categoria"}
-        onClose={() => setCategoryModal({ open: false, mode: "create", category: null, name: "" })}
-        actions={(
-          <>
-            <button
-              type="button"
-              className="kitchen-button secondary"
-              onClick={() => setCategoryModal({ open: false, mode: "create", category: null, name: "" })}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="kitchen-button"
-              onClick={() => (categoryModal.mode === "edit"
-                ? editCategory(categoryModal.category, categoryModal.name)
-                : createCategory(categoryModal.name))}
-            >
-              Guardar
-            </button>
-          </>
-        )}
-      >
-        <label className="kitchen-field">
-          <span className="kitchen-label">Nombre</span>
-          <input
-            className="kitchen-input"
-            value={categoryModal.name}
-            onChange={(event) => setCategoryModal((prev) => ({ ...prev, name: event.target.value }))}
-            placeholder="Verduras"
-          />
-        </label>
+      <ModalSheet open={memberModal.open} title="Editar usuario" onClose={() => setMemberModal({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setMemberModal({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } })}>Cancelar</button><button type="button" className="kitchen-button" onClick={saveMember}>Guardar</button></>}>
+        <div className="kitchen-actions">
+          <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={memberModal.form.displayName} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, displayName: event.target.value } }))} /></label>
+          <label className="kitchen-field"><span className="kitchen-label">Iniciales</span><input className="kitchen-input" maxLength={3} value={memberModal.form.initials} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, initials: event.target.value.toUpperCase() } }))} /></label>
+          <div className="settings-color-grid">{palette.map((color) => <button key={color.id} type="button" className={`settings-color-swatch ${memberModal.form.colorId === color.id ? "is-selected" : ""}`} style={{ background: color.background, color: color.text }} onClick={() => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, colorId: color.id } }))}>{color.label}</button>)}</div>
+          {!memberModal.member?.isPlaceholder ? <label className="kitchen-field"><span className="kitchen-label">Rol</span><select className="kitchen-select" value={memberModal.form.role} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, role: event.target.value } }))}><option value="owner">Owner</option><option value="member">User</option></select></label> : null}
+          {!memberModal.member?.isPlaceholder && canManageHousehold && String(memberModal.member?.id) !== String(user?.id) ? <button type="button" className="kitchen-button secondary" onClick={() => askDeleteMember(memberModal.member)}>Eliminar usuario</button> : null}
+        </div>
       </ModalSheet>
 
-      <ModalSheet
-        open={confirmModal.open}
-        title={confirmModal.title}
-        onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: null })}
-        actions={(
-          <>
-            <button
-              type="button"
-              className="kitchen-button secondary"
-              onClick={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: null })}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="kitchen-button"
-              onClick={async () => {
-                try {
-                  if (typeof confirmModal.onConfirm === "function") {
-                    await confirmModal.onConfirm();
-                  }
-                  setConfirmModal({ open: false, title: "", message: "", onConfirm: null });
-                } catch (err) {
-                  setError(err.message || "No se pudo completar la accion.");
-                }
-              }}
-            >
-              Confirmar
-            </button>
-          </>
-        )}
-      >
+      <ModalSheet open={dinerModal.open} title="Crear comensal" onClose={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } })}>Cancelar</button><button type="button" className="kitchen-button" onClick={createDiner}>Guardar</button></>}>
+        <div className="kitchen-actions">
+          <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={dinerModal.form.displayName} onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, displayName: event.target.value } }))} /></label>
+          <label className="kitchen-field"><span className="kitchen-label">Iniciales</span><input className="kitchen-input" maxLength={3} value={dinerModal.form.initials} onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, initials: event.target.value.toUpperCase() } }))} /></label>
+          <div className="settings-color-grid">{palette.map((color) => <button key={color.id} type="button" className={`settings-color-swatch ${dinerModal.form.colorId === color.id ? "is-selected" : ""}`} style={{ background: color.background, color: color.text }} onClick={() => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, colorId: color.id } }))}>{color.label}</button>)}</div>
+        </div>
+      </ModalSheet>
+
+      <ModalSheet open={categoryModal.open} title={categoryModal.mode === "edit" ? "Editar categoria" : "Nueva categoria"} onClose={() => setCategoryModal({ open: false, mode: "create", category: null, name: "" })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setCategoryModal({ open: false, mode: "create", category: null, name: "" })}>Cancelar</button><button type="button" className="kitchen-button" onClick={() => (categoryModal.mode === "edit" ? editCategory(categoryModal.category, categoryModal.name) : createCategory(categoryModal.name))}>Guardar</button></>}>
+        <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={categoryModal.name} onChange={(event) => setCategoryModal((prev) => ({ ...prev, name: event.target.value }))} placeholder="Verduras" /></label>
+      </ModalSheet>
+
+      <ModalSheet open={confirmModal.open} title={confirmModal.title} onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" })}>Cancelar</button><button type="button" className="kitchen-button" onClick={async () => { try { if (typeof confirmModal.onConfirm === "function") await confirmModal.onConfirm(); setConfirmModal({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" }); } catch (err) { setError(err.message || "No se pudo completar la accion."); } }}>{confirmModal.dangerLabel}</button></>}>
         <p className="kitchen-muted">{confirmModal.message}</p>
       </ModalSheet>
     </KitchenLayout>

@@ -8,8 +8,8 @@ import DishModal from "../components/DishModal.jsx";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import KitchenLayout from "../Layout.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
-import { getUserColor } from "../utils/userColors";
-import { getUserInitials } from "../utils/userInitials.js";
+import { getUserColorById } from "../utils/userColors";
+import { getUserInitialsFromProfile } from "../utils/userInitials.js";
 import { useActiveWeek } from "../weekContext.jsx";
 
 const DAY_CARD_STYLES = [
@@ -1116,8 +1116,8 @@ export default function WeekPage() {
                 }
                 const dayKey = day.date.slice(0, 10);
                 const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
-              const cookInitials = getUserInitials(cookUser?.id, cookUser?.displayName);
-                const cookColors = getUserColor(day.cookUserId);
+              const cookInitials = getUserInitialsFromProfile(cookUser?.initials, cookUser?.id, cookUser?.displayName);
+              const cookColors = getUserColorById(cookUser?.colorId, day.cookUserId);
                 const isAssigned = Boolean(day.cookUserId);
                 const isPlanned = Boolean(day.mainDishId);
                 const isAssignedToSelf = day.cookUserId
@@ -1712,8 +1712,8 @@ export default function WeekPage() {
                                 Yo ({user?.displayName || "mi usuario"})
                               </button>
                               {users.map((person) => {
-                                const initials = getUserInitials(person.id, person.displayName);
-                                const colors = getUserColor(person.id);
+                                const initials = getUserInitialsFromProfile(person.initials, person.id, person.displayName);
+                                const colors = getUserColorById(person.colorId, person.id);
                                 return (
                                   <button
                                     className="kitchen-suggestion is-assignee"

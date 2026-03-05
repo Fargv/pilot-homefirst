@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { getUnassignedColor, getUserColor } from "../utils/userColors";
-import { getUserInitials } from "../utils/userInitials.js";
+import { getUnassignedColor, getUserColorById } from "../utils/userColors";
+import { getUserInitialsFromProfile } from "../utils/userInitials.js";
 
 const DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
 const DAY_LONG = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -40,7 +40,9 @@ export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay,
     return safeDays.map((day, index) => {
       const dayKey = day?.date ? day.date.slice(0, 10) : `day-${index}`;
       const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
-      const initials = cookUser ? getUserInitials(cookUser.id, cookUser.displayName) : "";
+      const initials = cookUser
+        ? getUserInitialsFromProfile(cookUser.initials, cookUser.id, cookUser.displayName)
+        : "";
       return {
         key: dayKey,
         date: day.date,
@@ -112,7 +114,10 @@ export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay,
         >
           {entries.map((entry) => {
             const isSelected = selectedDay === entry.key;
-            const colors = entry.isAssigned ? getUserColor(entry.cookUserId) : getUnassignedColor();
+            const cookUser = entry.cookUserId ? userMap.get(entry.cookUserId) : null;
+            const colors = entry.isAssigned
+              ? getUserColorById(cookUser?.colorId, entry.cookUserId)
+              : getUnassignedColor();
             return (
               <button
                 key={entry.key}

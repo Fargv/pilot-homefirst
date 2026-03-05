@@ -5,7 +5,13 @@ import { Invitation } from "../models/Invitation.js";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { requireAuth, requireRole } from "../middleware.js";
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
-import { buildDisplayName, isValidEmail, normalizeEmail } from "../../users/utils.js";
+import {
+  buildDisplayName,
+  isValidEmail,
+  normalizeEmail,
+  normalizeInitials,
+  normalizeColorId
+} from "../../users/utils.js";
 import { config } from "../../config.js";
 import { Household } from "../models/Household.js";
 import { ensureHouseholdInviteCode } from "../householdInviteCode.js";
@@ -105,7 +111,7 @@ router.get("/invitations", requireAuth, requireRole("owner"), async (req, res) =
 
 router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res) => {
   try {
-    const { displayName } = req.body;
+    const { displayName, initials, colorId } = req.body;
     const safeDisplayName = buildDisplayName({ displayName, name: displayName });
     if (!safeDisplayName) {
       return res.status(400).json({ ok: false, error: "El nombre del comensal es obligatorio." });
@@ -116,6 +122,8 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
     const placeholder = await KitchenUser.create({
       username: `placeholder-${suffix}`,
       displayName: safeDisplayName,
+      initials: normalizeInitials(initials, safeDisplayName),
+      colorId: normalizeColorId(colorId),
       isPlaceholder: true,
       role: "member",
       householdId: effectiveHouseholdId,

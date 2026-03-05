@@ -51,6 +51,15 @@ export function getUserColor(key) {
   return COLOR_PALETTE[index];
 }
 
+export function getUserColorById(colorId, fallbackKey) {
+  const safeColorId = String(colorId || "").trim().toLowerCase();
+  if (safeColorId) {
+    const selected = COLOR_PALETTE.find((color) => color.id === safeColorId);
+    if (selected) return selected;
+  }
+  return getUserColor(fallbackKey);
+}
+
 export function getUnassignedColor() {
   return UNASSIGNED_COLOR;
 }
