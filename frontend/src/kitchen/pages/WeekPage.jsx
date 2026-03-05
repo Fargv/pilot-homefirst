@@ -152,12 +152,16 @@ export default function WeekPage() {
   const hasInitializedRef = useRef(false);
   const assignIntentRef = useRef(null);
   const dismissedMissingWeekPromptRef = useRef(new Set());
+  const loadRequestSeqRef = useRef(0);
   const [missingWeekPromptOpen, setMissingWeekPromptOpen] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
   const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
 
   const loadData = async () => {
+    const requestSeq = loadRequestSeqRef.current + 1;
+    loadRequestSeqRef.current = requestSeq;
+
     if (!user || isDiodGlobalMode) {
       setLoading(false);
       setPlan(null);
@@ -175,6 +179,7 @@ export default function WeekPage() {
         apiRequest("/api/kitchen/dishes"),
         apiRequest("/api/kitchen/dishes?sidedish=true")
       ]);
+      if (requestSeq !== loadRequestSeqRef.current) return;
       setPlan(planData.plan || null);
       if (!planData.plan && !dismissedMissingWeekPromptRef.current.has(weekStart)) {
         setMissingWeekPromptOpen(true);
@@ -183,10 +188,13 @@ export default function WeekPage() {
       setSideDishes(sideDishesData.dishes || []);
       const usersEndpoint = isOwnerAdmin ? "/api/kitchen/users" : "/api/kitchen/users/members";
       const usersData = await apiRequest(usersEndpoint);
+      if (requestSeq !== loadRequestSeqRef.current) return;
       setUsers(usersData.users || []);
     } catch (err) {
+      if (requestSeq !== loadRequestSeqRef.current) return;
       setLoadError(err.message || "No se pudo cargar la semana.");
     } finally {
+      if (requestSeq !== loadRequestSeqRef.current) return;
       setLoading(false);
     }
   };
@@ -661,13 +669,31 @@ export default function WeekPage() {
     const dayKey = day.date.slice(0, 10);
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
 
+    const activeHouseholdId = user?.activeHouseholdId || null;
+    const eligibleHouseholdDishes = dishes.filter((dish) => {
+      if (!dish?._id) return false;
+      if (dish.scope === "master") return true;
+      if (!activeHouseholdId) return false;
+      return String(dish.householdId || "") === String(activeHouseholdId);
+    });
+
+    if (!eligibleHouseholdDishes.length) {
+      setDayErrors((prev) => ({
+        ...prev,
+        [dayKey]: "No hay platos disponibles en este hogar para asignar aleatoriamente."
+      }));
+      return;
+    }
+
     const usedDishIds = new Set(
       safeDays
         .map((entry) => entry?.mainDishId)
         .filter(Boolean)
         .map((dishId) => String(dishId))
     );
-    const availableDishes = dishes.filter((dish) => dish?._id && !usedDishIds.has(String(dish._id)));
+    const availableDishes = eligibleHouseholdDishes.filter(
+      (dish) => !usedDishIds.has(String(dish._id))
+    );
 
     if (!availableDishes.length) {
       setDayErrors((prev) => ({

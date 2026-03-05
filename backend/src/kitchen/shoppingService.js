@@ -47,15 +47,17 @@ function buildDishVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
 }
 
 export async function ensureShoppingList(weekStartDate, effectiveHouseholdId) {
-  const existing = await KitchenShoppingList.findOne(
-    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
+  return KitchenShoppingList.findOneAndUpdate(
+    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate }),
+    {
+      $setOnInsert: {
+        weekStart: weekStartDate,
+        householdId: effectiveHouseholdId,
+        items: []
+      }
+    },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
   );
-  if (existing) return existing;
-  return KitchenShoppingList.create({
-    weekStart: weekStartDate,
-    items: [],
-    householdId: effectiveHouseholdId
-  });
 }
 
 function deriveCanonicalName(item, fallbackSeed = "") {
@@ -260,10 +262,19 @@ export async function rebuildShoppingList(weekStartDate, effectiveHouseholdId) {
   });
 
   const { valid } = filterValidShoppingItems(rebuiltItems, "rebuildShoppingList");
-  list.items = valid;
+  const updatedList = await KitchenShoppingList.findOneAndUpdate(
+    buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate }),
+    {
+      $set: { items: valid },
+      $setOnInsert: {
+        weekStart: weekStartDate,
+        householdId: effectiveHouseholdId
+      }
+    },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
 
-  await list.save();
-  return list;
+  return updatedList || list;
 }
 
 export async function repairShoppingListItems(list, effectiveHouseholdId, options = {}) {
@@ -282,8 +293,12 @@ export async function repairShoppingListItems(list, effectiveHouseholdId, option
   const changedByCount = valid.length !== (list.items || []).length;
   const changed = resolved.changed || filteredCount > 0 || changedByCount;
   if (changed) {
+    await KitchenShoppingList.findOneAndUpdate(
+      buildScopedFilter(effectiveHouseholdId, { weekStart: list.weekStart }),
+      { $set: { items: valid } },
+      { new: true }
+    );
     list.items = valid;
-    await list.save();
   }
 
   return { changed, filteredCount };
