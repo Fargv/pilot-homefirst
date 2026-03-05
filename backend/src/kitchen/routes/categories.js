@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { Category } from "../models/Category.js";
 import { KitchenIngredient } from "../models/KitchenIngredient.js";
 import { requireAuth } from "../middleware.js";
@@ -141,11 +142,103 @@ router.put("/:id", requireAuth, async (req, res) => {
       );
 
       await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "category", masterId: target._id });
-      await KitchenIngredient.updateMany(
-        { householdId: effectiveHouseholdId, categoryId: target._id },
+
+      const categoryIdFilter = mongoose.isValidObjectId(target._id)
+        ? { $in: [target._id, String(target._id)] }
+        : target._id;
+
+      const householdCascade = await KitchenIngredient.updateMany(
+        {
+          householdId: effectiveHouseholdId,
+          scope: { $in: [CATALOG_SCOPES.HOUSEHOLD, CATALOG_SCOPES.OVERRIDE] },
+          categoryId: categoryIdFilter
+        },
         { $set: { categoryId: category._id } }
       );
-      return res.json({ ok: true, category, overridden: true });
+
+      const masterIngredients = await KitchenIngredient.find(
+        {
+          scope: CATALOG_SCOPES.MASTER,
+          isArchived: { $ne: true },
+          categoryId: categoryIdFilter
+        },
+        { _id: 1, name: 1, canonicalName: 1, active: 1 }
+      ).lean();
+
+      let masterOverrideCascade = { matchedCount: 0, modifiedCount: 0, upsertedCount: 0 };
+      if (masterIngredients.length > 0) {
+        const ops = masterIngredients.map((ingredient) => ({
+          updateOne: {
+            filter: {
+              householdId: effectiveHouseholdId,
+              scope: CATALOG_SCOPES.OVERRIDE,
+              masterId: ingredient._id
+            },
+            update: {
+              $set: {
+                categoryId: category._id,
+                active: ingredient.active,
+                isArchived: false
+              },
+              $setOnInsert: {
+                householdId: effectiveHouseholdId,
+                scope: CATALOG_SCOPES.OVERRIDE,
+                masterId: ingredient._id,
+                name: ingredient.name,
+                canonicalName: ingredient.canonicalName
+              }
+            },
+            upsert: true
+          }
+        }));
+        const bulk = await KitchenIngredient.bulkWrite(ops, { ordered: false });
+        masterOverrideCascade = {
+          matchedCount: Number(bulk.matchedCount || 0),
+          modifiedCount: Number(bulk.modifiedCount || 0),
+          upsertedCount: Number(bulk.upsertedCount || 0)
+        };
+      }
+
+      const verification = {
+        remainingMasterRefs: await KitchenIngredient.countDocuments({
+          householdId: effectiveHouseholdId,
+          scope: { $in: [CATALOG_SCOPES.HOUSEHOLD, CATALOG_SCOPES.OVERRIDE] },
+          categoryId: categoryIdFilter
+        }),
+        reassignedToOverride: await KitchenIngredient.countDocuments({
+          householdId: effectiveHouseholdId,
+          scope: { $in: [CATALOG_SCOPES.HOUSEHOLD, CATALOG_SCOPES.OVERRIDE] },
+          categoryId: category._id
+        })
+      };
+
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[categories.override-cascade]", {
+          householdId: String(effectiveHouseholdId),
+          masterCategoryId: String(target._id),
+          overrideCategoryId: String(category._id),
+          householdCascade: {
+            matchedCount: Number(householdCascade.matchedCount || 0),
+            modifiedCount: Number(householdCascade.modifiedCount || 0)
+          },
+          masterOverrideCascade,
+          verification
+        });
+      }
+
+      return res.json({
+        ok: true,
+        category,
+        overridden: true,
+        cascade: {
+          householdCascade: {
+            matchedCount: Number(householdCascade.matchedCount || 0),
+            modifiedCount: Number(householdCascade.modifiedCount || 0)
+          },
+          masterOverrideCascade,
+          verification
+        }
+      });
     }
 
     if (!target.householdId || String(target.householdId) !== String(getEffectiveHouseholdId(req.user))) {

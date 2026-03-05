@@ -88,6 +88,11 @@ export default function SettingsPage() {
     setError("");
   };
 
+  const notifyCatalogInvalidated = () => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("kitchen:catalog-invalidated"));
+  };
+
   const loadData = async () => {
     setLoading(true);
     setError("");
@@ -306,6 +311,7 @@ export default function SettingsPage() {
       });
       setCategoryName("");
       setCategoryModal({ open: false, mode: "create", category: null, name: "" });
+      notifyCatalogInvalidated();
       updateSuccess("Categoria creada.");
       await loadData();
     } catch (err) {
@@ -328,6 +334,7 @@ export default function SettingsPage() {
         })
       });
       setCategoryModal({ open: false, mode: "create", category: null, name: "" });
+      notifyCatalogInvalidated();
       updateSuccess("Categoria actualizada.");
       await loadData();
     } catch (err) {
@@ -343,6 +350,7 @@ export default function SettingsPage() {
       dangerLabel: "Eliminar",
       onConfirm: async () => {
         await apiRequest(`/api/categories/${category._id}`, { method: "DELETE" });
+        notifyCatalogInvalidated();
         updateSuccess("Categoria eliminada.");
         await loadData();
       }

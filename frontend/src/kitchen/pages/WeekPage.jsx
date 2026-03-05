@@ -320,6 +320,14 @@ export default function WeekPage() {
     loadCategories();
   }, [isDiodGlobalMode]);
 
+  useEffect(() => {
+    const onCatalogInvalidated = () => {
+      void loadCategories();
+    };
+    window.addEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
+    return () => window.removeEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
+  }, [isDiodGlobalMode]);
+
   const userMap = useMemo(() => {
     const map = new Map();
     users.forEach((u) => map.set(u.id, u));

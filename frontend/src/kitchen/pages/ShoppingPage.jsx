@@ -205,6 +205,19 @@ export default function ShoppingPage() {
   }, []);
 
   useEffect(() => {
+    const onCatalogInvalidated = async () => {
+      try {
+        const categoriesData = await apiRequest("/api/categories");
+        setQuickCategories(categoriesData.categories || []);
+      } catch {
+        setQuickCategories([]);
+      }
+    };
+    window.addEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
+    return () => window.removeEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
+  }, []);
+
+  useEffect(() => {
     if (!quickQuery.trim()) {
       setQuickSuggestions([]);
       return;

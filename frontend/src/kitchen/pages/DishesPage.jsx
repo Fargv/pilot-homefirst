@@ -271,6 +271,17 @@ export default function DishesPage() {
     return () => clearTimeout(timeout);
   }, [activeTab, ingredientSearchTerm, loadIngredients]);
 
+  useEffect(() => {
+    const onCatalogInvalidated = () => {
+      void loadCategories();
+      if (activeTab === "ingredients") {
+        void loadIngredients(ingredientSearchTerm);
+      }
+    };
+    window.addEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
+    return () => window.removeEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
+  }, [activeTab, ingredientSearchTerm, loadIngredients]);
+
   const startIngredientCreate = () => {
     setActiveIngredient(null);
     setIngredientsError("");
