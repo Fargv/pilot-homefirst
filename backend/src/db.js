@@ -32,12 +32,14 @@ async function ensureKitchenUserEmailIndex() {
   const indexes = await collection.indexes();
   const emailIndexes = indexes.filter((index) => index.key && index.key.email === 1);
 
+  await collection.updateMany({ email: { $in: ["", null] } }, { $unset: { email: 1 } });
+
   for (const index of emailIndexes) {
     const isDesiredPartial =
       index.unique === true &&
       index.partialFilterExpression &&
       index.partialFilterExpression.email &&
-      index.partialFilterExpression.email.$type === "string";
+      index.partialFilterExpression.email.$exists === true;
 
     if (!isDesiredPartial) {
       await collection.dropIndex(index.name);
@@ -45,11 +47,19 @@ async function ensureKitchenUserEmailIndex() {
     }
   }
 
-  await collection.updateMany({ email: { $in: ["", null] } }, { $unset: { email: 1 } });
-  await collection.createIndex(
-    { email: 1 },
-    { unique: true, partialFilterExpression: { email: { $type: "string", $ne: "" } } }
-  );
+  try {
+    await collection.createIndex(
+      { email: 1 },
+      { unique: true, partialFilterExpression: { email: { $exists: true } } }
+    );
+  } catch (error) {
+    const safeMessage = String(error?.message || "");
+    const alreadyOk =
+      error?.codeName === "IndexOptionsConflict" ||
+      error?.codeName === "IndexKeySpecsConflict" ||
+      safeMessage.includes("already exists");
+    if (!alreadyOk) throw error;
+  }
 }
 
 export async function connectDb() {

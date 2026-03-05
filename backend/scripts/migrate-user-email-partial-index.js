@@ -28,7 +28,7 @@ async function run() {
 
   await collection.createIndex(
     { email: 1 },
-    { unique: true, partialFilterExpression: { email: { $type: "string", $ne: "" } } }
+    { unique: true, partialFilterExpression: { email: { $exists: true } } }
   );
   console.log("Índice parcial único de email creado.");
 }
@@ -43,4 +43,3 @@ run()
     await mongoose.disconnect().catch(() => {});
     process.exit(1);
   });
-

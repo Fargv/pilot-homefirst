@@ -25,7 +25,7 @@ const KitchenUserSchema = new mongoose.Schema(
 
 KitchenUserSchema.index(
   { email: 1 },
-  { unique: true, partialFilterExpression: { email: { $type: "string", $ne: "" } } }
+  { unique: true, partialFilterExpression: { email: { $exists: true } } }
 );
 
 KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
