@@ -2867,15 +2867,9 @@ body {
   margin-bottom: 8px;
 }
 
-.shopping-header-refresh-row {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
 .shopping-header-row {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   gap: 8px;
 }
@@ -2914,7 +2908,7 @@ body {
 .shopping-header-input-row {
   display: grid;
   grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
-  align-items: start;
+  align-items: center;
   gap: 10px;
 }
 
@@ -2965,6 +2959,7 @@ body {
   width: 100%;
   border-radius: 14px;
   min-height: 40px;
+  height: 40px;
   padding-right: 36px;
   border: 1px solid rgba(190, 201, 234, 0.92);
   background: linear-gradient(180deg, #fdfdff 0%, #f3f6ff 100%);
@@ -3041,13 +3036,22 @@ body {
 }
 
 .shopping-quick-add-input {
-  min-height: 38px;
+  min-height: 40px;
+  height: 40px;
+  border-radius: 14px;
   padding-block: 8px;
 }
 
 .shopping-quick-add-header {
   padding: 8px;
   box-shadow: 0 6px 12px rgba(79, 94, 170, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.shopping-header-quick-col .shopping-quick-add-header {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 .shopping-quick-add-header .shopping-quick-add-row {
