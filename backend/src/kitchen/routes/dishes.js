@@ -17,6 +17,18 @@ import {
 
 const router = express.Router();
 
+function buildDishVisibilityFilter(householdId, extraFilter = {}) {
+  return {
+    ...extraFilter,
+    isArchived: { $ne: true },
+    $or: [
+      { scope: CATALOG_SCOPES.MASTER },
+      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId },
+      { scope: CATALOG_SCOPES.OVERRIDE, householdId }
+    ]
+  };
+}
+
 
 async function rebuildFutureShoppingLists({ householdId, dishId }) {
   if (!householdId || !dishId) return;
@@ -30,7 +42,7 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
 
   for (const plan of plans) {
     const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-    const dishes = await KitchenDish.find(buildScopedFilter(householdId, { _id: { $in: dishIds } }));
+    const dishes = await KitchenDish.find(buildDishVisibilityFilter(householdId, { _id: { $in: dishIds } }));
     const dishMap = new Map(dishes.map((entry) => [String(entry._id), entry]));
 
     const merged = new Map();

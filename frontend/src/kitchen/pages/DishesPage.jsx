@@ -132,8 +132,15 @@ export default function DishesPage() {
     setLoading(true);
     setDishError("");
     try {
-      const data = await apiRequest("/api/kitchen/dishes");
-      setDishes(data.dishes || []);
+      const [mainData, sideData] = await Promise.all([
+        apiRequest("/api/kitchen/dishes"),
+        apiRequest("/api/kitchen/dishes?sidedish=true")
+      ]);
+      const merged = new Map();
+      [...(mainData.dishes || []), ...(sideData.dishes || [])].forEach((dish) => {
+        if (dish?._id) merged.set(dish._id, dish);
+      });
+      setDishes(Array.from(merged.values()));
     } catch (err) {
       setDishError(err.message || "No se pudieron cargar los platos.");
     } finally {

@@ -11,6 +11,7 @@ import {
 } from "../householdScope.js";
 import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
 import { rebuildShoppingList } from "../shoppingService.js";
+import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 
 const router = express.Router();
 
@@ -36,6 +37,18 @@ function normalizeIngredientOverrides(ingredientOverrides = []) {
     canonicalName: String(item?.canonicalName || "").trim(),
     ...(item?.ingredientId ? { ingredientId: item.ingredientId } : {})
   }));
+}
+
+function buildDishVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
+  return {
+    ...extraFilter,
+    isArchived: { $ne: true },
+    $or: [
+      { scope: CATALOG_SCOPES.MASTER },
+      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
+      { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
+    ]
+  };
 }
 
 async function rebuildShoppingListBestEffort({ monday, effectiveHouseholdId, context }) {
@@ -151,7 +164,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
 
     if (mainDishId) {
       const mainDish = await KitchenDish.findOne(
-        buildScopedFilter(effectiveHouseholdId, { _id: mainDishId, sidedish: { $ne: true } })
+        buildDishVisibilityFilter(effectiveHouseholdId, { _id: mainDishId, sidedish: { $ne: true } })
       ).select("_id");
       if (!mainDish) {
         return res.status(400).json({ ok: false, error: "El plato principal no pertenece a este hogar." });
@@ -160,7 +173,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
 
     if (sideDishId) {
       const sideDish = await KitchenDish.findOne(
-        buildScopedFilter(effectiveHouseholdId, { _id: sideDishId, sidedish: true })
+        buildDishVisibilityFilter(effectiveHouseholdId, { _id: sideDishId, sidedish: true })
       ).select("_id");
       if (!sideDish) {
         return res.status(400).json({ ok: false, error: "La guarnición no pertenece a este hogar." });
@@ -339,7 +352,7 @@ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
     const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
     const dishes = await KitchenDish.find(
-      buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
+      buildDishVisibilityFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
     );
 
     res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
@@ -351,3 +364,4 @@ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
 });
 
 export default router;
+

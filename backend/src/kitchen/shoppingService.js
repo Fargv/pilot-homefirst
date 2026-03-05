@@ -34,6 +34,18 @@ function buildIngredientVisibilityFilter(effectiveHouseholdId, extraFilter = {})
   };
 }
 
+function buildDishVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
+  return {
+    ...extraFilter,
+    isArchived: { $ne: true },
+    $or: [
+      { scope: CATALOG_SCOPES.MASTER },
+      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
+      { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
+    ]
+  };
+}
+
 export async function ensureShoppingList(weekStartDate, effectiveHouseholdId) {
   const existing = await KitchenShoppingList.findOne(
     buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
@@ -184,7 +196,7 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
   if (!plan) return [];
 
   const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-  const dishes = await KitchenDish.find(buildScopedFilter(effectiveHouseholdId, { _id: { $in: dishIds } }));
+  const dishes = await KitchenDish.find(buildDishVisibilityFilter(effectiveHouseholdId, { _id: { $in: dishIds } }));
   const dishMap = new Map(dishes.map((dish) => [dish._id.toString(), dish]));
 
   const merged = new Map();

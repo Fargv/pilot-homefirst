@@ -147,6 +147,7 @@ export default function WeekPage() {
   const dayRefs = useRef(new Map());
   const mainDishRefs = useRef(new Map());
   const sideDishRefs = useRef(new Map());
+  const sideDishPickingRef = useRef({});
   const selectedDayRef = useRef(selectedDay);
   const hasInitializedRef = useRef(false);
   const assignIntentRef = useRef(null);
@@ -331,11 +332,11 @@ export default function WeekPage() {
   );
   const dishMap = useMemo(() => {
     const map = new Map();
-    dishes.forEach((dish) => {
-      map.set(dish._id, dish);
+    [...dishes, ...sideDishes].forEach((dish) => {
+      if (dish?._id) map.set(dish._id, dish);
     });
     return map;
-  }, [dishes]);
+  }, [dishes, sideDishes]);
   const showCookTiming = useMemo(() => {
     if (!safeDays.length) {
       return false;
@@ -1266,6 +1267,10 @@ export default function WeekPage() {
                           placeholder="Busca una guarnición…"
                           onFocus={() => setSideDishOpen((prev) => ({ ...prev, [dayKey]: true }))}
                           onBlur={() => {
+                            if (sideDishPickingRef.current[dayKey]) {
+                              sideDishPickingRef.current[dayKey] = false;
+                              return;
+                            }
                             const trimmed = sideDishQuery.trim();
                             const normalized = normalizeIngredientName(trimmed);
                             const match = sideDishes.find(
@@ -1300,6 +1305,7 @@ export default function WeekPage() {
                                   type="button"
                                   onMouseDown={(event) => {
                                     event.preventDefault();
+                                    sideDishPickingRef.current[dayKey] = true;
                                     updateDay(day, { sideDishId: null });
                                     setSideDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
                                     setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
@@ -1315,6 +1321,7 @@ export default function WeekPage() {
                                       type="button"
                                       onMouseDown={(event) => {
                                         event.preventDefault();
+                                        sideDishPickingRef.current[dayKey] = true;
                                         updateDay(day, { sideDishId: dish._id });
                                         setSideDishQueries((prev) => ({ ...prev, [dayKey]: dish.name }));
                                         setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
@@ -1329,6 +1336,7 @@ export default function WeekPage() {
                                     type="button"
                                     onMouseDown={(event) => {
                                       event.preventDefault();
+                                      sideDishPickingRef.current[dayKey] = true;
                                       setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
                                       openDishModal(dayKey, trimmedSideDishQuery, {
                                         mode: "side",
