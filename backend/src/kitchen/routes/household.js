@@ -118,6 +118,11 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
     }
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const householdExists = await Household.exists({ _id: effectiveHouseholdId });
+    if (!householdExists) {
+      return res.status(404).json({ ok: false, error: "El household activo no existe." });
+    }
+
     const suffix = crypto.randomBytes(6).toString("hex");
     const placeholder = await KitchenUser.create({
       username: `placeholder-${suffix}`,
@@ -127,14 +132,48 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
       isPlaceholder: true,
       role: "member",
       householdId: effectiveHouseholdId,
+      createdByUserId: req.kitchenUser?._id || null,
       passwordHash: null,
-      email: null
+      email: undefined
     });
 
     return res.status(201).json({ ok: true, user: placeholder.toSafeJSON() });
   } catch (error) {
+    console.error("[kitchen/household] create placeholder failed", {
+      user: {
+        id: req.user?.id || null,
+        role: req.user?.role || null,
+        globalRole: req.user?.globalRole || null,
+        householdId: req.user?.householdId || null,
+        activeHouseholdId: req.user?.activeHouseholdId || null
+      },
+      body: req.body,
+      error: {
+        name: error?.name,
+        message: error?.message,
+        code: error?.code,
+        keyPattern: error?.keyPattern || null
+      },
+      stack: error?.stack
+    });
+
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
+    if (error?.name === "ValidationError" || error?.name === "CastError") {
+      return res.status(400).json({ ok: false, error: "Datos de comensal no válidos." });
+    }
+    if (error?.code === 11000) {
+      if (error?.keyPattern?.email) {
+        return res.status(409).json({
+          ok: false,
+          error: "No se pudo crear el comensal: conflicto de email en índice único."
+        });
+      }
+      return res.status(409).json({
+        ok: false,
+        error: "No se pudo crear el comensal: conflicto de datos únicos. Inténtalo de nuevo."
+      });
+    }
     return res.status(500).json({ ok: false, error: "No se pudo crear el comensal." });
   }
 });

@@ -14,6 +14,7 @@ const KitchenUserSchema = new mongoose.Schema(
     passwordHash: { type: String, default: null },
     role: { type: String, enum: ["owner", "member", "admin", "user"], default: "member" },
     householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" },
+    createdByUserId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },
     globalRole: { type: String, enum: ["diod", null], default: null },
     activeHouseholdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" }
   },
@@ -34,6 +35,7 @@ KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
     claimedAt: this.claimedAt ?? null,
     role: this.role,
     householdId: this.householdId ?? null,
+    createdByUserId: this.createdByUserId ?? null,
     globalRole: this.globalRole ?? null,
     activeHouseholdId: this.activeHouseholdId ?? null
   };
