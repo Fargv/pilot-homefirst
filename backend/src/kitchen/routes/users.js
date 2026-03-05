@@ -74,4 +74,109 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
   }
 });
 
+router.patch("/me", requireAuth, async (req, res) => {
+  try {
+    const safeDisplayName = buildDisplayName({
+      firstName: req.body?.firstName,
+      lastName: req.body?.lastName,
+      displayName: req.body?.displayName,
+      name: req.body?.displayName
+    });
+    if (!safeDisplayName) {
+      return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio." });
+    }
+
+    req.kitchenUser.displayName = safeDisplayName;
+    req.kitchenUser.firstName = req.body?.firstName ? String(req.body.firstName).trim() : req.kitchenUser.firstName;
+    req.kitchenUser.lastName = req.body?.lastName ? String(req.body.lastName).trim() : req.kitchenUser.lastName;
+    await req.kitchenUser.save();
+
+    return res.json({ ok: true, user: req.kitchenUser.toSafeJSON() });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el perfil." });
+  }
+});
+
+router.put("/me/password", requireAuth, async (req, res) => {
+  try {
+    const currentPassword = String(req.body?.currentPassword || "");
+    const newPassword = String(req.body?.newPassword || "");
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ ok: false, error: "Debes enviar la contraseña actual y la nueva." });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ ok: false, error: "La nueva contraseña debe tener al menos 8 caracteres." });
+    }
+    if (!req.kitchenUser.passwordHash) {
+      return res.status(400).json({ ok: false, error: "Esta cuenta no tiene contraseña local activa." });
+    }
+
+    const passwordOk = await bcrypt.compare(currentPassword, req.kitchenUser.passwordHash);
+    if (!passwordOk) {
+      return res.status(401).json({ ok: false, error: "La contraseña actual no es correcta." });
+    }
+
+    req.kitchenUser.passwordHash = await bcrypt.hash(newPassword, 10);
+    await req.kitchenUser.save();
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar la contraseña." });
+  }
+});
+
+router.put("/members/:id", requireAuth, requireRole("owner"), async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const member = await KitchenUser.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }));
+    if (!member) {
+      return res.status(404).json({ ok: false, error: "No encontramos al miembro." });
+    }
+    if (String(member._id) === String(req.kitchenUser._id)) {
+      return res.status(400).json({ ok: false, error: "No puedes editar tu propio rol desde esta pantalla." });
+    }
+
+    const nextRole = req.body?.role ? normalizeRole(req.body.role) : member.role;
+    if (req.body?.role) {
+      member.role = nextRole;
+    }
+    if (req.body?.displayName) {
+      const nextDisplayName = buildDisplayName({
+        displayName: req.body.displayName,
+        name: req.body.displayName
+      });
+      if (!nextDisplayName) {
+        return res.status(400).json({ ok: false, error: "El nombre para mostrar no es válido." });
+      }
+      member.displayName = nextDisplayName;
+    }
+
+    await member.save();
+    return res.json({ ok: true, user: member.toSafeJSON() });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el miembro." });
+  }
+});
+
+router.delete("/members/:id", requireAuth, requireRole("owner"), async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const member = await KitchenUser.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }));
+    if (!member) {
+      return res.status(404).json({ ok: false, error: "No encontramos al miembro." });
+    }
+    if (String(member._id) === String(req.kitchenUser._id)) {
+      return res.status(400).json({ ok: false, error: "No puedes eliminar tu propia cuenta del hogar." });
+    }
+
+    await KitchenUser.deleteOne({ _id: member._id });
+    return res.json({ ok: true });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo eliminar el miembro." });
+  }
+});
+
 export default router;

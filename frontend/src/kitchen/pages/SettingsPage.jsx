@@ -1,95 +1,116 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import { apiRequest } from "../api.js";
+import {
+  getColorPalette,
+  getUserColorPreference,
+  setUserColorPreference
+} from "../utils/userColors.js";
+
+function initialsFromName(name = "") {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
+
+function roleLabel(user, isOwner, isDiod) {
+  if (isDiod) return "DIOD";
+  if (isOwner) return "Household Owner/Admin";
+  return "Regular User";
+}
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user, setUser, refreshUser, logout } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [members, setMembers] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [inviteLink, setInviteLink] = useState("");
   const [householdCode, setHouseholdCode] = useState("");
   const [placeholderName, setPlaceholderName] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [categoryName, setCategoryName] = useState("");
+  const [diodHouseholds, setDiodHouseholds] = useState([]);
+  const [globalUsers, setGlobalUsers] = useState([]);
+  const [newHouseholdName, setNewHouseholdName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [categoryName, setCategoryName] = useState("");
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const [masterStores, setMasterStores] = useState([]);
-  const [storesLoading, setStoresLoading] = useState(false);
-  const [storeName, setStoreName] = useState("");
+  const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [selectedColorId, setSelectedColorId] = useState(getUserColorPreference(user?.id));
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
-  const isDiodGlobalMode = isDiod && !user?.activeHouseholdId;
   const canManageCategories = isDiod || isOwner;
-  const canManageHousehold = isOwner && !isDiodGlobalMode;
+  const canManageHousehold = isOwner && !(isDiod && !user?.activeHouseholdId);
+  const palette = getColorPalette();
 
-  const categoriesTitle = useMemo(() => (
-    isDiod ? "Categorías MASTER" : "Categorías del hogar"
-  ), [isDiod]);
+  const activePanel = (searchParams.get("section") || "").toLowerCase();
+  const isHub = !activePanel;
 
-  const loadCategories = async () => {
-    if (!canManageCategories) {
-      setCategories([]);
+  const userInitials = initialsFromName(user?.displayName || "");
+  const selectedColor = useMemo(
+    () => palette.find((item) => item.id === selectedColorId) || palette[0],
+    [palette, selectedColorId]
+  );
+
+  const setPanel = (panel) => {
+    if (!panel) {
+      setSearchParams({});
       return;
     }
-    setCategoriesLoading(true);
-    try {
-      const data = await apiRequest("/api/categories");
-      setCategories(data.categories || []);
-    } catch (err) {
-      setError(err.message || "No se pudieron cargar las categorías.");
-    } finally {
-      setCategoriesLoading(false);
-    }
-  };
-
-  const loadMasterStores = async () => {
-    if (!isDiod) {
-      setMasterStores([]);
-      return;
-    }
-    setStoresLoading(true);
-    try {
-      const data = await apiRequest("/api/kitchen/shopping/stores/master");
-      setMasterStores(data.stores || []);
-    } catch (err) {
-      setError(err.message || "No se pudieron cargar los supermercados master.");
-    } finally {
-      setStoresLoading(false);
-    }
+    setSearchParams({ section: panel });
   };
 
   const loadData = async () => {
     setLoading(true);
     setError("");
     try {
-      if (!isDiodGlobalMode) {
-        const membersResponse = await apiRequest("/api/kitchen/users/members");
-        setMembers(membersResponse.users || []);
+      const requests = [];
+
+      requests.push(apiRequest("/api/categories"));
+      if (!isDiod || user?.activeHouseholdId) {
+        requests.push(apiRequest("/api/kitchen/users/members"));
       } else {
-        setMembers([]);
+        requests.push(Promise.resolve({ users: [] }));
       }
 
       if (canManageHousehold) {
-        const [inviteResponse, codeResponse] = await Promise.all([
-          apiRequest("/api/kitchen/household/invitations"),
-          apiRequest("/api/kitchen/household/invite-code")
-        ]);
-        setInvitations(inviteResponse.invitations || []);
-        setHouseholdCode(codeResponse.inviteCode || "");
+        requests.push(apiRequest("/api/kitchen/household/invitations"));
+        requests.push(apiRequest("/api/kitchen/household/invite-code"));
       } else {
-        setInvitations([]);
-        setHouseholdCode("");
+        requests.push(Promise.resolve({ invitations: [] }));
+        requests.push(Promise.resolve({ inviteCode: "" }));
       }
 
-      await Promise.all([loadCategories(), loadMasterStores()]);
+      if (isDiod) {
+        requests.push(apiRequest("/api/kitchen/admin/households"));
+        requests.push(apiRequest("/api/kitchen/admin/users"));
+      } else {
+        requests.push(Promise.resolve({ households: [] }));
+        requests.push(Promise.resolve({ users: [] }));
+      }
+
+      const [categoryData, memberData, invitationData, codeData, householdData, globalUserData] = await Promise.all(requests);
+
+      setCategories(categoryData.categories || []);
+      setMembers(memberData.users || []);
+      setInvitations(invitationData.invitations || []);
+      setHouseholdCode(codeData.inviteCode || "");
+      setDiodHouseholds(householdData.households || []);
+      setGlobalUsers(globalUserData.users || []);
+      setDisplayName(user?.displayName || "");
+      setSelectedColorId(getUserColorPreference(user?.id));
     } catch (err) {
-      setError(err.message || "No se pudo cargar la configuración del hogar.");
+      setError(err.message || "No se pudo cargar configuracion.");
     } finally {
       setLoading(false);
     }
@@ -97,111 +118,152 @@ export default function SettingsPage() {
 
   useEffect(() => {
     void loadData();
-  }, [canManageHousehold, canManageCategories, isDiodGlobalMode]);
+  }, [isDiod, canManageHousehold, user?.activeHouseholdId]);
 
-  const handleLogout = async () => {
+  const updateSuccess = (message) => {
+    setSuccess(message);
+    setError("");
+  };
+
+  const saveProfile = async () => {
+    const safeDisplayName = displayName.trim();
+    if (!safeDisplayName) {
+      setError("El nombre visible es obligatorio.");
+      return;
+    }
     try {
-      await logout();
-    } finally {
-      navigate("/login", { replace: true });
+      const data = await apiRequest("/api/kitchen/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({ displayName: safeDisplayName })
+      });
+      if (data?.user) {
+        setUser((prev) => ({ ...prev, ...data.user }));
+      }
+      setUserColorPreference(user?.id, selectedColorId);
+      await refreshUser();
+      updateSuccess("Perfil actualizado.");
+    } catch (err) {
+      setError(err.message || "No se pudo guardar el perfil.");
+    }
+  };
+
+  const savePassword = async () => {
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setError("Completa todos los campos de contrasena.");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setError("La nueva contrasena y su confirmacion no coinciden.");
+      return;
+    }
+    try {
+      await apiRequest("/api/kitchen/users/me/password", {
+        method: "PUT",
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        })
+      });
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      updateSuccess("Contrasena actualizada.");
+    } catch (err) {
+      setError(err.message || "No se pudo cambiar la contrasena.");
     }
   };
 
   const generateInvite = async () => {
-    setError("");
-    setSuccess("");
     try {
       const data = await apiRequest("/api/kitchen/household/invitations", { method: "POST" });
       setInviteLink(data.inviteLink || "");
-      setSuccess("Enlace de invitación generado correctamente.");
+      updateSuccess("Invitacion generada.");
       await loadData();
     } catch (err) {
-      setError(err.message || "No se pudo generar la invitación.");
+      setError(err.message || "No se pudo generar la invitacion.");
     }
   };
-
-  const copyInvite = async () => {
-    if (!inviteLink) return;
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      setSuccess("Enlace copiado al portapapeles.");
-    } catch {
-      setError("No pudimos copiar el enlace automáticamente.");
-    }
-  };
-
 
   const generateHouseholdCode = async () => {
-    setError("");
-    setSuccess("");
     try {
       const data = await apiRequest("/api/kitchen/household/invite-code", { method: "POST" });
       setHouseholdCode(data.inviteCode || "");
-      setSuccess("Código de hogar generado correctamente.");
+      updateSuccess("Codigo generado.");
     } catch (err) {
-      setError(err.message || "No se pudo generar el código del hogar.");
+      setError(err.message || "No se pudo generar el codigo.");
     }
   };
 
-  const copyHouseholdCode = async () => {
-    if (!householdCode) return;
+  const copyText = async (value, label) => {
+    if (!value) return;
     try {
-      await navigator.clipboard.writeText(householdCode);
-      setSuccess("Código copiado al portapapeles.");
+      await navigator.clipboard.writeText(value);
+      updateSuccess(`${label} copiado.`);
     } catch {
-      setError("No pudimos copiar el código automáticamente.");
+      setError(`No se pudo copiar ${label.toLowerCase()}.`);
     }
   };
 
   const createPlaceholder = async () => {
     const safeName = placeholderName.trim();
     if (!safeName) {
-      setError("Debes indicar un nombre para el comensal.");
+      setError("Introduce nombre para el comensal.");
       return;
     }
-
-    setError("");
-    setSuccess("");
     try {
       await apiRequest("/api/kitchen/household/placeholders", {
         method: "POST",
         body: JSON.stringify({ displayName: safeName })
       });
       setPlaceholderName("");
-      setSuccess("Comensal sin cuenta creado correctamente.");
+      updateSuccess("Comensal creado.");
       await loadData();
     } catch (err) {
       setError(err.message || "No se pudo crear el comensal.");
     }
   };
 
+  const updateMemberRole = async (memberId, nextRole) => {
+    try {
+      await apiRequest(`/api/kitchen/users/members/${memberId}`, {
+        method: "PUT",
+        body: JSON.stringify({ role: nextRole })
+      });
+      updateSuccess("Rol actualizado.");
+      await loadData();
+    } catch (err) {
+      setError(err.message || "No se pudo actualizar el rol.");
+    }
+  };
+
+  const removeMember = async (member) => {
+    if (!window.confirm(`Eliminar a ${member.displayName}?`)) return;
+    try {
+      await apiRequest(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
+      updateSuccess("Miembro eliminado.");
+      await loadData();
+    } catch (err) {
+      setError(err.message || "No se pudo eliminar el miembro.");
+    }
+  };
 
   const createCategory = async () => {
     const safeName = categoryName.trim();
     if (!safeName) return;
-    setError("");
-    setSuccess("");
     try {
       await apiRequest("/api/categories", {
         method: "POST",
-        body: JSON.stringify({
-          name: safeName,
-          ...(isDiod ? { scope: "master" } : {})
-        })
+        body: JSON.stringify({ name: safeName, ...(isDiod ? { scope: "master" } : {}) })
       });
       setCategoryName("");
-      setSuccess("Categoría guardada correctamente.");
-      await Promise.all([loadCategories(), loadMasterStores()]);
+      updateSuccess("Categoria creada.");
+      await loadData();
     } catch (err) {
-      setError(err.message || "No se pudo crear la categoría.");
+      setError(err.message || "No se pudo crear categoria.");
     }
   };
 
-  const updateCategory = async (category) => {
-    const nextName = window.prompt("Nuevo nombre de la categoría", category.name || "");
+  const editCategory = async (category) => {
+    const nextName = window.prompt("Nuevo nombre", category.name || "");
     if (!nextName || !nextName.trim()) return;
-    setError("");
-    setSuccess("");
     try {
       await apiRequest(`/api/categories/${category._id}`, {
         method: "PUT",
@@ -209,282 +271,370 @@ export default function SettingsPage() {
           name: nextName.trim(),
           colorBg: category.colorBg,
           colorText: category.colorText,
-          active: category.active
-        })
-      });
-      setSuccess("Categoría actualizada correctamente.");
-      await Promise.all([loadCategories(), loadMasterStores()]);
-    } catch (err) {
-      setError(err.message || "No se pudo actualizar la categoría.");
-    }
-  };
-
-  const toggleCategoryRecipe = async (category) => {
-    setError("");
-    setSuccess("");
-    try {
-      await apiRequest(`/api/categories/${category._id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          name: category.name,
-          colorBg: category.colorBg,
-          colorText: category.colorText,
           active: category.active,
-          forRecipes: !category.forRecipes
+          forRecipes: category.forRecipes
         })
       });
-      setSuccess("Categoría actualizada correctamente.");
-      await Promise.all([loadCategories(), loadMasterStores()]);
+      updateSuccess("Categoria actualizada.");
+      await loadData();
     } catch (err) {
-      setError(err.message || "No se pudo actualizar la categoría.");
+      setError(err.message || "No se pudo editar categoria.");
     }
   };
 
   const removeCategory = async (category) => {
-    const confirmed = window.confirm(`¿Eliminar la categoría “${category.name}”?`);
-    if (!confirmed) return;
-    setError("");
-    setSuccess("");
+    if (!window.confirm(`Eliminar categoria "${category.name}"?`)) return;
     try {
       await apiRequest(`/api/categories/${category._id}`, { method: "DELETE" });
-      setSuccess("Categoría eliminada correctamente.");
-      await Promise.all([loadCategories(), loadMasterStores()]);
+      updateSuccess("Categoria eliminada.");
+      await loadData();
     } catch (err) {
-      setError(err.message || "No se pudo eliminar la categoría.");
+      setError(err.message || "No se pudo eliminar categoria.");
     }
   };
 
-  const createMasterStore = async () => {
-    const safeName = storeName.trim();
-    if (!safeName) return;
-    setError("");
-    setSuccess("");
+  const createHousehold = async (isTest = false) => {
+    const baseName = newHouseholdName.trim();
+    const name = baseName || (isTest ? `Test Household ${new Date().toLocaleString()}` : "");
+    if (!name) {
+      setError("Introduce nombre del household.");
+      return;
+    }
     try {
-      await apiRequest("/api/kitchen/shopping/stores/master", {
+      await apiRequest("/api/kitchen/admin/households", {
         method: "POST",
-        body: JSON.stringify({ name: safeName })
+        body: JSON.stringify({ name })
       });
-      setStoreName("");
-      setSuccess("Supermercado master guardado.");
-      await loadMasterStores();
+      setNewHouseholdName("");
+      updateSuccess(isTest ? "Test household creado." : "Household creado.");
+      await loadData();
     } catch (err) {
-      setError(err.message || "No se pudo guardar el supermercado master.");
+      setError(err.message || "No se pudo crear el household.");
     }
   };
 
-  const editMasterStore = async (store) => {
-    const nextName = window.prompt("Nombre del supermercado", store.name || "");
-    if (!nextName || !nextName.trim()) return;
-    setError("");
+  const deleteHousehold = async (household) => {
+    if (!window.confirm(`Eliminar household "${household.name}"?`)) return;
     try {
-      await apiRequest(`/api/kitchen/shopping/stores/master/${store._id}`, {
+      await apiRequest(`/api/kitchen/admin/households/${household.id}`, { method: "DELETE" });
+      updateSuccess("Household eliminado.");
+      await loadData();
+    } catch (err) {
+      setError(err.message || "No se pudo eliminar el household.");
+    }
+  };
+
+  const assignOwner = async (household, ownerUserId) => {
+    if (!ownerUserId) return;
+    try {
+      await apiRequest(`/api/kitchen/admin/households/${household.id}/owner`, {
         method: "PUT",
-        body: JSON.stringify({ name: nextName.trim() })
+        body: JSON.stringify({ ownerUserId })
       });
-      await loadMasterStores();
+      updateSuccess("Owner asignado.");
+      await loadData();
     } catch (err) {
-      setError(err.message || "No se pudo actualizar el supermercado.");
+      setError(err.message || "No se pudo asignar owner.");
     }
   };
 
-  const archiveMasterStore = async (store) => {
-    if (!window.confirm(`¿Archivar ${store.name}?`)) return;
-    setError("");
-    try {
-      await apiRequest(`/api/kitchen/shopping/stores/master/${store._id}`, { method: "DELETE" });
-      await loadMasterStores();
-    } catch (err) {
-      setError(err.message || "No se pudo archivar el supermercado.");
-    }
-  };
+  const CardButton = ({ title, subtitle, onClick, icon = ">" }) => (
+    <button type="button" className="settings-hub-card" onClick={onClick}>
+      <div className="settings-hub-card-main">
+        <h3>{title}</h3>
+        <p>{subtitle}</p>
+      </div>
+      <span className="settings-hub-card-arrow">{icon}</span>
+    </button>
+  );
 
-  const moveMasterStore = async (store, direction) => {
-    const sorted = [...masterStores];
-    const index = sorted.findIndex((item) => item._id === store._id);
-    const targetIndex = index + direction;
-    if (index < 0 || targetIndex < 0 || targetIndex >= sorted.length) return;
-    [sorted[index], sorted[targetIndex]] = [sorted[targetIndex], sorted[index]];
-    try {
-      await Promise.all(sorted.map((item, idx) => apiRequest(`/api/kitchen/shopping/stores/master/${item._id}`, {
-        method: "PUT",
-        body: JSON.stringify({ order: idx + 1 })
-      })));
-      await loadMasterStores();
-    } catch (err) {
-      setError(err.message || "No se pudo reordenar.");
-    }
-  };
+  const ProfilePanel = (
+    <div className="settings-panel">
+      <div className="settings-panel-header">
+        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
+        <h2>Perfil</h2>
+      </div>
+      <div className="settings-block">
+        <label className="kitchen-label" htmlFor="settings-display-name">Display name</label>
+        <input
+          id="settings-display-name"
+          className="kitchen-input"
+          value={displayName}
+          onChange={(event) => setDisplayName(event.target.value)}
+        />
+        <p className="kitchen-muted">Email: {user?.email || "Sin email"}</p>
+      </div>
+      <div className="settings-block">
+        <h3 className="settings-subtitle">Color del usuario</h3>
+        <p className="kitchen-muted">Selecciona uno de 8 colores pastel para tus iniciales.</p>
+        <div className="settings-color-grid">
+          {palette.map((color) => (
+            <button
+              key={color.id}
+              type="button"
+              className={`settings-color-swatch ${selectedColorId === color.id ? "is-selected" : ""}`}
+              style={{ background: color.background, color: color.text }}
+              onClick={() => setSelectedColorId(color.id)}
+              aria-label={color.label}
+            >
+              {color.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="settings-block">
+        <h3 className="settings-subtitle">Cambiar contrasena</h3>
+        <input
+          className="kitchen-input"
+          type="password"
+          placeholder="Contrasena actual"
+          value={passwordForm.currentPassword}
+          onChange={(event) => setPasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))}
+        />
+        <input
+          className="kitchen-input"
+          type="password"
+          placeholder="Nueva contrasena"
+          value={passwordForm.newPassword}
+          onChange={(event) => setPasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))}
+        />
+        <input
+          className="kitchen-input"
+          type="password"
+          placeholder="Confirmar nueva contrasena"
+          value={passwordForm.confirmPassword}
+          onChange={(event) => setPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+        />
+        <button type="button" className="kitchen-button secondary" onClick={savePassword}>Actualizar contrasena</button>
+      </div>
+      <button type="button" className="kitchen-button" onClick={saveProfile}>Guardar perfil</button>
+    </div>
+  );
+
+  const PreferencesPanel = (
+    <div className="settings-panel">
+      <div className="settings-panel-header">
+        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
+        <h2>Preferencias</h2>
+      </div>
+      <div className="settings-block">
+        <div className="settings-coming-row"><span>Idioma</span><span className="kitchen-pill">Coming soon</span></div>
+        <div className="settings-coming-row"><span>Dark mode</span><span className="kitchen-pill">Coming soon</span></div>
+        <div className="settings-coming-row"><span>Notificaciones</span><span className="kitchen-pill">Coming soon</span></div>
+      </div>
+    </div>
+  );
+
+  const HouseholdPanel = (
+    <div className="settings-panel">
+      <div className="settings-panel-header">
+        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
+        <h2>Household</h2>
+      </div>
+      <div className="settings-block">
+        <h3 className="settings-subtitle">Gestion de miembros</h3>
+        {members.map((member) => (
+          <div key={member.id} className="settings-row-card">
+            <div>
+              <strong>{member.displayName}</strong>
+              <p className="kitchen-muted">{member.email || "Comensal sin cuenta"}</p>
+            </div>
+            <div className="settings-row-actions">
+              <select
+                className="kitchen-select"
+                value={member.role || "member"}
+                onChange={(event) => updateMemberRole(member.id, event.target.value)}
+                disabled={String(member.id) === String(user?.id)}
+              >
+                <option value="member">User</option>
+                <option value="owner">Owner/Admin</option>
+              </select>
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                onClick={() => removeMember(member)}
+                disabled={String(member.id) === String(user?.id)}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="settings-block">
+        <h3 className="settings-subtitle">Invitaciones</h3>
+        <div className="kitchen-actions-inline">
+          <button type="button" className="kitchen-button" onClick={generateHouseholdCode}>
+            {householdCode ? "Regenerar codigo" : "Generar codigo"}
+          </button>
+          <button type="button" className="kitchen-button secondary" onClick={() => copyText(householdCode, "Codigo")} disabled={!householdCode}>Copiar</button>
+        </div>
+        <p className="kitchen-muted">Codigo: <strong>{householdCode || "No generado"}</strong></p>
+        <div className="kitchen-actions-inline">
+          <button type="button" className="kitchen-button" onClick={generateInvite}>Generar enlace</button>
+          <button type="button" className="kitchen-button secondary" onClick={() => copyText(inviteLink, "Enlace")} disabled={!inviteLink}>Copiar</button>
+        </div>
+        {inviteLink ? <p className="kitchen-muted">{inviteLink}</p> : null}
+        {invitations.length > 0 ? (
+          <ul className="kitchen-list">
+            {invitations.map((invitation) => (
+              <li key={invitation.id}>Valida hasta {new Date(invitation.expiresAt).toLocaleString()}</li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+      <div className="settings-block">
+        <h3 className="settings-subtitle">Anadir comensal sin cuenta</h3>
+        <div className="kitchen-actions-inline">
+          <input
+            className="kitchen-input"
+            placeholder="Nombre del comensal"
+            value={placeholderName}
+            onChange={(event) => setPlaceholderName(event.target.value)}
+          />
+          <button type="button" className="kitchen-button secondary" onClick={createPlaceholder}>Crear</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const CategoriesPanel = (
+    <div className="settings-panel">
+      <div className="settings-panel-header">
+        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
+        <h2>{isDiod ? "Categorias master" : "Categorias de ingredientes"}</h2>
+      </div>
+      <div className="settings-block">
+        <div className="kitchen-actions-inline">
+          <input
+            className="kitchen-input"
+            placeholder="Nombre de categoria"
+            value={categoryName}
+            onChange={(event) => setCategoryName(event.target.value)}
+          />
+          <button type="button" className="kitchen-button" onClick={createCategory} disabled={!categoryName.trim()}>Crear</button>
+        </div>
+      </div>
+      <div className="settings-block">
+        {categories.map((category) => (
+          <div key={category._id} className="settings-row-card">
+            <div>
+              <strong>{category.name}</strong>
+              <p className="kitchen-muted">{category.scope || "household"}</p>
+            </div>
+            <div className="settings-row-actions">
+              <button type="button" className="kitchen-button secondary" onClick={() => editCategory(category)}>Editar</button>
+              <button type="button" className="kitchen-button secondary" onClick={() => removeCategory(category)}>Eliminar</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const DiodPanel = (
+    <div className="settings-panel">
+      <div className="settings-panel-header">
+        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
+        <h2>DIOD Administration</h2>
+      </div>
+      <div className="settings-block">
+        <h3 className="settings-subtitle">Households</h3>
+        <div className="kitchen-actions-inline">
+          <input
+            className="kitchen-input"
+            placeholder="Nombre del household"
+            value={newHouseholdName}
+            onChange={(event) => setNewHouseholdName(event.target.value)}
+          />
+          <button type="button" className="kitchen-button" onClick={() => createHousehold(false)}>Crear</button>
+          <button type="button" className="kitchen-button secondary" onClick={() => createHousehold(true)}>Crear test</button>
+        </div>
+        {diodHouseholds.map((household) => (
+          <div key={household.id} className="settings-row-card">
+            <div>
+              <strong>{household.name}</strong>
+              <p className="kitchen-muted">{household.isActive ? "Activo" : "Inactivo"}</p>
+            </div>
+            <div className="settings-row-actions">
+              <select
+                className="kitchen-select"
+                defaultValue=""
+                onChange={(event) => assignOwner(household, event.target.value)}
+              >
+                <option value="">Asignar owner</option>
+                {globalUsers.map((globalUser) => (
+                  <option key={globalUser.id} value={globalUser.id}>
+                    {globalUser.displayName || globalUser.email}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="kitchen-button secondary" onClick={() => deleteHousehold(household)}>Eliminar</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="settings-block">
+        <h3 className="settings-subtitle">Global users</h3>
+        {globalUsers.map((globalUser) => (
+          <div key={globalUser.id} className="settings-row-card">
+            <div>
+              <strong>{globalUser.displayName || "Sin nombre"}</strong>
+              <p className="kitchen-muted">{globalUser.email || "Sin email"} · {globalUser.globalRole || globalUser.role}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <KitchenLayout>
       <div className="kitchen-card kitchen-block-gap">
-        <h2>Configuración</h2>
-        <p className="kitchen-muted">Gestiona tu hogar y tus miembros.</p>
+        <div className="settings-header">
+          <div className="settings-header-avatar" style={{ background: selectedColor.background, color: selectedColor.text }}>{userInitials}</div>
+          <h1>Settings</h1>
+          <p className="settings-header-name">{user?.displayName || "Usuario"}</p>
+          <p className="settings-header-meta">{roleLabel(user, isOwner, isDiod)} · {user?.activeHouseholdId ? "Household activo" : "Sin household activo"}</p>
+        </div>
+
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}
-        {isDiodGlobalMode ? (
-          <div className="kitchen-alert">Modo global DIOD activo: selecciona un hogar para configuración de miembros e invitaciones.</div>
-        ) : null}
+        {loading ? <p className="kitchen-muted">Cargando configuracion...</p> : null}
 
-        <h3>Mi Hogar</h3>
-        {loading ? <p className="kitchen-muted">Cargando miembros...</p> : null}
-        {!loading ? (
-          <ul className="kitchen-list">
-            {members.map((member) => (
-              <li key={member.id}>
-                <strong>{member.displayName}</strong>{" "}
-                {member.isPlaceholder ? "(comensal sin cuenta)" : member.email ? `(${member.email})` : ""}
-              </li>
-            ))}
-            {members.length === 0 ? <li className="kitchen-muted">Todavía no hay miembros.</li> : null}
-          </ul>
-        ) : null}
-
-        {canManageHousehold ? (
-          <>
-            <h3>Invitar miembros</h3>
-            <div className="kitchen-actions">
-              <button
-                type="button"
-                className="kitchen-button secondary"
-                onClick={copyHouseholdCode}
-                disabled={!householdCode}
-              >
-                Copiar código
-              </button>
-              <button type="button" className="kitchen-button" onClick={generateHouseholdCode}>
-                {householdCode ? "Regenerar código" : "Generar código"}
-              </button>
-            </div>
-            <p className="kitchen-muted">
-              Código del hogar: <strong>{householdCode || "No generado"}</strong>
-            </p>
-
-            <div className="kitchen-actions">
-              <button type="button" className="kitchen-button" onClick={generateInvite}>
-                Generar enlace
-              </button>
-              <button
-                type="button"
-                className="kitchen-button secondary"
-                onClick={copyInvite}
-                disabled={!inviteLink}
-              >
-                Copiar enlace
-              </button>
-            </div>
-            {inviteLink ? <p className="kitchen-muted">{inviteLink}</p> : null}
-
-            {invitations.length > 0 ? (
-              <ul className="kitchen-list">
-                {invitations.map((invitation) => (
-                  <li key={invitation.id}>
-                    Invitación activa hasta {new Date(invitation.expiresAt).toLocaleString()}
-                  </li>
-                ))}
-              </ul>
+        {!loading && isHub ? (
+          <div className="settings-hub-grid">
+            <CardButton title="Perfil" subtitle="Informacion personal, password y color de usuario." onClick={() => setPanel("perfil")} />
+            <CardButton title="Preferencias" subtitle="Idioma, dark mode y notificaciones." onClick={() => setPanel("preferencias")} />
+            {canManageHousehold ? (
+              <CardButton title="Household" subtitle="Miembros, invitaciones, roles y permisos." onClick={() => setPanel("household")} />
             ) : null}
-
-            <h3>Añadir comensal (sin cuenta)</h3>
-            <div className="kitchen-actions">
-              <input
-                type="text"
-                className="kitchen-input"
-                placeholder="Nombre del comensal"
-                value={placeholderName}
-                onChange={(event) => setPlaceholderName(event.target.value)}
-              />
-              <button type="button" className="kitchen-button secondary" onClick={createPlaceholder}>
-                Añadir comensal sin cuenta
-              </button>
-            </div>
-          </>
-        ) : null}
-
-        {canManageCategories ? (
-          <>
-            <h3>{categoriesTitle}</h3>
-            <p className="kitchen-muted">
-              {isDiod
-                ? "Gestiona las categorías globales del catálogo MASTER."
-                : "Puedes crear categorías del hogar y sobrescribir las categorías master."}
-            </p>
-            <div className="kitchen-actions">
-              <input
-                type="text"
-                className="kitchen-input"
-                placeholder="Nombre de categoría"
-                value={categoryName}
-                onChange={(event) => setCategoryName(event.target.value)}
-              />
-              <button type="button" className="kitchen-button" onClick={createCategory} disabled={!categoryName.trim()}>
-                Añadir categoría
-              </button>
-            </div>
-            {categoriesLoading ? <p className="kitchen-muted">Cargando categorías...</p> : null}
-            {!categoriesLoading ? (
-              <ul className="kitchen-list">
-                {categories.map((category) => (
-                  <li key={category._id}>
-                    <strong>{category.name}</strong> <span className="kitchen-muted">({category.scope || "household"} · {category.forRecipes === false ? "no receta" : "receta"})</span>
-                    <div className="kitchen-actions" style={{ marginTop: 8 }}>
-                      <button type="button" className="kitchen-button secondary" onClick={() => updateCategory(category)}>
-                        Editar
-                      </button>
-                      <button type="button" className="kitchen-button secondary" onClick={() => toggleCategoryRecipe(category)}>
-                        {category.forRecipes === false ? "Usar en recetas" : "Excluir de recetas"}
-                      </button>
-                      <button type="button" className="kitchen-button secondary" onClick={() => removeCategory(category)}>
-                        Eliminar
-                      </button>
-                    </div>
-                  </li>
-                ))}
-                {categories.length === 0 ? <li className="kitchen-muted">No hay categorías disponibles.</li> : null}
-              </ul>
+            {canManageCategories ? (
+              <CardButton title="Categorias" subtitle="Gestion de categorias en pantalla dedicada." onClick={() => setPanel("categorias")} />
             ) : null}
-          </>
-        ) : null}
-
-
-        {isDiod ? (
-          <>
-            <h3>Supermercados (master)</h3>
-            <div className="kitchen-actions">
-              <input
-                type="text"
-                className="kitchen-input"
-                placeholder="Nombre de supermercado"
-                value={storeName}
-                onChange={(event) => setStoreName(event.target.value)}
-              />
-              <button type="button" className="kitchen-button" onClick={createMasterStore} disabled={!storeName.trim()}>
-                Añadir supermercado
-              </button>
-            </div>
-            {storesLoading ? <p className="kitchen-muted">Cargando supermercados...</p> : null}
-            {!storesLoading ? (
-              <ul className="kitchen-list">
-                {masterStores.map((store) => (
-                  <li key={store._id}>
-                    <strong>{store.name}</strong> <span className="kitchen-muted">#{store.order ?? "-"} · {store.active ? "activo" : "archivado"}</span>
-                    <div className="kitchen-actions" style={{ marginTop: 8 }}>
-                      <button type="button" className="kitchen-button secondary" onClick={() => moveMasterStore(store, -1)}>↑</button>
-                      <button type="button" className="kitchen-button secondary" onClick={() => moveMasterStore(store, 1)}>↓</button>
-                      <button type="button" className="kitchen-button secondary" onClick={() => editMasterStore(store)}>Editar</button>
-                      <button type="button" className="kitchen-button secondary" onClick={() => archiveMasterStore(store)}>Archivar</button>
-                    </div>
-                  </li>
-                ))}
-                {masterStores.length === 0 ? <li className="kitchen-muted">No hay supermercados master.</li> : null}
-              </ul>
+            {isDiod ? (
+              <CardButton title="DIOD Administration" subtitle="Households, usuarios globales y categorias master." onClick={() => setPanel("administracion")} />
             ) : null}
-          </>
+            <div className="settings-upgrade-card">
+              <h3>Upgrade to Pro</h3>
+              <p className="kitchen-muted">Funciones premium proximamente:</p>
+              <ul className="kitchen-list">
+                <li>Planificacion inteligente</li>
+                <li>Sugerencias de menu</li>
+                <li>Estadisticas de cocina</li>
+              </ul>
+              <button type="button" className="kitchen-button secondary" disabled>Upgrade (coming soon)</button>
+            </div>
+          </div>
         ) : null}
 
-        <button type="button" className="kitchen-button secondary" onClick={handleLogout}>
-          Cerrar sesión
-        </button>
+        {!loading && activePanel === "perfil" ? ProfilePanel : null}
+        {!loading && activePanel === "preferencias" ? PreferencesPanel : null}
+        {!loading && activePanel === "household" && canManageHousehold ? HouseholdPanel : null}
+        {!loading && activePanel === "categorias" && canManageCategories ? CategoriesPanel : null}
+        {!loading && activePanel === "administracion" && isDiod ? DiodPanel : null}
+
+        <button type="button" className="kitchen-button secondary" onClick={logout}>Cerrar sesion</button>
       </div>
     </KitchenLayout>
   );

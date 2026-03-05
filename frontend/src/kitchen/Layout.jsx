@@ -4,6 +4,7 @@ import Header from "./components/ui/Header";
 import BottomNav from "./components/ui/BottomNav";
 import { useAuth } from "./auth";
 import { apiRequest } from "./api.js";
+import { getUserColor } from "./utils/userColors.js";
 import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
 import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
 
@@ -224,6 +225,7 @@ export default function KitchenLayout({ children }) {
 
   const userName = getFirstName(user?.displayName || "");
   const userInitials = getInitials(user?.displayName || "");
+  const userColors = getUserColor(user?.id || user?.email || user?.username || "");
 
   return (
     <div className="kitchen-app">
@@ -254,7 +256,12 @@ export default function KitchenLayout({ children }) {
               aria-expanded={userMenuOpen}
               aria-haspopup="menu"
             >
-              <span className="kitchen-user-avatar">{userInitials}</span>
+              <span
+                className="kitchen-user-avatar"
+                style={{ background: userColors.background, color: userColors.text }}
+              >
+                {userInitials}
+              </span>
               <span className="kitchen-user-name">{userName}</span>
               <ChevronDownIcon className="kitchen-user-chevron" />
             </button>

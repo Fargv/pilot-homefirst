@@ -1,13 +1,15 @@
 const COLOR_PALETTE = [
-  { background: "#E0E7FF", text: "#3730A3" },
-  { background: "#DBEAFE", text: "#1E40AF" },
-  { background: "#D1FAE5", text: "#065F46" },
-  { background: "#FEF3C7", text: "#92400E" },
-  { background: "#FDE68A", text: "#92400E" },
-  { background: "#FCE7F3", text: "#9D174D" },
-  { background: "#EDE9FE", text: "#5B21B6" },
-  { background: "#F3E8FF", text: "#6B21A8" }
+  { id: "lavender", label: "Lavanda", background: "#E9E4FF", text: "#4C3B91" },
+  { id: "mint", label: "Menta", background: "#DDF8EC", text: "#1E6B52" },
+  { id: "coral", label: "Coral", background: "#FFDCD6", text: "#9A3A2E" },
+  { id: "sky", label: "Cielo", background: "#D9EEFF", text: "#1D4C7A" },
+  { id: "peach", label: "Melocoton", background: "#FFE7D1", text: "#8A4B23" },
+  { id: "sage", label: "Salvia", background: "#E6F2DE", text: "#3F6B3B" },
+  { id: "sand", label: "Arena", background: "#F7EEDB", text: "#7A6440" },
+  { id: "mauve", label: "Malva", background: "#F1E1F5", text: "#6A3D75" }
 ];
+
+const USER_COLOR_OVERRIDES_KEY = "kitchen_user_color_overrides";
 
 const UNASSIGNED_COLOR = { background: "#F2F4F7", text: "#667085", border: "#D0D5DD" };
 
@@ -20,9 +22,30 @@ function hashString(value) {
   return Math.abs(hash);
 }
 
+function readOverrides() {
+  try {
+    const raw = localStorage.getItem(USER_COLOR_OVERRIDES_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeOverrides(nextOverrides) {
+  localStorage.setItem(USER_COLOR_OVERRIDES_KEY, JSON.stringify(nextOverrides));
+}
+
 export function getUserColor(key) {
   if (!key) {
     return UNASSIGNED_COLOR;
+  }
+  const overrides = readOverrides();
+  const selectedId = overrides[String(key)];
+  if (selectedId) {
+    const selected = COLOR_PALETTE.find((color) => color.id === selectedId);
+    if (selected) return selected;
   }
   const index = hashString(String(key)) % COLOR_PALETTE.length;
   return COLOR_PALETTE[index];
@@ -30,4 +53,25 @@ export function getUserColor(key) {
 
 export function getUnassignedColor() {
   return UNASSIGNED_COLOR;
+}
+
+export function getColorPalette() {
+  return COLOR_PALETTE;
+}
+
+export function getUserColorPreference(userId) {
+  if (!userId) return "";
+  const overrides = readOverrides();
+  return overrides[String(userId)] || "";
+}
+
+export function setUserColorPreference(userId, colorId) {
+  if (!userId) return;
+  const overrides = readOverrides();
+  if (!colorId) {
+    delete overrides[String(userId)];
+  } else {
+    overrides[String(userId)] = colorId;
+  }
+  writeOverrides(overrides);
 }
