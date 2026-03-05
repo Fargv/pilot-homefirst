@@ -669,15 +669,49 @@ export default function WeekPage() {
     const dayKey = day.date.slice(0, 10);
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
 
-    const activeHouseholdId = user?.activeHouseholdId || null;
-    const eligibleHouseholdDishes = dishes.filter((dish) => {
-      if (!dish?._id) return false;
+    const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
+    const fetchedDishes = dishes.filter((dish) => dish?._id);
+    const householdScopedDishes = fetchedDishes.filter((dish) => {
       if (dish.scope === "master") return true;
-      if (!activeHouseholdId) return false;
-      return String(dish.householdId || "") === String(activeHouseholdId);
+      if (!currentHouseholdId) return true;
+      if (!dish.householdId) return true;
+      return String(dish.householdId) === String(currentHouseholdId);
     });
 
-    if (!eligibleHouseholdDishes.length) {
+    const usedDishEntries = safeDays
+      .map((entry) => entry?.mainDishId)
+      .filter(Boolean)
+      .map((dishId) => ({
+        raw: dishId,
+        normalized: String(dishId),
+        type: typeof dishId
+      }));
+    const usedDishIds = new Set(usedDishEntries.map((entry) => entry.normalized));
+
+    const availableDishes = householdScopedDishes.filter(
+      (dish) => !usedDishIds.has(String(dish._id))
+    );
+
+    if (import.meta.env.DEV) {
+      const sample = fetchedDishes.slice(0, 3).map((dish) => ({
+        id: String(dish._id),
+        householdId: dish.householdId ? String(dish.householdId) : null,
+        scope: dish.scope || null
+      }));
+      console.debug("[kitchen][random-dish] debug", {
+        currentHouseholdId: currentHouseholdId ? String(currentHouseholdId) : null,
+        fetchedDishesTotal: fetchedDishes.length,
+        fetchedSample: sample,
+        usedThisWeek: usedDishEntries,
+        counts: {
+          afterFetched: fetchedDishes.length,
+          afterHouseholdFilter: householdScopedDishes.length,
+          afterUsedFilter: availableDishes.length
+        }
+      });
+    }
+
+    if (!householdScopedDishes.length) {
       setDayErrors((prev) => ({
         ...prev,
         [dayKey]: "No hay platos disponibles en este hogar para asignar aleatoriamente."
@@ -685,20 +719,10 @@ export default function WeekPage() {
       return;
     }
 
-    const usedDishIds = new Set(
-      safeDays
-        .map((entry) => entry?.mainDishId)
-        .filter(Boolean)
-        .map((dishId) => String(dishId))
-    );
-    const availableDishes = eligibleHouseholdDishes.filter(
-      (dish) => !usedDishIds.has(String(dish._id))
-    );
-
     if (!availableDishes.length) {
       setDayErrors((prev) => ({
         ...prev,
-        [dayKey]: "No quedan platos disponibles sin repetir esta semana."
+        [dayKey]: "Esta semana ya se han usado todos los platos disponibles."
       }));
       return;
     }
