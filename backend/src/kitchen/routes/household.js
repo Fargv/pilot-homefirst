@@ -18,6 +18,12 @@ import { ensureHouseholdInviteCode } from "../householdInviteCode.js";
 
 const router = express.Router();
 
+function normalizeAvoidRepeatsWeeks(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(12, Math.max(1, Math.round(parsed)));
+}
+
 function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -25,7 +31,9 @@ function hashToken(token) {
 router.get("/summary", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const household = await Household.findById(effectiveHouseholdId).select("_id name inviteCode ownerUserId").lean();
+    const household = await Household.findById(effectiveHouseholdId)
+      .select("_id name inviteCode ownerUserId avoidRepeatsEnabled avoidRepeatsWeeks")
+      .lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
@@ -35,7 +43,9 @@ router.get("/summary", requireAuth, async (req, res) => {
         id: household._id,
         name: household.name || "Mi household",
         inviteCode: household.inviteCode || null,
-        ownerUserId: household.ownerUserId || null
+        ownerUserId: household.ownerUserId || null,
+        avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
+        avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks)
       }
     });
   } catch (error) {
@@ -67,13 +77,51 @@ router.patch("/name", requireAuth, requireRole("owner"), async (req, res) => {
         id: household._id,
         name: household.name,
         inviteCode: household.inviteCode || null,
-        ownerUserId: household.ownerUserId || null
+        ownerUserId: household.ownerUserId || null,
+        avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
+        avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks)
       }
     });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el nombre del household." });
+  }
+});
+
+router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const household = await Household.findById(effectiveHouseholdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
+
+    const nextEnabled = Boolean(req.body?.avoidRepeatsEnabled);
+    const nextWeeks = normalizeAvoidRepeatsWeeks(req.body?.avoidRepeatsWeeks);
+
+    household.avoidRepeatsEnabled = nextEnabled;
+    household.avoidRepeatsWeeks = nextWeeks;
+    await household.save();
+
+    return res.json({
+      ok: true,
+      household: {
+        id: household._id,
+        name: household.name,
+        inviteCode: household.inviteCode || null,
+        ownerUserId: household.ownerUserId || null,
+        avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
+        avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks)
+      }
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    if (error?.name === "ValidationError" || error?.name === "CastError") {
+      return res.status(400).json({ ok: false, error: "Preferencias del household no válidas." });
+    }
+    return res.status(500).json({ ok: false, error: "No se pudieron actualizar las preferencias del household." });
   }
 });
 

@@ -2,6 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { KitchenUser } from "../models/KitchenUser.js";
+import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
+import { Household } from "../models/Household.js";
 import { requireAuth, requireRole } from "../middleware.js";
 import { formatDateISO, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
 import {
@@ -106,6 +108,34 @@ function shuffleArray(items = []) {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+}
+
+function normalizeAvoidRepeatsWeeks(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(12, Math.max(1, Math.round(parsed)));
+}
+
+async function getRecentWeeksDishIds(effectiveHouseholdId, monday, weeks) {
+  const windowStart = new Date(monday);
+  windowStart.setUTCDate(windowStart.getUTCDate() - (weeks * 7));
+
+  const recentPlans = await KitchenWeekPlan.find(
+    buildScopedFilter(effectiveHouseholdId, {
+      weekStart: { $gte: windowStart, $lt: monday }
+    })
+  )
+    .select("days.mainDishId")
+    .lean();
+
+  const usedDishIds = new Set();
+  for (const plan of recentPlans) {
+    const days = Array.isArray(plan?.days) ? plan.days : [];
+    for (const day of days) {
+      if (day?.mainDishId) usedDishIds.add(String(day.mainDishId));
+    }
+  }
+  return usedDishIds;
 }
 
 router.get("/:weekStart", requireAuth, async (req, res) => {
@@ -302,7 +332,7 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       });
     }
 
-    const usedDishIds = new Set(
+    const usedInCurrentWeek = new Set(
       plan.days
         .filter((day) => !targetDays.includes(day))
         .map((day) => day?.mainDishId)
@@ -311,16 +341,64 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     );
 
     const candidates = await KitchenDish.find(
-      buildDishVisibilityFilter(effectiveHouseholdId, {
-        sidedish: { $ne: true },
-        _id: { $nin: Array.from(usedDishIds) }
-      })
+      buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true } })
     )
       .select("_id")
       .lean();
 
-    const shuffledDishIds = shuffleArray(candidates.map((dish) => String(dish._id)));
-    const assignedCount = Math.min(targetDays.length, shuffledDishIds.length);
+    const allDishIds = candidates.map((dish) => String(dish._id));
+    if (!allDishIds.length) {
+      return res.json({
+        ok: true,
+        plan,
+        assignedCount: 0,
+        targetCount: targetDays.length,
+        insufficient: true,
+        warnings: ["No hay platos disponibles en este household para randomizar la semana."],
+        warningCodes: ["no_dishes"]
+      });
+    }
+
+    const household = await Household.findById(effectiveHouseholdId)
+      .select("avoidRepeatsEnabled avoidRepeatsWeeks")
+      .lean();
+    const avoidRepeatsEnabled = Boolean(household?.avoidRepeatsEnabled);
+    const avoidRepeatsWeeks = normalizeAvoidRepeatsWeeks(household?.avoidRepeatsWeeks);
+    const recentDishIds = avoidRepeatsEnabled
+      ? await getRecentWeeksDishIds(effectiveHouseholdId, monday, avoidRepeatsWeeks)
+      : new Set();
+
+    const randomizedDays = shuffleArray([...targetDays]);
+    let assignedCount = 0;
+    let relaxedCrossWeekRule = false;
+    let relaxedSameWeekRule = false;
+
+    for (const day of randomizedDays) {
+      const strictEligible = allDishIds.filter(
+        (dishId) => !usedInCurrentWeek.has(dishId) && !recentDishIds.has(dishId)
+      );
+      let pickedDishId = pickRandomItem(strictEligible);
+
+      if (!pickedDishId) {
+        const sameWeekEligible = allDishIds.filter((dishId) => !usedInCurrentWeek.has(dishId));
+        pickedDishId = pickRandomItem(sameWeekEligible);
+        if (pickedDishId) {
+          relaxedCrossWeekRule = true;
+        } else {
+          pickedDishId = pickRandomItem(allDishIds);
+          if (pickedDishId) {
+            relaxedCrossWeekRule = true;
+            relaxedSameWeekRule = true;
+          }
+        }
+      }
+
+      if (!pickedDishId) continue;
+
+      day.mainDishId = pickedDishId;
+      usedInCurrentWeek.add(pickedDishId);
+      assignedCount += 1;
+    }
 
     const canDistributeUsers = isHouseholdAdmin(req.kitchenUser);
     let userPool = [];
@@ -336,10 +414,9 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       userPool = [String(req.kitchenUser?._id || "")].filter(Boolean);
     }
 
-    for (let index = 0; index < assignedCount; index += 1) {
-      const day = targetDays[index];
-      const dishId = shuffledDishIds[index];
-      day.mainDishId = dishId;
+    for (let index = 0; index < randomizedDays.length; index += 1) {
+      const day = randomizedDays[index];
+      if (!day.mainDishId) continue;
       if (userPool.length) {
         day.cookUserId = userPool[index % userPool.length];
       }
@@ -352,12 +429,29 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       context: "randomize-week"
     });
 
+    const warnings = [];
+    const warningCodes = [];
+    if (relaxedCrossWeekRule && avoidRepeatsEnabled) {
+      warnings.push(
+        `No se pudo evitar repetir platos en las ultimas ${avoidRepeatsWeeks} semanas por falta de platos disponibles. Se ha aplicado la regla hasta donde ha sido posible.`
+      );
+      warningCodes.push("avoid_repeats_relaxed");
+    }
+    if (relaxedSameWeekRule) {
+      warnings.push(
+        "No habia platos suficientes para evitar repeticiones dentro de la misma semana. Se permitieron repeticiones para completar la planificacion."
+      );
+      warningCodes.push("same_week_repeat_relaxed");
+    }
+
     return res.json({
       ok: true,
       plan,
       assignedCount,
       targetCount: targetDays.length,
       insufficient: assignedCount < targetDays.length,
+      warnings,
+      warningCodes,
       ...(warning ? { warning } : {})
     });
   } catch (error) {

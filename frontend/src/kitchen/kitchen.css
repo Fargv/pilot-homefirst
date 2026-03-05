@@ -3766,6 +3766,69 @@ body {
   color: #344054;
 }
 
+.settings-household-pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-household-pref-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-household-pref-main .kitchen-muted {
+  margin: 0;
+}
+
+.settings-household-pref-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.settings-household-pref-title .settings-mini-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.settings-household-pref-input-row {
+  max-width: 170px;
+}
+
+.settings-household-pref-popover {
+  border: 1px solid #d8def0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-household-pref-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.settings-household-pref-popover p {
+  margin: 0;
+  font-size: 13px;
+  color: #475467;
+}
+
 .settings-members-actions {
   display: flex;
   gap: 8px;
@@ -3862,6 +3925,14 @@ body {
 
   .settings-category-color-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .settings-household-pref-row {
+    align-items: flex-start;
+  }
+
+  .settings-household-pref-input-row {
+    max-width: 100%;
   }
 }
 /* Dish cards: title-first + bottom actions bar */

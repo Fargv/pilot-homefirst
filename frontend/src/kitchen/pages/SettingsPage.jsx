@@ -90,6 +90,22 @@ function CopyIcon() {
   );
 }
 
+function InfoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M12 10.2v5.1" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <circle cx="12" cy="7.2" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function clampAvoidRepeatWeeks(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(12, Math.max(1, Math.round(parsed)));
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { user, setUser, refreshUser, logout } = useAuth();
@@ -103,6 +119,10 @@ export default function SettingsPage() {
   const [householdName, setHouseholdName] = useState("");
   const [householdNameDraft, setHouseholdNameDraft] = useState("");
   const [householdNameEditing, setHouseholdNameEditing] = useState(false);
+  const [avoidRepeatsEnabled, setAvoidRepeatsEnabled] = useState(false);
+  const [avoidRepeatsWeeks, setAvoidRepeatsWeeks] = useState(1);
+  const [avoidRepeatsInfoOpen, setAvoidRepeatsInfoOpen] = useState(false);
+  const [householdPrefsSaving, setHouseholdPrefsSaving] = useState(false);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -218,6 +238,8 @@ export default function SettingsPage() {
       setCategories(categoryData.categories || []);
       setHouseholdName(householdData?.household?.name || "");
       setHouseholdNameDraft(householdData?.household?.name || "");
+      setAvoidRepeatsEnabled(Boolean(householdData?.household?.avoidRepeatsEnabled));
+      setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(householdData?.household?.avoidRepeatsWeeks));
       setMembers(memberData.users || []);
       setInvitations(invitationData.invitations || []);
       setHouseholdCode(codeData.inviteCode || householdData?.household?.inviteCode || "");
@@ -308,6 +330,36 @@ export default function SettingsPage() {
       await refreshUser();
     } catch (err) {
       setError(err.message || "No se pudo actualizar el household.");
+    }
+  };
+
+  const saveHouseholdPreferences = async (nextValues = {}) => {
+    if (!canManageHousehold) return;
+    const nextEnabled = Object.prototype.hasOwnProperty.call(nextValues, "avoidRepeatsEnabled")
+      ? Boolean(nextValues.avoidRepeatsEnabled)
+      : Boolean(avoidRepeatsEnabled);
+    const nextWeeks = clampAvoidRepeatWeeks(
+      Object.prototype.hasOwnProperty.call(nextValues, "avoidRepeatsWeeks")
+        ? nextValues.avoidRepeatsWeeks
+        : avoidRepeatsWeeks
+    );
+
+    setHouseholdPrefsSaving(true);
+    try {
+      const data = await apiRequest("/api/kitchen/household/preferences", {
+        method: "PATCH",
+        body: JSON.stringify({
+          avoidRepeatsEnabled: nextEnabled,
+          avoidRepeatsWeeks: nextWeeks
+        })
+      });
+      setAvoidRepeatsEnabled(Boolean(data?.household?.avoidRepeatsEnabled));
+      setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(data?.household?.avoidRepeatsWeeks));
+      updateSuccess("Preferencia del household actualizada.");
+    } catch (err) {
+      setError(err.message || "No se pudieron guardar las preferencias del household.");
+    } finally {
+      setHouseholdPrefsSaving(false);
     }
   };
 
@@ -675,6 +727,70 @@ export default function SettingsPage() {
       <div className="settings-block">
         {householdNameEditing ? (
           <input className="kitchen-input" value={householdNameDraft} onChange={(event) => setHouseholdNameDraft(event.target.value)} />
+        ) : null}
+        <div className="settings-household-pref-row">
+          <div className="settings-household-pref-main">
+            <div className="settings-household-pref-title">
+              <span>No repetir plato en X semanas</span>
+              <button
+                type="button"
+                className="settings-mini-icon"
+                aria-label="Informacion sobre no repetir plato"
+                onClick={() => setAvoidRepeatsInfoOpen((prev) => !prev)}
+              >
+                <InfoIcon />
+              </button>
+            </div>
+            <p className="kitchen-muted">Regla best-effort de randomizacion semanal.</p>
+          </div>
+          <label className="kitchen-toggle" aria-label="Activar no repetir plato por semanas">
+            <input
+              type="checkbox"
+              className="kitchen-toggle-input"
+              checked={avoidRepeatsEnabled}
+              disabled={householdPrefsSaving}
+              onChange={(event) => {
+                const checked = event.target.checked;
+                setAvoidRepeatsEnabled(checked);
+                void saveHouseholdPreferences({ avoidRepeatsEnabled: checked });
+              }}
+            />
+            <span className="kitchen-toggle-track" />
+          </label>
+        </div>
+        <div className="settings-household-pref-input-row">
+          <label className="kitchen-field">
+            <span className="kitchen-label">Semanas (X)</span>
+            <input
+              type="number"
+              min={1}
+              max={12}
+              step={1}
+              className="kitchen-input"
+              value={avoidRepeatsWeeks}
+              disabled={!avoidRepeatsEnabled || householdPrefsSaving}
+              onChange={(event) => setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(event.target.value))}
+              onBlur={() => void saveHouseholdPreferences()}
+            />
+          </label>
+        </div>
+        {avoidRepeatsInfoOpen ? (
+          <div className="settings-household-pref-popover" role="dialog" aria-modal="false">
+            <div className="settings-household-pref-popover-header">
+              <strong>No repetir plato en X semanas</strong>
+              <button
+                type="button"
+                className="settings-mini-icon"
+                aria-label="Cerrar informacion"
+                onClick={() => setAvoidRepeatsInfoOpen(false)}
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            <p>Evita, en lo posible, platos usados en las ultimas X semanas al randomizar la semana actual.</p>
+            <p>Es una regla best-effort: no bloquea la planificacion y puede relajarse si faltan platos.</p>
+            <p>Ejemplo: con X=3 y solo 10 platos, el sistema intentara evitar repetidos y completara la semana igualmente.</p>
+          </div>
         ) : null}
         <p className="settings-counter">Miembros ({members.length})</p>
         <div className="settings-members-actions">

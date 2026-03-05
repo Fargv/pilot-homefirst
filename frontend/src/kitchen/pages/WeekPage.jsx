@@ -68,7 +68,6 @@ function ChevronIcon(props) {
     </svg>
   );
 }
-
 function DiceIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
@@ -199,11 +198,17 @@ export default function WeekPage() {
         body: JSON.stringify({ overwriteAll: false })
       });
       setPlan(data.plan || null);
+      const warningMessages = Array.isArray(data.warnings)
+        ? data.warnings.filter((item) => String(item || "").trim())
+        : [];
+      const hasWarnings = warningMessages.length > 0;
       if (data.insufficient) {
-        setWeekNotice({
-          type: "error",
-          message: "No hay suficientes platos para completar todos los días sin repetir."
-        });
+        const message = hasWarnings
+          ? `No hay suficientes platos para completar todos los dias sin repetir. ${warningMessages.join(" ")}`
+          : "No hay suficientes platos para completar todos los dias sin repetir.";
+        setWeekNotice({ type: "error", message });
+      } else if (hasWarnings) {
+        setWeekNotice({ type: "error", message: warningMessages.join(" ") });
       } else {
         setWeekNotice({ type: "success", message: "Semana randomizada" });
       }
@@ -1925,4 +1930,5 @@ export default function WeekPage() {
     </KitchenLayout>
   );
 }
+
 
