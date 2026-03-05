@@ -201,9 +201,15 @@ export default function WeekPage() {
       const warningMessages = Array.isArray(data.warnings)
         ? data.warnings.filter((item) => String(item || "").trim())
         : [];
+      const warningCodes = Array.isArray(data.warningCodes)
+        ? data.warningCodes.filter((item) => String(item || "").trim())
+        : [];
       const hasWarnings = warningMessages.length > 0;
+      const hasOnlySpecialWarning = warningCodes.includes("only_special_excluded");
       if (data.insufficient) {
-        const message = hasWarnings
+        const message = hasOnlySpecialWarning
+          ? "No hay platos disponibles para randomizar (los platos especiales estan excluidos)."
+          : hasWarnings
           ? `No hay suficientes platos para completar todos los dias sin repetir. ${warningMessages.join(" ")}`
           : "No hay suficientes platos para completar todos los dias sin repetir.";
         setWeekNotice({ type: "error", message });
@@ -854,7 +860,9 @@ export default function WeekPage() {
       const reason = String(randomResponse?.reason || "");
       const message = reason === "all_used"
         ? "Esta semana ya se han usado todos los platos disponibles."
-        : "No hay platos disponibles en este hogar para asignar aleatoriamente.";
+        : reason === "only_special"
+          ? "No hay platos disponibles para randomizar (los platos especiales estan excluidos)."
+          : "No hay platos disponibles en este hogar para asignar aleatoriamente.";
       setDayErrors((prev) => ({
         ...prev,
         [dayKey]: message

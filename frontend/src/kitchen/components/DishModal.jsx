@@ -3,7 +3,7 @@ import { apiRequest } from "../api.js";
 import IngredientPicker from "./IngredientPicker.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
-const EMPTY_FORM = { name: "", ingredients: [], sidedish: false };
+const EMPTY_FORM = { name: "", ingredients: [], sidedish: false, special: false };
 
 export default function DishModal({
   isOpen,
@@ -73,14 +73,16 @@ export default function DishModal({
         setForm({
           name: initialDish.name || "",
           ingredients,
-          sidedish: Boolean(initialDish.sidedish)
+          sidedish: Boolean(initialDish.sidedish),
+          special: Boolean(initialDish.special)
         });
         setEditingId(initialDish._id);
       } else {
         setForm({
           name: initialName || "",
           ingredients: [],
-          sidedish: Boolean(initialSidedish)
+          sidedish: Boolean(initialSidedish),
+          special: false
         });
         setEditingId(null);
       }
@@ -112,6 +114,7 @@ export default function DishModal({
       const payload = {
         name: form.name,
         sidedish: form.sidedish,
+        special: form.special,
         ...(scope ? { scope } : {}),
         ingredients: (form.ingredients || []).map((item) => ({
           ingredientId: item.ingredientId,
@@ -199,6 +202,24 @@ export default function DishModal({
                 <span className="kitchen-toggle-track" aria-hidden="true" />
               </label>
             </div>
+          </div>
+          <div className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Plato especial</span>
+              <label className="kitchen-toggle" htmlFor="dish-specialswitch">
+                <input
+                  id="dish-specialswitch"
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={form.special}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, special: event.target.checked }))
+                  }
+                />
+                <span className="kitchen-toggle-track" aria-hidden="true" />
+              </label>
+            </div>
+            <p className="kitchen-muted">No aparecera en sugerencias aleatorias.</p>
           </div>
           <div className="kitchen-field kitchen-dish-ingredients">
             <span className="kitchen-label">Ingredientes</span>

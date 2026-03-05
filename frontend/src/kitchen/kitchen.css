@@ -4183,6 +4183,22 @@ body {
   word-break: break-word;
 }
 
+.kitchen-dish-special-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #a16207;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  flex: 0 0 auto;
+}
+
 .kitchen-card-subtitle {
   margin: 0;
   text-align: center;

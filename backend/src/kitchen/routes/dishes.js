@@ -17,6 +17,16 @@ import {
 
 const router = express.Router();
 
+function parseBooleanField(value, fallback = false) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return fallback;
+}
+
 function buildDishVisibilityFilter(householdId, extraFilter = {}) {
   return {
     ...extraFilter,
@@ -112,11 +122,12 @@ router.get("/", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients, sidedish, scope } = req.body;
+    const { name, ingredients, sidedish, special, scope } = req.body;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
 
     const normalizedIngredients = normalizeIngredientList(ingredients || []);
     const isSideDish = Boolean(sidedish);
+    const isSpecial = parseBooleanField(special, false);
     const isDiod = isDiodUser(req.kitchenUser);
     const isMasterWrite = scope === CATALOG_SCOPES.MASTER;
     const effectiveHouseholdId = isMasterWrite ? getOptionalHouseholdId(req.user) : getEffectiveHouseholdId(req.user);
@@ -129,6 +140,7 @@ router.post("/", requireAuth, async (req, res) => {
       name: String(name).trim(),
       ingredients: normalizedIngredients,
       sidedish: isSideDish,
+      special: isSpecial,
       scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
       createdBy: req.kitchenUser._id,
       householdId: isMasterWrite ? undefined : effectiveHouseholdId
@@ -148,7 +160,7 @@ router.post("/", requireAuth, async (req, res) => {
 
 router.put("/:id", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients, sidedish } = req.body;
+    const { name, ingredients, sidedish, special } = req.body;
     const optionalHouseholdId = getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const dish = await KitchenDish.findById(req.params.id);
@@ -158,6 +170,7 @@ router.put("/:id", requireAuth, async (req, res) => {
     if (name) nextData.name = String(name).trim();
     if (Array.isArray(ingredients)) nextData.ingredients = normalizeIngredientList(ingredients);
     if (typeof sidedish === "boolean") nextData.sidedish = sidedish;
+    if (special !== undefined) nextData.special = parseBooleanField(special, Boolean(dish.special));
 
     if (dish.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {

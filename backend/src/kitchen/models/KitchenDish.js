@@ -22,6 +22,7 @@ const KitchenDishSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     ingredients: { type: [IngredientSchema], default: [] },
     sidedish: { type: Boolean, default: false },
+    special: { type: Boolean, default: false },
     isArchived: { type: Boolean, default: false },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" }
   },

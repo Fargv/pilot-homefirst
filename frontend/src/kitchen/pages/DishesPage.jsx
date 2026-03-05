@@ -791,7 +791,15 @@ export default function DishesPage() {
                   <div className="kitchen-dish-main">
                     <div className="kitchen-dish-title-row">
                       <h3 className="kitchen-dish-name">{dish.name}</h3>
-                      
+                      {dish.special ? (
+                        <span
+                          className="kitchen-dish-special-pill"
+                          title="Plato especial (excluido de randomización)"
+                          aria-label="Plato especial"
+                        >
+                          ★
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                   <div className="kitchen-dish-actions-bar">

@@ -283,9 +283,18 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       .filter(Boolean)
       .map((dishId) => String(dishId));
 
-    const baseDishFilter = buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true } });
+    const baseDishFilter = buildDishVisibilityFilter(effectiveHouseholdId, {
+      sidedish: { $ne: true },
+      special: { $ne: true }
+    });
     const allEligible = await KitchenDish.find(baseDishFilter).select("_id name householdId scope").lean();
     if (!allEligible.length) {
+      const allVisibleCount = await KitchenDish.countDocuments(
+        buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true } })
+      );
+      if (allVisibleCount > 0) {
+        return res.json({ ok: true, dish: null, reason: "only_special" });
+      }
       return res.json({ ok: true, dish: null, reason: "no_dishes" });
     }
 
@@ -341,13 +350,30 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     );
 
     const candidates = await KitchenDish.find(
-      buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true } })
+      buildDishVisibilityFilter(effectiveHouseholdId, {
+        sidedish: { $ne: true },
+        special: { $ne: true }
+      })
     )
       .select("_id")
       .lean();
 
     const allDishIds = candidates.map((dish) => String(dish._id));
     if (!allDishIds.length) {
+      const allVisibleCount = await KitchenDish.countDocuments(
+        buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true } })
+      );
+      if (allVisibleCount > 0) {
+        return res.json({
+          ok: true,
+          plan,
+          assignedCount: 0,
+          targetCount: targetDays.length,
+          insufficient: true,
+          warnings: ["No hay platos disponibles para randomizar (los platos especiales están excluidos)."],
+          warningCodes: ["only_special_excluded"]
+        });
+      }
       return res.json({
         ok: true,
         plan,
