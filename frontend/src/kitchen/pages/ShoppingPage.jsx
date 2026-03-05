@@ -427,11 +427,7 @@ export default function ShoppingPage() {
       <div className="shopping-page-shell">
         <div className="kitchen-card shopping-main-card">
           <div className="shopping-header-card">
-            <div className="shopping-header-row">
-              <div className="shopping-header-title">
-                <h1>Lista de la compra</h1>
-                <p className="shopping-week-label">Semana {formatWeekTitle(weekStart)}</p>
-              </div>
+            <div className="shopping-header-refresh-row">
               <div className="kitchen-actions">
                 <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
                   <RefreshIcon className="shopping-week-arrow-icon" />
@@ -439,7 +435,13 @@ export default function ShoppingPage() {
               </div>
             </div>
 
-            <div className={`shopping-controls-row ${tab === "pending" ? "" : "is-no-store"}`}>
+            <div className="shopping-header-row">
+              <div className="shopping-header-title">
+                <h1>Lista de la compra</h1>
+              </div>
+            </div>
+
+            <div className="shopping-header-week-row">
               <WeekNavigator
                 className="shopping-week-nav"
                 value={weekStart}
@@ -447,75 +449,80 @@ export default function ShoppingPage() {
                 onPrevious={() => setWeekStart((prev) => addDaysToISO(prev, -7))}
                 onNext={() => setWeekStart((prev) => addDaysToISO(prev, 7))}
               />
+            </div>
 
+            <div className="shopping-header-tabs-row">
               <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
-                <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "‚Äî" : pendingCount})</button>
+                <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "ó" : pendingCount})</button>
                 <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
               </div>
-
-              {tab === "pending" ? (
-                <select
-                  className="kitchen-select shopping-store-select"
-                  value={selectedStoreId}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    if (value === "__add__") {
-                      void createStoreFromDropdown();
-                      return;
-                    }
-                    selectedStoreRef.current = value;
-                    setSelectedStoreId(value);
-                  }}
-                >
-                  <option value="">Supermercado (opcional)</option>
-                  {stores.map((store) => (
-                    <option key={store._id} value={store._id}>{store.name}</option>
-                  ))}
-                  <option value="__add__">A√±adir supermercado‚Ä¶</option>
-                </select>
-              ) : null}
             </div>
 
             {tab === "pending" ? (
-              <div className="shopping-quick-add shopping-quick-add-header" role="region" aria-label="A√±adir ingrediente r√°pido">
-                <div className="shopping-quick-add-row">
-                  <input
-                    ref={quickInputRef}
-                    className="kitchen-input shopping-quick-add-input"
-                    value={quickQuery}
-                    onChange={(event) => setQuickQuery(event.target.value)}
-                    placeholder="A√±adir ingrediente a la lista..."
-                  />
+              <div className="shopping-header-input-row">
+                <div className="shopping-header-store-col">
+                  <select
+                    className="kitchen-select shopping-store-select"
+                    value={selectedStoreId}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (value === "__add__") {
+                        void createStoreFromDropdown();
+                        return;
+                      }
+                      selectedStoreRef.current = value;
+                      setSelectedStoreId(value);
+                    }}
+                  >
+                    <option value="">Supermercado (opcional)</option>
+                    {stores.map((store) => (
+                      <option key={store._id} value={store._id}>{store.name}</option>
+                    ))}
+                    <option value="__add__">AÒadir supermercadoÖ</option>
+                  </select>
                 </div>
-                {!hasExactSuggestion && quickQuery.trim() ? (
-                  <div className="shopping-quick-category-row">
-                    <select className="kitchen-select shopping-quick-category" value={quickCategoryId} onChange={(event) => setQuickCategoryId(event.target.value)}>
-                      <option value="">Categor√≠a</option>
-                      {quickCategories.map((category) => (
-                        <option key={category._id} value={category._id}>{category.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                ) : null}
-                {quickQuery ? (
-                  <div className="shopping-quick-suggestions">
-                    {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
-                    {!quickSearching ? quickSuggestions.slice(0, 8).map((item) => (
-                      <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => handleQuickSelect(item)} disabled={quickBusy}>
-                        <span className="kitchen-suggestion-name">{item.name}</span>
-                      </button>
-                    )) : null}
-                    {!quickSearching && !hasExactSuggestion && quickQuery.trim() ? (
-                      <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={handleQuickCreate} disabled={!quickCategoryId || quickBusy}>
-                        Crear ‚Äú{quickQuery.trim()}‚Äù
-                      </button>
+
+                <div className="shopping-header-quick-col">
+                  <div className="shopping-quick-add shopping-quick-add-header" role="region" aria-label="AÒadir ingrediente r·pido">
+                    <div className="shopping-quick-add-row">
+                      <input
+                        ref={quickInputRef}
+                        className="kitchen-input shopping-quick-add-input"
+                        value={quickQuery}
+                        onChange={(event) => setQuickQuery(event.target.value)}
+                        placeholder="AÒadir ingrediente a la lista..."
+                      />
+                    </div>
+                    {!hasExactSuggestion && quickQuery.trim() ? (
+                      <div className="shopping-quick-category-row">
+                        <select className="kitchen-select shopping-quick-category" value={quickCategoryId} onChange={(event) => setQuickCategoryId(event.target.value)}>
+                          <option value="">CategorÌa</option>
+                          {quickCategories.map((category) => (
+                            <option key={category._id} value={category._id}>{category.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+                    {quickQuery ? (
+                      <div className="shopping-quick-suggestions">
+                        {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
+                        {!quickSearching ? quickSuggestions.slice(0, 8).map((item) => (
+                          <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => handleQuickSelect(item)} disabled={quickBusy}>
+                            <span className="kitchen-suggestion-name">{item.name}</span>
+                          </button>
+                        )) : null}
+                        {!quickSearching && !hasExactSuggestion && quickQuery.trim() ? (
+                          <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={handleQuickCreate} disabled={!quickCategoryId || quickBusy}>
+                            Crear ì{quickQuery.trim()}î
+                          </button>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
-                ) : null}
+                </div>
               </div>
             ) : null}
           </div>
-
           {(success || error) ? (
             <div className="shopping-toolbar-alerts" aria-live="polite">
               {success ? <div className="kitchen-alert success shopping-toolbar-alert">{success}</div> : null}
