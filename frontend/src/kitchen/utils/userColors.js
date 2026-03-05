@@ -3,10 +3,10 @@ const COLOR_PALETTE = [
   { id: "mint", label: "Menta", background: "#DDF8EC", text: "#1E6B52" },
   { id: "coral", label: "Coral", background: "#FFDCD6", text: "#9A3A2E" },
   { id: "sky", label: "Cielo", background: "#D9EEFF", text: "#1D4C7A" },
-  { id: "peach", label: "Melocoton", background: "#FFE7D1", text: "#8A4B23" },
-  { id: "sage", label: "Salvia", background: "#E6F2DE", text: "#3F6B3B" },
   { id: "sand", label: "Arena", background: "#F7EEDB", text: "#7A6440" },
-  { id: "mauve", label: "Malva", background: "#F1E1F5", text: "#6A3D75" }
+  { id: "butter", label: "Mantequilla", background: "#FFF4C7", text: "#7A5A00" },
+  { id: "ocean", label: "Oceano", background: "#D8F4F7", text: "#0F5F6A" },
+  { id: "rose", label: "Rosa", background: "#FFE2EC", text: "#8C3358" }
 ];
 
 const USER_COLOR_OVERRIDES_KEY = "kitchen_user_color_overrides";

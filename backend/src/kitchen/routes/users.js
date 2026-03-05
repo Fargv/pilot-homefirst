@@ -1,6 +1,18 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
+import { Household } from "../models/Household.js";
+import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
+import { Category } from "../models/Category.js";
+import { HiddenMaster } from "../models/HiddenMaster.js";
+import { KitchenDish } from "../models/KitchenDish.js";
+import { KitchenIngredient } from "../models/KitchenIngredient.js";
+import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
+import { KitchenSwap } from "../models/KitchenSwap.js";
+import { Store } from "../models/Store.js";
+import { ShoppingTrip } from "../models/ShoppingTrip.js";
+import { Invitation } from "../models/Invitation.js";
+import { KitchenAuditLog } from "../models/KitchenAuditLog.js";
 import { requireAuth, requireRole } from "../middleware.js";
 import {
   buildDisplayName,
@@ -13,6 +25,125 @@ import {
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 
 const router = express.Router();
+
+function startOfTodayUtc() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+async function unassignFutureCookSlots({ householdId, userId }) {
+  const todayStart = startOfTodayUtc();
+  const result = await KitchenWeekPlan.updateMany(
+    { householdId },
+    {
+      $set: {
+        "days.$[day].cookUserId": null
+      }
+    },
+    {
+      arrayFilters: [
+        {
+          "day.cookUserId": userId,
+          "day.date": { $gte: todayStart }
+        }
+      ]
+    }
+  );
+  return {
+    matchedCount: Number(result.matchedCount || 0),
+    modifiedCount: Number(result.modifiedCount || 0)
+  };
+}
+
+async function deleteHouseholdScopedData(householdId) {
+  const operations = await Promise.all([
+    Invitation.deleteMany({ householdId }),
+    KitchenShoppingList.deleteMany({ householdId }),
+    KitchenWeekPlan.deleteMany({ householdId }),
+    KitchenSwap.deleteMany({ householdId }),
+    KitchenDish.deleteMany({ householdId }),
+    KitchenIngredient.deleteMany({ householdId }),
+    Category.deleteMany({ householdId }),
+    HiddenMaster.deleteMany({ householdId }),
+    Store.deleteMany({ householdId, scope: "household" }),
+    ShoppingTrip.deleteMany({ householdId }),
+    KitchenAuditLog.deleteMany({ householdId }),
+    KitchenUser.deleteMany({ householdId }),
+    Household.deleteOne({ _id: householdId })
+  ]);
+  return {
+    invitationsDeleted: Number(operations[0].deletedCount || 0),
+    shoppingListsDeleted: Number(operations[1].deletedCount || 0),
+    weekPlansDeleted: Number(operations[2].deletedCount || 0),
+    swapsDeleted: Number(operations[3].deletedCount || 0),
+    dishesDeleted: Number(operations[4].deletedCount || 0),
+    ingredientsDeleted: Number(operations[5].deletedCount || 0),
+    categoriesDeleted: Number(operations[6].deletedCount || 0),
+    hiddenMastersDeleted: Number(operations[7].deletedCount || 0),
+    storesDeleted: Number(operations[8].deletedCount || 0),
+    shoppingTripsDeleted: Number(operations[9].deletedCount || 0),
+    auditLogsDeleted: Number(operations[10].deletedCount || 0),
+    usersDeleted: Number(operations[11].deletedCount || 0),
+    householdDeleted: Number(operations[12].deletedCount || 0)
+  };
+}
+
+async function buildDeleteProfilePreview(currentUser, effectiveHouseholdId) {
+  const household = await Household.findById(effectiveHouseholdId).select("_id name ownerUserId").lean();
+  if (!household) {
+    const error = new Error("No encontramos el hogar activo.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const users = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}))
+    .select("_id displayName email role hasLogin isPlaceholder")
+    .lean();
+
+  const owners = users.filter((user) => user.role === "owner");
+  const isCurrentOwner = currentUser.role === "owner";
+  const ownersExcludingCurrent = owners.filter((user) => String(user._id) !== String(currentUser._id));
+  const promotableCandidates = users.filter((user) =>
+    String(user._id) !== String(currentUser._id)
+    && Boolean(user.email)
+    && user.hasLogin !== false
+    && user.isPlaceholder !== true
+  );
+
+  const isOnlyOwner = isCurrentOwner && owners.length === 1;
+  const mustTransferOwner = isOnlyOwner && promotableCandidates.length > 0;
+  const willDeleteHousehold = isOnlyOwner && promotableCandidates.length === 0;
+
+  return {
+    household: {
+      id: household._id,
+      name: household.name || "Mi household"
+    },
+    isOwner: isCurrentOwner,
+    isOnlyOwner,
+    ownersCount: owners.length,
+    mustTransferOwner,
+    willDeleteHousehold,
+    promotableCandidates: promotableCandidates.map((user) => ({
+      id: user._id,
+      displayName: user.displayName,
+      email: user.email,
+      role: user.role
+    })),
+    destructiveScope: willDeleteHousehold
+      ? [
+        "household",
+        "usuarios del household",
+        "platos del household",
+        "ingredientes del household",
+        "semanas/planes del household",
+        "categorias household/override",
+        "listas de compra",
+        "invitaciones"
+      ]
+      : ["solo tu cuenta del household", "reasignaciones futuras de cocina (cookUserId -> null)"]
+  };
+}
 
 router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
   try {
@@ -107,6 +238,110 @@ router.patch("/me", requireAuth, async (req, res) => {
     return res.json({ ok: true, user: req.kitchenUser.toSafeJSON() });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el perfil." });
+  }
+});
+
+router.get("/me/delete-preview", requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const preview = await buildDeleteProfilePreview(req.kitchenUser, effectiveHouseholdId);
+    return res.json({ ok: true, preview });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    const statusCode = Number(error?.statusCode || 500);
+    if (statusCode >= 400 && statusCode < 500) {
+      return res.status(statusCode).json({ ok: false, error: error.message || "No se pudo preparar la vista previa." });
+    }
+    return res.status(500).json({ ok: false, error: "No se pudo preparar la vista previa de eliminación." });
+  }
+});
+
+router.delete("/me", requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const preview = await buildDeleteProfilePreview(req.kitchenUser, effectiveHouseholdId);
+
+    if (preview.mustTransferOwner) {
+      const promoteUserId = String(req.body?.promoteUserId || "").trim();
+      if (!promoteUserId) {
+        return res.status(400).json({
+          ok: false,
+          error: "Debes seleccionar otro usuario con email para transferir el rol Owner.",
+          code: "OWNER_TRANSFER_REQUIRED",
+          preview
+        });
+      }
+      const promoteTarget = await KitchenUser.findOne(
+        buildScopedFilter(effectiveHouseholdId, { _id: promoteUserId })
+      );
+      if (!promoteTarget || !promoteTarget.email || promoteTarget.hasLogin === false || promoteTarget.isPlaceholder) {
+        return res.status(400).json({
+          ok: false,
+          error: "El usuario seleccionado no es válido para ser Owner.",
+          code: "INVALID_OWNER_TRANSFER_TARGET",
+          preview
+        });
+      }
+
+      promoteTarget.role = "owner";
+      await promoteTarget.save();
+
+      await Household.updateOne(
+        { _id: effectiveHouseholdId },
+        { $set: { ownerUserId: promoteTarget._id } }
+      );
+    } else if (preview.willDeleteHousehold) {
+      if (req.body?.confirmDeleteHousehold !== true) {
+        return res.status(400).json({
+          ok: false,
+          error: "Debes confirmar explícitamente la eliminación del household completo.",
+          code: "HOUSEHOLD_DELETE_CONFIRMATION_REQUIRED",
+          preview
+        });
+      }
+
+      const stats = await deleteHouseholdScopedData(effectiveHouseholdId);
+      return res.json({
+        ok: true,
+        deleted: "household",
+        stats
+      });
+    }
+
+    const unassignResult = await unassignFutureCookSlots({
+      householdId: effectiveHouseholdId,
+      userId: req.kitchenUser._id
+    });
+
+    if (preview.isOwner) {
+      const replacementOwner = await KitchenUser.findOne(
+        buildScopedFilter(effectiveHouseholdId, {
+          role: "owner",
+          _id: { $ne: req.kitchenUser._id }
+        })
+      )
+        .select("_id")
+        .lean();
+      if (replacementOwner?._id) {
+        await Household.updateOne(
+          { _id: effectiveHouseholdId, ownerUserId: req.kitchenUser._id },
+          { $set: { ownerUserId: replacementOwner._id } }
+        );
+      }
+    }
+
+    await KitchenUser.deleteOne({ _id: req.kitchenUser._id });
+
+    return res.json({
+      ok: true,
+      deleted: "user",
+      unassignedFutureCookSlots: unassignResult
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo eliminar el perfil." });
   }
 });
 

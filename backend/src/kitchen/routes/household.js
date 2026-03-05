@@ -22,6 +22,61 @@ function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+router.get("/summary", requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const household = await Household.findById(effectiveHouseholdId).select("_id name inviteCode ownerUserId").lean();
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
+    return res.json({
+      ok: true,
+      household: {
+        id: household._id,
+        name: household.name || "Mi household",
+        inviteCode: household.inviteCode || null,
+        ownerUserId: household.ownerUserId || null
+      }
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo cargar el household." });
+  }
+});
+
+router.patch("/name", requireAuth, requireRole("owner"), async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const nextName = String(req.body?.name || "").trim();
+    if (!nextName) {
+      return res.status(400).json({ ok: false, error: "El nombre del household es obligatorio." });
+    }
+
+    const household = await Household.findById(effectiveHouseholdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
+
+    household.name = nextName;
+    await household.save();
+
+    return res.json({
+      ok: true,
+      household: {
+        id: household._id,
+        name: household.name,
+        inviteCode: household.inviteCode || null,
+        ownerUserId: household.ownerUserId || null
+      }
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el nombre del household." });
+  }
+});
+
 router.get("/invite-code", requireAuth, requireRole("owner"), async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);

@@ -304,15 +304,27 @@ router.post("/logout", (req, res) => {
   res.json({ ok: true });
 });
 
-router.get("/me", requireAuth, (req, res) => {
-  res.json({
-    ok: true,
-    user: {
-      ...req.kitchenUser.toSafeJSON(),
-      migrationPending: !req.kitchenUser.householdId
-    },
-    auth: req.user
-  });
+router.get("/me", requireAuth, async (req, res) => {
+  try {
+    let householdName = null;
+    const effectiveHouseholdId = req.user?.activeHouseholdId || req.user?.householdId || null;
+    if (effectiveHouseholdId) {
+      const household = await Household.findById(effectiveHouseholdId).select("name").lean();
+      householdName = household?.name || null;
+    }
+
+    res.json({
+      ok: true,
+      user: {
+        ...req.kitchenUser.toSafeJSON(),
+        migrationPending: !req.kitchenUser.householdId,
+        householdName
+      },
+      auth: req.user
+    });
+  } catch {
+    return res.status(500).json({ ok: false, error: "No se pudo cargar el perfil." });
+  }
 });
 
 export default router;

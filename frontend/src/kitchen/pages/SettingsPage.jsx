@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import { apiRequest } from "../api.js";
@@ -14,10 +14,11 @@ function initialsFromName(name = "") {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
-function roleLabel(user, isOwner, isDiod) {
-  if (isDiod) return "DIOD";
-  if (isOwner) return "Household Owner/Admin";
-  return "Regular User";
+function roleLabel(user, isOwner, householdName) {
+  const safeHousehold = householdName || "Mi household";
+  if (user?.globalRole === "diod") return `DIOD - ${safeHousehold}`;
+  if (isOwner) return `Household Owner/Admin - ${safeHousehold}`;
+  return `Regular User - ${safeHousehold}`;
 }
 
 function memberRoleLabel(member) {
@@ -27,7 +28,23 @@ function memberRoleLabel(member) {
   return "USER";
 }
 
+const CATEGORY_COLORS = [
+  { colorBg: "#E8F1FF", colorText: "#1D4ED8" },
+  { colorBg: "#FDECEC", colorText: "#B42318" },
+  { colorBg: "#EAFBF1", colorText: "#067647" },
+  { colorBg: "#FFF4E5", colorText: "#B54708" },
+  { colorBg: "#F2EDFF", colorText: "#5B3CC4" },
+  { colorBg: "#E6FAFA", colorText: "#0E7490" },
+  { colorBg: "#FFF0F7", colorText: "#BE185D" },
+  { colorBg: "#EEF2F6", colorText: "#344054" },
+  { colorBg: "#ECFCCB", colorText: "#3F6212" },
+  { colorBg: "#FCE7F3", colorText: "#9D174D" },
+  { colorBg: "#E0F2FE", colorText: "#075985" },
+  { colorBg: "#FFEDD5", colorText: "#9A3412" }
+];
+
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const { user, setUser, refreshUser, logout } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -36,8 +53,10 @@ export default function SettingsPage() {
   const [invitations, setInvitations] = useState([]);
   const [inviteLink, setInviteLink] = useState("");
   const [householdCode, setHouseholdCode] = useState("");
+  const [householdName, setHouseholdName] = useState("");
+  const [householdNameDraft, setHouseholdNameDraft] = useState("");
+  const [householdNameEditing, setHouseholdNameEditing] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [categoryName, setCategoryName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -45,13 +64,28 @@ export default function SettingsPage() {
   const [profileInitials, setProfileInitials] = useState(user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
   const [selectedColorId, setSelectedColorId] = useState(user?.colorId || getUserColorPreference(user?.id) || "lavender");
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
-  const [memberSearch, setMemberSearch] = useState("");
+  const [profileEditingMain, setProfileEditingMain] = useState(false);
+  const [profileEditingColor, setProfileEditingColor] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [categoryModal, setCategoryModal] = useState({ open: false, mode: "create", category: null, name: "" });
+  const [categoryModal, setCategoryModal] = useState({
+    open: false,
+    mode: "create",
+    category: null,
+    name: "",
+    colorBg: CATEGORY_COLORS[0].colorBg,
+    colorText: CATEGORY_COLORS[0].colorText
+  });
   const [memberModal, setMemberModal] = useState({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } });
   const [convertForm, setConvertForm] = useState({ email: "", password: "" });
   const [dinerModal, setDinerModal] = useState({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } });
   const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" });
+  const [deleteProfileModal, setDeleteProfileModal] = useState({
+    open: false,
+    loading: false,
+    preview: null,
+    promoteUserId: "",
+    confirmDeleteHousehold: false
+  });
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
@@ -66,21 +100,13 @@ export default function SettingsPage() {
     [palette, selectedColorId]
   );
 
-  const filteredMembers = useMemo(() => {
-    const needle = memberSearch.trim().toLowerCase();
-    if (!needle) return members;
-    return members.filter((member) => {
-      const text = `${member.displayName || ""} ${member.email || ""}`.toLowerCase();
-      return text.includes(needle);
-    });
-  }, [members, memberSearch]);
-
   const setPanel = (panel) => {
     if (!panel) {
       setSearchParams({});
+      navigate("/kitchen/configuracion");
       return;
     }
-    setSearchParams({ section: panel });
+    navigate(`/kitchen/configuracion?section=${panel}`);
   };
 
   const updateSuccess = (message) => {
@@ -97,7 +123,10 @@ export default function SettingsPage() {
     setLoading(true);
     setError("");
     try {
-      const requests = [apiRequest("/api/categories")];
+      const householdSummaryRequest = (!isDiod || user?.activeHouseholdId)
+        ? apiRequest("/api/kitchen/household/summary")
+        : Promise.resolve({ household: { name: "", inviteCode: "" } });
+      const requests = [apiRequest("/api/categories"), householdSummaryRequest];
       if (!isDiod || user?.activeHouseholdId) {
         requests.push(apiRequest("/api/kitchen/users/members"));
       } else {
@@ -111,11 +140,13 @@ export default function SettingsPage() {
         requests.push(Promise.resolve({ inviteCode: "" }));
       }
 
-      const [categoryData, memberData, invitationData, codeData] = await Promise.all(requests);
+      const [categoryData, householdData, memberData, invitationData, codeData] = await Promise.all(requests);
       setCategories(categoryData.categories || []);
+      setHouseholdName(householdData?.household?.name || "");
+      setHouseholdNameDraft(householdData?.household?.name || "");
       setMembers(memberData.users || []);
       setInvitations(invitationData.invitations || []);
-      setHouseholdCode(codeData.inviteCode || "");
+      setHouseholdCode(codeData.inviteCode || householdData?.household?.inviteCode || "");
       setDisplayName(user?.displayName || "");
       setProfileInitials(user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
       setSelectedColorId(user?.colorId || getUserColorPreference(user?.id) || "lavender");
@@ -146,6 +177,8 @@ export default function SettingsPage() {
       setUserInitialsPreference(user?.id, safeInitials);
       setUserColorPreference(user?.id, selectedColorId);
       await refreshUser();
+      setProfileEditingMain(false);
+      setProfileEditingColor(false);
       updateSuccess("Perfil actualizado.");
     } catch (err) {
       setError(err.message || "No se pudo guardar el perfil.");
@@ -171,6 +204,68 @@ export default function SettingsPage() {
       updateSuccess("Contrasena actualizada.");
     } catch (err) {
       setError(err.message || "No se pudo cambiar la contrasena.");
+    }
+  };
+
+  const saveHouseholdName = async () => {
+    const safeName = householdNameDraft.trim();
+    if (!safeName) {
+      setError("El nombre del household es obligatorio.");
+      return;
+    }
+    try {
+      const data = await apiRequest("/api/kitchen/household/name", {
+        method: "PATCH",
+        body: JSON.stringify({ name: safeName })
+      });
+      setHouseholdName(data?.household?.name || safeName);
+      setHouseholdNameEditing(false);
+      updateSuccess("Nombre del household actualizado.");
+      await refreshUser();
+    } catch (err) {
+      setError(err.message || "No se pudo actualizar el household.");
+    }
+  };
+
+  const openDeleteProfileFlow = async () => {
+    setDeleteProfileModal({
+      open: true,
+      loading: true,
+      preview: null,
+      promoteUserId: "",
+      confirmDeleteHousehold: false
+    });
+    try {
+      const data = await apiRequest("/api/kitchen/users/me/delete-preview");
+      setDeleteProfileModal((prev) => ({
+        ...prev,
+        loading: false,
+        preview: data.preview || null
+      }));
+    } catch (err) {
+      setDeleteProfileModal((prev) => ({ ...prev, loading: false }));
+      setError(err.message || "No se pudo cargar la vista previa de eliminacion.");
+    }
+  };
+
+  const confirmDeleteProfile = async () => {
+    if (!deleteProfileModal.preview) return;
+    try {
+      const body = {};
+      if (deleteProfileModal.preview.mustTransferOwner) {
+        body.promoteUserId = deleteProfileModal.promoteUserId;
+      }
+      if (deleteProfileModal.preview.willDeleteHousehold) {
+        body.confirmDeleteHousehold = deleteProfileModal.confirmDeleteHousehold;
+      }
+      await apiRequest("/api/kitchen/users/me", {
+        method: "DELETE",
+        body: JSON.stringify(body)
+      });
+      logout();
+      navigate("/kitchen/login");
+    } catch (err) {
+      setError(err.message || "No se pudo eliminar el perfil.");
     }
   };
 
@@ -301,16 +396,27 @@ export default function SettingsPage() {
     }
   };
 
-  const createCategory = async (sourceName) => {
-    const safeName = String(sourceName ?? categoryName).trim();
+  const createCategory = async (sourceName, colorBg, colorText) => {
+    const safeName = String(sourceName || "").trim();
     if (!safeName) return;
     try {
       await apiRequest("/api/categories", {
         method: "POST",
-        body: JSON.stringify({ name: safeName, ...(isDiod ? { scope: "master" } : {}) })
+        body: JSON.stringify({
+          name: safeName,
+          colorBg,
+          colorText,
+          ...(isDiod ? { scope: "master" } : {})
+        })
       });
-      setCategoryName("");
-      setCategoryModal({ open: false, mode: "create", category: null, name: "" });
+      setCategoryModal({
+        open: false,
+        mode: "create",
+        category: null,
+        name: "",
+        colorBg: CATEGORY_COLORS[0].colorBg,
+        colorText: CATEGORY_COLORS[0].colorText
+      });
       notifyCatalogInvalidated();
       updateSuccess("Categoria creada.");
       await loadData();
@@ -319,7 +425,7 @@ export default function SettingsPage() {
     }
   };
 
-  const editCategory = async (category, nextName) => {
+  const editCategory = async (category, nextName, colorBg, colorText) => {
     const safeName = String(nextName || "").trim();
     if (!safeName) return;
     try {
@@ -327,13 +433,20 @@ export default function SettingsPage() {
         method: "PUT",
         body: JSON.stringify({
           name: safeName,
-          colorBg: category.colorBg,
-          colorText: category.colorText,
+          colorBg,
+          colorText,
           active: category.active,
           forRecipes: category.forRecipes
         })
       });
-      setCategoryModal({ open: false, mode: "create", category: null, name: "" });
+      setCategoryModal({
+        open: false,
+        mode: "create",
+        category: null,
+        name: "",
+        colorBg: CATEGORY_COLORS[0].colorBg,
+        colorText: CATEGORY_COLORS[0].colorText
+      });
       notifyCatalogInvalidated();
       updateSuccess("Categoria actualizada.");
       await loadData();
@@ -374,21 +487,32 @@ export default function SettingsPage() {
         <h2>Perfil</h2>
       </div>
       <div className="settings-block">
-        <label className="kitchen-label" htmlFor="settings-display-name">Nombre</label>
-        <input id="settings-display-name" className="kitchen-input" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+        <div className="settings-inline-heading">
+          <h3 className="settings-subtitle">Informacion personal</h3>
+          <button type="button" className="settings-mini-button" onClick={() => setProfileEditingMain((value) => !value)}>
+            {profileEditingMain ? "Cancelar" : "Editar"}
+          </button>
+        </div>
+        <div className="settings-readonly-grid two-cols">
+          <label className="kitchen-field">
+            <span className="kitchen-label">Nombre</span>
+            <input id="settings-display-name" className="kitchen-input" value={displayName} readOnly={!profileEditingMain} onChange={(event) => setDisplayName(event.target.value)} />
+          </label>
+          <label className="kitchen-field">
+            <span className="kitchen-label">Iniciales</span>
+            <input id="settings-initials" className="kitchen-input" maxLength={3} value={profileInitials} readOnly={!profileEditingMain} onChange={(event) => setProfileInitials(event.target.value.toUpperCase())} placeholder="FR" />
+          </label>
+        </div>
+        {profileEditingMain ? <button type="button" className="settings-mini-button" onClick={saveProfile}>Guardar</button> : null}
         <p className="kitchen-muted">Email: {user?.email || "Sin email"}</p>
-        <label className="kitchen-label" htmlFor="settings-initials">Iniciales</label>
-        <input
-          id="settings-initials"
-          className="kitchen-input"
-          maxLength={3}
-          value={profileInitials}
-          onChange={(event) => setProfileInitials(event.target.value.toUpperCase())}
-          placeholder="FR"
-        />
       </div>
       <div className="settings-block">
-        <h3 className="settings-subtitle">Color del usuario</h3>
+        <div className="settings-inline-heading">
+          <h3 className="settings-subtitle">Color del usuario</h3>
+          <button type="button" className="settings-mini-button" onClick={() => setProfileEditingColor((value) => !value)}>
+            {profileEditingColor ? "Cancelar" : "Editar"}
+          </button>
+        </div>
         <div className="settings-color-grid">
           {palette.map((color) => (
             <button
@@ -396,17 +520,22 @@ export default function SettingsPage() {
               type="button"
               className={`settings-color-swatch ${selectedColorId === color.id ? "is-selected" : ""}`}
               style={{ background: color.background, color: color.text }}
-              onClick={() => setSelectedColorId(color.id)}
+              onClick={() => profileEditingColor && setSelectedColorId(color.id)}
+              disabled={!profileEditingColor}
             >
               {color.label}
             </button>
           ))}
         </div>
+        {profileEditingColor ? <button type="button" className="settings-mini-button" onClick={saveProfile}>Guardar</button> : null}
       </div>
       <div className="settings-block">
         <button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(true)}>Cambiar contrasena</button>
       </div>
-      <button type="button" className="kitchen-button" onClick={saveProfile}>Guardar perfil</button>
+      <div className="settings-block danger">
+        <h3 className="settings-subtitle">Zona de peligro</h3>
+        <button type="button" className="kitchen-button secondary" onClick={openDeleteProfileFlow}>Eliminar mi perfil</button>
+      </div>
     </div>
   );
 
@@ -431,15 +560,25 @@ export default function SettingsPage() {
         <h2>Miembros del hogar</h2>
       </div>
       <div className="settings-block">
+        <div className="settings-inline-heading">
+          <p className="settings-counter">Household: {householdName || "Mi household"}</p>
+          {householdNameEditing ? (
+            <button type="button" className="settings-mini-button" onClick={saveHouseholdName}>Guardar</button>
+          ) : (
+            <button type="button" className="settings-mini-button" onClick={() => setHouseholdNameEditing(true)}>Editar</button>
+          )}
+        </div>
+        {householdNameEditing ? (
+          <input className="kitchen-input" value={householdNameDraft} onChange={(event) => setHouseholdNameDraft(event.target.value)} />
+        ) : null}
         <p className="settings-counter">Miembros ({members.length})</p>
-        <input className="kitchen-input" placeholder="Buscar usuario" value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} />
         <div className="settings-members-actions">
           <button type="button" className="kitchen-button" onClick={() => setPanel("household-invitations")}>Invitar</button>
           <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender" } })}>Crear comensal</button>
         </div>
       </div>
       <div className="settings-block">
-        {filteredMembers.map((member) => {
+        {members.map((member) => {
           const colors = getUserColorById(member.colorId, member.id);
           const initials = (member.initials || initialsFromName(member.displayName || "")).slice(0, 3);
           const isSelf = String(member.id) === String(user?.id);
@@ -454,7 +593,7 @@ export default function SettingsPage() {
             </button>
           );
         })}
-        {!filteredMembers.length ? <p className="kitchen-muted">No hay miembros que coincidan.</p> : null}
+        {!members.length ? <p className="kitchen-muted">No hay miembros.</p> : null}
       </div>
     </div>
   );
@@ -462,24 +601,24 @@ export default function SettingsPage() {
   const HouseholdInvitesPanel = (
     <div className="settings-panel">
       <div className="settings-panel-header">
-        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("household-members")}>Volver</button>
+        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
         <h2>Invitar usuario</h2>
       </div>
       <div className="settings-block">
         <p className="kitchen-muted">
-          Comparte este codigo o enlace con tus companeros.
-          Cuando se registren podran introducirlo y entraran directamente en tu household.
+          Comparte el codigo con otra persona: se registra o inicia sesion y lo introduce para unirse al household.
+          Tambien puedes compartir el enlace directo.
         </p>
-        <div className="kitchen-actions-inline">
-          <button type="button" className="kitchen-button" onClick={generateInvite}>Generar enlace</button>
-          <button type="button" className="kitchen-button secondary" onClick={() => copyText(inviteLink, "Enlace")} disabled={!inviteLink}>Copiar enlace</button>
+        {!inviteLink ? <button type="button" className="kitchen-button" onClick={generateInvite}>Generar enlace</button> : null}
+        <div className="settings-copy-box">
+          <span>{inviteLink || "Sin enlace generado"}</span>
+          <button type="button" className="settings-mini-icon" onClick={() => copyText(inviteLink, "Enlace")} disabled={!inviteLink}>Copiar</button>
         </div>
-        {inviteLink ? <p className="kitchen-muted">{inviteLink}</p> : null}
-        <div className="kitchen-actions-inline">
-          <button type="button" className="kitchen-button" onClick={generateHouseholdCode}>{householdCode ? "Regenerar codigo" : "Generar codigo"}</button>
-          <button type="button" className="kitchen-button secondary" onClick={() => copyText(householdCode, "Codigo")} disabled={!householdCode}>Copiar codigo</button>
+        {!householdCode ? <button type="button" className="kitchen-button secondary" onClick={generateHouseholdCode}>Generar codigo</button> : null}
+        <div className="settings-copy-box">
+          <span>{householdCode || "Sin codigo generado"}</span>
+          <button type="button" className="settings-mini-icon" onClick={() => copyText(householdCode, "Codigo")} disabled={!householdCode}>Copiar</button>
         </div>
-        <p className="kitchen-muted"><strong>{householdCode || "Sin codigo generado"}</strong></p>
         {invitations.length > 0 ? (
           <ul className="kitchen-list">
             {invitations.map((invitation) => (
@@ -498,21 +637,44 @@ export default function SettingsPage() {
         <h2>{isDiod ? "Categorias master" : "Categorias de ingredientes"}</h2>
       </div>
       <div className="settings-block">
-        <div className="kitchen-actions-inline">
-          <input className="kitchen-input" placeholder="Nombre de categoria" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} />
-          <button type="button" className="kitchen-button" onClick={() => setCategoryModal({ open: true, mode: "create", category: null, name: categoryName })} disabled={!categoryName.trim()}>Nueva categoria</button>
-        </div>
+        <button
+          type="button"
+          className="kitchen-button"
+          onClick={() => setCategoryModal({
+            open: true,
+            mode: "create",
+            category: null,
+            name: "",
+            colorBg: CATEGORY_COLORS[0].colorBg,
+            colorText: CATEGORY_COLORS[0].colorText
+          })}
+        >
+          Nueva categoria
+        </button>
       </div>
       <div className="settings-block">
         {categories.map((category) => (
           <div key={category._id} className="settings-row-card">
             <div>
-              <strong>{category.name}<span className="settings-category-dot">●</span></strong>
+              <strong>{category.name}<span className="settings-category-dot" style={{ color: category.colorText, background: category.colorBg }}>●</span></strong>
               <p className="kitchen-muted">{category.scope || "household"}</p>
             </div>
             <div className="settings-row-actions">
-              <button type="button" className="kitchen-button secondary" onClick={() => setCategoryModal({ open: true, mode: "edit", category, name: category.name })}>Editar</button>
-              <button type="button" className="kitchen-button secondary" onClick={() => removeCategory(category)}>Eliminar</button>
+              <button
+                type="button"
+                className="settings-mini-icon"
+                onClick={() => setCategoryModal({
+                  open: true,
+                  mode: "edit",
+                  category,
+                  name: category.name,
+                  colorBg: category.colorBg || CATEGORY_COLORS[0].colorBg,
+                  colorText: category.colorText || CATEGORY_COLORS[0].colorText
+                })}
+              >
+                Editar
+              </button>
+              <button type="button" className="settings-mini-icon danger" onClick={() => removeCategory(category)}>Eliminar</button>
             </div>
           </div>
         ))}
@@ -527,7 +689,7 @@ export default function SettingsPage() {
           <div className="settings-header-avatar" style={{ background: selectedColor.background, color: selectedColor.text }}>{userInitials}</div>
           <h1>Settings</h1>
           <p className="settings-header-name">{user?.displayName || "Usuario"}</p>
-          <p className="settings-header-meta">{roleLabel(user, isOwner, isDiod)} · {user?.activeHouseholdId ? "Household activo" : "Sin household activo"}</p>
+          <p className="settings-header-meta">{roleLabel(user, isOwner, householdName || user?.householdName || "Mi household")}</p>
         </div>
 
         {error ? <div className="kitchen-alert error">{error}</div> : null}
@@ -596,8 +758,61 @@ export default function SettingsPage() {
         </div>
       </ModalSheet>
 
-      <ModalSheet open={categoryModal.open} title={categoryModal.mode === "edit" ? "Editar categoria" : "Nueva categoria"} onClose={() => setCategoryModal({ open: false, mode: "create", category: null, name: "" })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setCategoryModal({ open: false, mode: "create", category: null, name: "" })}>Cancelar</button><button type="button" className="kitchen-button" onClick={() => (categoryModal.mode === "edit" ? editCategory(categoryModal.category, categoryModal.name) : createCategory(categoryModal.name))}>Guardar</button></>}>
+      <ModalSheet
+        open={categoryModal.open}
+        title={categoryModal.mode === "edit" ? "Editar categoria" : "Nueva categoria"}
+        onClose={() => setCategoryModal({ open: false, mode: "create", category: null, name: "", colorBg: CATEGORY_COLORS[0].colorBg, colorText: CATEGORY_COLORS[0].colorText })}
+        actions={<><button type="button" className="kitchen-button secondary" onClick={() => setCategoryModal({ open: false, mode: "create", category: null, name: "", colorBg: CATEGORY_COLORS[0].colorBg, colorText: CATEGORY_COLORS[0].colorText })}>Cancelar</button><button type="button" className="kitchen-button" onClick={() => (categoryModal.mode === "edit" ? editCategory(categoryModal.category, categoryModal.name, categoryModal.colorBg, categoryModal.colorText) : createCategory(categoryModal.name, categoryModal.colorBg, categoryModal.colorText))}>Guardar</button></>}
+      >
         <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={categoryModal.name} onChange={(event) => setCategoryModal((prev) => ({ ...prev, name: event.target.value }))} placeholder="Verduras" /></label>
+        <div className="settings-category-color-preview" style={{ background: categoryModal.colorBg, color: categoryModal.colorText }}>Color actual</div>
+        <div className="settings-category-color-grid">
+          {CATEGORY_COLORS.map((color) => {
+            const selected = color.colorBg === categoryModal.colorBg && color.colorText === categoryModal.colorText;
+            return (
+              <button
+                key={`${color.colorBg}-${color.colorText}`}
+                type="button"
+                className={`settings-category-swatch ${selected ? "is-selected" : ""}`}
+                style={{ background: color.colorBg, color: color.colorText }}
+                onClick={() => setCategoryModal((prev) => ({ ...prev, colorBg: color.colorBg, colorText: color.colorText }))}
+              >
+                Aa
+              </button>
+            );
+          })}
+        </div>
+      </ModalSheet>
+
+      <ModalSheet
+        open={deleteProfileModal.open}
+        title="Eliminar mi perfil"
+        onClose={() => setDeleteProfileModal({ open: false, loading: false, preview: null, promoteUserId: "", confirmDeleteHousehold: false })}
+        actions={<><button type="button" className="kitchen-button secondary" onClick={() => setDeleteProfileModal({ open: false, loading: false, preview: null, promoteUserId: "", confirmDeleteHousehold: false })}>Cancelar</button><button type="button" className="kitchen-button" onClick={confirmDeleteProfile}>Eliminar</button></>}
+      >
+        {deleteProfileModal.loading ? <p className="kitchen-muted">Preparando confirmacion...</p> : null}
+        {!deleteProfileModal.loading && deleteProfileModal.preview ? (
+          <div className="kitchen-actions">
+            <p className="kitchen-muted">Household: <strong>{deleteProfileModal.preview.household?.name || "Mi household"}</strong></p>
+            {deleteProfileModal.preview.mustTransferOwner ? (
+              <label className="kitchen-field">
+                <span className="kitchen-label">Selecciona el nuevo Owner (con email)</span>
+                <select className="kitchen-select" value={deleteProfileModal.promoteUserId} onChange={(event) => setDeleteProfileModal((prev) => ({ ...prev, promoteUserId: event.target.value }))}>
+                  <option value="">Seleccionar usuario</option>
+                  {(deleteProfileModal.preview.promotableCandidates || []).map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>{candidate.displayName} ({candidate.email})</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {deleteProfileModal.preview.willDeleteHousehold ? (
+              <label className="kitchen-muted">
+                <input type="checkbox" checked={deleteProfileModal.confirmDeleteHousehold} onChange={(event) => setDeleteProfileModal((prev) => ({ ...prev, confirmDeleteHousehold: event.target.checked }))} />
+                {" "}Confirmo la eliminacion completa del household
+              </label>
+            ) : null}
+          </div>
+        ) : null}
       </ModalSheet>
 
       <ModalSheet open={confirmModal.open} title={confirmModal.title} onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" })}>Cancelar</button><button type="button" className="kitchen-button" onClick={async () => { try { if (typeof confirmModal.onConfirm === "function") await confirmModal.onConfirm(); setConfirmModal({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" }); } catch (err) { setError(err.message || "No se pudo completar la accion."); } }}>{confirmModal.dangerLabel}</button></>}>
