@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth";
 import Card from "../components/ui/Card";
 import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
@@ -7,9 +7,11 @@ import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const profileDeleted = searchParams.get("deleted") === "1";
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -37,6 +39,7 @@ export default function LoginPage() {
           </div>
           <h2 className="kitchen-login-title">¡Bienvenido de nuevo!</h2>
           <p className="kitchen-login-subtitle">Hay planes deliciosos esperándote.</p>
+          {profileDeleted ? <div className="kitchen-alert success">Perfil eliminado correctamente. Puedes iniciar sesion o registrarte de nuevo.</div> : null}
           <form onSubmit={onSubmit} className="kitchen-login-form">
             <div className="kitchen-login-fields">
               <label className="kitchen-ui-input-group" htmlFor="login-email">

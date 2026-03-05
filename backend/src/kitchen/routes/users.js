@@ -379,10 +379,6 @@ router.put("/members/:id", requireAuth, requireRole("owner"), async (req, res) =
     if (!member) {
       return res.status(404).json({ ok: false, error: "No encontramos al miembro." });
     }
-    if (String(member._id) === String(req.kitchenUser._id)) {
-      return res.status(400).json({ ok: false, error: "No puedes editar tu propio rol desde esta pantalla." });
-    }
-
     const nextRole = req.body?.role ? normalizeRole(req.body.role) : member.role;
     if (req.body?.role) {
       member.role = nextRole;

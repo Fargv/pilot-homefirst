@@ -37,10 +37,17 @@ export function normalizeInitials(initials, fallbackName = "") {
   return buildInitials(fallbackName);
 }
 
-const COLOR_IDS = new Set(["lavender", "mint", "coral", "sky", "sand", "peach", "sage", "mauve"]);
+const COLOR_IDS = new Set(["lavender", "mint", "coral", "sky", "sand", "butter", "ocean", "rose"]);
+const LEGACY_COLOR_MAP = {
+  peach: "butter",
+  sage: "mint",
+  mauve: "rose"
+};
 
 export function normalizeColorId(colorId) {
   const value = String(colorId || "").trim().toLowerCase();
   if (!value) return "";
-  return COLOR_IDS.has(value) ? value : "";
+  if (COLOR_IDS.has(value)) return value;
+  if (LEGACY_COLOR_MAP[value]) return LEGACY_COLOR_MAP[value];
+  return "";
 }
