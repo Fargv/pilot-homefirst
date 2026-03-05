@@ -24,6 +24,27 @@ function normalizeAvoidRepeatsWeeks(value) {
   return Math.min(12, Math.max(1, Math.round(parsed)));
 }
 
+function parseBooleanInput(value) {
+  if (typeof value === "boolean") return { ok: true, value };
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return { ok: true, value: true };
+    if (normalized === "false") return { ok: true, value: false };
+  }
+  return { ok: false, value: null };
+}
+
+function parseWeeksInput(value) {
+  if (value === undefined || value === null || value === "") {
+    return { ok: false, value: null };
+  }
+  const parsed = Number.parseInt(String(value), 10);
+  if (!Number.isFinite(parsed)) return { ok: false, value: null };
+  const weeks = Math.round(parsed);
+  if (weeks < 1 || weeks > 12) return { ok: false, value: null };
+  return { ok: true, value: weeks };
+}
+
 function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -92,27 +113,52 @@ router.patch("/name", requireAuth, requireRole("owner"), async (req, res) => {
 router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const household = await Household.findById(effectiveHouseholdId);
+    const household = await Household.findById(effectiveHouseholdId).lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
 
-    const nextEnabled = Boolean(req.body?.avoidRepeatsEnabled);
-    const nextWeeks = normalizeAvoidRepeatsWeeks(req.body?.avoidRepeatsWeeks);
+    const incomingEnabled = req.body?.avoidRepeatsEnabled;
+    const parsedEnabled = incomingEnabled === undefined
+      ? { ok: true, value: Boolean(household.avoidRepeatsEnabled) }
+      : parseBooleanInput(incomingEnabled);
+    if (!parsedEnabled.ok) {
+      return res.status(400).json({ ok: false, error: "avoidRepeatsEnabled debe ser booleano." });
+    }
 
-    household.avoidRepeatsEnabled = nextEnabled;
-    household.avoidRepeatsWeeks = nextWeeks;
-    await household.save();
+    const parsedWeeks = parseWeeksInput(req.body?.avoidRepeatsWeeks);
+    const currentWeeks = normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks);
+    const nextWeeks = parsedWeeks.ok ? parsedWeeks.value : currentWeeks;
+    if (parsedEnabled.value && !Number.isInteger(nextWeeks)) {
+      return res.status(400).json({ ok: false, error: "avoidRepeatsWeeks debe estar entre 1 y 12." });
+    }
+    if (parsedEnabled.value && !parsedWeeks.ok && req.body?.avoidRepeatsWeeks !== undefined) {
+      return res.status(400).json({ ok: false, error: "avoidRepeatsWeeks debe ser un entero entre 1 y 12." });
+    }
+
+    const updated = await Household.findByIdAndUpdate(
+      effectiveHouseholdId,
+      {
+        $set: {
+          avoidRepeatsEnabled: parsedEnabled.value,
+          avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(nextWeeks)
+        }
+      },
+      { new: true, runValidators: true }
+    ).lean();
+    if (!updated) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
 
     return res.json({
       ok: true,
       household: {
-        id: household._id,
-        name: household.name,
-        inviteCode: household.inviteCode || null,
-        ownerUserId: household.ownerUserId || null,
-        avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
-        avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks)
+        id: updated._id,
+        name: updated.name,
+        inviteCode: updated.inviteCode || null,
+        ownerUserId: updated.ownerUserId || null,
+        avoidRepeatsEnabled: Boolean(updated.avoidRepeatsEnabled),
+        avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(updated.avoidRepeatsWeeks)
       }
     });
   } catch (error) {
@@ -121,6 +167,13 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     if (error?.name === "ValidationError" || error?.name === "CastError") {
       return res.status(400).json({ ok: false, error: "Preferencias del household no válidas." });
     }
+    console.error("[kitchen/household] update preferences failed", {
+      userId: req.user?.id || null,
+      householdId: req.user?.activeHouseholdId || req.user?.householdId || null,
+      body: req.body,
+      error: error?.message,
+      stack: error?.stack
+    });
     return res.status(500).json({ ok: false, error: "No se pudieron actualizar las preferencias del household." });
   }
 });

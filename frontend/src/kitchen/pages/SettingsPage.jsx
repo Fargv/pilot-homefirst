@@ -350,7 +350,7 @@ export default function SettingsPage() {
         method: "PATCH",
         body: JSON.stringify({
           avoidRepeatsEnabled: nextEnabled,
-          avoidRepeatsWeeks: nextWeeks
+          avoidRepeatsWeeks: Number(nextWeeks)
         })
       });
       setAvoidRepeatsEnabled(Boolean(data?.household?.avoidRepeatsEnabled));
@@ -728,6 +728,34 @@ export default function SettingsPage() {
         {householdNameEditing ? (
           <input className="kitchen-input" value={householdNameDraft} onChange={(event) => setHouseholdNameDraft(event.target.value)} />
         ) : null}
+        <p className="settings-counter">Miembros ({members.length})</p>
+        <div className="settings-members-actions">
+          <button type="button" className="kitchen-button" onClick={openInvitesPanel}>Invitar</button>
+          <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender" } })}>Crear comensal</button>
+        </div>
+      </div>
+      <div className="settings-block">
+        {members.map((member) => {
+          const colors = getUserColorById(member.colorId, member.id);
+          const initials = (member.initials || initialsFromName(member.displayName || "")).slice(0, 3);
+          const isSelf = String(member.id) === String(user?.id);
+          return (
+            <button type="button" key={member.id} className="settings-member-row" onClick={() => openMemberModal(member)} disabled={!canManageHousehold && !isSelf}>
+              <span className="settings-member-avatar" style={{ background: colors.background, color: colors.text }}>{initials}</span>
+              <span className="settings-member-text">
+                <strong>{member.displayName}{isSelf ? " (Tu)" : ""}</strong>
+                <span>{memberRoleLabel(member)}</span>
+              </span>
+              <span className="settings-member-arrow">{">"}</span>
+            </button>
+          );
+        })}
+        {!members.length ? <p className="kitchen-muted">No hay miembros.</p> : null}
+      </div>
+      <div className="settings-block">
+        <div className="settings-inline-heading">
+          <h3 className="settings-subtitle">Preferencias del household</h3>
+        </div>
         <div className="settings-household-pref-row">
           <div className="settings-household-pref-main">
             <div className="settings-household-pref-title">
@@ -792,29 +820,6 @@ export default function SettingsPage() {
             <p>Ejemplo: con X=3 y solo 10 platos, el sistema intentara evitar repetidos y completara la semana igualmente.</p>
           </div>
         ) : null}
-        <p className="settings-counter">Miembros ({members.length})</p>
-        <div className="settings-members-actions">
-          <button type="button" className="kitchen-button" onClick={openInvitesPanel}>Invitar</button>
-          <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender" } })}>Crear comensal</button>
-        </div>
-      </div>
-      <div className="settings-block">
-        {members.map((member) => {
-          const colors = getUserColorById(member.colorId, member.id);
-          const initials = (member.initials || initialsFromName(member.displayName || "")).slice(0, 3);
-          const isSelf = String(member.id) === String(user?.id);
-          return (
-            <button type="button" key={member.id} className="settings-member-row" onClick={() => openMemberModal(member)} disabled={!canManageHousehold && !isSelf}>
-              <span className="settings-member-avatar" style={{ background: colors.background, color: colors.text }}>{initials}</span>
-              <span className="settings-member-text">
-                <strong>{member.displayName}{isSelf ? " (Tu)" : ""}</strong>
-                <span>{memberRoleLabel(member)}</span>
-              </span>
-              <span className="settings-member-arrow">{">"}</span>
-            </button>
-          );
-        })}
-        {!members.length ? <p className="kitchen-muted">No hay miembros.</p> : null}
       </div>
     </div>
   );
