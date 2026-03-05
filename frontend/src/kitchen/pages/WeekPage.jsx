@@ -119,6 +119,8 @@ export default function WeekPage() {
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dishesLoading, setDishesLoading] = useState(false);
+  const [dishesLoadedForHouseholdKey, setDishesLoadedForHouseholdKey] = useState("");
   const [creatingPlan, setCreatingPlan] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [dayStatus, setDayStatus] = useState({});
@@ -153,26 +155,67 @@ export default function WeekPage() {
   const assignIntentRef = useRef(null);
   const dismissedMissingWeekPromptRef = useRef(new Set());
   const loadRequestSeqRef = useRef(0);
+  const userRef = useRef(user);
+  const weekStartRef = useRef(weekStart);
+  const dishesRef = useRef(dishes);
+  const safeDaysRef = useRef([]);
   const [missingWeekPromptOpen, setMissingWeekPromptOpen] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
   const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
+  const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
+  const currentHouseholdKey = currentHouseholdId ? String(currentHouseholdId) : "__no_household__";
+  const dishesReadyForCurrentHousehold = !dishesLoading && dishesLoadedForHouseholdKey === currentHouseholdKey;
+
+  const getCurrentHouseholdId = useCallback(() => {
+    return userRef.current?.activeHouseholdId || userRef.current?.householdId || null;
+  }, []);
+
+  const refreshCurrentDishes = useCallback(async () => {
+    const householdIdAtRequest = getCurrentHouseholdId();
+    const householdKeyAtRequest = householdIdAtRequest ? String(householdIdAtRequest) : "__no_household__";
+    setDishesLoading(true);
+    try {
+      const [dishesData, sideDishesData] = await Promise.all([
+        apiRequest("/api/kitchen/dishes"),
+        apiRequest("/api/kitchen/dishes?sidedish=true")
+      ]);
+      setDishes(dishesData.dishes || []);
+      setSideDishes(sideDishesData.dishes || []);
+      setDishesLoadedForHouseholdKey(householdKeyAtRequest);
+      return dishesData.dishes || [];
+    } catch (error) {
+      setDishesLoadedForHouseholdKey("");
+      throw error;
+    } finally {
+      setDishesLoading(false);
+    }
+  }, [getCurrentHouseholdId]);
 
   const loadData = async () => {
     const requestSeq = loadRequestSeqRef.current + 1;
     loadRequestSeqRef.current = requestSeq;
+    const householdIdAtRequest = user?.activeHouseholdId || user?.householdId || null;
+    const householdKeyAtRequest = householdIdAtRequest ? String(householdIdAtRequest) : "__no_household__";
 
     if (!user || isDiodGlobalMode) {
       setLoading(false);
+      setDishesLoading(false);
       setPlan(null);
       setDishes([]);
       setSideDishes([]);
       setUsers([]);
+      setDishesLoadedForHouseholdKey("");
       return;
     }
     setLoading(true);
+    setDishesLoading(true);
     setLoadError("");
     setMissingWeekPromptOpen(false);
+    setPlan(null);
+    setDishes([]);
+    setSideDishes([]);
+    setDishesLoadedForHouseholdKey("");
     try {
       const [planData, dishesData, sideDishesData] = await Promise.all([
         apiRequest(`/api/kitchen/weeks/${weekStart}`),
@@ -186,6 +229,7 @@ export default function WeekPage() {
       }
       setDishes(dishesData.dishes || []);
       setSideDishes(sideDishesData.dishes || []);
+      setDishesLoadedForHouseholdKey(householdKeyAtRequest);
       const usersEndpoint = isOwnerAdmin ? "/api/kitchen/users" : "/api/kitchen/users/members";
       const usersData = await apiRequest(usersEndpoint);
       if (requestSeq !== loadRequestSeqRef.current) return;
@@ -196,12 +240,29 @@ export default function WeekPage() {
     } finally {
       if (requestSeq !== loadRequestSeqRef.current) return;
       setLoading(false);
+      setDishesLoading(false);
     }
   };
 
   useEffect(() => {
     loadData();
   }, [user, weekStart, isOwnerAdmin, isDiodGlobalMode]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    weekStartRef.current = weekStart;
+  }, [weekStart]);
+
+  useEffect(() => {
+    dishesRef.current = dishes;
+  }, [dishes]);
+
+  useEffect(() => {
+    safeDaysRef.current = safeDays;
+  }, [safeDays]);
 
   useEffect(() => {
     if (!isDiodGlobalMode) return;
@@ -417,12 +478,21 @@ export default function WeekPage() {
     };
   }, [dayKeys]);
 
-  const updateDay = async (day, updates) => {
+  const updateDay = async (day, updates, options = {}) => {
+    const targetWeekStart = options.weekStart || weekStartRef.current;
     const dayKey = day.date.slice(0, 10);
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
     setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
     try {
-      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${day.date.slice(0, 10)}`, {
+      if (import.meta.env.DEV) {
+        console.debug("[kitchen][update-day] request", {
+          householdId: getCurrentHouseholdId() ? String(getCurrentHouseholdId()) : null,
+          weekStart: targetWeekStart,
+          day: day.date.slice(0, 10),
+          mainDishId: updates?.mainDishId ? String(updates.mainDishId) : null
+        });
+      }
+      const data = await apiRequest(`/api/kitchen/weeks/${targetWeekStart}/day/${day.date.slice(0, 10)}`, {
         method: "PUT",
         body: JSON.stringify(updates)
       });
@@ -434,17 +504,24 @@ export default function WeekPage() {
       saveTimers.current[dayKey] = window.setTimeout(() => {
         setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
       }, 2000);
+      if (options.returnErrorObject) {
+        return { plan: data.plan, error: null };
+      }
       return data.plan;
     } catch (err) {
       const message = err.message || "No se pudo actualizar el día.";
       setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
       setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));
+      if (options.returnErrorObject) {
+        return { plan: null, error: err };
+      }
       return null;
     }
   };
 
-  const onAssignSelf = async (day) => {
-    return updateDay(day, { cookUserId: user?.id || user?._id });
+  const onAssignSelf = async (day, options = {}) => {
+    const currentUserId = userRef.current?.id || userRef.current?._id;
+    return updateDay(day, { cookUserId: currentUserId }, options);
   };
 
   const removeDayAssignment = async (day) => {
@@ -669,27 +746,44 @@ export default function WeekPage() {
     const dayKey = day.date.slice(0, 10);
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
 
-    const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
-    const fetchedDishes = dishes.filter((dish) => dish?._id);
-    const householdScopedDishes = fetchedDishes.filter((dish) => {
-      if (dish.scope === "master") return true;
-      if (!currentHouseholdId) return true;
-      if (!dish.householdId) return true;
-      return String(dish.householdId) === String(currentHouseholdId);
-    });
-
-    const usedDishEntries = safeDays
-      .map((entry) => entry?.mainDishId)
-      .filter(Boolean)
-      .map((dishId) => ({
-        raw: dishId,
-        normalized: String(dishId),
-        type: typeof dishId
+    if (!dishesReadyForCurrentHousehold) {
+      setDayErrors((prev) => ({
+        ...prev,
+        [dayKey]: "Estamos actualizando los platos del hogar. Intenta de nuevo en un momento."
       }));
-    const usedDishIds = new Set(usedDishEntries.map((entry) => entry.normalized));
+      return;
+    }
 
-    const availableDishes = householdScopedDishes.filter(
-      (dish) => !usedDishIds.has(String(dish._id))
+    const clickHouseholdId = getCurrentHouseholdId();
+    const clickWeekStart = weekStartRef.current;
+    const collectEligible = (sourceDishes, sourceDays) => {
+      const fetchedDishes = (sourceDishes || []).filter((dish) => dish?._id);
+      const householdScopedDishes = fetchedDishes.filter((dish) =>
+        clickHouseholdId && dish?.householdId && String(dish.householdId) === String(clickHouseholdId)
+      );
+      const usedDishEntries = (sourceDays || [])
+        .map((entry) => entry?.mainDishId)
+        .filter(Boolean)
+        .map((dishId) => ({
+          raw: dishId,
+          normalized: String(dishId),
+          type: typeof dishId
+        }));
+      const usedDishIds = new Set(usedDishEntries.map((entry) => entry.normalized));
+      const availableDishes = householdScopedDishes.filter(
+        (dish) => !usedDishIds.has(String(dish._id))
+      );
+      return {
+        fetchedDishes,
+        householdScopedDishes,
+        usedDishEntries,
+        availableDishes
+      };
+    };
+
+    let { fetchedDishes, householdScopedDishes, usedDishEntries, availableDishes } = collectEligible(
+      dishesRef.current,
+      safeDaysRef.current
     );
 
     if (import.meta.env.DEV) {
@@ -699,7 +793,8 @@ export default function WeekPage() {
         scope: dish.scope || null
       }));
       console.debug("[kitchen][random-dish] debug", {
-        currentHouseholdId: currentHouseholdId ? String(currentHouseholdId) : null,
+        householdIdAtClick: clickHouseholdId ? String(clickHouseholdId) : null,
+        weekStartAtClick: clickWeekStart,
         fetchedDishesTotal: fetchedDishes.length,
         fetchedSample: sample,
         usedThisWeek: usedDishEntries,
@@ -709,6 +804,23 @@ export default function WeekPage() {
           afterUsedFilter: availableDishes.length
         }
       });
+    }
+
+    if (!householdScopedDishes.length) {
+      try {
+        const refreshedDishes = await refreshCurrentDishes();
+        const recomputed = collectEligible(refreshedDishes, safeDaysRef.current);
+        fetchedDishes = recomputed.fetchedDishes;
+        householdScopedDishes = recomputed.householdScopedDishes;
+        usedDishEntries = recomputed.usedDishEntries;
+        availableDishes = recomputed.availableDishes;
+      } catch (err) {
+        setDayErrors((prev) => ({
+          ...prev,
+          [dayKey]: err.message || "No se pudieron refrescar los platos del hogar."
+        }));
+        return;
+      }
     }
 
     if (!householdScopedDishes.length) {
@@ -727,20 +839,97 @@ export default function WeekPage() {
       return;
     }
 
-    const randomDish = availableDishes[Math.floor(Math.random() * availableDishes.length)];
-    let targetDay = day;
+    const pickRandomDish = (pool) => pool[Math.floor(Math.random() * pool.length)];
+    const isDishValidForCurrentHousehold = (dishCandidate, sourceDishes) => {
+      if (!dishCandidate?._id || !clickHouseholdId || !dishCandidate?.householdId) return false;
+      if (String(dishCandidate.householdId) !== String(clickHouseholdId)) return false;
+      return (sourceDishes || []).some(
+        (item) =>
+          item?._id
+          && String(item._id) === String(dishCandidate._id)
+          && item?.householdId
+          && String(item.householdId) === String(clickHouseholdId)
+      );
+    };
 
-    if (!isAssigned && user) {
-      const updatedPlan = await onAssignSelf(day);
-      if (!updatedPlan) return;
+    let randomDish = pickRandomDish(availableDishes);
+    if (!isDishValidForCurrentHousehold(randomDish, fetchedDishes)) {
+      try {
+        const refreshedDishes = await refreshCurrentDishes();
+        const recomputed = collectEligible(refreshedDishes, safeDaysRef.current);
+        fetchedDishes = recomputed.fetchedDishes;
+        availableDishes = recomputed.availableDishes;
+        randomDish = availableDishes.length ? pickRandomDish(availableDishes) : null;
+      } catch (err) {
+        setDayErrors((prev) => ({
+          ...prev,
+          [dayKey]: err.message || "No se pudieron refrescar los platos del hogar."
+        }));
+        return;
+      }
+    }
+
+    if (!randomDish || !isDishValidForCurrentHousehold(randomDish, fetchedDishes)) {
+      setDayErrors((prev) => ({
+        ...prev,
+        [dayKey]: "No hay platos válidos del hogar para asignar ahora mismo."
+      }));
+      return;
+    }
+
+    let targetDay = day;
+    if (!isAssigned && userRef.current) {
+      const assignResult = await onAssignSelf(day, { weekStart: clickWeekStart, returnErrorObject: true });
+      if (!assignResult?.plan) return;
       targetDay =
-        updatedPlan.days?.find((entry) => entry?.date?.slice(0, 10) === dayKey) || day;
+        assignResult.plan.days?.find((entry) => entry?.date?.slice(0, 10) === dayKey) || day;
     } else if (!canEdit) {
       return;
     }
 
-    const updatedPlan = await updateDay(targetDay, { mainDishId: randomDish._id });
-    if (updatedPlan) {
+    if (import.meta.env.DEV) {
+      console.debug("[kitchen][random-dish] assign", {
+        householdIdAtClick: clickHouseholdId ? String(clickHouseholdId) : null,
+        requestWeekStart: clickWeekStart,
+        selectedDishId: String(randomDish._id),
+        selectedDishHouseholdId: randomDish.householdId ? String(randomDish.householdId) : null
+      });
+    }
+
+    let updateResult = await updateDay(
+      targetDay,
+      { mainDishId: randomDish._id },
+      { weekStart: clickWeekStart, returnErrorObject: true }
+    );
+
+    const shouldRetry =
+      !updateResult?.plan
+      && String(updateResult?.error?.message || "")
+        .toLowerCase()
+        .includes("no pertenece a este hogar");
+
+    if (shouldRetry) {
+      try {
+        const refreshedDishes = await refreshCurrentDishes();
+        const recomputed = collectEligible(refreshedDishes, safeDaysRef.current);
+        const retryDish = recomputed.availableDishes.length
+          ? pickRandomDish(recomputed.availableDishes)
+          : null;
+        if (!retryDish || !isDishValidForCurrentHousehold(retryDish, recomputed.fetchedDishes)) {
+          return;
+        }
+        updateResult = await updateDay(
+          targetDay,
+          { mainDishId: retryDish._id },
+          { weekStart: clickWeekStart, returnErrorObject: true }
+        );
+        randomDish = retryDish;
+      } catch (err) {
+        return;
+      }
+    }
+
+    if (updateResult?.plan) {
       setMainDishQueries((prev) => ({ ...prev, [dayKey]: randomDish.name }));
       setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
     }
@@ -960,6 +1149,10 @@ export default function WeekPage() {
                 const sideToggleId = `side-toggle-${dayKey}`;
                 const isEmptyState = !isPlanned && !isEditing;
                 const canShowAssignCta = !isPlanned && (canEdit || (!isAssigned && user));
+                const randomDisabled = !dishesReadyForCurrentHousehold;
+                const randomTitle = randomDisabled
+                  ? "Actualizando platos del hogar..."
+                  : "Asignar plato aleatorio";
                 const dayVisual = DAY_CARD_STYLES[index % DAY_CARD_STYLES.length];
                 const baseIngredients = mergeIngredientLists(
                   mainDish?.ingredients || [],
@@ -1104,8 +1297,9 @@ export default function WeekPage() {
                           type="button"
                           className="kitchen-button secondary kitchen-day-random-button"
                           onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
+                          disabled={randomDisabled}
                           aria-label="Asignar plato aleatorio"
-                          title="Asignar plato aleatorio"
+                          title={randomTitle}
                         >
                           <DiceIcon />
                         </button>
@@ -1133,15 +1327,16 @@ export default function WeekPage() {
                         >
                           Asignar plato
                         </button>
-                        <button
-                          type="button"
-                          className="kitchen-button secondary kitchen-day-random-button"
-                          onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
-                          aria-label="Asignar plato aleatorio"
-                          title="Asignar plato aleatorio"
-                        >
-                          <DiceIcon />
-                        </button>
+                          <button
+                            type="button"
+                            className="kitchen-button secondary kitchen-day-random-button"
+                            onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
+                            disabled={randomDisabled}
+                            aria-label="Asignar plato aleatorio"
+                            title={randomTitle}
+                          >
+                            <DiceIcon />
+                          </button>
                       </div>
                     ) : null}
                     <div className="kitchen-day-ingredients">
