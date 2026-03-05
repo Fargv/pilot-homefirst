@@ -68,6 +68,17 @@ function ChevronIcon(props) {
   );
 }
 
+function DiceIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <rect x="4.5" y="4.5" width="15" height="15" rx="3" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="9" cy="9" r="1.3" fill="currentColor" />
+      <circle cx="15" cy="15" r="1.3" fill="currentColor" />
+      <circle cx="9" cy="15" r="1.3" fill="currentColor" />
+    </svg>
+  );
+}
+
 function getInitials(name) {
   if (!name) return "";
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -645,6 +656,45 @@ export default function WeekPage() {
     }
   };
 
+  const handleRandomAssignCta = async (day, canEdit, isAssigned) => {
+    const dayKey = day.date.slice(0, 10);
+    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
+
+    const usedDishIds = new Set(
+      safeDays
+        .map((entry) => entry?.mainDishId)
+        .filter(Boolean)
+        .map((dishId) => String(dishId))
+    );
+    const availableDishes = dishes.filter((dish) => dish?._id && !usedDishIds.has(String(dish._id)));
+
+    if (!availableDishes.length) {
+      setDayErrors((prev) => ({
+        ...prev,
+        [dayKey]: "No quedan platos disponibles sin repetir esta semana."
+      }));
+      return;
+    }
+
+    const randomDish = availableDishes[Math.floor(Math.random() * availableDishes.length)];
+    let targetDay = day;
+
+    if (!isAssigned && user) {
+      const updatedPlan = await onAssignSelf(day);
+      if (!updatedPlan) return;
+      targetDay =
+        updatedPlan.days?.find((entry) => entry?.date?.slice(0, 10) === dayKey) || day;
+    } else if (!canEdit) {
+      return;
+    }
+
+    const updatedPlan = await updateDay(targetDay, { mainDishId: randomDish._id });
+    if (updatedPlan) {
+      setMainDishQueries((prev) => ({ ...prev, [dayKey]: randomDish.name }));
+      setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+    }
+  };
+
   const openDishModal = (dayKey, name, options = {}) => {
     const { mode = "main", sidedish = false } = options;
     setDishModalDayKey(dayKey);
@@ -991,13 +1041,24 @@ export default function WeekPage() {
                   <div className="kitchen-day-empty">
                     <div className="kitchen-day-empty-spacer" aria-hidden="true" />
                     {canShowAssignCta ? (
-                      <button
-                        type="button"
-                        className="kitchen-button kitchen-day-empty-button"
-                        onClick={() => handleAssignCta(day, canEdit, isAssigned)}
-                      >
-                        Asignar plato
-                      </button>
+                      <div className="kitchen-day-empty-actions">
+                        <button
+                          type="button"
+                          className="kitchen-button kitchen-day-empty-button"
+                          onClick={() => handleAssignCta(day, canEdit, isAssigned)}
+                        >
+                          Asignar plato
+                        </button>
+                        <button
+                          type="button"
+                          className="kitchen-button secondary kitchen-day-random-button"
+                          onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
+                          aria-label="Asignar plato aleatorio"
+                          title="Asignar plato aleatorio"
+                        >
+                          <DiceIcon />
+                        </button>
+                      </div>
                     ) : null}
                   </div>
                 ) : (
@@ -1013,13 +1074,24 @@ export default function WeekPage() {
                       </div>
                     ) : null}
                     {!isPlanned && canShowAssignCta ? (
-                      <button
-                        type="button"
-                        className="kitchen-button"
-                        onClick={() => handleAssignCta(day, canEdit, isAssigned)}
-                      >
-                        Asignar plato
-                      </button>
+                      <div className="kitchen-day-assign-actions">
+                        <button
+                          type="button"
+                          className="kitchen-button"
+                          onClick={() => handleAssignCta(day, canEdit, isAssigned)}
+                        >
+                          Asignar plato
+                        </button>
+                        <button
+                          type="button"
+                          className="kitchen-button secondary kitchen-day-random-button"
+                          onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
+                          aria-label="Asignar plato aleatorio"
+                          title="Asignar plato aleatorio"
+                        >
+                          <DiceIcon />
+                        </button>
+                      </div>
                     ) : null}
                     <div className="kitchen-day-ingredients">
                       <span className="kitchen-label">Ingredientes</span>

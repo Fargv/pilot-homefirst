@@ -1401,6 +1401,42 @@ body {
   width: 100%;
 }
 
+.kitchen-day-empty-actions,
+.kitchen-day-assign-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.kitchen-day-empty-actions {
+  margin-top: auto;
+}
+
+.kitchen-day-empty-actions .kitchen-day-empty-button {
+  margin-top: 0;
+  align-self: auto;
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.kitchen-day-random-button {
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.kitchen-day-random-button svg {
+  width: 20px;
+  height: 20px;
+}
+
 .kitchen-day-info {
   display: flex;
   flex-direction: column;
@@ -2089,7 +2125,7 @@ body {
 }
 
 @media (min-width: 900px) {
-  .kitchen-day-empty-button {
+  .kitchen-day-empty-actions .kitchen-day-empty-button {
     max-width: 280px;
   }
 
