@@ -46,7 +46,11 @@ export async function apiRequest(path, options = {}) {
     headers
   });
 
-  const data = await response.json().catch(() => ({}));
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  const contentLength = Number.parseInt(response.headers.get("content-length") || "0", 10);
+  const canHaveBody = response.status !== 204 && response.status !== 205;
+  const shouldParseJson = canHaveBody && (contentType.includes("application/json") || (Number.isFinite(contentLength) && contentLength > 0));
+  const data = shouldParseJson ? await response.json().catch(() => ({})) : {};
   if (!response.ok) {
     const message = data?.error || "Error inesperado";
     throw new ApiRequestError(message, {

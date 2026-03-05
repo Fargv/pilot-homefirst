@@ -74,6 +74,7 @@ export default function DishesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dishError, setDishError] = useState("");
+  const [dishSuccess, setDishSuccess] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeDish, setActiveDish] = useState(null);
   const [dishSearchTerm, setDishSearchTerm] = useState("");
@@ -152,6 +153,12 @@ export default function DishesPage() {
   useEffect(() => {
     loadDishes();
   }, [isDiodGlobalMode, user?.activeHouseholdId, user?.id]);
+
+  useEffect(() => {
+    if (!dishSuccess) return undefined;
+    const timer = window.setTimeout(() => setDishSuccess(""), 2200);
+    return () => window.clearTimeout(timer);
+  }, [dishSuccess]);
 
   const loadCategories = async () => {
     try {
@@ -419,10 +426,14 @@ export default function DishesPage() {
     if (!deleteDishModal.dish?._id || deleteDishModal.deleting) return;
     try {
       setDeleteDishModal((prev) => ({ ...prev, deleting: true }));
-      await apiRequest(`/api/kitchen/dishes/${deleteDishModal.dish._id}`, { method: "DELETE" });
-      if (activeDish?._id === deleteDishModal.dish._id) closeModal();
-      if (dishInfoOpenId === deleteDishModal.dish._id) closeDishInfo();
+      const deletedId = String(deleteDishModal.dish._id);
+      await apiRequest(`/api/kitchen/dishes/${deletedId}`, { method: "DELETE" });
+      setDishes((prev) => prev.filter((item) => String(item?._id) !== deletedId));
+      if (activeDish?._id === deletedId) closeModal();
+      if (dishInfoOpenId === deletedId) closeDishInfo();
       setDeleteDishModal({ open: false, dish: null, deleting: false });
+      setDishError("");
+      setDishSuccess("Plato eliminado");
       await loadDishes();
     } catch (err) {
       setDishError(err.message || "No se pudo eliminar el plato.");
@@ -959,6 +970,7 @@ export default function DishesPage() {
           </div>
         )}
         {dishError ? <div className="kitchen-alert error">{dishError}</div> : null}
+        {dishSuccess ? <div className="kitchen-alert success">{dishSuccess}</div> : null}
         {ingredientsError && isIngredientsTab ? (
           <div className="kitchen-alert error">{ingredientsError}</div>
         ) : null}

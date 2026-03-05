@@ -357,7 +357,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
           });
         }
       }
-      return res.json({ ok: true });
+      return res.json({ ok: true, dishId: String(dish._id), active: false });
     }
 
     if (!dish.householdId || String(dish.householdId) !== String(getEffectiveHouseholdId(req.user))) {
@@ -372,12 +372,30 @@ router.delete("/:id", requireAuth, async (req, res) => {
     dish.deletedAt = new Date();
     await dish.save();
 
-    const cascade = await unassignDishFromCurrentAndFutureWeeks({
-      householdId: getEffectiveHouseholdId(req.user),
-      dishId: dish._id
-    });
+    let cascade = { affectedWeeks: 0, changedDays: 0 };
+    let warning = null;
+    try {
+      cascade = await unassignDishFromCurrentAndFutureWeeks({
+        householdId: getEffectiveHouseholdId(req.user),
+        dishId: dish._id
+      });
+    } catch (cascadeError) {
+      console.error("[kitchen/dishes] delete cascade failed", {
+        dishId: String(dish._id),
+        householdId: String(getEffectiveHouseholdId(req.user)),
+        message: cascadeError?.message,
+        stack: cascadeError?.stack
+      });
+      warning = "El plato se elimino, pero no se pudo completar la limpieza de asignaciones futuras.";
+    }
 
-    return res.json({ ok: true, dish, cascade });
+    return res.json({
+      ok: true,
+      dishId: String(dish._id),
+      active: false,
+      cascade,
+      ...(warning ? { warning } : {})
+    });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
