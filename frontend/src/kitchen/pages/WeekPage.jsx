@@ -756,125 +756,21 @@ export default function WeekPage() {
 
     const clickHouseholdId = getCurrentHouseholdId();
     const clickWeekStart = weekStartRef.current;
-    const collectEligible = (sourceDishes, sourceDays) => {
-      const fetchedDishes = (sourceDishes || []).filter((dish) => dish?._id);
-      const householdScopedDishes = fetchedDishes.filter((dish) =>
-        clickHouseholdId && dish?.householdId && String(dish.householdId) === String(clickHouseholdId)
-      );
-      const usedDishEntries = (sourceDays || [])
+    const usedIds = new Set(
+      (safeDaysRef.current || [])
         .map((entry) => entry?.mainDishId)
         .filter(Boolean)
-        .map((dishId) => ({
-          raw: dishId,
-          normalized: String(dishId),
-          type: typeof dishId
-        }));
-      const usedDishIds = new Set(usedDishEntries.map((entry) => entry.normalized));
-      const availableDishes = householdScopedDishes.filter(
-        (dish) => !usedDishIds.has(String(dish._id))
-      );
-      return {
-        fetchedDishes,
-        householdScopedDishes,
-        usedDishEntries,
-        availableDishes
-      };
-    };
-
-    let { fetchedDishes, householdScopedDishes, usedDishEntries, availableDishes } = collectEligible(
-      dishesRef.current,
-      safeDaysRef.current
+        .map((value) => String(value))
     );
 
     if (import.meta.env.DEV) {
-      const sample = fetchedDishes.slice(0, 3).map((dish) => ({
-        id: String(dish._id),
-        householdId: dish.householdId ? String(dish.householdId) : null,
-        scope: dish.scope || null
-      }));
-      console.debug("[kitchen][random-dish] debug", {
+      console.debug("[kitchen][random-dish] click", {
         householdIdAtClick: clickHouseholdId ? String(clickHouseholdId) : null,
         weekStartAtClick: clickWeekStart,
-        fetchedDishesTotal: fetchedDishes.length,
-        fetchedSample: sample,
-        usedThisWeek: usedDishEntries,
-        counts: {
-          afterFetched: fetchedDishes.length,
-          afterHouseholdFilter: householdScopedDishes.length,
-          afterUsedFilter: availableDishes.length
-        }
+        day: dayKey,
+        dishesTotal: (dishesRef.current || []).length,
+        usedIdsCount: usedIds.size
       });
-    }
-
-    if (!householdScopedDishes.length) {
-      try {
-        const refreshedDishes = await refreshCurrentDishes();
-        const recomputed = collectEligible(refreshedDishes, safeDaysRef.current);
-        fetchedDishes = recomputed.fetchedDishes;
-        householdScopedDishes = recomputed.householdScopedDishes;
-        usedDishEntries = recomputed.usedDishEntries;
-        availableDishes = recomputed.availableDishes;
-      } catch (err) {
-        setDayErrors((prev) => ({
-          ...prev,
-          [dayKey]: err.message || "No se pudieron refrescar los platos del hogar."
-        }));
-        return;
-      }
-    }
-
-    if (!householdScopedDishes.length) {
-      setDayErrors((prev) => ({
-        ...prev,
-        [dayKey]: "No hay platos disponibles en este hogar para asignar aleatoriamente."
-      }));
-      return;
-    }
-
-    if (!availableDishes.length) {
-      setDayErrors((prev) => ({
-        ...prev,
-        [dayKey]: "Esta semana ya se han usado todos los platos disponibles."
-      }));
-      return;
-    }
-
-    const pickRandomDish = (pool) => pool[Math.floor(Math.random() * pool.length)];
-    const isDishValidForCurrentHousehold = (dishCandidate, sourceDishes) => {
-      if (!dishCandidate?._id || !clickHouseholdId || !dishCandidate?.householdId) return false;
-      if (String(dishCandidate.householdId) !== String(clickHouseholdId)) return false;
-      return (sourceDishes || []).some(
-        (item) =>
-          item?._id
-          && String(item._id) === String(dishCandidate._id)
-          && item?.householdId
-          && String(item.householdId) === String(clickHouseholdId)
-      );
-    };
-
-    let randomDish = pickRandomDish(availableDishes);
-    if (!isDishValidForCurrentHousehold(randomDish, fetchedDishes)) {
-      try {
-        const refreshedDishes = await refreshCurrentDishes();
-        const recomputed = collectEligible(refreshedDishes, safeDaysRef.current);
-        fetchedDishes = recomputed.fetchedDishes;
-        availableDishes = recomputed.availableDishes;
-        randomDish = availableDishes.length ? pickRandomDish(availableDishes) : null;
-      } catch (err) {
-        setDayErrors((prev) => ({
-          ...prev,
-          [dayKey]: err.message || "No se pudieron refrescar los platos del hogar."
-        }));
-        return;
-      }
-    }
-
-    if (!randomDish || !isDishValidForCurrentHousehold(randomDish, fetchedDishes)) {
-      setDayErrors((prev) => ({
-        ...prev,
-        [dayKey]: "No hay platos válidos del hogar para asignar ahora mismo."
-      }));
-      return;
     }
 
     let targetDay = day;
@@ -887,8 +783,38 @@ export default function WeekPage() {
       return;
     }
 
+    const fetchRandomCandidate = async () => {
+      return apiRequest(`/api/kitchen/weeks/${clickWeekStart}/day/${dayKey}/random-main`, {
+        method: "POST"
+      });
+    };
+
+    let randomResponse;
+    try {
+      randomResponse = await fetchRandomCandidate();
+    } catch (err) {
+      setDayErrors((prev) => ({
+        ...prev,
+        [dayKey]: err.message || "No se pudo seleccionar un plato aleatorio."
+      }));
+      return;
+    }
+
+    if (!randomResponse?.dish) {
+      const reason = String(randomResponse?.reason || "");
+      const message = reason === "all_used"
+        ? "Esta semana ya se han usado todos los platos disponibles."
+        : "No hay platos disponibles en este hogar para asignar aleatoriamente.";
+      setDayErrors((prev) => ({
+        ...prev,
+        [dayKey]: message
+      }));
+      return;
+    }
+
+    let randomDish = randomResponse.dish;
     if (import.meta.env.DEV) {
-      console.debug("[kitchen][random-dish] assign", {
+      console.debug("[kitchen][random-dish] selected", {
         householdIdAtClick: clickHouseholdId ? String(clickHouseholdId) : null,
         requestWeekStart: clickWeekStart,
         selectedDishId: String(randomDish._id),
@@ -909,13 +835,16 @@ export default function WeekPage() {
         .includes("no pertenece a este hogar");
 
     if (shouldRetry) {
+      if (import.meta.env.DEV) {
+        console.debug("[kitchen][random-dish] retry-after-ownership-error", {
+          error: String(updateResult?.error?.message || "")
+        });
+      }
       try {
-        const refreshedDishes = await refreshCurrentDishes();
-        const recomputed = collectEligible(refreshedDishes, safeDaysRef.current);
-        const retryDish = recomputed.availableDishes.length
-          ? pickRandomDish(recomputed.availableDishes)
-          : null;
-        if (!retryDish || !isDishValidForCurrentHousehold(retryDish, recomputed.fetchedDishes)) {
+        await refreshCurrentDishes();
+        randomResponse = await fetchRandomCandidate();
+        const retryDish = randomResponse?.dish || null;
+        if (!retryDish?._id) {
           return;
         }
         updateResult = await updateDay(
@@ -924,7 +853,7 @@ export default function WeekPage() {
           { weekStart: clickWeekStart, returnErrorObject: true }
         );
         randomDish = retryDish;
-      } catch (err) {
+      } catch (_err) {
         return;
       }
     }
@@ -1894,3 +1823,4 @@ export default function WeekPage() {
     </KitchenLayout>
   );
 }
+

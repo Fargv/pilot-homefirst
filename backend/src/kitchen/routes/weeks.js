@@ -93,6 +93,12 @@ function hasAdministrativePlanChange(req, day, updates) {
   return clearsMainDish || clearsSideDish;
 }
 
+function pickRandomItem(items = []) {
+  if (!items.length) return null;
+  const index = Math.floor(Math.random() * items.length);
+  return items[index] || null;
+}
+
 router.get("/:weekStart", requireAuth, async (req, res) => {
   try {
     const weekStart = parseISODate(req.params.weekStart);
@@ -209,6 +215,57 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Datos inválidos al actualizar el día del plan." });
     }
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
+  }
+});
+
+router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    const date = parseISODate(req.params.date);
+    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+    const day = plan.days.find((item) => isSameDay(item.date, date));
+    if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
+
+    const isAdmin = isHouseholdAdmin(req.kitchenUser);
+    const isSelf = day.cookUserId && String(day.cookUserId) === String(req.kitchenUser?._id);
+    if (day.cookUserId && !isAdmin && !isSelf) {
+      return res.status(403).json({
+        ok: false,
+        error: "Solo owner/admin puede reasignar a otros usuarios o quitar platos del día."
+      });
+    }
+
+    const usedMainDishIds = plan.days
+      .map((entry) => entry?.mainDishId)
+      .filter(Boolean)
+      .map((dishId) => String(dishId));
+
+    const baseDishFilter = buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true } });
+    const allEligible = await KitchenDish.find(baseDishFilter).select("_id name householdId scope").lean();
+    if (!allEligible.length) {
+      return res.json({ ok: true, dish: null, reason: "no_dishes" });
+    }
+
+    const available = allEligible.filter((dish) => !usedMainDishIds.includes(String(dish._id)));
+    if (!available.length) {
+      return res.json({ ok: true, dish: null, reason: "all_used" });
+    }
+
+    const dish = pickRandomItem(available);
+    return res.json({ ok: true, dish, reason: null });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    logKitchenError("random-main", error, {
+      weekStart: req.params.weekStart,
+      date: req.params.date,
+      userId: String(req.kitchenUser?._id || "")
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo seleccionar un plato aleatorio." });
   }
 });
 
