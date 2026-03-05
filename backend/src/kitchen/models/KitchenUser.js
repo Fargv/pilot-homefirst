@@ -3,12 +3,14 @@ import mongoose from "mongoose";
 const KitchenUserSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true, trim: true },
-    email: { type: String, unique: true, sparse: true, lowercase: true, trim: true, default: null },
+    email: { type: String, lowercase: true, trim: true, default: undefined },
     firstName: { type: String, trim: true },
     lastName: { type: String, trim: true },
     displayName: { type: String, required: true, trim: true },
     initials: { type: String, trim: true, default: "" },
     colorId: { type: String, trim: true, default: "" },
+    type: { type: String, enum: ["placeholder", "user"], default: "user" },
+    hasLogin: { type: Boolean, default: true },
     isPlaceholder: { type: Boolean, default: false },
     claimedAt: { type: Date, default: null },
     passwordHash: { type: String, default: null },
@@ -21,6 +23,11 @@ const KitchenUserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+KitchenUserSchema.index(
+  { email: 1 },
+  { unique: true, partialFilterExpression: { email: { $type: "string", $ne: "" } } }
+);
+
 KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
   return {
     id: this._id,
@@ -31,6 +38,8 @@ KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
     displayName: this.displayName,
     initials: this.initials || "",
     colorId: this.colorId || "",
+    type: this.type || (this.isPlaceholder ? "placeholder" : "user"),
+    hasLogin: typeof this.hasLogin === "boolean" ? this.hasLogin : !this.isPlaceholder,
     isPlaceholder: this.isPlaceholder,
     claimedAt: this.claimedAt ?? null,
     role: this.role,

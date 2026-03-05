@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
@@ -31,12 +31,12 @@ router.get("/invite/:token", async (req, res) => {
   try {
     const { token } = req.params;
     if (!token) {
-      return res.status(400).json({ ok: false, error: "Token de invitación inválido." });
+      return res.status(400).json({ ok: false, error: "Token de invitaciÃ³n invÃ¡lido." });
     }
 
     const invitation = await findActiveInvitationByToken(token);
     if (!invitation) {
-      return res.status(404).json({ ok: false, error: "La invitación no es válida o expiró." });
+      return res.status(404).json({ ok: false, error: "La invitaciÃ³n no es vÃ¡lida o expirÃ³." });
     }
 
     const household = await Household.findById(invitation.householdId).select("name");
@@ -47,7 +47,7 @@ router.get("/invite/:token", async (req, res) => {
       expiresAt: invitation.expiresAt
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: "No se pudo validar la invitación." });
+    return res.status(500).json({ ok: false, error: "No se pudo validar la invitaciÃ³n." });
   }
 });
 
@@ -57,18 +57,18 @@ router.post("/login", async (req, res) => {
     const { email, password, username } = req.body;
     const loginValue = normalizeEmail(email || username);
     if (!loginValue || !password) {
-      return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
+      return res.status(400).json({ ok: false, error: "Email y contraseÃ±a son obligatorios." });
     }
 
     const user = await KitchenUser.findOne({ email: loginValue });
-    if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+    if (!user) return res.status(401).json({ ok: false, error: "Credenciales invÃ¡lidas." });
 
-    if (!user.passwordHash || user.isPlaceholder) {
-      return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+    if (!user.passwordHash || user.isPlaceholder || user.type === "placeholder" || user.hasLogin === false) {
+      return res.status(401).json({ ok: false, error: "Credenciales invÃ¡lidas." });
     }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+    if (!ok) return res.status(401).json({ ok: false, error: "Credenciales invÃ¡lidas." });
 
     const isDiod = loginValue === DIOD_EMAIL;
     const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
@@ -84,7 +84,7 @@ router.post("/login", async (req, res) => {
     };
     return res.json({ ok: true, token, user: safeUser });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
+    return res.status(500).json({ ok: false, error: "No se pudo iniciar sesiÃ³n." });
   }
 });
 
@@ -93,12 +93,12 @@ router.get("/resolve-household/:inviteCode", async (req, res) => {
   try {
     const inviteCode = String(req.params.inviteCode || "").trim();
     if (!isValidInviteCodeFormat(inviteCode)) {
-      return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
+      return res.status(400).json({ ok: false, error: "El cÃ³digo debe tener 6 dÃ­gitos numÃ©ricos." });
     }
 
     const household = await Household.findOne({ inviteCode }).select("_id name");
     if (!household) {
-      return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
+      return res.status(404).json({ ok: false, error: "El cÃ³digo del hogar no es vÃ¡lido." });
     }
 
     return res.json({
@@ -109,7 +109,7 @@ router.get("/resolve-household/:inviteCode", async (req, res) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: "No se pudo validar el código del hogar." });
+    return res.status(500).json({ ok: false, error: "No se pudo validar el cÃ³digo del hogar." });
   }
 });
 
@@ -121,20 +121,20 @@ router.post("/register", async (req, res) => {
     const normalizedInviteCode = String(inviteCode || "").trim();
 
     if (!normalizedEmail || !password || !safeDisplayName) {
-      return res.status(400).json({ ok: false, error: "Nombre, email y contraseña son obligatorios." });
+      return res.status(400).json({ ok: false, error: "Nombre, email y contraseÃ±a son obligatorios." });
     }
 
     if (!isValidEmail(normalizedEmail)) {
-      return res.status(400).json({ ok: false, error: "El email no es válido." });
+      return res.status(400).json({ ok: false, error: "El email no es vÃ¡lido." });
     }
 
     if (String(password).length < 8) {
-      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
+      return res.status(400).json({ ok: false, error: "La contraseÃ±a debe tener al menos 8 caracteres." });
     }
 
     const existingUser = await KitchenUser.findOne({ email: normalizedEmail });
     if (existingUser) {
-      return res.status(409).json({ ok: false, error: "El email ya está registrado." });
+      return res.status(409).json({ ok: false, error: "El email ya estÃ¡ registrado." });
     }
 
     const mode = normalizedInviteCode ? "join" : "create";
@@ -143,12 +143,12 @@ router.post("/register", async (req, res) => {
 
     if (mode === "join") {
       if (!isValidInviteCodeFormat(normalizedInviteCode)) {
-        return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
+        return res.status(400).json({ ok: false, error: "El cÃ³digo debe tener 6 dÃ­gitos numÃ©ricos." });
       }
 
       household = await Household.findOne({ inviteCode: normalizedInviteCode });
       if (!household) {
-        return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
+        return res.status(404).json({ ok: false, error: "El cÃ³digo del hogar no es vÃ¡lido." });
       }
       role = "member";
     }
@@ -159,6 +159,8 @@ router.post("/register", async (req, res) => {
       displayName: safeDisplayName,
       initials: normalizeInitials("", safeDisplayName),
       passwordHash: await bcrypt.hash(password, 10),
+      type: "user",
+      hasLogin: true,
       role,
       householdId: null,
       isPlaceholder: false
@@ -180,7 +182,7 @@ router.post("/register", async (req, res) => {
       try {
         await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
       } catch (error) {
-        console.error("No se pudo crear automáticamente el plan semanal durante el registro:", error?.message || error);
+        console.error("No se pudo crear automÃ¡ticamente el plan semanal durante el registro:", error?.message || error);
       }
     }
 
@@ -211,18 +213,18 @@ router.post("/accept-invite", async (req, res) => {
     if (!token || !normalizedEmail || !password) {
       return res.status(400).json({
         ok: false,
-        error: "Token, email y contraseña son obligatorios."
+        error: "Token, email y contraseÃ±a son obligatorios."
       });
     }
 
     if (String(password).length < 8) {
-      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
+      return res.status(400).json({ ok: false, error: "La contraseÃ±a debe tener al menos 8 caracteres." });
     }
 
     const invitation = await findActiveInvitationByToken(token);
 
     if (!invitation) {
-      return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
+      return res.status(400).json({ ok: false, error: "La invitaciÃ³n no es vÃ¡lida o expirÃ³." });
     }
 
     let user = await KitchenUser.findOne({ email: normalizedEmail });
@@ -231,7 +233,7 @@ router.post("/accept-invite", async (req, res) => {
       if (user.householdId && user.householdId.toString() !== invitation.householdId.toString()) {
         return res.status(409).json({
           ok: false,
-          error: "Ese email ya pertenece a otro hogar y no se puede unir con esta invitación."
+          error: "Ese email ya pertenece a otro hogar y no se puede unir con esta invitaciÃ³n."
         });
       }
 
@@ -239,22 +241,26 @@ router.post("/accept-invite", async (req, res) => {
         user.householdId = invitation.householdId;
       }
 
-      if (!user.passwordHash || user.isPlaceholder) {
+      if (!user.passwordHash || user.isPlaceholder || user.type === "placeholder" || user.hasLogin === false) {
         if (!displayName || !String(displayName).trim()) {
           return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para activar la cuenta." });
         }
         user.displayName = String(displayName).trim();
         user.passwordHash = await bcrypt.hash(password, 10);
+        user.type = "user";
+        user.hasLogin = true;
       } else {
         const passwordOk = await bcrypt.compare(password, user.passwordHash);
         if (!passwordOk) {
-          return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
+          return res.status(401).json({ ok: false, error: "Credenciales invÃ¡lidas." });
         }
       }
 
       if (user.isPlaceholder) {
         user.isPlaceholder = false;
         user.claimedAt = new Date();
+        user.type = "user";
+        user.hasLogin = true;
       }
 
       if (displayName && String(displayName).trim()) {
@@ -275,6 +281,8 @@ router.post("/accept-invite", async (req, res) => {
         displayName: String(displayName).trim(),
         initials: normalizeInitials("", String(displayName).trim()),
         passwordHash: await bcrypt.hash(password, 10),
+        type: "user",
+        hasLogin: true,
         role: invitation.role || "member",
         householdId: invitation.householdId,
         isPlaceholder: false
@@ -288,7 +296,7 @@ router.post("/accept-invite", async (req, res) => {
     const jwt = createToken(user);
     return res.json({ ok: true, token: jwt, user: user.toSafeJSON() });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitación." });
+    return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitaciÃ³n." });
   }
 });
 
@@ -308,3 +316,5 @@ router.get("/me", requireAuth, (req, res) => {
 });
 
 export default router;
+
+

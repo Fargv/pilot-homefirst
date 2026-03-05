@@ -70,6 +70,8 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       displayName: safeDisplayName,
       initials: normalizeInitials(req.body?.initials, safeDisplayName),
       colorId: normalizeColorId(req.body?.colorId),
+      type: "user",
+      hasLogin: true,
       role: normalizeRole(req.body.role),
       householdId: effectiveHouseholdId,
       passwordHash

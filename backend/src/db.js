@@ -27,6 +27,31 @@ async function ensureShoppingListIndexes() {
   await ensureScopedWeekStartIndex("kitchenshoppinglists");
 }
 
+async function ensureKitchenUserEmailIndex() {
+  const collection = mongoose.connection.collection("kitchenusers");
+  const indexes = await collection.indexes();
+  const emailIndexes = indexes.filter((index) => index.key && index.key.email === 1);
+
+  for (const index of emailIndexes) {
+    const isDesiredPartial =
+      index.unique === true &&
+      index.partialFilterExpression &&
+      index.partialFilterExpression.email &&
+      index.partialFilterExpression.email.$type === "string";
+
+    if (!isDesiredPartial) {
+      await collection.dropIndex(index.name);
+      console.log(`Index email legado eliminado en kitchenusers: ${index.name}`);
+    }
+  }
+
+  await collection.updateMany({ email: { $in: ["", null] } }, { $unset: { email: 1 } });
+  await collection.createIndex(
+    { email: 1 },
+    { unique: true, partialFilterExpression: { email: { $type: "string", $ne: "" } } }
+  );
+}
+
 export async function connectDb() {
   if (!config.mongodbUri) return;
 
@@ -34,6 +59,7 @@ export async function connectDb() {
   await mongoose.connect(config.mongodbUri);
   await ensureWeekPlanIndexes();
   await ensureShoppingListIndexes();
+  await ensureKitchenUserEmailIndex();
   const match = config.mongodbUri.match(/\/([^/?]+)(\?|$)/);
   const dbName = match ? match[1] : "desconocida";
   console.log("MongoDB conectado");

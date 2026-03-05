@@ -49,6 +49,7 @@ export default function SettingsPage() {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [categoryModal, setCategoryModal] = useState({ open: false, mode: "create", category: null, name: "" });
   const [memberModal, setMemberModal] = useState({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } });
+  const [convertForm, setConvertForm] = useState({ email: "", password: "" });
   const [dinerModal, setDinerModal] = useState({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } });
   const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" });
 
@@ -201,6 +202,7 @@ export default function SettingsPage() {
 
   const openMemberModal = (member) => {
     if (!canManageHousehold && String(member.id) !== String(user?.id)) return;
+    setConvertForm({ email: member.email || "", password: "" });
     setMemberModal({
       open: true,
       member,
@@ -267,6 +269,30 @@ export default function SettingsPage() {
       await loadData();
     } catch (err) {
       setError(err.message || "No se pudo crear el comensal.");
+    }
+  };
+
+  const convertPlaceholder = async () => {
+    if (!memberModal.member) return;
+    const email = convertForm.email.trim().toLowerCase();
+    if (!email) {
+      setError("El email es obligatorio para convertir.");
+      return;
+    }
+    try {
+      await apiRequest(`/api/kitchen/household/placeholders/${memberModal.member.id}/convert`, {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          ...(convertForm.password.trim() ? { password: convertForm.password.trim() } : {})
+        })
+      });
+      updateSuccess("Comensal convertido en usuario.");
+      setMemberModal({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } });
+      setConvertForm({ email: "", password: "" });
+      await loadData();
+    } catch (err) {
+      setError(err.message || "No se pudo convertir el comensal.");
     }
   };
 
@@ -543,6 +569,14 @@ export default function SettingsPage() {
           <div className="settings-color-grid">{palette.map((color) => <button key={color.id} type="button" className={`settings-color-swatch ${memberModal.form.colorId === color.id ? "is-selected" : ""}`} style={{ background: color.background, color: color.text }} onClick={() => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, colorId: color.id } }))}>{color.label}</button>)}</div>
           {!memberModal.member?.isPlaceholder ? <label className="kitchen-field"><span className="kitchen-label">Rol</span><select className="kitchen-select" value={memberModal.form.role} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, role: event.target.value } }))}><option value="owner">Owner</option><option value="member">User</option></select></label> : null}
           {!memberModal.member?.isPlaceholder && canManageHousehold && String(memberModal.member?.id) !== String(user?.id) ? <button type="button" className="kitchen-button secondary" onClick={() => askDeleteMember(memberModal.member)}>Eliminar usuario</button> : null}
+          {memberModal.member?.isPlaceholder ? (
+            <div className="settings-block">
+              <h4 className="settings-subtitle">Convertir en usuario</h4>
+              <label className="kitchen-field"><span className="kitchen-label">Email</span><input className="kitchen-input" type="email" value={convertForm.email} onChange={(event) => setConvertForm((prev) => ({ ...prev, email: event.target.value }))} /></label>
+              <label className="kitchen-field"><span className="kitchen-label">Contraseña (opcional)</span><input className="kitchen-input" type="password" value={convertForm.password} onChange={(event) => setConvertForm((prev) => ({ ...prev, password: event.target.value }))} /></label>
+              <button type="button" className="kitchen-button secondary" onClick={convertPlaceholder}>Convertir en usuario</button>
+            </div>
+          ) : null}
         </div>
       </ModalSheet>
 

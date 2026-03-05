@@ -1,4 +1,4 @@
-import crypto from "crypto";
+﻿import crypto from "crypto";
 import express from "express";
 import bcrypt from "bcryptjs";
 import { Invitation } from "../models/Invitation.js";
@@ -21,7 +21,6 @@ const router = express.Router();
 function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
-
 
 router.get("/invite-code", requireAuth, requireRole("owner"), async (req, res) => {
   try {
@@ -129,6 +128,8 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
       displayName: safeDisplayName,
       initials: normalizeInitials(initials, safeDisplayName),
       colorId: normalizeColorId(colorId),
+      type: "placeholder",
+      hasLogin: false,
       isPlaceholder: true,
       role: "member",
       householdId: effectiveHouseholdId,
@@ -164,15 +165,9 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
     }
     if (error?.code === 11000) {
       if (error?.keyPattern?.email) {
-        return res.status(409).json({
-          ok: false,
-          error: "No se pudo crear el comensal: conflicto de email en índice único."
-        });
+        return res.status(409).json({ ok: false, error: "No se pudo crear el comensal: email duplicado." });
       }
-      return res.status(409).json({
-        ok: false,
-        error: "No se pudo crear el comensal: conflicto de datos únicos. Inténtalo de nuevo."
-      });
+      return res.status(409).json({ ok: false, error: "No se pudo crear el comensal: conflicto de datos únicos." });
     }
     return res.status(500).json({ ok: false, error: "No se pudo crear el comensal." });
   }
@@ -185,7 +180,7 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
     if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
       return res.status(400).json({ ok: false, error: "Debes indicar un email válido." });
     }
-    if (String(password || "").length < 8) {
+    if (password && String(password).length < 8) {
       return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
     }
 
@@ -195,7 +190,7 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
     );
 
     if (!placeholder) {
-      return res.status(404).json({ ok: false, error: "No encontramos ese usuario placeholder." });
+      return res.status(404).json({ ok: false, error: "No encontramos ese comensal." });
     }
 
     const emailInUse = await KitchenUser.findOne({ email: normalizedEmail, _id: { $ne: placeholder._id } });
@@ -205,7 +200,14 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
 
     placeholder.email = normalizedEmail;
     placeholder.username = normalizedEmail;
-    placeholder.passwordHash = await bcrypt.hash(password, 10);
+    if (password) {
+      placeholder.passwordHash = await bcrypt.hash(password, 10);
+    } else {
+      const generatedPassword = crypto.randomBytes(24).toString("hex");
+      placeholder.passwordHash = await bcrypt.hash(generatedPassword, 10);
+    }
+    placeholder.type = "user";
+    placeholder.hasLogin = true;
     placeholder.isPlaceholder = false;
     placeholder.claimedAt = new Date();
     await placeholder.save();
@@ -214,6 +216,19 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
+    if (error?.name === "ValidationError" || error?.name === "CastError") {
+      return res.status(400).json({ ok: false, error: "Datos de conversión no válidos." });
+    }
+    if (error?.code === 11000 && error?.keyPattern?.email) {
+      return res.status(409).json({ ok: false, error: "Ese email ya está en uso por otra cuenta." });
+    }
+    console.error("[kitchen/household] convert placeholder failed", {
+      userId: req.user?.id || null,
+      placeholderId: req.params.id,
+      body: req.body,
+      error: error?.message,
+      stack: error?.stack
+    });
     return res.status(500).json({ ok: false, error: "No se pudo convertir el comensal." });
   }
 });
