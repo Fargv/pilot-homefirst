@@ -42,8 +42,10 @@ function normalizeIngredientOverrides(ingredientOverrides = []) {
 }
 
 function buildDishVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
+  const hasActiveFilter = Object.prototype.hasOwnProperty.call(extraFilter, "active");
   return {
     ...extraFilter,
+    ...(hasActiveFilter ? {} : { active: true }),
     isArchived: { $ne: true },
     $or: [
       { scope: CATALOG_SCOPES.MASTER },

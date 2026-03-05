@@ -28,8 +28,10 @@ function parseBooleanField(value, fallback = false) {
 }
 
 function buildDishVisibilityFilter(householdId, extraFilter = {}) {
+  const hasActiveFilter = Object.prototype.hasOwnProperty.call(extraFilter, "active");
   return {
     ...extraFilter,
+    ...(hasActiveFilter ? {} : { active: true }),
     isArchived: { $ne: true },
     $or: [
       { scope: CATALOG_SCOPES.MASTER },
@@ -37,6 +39,95 @@ function buildDishVisibilityFilter(householdId, extraFilter = {}) {
       { scope: CATALOG_SCOPES.OVERRIDE, householdId }
     ]
   };
+}
+
+async function rebuildFutureShoppingListsSafe({ householdId, dishId, context }) {
+  try {
+    await rebuildFutureShoppingLists({ householdId, dishId });
+    return null;
+  } catch (error) {
+    console.error(`[kitchen/dishes] ${context} rebuild shopping list failed`, {
+      householdId: String(householdId || ""),
+      dishId: String(dishId || ""),
+      message: error?.message,
+      stack: error?.stack
+    });
+    return "El plato se guardo, pero no se pudo actualizar la lista de compra.";
+  }
+}
+
+async function rebuildShoppingListForPlan(plan, householdId) {
+  const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
+  const dishes = await KitchenDish.find(buildDishVisibilityFilter(householdId, { _id: { $in: dishIds } }));
+  const dishMap = new Map(dishes.map((entry) => [String(entry._id), entry]));
+
+  const merged = new Map();
+  plan.days.forEach((day) => {
+    const ingredients = combineDayIngredients({
+      mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
+      sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
+      overrides: day.ingredientOverrides
+    });
+
+    ingredients.forEach((item) => {
+      if (!item.canonicalName || merged.has(item.canonicalName)) return;
+      merged.set(item.canonicalName, {
+        displayName: item.displayName,
+        canonicalName: item.canonicalName,
+        status: "need"
+      });
+    });
+  });
+
+  const list = await KitchenShoppingList.findOneAndUpdate(
+    { householdId, weekStart: plan.weekStart },
+    { $setOnInsert: { householdId, weekStart: plan.weekStart, items: [] } },
+    { new: true, upsert: true }
+  );
+
+  const previousByCanonical = new Map((list.items || []).map((item) => [item.canonicalName, item.status]));
+  list.items = Array.from(merged.values()).map((item) => ({
+    ...item,
+    status: previousByCanonical.get(item.canonicalName) || "need"
+  }));
+  await list.save();
+}
+
+async function unassignDishFromCurrentAndFutureWeeks({ householdId, dishId }) {
+  if (!householdId || !dishId) return { affectedWeeks: 0, changedDays: 0 };
+  const currentWeekStart = getWeekStart(new Date());
+  const plans = await KitchenWeekPlan.find({
+    householdId,
+    weekStart: { $gte: currentWeekStart },
+    $or: [{ "days.mainDishId": dishId }, { "days.sideDishId": dishId }]
+  });
+
+  let affectedWeeks = 0;
+  let changedDays = 0;
+  for (const plan of plans) {
+    let planChanged = false;
+    for (const day of plan.days) {
+      let dayChanged = false;
+      if (day.mainDishId && String(day.mainDishId) === String(dishId)) {
+        day.mainDishId = null;
+        dayChanged = true;
+      }
+      if (day.sideDishId && String(day.sideDishId) === String(dishId)) {
+        day.sideDishId = null;
+        dayChanged = true;
+      }
+      if (dayChanged) {
+        planChanged = true;
+        changedDays += 1;
+      }
+    }
+    if (planChanged) {
+      await plan.save();
+      await rebuildShoppingListForPlan(plan, householdId);
+      affectedWeeks += 1;
+    }
+  }
+  return { affectedWeeks, changedDays };
 }
 
 
@@ -90,8 +181,10 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
 
 router.get("/", requireAuth, async (req, res) => {
   try {
-    const { sidedish } = req.query;
+    const { sidedish, includeInactive } = req.query;
     const optionalHouseholdId = getOptionalHouseholdId(req.user);
+    const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
+    const activeFilter = shouldIncludeInactive ? {} : { active: true };
 
     if (sidedish === "true") {
       const dishes = await resolveCatalogForHousehold({
@@ -99,16 +192,28 @@ router.get("/", requireAuth, async (req, res) => {
         householdId: optionalHouseholdId,
         type: "side",
         baseFilter: { sidedish: true },
+        masterFilter: activeFilter,
+        householdFilter: activeFilter,
+        overrideFilter: activeFilter,
         sort: { createdAt: -1 }
       });
       return res.json({ ok: true, dishes });
     }
 
     const dishes = optionalHouseholdId
-      ? await KitchenDish.find(buildScopedFilter(optionalHouseholdId, { sidedish: { $ne: true } })).sort({
+      ? await KitchenDish.find(buildScopedFilter(optionalHouseholdId, {
+          sidedish: { $ne: true },
+          isArchived: { $ne: true },
+          ...activeFilter
+        })).sort({
           createdAt: -1
         })
-      : await KitchenDish.find({ scope: CATALOG_SCOPES.MASTER, sidedish: { $ne: true }, isArchived: { $ne: true } }).sort({
+      : await KitchenDish.find({
+          scope: CATALOG_SCOPES.MASTER,
+          sidedish: { $ne: true },
+          isArchived: { $ne: true },
+          ...activeFilter
+        }).sort({
           createdAt: -1
         });
 
@@ -141,6 +246,8 @@ router.post("/", requireAuth, async (req, res) => {
       ingredients: normalizedIngredients,
       sidedish: isSideDish,
       special: isSpecial,
+      active: true,
+      deletedAt: null,
       scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
       createdBy: req.kitchenUser._id,
       householdId: isMasterWrite ? undefined : effectiveHouseholdId
@@ -176,8 +283,12 @@ router.put("/:id", requireAuth, async (req, res) => {
       if (isDiod) {
         Object.assign(dish, nextData);
         await dish.save();
-        await rebuildFutureShoppingLists({ householdId: optionalHouseholdId, dishId: dish._id });
-        return res.json({ ok: true, dish });
+        const warning = await rebuildFutureShoppingListsSafe({
+          householdId: optionalHouseholdId,
+          dishId: dish._id,
+          context: "update-master-dish"
+        });
+        return res.json({ ok: true, dish, ...(warning ? { warning } : {}) });
       }
 
       const requiredHouseholdId = getEffectiveHouseholdId(req.user);
@@ -193,13 +304,18 @@ router.put("/:id", requireAuth, async (req, res) => {
           masterId: dish._id,
           householdId: requiredHouseholdId,
           sidedish: true,
+          active: true,
           isArchived: false
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
       if (dish.sidedish) await clearHiddenMasterForHousehold({ householdId: requiredHouseholdId, type: "side", masterId: dish._id });
-      await rebuildFutureShoppingLists({ householdId: requiredHouseholdId, dishId: override._id });
-      return res.json({ ok: true, dish: override, overridden: true });
+      const warning = await rebuildFutureShoppingListsSafe({
+        householdId: requiredHouseholdId,
+        dishId: override._id,
+        context: "update-master-override-dish"
+      });
+      return res.json({ ok: true, dish: override, overridden: true, ...(warning ? { warning } : {}) });
     }
 
     if (!dish.householdId || String(dish.householdId) !== String(getEffectiveHouseholdId(req.user))) {
@@ -208,8 +324,12 @@ router.put("/:id", requireAuth, async (req, res) => {
 
     Object.assign(dish, nextData);
     await dish.save();
-    await rebuildFutureShoppingLists({ householdId: getEffectiveHouseholdId(req.user), dishId: dish._id });
-    return res.json({ ok: true, dish });
+    const warning = await rebuildFutureShoppingListsSafe({
+      householdId: getEffectiveHouseholdId(req.user),
+      dishId: dish._id,
+      context: "update-household-dish"
+    });
+    return res.json({ ok: true, dish, ...(warning ? { warning } : {}) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
@@ -219,40 +339,45 @@ router.put("/:id", requireAuth, async (req, res) => {
 
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const optionalHouseholdId = getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const dish = await KitchenDish.findById(req.params.id);
     if (!dish || dish.isArchived) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
 
     if (dish.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {
-        dish.isArchived = true;
+        dish.active = false;
+        dish.deletedAt = new Date();
         await dish.save();
       } else {
-        if (dish.sidedish) await hideMasterForHousehold({ householdId: getEffectiveHouseholdId(req.user), type: "side", masterId: dish._id });
+        if (dish.sidedish) {
+          await hideMasterForHousehold({
+            householdId: getEffectiveHouseholdId(req.user),
+            type: "side",
+            masterId: dish._id
+          });
+        }
       }
       return res.json({ ok: true });
-    }
-
-    if (dish.sidedish) {
-      if (!dish.householdId || String(dish.householdId) !== String(getEffectiveHouseholdId(req.user))) {
-        return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar esta guarnición." });
-      }
-      dish.isArchived = true;
-      await dish.save();
-      return res.json({ ok: true });
-    }
-
-    if (!isDiod && !["admin", "owner"].includes(req.kitchenUser.role)) {
-      return res.status(403).json({ ok: false, error: "No tienes permisos para esta acción." });
     }
 
     if (!dish.householdId || String(dish.householdId) !== String(getEffectiveHouseholdId(req.user))) {
       return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar este plato." });
     }
 
-    await dish.deleteOne();
-    return res.json({ ok: true });
+    if (!isDiod && !["admin", "owner"].includes(req.kitchenUser.role)) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para esta accion." });
+    }
+
+    dish.active = false;
+    dish.deletedAt = new Date();
+    await dish.save();
+
+    const cascade = await unassignDishFromCurrentAndFutureWeeks({
+      householdId: getEffectiveHouseholdId(req.user),
+      dishId: dish._id
+    });
+
+    return res.json({ ok: true, dish, cascade });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
@@ -260,4 +385,45 @@ router.delete("/:id", requireAuth, async (req, res) => {
   }
 });
 
+router.post("/:id/restore", requireAuth, async (req, res) => {
+  try {
+    const optionalHouseholdId = getOptionalHouseholdId(req.user);
+    const isDiod = isDiodUser(req.kitchenUser);
+    const dish = await KitchenDish.findById(req.params.id);
+    if (!dish || dish.isArchived) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
+
+    if (dish.scope === CATALOG_SCOPES.MASTER) {
+      if (!isDiod) {
+        return res.status(403).json({ ok: false, error: "No tienes permisos para recuperar este plato." });
+      }
+      dish.active = true;
+      dish.deletedAt = null;
+      await dish.save();
+      return res.json({ ok: true, dish });
+    }
+
+    if (!dish.householdId || String(dish.householdId) !== String(getEffectiveHouseholdId(req.user))) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para recuperar este plato." });
+    }
+    if (!isDiod && !["admin", "owner"].includes(req.kitchenUser.role)) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para esta accion." });
+    }
+
+    dish.active = true;
+    dish.deletedAt = null;
+    await dish.save();
+    const warning = await rebuildFutureShoppingListsSafe({
+      householdId: optionalHouseholdId || getEffectiveHouseholdId(req.user),
+      dishId: dish._id,
+      context: "restore-dish"
+    });
+    return res.json({ ok: true, dish, ...(warning ? { warning } : {}) });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo recuperar el plato." });
+  }
+});
+
 export default router;
+

@@ -340,7 +340,8 @@ router.delete("/:id", requireAuth, async (req, res) => {
 
     if (target.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {
-        target.isArchived = true;
+        target.active = false;
+        target.deletedAt = new Date();
         await target.save();
       } else {
         await hideMasterForHousehold({ householdId: getEffectiveHouseholdId(req.user), type: "ingredient", masterId: target._id });
@@ -352,13 +353,59 @@ router.delete("/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar este ingrediente." });
     }
 
-    target.isArchived = true;
+    target.active = false;
+    target.deletedAt = new Date();
     await target.save();
     return res.json({ ok: true });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo eliminar el ingrediente." });
+  }
+});
+
+router.post("/:id/restore", requireAuth, async (req, res) => {
+  try {
+    const optionalHouseholdId = getOptionalHouseholdId(req.user);
+    const isDiod = isDiodUser(req.kitchenUser);
+    const target = await KitchenIngredient.findById(req.params.id);
+
+    if (!target || target.isArchived) {
+      return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
+    }
+
+    if (target.scope === CATALOG_SCOPES.MASTER) {
+      if (!isDiod) {
+        return res.status(403).json({ ok: false, error: "No tienes permisos para recuperar este ingrediente." });
+      }
+      target.active = true;
+      target.deletedAt = null;
+      await target.save();
+      const ingredient = await KitchenIngredient.findById(target._id).populate("categoryId", "name slug colorBg colorText");
+      return res.json({ ok: true, ingredient });
+    }
+
+    if (!target.householdId || String(target.householdId) !== String(getEffectiveHouseholdId(req.user))) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para recuperar este ingrediente." });
+    }
+
+    target.active = true;
+    target.deletedAt = null;
+    await target.save();
+    const ingredient = await KitchenIngredient.findById(target._id).populate("categoryId", "name slug colorBg colorText");
+
+    await syncIngredientReferences({
+      ingredientId: target._id,
+      name: target.name,
+      canonicalName: target.canonicalName,
+      householdId: optionalHouseholdId || getEffectiveHouseholdId(req.user)
+    });
+
+    return res.json({ ok: true, ingredient });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo recuperar el ingrediente." });
   }
 });
 

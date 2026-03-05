@@ -89,6 +89,7 @@ export default function DishesPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignDish, setAssignDish] = useState(null);
   const [assignDate, setAssignDate] = useState("");
+  const [deleteDishModal, setDeleteDishModal] = useState({ open: false, dish: null, deleting: false });
   const [dishInfoOpenId, setDishInfoOpenId] = useState(null);
   const [isInfoMobile, setIsInfoMobile] = useState(false);
   const infoPopoverRef = useRef(null);
@@ -252,7 +253,7 @@ export default function DishesPage() {
     setIngredientsLoading(true);
     setIngredientsError("");
     try {
-      const params = new URLSearchParams({ includeInactive: "true", limit: "0" });
+      const params = new URLSearchParams({ limit: "0" });
       if (query.trim()) params.set("q", query.trim());
       const data = await apiRequest(`/api/kitchenIngredients?${params.toString()}`);
       setIngredients(data.ingredients || []);
@@ -407,6 +408,26 @@ export default function DishesPage() {
     if (!assignDish?._id || !assignDate) return;
     navigate(`/kitchen/semana?assignPlateId=${assignDish._id}&date=${assignDate}`);
     closeAssignModal();
+  };
+
+  const askDeleteDish = (dish) => {
+    if (!dish?._id) return;
+    setDeleteDishModal({ open: true, dish, deleting: false });
+  };
+
+  const confirmDeleteDish = async () => {
+    if (!deleteDishModal.dish?._id || deleteDishModal.deleting) return;
+    try {
+      setDeleteDishModal((prev) => ({ ...prev, deleting: true }));
+      await apiRequest(`/api/kitchen/dishes/${deleteDishModal.dish._id}`, { method: "DELETE" });
+      if (activeDish?._id === deleteDishModal.dish._id) closeModal();
+      if (dishInfoOpenId === deleteDishModal.dish._id) closeDishInfo();
+      setDeleteDishModal({ open: false, dish: null, deleting: false });
+      await loadDishes();
+    } catch (err) {
+      setDishError(err.message || "No se pudo eliminar el plato.");
+      setDeleteDishModal((prev) => ({ ...prev, deleting: false }));
+    }
   };
 
   const closeDishInfo = useCallback(() => {
@@ -903,16 +924,11 @@ export default function DishesPage() {
                           </svg>
                         </button>
                       ) : null}
-                      {dish.sidedish || user?.role === "admin" || user?.globalRole === "diod" ? (
+                      {dish.sidedish || user?.role === "admin" || user?.role === "owner" || user?.globalRole === "diod" ? (
                         <button
                           className="kitchen-icon-button danger"
                           type="button"
-                          onClick={async () => {
-                            await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
-                            if (activeDish?._id === dish._id) closeModal();
-                            if (dishInfoOpenId === dish._id) closeDishInfo();
-                            loadDishes();
-                          }}
+                          onClick={() => askDeleteDish(dish)}
                           aria-label={`Eliminar ${dish.name}`}
                         >
                           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1129,6 +1145,44 @@ export default function DishesPage() {
               </button>
               <button className="kitchen-button secondary" type="button" onClick={closeAssignModal}>
                 Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {deleteDishModal.open ? (
+        <div className="kitchen-modal-backdrop" role="presentation" onClick={() => setDeleteDishModal({ open: false, dish: null, deleting: false })}>
+          <div
+            className="kitchen-modal kitchen-context-modal small"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirmar eliminación de plato"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <div>
+                <h3>Eliminar plato</h3>
+                <p className="kitchen-muted">
+                  ¿Estas seguro de eliminar <strong>{deleteDishModal.dish?.name || "este plato"}</strong>?
+                </p>
+              </div>
+            </div>
+            <div className="kitchen-modal-actions">
+              <button
+                type="button"
+                className="kitchen-button ghost"
+                onClick={() => setDeleteDishModal({ open: false, dish: null, deleting: false })}
+                disabled={deleteDishModal.deleting}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="kitchen-button danger"
+                onClick={confirmDeleteDish}
+                disabled={deleteDishModal.deleting}
+              >
+                {deleteDishModal.deleting ? "Eliminando..." : "Eliminar"}
               </button>
             </div>
           </div>

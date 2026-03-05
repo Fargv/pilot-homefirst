@@ -124,6 +124,9 @@ export default function SettingsPage() {
   const [avoidRepeatsInfoOpen, setAvoidRepeatsInfoOpen] = useState(false);
   const [householdPrefsSaving, setHouseholdPrefsSaving] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [deletedTab, setDeletedTab] = useState("dishes");
+  const [deletedItems, setDeletedItems] = useState({ dishes: [], sides: [], ingredients: [] });
+  const [deletedLoading, setDeletedLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -159,6 +162,7 @@ export default function SettingsPage() {
   const isDiod = user?.globalRole === "diod";
   const canManageCategories = isDiod || isOwner;
   const canManageHousehold = isOwner && !(isDiod && !user?.activeHouseholdId);
+  const canManageDeleted = isDiod || isOwner;
 
   const activePanel = (searchParams.get("section") || "").toLowerCase();
   const isHub = !activePanel;
@@ -267,6 +271,36 @@ export default function SettingsPage() {
     const timer = setTimeout(() => setCopiedField(""), 700);
     return () => clearTimeout(timer);
   }, [copiedField]);
+
+  const loadDeletedItems = async () => {
+    if (!canManageDeleted) return;
+    if (isDiod && !user?.activeHouseholdId) {
+      setDeletedItems({ dishes: [], sides: [], ingredients: [] });
+      return;
+    }
+    setDeletedLoading(true);
+    try {
+      const [dishesData, sidesData, ingredientsData] = await Promise.all([
+        apiRequest("/api/kitchen/dishes?includeInactive=true"),
+        apiRequest("/api/kitchen/dishes?sidedish=true&includeInactive=true"),
+        apiRequest("/api/kitchenIngredients?includeInactive=true&limit=0")
+      ]);
+      setDeletedItems({
+        dishes: (dishesData?.dishes || []).filter((item) => item?.active === false),
+        sides: (sidesData?.dishes || []).filter((item) => item?.active === false),
+        ingredients: (ingredientsData?.ingredients || []).filter((item) => item?.active === false)
+      });
+    } catch (err) {
+      setError(err.message || "No se pudieron cargar los eliminados.");
+    } finally {
+      setDeletedLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activePanel !== "eliminados") return;
+    void loadDeletedItems();
+  }, [activePanel, canManageDeleted, isDiod, user?.activeHouseholdId]);
 
   const saveProfile = async () => {
     const safeDisplayName = displayName.trim();
@@ -624,6 +658,20 @@ export default function SettingsPage() {
     });
   };
 
+  const restoreDeletedItem = async (kind, id) => {
+    try {
+      if (kind === "ingredient") {
+        await apiRequest(`/api/kitchenIngredients/${id}/restore`, { method: "POST" });
+      } else {
+        await apiRequest(`/api/kitchen/dishes/${id}/restore`, { method: "POST" });
+      }
+      updateSuccess("Elemento recuperado.");
+      await Promise.all([loadDeletedItems(), loadData()]);
+    } catch (err) {
+      setError(err.message || "No se pudo recuperar el elemento.");
+    }
+  };
+
   const CardButton = ({ title, subtitle, onClick, icon = ">" }) => (
     <button type="button" className="settings-hub-card" onClick={onClick}>
       <div className="settings-hub-card-main">
@@ -912,6 +960,61 @@ export default function SettingsPage() {
     </div>
   );
 
+  const DeletedPanel = (
+    <div className="settings-panel">
+      <div className="settings-panel-header">
+        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
+        <h2>Eliminados</h2>
+      </div>
+      <div className="settings-block">
+        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Secciones eliminadas">
+          <button type="button" className={`kitchen-tab-button ${deletedTab === "dishes" ? "is-active" : ""}`} onClick={() => setDeletedTab("dishes")}>Platos eliminados</button>
+          <button type="button" className={`kitchen-tab-button ${deletedTab === "sides" ? "is-active" : ""}`} onClick={() => setDeletedTab("sides")}>Guarniciones eliminadas</button>
+          <button type="button" className={`kitchen-tab-button ${deletedTab === "ingredients" ? "is-active" : ""}`} onClick={() => setDeletedTab("ingredients")}>Ingredientes eliminados</button>
+        </div>
+      </div>
+      <div className="settings-block">
+        {deletedLoading ? <p className="kitchen-muted">Cargando eliminados...</p> : null}
+        {!deletedLoading && deletedTab === "dishes" && deletedItems.dishes.map((dish) => (
+          <div key={dish._id} className="settings-row-card">
+            <div>
+              <strong>{dish.name}</strong>
+              <p className="kitchen-muted">Plato eliminado</p>
+            </div>
+            <div className="settings-row-actions">
+              <button type="button" className="settings-mini-button" onClick={() => restoreDeletedItem("dish", dish._id)}>Recuperar</button>
+            </div>
+          </div>
+        ))}
+        {!deletedLoading && deletedTab === "sides" && deletedItems.sides.map((dish) => (
+          <div key={dish._id} className="settings-row-card">
+            <div>
+              <strong>{dish.name}</strong>
+              <p className="kitchen-muted">Guarnicion eliminada</p>
+            </div>
+            <div className="settings-row-actions">
+              <button type="button" className="settings-mini-button" onClick={() => restoreDeletedItem("side", dish._id)}>Recuperar</button>
+            </div>
+          </div>
+        ))}
+        {!deletedLoading && deletedTab === "ingredients" && deletedItems.ingredients.map((ingredient) => (
+          <div key={ingredient._id} className="settings-row-card">
+            <div>
+              <strong>{ingredient.name}</strong>
+              <p className="kitchen-muted">Ingrediente eliminado</p>
+            </div>
+            <div className="settings-row-actions">
+              <button type="button" className="settings-mini-button" onClick={() => restoreDeletedItem("ingredient", ingredient._id)}>Recuperar</button>
+            </div>
+          </div>
+        ))}
+        {!deletedLoading && deletedTab === "dishes" && !deletedItems.dishes.length ? <p className="kitchen-muted">No hay platos eliminados.</p> : null}
+        {!deletedLoading && deletedTab === "sides" && !deletedItems.sides.length ? <p className="kitchen-muted">No hay guarniciones eliminadas.</p> : null}
+        {!deletedLoading && deletedTab === "ingredients" && !deletedItems.ingredients.length ? <p className="kitchen-muted">No hay ingredientes eliminados.</p> : null}
+      </div>
+    </div>
+  );
+
   return (
     <KitchenLayout>
       <div className="kitchen-card kitchen-block-gap">
@@ -932,6 +1035,7 @@ export default function SettingsPage() {
             <CardButton title="Preferencias" subtitle="Idioma, dark mode y notificaciones." onClick={() => setPanel("preferencias")} />
             {canManageHousehold ? <CardButton title="Household" subtitle="Miembros e invitaciones." onClick={() => setPanel("household-members")} /> : null}
             {canManageCategories ? <CardButton title="Categorias" subtitle="Gestion de categorias." onClick={() => setPanel("categorias")} /> : null}
+            {canManageDeleted ? <CardButton title="Eliminados" subtitle="Recupera platos, guarniciones e ingredientes." onClick={() => setPanel("eliminados")} /> : null}
             <div className="settings-upgrade-card">
               <h3>Upgrade to Pro</h3>
               <p className="kitchen-muted">Funciones premium proximamente:</p>
@@ -950,6 +1054,7 @@ export default function SettingsPage() {
         {!loading && activePanel === "household-members" && canManageHousehold ? HouseholdMembersPanel : null}
         {!loading && activePanel === "household-invitations" && canManageHousehold ? HouseholdInvitesPanel : null}
         {!loading && activePanel === "categorias" && canManageCategories ? CategoriesPanel : null}
+        {!loading && activePanel === "eliminados" && canManageDeleted ? DeletedPanel : null}
       </div>
 
       <ModalSheet open={passwordModalOpen} title="Cambiar contrasena" onClose={() => setPasswordModalOpen(false)} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(false)}>Cancelar</button><button type="button" className="kitchen-button" onClick={savePassword}>Guardar</button></>}>

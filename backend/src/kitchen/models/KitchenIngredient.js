@@ -14,6 +14,7 @@ const KitchenIngredientSchema = new mongoose.Schema(
     canonicalName: { type: String, required: true, index: true },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     active: { type: Boolean, default: true },
+    deletedAt: { type: Date, default: null },
     isArchived: { type: Boolean, default: false }
   },
   { timestamps: true }
