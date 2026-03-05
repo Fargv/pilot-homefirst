@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { getUnassignedColor, getUserColor } from "../utils/userColors";
+import { getUserInitials } from "../utils/userInitials.js";
 
 const DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
 const DAY_LONG = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -22,14 +23,6 @@ function getDayLong(dateString) {
   return DAY_LONG[date.getDay()];
 }
 
-function getInitials(name) {
-  if (!name) return "";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-}
-
 function ChevronIcon(props) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -47,7 +40,7 @@ export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay,
     return safeDays.map((day, index) => {
       const dayKey = day?.date ? day.date.slice(0, 10) : `day-${index}`;
       const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
-      const initials = cookUser ? getInitials(cookUser.displayName) : "";
+      const initials = cookUser ? getUserInitials(cookUser.id, cookUser.displayName) : "";
       return {
         key: dayKey,
         date: day.date,

@@ -5,6 +5,7 @@ import BottomNav from "./components/ui/BottomNav";
 import { useAuth } from "./auth";
 import { apiRequest } from "./api.js";
 import { getUserColor } from "./utils/userColors.js";
+import { getUserInitials } from "./utils/userInitials.js";
 import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
 import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
 
@@ -80,13 +81,6 @@ function ChevronDownIcon(props) {
 
 function getFirstName(displayName = "") {
   return String(displayName).trim().split(/\s+/)[0] || "";
-}
-
-function getInitials(name = "") {
-  const parts = String(name).trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "U";
-  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
 export default function KitchenLayout({ children }) {
@@ -224,7 +218,7 @@ export default function KitchenLayout({ children }) {
   };
 
   const userName = getFirstName(user?.displayName || "");
-  const userInitials = getInitials(user?.displayName || "");
+  const userInitials = getUserInitials(user?.id || user?.email || user?.username || "", user?.displayName || "");
   const userColors = getUserColor(user?.id || user?.email || user?.username || "");
 
   return (

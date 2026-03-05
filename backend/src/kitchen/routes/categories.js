@@ -1,5 +1,6 @@
 import express from "express";
 import { Category } from "../models/Category.js";
+import { KitchenIngredient } from "../models/KitchenIngredient.js";
 import { requireAuth } from "../middleware.js";
 import { getEffectiveHouseholdId, getOptionalHouseholdId, handleHouseholdError } from "../householdScope.js";
 import {
@@ -122,15 +123,16 @@ router.put("/:id", requireAuth, async (req, res) => {
         return res.json({ ok: true, category: target });
       }
 
+      const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
       const category = await Category.findOneAndUpdate(
         {
-          householdId: getEffectiveHouseholdId(req.user),
+          householdId: effectiveHouseholdId,
           scope: CATALOG_SCOPES.OVERRIDE,
           masterId: target._id
         },
         {
           ...nextData,
-          householdId: getEffectiveHouseholdId(req.user),
+          householdId: effectiveHouseholdId,
           masterId: target._id,
           scope: CATALOG_SCOPES.OVERRIDE,
           isArchived: false
@@ -138,7 +140,11 @@ router.put("/:id", requireAuth, async (req, res) => {
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
 
-      await clearHiddenMasterForHousehold({ householdId: getEffectiveHouseholdId(req.user), type: "category", masterId: target._id });
+      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "category", masterId: target._id });
+      await KitchenIngredient.updateMany(
+        { householdId: effectiveHouseholdId, categoryId: target._id },
+        { $set: { categoryId: category._id } }
+      );
       return res.json({ ok: true, category, overridden: true });
     }
 

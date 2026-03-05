@@ -9,6 +9,7 @@ import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import KitchenLayout from "../Layout.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { getUserColor } from "../utils/userColors";
+import { getUserInitials } from "../utils/userInitials.js";
 import { useActiveWeek } from "../weekContext.jsx";
 
 const DAY_CARD_STYLES = [
@@ -77,14 +78,6 @@ function DiceIcon(props) {
       <circle cx="9" cy="15" r="1.3" fill="currentColor" />
     </svg>
   );
-}
-
-function getInitials(name) {
-  if (!name) return "";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
 const MAX_DISH_RESULTS = 8;
@@ -1123,7 +1116,7 @@ export default function WeekPage() {
                 }
                 const dayKey = day.date.slice(0, 10);
                 const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
-                const cookInitials = getInitials(cookUser?.displayName);
+              const cookInitials = getUserInitials(cookUser?.id, cookUser?.displayName);
                 const cookColors = getUserColor(day.cookUserId);
                 const isAssigned = Boolean(day.cookUserId);
                 const isPlanned = Boolean(day.mainDishId);
@@ -1719,7 +1712,7 @@ export default function WeekPage() {
                                 Yo ({user?.displayName || "mi usuario"})
                               </button>
                               {users.map((person) => {
-                                const initials = getInitials(person.displayName);
+                                const initials = getUserInitials(person.id, person.displayName);
                                 const colors = getUserColor(person.id);
                                 return (
                                   <button

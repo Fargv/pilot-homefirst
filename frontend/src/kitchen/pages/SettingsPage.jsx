@@ -3,11 +3,13 @@ import { useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import { apiRequest } from "../api.js";
+import ModalSheet from "../components/ui/ModalSheet.jsx";
 import {
   getColorPalette,
   getUserColorPreference,
   setUserColorPreference
 } from "../utils/userColors.js";
+import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 
 function initialsFromName(name = "") {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
@@ -40,12 +42,16 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [profileInitials, setProfileInitials] = useState(getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   });
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [selectedColorId, setSelectedColorId] = useState(getUserColorPreference(user?.id));
+  const [categoryModal, setCategoryModal] = useState({ open: false, mode: "create", category: null, name: "" });
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", onConfirm: null });
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
@@ -56,7 +62,7 @@ export default function SettingsPage() {
   const activePanel = (searchParams.get("section") || "").toLowerCase();
   const isHub = !activePanel;
 
-  const userInitials = initialsFromName(user?.displayName || "");
+  const userInitials = (getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || "")).slice(0, 3);
   const selectedColor = useMemo(
     () => palette.find((item) => item.id === selectedColorId) || palette[0],
     [palette, selectedColorId]
@@ -108,6 +114,7 @@ export default function SettingsPage() {
       setDiodHouseholds(householdData.households || []);
       setGlobalUsers(globalUserData.users || []);
       setDisplayName(user?.displayName || "");
+      setProfileInitials(getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
       setSelectedColorId(getUserColorPreference(user?.id));
     } catch (err) {
       setError(err.message || "No se pudo cargar configuracion.");
@@ -139,6 +146,7 @@ export default function SettingsPage() {
       if (data?.user) {
         setUser((prev) => ({ ...prev, ...data.user }));
       }
+      setUserInitialsPreference(user?.id, profileInitials);
       setUserColorPreference(user?.id, selectedColorId);
       await refreshUser();
       updateSuccess("Perfil actualizado.");
@@ -165,6 +173,7 @@ export default function SettingsPage() {
         })
       });
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordModalOpen(false);
       updateSuccess("Contrasena actualizada.");
     } catch (err) {
       setError(err.message || "No se pudo cambiar la contrasena.");
@@ -235,18 +244,20 @@ export default function SettingsPage() {
   };
 
   const removeMember = async (member) => {
-    if (!window.confirm(`Eliminar a ${member.displayName}?`)) return;
-    try {
-      await apiRequest(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
-      updateSuccess("Miembro eliminado.");
-      await loadData();
-    } catch (err) {
-      setError(err.message || "No se pudo eliminar el miembro.");
-    }
+    setConfirmModal({
+      open: true,
+      title: "Eliminar miembro",
+      message: `Se eliminara a ${member.displayName} del household.`,
+      onConfirm: async () => {
+        await apiRequest(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
+        updateSuccess("Miembro eliminado.");
+        await loadData();
+      }
+    });
   };
 
-  const createCategory = async () => {
-    const safeName = categoryName.trim();
+  const createCategory = async (sourceName) => {
+    const safeName = String(sourceName ?? categoryName).trim();
     if (!safeName) return;
     try {
       await apiRequest("/api/categories", {
@@ -254,6 +265,7 @@ export default function SettingsPage() {
         body: JSON.stringify({ name: safeName, ...(isDiod ? { scope: "master" } : {}) })
       });
       setCategoryName("");
+      setCategoryModal({ open: false, mode: "create", category: null, name: "" });
       updateSuccess("Categoria creada.");
       await loadData();
     } catch (err) {
@@ -261,20 +273,21 @@ export default function SettingsPage() {
     }
   };
 
-  const editCategory = async (category) => {
-    const nextName = window.prompt("Nuevo nombre", category.name || "");
-    if (!nextName || !nextName.trim()) return;
+  const editCategory = async (category, nextName) => {
+    const safeName = String(nextName || "").trim();
+    if (!safeName) return;
     try {
       await apiRequest(`/api/categories/${category._id}`, {
         method: "PUT",
         body: JSON.stringify({
-          name: nextName.trim(),
+          name: safeName,
           colorBg: category.colorBg,
           colorText: category.colorText,
           active: category.active,
           forRecipes: category.forRecipes
         })
       });
+      setCategoryModal({ open: false, mode: "create", category: null, name: "" });
       updateSuccess("Categoria actualizada.");
       await loadData();
     } catch (err) {
@@ -283,14 +296,16 @@ export default function SettingsPage() {
   };
 
   const removeCategory = async (category) => {
-    if (!window.confirm(`Eliminar categoria "${category.name}"?`)) return;
-    try {
-      await apiRequest(`/api/categories/${category._id}`, { method: "DELETE" });
-      updateSuccess("Categoria eliminada.");
-      await loadData();
-    } catch (err) {
-      setError(err.message || "No se pudo eliminar categoria.");
-    }
+    setConfirmModal({
+      open: true,
+      title: "Eliminar categoria",
+      message: `Se eliminara la categoria "${category.name}".`,
+      onConfirm: async () => {
+        await apiRequest(`/api/categories/${category._id}`, { method: "DELETE" });
+        updateSuccess("Categoria eliminada.");
+        await loadData();
+      }
+    });
   };
 
   const createHousehold = async (isTest = false) => {
@@ -314,14 +329,16 @@ export default function SettingsPage() {
   };
 
   const deleteHousehold = async (household) => {
-    if (!window.confirm(`Eliminar household "${household.name}"?`)) return;
-    try {
-      await apiRequest(`/api/kitchen/admin/households/${household.id}`, { method: "DELETE" });
-      updateSuccess("Household eliminado.");
-      await loadData();
-    } catch (err) {
-      setError(err.message || "No se pudo eliminar el household.");
-    }
+    setConfirmModal({
+      open: true,
+      title: "Eliminar household",
+      message: `Se eliminara el household "${household.name}" y sus datos.`,
+      onConfirm: async () => {
+        await apiRequest(`/api/kitchen/admin/households/${household.id}`, { method: "DELETE" });
+        updateSuccess("Household eliminado.");
+        await loadData();
+      }
+    });
   };
 
   const assignOwner = async (household, ownerUserId) => {
@@ -363,6 +380,15 @@ export default function SettingsPage() {
           onChange={(event) => setDisplayName(event.target.value)}
         />
         <p className="kitchen-muted">Email: {user?.email || "Sin email"}</p>
+        <label className="kitchen-label" htmlFor="settings-initials">Iniciales</label>
+        <input
+          id="settings-initials"
+          className="kitchen-input"
+          maxLength={3}
+          value={profileInitials}
+          onChange={(event) => setProfileInitials(event.target.value.toUpperCase())}
+          placeholder="FR"
+        />
       </div>
       <div className="settings-block">
         <h3 className="settings-subtitle">Color del usuario</h3>
@@ -384,28 +410,7 @@ export default function SettingsPage() {
       </div>
       <div className="settings-block">
         <h3 className="settings-subtitle">Cambiar contrasena</h3>
-        <input
-          className="kitchen-input"
-          type="password"
-          placeholder="Contrasena actual"
-          value={passwordForm.currentPassword}
-          onChange={(event) => setPasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))}
-        />
-        <input
-          className="kitchen-input"
-          type="password"
-          placeholder="Nueva contrasena"
-          value={passwordForm.newPassword}
-          onChange={(event) => setPasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))}
-        />
-        <input
-          className="kitchen-input"
-          type="password"
-          placeholder="Confirmar nueva contrasena"
-          value={passwordForm.confirmPassword}
-          onChange={(event) => setPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
-        />
-        <button type="button" className="kitchen-button secondary" onClick={savePassword}>Actualizar contrasena</button>
+        <button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(true)}>Cambiar contrasena</button>
       </div>
       <button type="button" className="kitchen-button" onClick={saveProfile}>Guardar perfil</button>
     </div>
@@ -463,6 +468,10 @@ export default function SettingsPage() {
       </div>
       <div className="settings-block">
         <h3 className="settings-subtitle">Invitaciones</h3>
+        <p className="kitchen-muted">
+          Invita a alguien al household compartiendo enlace o codigo.
+          Cuando se registren podran entrar directamente en tu household.
+        </p>
         <div className="kitchen-actions-inline">
           <button type="button" className="kitchen-button" onClick={generateHouseholdCode}>
             {householdCode ? "Regenerar codigo" : "Generar codigo"}
@@ -512,18 +521,39 @@ export default function SettingsPage() {
             value={categoryName}
             onChange={(event) => setCategoryName(event.target.value)}
           />
-          <button type="button" className="kitchen-button" onClick={createCategory} disabled={!categoryName.trim()}>Crear</button>
+          <button
+            type="button"
+            className="kitchen-button"
+            onClick={() => setCategoryModal({ open: true, mode: "create", category: null, name: categoryName })}
+            disabled={!categoryName.trim()}
+          >
+            Nueva categoria
+          </button>
         </div>
       </div>
       <div className="settings-block">
         {categories.map((category) => (
           <div key={category._id} className="settings-row-card">
             <div>
-              <strong>{category.name}</strong>
+              <strong>
+                {category.name}
+                <span
+                  className="settings-category-dot"
+                  style={{ background: category.colorBg || "#E8F1FF", color: category.colorText || "#1D4ED8" }}
+                >
+                  ●
+                </span>
+              </strong>
               <p className="kitchen-muted">{category.scope || "household"}</p>
             </div>
             <div className="settings-row-actions">
-              <button type="button" className="kitchen-button secondary" onClick={() => editCategory(category)}>Editar</button>
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                onClick={() => setCategoryModal({ open: true, mode: "edit", category, name: category.name })}
+              >
+                Editar
+              </button>
               <button type="button" className="kitchen-button secondary" onClick={() => removeCategory(category)}>Eliminar</button>
             </div>
           </div>
@@ -636,6 +666,113 @@ export default function SettingsPage() {
 
         <button type="button" className="kitchen-button secondary" onClick={logout}>Cerrar sesion</button>
       </div>
+
+      <ModalSheet
+        open={passwordModalOpen}
+        title="Cambiar contrasena"
+        onClose={() => setPasswordModalOpen(false)}
+        actions={(
+          <>
+            <button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(false)}>Cancelar</button>
+            <button type="button" className="kitchen-button" onClick={savePassword}>Guardar</button>
+          </>
+        )}
+      >
+        <div className="kitchen-actions">
+          <input
+            className="kitchen-input"
+            type="password"
+            placeholder="Contrasena actual"
+            value={passwordForm.currentPassword}
+            onChange={(event) => setPasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))}
+          />
+          <input
+            className="kitchen-input"
+            type="password"
+            placeholder="Nueva contrasena"
+            value={passwordForm.newPassword}
+            onChange={(event) => setPasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))}
+          />
+          <input
+            className="kitchen-input"
+            type="password"
+            placeholder="Repetir contrasena"
+            value={passwordForm.confirmPassword}
+            onChange={(event) => setPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+          />
+        </div>
+      </ModalSheet>
+
+      <ModalSheet
+        open={categoryModal.open}
+        title={categoryModal.mode === "edit" ? "Editar categoria" : "Nueva categoria"}
+        onClose={() => setCategoryModal({ open: false, mode: "create", category: null, name: "" })}
+        actions={(
+          <>
+            <button
+              type="button"
+              className="kitchen-button secondary"
+              onClick={() => setCategoryModal({ open: false, mode: "create", category: null, name: "" })}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="kitchen-button"
+              onClick={() => (categoryModal.mode === "edit"
+                ? editCategory(categoryModal.category, categoryModal.name)
+                : createCategory(categoryModal.name))}
+            >
+              Guardar
+            </button>
+          </>
+        )}
+      >
+        <label className="kitchen-field">
+          <span className="kitchen-label">Nombre</span>
+          <input
+            className="kitchen-input"
+            value={categoryModal.name}
+            onChange={(event) => setCategoryModal((prev) => ({ ...prev, name: event.target.value }))}
+            placeholder="Verduras"
+          />
+        </label>
+      </ModalSheet>
+
+      <ModalSheet
+        open={confirmModal.open}
+        title={confirmModal.title}
+        onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: null })}
+        actions={(
+          <>
+            <button
+              type="button"
+              className="kitchen-button secondary"
+              onClick={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: null })}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="kitchen-button"
+              onClick={async () => {
+                try {
+                  if (typeof confirmModal.onConfirm === "function") {
+                    await confirmModal.onConfirm();
+                  }
+                  setConfirmModal({ open: false, title: "", message: "", onConfirm: null });
+                } catch (err) {
+                  setError(err.message || "No se pudo completar la accion.");
+                }
+              }}
+            >
+              Confirmar
+            </button>
+          </>
+        )}
+      >
+        <p className="kitchen-muted">{confirmModal.message}</p>
+      </ModalSheet>
     </KitchenLayout>
   );
 }
