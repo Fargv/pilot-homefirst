@@ -14,6 +14,8 @@ const WeekDaySchema = new mongoose.Schema(
   {
     date: { type: Date, required: true },
     cookUserId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" },
+    attendeeIds: { type: [mongoose.Schema.Types.ObjectId], ref: "KitchenUser" },
+    attendeeCount: { type: Number },
     cookTiming: { type: String, enum: ["previous_day", "same_day"], default: "previous_day" },
     servings: { type: Number, default: 4 },
     mainDishId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDish" },

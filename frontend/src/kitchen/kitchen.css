@@ -1369,9 +1369,39 @@ body {
 
 .kitchen-day-cta {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.kitchen-day-attendance-toggle {
+  border: 1px solid #d0d5dd;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.kitchen-day-attendance-toggle.is-attending {
+  border-color: #16a34a;
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.kitchen-day-attendance-toggle.is-not-attending {
+  border-color: #fda4af;
+  color: #9f1239;
+  background: #fff1f2;
+}
+
+.kitchen-day-attendance-toggle:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .kitchen-day-edit-actions {

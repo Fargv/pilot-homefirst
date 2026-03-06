@@ -145,7 +145,18 @@ export default function SettingsPage() {
     colorBg: CATEGORY_COLORS[0].colorBg,
     colorText: CATEGORY_COLORS[0].colorText
   });
-  const [memberModal, setMemberModal] = useState({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } });
+  const [memberModal, setMemberModal] = useState({
+    open: false,
+    member: null,
+    form: {
+      displayName: "",
+      initials: "",
+      colorId: "lavender",
+      role: "member",
+      active: true,
+      canCook: true
+    }
+  });
   const [convertModal, setConvertModal] = useState({ open: false, memberId: "", email: "", password: "" });
   const [dinerModal, setDinerModal] = useState({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } });
   const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" });
@@ -160,6 +171,7 @@ export default function SettingsPage() {
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
+  const canViewHousehold = Boolean(user?.activeHouseholdId || user?.householdId) && !(isDiod && !user?.activeHouseholdId);
   const canManageCategories = isDiod || isOwner;
   const canManageHousehold = isOwner && !(isDiod && !user?.activeHouseholdId);
   const canManageDeleted = isDiod || isOwner;
@@ -493,7 +505,24 @@ export default function SettingsPage() {
         displayName: member.displayName || "",
         initials: (member.initials || initialsFromName(member.displayName || "")).slice(0, 3),
         colorId: member.colorId || "lavender",
-        role: member.role || "member"
+        role: member.role || "member",
+        active: member.active !== false,
+        canCook: member.canCook !== false
+      }
+    });
+  };
+
+  const closeMemberModal = () => {
+    setMemberModal({
+      open: false,
+      member: null,
+      form: {
+        displayName: "",
+        initials: "",
+        colorId: "lavender",
+        role: "member",
+        active: true,
+        canCook: true
       }
     });
   };
@@ -501,19 +530,25 @@ export default function SettingsPage() {
   const saveMember = async () => {
     if (!memberModal.member) return;
     try {
-      const data = await apiRequest(`/api/kitchen/users/members/${memberModal.member.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
+      const isSelf = String(memberModal.member.id) === String(user?.id);
+      const payload = canManageHousehold
+        ? {
           displayName: memberModal.form.displayName.trim(),
           initials: memberModal.form.initials.trim().toUpperCase().slice(0, 3),
           colorId: memberModal.form.colorId,
-          role: memberModal.form.role
-        })
+          role: memberModal.form.role,
+          active: memberModal.form.active,
+          canCook: memberModal.form.canCook
+        }
+        : (isSelf ? { canCook: memberModal.form.canCook } : {});
+      const data = await apiRequest(`/api/kitchen/users/members/${memberModal.member.id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload)
       });
       if (String(memberModal.member.id) === String(user?.id) && data?.user) {
         setUser((prev) => ({ ...prev, ...data.user }));
       }
-      setMemberModal({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } });
+      closeMemberModal();
       updateSuccess("Usuario actualizado.");
       await loadData();
     } catch (err) {
@@ -529,7 +564,7 @@ export default function SettingsPage() {
       dangerLabel: "Eliminar",
       onConfirm: async () => {
         await apiRequest(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
-        setMemberModal({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } });
+        closeMemberModal();
         updateSuccess("Usuario eliminado.");
         await loadData();
       }
@@ -577,7 +612,7 @@ export default function SettingsPage() {
       });
       updateSuccess("Comensal convertido en usuario.");
       setConvertModal({ open: false, memberId: "", email: "", password: "" });
-      setMemberModal({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } });
+      closeMemberModal();
       await loadData();
     } catch (err) {
       setError(err.message || "No se pudo convertir el comensal.");
@@ -762,25 +797,27 @@ export default function SettingsPage() {
       <div className="settings-panel-header">
         <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
         <h2>Miembros del {householdName || "household"}</h2>
-        {householdNameEditing ? (
+        {canManageHousehold && householdNameEditing ? (
           <button type="button" className="settings-icon-only" onClick={saveHouseholdName} aria-label="Guardar nombre del household">
             <SaveIcon />
           </button>
-        ) : (
+        ) : canManageHousehold ? (
           <button type="button" className="settings-icon-only" onClick={() => setHouseholdNameEditing(true)} aria-label="Editar nombre del household">
             <PencilIcon />
           </button>
-        )}
+        ) : null}
       </div>
       <div className="settings-block">
         {householdNameEditing ? (
           <input className="kitchen-input" value={householdNameDraft} onChange={(event) => setHouseholdNameDraft(event.target.value)} />
         ) : null}
         <p className="settings-counter">Miembros ({members.length})</p>
-        <div className="settings-members-actions">
-          <button type="button" className="kitchen-button" onClick={openInvitesPanel}>Invitar</button>
-          <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender" } })}>Crear comensal</button>
-        </div>
+        {canManageHousehold ? (
+          <div className="settings-members-actions">
+            <button type="button" className="kitchen-button" onClick={openInvitesPanel}>Invitar</button>
+            <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender" } })}>Crear comensal</button>
+          </div>
+        ) : null}
       </div>
       <div className="settings-block">
         {members.map((member) => {
@@ -792,7 +829,7 @@ export default function SettingsPage() {
               <span className="settings-member-avatar" style={{ background: colors.background, color: colors.text }}>{initials}</span>
               <span className="settings-member-text">
                 <strong>{member.displayName}{isSelf ? " (Tu)" : ""}</strong>
-                <span>{memberRoleLabel(member)}</span>
+                <span>{memberRoleLabel(member)} · {member.active === false ? "Inactivo" : "Activo"} · {member.canCook === false ? "No cocina" : "Puede cocinar"}</span>
               </span>
               <span className="settings-member-arrow">{">"}</span>
             </button>
@@ -800,7 +837,8 @@ export default function SettingsPage() {
         })}
         {!members.length ? <p className="kitchen-muted">No hay miembros.</p> : null}
       </div>
-      <div className="settings-block">
+      {canManageHousehold ? (
+        <div className="settings-block">
         <div className="settings-inline-heading">
           <h3 className="settings-subtitle">Preferencias del household</h3>
         </div>
@@ -868,7 +906,8 @@ export default function SettingsPage() {
             <p>Ejemplo: con X=3 y solo 10 platos, el sistema intentara evitar repetidos y completara la semana igualmente.</p>
           </div>
         ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 
@@ -1033,7 +1072,7 @@ export default function SettingsPage() {
           <div className="settings-hub-grid">
             <CardButton title="Perfil" subtitle="Informacion personal, password y color." onClick={() => setPanel("perfil")} />
             <CardButton title="Preferencias" subtitle="Idioma, dark mode y notificaciones." onClick={() => setPanel("preferencias")} />
-            {canManageHousehold ? <CardButton title="Household" subtitle="Miembros e invitaciones." onClick={() => setPanel("household-members")} /> : null}
+            {canViewHousehold ? <CardButton title="Household" subtitle="Miembros e invitaciones." onClick={() => setPanel("household-members")} /> : null}
             {canManageCategories ? <CardButton title="Categorias" subtitle="Gestion de categorias." onClick={() => setPanel("categorias")} /> : null}
             {canManageDeleted ? <CardButton title="Eliminados" subtitle="Recupera platos, guarniciones e ingredientes." onClick={() => setPanel("eliminados")} /> : null}
             <div className="settings-upgrade-card">
@@ -1051,7 +1090,7 @@ export default function SettingsPage() {
 
         {!loading && activePanel === "perfil" ? ProfilePanel : null}
         {!loading && activePanel === "preferencias" ? PreferencesPanel : null}
-        {!loading && activePanel === "household-members" && canManageHousehold ? HouseholdMembersPanel : null}
+        {!loading && activePanel === "household-members" && canViewHousehold ? HouseholdMembersPanel : null}
         {!loading && activePanel === "household-invitations" && canManageHousehold ? HouseholdInvitesPanel : null}
         {!loading && activePanel === "categorias" && canManageCategories ? CategoriesPanel : null}
         {!loading && activePanel === "eliminados" && canManageDeleted ? DeletedPanel : null}
@@ -1065,12 +1104,42 @@ export default function SettingsPage() {
         </div>
       </ModalSheet>
 
-      <ModalSheet open={memberModal.open} title="Editar usuario" onClose={() => setMemberModal({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setMemberModal({ open: false, member: null, form: { displayName: "", initials: "", colorId: "lavender", role: "member" } })}>Cancelar</button><button type="button" className="kitchen-button" onClick={saveMember}>Guardar</button></>}>
+      <ModalSheet open={memberModal.open} title="Editar usuario" onClose={closeMemberModal} actions={<><button type="button" className="kitchen-button secondary" onClick={closeMemberModal}>Cancelar</button><button type="button" className="kitchen-button" onClick={saveMember}>Guardar</button></>}>
         <div className="kitchen-actions">
-          <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={memberModal.form.displayName} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, displayName: event.target.value } }))} /></label>
-          <label className="kitchen-field"><span className="kitchen-label">Iniciales</span><input className="kitchen-input" maxLength={3} value={memberModal.form.initials} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, initials: event.target.value.toUpperCase() } }))} /></label>
-          <div className="settings-color-grid">{palette.map((color) => <button key={color.id} type="button" className={`settings-color-swatch ${memberModal.form.colorId === color.id ? "is-selected" : ""}`} style={{ background: color.background, color: color.text }} onClick={() => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, colorId: color.id } }))}>{color.label}</button>)}</div>
-          {!memberModal.member?.isPlaceholder ? <label className="kitchen-field"><span className="kitchen-label">Rol</span><select className="kitchen-select" value={memberModal.form.role} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, role: event.target.value } }))}><option value="owner">Owner</option><option value="member">User</option></select></label> : null}
+          <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={memberModal.form.displayName} disabled={!canManageHousehold} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, displayName: event.target.value } }))} /></label>
+          <label className="kitchen-field"><span className="kitchen-label">Iniciales</span><input className="kitchen-input" maxLength={3} disabled={!canManageHousehold} value={memberModal.form.initials} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, initials: event.target.value.toUpperCase() } }))} /></label>
+          <div className="settings-color-grid">{palette.map((color) => <button key={color.id} type="button" className={`settings-color-swatch ${memberModal.form.colorId === color.id ? "is-selected" : ""}`} style={{ background: color.background, color: color.text }} disabled={!canManageHousehold} onClick={() => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, colorId: color.id } }))}>{color.label}</button>)}</div>
+          {!memberModal.member?.isPlaceholder && canManageHousehold ? <label className="kitchen-field"><span className="kitchen-label">Rol</span><select className="kitchen-select" value={memberModal.form.role} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, role: event.target.value } }))}><option value="owner">Owner</option><option value="member">User</option></select></label> : null}
+          <label className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Activo</span>
+              <label className="kitchen-toggle">
+                <input
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={memberModal.form.active}
+                  disabled={!canManageHousehold || String(memberModal.member?.id) === String(user?.id)}
+                  onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, active: event.target.checked } }))}
+                />
+                <span className="kitchen-toggle-track" />
+              </label>
+            </div>
+          </label>
+          <label className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Puede cocinar</span>
+              <label className="kitchen-toggle">
+                <input
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={memberModal.form.canCook}
+                  disabled={!canManageHousehold && String(memberModal.member?.id) !== String(user?.id)}
+                  onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, canCook: event.target.checked } }))}
+                />
+                <span className="kitchen-toggle-track" />
+              </label>
+            </div>
+          </label>
           {!memberModal.member?.isPlaceholder && canManageHousehold && String(memberModal.member?.id) !== String(user?.id) ? <button type="button" className="kitchen-button secondary" onClick={() => askDeleteMember(memberModal.member)}>Eliminar usuario</button> : null}
           {memberModal.member?.isPlaceholder ? (
             <div className="settings-block">

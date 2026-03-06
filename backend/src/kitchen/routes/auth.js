@@ -161,6 +161,8 @@ router.post("/register", async (req, res) => {
       passwordHash: await bcrypt.hash(password, 10),
       type: "user",
       hasLogin: true,
+      active: true,
+      canCook: true,
       role,
       householdId: null,
       isPlaceholder: false
@@ -249,6 +251,8 @@ router.post("/accept-invite", async (req, res) => {
         user.passwordHash = await bcrypt.hash(password, 10);
         user.type = "user";
         user.hasLogin = true;
+        user.active = true;
+        user.canCook = true;
       } else {
         const passwordOk = await bcrypt.compare(password, user.passwordHash);
         if (!passwordOk) {
@@ -261,6 +265,8 @@ router.post("/accept-invite", async (req, res) => {
         user.claimedAt = new Date();
         user.type = "user";
         user.hasLogin = true;
+        user.active = true;
+        user.canCook = true;
       }
 
       if (displayName && String(displayName).trim()) {
@@ -283,6 +289,8 @@ router.post("/accept-invite", async (req, res) => {
         passwordHash: await bcrypt.hash(password, 10),
         type: "user",
         hasLogin: true,
+        active: true,
+        canCook: true,
         role: invitation.role || "member",
         householdId: invitation.householdId,
         isPlaceholder: false

@@ -1,10 +1,24 @@
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
+import { KitchenUser } from "./models/KitchenUser.js";
 import { buildScopedFilter } from "./householdScope.js";
 import { getWeekDates } from "./utils/dates.js";
 
-function buildDefaultDays(weekStartDate) {
+function isActiveMember(member) {
+  return member?.active !== false;
+}
+
+function buildDefaultAttendeeIds(members = []) {
+  return members
+    .filter((member) => isActiveMember(member))
+    .map((member) => String(member._id))
+    .filter(Boolean);
+}
+
+function buildDefaultDays(weekStartDate, attendeeIds = []) {
   return getWeekDates(weekStartDate).map((date) => ({
     date,
+    attendeeIds: [...attendeeIds],
+    attendeeCount: attendeeIds.length,
     cookTiming: "previous_day",
     servings: 4,
     ingredientOverrides: []
@@ -23,10 +37,14 @@ export async function createOrGetWeekPlan(weekStartDate, effectiveHouseholdId) {
   }
 
   try {
+    const members = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}))
+      .select("_id active")
+      .lean();
+    const attendeeIds = buildDefaultAttendeeIds(members);
     const createdPlan = await KitchenWeekPlan.create({
       weekStart: weekStartDate,
       householdId: effectiveHouseholdId,
-      days: buildDefaultDays(weekStartDate)
+      days: buildDefaultDays(weekStartDate, attendeeIds)
     });
 
     return { plan: createdPlan, created: true };

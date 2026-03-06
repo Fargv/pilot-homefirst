@@ -12,6 +12,8 @@ const KitchenUserSchema = new mongoose.Schema(
     type: { type: String, enum: ["placeholder", "user"], default: "user" },
     hasLogin: { type: Boolean, default: true },
     isPlaceholder: { type: Boolean, default: false },
+    active: { type: Boolean, default: true },
+    canCook: { type: Boolean, default: true },
     claimedAt: { type: Date, default: null },
     passwordHash: { type: String, default: null },
     role: { type: String, enum: ["owner", "member", "admin", "user"], default: "member" },
@@ -29,6 +31,9 @@ KitchenUserSchema.index(
 );
 
 KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
+  const isPlaceholder = this.isPlaceholder || this.type === "placeholder";
+  const active = typeof this.active === "boolean" ? this.active : true;
+  const canCook = typeof this.canCook === "boolean" ? this.canCook : !isPlaceholder;
   return {
     id: this._id,
     username: this.username,
@@ -41,6 +46,8 @@ KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
     type: this.type || (this.isPlaceholder ? "placeholder" : "user"),
     hasLogin: typeof this.hasLogin === "boolean" ? this.hasLogin : !this.isPlaceholder,
     isPlaceholder: this.isPlaceholder,
+    active,
+    canCook,
     claimedAt: this.claimedAt ?? null,
     role: this.role,
     householdId: this.householdId ?? null,

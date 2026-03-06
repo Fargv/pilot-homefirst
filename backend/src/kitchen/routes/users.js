@@ -26,6 +26,10 @@ import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from
 
 const router = express.Router();
 
+function isHouseholdAdmin(user) {
+  return user?.globalRole === "diod" || user?.role === "owner" || user?.role === "admin";
+}
+
 function startOfTodayUtc() {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -203,6 +207,8 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       colorId: normalizeColorId(req.body?.colorId),
       type: "user",
       hasLogin: true,
+      active: true,
+      canCook: true,
       role: normalizeRole(req.body.role),
       householdId: effectiveHouseholdId,
       passwordHash
@@ -372,18 +378,26 @@ router.put("/me/password", requireAuth, async (req, res) => {
   }
 });
 
-router.put("/members/:id", requireAuth, requireRole("owner"), async (req, res) => {
+router.put("/members/:id", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const member = await KitchenUser.findOne(buildScopedFilter(effectiveHouseholdId, { _id: req.params.id }));
     if (!member) {
       return res.status(404).json({ ok: false, error: "No encontramos al miembro." });
     }
+    const isAdmin = isHouseholdAdmin(req.kitchenUser);
+    const isSelf = String(member._id) === String(req.kitchenUser?._id);
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para editar este miembro." });
+    }
+    if (!isAdmin && Object.keys(req.body || {}).some((key) => key !== "canCook")) {
+      return res.status(403).json({ ok: false, error: "Solo puedes editar tu preferencia de cocina." });
+    }
     const nextRole = req.body?.role ? normalizeRole(req.body.role) : member.role;
-    if (req.body?.role) {
+    if (req.body?.role && isAdmin) {
       member.role = nextRole;
     }
-    if (req.body?.displayName) {
+    if (req.body?.displayName && isAdmin) {
       const nextDisplayName = buildDisplayName({
         displayName: req.body.displayName,
         name: req.body.displayName
@@ -393,11 +407,23 @@ router.put("/members/:id", requireAuth, requireRole("owner"), async (req, res) =
       }
       member.displayName = nextDisplayName;
       member.initials = normalizeInitials(req.body?.initials, nextDisplayName);
-    } else if (typeof req.body?.initials !== "undefined") {
+    } else if (typeof req.body?.initials !== "undefined" && isAdmin) {
       member.initials = normalizeInitials(req.body?.initials, member.displayName);
     }
-    if (typeof req.body?.colorId !== "undefined") {
+    if (typeof req.body?.colorId !== "undefined" && isAdmin) {
       member.colorId = normalizeColorId(req.body?.colorId);
+    }
+    if (typeof req.body?.active === "boolean") {
+      if (!isAdmin) {
+        return res.status(403).json({ ok: false, error: "No tienes permisos para activar o desactivar miembros." });
+      }
+      if (isSelf && req.body.active === false) {
+        return res.status(400).json({ ok: false, error: "No puedes desactivarte a ti mismo." });
+      }
+      member.active = req.body.active;
+    }
+    if (typeof req.body?.canCook === "boolean") {
+      member.canCook = req.body.canCook;
     }
 
     await member.save();

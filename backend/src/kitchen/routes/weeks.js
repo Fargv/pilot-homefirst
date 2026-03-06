@@ -97,6 +97,54 @@ function hasAdministrativePlanChange(req, day, updates) {
   return clearsMainDish || clearsSideDish;
 }
 
+function isActiveMember(member) {
+  return member?.active !== false;
+}
+
+function canAutoAssignCook(member) {
+  const isPlaceholder = member?.isPlaceholder || member?.type === "placeholder";
+  const canCook = typeof member?.canCook === "boolean" ? member.canCook : !isPlaceholder;
+  return isActiveMember(member) && canCook;
+}
+
+function dedupeIds(items = []) {
+  const seen = new Set();
+  const result = [];
+  for (const item of items) {
+    const value = String(item || "").trim();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
+}
+
+function buildDefaultAttendeeIds(members = []) {
+  return dedupeIds(
+    members
+      .filter((member) => isActiveMember(member))
+      .map((member) => member?._id)
+  );
+}
+
+function resolveDayAttendeeIds(day, defaultAttendeeIds = []) {
+  if (Array.isArray(day?.attendeeIds)) {
+    return dedupeIds(day.attendeeIds);
+  }
+  return [...defaultAttendeeIds];
+}
+
+function applyAttendeesToDay(day, attendeeIds) {
+  day.attendeeIds = dedupeIds(attendeeIds);
+  day.attendeeCount = day.attendeeIds.length;
+}
+
+async function loadHouseholdMembers(effectiveHouseholdId) {
+  return KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}))
+    .select("_id active canCook isPlaceholder type")
+    .lean();
+}
+
 function pickRandomItem(items = []) {
   if (!items.length) return null;
   const index = Math.floor(Math.random() * items.length);
@@ -148,6 +196,14 @@ router.get("/:weekStart", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
     const plan = await findWeekPlan(monday, effectiveHouseholdId);
+    if (plan) {
+      const members = await loadHouseholdMembers(effectiveHouseholdId);
+      const defaultAttendeeIds = buildDefaultAttendeeIds(members);
+      for (const day of plan.days || []) {
+        const attendeeIds = resolveDayAttendeeIds(day, defaultAttendeeIds);
+        applyAttendeesToDay(day, attendeeIds);
+      }
+    }
 
     res.json({
       ok: true,
@@ -165,16 +221,24 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
   try {
     const weekStart = parseISODate(req.params.weekStart);
     const date = parseISODate(req.params.date);
-    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha invalida." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
 
     const day = plan.days.find((item) => isSameDay(item.date, date));
-    if (!day) return res.status(404).json({ ok: false, error: "Día fuera de la semana." });
+    if (!day) return res.status(404).json({ ok: false, error: "Dia fuera de la semana." });
 
-    const { cookUserId, cookTiming, servings, mainDishId, sideDishId, ingredientOverrides } = req.body;
+    const {
+      cookUserId,
+      cookTiming,
+      servings,
+      mainDishId,
+      sideDishId,
+      ingredientOverrides,
+      attendeeIds
+    } = req.body;
 
     const invalidIdMessage =
       validateObjectId(cookUserId, "cookUserId")
@@ -189,14 +253,23 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
         item?.ingredientId && !mongoose.isValidObjectId(item.ingredientId)
       );
       if (invalidOverride) {
-        return res.status(400).json({ ok: false, error: "Algún ingredientId de ingredientes extra no es válido." });
+        return res.status(400).json({ ok: false, error: "Algun ingredientId de extras no es valido." });
+      }
+    }
+    if (attendeeIds !== undefined && !Array.isArray(attendeeIds)) {
+      return res.status(400).json({ ok: false, error: "attendeeIds debe ser una lista." });
+    }
+    if (Array.isArray(attendeeIds)) {
+      const invalidAttendeeId = attendeeIds.find((item) => !mongoose.isValidObjectId(item));
+      if (invalidAttendeeId) {
+        return res.status(400).json({ ok: false, error: "Algun attendeeId no es valido." });
       }
     }
 
     if (hasAdministrativePlanChange(req, day, req.body || {})) {
       return res.status(403).json({
         ok: false,
-        error: "Solo owner/admin puede reasignar a otros usuarios o quitar platos del día."
+        error: "Solo owner/admin puede reasignar a otros usuarios o quitar platos del dia."
       });
     }
 
@@ -223,8 +296,18 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
         buildDishVisibilityFilter(effectiveHouseholdId, { _id: sideDishId, sidedish: true })
       ).select("_id");
       if (!sideDish) {
-        return res.status(400).json({ ok: false, error: "La guarnición no pertenece a este hogar." });
+        return res.status(400).json({ ok: false, error: "La guarnicion no pertenece a este hogar." });
       }
+    }
+
+    const members = await loadHouseholdMembers(effectiveHouseholdId);
+    const validMemberIdSet = new Set(dedupeIds(members.map((member) => member._id)));
+    const defaultAttendeeIds = buildDefaultAttendeeIds(members);
+    const nextAttendeeIds = Array.isArray(attendeeIds)
+      ? dedupeIds(attendeeIds)
+      : resolveDayAttendeeIds(day, defaultAttendeeIds);
+    if (nextAttendeeIds.some((id) => !validMemberIdSet.has(id))) {
+      return res.status(400).json({ ok: false, error: "Algun comensal no pertenece a este hogar." });
     }
 
     if (cookUserId !== undefined) day.cookUserId = cookUserId || null;
@@ -236,6 +319,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
     if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
     if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = normalizeIngredientOverrides(ingredientOverrides);
+    applyAttendeesToDay(day, nextAttendeeIds);
 
     await plan.save();
     const warning = await rebuildShoppingListBestEffort({
@@ -253,9 +337,51 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       userId: String(req.kitchenUser?._id || "")
     });
     if (error?.name === "ValidationError" || error?.name === "CastError") {
-      return res.status(400).json({ ok: false, error: "Datos inválidos al actualizar el día del plan." });
+      return res.status(400).json({ ok: false, error: "Datos invalidos al actualizar el dia del plan." });
     }
-    return res.status(500).json({ ok: false, error: "No se pudo actualizar el día del plan." });
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el dia del plan." });
+  }
+});
+
+router.post("/:weekStart/day/:date/toggle-attendance", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    const date = parseISODate(req.params.date);
+    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha invalida." });
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+    const day = plan.days.find((item) => isSameDay(item.date, date));
+    if (!day) return res.status(404).json({ ok: false, error: "Dia fuera de la semana." });
+
+    const members = await loadHouseholdMembers(effectiveHouseholdId);
+    const defaultAttendeeIds = buildDefaultAttendeeIds(members);
+    const selfId = String(req.kitchenUser?._id || "");
+    const nextAttendeeIds = resolveDayAttendeeIds(day, defaultAttendeeIds);
+    const isPresent = nextAttendeeIds.includes(selfId);
+    const toggledAttendees = isPresent
+      ? nextAttendeeIds.filter((id) => id !== selfId)
+      : [...nextAttendeeIds, selfId];
+
+    applyAttendeesToDay(day, toggledAttendees);
+    await plan.save();
+    return res.json({
+      ok: true,
+      plan,
+      attending: !isPresent,
+      attendeeIds: day.attendeeIds,
+      attendeeCount: day.attendeeCount
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    logKitchenError("toggle-attendance", error, {
+      weekStart: req.params.weekStart,
+      date: req.params.date,
+      userId: String(req.kitchenUser?._id || "")
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar asistencia." });
   }
 });
 
@@ -400,6 +526,8 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     let assignedCount = 0;
     let relaxedCrossWeekRule = false;
     let relaxedSameWeekRule = false;
+    const members = await loadHouseholdMembers(effectiveHouseholdId);
+    const defaultAttendeeIds = buildDefaultAttendeeIds(members);
 
     for (const day of randomizedDays) {
       const strictEligible = allDishIds.filter(
@@ -424,30 +552,22 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       if (!pickedDishId) continue;
 
       day.mainDishId = pickedDishId;
+      applyAttendeesToDay(day, resolveDayAttendeeIds(day, defaultAttendeeIds));
       usedInCurrentWeek.add(pickedDishId);
       assignedCount += 1;
     }
 
-    const canDistributeUsers = isHouseholdAdmin(req.kitchenUser);
-    let userPool = [];
-    if (canDistributeUsers) {
-      const members = await KitchenUser.find(
-        buildScopedFilter(effectiveHouseholdId, {})
-      )
-        .select("_id")
-        .lean();
-      userPool = shuffleArray(members.map((member) => String(member._id)).filter(Boolean));
-    }
-    if (!userPool.length) {
-      userPool = [String(req.kitchenUser?._id || "")].filter(Boolean);
-    }
+    const userPool = shuffleArray(
+      members
+        .filter((member) => canAutoAssignCook(member))
+        .map((member) => String(member._id))
+        .filter(Boolean)
+    );
 
     for (let index = 0; index < randomizedDays.length; index += 1) {
       const day = randomizedDays[index];
       if (!day.mainDishId) continue;
-      if (userPool.length) {
-        day.cookUserId = userPool[index % userPool.length];
-      }
+      day.cookUserId = userPool.length ? userPool[index % userPool.length] : null;
     }
 
     await plan.save();
@@ -511,6 +631,10 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
     targetPlan.days = sourcePlan.days.map((day) => ({
       date: new Date(day.date),
       cookUserId: day.cookUserId,
+      attendeeIds: Array.isArray(day.attendeeIds) ? dedupeIds(day.attendeeIds) : undefined,
+      attendeeCount: Array.isArray(day.attendeeIds)
+        ? dedupeIds(day.attendeeIds).length
+        : (typeof day.attendeeCount === "number" ? day.attendeeCount : undefined),
       cookTiming: day.cookTiming,
       servings: day.servings,
       mainDishId: day.mainDishId,
@@ -631,6 +755,11 @@ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+    const members = await loadHouseholdMembers(effectiveHouseholdId);
+    const defaultAttendeeIds = buildDefaultAttendeeIds(members);
+    for (const day of plan.days || []) {
+      applyAttendeesToDay(day, resolveDayAttendeeIds(day, defaultAttendeeIds));
+    }
     const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
     const dishes = await KitchenDish.find(
       buildDishVisibilityFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
@@ -645,4 +774,5 @@ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
 });
 
 export default router;
+
 

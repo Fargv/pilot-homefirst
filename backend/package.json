@@ -13,7 +13,8 @@
     "migrate:ingredientCategoryId": "node scripts/migrate-ingredient-category-id.js",
     "repair:shoppingItems": "node scripts/repair-shopping-list-items.js",
     "migrate:removeShoppingTripAmount": "node scripts/migrate-remove-shopping-trip-amount.js",
-    "migrate:userEmailPartialIndex": "node scripts/migrate-user-email-partial-index.js"
+    "migrate:userEmailPartialIndex": "node scripts/migrate-user-email-partial-index.js",
+    "migrate:userFlags": "node scripts/migrate-user-flags.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

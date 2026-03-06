@@ -287,6 +287,8 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
       type: "placeholder",
       hasLogin: false,
       isPlaceholder: true,
+      active: true,
+      canCook: false,
       role: "member",
       householdId: effectiveHouseholdId,
       createdByUserId: req.kitchenUser?._id || null,
@@ -365,6 +367,8 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
     placeholder.type = "user";
     placeholder.hasLogin = true;
     placeholder.isPlaceholder = false;
+    placeholder.active = true;
+    placeholder.canCook = true;
     placeholder.claimedAt = new Date();
     await placeholder.save();
 

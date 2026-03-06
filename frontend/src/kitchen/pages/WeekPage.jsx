@@ -101,6 +101,15 @@ function mergeIngredientLists(...lists) {
   return Array.from(merged.values());
 }
 
+function isActiveMember(user) {
+  return user?.active !== false;
+}
+
+function resolveDayAttendees(day, users = []) {
+  if (Array.isArray(day?.attendeeIds)) return day.attendeeIds.map((item) => String(item));
+  return users.filter((member) => isActiveMember(member)).map((member) => String(member.id));
+}
+
 export default function WeekPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -118,6 +127,7 @@ export default function WeekPage() {
   const [weekNotice, setWeekNotice] = useState(null);
   const [dayStatus, setDayStatus] = useState({});
   const [dayErrors, setDayErrors] = useState({});
+  const [dayAttendanceBusy, setDayAttendanceBusy] = useState({});
   const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
   const [extraIngredientsEnabled, setExtraIngredientsEnabled] = useState({});
   const [selectedDay, setSelectedDay] = useState("");
@@ -270,8 +280,7 @@ export default function WeekPage() {
       setDishes(dishesData.dishes || []);
       setSideDishes(sideDishesData.dishes || []);
       setDishesLoadedForHouseholdKey(householdKeyAtRequest);
-      const usersEndpoint = isOwnerAdmin ? "/api/kitchen/users" : "/api/kitchen/users/members";
-      const usersData = await apiRequest(usersEndpoint);
+      const usersData = await apiRequest("/api/kitchen/users/members");
       if (requestSeq !== loadRequestSeqRef.current) return;
       setUsers(usersData.users || []);
     } catch (err) {
@@ -578,6 +587,22 @@ export default function WeekPage() {
   const onAssignSelf = async (day, options = {}) => {
     const currentUserId = userRef.current?.id || userRef.current?._id;
     return updateDay(day, { cookUserId: currentUserId }, options);
+  };
+
+  const toggleSelfAttendance = async (day) => {
+    const dayKey = day.date.slice(0, 10);
+    setDayAttendanceBusy((prev) => ({ ...prev, [dayKey]: true }));
+    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
+    try {
+      const data = await apiRequest(`/api/kitchen/weeks/${weekStartRef.current}/day/${dayKey}/toggle-attendance`, {
+        method: "POST"
+      });
+      setPlan(data?.plan || null);
+    } catch (err) {
+      setDayErrors((prev) => ({ ...prev, [dayKey]: err.message || "No se pudo actualizar asistencia." }));
+    } finally {
+      setDayAttendanceBusy((prev) => ({ ...prev, [dayKey]: false }));
+    }
   };
 
   const removeDayAssignment = async (day) => {
@@ -1137,8 +1162,12 @@ export default function WeekPage() {
                 }
                 const dayKey = day.date.slice(0, 10);
                 const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
-              const cookInitials = getUserInitialsFromProfile(cookUser?.initials, cookUser?.id, cookUser?.displayName);
-              const cookColors = getUserColorById(cookUser?.colorId, day.cookUserId);
+                const dayAttendeeIds = resolveDayAttendees(day, users);
+                const attendeeCount = dayAttendeeIds.length;
+                const currentUserId = String(user?.id || user?._id || "");
+                const isSelfAttending = Boolean(currentUserId) && dayAttendeeIds.includes(currentUserId);
+                const cookInitials = getUserInitialsFromProfile(cookUser?.initials, cookUser?.id, cookUser?.displayName);
+                const cookColors = getUserColorById(cookUser?.colorId, day.cookUserId);
                 const isAssigned = Boolean(day.cookUserId);
                 const isPlanned = Boolean(day.mainDishId);
                 const isAssignedToSelf = day.cookUserId
@@ -1240,6 +1269,7 @@ export default function WeekPage() {
                       {cookUser?.displayName ? (
                         <span>Cocinero: {cookUser.displayName}</span>
                       ) : null}
+                      <span>Cocinar para {attendeeCount} {attendeeCount === 1 ? "persona" : "personas"}</span>
                     </div>
                     {statusLabels.length ? (
                       <div className="kitchen-day-status" aria-label="Estado del día">
@@ -1251,6 +1281,16 @@ export default function WeekPage() {
                       </div>
                     ) : null}
                     <div className="kitchen-day-cta">
+                      <button
+                        type="button"
+                        className={`kitchen-day-attendance-toggle ${isSelfAttending ? "is-attending" : "is-not-attending"}`}
+                        onClick={() => toggleSelfAttendance(day)}
+                        disabled={dayAttendanceBusy[dayKey]}
+                      >
+                        {dayAttendanceBusy[dayKey]
+                          ? "Actualizando..."
+                          : (isSelfAttending ? "Este dia SI como" : "Este dia no como")}
+                      </button>
                       {canEdit && isPlanned && !isEditing ? (
                         <button
                           type="button"
@@ -1286,6 +1326,16 @@ export default function WeekPage() {
               {!isEditing ? (
                 isEmptyState ? (
                   <div className="kitchen-day-empty">
+                    <button
+                      type="button"
+                      className={`kitchen-day-attendance-toggle ${isSelfAttending ? "is-attending" : "is-not-attending"}`}
+                      onClick={() => toggleSelfAttendance(day)}
+                      disabled={dayAttendanceBusy[dayKey]}
+                    >
+                      {dayAttendanceBusy[dayKey]
+                        ? "Actualizando..."
+                        : (isSelfAttending ? "Este dia SI como" : "Este dia no como")}
+                    </button>
                     <div className="kitchen-day-empty-spacer" aria-hidden="true" />
                     {canShowAssignCta ? (
                       <div className="kitchen-day-empty-actions">
