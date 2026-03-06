@@ -1673,7 +1673,7 @@ export default function WeekPage() {
                 const leftoversDishName = day?.leftoversSourceDishName
                   || (day?.leftoversSourceDishId ? dishMap.get(day.leftoversSourceDishId)?.name : "");
                 const displayDishName = day?.isLeftovers
-                  ? `Sobras de ${leftoversDishName || "plato seleccionado"}`
+                  ? (leftoversDishName ? `Sobras - ${leftoversDishName}` : "Sobras")
                   : mainDish
                   ? `${mainDish?.name || ""}${sideDish?.name ? ` con ${sideDish.name}` : ""}`.trim()
                   : "";
