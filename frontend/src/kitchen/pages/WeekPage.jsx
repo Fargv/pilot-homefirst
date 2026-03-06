@@ -86,6 +86,14 @@ function EditIcon(props) {
     </svg>
   );
 }
+function EyeIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="2.8" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}
 function InfoIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
@@ -198,6 +206,11 @@ export default function WeekPage() {
   const [swapBusy, setSwapBusy] = useState(false);
   const [deleteDialogDay, setDeleteDialogDay] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [attendeeDialogDay, setAttendeeDialogDay] = useState(null);
+  const [attendeeDialogEditable, setAttendeeDialogEditable] = useState(false);
+  const [attendeeDraftIds, setAttendeeDraftIds] = useState([]);
+  const [attendeeDialogBusy, setAttendeeDialogBusy] = useState(false);
+  const [attendeeDialogError, setAttendeeDialogError] = useState("");
   const [dishModalOpen, setDishModalOpen] = useState(false);
   const [dishModalName, setDishModalName] = useState("");
   const [dishModalDayKey, setDishModalDayKey] = useState(null);
@@ -224,6 +237,7 @@ export default function WeekPage() {
   const [missingWeekPromptOpen, setMissingWeekPromptOpen] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
   const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
+  const canManageAttendees = isOwnerAdmin;
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const hasAnyMainDishInWeek = safeDays.some((day) => Boolean(day?.mainDishId));
   const canShowWeekRandomize = Boolean(plan && safeDays.length && !hasAnyMainDishInWeek);
@@ -677,6 +691,50 @@ export default function WeekPage() {
     return result;
   };
 
+  const openAttendeeDialog = (day, editable) => {
+    const dayKey = day?.date?.slice?.(0, 10);
+    if (!dayKey) return;
+    setAttendeeDialogDay(dayKey);
+    setAttendeeDialogEditable(Boolean(editable));
+    setAttendeeDialogBusy(false);
+    setAttendeeDialogError("");
+    setAttendeeDraftIds(resolveDayAttendees(day, users));
+  };
+
+  const closeAttendeeDialog = () => {
+    if (attendeeDialogBusy) return;
+    setAttendeeDialogDay(null);
+    setAttendeeDialogEditable(false);
+    setAttendeeDraftIds([]);
+    setAttendeeDialogError("");
+  };
+
+  const toggleAttendeeDraft = (memberId) => {
+    const id = String(memberId || "");
+    if (!id || !attendeeDialogEditable) return;
+    setAttendeeDraftIds((prev) => (
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    ));
+  };
+
+  const saveAttendeeDialog = async () => {
+    if (!attendeeDialogDay || attendeeDialogBusy || !attendeeDialogEditable) return;
+    const day = safeDaysRef.current.find((entry) => entry?.date?.slice(0, 10) === attendeeDialogDay);
+    if (!day) {
+      closeAttendeeDialog();
+      return;
+    }
+    setAttendeeDialogBusy(true);
+    setAttendeeDialogError("");
+    const result = await updateDay(day, { attendeeIds: attendeeDraftIds }, { returnErrorObject: true });
+    setAttendeeDialogBusy(false);
+    if (result?.error) {
+      setAttendeeDialogError(result.error.message || "No se pudieron guardar los comensales.");
+      return;
+    }
+    closeAttendeeDialog();
+  };
+
   const buildMainDishUpdatePayload = (day, nextMainDishId) => {
     const currentMainDishId = day?.mainDishId ? String(day.mainDishId) : "";
     const nextMainDishKey = nextMainDishId ? String(nextMainDishId) : "";
@@ -1127,6 +1185,16 @@ export default function WeekPage() {
     setDishModalSidedish(false);
   };
 
+  const attendeeDialogMembers = useMemo(
+    () => [...users].sort((a, b) => String(a?.displayName || "").localeCompare(String(b?.displayName || ""), "es")),
+    [users]
+  );
+  const attendeeDialogSelectedMembers = useMemo(() => {
+    if (!attendeeDialogDay) return [];
+    const selectedSet = new Set(attendeeDraftIds.map((id) => String(id)));
+    return attendeeDialogMembers.filter((member) => selectedSet.has(String(member.id)));
+  }, [attendeeDialogDay, attendeeDialogMembers, attendeeDraftIds]);
+
   const handleDishSaved = async (dish) => {
     if (!dish) return;
     setDishes((prev) => {
@@ -1441,8 +1509,19 @@ export default function WeekPage() {
                     </span>
                   </div>
                 </div>
-                <div className="kitchen-day-subtitle">
-                  Comen {attendeeCount} {attendeeCount === 1 ? "persona" : "personas"}
+                <div className="kitchen-day-subtitle-row">
+                  <div className="kitchen-day-subtitle">
+                    Comen {attendeeCount} {attendeeCount === 1 ? "persona" : "personas"}
+                  </div>
+                  <button
+                    type="button"
+                    className="kitchen-day-attendees-action"
+                    onClick={() => openAttendeeDialog(day, canManageAttendees)}
+                    aria-label={canManageAttendees ? "Editar comensales" : "Ver comensales"}
+                    title={canManageAttendees ? "Editar comensales" : "Ver comensales"}
+                  >
+                    {canManageAttendees ? <EditIcon /> : <EyeIcon />}
+                  </button>
                 </div>
                 {!isEmptyState ? (
                   <>
@@ -2125,6 +2204,100 @@ export default function WeekPage() {
           ) : null}
         </div>
       </div>
+      {attendeeDialogDay ? (
+        <div className="kitchen-modal-backdrop" role="presentation">
+          <div
+            className="kitchen-modal kitchen-attendee-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={attendeeDialogEditable ? "Editar comensales" : "Quien come este dia"}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header kitchen-attendee-modal-header">
+              <h3>{attendeeDialogEditable ? "Editar comensales" : "Quien come este dia"}</h3>
+              <button
+                type="button"
+                className="kitchen-ui-sheet-close"
+                onClick={closeAttendeeDialog}
+                aria-label="Cerrar modal"
+                title="Cerrar"
+                disabled={attendeeDialogBusy}
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            {attendeeDialogError ? <p className="kitchen-inline-error">{attendeeDialogError}</p> : null}
+            {attendeeDialogEditable ? (
+              <div className="kitchen-attendee-list" role="list">
+                {attendeeDialogMembers.map((member) => {
+                  const memberId = String(member.id);
+                  const checked = attendeeDraftIds.includes(memberId);
+                  const initials = getUserInitialsFromProfile(member.initials, member.id, member.displayName);
+                  const colors = getUserColorById(member.colorId, member.id);
+                  return (
+                    <label key={`attendee-option-${memberId}`} className="kitchen-attendee-row" role="listitem">
+                      <span
+                        className="kitchen-attendee-avatar"
+                        style={{ background: colors.background, color: colors.text }}
+                        aria-hidden="true"
+                      >
+                        {initials || "?"}
+                      </span>
+                      <span className="kitchen-attendee-name">{member.displayName || "Sin nombre"}</span>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleAttendeeDraft(memberId)}
+                        disabled={attendeeDialogBusy}
+                        aria-label={`Incluir a ${member.displayName || "usuario"} como comensal`}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="kitchen-attendee-list is-readonly" role="list">
+                {attendeeDialogSelectedMembers.length ? attendeeDialogSelectedMembers.map((member) => {
+                  const initials = getUserInitialsFromProfile(member.initials, member.id, member.displayName);
+                  const colors = getUserColorById(member.colorId, member.id);
+                  return (
+                    <div key={`attendee-view-${member.id}`} className="kitchen-attendee-row" role="listitem">
+                      <span
+                        className="kitchen-attendee-avatar"
+                        style={{ background: colors.background, color: colors.text }}
+                        aria-hidden="true"
+                      >
+                        {initials || "?"}
+                      </span>
+                      <span className="kitchen-attendee-name">{member.displayName || "Sin nombre"}</span>
+                    </div>
+                  );
+                }) : <p className="kitchen-muted">Sin comensales para este dia.</p>}
+              </div>
+            )}
+            <div className="kitchen-modal-actions">
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                onClick={closeAttendeeDialog}
+                disabled={attendeeDialogBusy}
+              >
+                {attendeeDialogEditable ? "Cancelar" : "Cerrar"}
+              </button>
+              {attendeeDialogEditable ? (
+                <button
+                  type="button"
+                  className="kitchen-button"
+                  onClick={saveAttendeeDialog}
+                  disabled={attendeeDialogBusy}
+                >
+                  {attendeeDialogBusy ? "Guardando..." : "Guardar"}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
       {weekRandomizeConfirmOpen ? (
         <div
           className="kitchen-modal-backdrop"

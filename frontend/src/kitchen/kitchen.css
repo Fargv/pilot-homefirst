@@ -4370,6 +4370,37 @@ body {
   margin-top: 2px;
 }
 
+.kitchen-day-subtitle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kitchen-day-attendees-action {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(255, 255, 255, 0.8);
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.kitchen-day-attendees-action:hover {
+  border-color: rgba(99, 102, 241, 0.55);
+  background: #ffffff;
+}
+
+.kitchen-day-attendees-action svg {
+  width: 16px;
+  height: 16px;
+}
+
 .kitchen-day-view {
   flex: 1;
   display: flex;
@@ -4569,6 +4600,64 @@ body {
 .kitchen-day-attendance-toggle.is-disabled {
   opacity: 0.7;
   cursor: default;
+}
+
+.kitchen-attendee-modal {
+  width: min(520px, 94vw);
+}
+
+.kitchen-attendee-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kitchen-ui-sheet-close svg {
+  width: 15px;
+  height: 15px;
+}
+
+.kitchen-attendee-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(52vh, 440px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.kitchen-attendee-row {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  min-height: 44px;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.kitchen-attendee-list.is-readonly .kitchen-attendee-row {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.kitchen-attendee-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.kitchen-attendee-name {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.92rem;
 }
 
 .kitchen-link-add-ingredient {
