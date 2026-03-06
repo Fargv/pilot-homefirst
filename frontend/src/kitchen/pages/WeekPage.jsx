@@ -606,12 +606,19 @@ export default function WeekPage() {
   };
 
   const removeDayAssignment = async (day) => {
-    return updateDay(day, {
+    const dayKey = day.date.slice(0, 10);
+    const confirmed = window.confirm("Se eliminara el plato de la planificacion de este dia. ¿Continuar?");
+    if (!confirmed) return null;
+    const result = await updateDay(day, {
       cookUserId: null,
       mainDishId: null,
       sideDishId: null,
       ingredientOverrides: []
     });
+    if (result) {
+      stopEditingDay(dayKey);
+    }
+    return result;
   };
 
   const moveDayAssignment = async (day, targetDate) => {
@@ -1281,16 +1288,15 @@ export default function WeekPage() {
                       </div>
                     ) : null}
                     <div className="kitchen-day-cta">
-                      <button
-                        type="button"
-                        className={`kitchen-day-attendance-toggle ${isSelfAttending ? "is-attending" : "is-not-attending"}`}
-                        onClick={() => toggleSelfAttendance(day)}
-                        disabled={dayAttendanceBusy[dayKey]}
-                      >
-                        {dayAttendanceBusy[dayKey]
-                          ? "Actualizando..."
-                          : (isSelfAttending ? "Este dia SI como" : "Este dia no como")}
-                      </button>
+                      <label className={`kitchen-day-attendance-check ${dayAttendanceBusy[dayKey] ? "is-disabled" : ""}`}>
+                        <input
+                          type="checkbox"
+                          checked={isSelfAttending}
+                          disabled={dayAttendanceBusy[dayKey]}
+                          onChange={() => toggleSelfAttendance(day)}
+                        />
+                        <span>{dayAttendanceBusy[dayKey] ? "Actualizando..." : "Voy a comer este dia"}</span>
+                      </label>
                       {canEdit && isPlanned && !isEditing ? (
                         <button
                           type="button"
@@ -1326,16 +1332,15 @@ export default function WeekPage() {
               {!isEditing ? (
                 isEmptyState ? (
                   <div className="kitchen-day-empty">
-                    <button
-                      type="button"
-                      className={`kitchen-day-attendance-toggle ${isSelfAttending ? "is-attending" : "is-not-attending"}`}
-                      onClick={() => toggleSelfAttendance(day)}
-                      disabled={dayAttendanceBusy[dayKey]}
-                    >
-                      {dayAttendanceBusy[dayKey]
-                        ? "Actualizando..."
-                        : (isSelfAttending ? "Este dia SI como" : "Este dia no como")}
-                    </button>
+                    <label className={`kitchen-day-attendance-check ${dayAttendanceBusy[dayKey] ? "is-disabled" : ""}`}>
+                      <input
+                        type="checkbox"
+                        checked={isSelfAttending}
+                        disabled={dayAttendanceBusy[dayKey]}
+                        onChange={() => toggleSelfAttendance(day)}
+                      />
+                      <span>{dayAttendanceBusy[dayKey] ? "Actualizando..." : "Voy a comer este dia"}</span>
+                    </label>
                     <div className="kitchen-day-empty-spacer" aria-hidden="true" />
                     {canShowAssignCta ? (
                       <div className="kitchen-day-empty-actions">
@@ -1851,7 +1856,7 @@ export default function WeekPage() {
                           className="kitchen-button secondary is-small"
                           onClick={() => removeDayAssignment(day)}
                         >
-                          Quitar cocina del día
+                          Eliminar plato de la planificacion
                         </button>
                       </>
                     ) : null}

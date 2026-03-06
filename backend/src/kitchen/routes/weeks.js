@@ -407,6 +407,7 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
     }
 
     const usedMainDishIds = plan.days
+      .filter((entry) => !isSameDay(entry.date, date))
       .map((entry) => entry?.mainDishId)
       .filter(Boolean)
       .map((dishId) => String(dishId));
@@ -528,6 +529,8 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     let relaxedSameWeekRule = false;
     const members = await loadHouseholdMembers(effectiveHouseholdId);
     const defaultAttendeeIds = buildDefaultAttendeeIds(members);
+    const uniqueDishCapacity = allDishIds.filter((dishId) => !usedInCurrentWeek.has(dishId)).length;
+    const mustKeepSameWeekUnique = uniqueDishCapacity >= targetDays.length;
 
     for (const day of randomizedDays) {
       const strictEligible = allDishIds.filter(
@@ -541,6 +544,9 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
         if (pickedDishId) {
           relaxedCrossWeekRule = true;
         } else {
+          if (mustKeepSameWeekUnique) {
+            continue;
+          }
           pickedDishId = pickRandomItem(allDishIds);
           if (pickedDishId) {
             relaxedCrossWeekRule = true;

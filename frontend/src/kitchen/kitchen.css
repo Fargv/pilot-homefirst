@@ -1404,6 +1404,33 @@ body {
   cursor: not-allowed;
 }
 
+.kitchen-day-attendance-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d0d5dd;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.kitchen-day-attendance-check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #16a34a;
+}
+
+.kitchen-day-attendance-check.is-disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .kitchen-day-edit-actions {
   display: inline-flex;
   gap: 8px;
