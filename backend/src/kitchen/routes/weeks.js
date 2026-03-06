@@ -406,11 +406,13 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       });
     }
 
-    const usedMainDishIds = plan.days
-      .filter((entry) => !isSameDay(entry.date, date))
-      .map((entry) => entry?.mainDishId)
-      .filter(Boolean)
-      .map((dishId) => String(dishId));
+    const usedMainDishIds = new Set(
+      plan.days
+        .filter((entry) => !isSameDay(entry.date, date))
+        .map((entry) => entry?.mainDishId)
+        .filter(Boolean)
+        .map((dishId) => String(dishId))
+    );
 
     const baseDishFilter = buildDishVisibilityFilter(effectiveHouseholdId, {
       sidedish: { $ne: true },
@@ -427,13 +429,40 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       return res.json({ ok: true, dish: null, reason: "no_dishes" });
     }
 
-    const available = allEligible.filter((dish) => !usedMainDishIds.includes(String(dish._id)));
-    if (!available.length) {
-      return res.json({ ok: true, dish: null, reason: "all_used" });
+    const household = await Household.findById(effectiveHouseholdId)
+      .select("avoidRepeatsEnabled avoidRepeatsWeeks")
+      .lean();
+    const avoidRepeatsEnabled = Boolean(household?.avoidRepeatsEnabled);
+    const avoidRepeatsWeeks = normalizeAvoidRepeatsWeeks(household?.avoidRepeatsWeeks);
+    const recentDishIds = avoidRepeatsEnabled
+      ? await getRecentWeeksDishIds(effectiveHouseholdId, monday, avoidRepeatsWeeks)
+      : new Set();
+
+    const candidatesRelaxed = allEligible.filter((dish) => !usedMainDishIds.has(String(dish._id)));
+    const candidatesStrict = candidatesRelaxed.filter((dish) => !recentDishIds.has(String(dish._id)));
+
+    if (candidatesStrict.length) {
+      const dish = pickRandomItem(candidatesStrict);
+      return res.json({
+        ok: true,
+        dish,
+        reason: null
+      });
     }
 
-    const dish = pickRandomItem(available);
-    return res.json({ ok: true, dish, reason: null });
+    if (candidatesRelaxed.length) {
+      const dish = pickRandomItem(candidatesRelaxed);
+      return res.json({
+        ok: true,
+        dish,
+        reason: avoidRepeatsEnabled ? "avoid_repeats_relaxed" : null
+      });
+    }
+
+    if (!candidatesRelaxed.length) {
+      return res.json({ ok: true, dish: null, reason: "all_used" });
+    }
+    return res.json({ ok: true, dish: null, reason: "no_dishes" });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
