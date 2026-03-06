@@ -1425,14 +1425,19 @@ export default function WeekPage() {
                     ) : null}
                     {isPlanned ? (
                       <div className="kitchen-day-footer">
-                        <label className={`kitchen-day-attendance-check ${dayAttendanceBusy[dayKey] ? "is-disabled" : ""}`}>
+                        <label className={`kitchen-day-attendance-toggle ${dayAttendanceBusy[dayKey] ? "is-disabled" : ""}`}>
                           <input
                             type="checkbox"
                             checked={isSelfAttending}
                             disabled={dayAttendanceBusy[dayKey]}
                             onChange={() => toggleSelfAttendance(day)}
                           />
-                          <span>{dayAttendanceBusy[dayKey] ? "Actualizando..." : "Voy a comer"}</span>
+                          <span className="kitchen-day-attendance-toggle-track" aria-hidden="true">
+                            <span className="kitchen-day-attendance-toggle-thumb" />
+                          </span>
+                          <span className="kitchen-day-attendance-toggle-label">
+                            {dayAttendanceBusy[dayKey] ? "Actualizando..." : isSelfAttending ? "Como" : "No como"}
+                          </span>
                         </label>
                         <div className="kitchen-day-actions-row">
                           {canEdit ? (

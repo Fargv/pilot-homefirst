@@ -4392,12 +4392,12 @@ body {
 .kitchen-day-footer {
   margin-top: auto;
   width: 100%;
-  padding: 10px 4px 2px;
+  padding: 12px 4px 6px;
   border-top: 1px solid rgba(99, 102, 241, 0.2);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 14px;
 }
 
 .kitchen-day-actions-row {
@@ -4405,15 +4405,15 @@ body {
   display: inline-flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   position: relative;
   padding: 0;
 }
 
 .kitchen-day-icon-action {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
+  width: 50px;
+  height: 50px;
+  border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.45);
   background: rgba(255, 255, 255, 0.86);
   color: #334155;
@@ -4424,8 +4424,8 @@ body {
 }
 
 .kitchen-day-icon-action svg {
-  width: 20px;
-  height: 20px;
+  width: 21px;
+  height: 21px;
 }
 
 .kitchen-day-icon-action.is-danger {
@@ -4476,16 +4476,60 @@ body {
   color: #334155;
 }
 
-.kitchen-day-attendance-check {
-  border-color: rgba(108, 99, 255, 0.35);
-  background: rgba(245, 244, 255, 0.95);
+.kitchen-day-attendance-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   color: #312e81;
-  min-height: 32px;
-  padding: 4px 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
+  line-height: 1;
+  user-select: none;
+  cursor: pointer;
 }
 
-.kitchen-day-attendance-check input {
-  accent-color: #6d28d9;
+.kitchen-day-attendance-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kitchen-day-attendance-toggle-track {
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(129, 140, 248, 0.35);
+  border: 1px solid rgba(108, 99, 255, 0.35);
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.kitchen-day-attendance-toggle-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+  transform: translateX(0);
+  transition: transform 180ms ease;
+}
+
+.kitchen-day-attendance-toggle input:checked + .kitchen-day-attendance-toggle-track {
+  background: #4f46e5;
+  border-color: #4f46e5;
+}
+
+.kitchen-day-attendance-toggle input:checked + .kitchen-day-attendance-toggle-track .kitchen-day-attendance-toggle-thumb {
+  transform: translateX(18px);
+}
+
+.kitchen-day-attendance-toggle-label {
+  min-width: 52px;
+}
+
+.kitchen-day-attendance-toggle.is-disabled {
+  opacity: 0.7;
+  cursor: default;
 }
