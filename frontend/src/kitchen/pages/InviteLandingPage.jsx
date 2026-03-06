@@ -18,7 +18,9 @@ export default function InviteLandingPage() {
   const [form, setForm] = useState({
     email: "",
     password: "",
-    displayName: ""
+    displayName: "",
+    active: true,
+    canCook: true
   });
 
   const validateInvite = async () => {
@@ -61,7 +63,9 @@ export default function InviteLandingPage() {
         token,
         email: form.email,
         password: form.password,
-        displayName: mode === "signup" ? form.displayName : undefined
+        displayName: mode === "signup" ? form.displayName : undefined,
+        active: mode === "signup" ? Boolean(form.active) : undefined,
+        canCook: mode === "signup" ? Boolean(form.canCook) : undefined
       };
       const data = await apiRequest("/api/kitchen/auth/accept-invite", {
         method: "POST",
@@ -135,17 +139,49 @@ export default function InviteLandingPage() {
               </label>
 
               {mode === "signup" ? (
-                <label className="kitchen-ui-input-group" htmlFor="invite-display-name">
-                  <span>Nombre para mostrar</span>
-                  <input
-                    id="invite-display-name"
-                    type="text"
-                    className="kitchen-input"
-                    value={form.displayName}
-                    onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
-                    required
-                  />
-                </label>
+                <>
+                  <label className="kitchen-ui-input-group" htmlFor="invite-display-name">
+                    <span>Nombre para mostrar</span>
+                    <input
+                      id="invite-display-name"
+                      type="text"
+                      className="kitchen-input"
+                      value={form.displayName}
+                      onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
+                      required
+                    />
+                  </label>
+                  <label className="kitchen-field kitchen-toggle-field">
+                    <div className="kitchen-toggle-row">
+                      <span className="kitchen-label">Incluir como comensal por defecto</span>
+                      <label className="kitchen-toggle">
+                        <input
+                          type="checkbox"
+                          className="kitchen-toggle-input"
+                          checked={form.active}
+                          onChange={(event) => setForm((prev) => ({ ...prev, active: event.target.checked }))}
+                        />
+                        <span className="kitchen-toggle-track" />
+                      </label>
+                    </div>
+                    <p className="kitchen-muted">Si está activado, aparecerás automáticamente como comensal cuando se planifiquen comidas.</p>
+                  </label>
+                  <label className="kitchen-field kitchen-toggle-field">
+                    <div className="kitchen-toggle-row">
+                      <span className="kitchen-label">Puede cocinar</span>
+                      <label className="kitchen-toggle">
+                        <input
+                          type="checkbox"
+                          className="kitchen-toggle-input"
+                          checked={form.canCook}
+                          onChange={(event) => setForm((prev) => ({ ...prev, canCook: event.target.checked }))}
+                        />
+                        <span className="kitchen-toggle-track" />
+                      </label>
+                    </div>
+                    <p className="kitchen-muted">Si está activado, podrás ser asignado automáticamente para cocinar cuando se utilice la asignación aleatoria.</p>
+                  </label>
+                </>
               ) : null}
 
               <button type="submit" className="kitchen-button" disabled={!canSubmit || submitting}>

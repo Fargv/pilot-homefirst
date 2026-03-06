@@ -166,7 +166,10 @@ export default function SettingsPage() {
     }
   });
   const [convertModal, setConvertModal] = useState({ open: false, memberId: "", email: "", password: "" });
-  const [dinerModal, setDinerModal] = useState({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } });
+  const [dinerModal, setDinerModal] = useState({
+    open: false,
+    form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false }
+  });
   const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" });
   const [deleteProfileModal, setDeleteProfileModal] = useState({
     open: false,
@@ -610,10 +613,12 @@ export default function SettingsPage() {
         body: JSON.stringify({
           displayName: safeName,
           initials: dinerModal.form.initials.trim().toUpperCase().slice(0, 3),
-          colorId: dinerModal.form.colorId
+          colorId: dinerModal.form.colorId,
+          active: dinerModal.form.active,
+          canCook: dinerModal.form.canCook
         })
       });
-      setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } });
+      setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false } });
       updateSuccess("Comensal creado.");
       await loadData();
     } catch (err) {
@@ -794,7 +799,7 @@ export default function SettingsPage() {
         </div>
         <label className="kitchen-field kitchen-toggle-field">
           <div className="kitchen-toggle-row">
-            <span className="kitchen-label">Activo</span>
+            <span className="kitchen-label">Incluir como comensal por defecto</span>
             <label className="kitchen-toggle">
               <input
                 type="checkbox"
@@ -806,7 +811,7 @@ export default function SettingsPage() {
               <span className="kitchen-toggle-track" />
             </label>
           </div>
-          <p className="kitchen-muted">Participa por defecto en planificacion y listas de asistencia.</p>
+          <p className="kitchen-muted">Si está activado, esta persona aparecerá automáticamente como comensal cuando se planifique un plato.</p>
         </label>
         <label className="kitchen-field kitchen-toggle-field">
           <div className="kitchen-toggle-row">
@@ -874,7 +879,7 @@ export default function SettingsPage() {
         {canManageHousehold ? (
           <div className="settings-members-actions">
             <button type="button" className="kitchen-button" onClick={openInvitesPanel}>Invitar</button>
-            <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender" } })}>Crear comensal</button>
+            <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false } })}>Crear comensal</button>
           </div>
         ) : null}
       </div>
@@ -888,7 +893,7 @@ export default function SettingsPage() {
               <span className="settings-member-avatar" style={{ background: colors.background, color: colors.text }}>{initials}</span>
               <span className="settings-member-text">
                 <strong>{member.displayName}{isSelf ? " (Tu)" : ""}</strong>
-                <span>{memberRoleLabel(member)} · {member.active === false ? "Inactivo" : "Activo"} · {member.canCook === false ? "No cocina" : "Puede cocinar"}</span>
+                <span>{memberRoleLabel(member)} · {member.active === false ? "No incluido por defecto" : "Incluido por defecto"} · {member.canCook === false ? "No cocina" : "Puede cocinar"}</span>
               </span>
               <span className="settings-member-arrow">{">"}</span>
             </button>
@@ -1171,7 +1176,7 @@ export default function SettingsPage() {
           {!memberModal.member?.isPlaceholder && canManageHousehold ? <label className="kitchen-field"><span className="kitchen-label">Rol</span><select className="kitchen-select" value={memberModal.form.role} onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, role: event.target.value } }))}><option value="owner">Owner</option><option value="member">User</option></select></label> : null}
           <label className="kitchen-field kitchen-toggle-field">
             <div className="kitchen-toggle-row">
-              <span className="kitchen-label">Activo</span>
+              <span className="kitchen-label">Incluir como comensal por defecto</span>
               <label className="kitchen-toggle">
                 <input
                   type="checkbox"
@@ -1183,7 +1188,7 @@ export default function SettingsPage() {
                 <span className="kitchen-toggle-track" />
               </label>
             </div>
-            <p className="kitchen-muted">Participa por defecto en planificacion y listas de asistencia.</p>
+            <p className="kitchen-muted">Si está activado, esta persona aparecerá automáticamente como comensal cuando se planifique un plato.</p>
           </label>
           <label className="kitchen-field kitchen-toggle-field">
             <div className="kitchen-toggle-row">
@@ -1217,11 +1222,41 @@ export default function SettingsPage() {
         </div>
       </ModalSheet>
 
-      <ModalSheet open={dinerModal.open} title="Crear comensal" onClose={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender" } })}>Cancelar</button><button type="button" className="kitchen-button" onClick={createDiner}>Guardar</button></>}>
+      <ModalSheet open={dinerModal.open} title="Crear comensal" onClose={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false } })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false } })}>Cancelar</button><button type="button" className="kitchen-button" onClick={createDiner}>Guardar</button></>}>
         <div className="kitchen-actions">
           <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={dinerModal.form.displayName} onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, displayName: event.target.value } }))} /></label>
           <label className="kitchen-field"><span className="kitchen-label">Iniciales</span><input className="kitchen-input" maxLength={3} value={dinerModal.form.initials} onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, initials: event.target.value.toUpperCase() } }))} /></label>
           <div className="settings-color-grid">{palette.map((color) => <button key={color.id} type="button" className={`settings-color-swatch ${dinerModal.form.colorId === color.id ? "is-selected" : ""}`} style={{ background: color.background, color: color.text }} onClick={() => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, colorId: color.id } }))}>{color.label}</button>)}</div>
+          <label className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Incluir como comensal por defecto</span>
+              <label className="kitchen-toggle">
+                <input
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={dinerModal.form.active}
+                  onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, active: event.target.checked } }))}
+                />
+                <span className="kitchen-toggle-track" />
+              </label>
+            </div>
+            <p className="kitchen-muted">Si está activado, esta persona aparecerá automáticamente como comensal cuando se planifique un plato.</p>
+          </label>
+          <label className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Puede cocinar</span>
+              <label className="kitchen-toggle">
+                <input
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={dinerModal.form.canCook}
+                  onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, canCook: event.target.checked } }))}
+                />
+                <span className="kitchen-toggle-track" />
+              </label>
+            </div>
+            <p className="kitchen-muted">Si está activado, podrá ser asignado automáticamente para cocinar.</p>
+          </label>
         </div>
       </ModalSheet>
 

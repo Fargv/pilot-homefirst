@@ -45,6 +45,16 @@ function parseWeeksInput(value) {
   return { ok: true, value: weeks };
 }
 
+function parseBooleanWithDefault(value, fallback) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return fallback;
+}
+
 function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -266,7 +276,7 @@ router.get("/invitations", requireAuth, requireRole("owner"), async (req, res) =
 
 router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res) => {
   try {
-    const { displayName, initials, colorId } = req.body;
+    const { displayName, initials, colorId, active, canCook } = req.body;
     const safeDisplayName = buildDisplayName({ displayName, name: displayName });
     if (!safeDisplayName) {
       return res.status(400).json({ ok: false, error: "El nombre del comensal es obligatorio." });
@@ -287,8 +297,8 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
       type: "placeholder",
       hasLogin: false,
       isPlaceholder: true,
-      active: true,
-      canCook: false,
+      active: parseBooleanWithDefault(active, true),
+      canCook: parseBooleanWithDefault(canCook, false),
       role: "member",
       householdId: effectiveHouseholdId,
       createdByUserId: req.kitchenUser?._id || null,

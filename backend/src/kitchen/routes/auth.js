@@ -14,6 +14,16 @@ const DIOD_EMAIL = "admin@admin.com";
 
 const router = express.Router();
 
+function parseBooleanWithDefault(value, fallback) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return fallback;
+}
+
 
 function hashInviteToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -115,7 +125,7 @@ router.get("/resolve-household/:inviteCode", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, displayName, householdName, inviteCode } = req.body;
+    const { email, password, displayName, householdName, inviteCode, active, canCook } = req.body;
     const normalizedEmail = normalizeEmail(email);
     const safeDisplayName = buildDisplayName({ displayName, name: displayName });
     const normalizedInviteCode = String(inviteCode || "").trim();
@@ -161,8 +171,8 @@ router.post("/register", async (req, res) => {
       passwordHash: await bcrypt.hash(password, 10),
       type: "user",
       hasLogin: true,
-      active: true,
-      canCook: true,
+      active: parseBooleanWithDefault(active, true),
+      canCook: parseBooleanWithDefault(canCook, true),
       role,
       householdId: null,
       isPlaceholder: false
@@ -209,7 +219,7 @@ router.post("/register", async (req, res) => {
 
 router.post("/accept-invite", async (req, res) => {
   try {
-    const { token, email, password, displayName } = req.body;
+    const { token, email, password, displayName, active, canCook } = req.body;
     const normalizedEmail = normalizeEmail(email);
 
     if (!token || !normalizedEmail || !password) {
@@ -289,8 +299,8 @@ router.post("/accept-invite", async (req, res) => {
         passwordHash: await bcrypt.hash(password, 10),
         type: "user",
         hasLogin: true,
-        active: true,
-        canCook: true,
+        active: parseBooleanWithDefault(active, true),
+        canCook: parseBooleanWithDefault(canCook, true),
         role: invitation.role || "member",
         householdId: invitation.householdId,
         isPlaceholder: false
