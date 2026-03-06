@@ -1432,11 +1432,13 @@ export default function WeekPage() {
                             disabled={dayAttendanceBusy[dayKey]}
                             onChange={() => toggleSelfAttendance(day)}
                           />
-                          <span className="kitchen-day-attendance-toggle-track" aria-hidden="true">
-                            <span className="kitchen-day-attendance-toggle-thumb" />
-                          </span>
-                          <span className="kitchen-day-attendance-toggle-label">
-                            {dayAttendanceBusy[dayKey] ? "Actualizando..." : isSelfAttending ? "Como" : "No como"}
+                          <span className="kitchen-day-attendance-toggle-stack">
+                            <span className="kitchen-day-attendance-toggle-track" aria-hidden="true">
+                              <span className="kitchen-day-attendance-toggle-thumb" />
+                            </span>
+                            <span className="kitchen-day-attendance-toggle-label">
+                              {dayAttendanceBusy[dayKey] ? "Actualizando..." : isSelfAttending ? "Como" : "No como"}
+                            </span>
                           </span>
                         </label>
                         <div className="kitchen-day-actions-row">
