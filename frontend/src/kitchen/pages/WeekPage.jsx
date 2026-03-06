@@ -513,26 +513,6 @@ export default function WeekPage() {
     selectedDayRef.current = selectedDay;
   }, [selectedDay]);
 
-  useEffect(() => {
-    const editingEntry = Object.entries(editingDays).find(([, open]) => Boolean(open));
-    if (!editingEntry) return;
-    const [editingDayKey] = editingEntry;
-    if (!selectedDay || selectedDay === editingDayKey) return;
-    const targetDay = safeDays.find((day) => day?.date?.slice(0, 10) === selectedDay);
-    if (!targetDay) {
-      setEditingDays({});
-      return;
-    }
-    const targetCookId = targetDay?.cookUserId ? String(targetDay.cookUserId) : "";
-    const currentUserId = String(user?.id || user?._id || "");
-    const canEditTarget = isOwnerAdmin || (targetCookId && targetCookId === currentUserId);
-    if (canEditTarget) {
-      startEditingDay(targetDay);
-    } else {
-      setEditingDays({});
-    }
-  }, [editingDays, isOwnerAdmin, safeDays, selectedDay, user?.id, user?._id]);
-
   const dayKeys = useMemo(
     () => safeDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
     [safeDays]
