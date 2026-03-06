@@ -1261,7 +1261,7 @@ export default function WeekPage() {
                   ? cookColors
                   : { background: dayVisual.background, text: dayVisual.color };
                 const displayDishName = mainDish
-                  ? `${mainDish?.name || ""}${sideDish?.name ? ` CON ${sideDish.name}` : ""}`.trim()
+                  ? `${mainDish?.name || ""}${sideDish?.name ? ` con ${sideDish.name}` : ""}`.trim()
                   : "";
                 const canDeletePlanning = isOwnerAdmin || isAssignedToSelf;
                 const baseIngredients = mergeIngredientLists(
@@ -1315,7 +1315,11 @@ export default function WeekPage() {
             <div
               key={day.date}
               id={`daycard-${dayKey}`}
-              style={{ "--day-card-bg": cardColors.background, "--day-card-text": cardColors.text }}
+              style={{
+                "--day-card-bg": cardColors.background,
+                "--day-card-text": cardColors.text,
+                "--day-card-highlight": cardColors.text
+              }}
               className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""}`}
               tabIndex={-1}
               ref={(node) => {
@@ -1330,10 +1334,19 @@ export default function WeekPage() {
                 <div className="kitchen-day-header-row">
                   <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
                   <div className="kitchen-day-cook-block">
-                    <span className="kitchen-day-cook-name" style={{ color: cookColors.text }}>
+                    <span className="kitchen-day-cook-name">
                       {cookUser?.displayName || "Sin cocinar"}
                     </span>
                     <span className="kitchen-day-cook-attendees">Comen {attendeeCount}</span>
+                    <label className={`kitchen-day-attendance-check is-inline-right ${dayAttendanceBusy[dayKey] ? "is-disabled" : ""}`}>
+                      <input
+                        type="checkbox"
+                        checked={isSelfAttending}
+                        disabled={dayAttendanceBusy[dayKey]}
+                        onChange={() => toggleSelfAttendance(day)}
+                      />
+                      <span>{dayAttendanceBusy[dayKey] ? "Actualizando..." : "Voy a comer este día"}</span>
+                    </label>
                   </div>
                 </div>
                 {!isEmptyState ? (
@@ -1344,15 +1357,6 @@ export default function WeekPage() {
                       ) : null}
                     </div>
                     <div className="kitchen-day-cta">
-                      <label className={`kitchen-day-attendance-check ${dayAttendanceBusy[dayKey] ? "is-disabled" : ""}`}>
-                        <input
-                          type="checkbox"
-                          checked={isSelfAttending}
-                          disabled={dayAttendanceBusy[dayKey]}
-                          onChange={() => toggleSelfAttendance(day)}
-                        />
-                        <span>{dayAttendanceBusy[dayKey] ? "Actualizando..." : isSelfAttending ? "Como" : "No Como"}</span>
-                      </label>
                       {isEditing ? (
                         <div className="kitchen-day-edit-actions">
                           <button
@@ -1379,15 +1383,6 @@ export default function WeekPage() {
               {!isEditing ? (
                 isEmptyState ? (
                   <div className="kitchen-day-empty">
-                    <label className={`kitchen-day-attendance-check ${dayAttendanceBusy[dayKey] ? "is-disabled" : ""}`}>
-                      <input
-                        type="checkbox"
-                        checked={isSelfAttending}
-                        disabled={dayAttendanceBusy[dayKey]}
-                        onChange={() => toggleSelfAttendance(day)}
-                      />
-                      <span>{dayAttendanceBusy[dayKey] ? "Actualizando..." : isSelfAttending ? "Como" : "No Como"}</span>
-                    </label>
                     <div className="kitchen-day-empty-spacer" aria-hidden="true" />
                     {canShowAssignCta ? (
                       <div className="kitchen-day-empty-actions">
@@ -1413,7 +1408,7 @@ export default function WeekPage() {
                   </div>
                 ) : (
                   <div className="kitchen-day-view">
-                    <div className="kitchen-day-dish-display">{displayDishName || "SIN PLATO"}</div>
+                    <div className="kitchen-day-dish-display">{displayDishName || "Sin plato"}</div>
                     {!isPlanned && canShowAssignCta ? (
                       <div className="kitchen-day-assign-actions">
                         <button
