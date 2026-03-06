@@ -673,6 +673,18 @@ export default function WeekPage() {
     return result;
   };
 
+  const buildMainDishUpdatePayload = (day, nextMainDishId) => {
+    const currentMainDishId = day?.mainDishId ? String(day.mainDishId) : "";
+    const nextMainDishKey = nextMainDishId ? String(nextMainDishId) : "";
+    if (currentMainDishId !== nextMainDishKey) {
+      return {
+        mainDishId: nextMainDishId || null,
+        baseIngredientExclusions: []
+      };
+    }
+    return { mainDishId: nextMainDishId || null };
+  };
+
   const requestRemoveDayAssignment = (day) => {
     const dayKey = day?.date?.slice(0, 10);
     if (!dayKey) return;
@@ -829,7 +841,7 @@ export default function WeekPage() {
           focusSideDish(targetDate);
         } else if (targetDish) {
           setMainDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
-          updateDay(targetDay, { mainDishId: targetDish._id, baseIngredientExclusions: [] });
+          updateDay(targetDay, buildMainDishUpdatePayload(targetDay, targetDish._id));
           focusMainDish(targetDate);
         }
       }
@@ -1035,7 +1047,7 @@ export default function WeekPage() {
 
     let updateResult = await updateDay(
       targetDay,
-      { mainDishId: randomDish._id, baseIngredientExclusions: [] },
+      buildMainDishUpdatePayload(targetDay, randomDish._id),
       { weekStart: clickWeekStart, returnErrorObject: true }
     );
 
@@ -1060,7 +1072,7 @@ export default function WeekPage() {
         }
         updateResult = await updateDay(
           targetDay,
-          { mainDishId: retryDish._id, baseIngredientExclusions: [] },
+          buildMainDishUpdatePayload(targetDay, retryDish._id),
           { weekStart: clickWeekStart, returnErrorObject: true }
         );
         randomDish = retryDish;
@@ -1121,7 +1133,7 @@ export default function WeekPage() {
           setSideDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
           setSideDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
         } else {
-          updateDay(targetDay, { mainDishId: dish._id, baseIngredientExclusions: [] });
+          updateDay(targetDay, buildMainDishUpdatePayload(targetDay, dish._id));
           setMainDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
           setMainDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
         }
@@ -1586,10 +1598,10 @@ export default function WeekPage() {
                             (dish) => normalizeIngredientName(dish.name || "") === normalized
                           );
                           if (!trimmed) {
-                            updateDay(day, { mainDishId: null, baseIngredientExclusions: [] });
+                            updateDay(day, buildMainDishUpdatePayload(day, null));
                             setMainDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
                           } else if (match) {
-                            updateDay(day, { mainDishId: match._id, baseIngredientExclusions: [] });
+                            updateDay(day, buildMainDishUpdatePayload(day, match._id));
                             setMainDishQueries((prev) => ({ ...prev, [dayKey]: match.name }));
                           } else {
                             setMainDishQueries((prev) => ({
@@ -1614,7 +1626,7 @@ export default function WeekPage() {
                                 type="button"
                                 onMouseDown={(event) => {
                                   event.preventDefault();
-                                  updateDay(day, { mainDishId: null, baseIngredientExclusions: [] });
+                                  updateDay(day, buildMainDishUpdatePayload(day, null));
                                   setMainDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
                                   setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
                                 }}
@@ -1629,7 +1641,7 @@ export default function WeekPage() {
                                     type="button"
                                     onMouseDown={(event) => {
                                       event.preventDefault();
-                                      updateDay(day, { mainDishId: dish._id, baseIngredientExclusions: [] });
+                                      updateDay(day, buildMainDishUpdatePayload(day, dish._id));
                                       setMainDishQueries((prev) => ({ ...prev, [dayKey]: dish.name }));
                                       setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
                                     }}
@@ -1818,6 +1830,18 @@ export default function WeekPage() {
                                     ...(idKey ? [idKey] : [])
                                   ].map((value) => String(value || "").trim()).filter(Boolean))
                                 );
+                                setPlan((prevPlan) => {
+                                  if (!prevPlan?.days) return prevPlan;
+                                  return {
+                                    ...prevPlan,
+                                    days: prevPlan.days.map((entry) => {
+                                      const entryDayKey = entry?.date?.slice?.(0, 10)
+                                        || (entry?.date ? new Date(entry.date).toISOString().slice(0, 10) : "");
+                                      if (entryDayKey !== dayKey) return entry;
+                                      return { ...entry, baseIngredientExclusions: nextExclusions };
+                                    })
+                                  };
+                                });
                                 updateDay(day, { baseIngredientExclusions: nextExclusions });
                               }}
                             >
