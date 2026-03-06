@@ -227,12 +227,14 @@ router.get("/", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients, sidedish, special, scope } = req.body;
+    const { name, ingredients, sidedish, special, scope, active, isArchived } = req.body;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
 
     const normalizedIngredients = normalizeIngredientList(ingredients || []);
-    const isSideDish = Boolean(sidedish);
+    const isSideDish = parseBooleanField(sidedish, false);
     const isSpecial = parseBooleanField(special, false);
+    const isActive = parseBooleanField(active, true);
+    const nextIsArchived = parseBooleanField(isArchived, false);
     const isDiod = isDiodUser(req.kitchenUser);
     const isMasterWrite = scope === CATALOG_SCOPES.MASTER;
     const effectiveHouseholdId = isMasterWrite ? getOptionalHouseholdId(req.user) : getEffectiveHouseholdId(req.user);
@@ -246,7 +248,8 @@ router.post("/", requireAuth, async (req, res) => {
       ingredients: normalizedIngredients,
       sidedish: isSideDish,
       special: isSpecial,
-      active: true,
+      active: isActive,
+      isArchived: nextIsArchived,
       deletedAt: null,
       scope: isMasterWrite ? CATALOG_SCOPES.MASTER : CATALOG_SCOPES.HOUSEHOLD,
       createdBy: req.kitchenUser._id,
@@ -267,17 +270,23 @@ router.post("/", requireAuth, async (req, res) => {
 
 router.put("/:id", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients, sidedish, special } = req.body;
+    const { name, ingredients, sidedish, special, active, isArchived } = req.body;
     const optionalHouseholdId = getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const dish = await KitchenDish.findById(req.params.id);
     if (!dish || dish.isArchived) return res.status(404).json({ ok: false, error: "Plato no encontrado." });
 
-    const nextData = {};
+    const nextData = {
+      scope: dish.scope,
+      active: parseBooleanField(active, dish.active !== false),
+      special: parseBooleanField(special, Boolean(dish.special)),
+      sidedish: parseBooleanField(sidedish, Boolean(dish.sidedish)),
+      isArchived: parseBooleanField(isArchived, Boolean(dish.isArchived))
+    };
     if (name) nextData.name = String(name).trim();
+    else nextData.name = dish.name;
     if (Array.isArray(ingredients)) nextData.ingredients = normalizeIngredientList(ingredients);
-    if (typeof sidedish === "boolean") nextData.sidedish = sidedish;
-    if (special !== undefined) nextData.special = parseBooleanField(special, Boolean(dish.special));
+    else nextData.ingredients = dish.ingredients;
 
     if (dish.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {
@@ -303,11 +312,12 @@ router.put("/:id", requireAuth, async (req, res) => {
           scope: CATALOG_SCOPES.OVERRIDE,
           masterId: dish._id,
           householdId: requiredHouseholdId,
-          sidedish: true,
-          active: true,
-          isArchived: false
+          sidedish: nextData.sidedish,
+          active: nextData.active,
+          special: nextData.special,
+          isArchived: nextData.isArchived
         },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
       );
       if (dish.sidedish) await clearHiddenMasterForHousehold({ householdId: requiredHouseholdId, type: "side", masterId: dish._id });
       const warning = await rebuildFutureShoppingListsSafe({

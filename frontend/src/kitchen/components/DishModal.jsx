@@ -3,7 +3,14 @@ import { apiRequest } from "../api.js";
 import IngredientPicker from "./IngredientPicker.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
-const EMPTY_FORM = { name: "", ingredients: [], sidedish: false, special: false };
+const EMPTY_FORM = {
+  name: "",
+  ingredients: [],
+  sidedish: false,
+  special: false,
+  active: true,
+  isArchived: false
+};
 
 export default function DishModal({
   isOpen,
@@ -74,7 +81,9 @@ export default function DishModal({
           name: initialDish.name || "",
           ingredients,
           sidedish: Boolean(initialDish.sidedish),
-          special: Boolean(initialDish.special)
+          special: Boolean(initialDish.special),
+          active: initialDish.active !== false,
+          isArchived: Boolean(initialDish.isArchived)
         });
         setEditingId(initialDish._id);
       } else {
@@ -82,7 +91,9 @@ export default function DishModal({
           name: initialName || "",
           ingredients: [],
           sidedish: Boolean(initialSidedish),
-          special: false
+          special: false,
+          active: true,
+          isArchived: false
         });
         setEditingId(null);
       }
@@ -113,9 +124,11 @@ export default function DishModal({
     try {
       const payload = {
         name: form.name,
+        scope: scope || initialDish?.scope || "household",
+        active: Boolean(form.active),
+        isArchived: Boolean(form.isArchived),
         sidedish: form.sidedish,
         special: form.special,
-        ...(scope ? { scope } : {}),
         ingredients: (form.ingredients || []).map((item) => ({
           ingredientId: item.ingredientId,
           displayName: item.displayName,
