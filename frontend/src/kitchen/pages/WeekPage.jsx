@@ -733,7 +733,26 @@ export default function WeekPage() {
       setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
       setMoveTargetByDay((prev) => ({ ...prev, [dayKey]: "" }));
       stopEditingDay(dayKey);
+      const targetIndex = Array.isArray(data?.plan?.days)
+        ? data.plan.days.findIndex((entry) => {
+          const key = entry?.date?.slice?.(0, 10)
+            || (entry?.date ? new Date(entry.date).toISOString().slice(0, 10) : "");
+          return key === targetDate;
+        })
+        : -1;
       setSelectedDay(targetDate);
+      if (targetIndex >= 0) {
+        setActiveIndex(targetIndex);
+      }
+      window.requestAnimationFrame(() => {
+        const carouselElement = carouselRef.current;
+        if (carouselElement && targetIndex >= 0) {
+          carouselElement.scrollTo({
+            left: targetIndex * carouselElement.clientWidth,
+            behavior: "smooth"
+          });
+        }
+      });
       const targetDay = data?.plan?.days?.find((entry) => {
         const key = entry?.date?.slice?.(0, 10)
           || (entry?.date ? new Date(entry.date).toISOString().slice(0, 10) : "");
