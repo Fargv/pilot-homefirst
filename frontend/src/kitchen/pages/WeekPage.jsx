@@ -1337,17 +1337,10 @@ export default function WeekPage() {
                     <span className="kitchen-day-cook-name">
                       {cookUser?.displayName || "Sin cocinar"}
                     </span>
-                    <span className="kitchen-day-cook-attendees">Comen {attendeeCount}</span>
-                    <label className={`kitchen-day-attendance-check is-inline-right ${dayAttendanceBusy[dayKey] ? "is-disabled" : ""}`}>
-                      <input
-                        type="checkbox"
-                        checked={isSelfAttending}
-                        disabled={dayAttendanceBusy[dayKey]}
-                        onChange={() => toggleSelfAttendance(day)}
-                      />
-                      <span>{dayAttendanceBusy[dayKey] ? "Actualizando..." : "Voy a comer este día"}</span>
-                    </label>
                   </div>
+                </div>
+                <div className="kitchen-day-subtitle">
+                  Comen {attendeeCount} {attendeeCount === 1 ? "persona" : "personas"}
                 </div>
                 {!isEmptyState ? (
                   <>
@@ -1431,68 +1424,79 @@ export default function WeekPage() {
                       </div>
                     ) : null}
                     {isPlanned ? (
-                      <div className="kitchen-day-actions-row">
-                        {canEdit ? (
-                          <button
-                            type="button"
-                            className="kitchen-day-icon-action"
-                            onClick={() => startEditingDay(day)}
-                            aria-label="Editar día"
-                            title="Editar"
-                          >
-                            <EditIcon />
-                          </button>
-                        ) : null}
-                        <div className="kitchen-day-info-popover-wrap">
-                          <button
-                            type="button"
-                            className="kitchen-day-icon-action"
-                            onClick={() => setInfoOpenByDay((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))}
-                            aria-label="Ver ingredientes"
-                            title="Ingredientes"
-                          >
-                            <InfoIcon />
-                          </button>
-                          {infoOpenByDay[dayKey] ? (
-                            <div className="kitchen-day-info-popover" role="dialog" aria-label="Ingredientes del día">
-                              <strong>Ingredientes</strong>
-                              <ul>
-                                {baseIngredients.length ? baseIngredients.map((item) => (
-                                  <li key={item.ingredientId || item.canonicalName || item.displayName}>
-                                    {item.displayName}
-                                  </li>
-                                )) : <li>Sin ingredientes base</li>}
-                                {extraIngredients.length && extrasOn ? extraIngredients.map((item) => (
-                                  <li key={`extra-${item.ingredientId || item.canonicalName || item.displayName}`}>
-                                    + {item.displayName}
-                                  </li>
-                                )) : null}
-                              </ul>
-                            </div>
+                      <div className="kitchen-day-footer">
+                        <label className={`kitchen-day-attendance-check ${dayAttendanceBusy[dayKey] ? "is-disabled" : ""}`}>
+                          <input
+                            type="checkbox"
+                            checked={isSelfAttending}
+                            disabled={dayAttendanceBusy[dayKey]}
+                            onChange={() => toggleSelfAttendance(day)}
+                          />
+                          <span>{dayAttendanceBusy[dayKey] ? "Actualizando..." : "Voy a comer"}</span>
+                        </label>
+                        <div className="kitchen-day-actions-row">
+                          {canEdit ? (
+                            <button
+                              type="button"
+                              className="kitchen-day-icon-action"
+                              onClick={() => startEditingDay(day)}
+                              aria-label="Editar día"
+                              title="Editar"
+                            >
+                              <EditIcon />
+                            </button>
+                          ) : null}
+                          <div className="kitchen-day-info-popover-wrap">
+                            <button
+                              type="button"
+                              className="kitchen-day-icon-action"
+                              onClick={() => setInfoOpenByDay((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))}
+                              aria-label="Ver ingredientes"
+                              title="Ingredientes"
+                            >
+                              <InfoIcon />
+                            </button>
+                            {infoOpenByDay[dayKey] ? (
+                              <div className="kitchen-day-info-popover" role="dialog" aria-label="Ingredientes del día">
+                                <strong>Ingredientes</strong>
+                                <ul>
+                                  {baseIngredients.length ? baseIngredients.map((item) => (
+                                    <li key={item.ingredientId || item.canonicalName || item.displayName}>
+                                      {item.displayName}
+                                    </li>
+                                  )) : <li>Sin ingredientes base</li>}
+                                  {extraIngredients.length && extrasOn ? extraIngredients.map((item) => (
+                                    <li key={`extra-${item.ingredientId || item.canonicalName || item.displayName}`}>
+                                      + {item.displayName}
+                                    </li>
+                                  )) : null}
+                                </ul>
+                              </div>
+                            ) : null}
+                          </div>
+                          {isOwnerAdmin ? (
+                            <button
+                              type="button"
+                              className="kitchen-day-icon-action"
+                              onClick={() => startSwapDialog(day)}
+                              aria-label="Intercambiar día"
+                              title="Intercambiar día"
+                            >
+                              <SwapIcon />
+                            </button>
+                          ) : null}
+                          {canDeletePlanning ? (
+                            <button
+                              type="button"
+                              className="kitchen-day-icon-action is-danger"
+                              onClick={() => removeDayAssignment(day)}
+                              aria-label="Eliminar plato de la planificación"
+                              title="Eliminar plato de la planificación"
+                            >
+                              <TrashIcon />
+                            </button>
                           ) : null}
                         </div>
-                        {isOwnerAdmin ? (
-                          <button
-                            type="button"
-                            className="kitchen-day-icon-action"
-                            onClick={() => startSwapDialog(day)}
-                            aria-label="Intercambiar día"
-                            title="Intercambiar día"
-                          >
-                            <SwapIcon />
-                          </button>
-                        ) : null}
-                        {canDeletePlanning ? (
-                          <button
-                            type="button"
-                            className="kitchen-day-icon-action is-danger"
-                            onClick={() => removeDayAssignment(day)}
-                            aria-label="Eliminar plato de la planificación"
-                            title="Eliminar plato de la planificación"
-                          >
-                            <TrashIcon />
-                          </button>
-                        ) : null}
                       </div>
                     ) : null}
                   </div>

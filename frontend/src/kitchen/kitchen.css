@@ -4334,7 +4334,7 @@ body {
 .kitchen-day-header-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
+  align-items: center;
   gap: 12px;
 }
 
@@ -4343,7 +4343,7 @@ body {
   flex-direction: column;
   align-items: flex-end;
   text-align: right;
-  gap: 6px;
+  gap: 2px;
 }
 
 .kitchen-day-title {
@@ -4360,17 +4360,23 @@ body {
 }
 
 .kitchen-day-cook-attendees {
+  display: none;
+}
+
+.kitchen-day-subtitle {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #4b5563;
+  color: color-mix(in srgb, var(--day-card-highlight, #475467) 82%, white 18%);
+  margin-top: 2px;
 }
 
 .kitchen-day-view {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 14px;
+  justify-content: center;
+  gap: 10px;
+  min-height: 148px;
 }
 
 .kitchen-day-dish-display {
@@ -4380,25 +4386,34 @@ body {
   letter-spacing: 0.01em;
   line-height: 1.25;
   color: #111827;
-  margin: 6px 2px 0;
+  margin: auto 2px;
+}
+
+.kitchen-day-footer {
+  margin-top: auto;
+  width: 100%;
+  padding: 10px 4px 2px;
+  border-top: 1px solid rgba(99, 102, 241, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .kitchen-day-actions-row {
-  margin-top: auto;
-  width: 100%;
+  width: auto;
   display: inline-flex;
-  justify-content: space-evenly;
+  justify-content: flex-end;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   position: relative;
-  padding: 12px 8px 2px;
-  border-top: 1px solid rgba(99, 102, 241, 0.18);
+  padding: 0;
 }
 
 .kitchen-day-icon-action {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.45);
   background: rgba(255, 255, 255, 0.86);
   color: #334155;
@@ -4409,8 +4424,8 @@ body {
 }
 
 .kitchen-day-icon-action svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
 .kitchen-day-icon-action.is-danger {
@@ -4465,16 +4480,12 @@ body {
   border-color: rgba(108, 99, 255, 0.35);
   background: rgba(245, 244, 255, 0.95);
   color: #312e81;
-  align-self: flex-end;
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .kitchen-day-attendance-check input {
   accent-color: #6d28d9;
-}
-
-.kitchen-day-attendance-check.is-inline-right {
-  margin-top: 2px;
-  min-height: 30px;
-  padding: 5px 10px;
-  font-size: 11px;
 }
