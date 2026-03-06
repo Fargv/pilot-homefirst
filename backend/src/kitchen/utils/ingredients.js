@@ -25,10 +25,17 @@ export function mergeIngredientLists(...lists) {
   return Array.from(merged.values());
 }
 
-export function combineDayIngredients({ mainDish, sideDish, overrides, baseExclusions = [] }) {
+export function combineDayIngredients({
+  mainDish,
+  sideDish,
+  overrides,
+  baseExclusions = [],
+  includeMain = true,
+  includeSide = true
+}) {
   const baseIngredients = normalizeIngredientList([
-    ...(mainDish?.ingredients || []),
-    ...(sideDish?.ingredients || [])
+    ...(includeMain ? (mainDish?.ingredients || []) : []),
+    ...(includeSide ? (sideDish?.ingredients || []) : [])
   ]);
   const exclusionSet = new Set(
     (Array.isArray(baseExclusions) ? baseExclusions : [])

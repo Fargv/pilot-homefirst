@@ -20,6 +20,7 @@ function getMemberDinnerActive(member) {
 }
 
 function buildDefaultDays(weekStartDate, attendeeIds = [], mealType = "lunch") {
+  const isDinner = mealType === "dinner";
   return getWeekDates(weekStartDate).map((date) => ({
     date,
     mealType,
@@ -27,6 +28,8 @@ function buildDefaultDays(weekStartDate, attendeeIds = [], mealType = "lunch") {
     attendeeCount: attendeeIds.length,
     cookTiming: "previous_day",
     servings: 4,
+    includeMainIngredients: !isDinner,
+    includeSideIngredients: !isDinner,
     ingredientOverrides: []
   }));
 }
@@ -71,6 +74,8 @@ async function ensureDinnerSlotsIfEnabled(plan, effectiveHouseholdId) {
       attendeeCount: dinnerAttendees.length,
       cookTiming: "same_day",
       servings: 4,
+      includeMainIngredients: false,
+      includeSideIngredients: false,
       ingredientOverrides: []
     });
     changed = true;

@@ -182,6 +182,26 @@ async function loadHouseholdMembers(effectiveHouseholdId) {
     .lean();
 }
 
+async function hydrateLeftoversDishNames(plan, effectiveHouseholdId) {
+  if (!plan) return;
+  const leftoversDishIds = dedupeIds(
+    (plan.days || [])
+      .map((day) => day?.leftoversSourceDishId)
+      .filter(Boolean)
+  );
+  if (!leftoversDishIds.length) return;
+  const dishes = await KitchenDish.find(
+    buildDishVisibilityFilter(effectiveHouseholdId, { _id: { $in: leftoversDishIds } })
+  )
+    .select("_id name")
+    .lean();
+  const nameById = new Map(dishes.map((dish) => [String(dish._id), dish.name]));
+  for (const day of plan.days || []) {
+    if (!day?.leftoversSourceDishId) continue;
+    day.leftoversSourceDishName = nameById.get(String(day.leftoversSourceDishId)) || null;
+  }
+}
+
 function findDayByDateAndMeal(plan, date, mealType = "lunch") {
   return (plan?.days || []).find(
     (item) => isSameDay(item.date, date) && dayMealType(item) === normalizeMealType(mealType)
@@ -248,6 +268,7 @@ router.get("/:weekStart", requireAuth, async (req, res) => {
         const attendeeIds = resolveDayAttendeeIds(day, defaultAttendeeIds, mealType);
         applyAttendeesToDay(day, attendeeIds);
       }
+      await hydrateLeftoversDishNames(plan, effectiveHouseholdId);
     }
 
     res.json({
@@ -285,6 +306,8 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       ingredientOverrides,
       attendeeIds,
       baseIngredientExclusions,
+      includeMainIngredients,
+      includeSideIngredients,
       isLeftovers,
       leftoversSourceDate,
       leftoversSourceMealType,
@@ -377,11 +400,23 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     if (servings) day.servings = Number(servings) || 4;
     if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
     if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
+    if (typeof includeMainIngredients === "boolean") {
+      day.includeMainIngredients = includeMainIngredients;
+    }
+    if (typeof includeSideIngredients === "boolean") {
+      day.includeSideIngredients = includeSideIngredients;
+    }
     if (mainDishId) {
       day.isLeftovers = false;
       day.leftoversSourceDate = null;
       day.leftoversSourceMealType = null;
       day.leftoversSourceDishId = null;
+      if (isDinnerMeal(mealType) && typeof includeMainIngredients !== "boolean") {
+        day.includeMainIngredients = false;
+      }
+    }
+    if (sideDishId && isDinnerMeal(mealType) && typeof includeSideIngredients !== "boolean") {
+      day.includeSideIngredients = false;
     }
     if (typeof isLeftovers === "boolean" && isDinnerMeal(mealType)) {
       day.isLeftovers = isLeftovers;
@@ -395,8 +430,11 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       day.leftoversSourceDate = leftoversSourceDate ? parseISODate(leftoversSourceDate) : null;
       day.leftoversSourceMealType = leftoversSourceMealType ? normalizeMealType(leftoversSourceMealType) : null;
       day.leftoversSourceDishId = leftoversSourceDishId || null;
-      day.mainDishId = null;
-      day.sideDishId = null;
+      day.mainDishId = day.leftoversSourceDishId || null;
+      day.includeMainIngredients = false;
+      if (typeof includeSideIngredients !== "boolean") {
+        day.includeSideIngredients = false;
+      }
       day.ingredientOverrides = [];
       day.baseIngredientExclusions = [];
     } else if (Object.prototype.hasOwnProperty.call(req.body || {}, "isLeftovers")) {
@@ -417,6 +455,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     applyAttendeesToDay(day, nextAttendeeIds);
 
     await plan.save();
+    await hydrateLeftoversDishNames(plan, effectiveHouseholdId);
     const warning = await rebuildShoppingListBestEffort({
       monday,
       effectiveHouseholdId,
@@ -691,6 +730,8 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       day.leftoversSourceDate = null;
       day.leftoversSourceMealType = null;
       day.leftoversSourceDishId = null;
+      day.includeMainIngredients = isDinnerMeal(mealType) ? false : true;
+      day.includeSideIngredients = isDinnerMeal(mealType) ? false : true;
       applyAttendeesToDay(day, resolveDayAttendeeIds(day, defaultAttendeeIds, mealType));
       usedInCurrentWeek.add(pickedDishId);
       assignedCount += 1;
@@ -778,7 +819,13 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
       cookTiming: day.cookTiming,
       servings: day.servings,
       mainDishId: day.mainDishId,
+      includeMainIngredients: typeof day.includeMainIngredients === "boolean"
+        ? day.includeMainIngredients
+        : (dayMealType(day) === "dinner" ? false : true),
       sideDishId: day.sideDishId,
+      includeSideIngredients: typeof day.includeSideIngredients === "boolean"
+        ? day.includeSideIngredients
+        : (dayMealType(day) === "dinner" ? false : true),
       isLeftovers: Boolean(day.isLeftovers),
       leftoversSourceDate: day.leftoversSourceDate || null,
       leftoversSourceMealType: day.leftoversSourceMealType || null,
@@ -947,7 +994,13 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       cookTiming: sourceDay.cookTiming || "previous_day",
       servings: sourceDay.servings || 4,
       mainDishId: sourceDay.mainDishId || null,
+      includeMainIngredients: typeof sourceDay.includeMainIngredients === "boolean"
+        ? sourceDay.includeMainIngredients
+        : (dayMealType(sourceDay) === "dinner" ? false : true),
       sideDishId: sourceDay.sideDishId || null,
+      includeSideIngredients: typeof sourceDay.includeSideIngredients === "boolean"
+        ? sourceDay.includeSideIngredients
+        : (dayMealType(sourceDay) === "dinner" ? false : true),
       isLeftovers: Boolean(sourceDay.isLeftovers),
       leftoversSourceDate: sourceDay.leftoversSourceDate || null,
       leftoversSourceMealType: sourceDay.leftoversSourceMealType || null,
@@ -962,7 +1015,13 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       cookTiming: targetDay.cookTiming || "previous_day",
       servings: targetDay.servings || 4,
       mainDishId: targetDay.mainDishId || null,
+      includeMainIngredients: typeof targetDay.includeMainIngredients === "boolean"
+        ? targetDay.includeMainIngredients
+        : (dayMealType(targetDay) === "dinner" ? false : true),
       sideDishId: targetDay.sideDishId || null,
+      includeSideIngredients: typeof targetDay.includeSideIngredients === "boolean"
+        ? targetDay.includeSideIngredients
+        : (dayMealType(targetDay) === "dinner" ? false : true),
       isLeftovers: Boolean(targetDay.isLeftovers),
       leftoversSourceDate: targetDay.leftoversSourceDate || null,
       leftoversSourceMealType: targetDay.leftoversSourceMealType || null,
@@ -976,7 +1035,9 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     sourceDay.cookTiming = targetSnapshot.cookTiming;
     sourceDay.servings = targetSnapshot.servings;
     sourceDay.mainDishId = targetSnapshot.mainDishId;
+    sourceDay.includeMainIngredients = targetSnapshot.includeMainIngredients;
     sourceDay.sideDishId = targetSnapshot.sideDishId;
+    sourceDay.includeSideIngredients = targetSnapshot.includeSideIngredients;
     sourceDay.isLeftovers = targetSnapshot.isLeftovers;
     sourceDay.leftoversSourceDate = targetSnapshot.leftoversSourceDate;
     sourceDay.leftoversSourceMealType = targetSnapshot.leftoversSourceMealType;
@@ -989,7 +1050,9 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     targetDay.cookTiming = sourceSnapshot.cookTiming;
     targetDay.servings = sourceSnapshot.servings;
     targetDay.mainDishId = sourceSnapshot.mainDishId;
+    targetDay.includeMainIngredients = sourceSnapshot.includeMainIngredients;
     targetDay.sideDishId = sourceSnapshot.sideDishId;
+    targetDay.includeSideIngredients = sourceSnapshot.includeSideIngredients;
     targetDay.isLeftovers = sourceSnapshot.isLeftovers;
     targetDay.leftoversSourceDate = sourceSnapshot.leftoversSourceDate;
     targetDay.leftoversSourceMealType = sourceSnapshot.leftoversSourceMealType;

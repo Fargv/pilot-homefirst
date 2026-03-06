@@ -46,6 +46,18 @@ function buildDishVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
   };
 }
 
+function shouldIncludeMainInShopping(day) {
+  if (day?.isLeftovers) return false;
+  if (typeof day?.includeMainIngredients === "boolean") return day.includeMainIngredients;
+  return day?.mealType === "dinner" ? false : true;
+}
+
+function shouldIncludeSideInShopping(day) {
+  if (day?.isLeftovers) return false;
+  if (typeof day?.includeSideIngredients === "boolean") return day.includeSideIngredients;
+  return day?.mealType === "dinner" ? false : true;
+}
+
 export async function ensureShoppingList(weekStartDate, effectiveHouseholdId) {
   return KitchenShoppingList.findOneAndUpdate(
     buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate }),
@@ -212,7 +224,9 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
       mainDish: main,
       sideDish: side,
       overrides: day.ingredientOverrides,
-      baseExclusions: day.baseIngredientExclusions
+      baseExclusions: day.baseIngredientExclusions,
+      includeMain: shouldIncludeMainInShopping(day),
+      includeSide: shouldIncludeSideInShopping(day)
     });
     if (process.env.NODE_ENV !== "production") {
       const baseDishIngredients = [

@@ -41,6 +41,18 @@ function buildDishVisibilityFilter(householdId, extraFilter = {}) {
   };
 }
 
+function shouldIncludeMainInShopping(day) {
+  if (day?.isLeftovers) return false;
+  if (typeof day?.includeMainIngredients === "boolean") return day.includeMainIngredients;
+  return day?.mealType === "dinner" ? false : true;
+}
+
+function shouldIncludeSideInShopping(day) {
+  if (day?.isLeftovers) return false;
+  if (typeof day?.includeSideIngredients === "boolean") return day.includeSideIngredients;
+  return day?.mealType === "dinner" ? false : true;
+}
+
 async function rebuildFutureShoppingListsSafe({ householdId, dishId, context }) {
   try {
     await rebuildFutureShoppingLists({ householdId, dishId });
@@ -68,7 +80,9 @@ async function rebuildShoppingListForPlan(plan, householdId) {
       mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
       sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
       overrides: day.ingredientOverrides,
-      baseExclusions: day.baseIngredientExclusions
+      baseExclusions: day.baseIngredientExclusions,
+      includeMain: shouldIncludeMainInShopping(day),
+      includeSide: shouldIncludeSideInShopping(day)
     });
 
     ingredients.forEach((item) => {
@@ -162,7 +176,9 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
         mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
         sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
         overrides: day.ingredientOverrides,
-        baseExclusions: day.baseIngredientExclusions
+        baseExclusions: day.baseIngredientExclusions,
+        includeMain: shouldIncludeMainInShopping(day),
+        includeSide: shouldIncludeSideInShopping(day)
       });
 
       ingredients.forEach((item) => {
