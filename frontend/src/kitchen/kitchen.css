@@ -4427,33 +4427,20 @@ body {
   margin-top: auto;
   width: 100%;
   min-width: 0;
-  padding: 12px 6px 6px;
+  padding: 8px 2px 2px;
   border-top: 1px solid rgba(99, 102, 241, 0.2);
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  overflow: visible;
-}
-
-.kitchen-day-actions-row {
-  width: 100%;
-  min-width: 0;
-  display: inline-flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 14px;
-  position: relative;
-  padding: 0;
-  flex-wrap: nowrap;
-  overflow: visible;
+  gap: 12px;
+  overflow: hidden;
 }
 
 .kitchen-day-icon-action {
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.45);
   background: rgba(255, 255, 255, 0.86);
@@ -4465,8 +4452,8 @@ body {
 }
 
 .kitchen-day-icon-action svg {
-  width: 20px;
-  height: 20px;
+  width: 21px;
+  height: 21px;
 }
 
 .kitchen-day-icon-action.is-danger {
@@ -4523,7 +4510,7 @@ body {
 .kitchen-day-attendance-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0;
+  gap: 8px;
   color: #312e81;
   font-size: 11px;
   font-weight: 700;
@@ -4531,7 +4518,7 @@ body {
   user-select: none;
   cursor: pointer;
   min-width: 0;
-  justify-self: start;
+  flex: 1 1 auto;
 }
 
 .kitchen-day-attendance-toggle input {
@@ -4562,34 +4549,21 @@ body {
   transition: transform 180ms ease;
 }
 
-.kitchen-day-attendance-toggle input:checked + .kitchen-day-attendance-toggle-stack .kitchen-day-attendance-toggle-track {
+.kitchen-day-attendance-toggle input:checked + .kitchen-day-attendance-toggle-track {
   background: #4f46e5;
   border-color: #4f46e5;
 }
 
-.kitchen-day-attendance-toggle input:checked + .kitchen-day-attendance-toggle-stack .kitchen-day-attendance-toggle-thumb {
+.kitchen-day-attendance-toggle input:checked + .kitchen-day-attendance-toggle-track .kitchen-day-attendance-toggle-thumb {
   transform: translateX(18px);
 }
 
 .kitchen-day-attendance-toggle-label {
   min-width: 0;
-  text-align: center;
+  text-align: left;
   color: #3730a3;
   letter-spacing: 0.01em;
-}
-
-.kitchen-day-attendance-toggle-stack {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-width: 78px;
-  min-height: 48px;
-  padding: 6px 8px;
-  border-radius: 14px;
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  background: rgba(255, 255, 255, 0.86);
+  white-space: nowrap;
 }
 
 .kitchen-day-attendance-toggle.is-disabled {
@@ -4599,34 +4573,24 @@ body {
 
 @media (max-width: 420px) {
   .kitchen-day-footer {
-    gap: 8px;
-    padding: 11px 2px 5px;
-  }
-
-  .kitchen-day-actions-row {
-    gap: 7px;
+    gap: 8px 10px;
+    padding: 7px 0 1px;
   }
 
   .kitchen-day-icon-action {
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 11px;
   }
 
   .kitchen-day-icon-action svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .kitchen-day-attendance-toggle-stack {
-    min-width: 70px;
-    min-height: 42px;
-    padding: 4px 6px;
+    width: 20px;
+    height: 20px;
   }
 
   .kitchen-day-attendance-toggle-track {
-    width: 38px;
+    width: 36px;
     height: 22px;
   }
 
@@ -4635,7 +4599,7 @@ body {
     height: 16px;
   }
 
-  .kitchen-day-attendance-toggle input:checked + .kitchen-day-attendance-toggle-stack .kitchen-day-attendance-toggle-thumb {
+  .kitchen-day-attendance-toggle input:checked + .kitchen-day-attendance-toggle-track .kitchen-day-attendance-toggle-thumb {
     transform: translateX(16px);
   }
 

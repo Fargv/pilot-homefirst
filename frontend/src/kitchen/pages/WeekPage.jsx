@@ -1502,50 +1502,46 @@ export default function WeekPage() {
                             disabled={dayAttendanceBusy[dayKey]}
                             onChange={() => toggleSelfAttendance(day)}
                           />
-                          <span className="kitchen-day-attendance-toggle-stack">
-                            <span className="kitchen-day-attendance-toggle-track" aria-hidden="true">
-                              <span className="kitchen-day-attendance-toggle-thumb" />
-                            </span>
-                            <span className="kitchen-day-attendance-toggle-label">
-                              {dayAttendanceBusy[dayKey] ? "Actualizando..." : isSelfAttending ? "Como" : "No como"}
-                            </span>
+                          <span className="kitchen-day-attendance-toggle-track" aria-hidden="true">
+                            <span className="kitchen-day-attendance-toggle-thumb" />
+                          </span>
+                          <span className="kitchen-day-attendance-toggle-label">
+                            {dayAttendanceBusy[dayKey] ? "Actualizando..." : isSelfAttending ? "Como" : "No como"}
                           </span>
                         </label>
-                        <div className="kitchen-day-actions-row">
-                          {canEdit ? (
-                            <button
-                              type="button"
-                              className="kitchen-day-icon-action"
-                              onClick={() => startEditingDay(day)}
-                              aria-label="Editar día"
-                              title="Editar"
-                            >
-                              <EditIcon />
-                            </button>
-                          ) : null}
-                          {isOwnerAdmin ? (
-                            <button
-                              type="button"
-                              className="kitchen-day-icon-action"
-                              onClick={() => startSwapDialog(day)}
-                              aria-label="Intercambiar día"
-                              title="Intercambiar día"
-                            >
-                              <SwapIcon />
-                            </button>
-                          ) : null}
-                          {canDeletePlanning ? (
-                            <button
-                              type="button"
-                              className="kitchen-day-icon-action is-danger"
-                              onClick={() => requestRemoveDayAssignment(day)}
-                              aria-label="Eliminar plato de la planificación"
-                              title="Eliminar plato de la planificación"
-                            >
-                              <TrashIcon />
-                            </button>
-                          ) : null}
-                        </div>
+                        {canEdit ? (
+                          <button
+                            type="button"
+                            className="kitchen-day-icon-action"
+                            onClick={() => startEditingDay(day)}
+                            aria-label="Editar día"
+                            title="Editar"
+                          >
+                            <EditIcon />
+                          </button>
+                        ) : null}
+                        {isOwnerAdmin ? (
+                          <button
+                            type="button"
+                            className="kitchen-day-icon-action"
+                            onClick={() => startSwapDialog(day)}
+                            aria-label="Intercambiar día"
+                            title="Intercambiar día"
+                          >
+                            <SwapIcon />
+                          </button>
+                        ) : null}
+                        {canDeletePlanning ? (
+                          <button
+                            type="button"
+                            className="kitchen-day-icon-action is-danger"
+                            onClick={() => requestRemoveDayAssignment(day)}
+                            aria-label="Eliminar plato de la planificación"
+                            title="Eliminar plato de la planificación"
+                          >
+                            <TrashIcon />
+                          </button>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
