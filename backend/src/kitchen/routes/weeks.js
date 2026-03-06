@@ -42,7 +42,11 @@ function normalizeIngredientOverrides(ingredientOverrides = []) {
 }
 
 function normalizeBaseIngredientExclusions(values = []) {
-  return dedupeIds((Array.isArray(values) ? values : []).map((value) => String(value || "").trim()));
+  return dedupeIds(
+    (Array.isArray(values) ? values : [])
+      .map((value) => String(value || "").trim().toLowerCase())
+      .filter(Boolean)
+  );
 }
 
 function buildDishVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
@@ -333,6 +337,12 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = normalizeIngredientOverrides(ingredientOverrides);
     if (Array.isArray(baseIngredientExclusions)) {
       day.baseIngredientExclusions = normalizeBaseIngredientExclusions(baseIngredientExclusions);
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[kitchen][weeks][update-day] base exclusions", {
+          day: req.params.date,
+          baseIngredientExclusions: day.baseIngredientExclusions
+        });
+      }
     }
     applyAttendeesToDay(day, nextAttendeeIds);
 

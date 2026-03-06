@@ -32,13 +32,13 @@ export function combineDayIngredients({ mainDish, sideDish, overrides, baseExclu
   ]);
   const exclusionSet = new Set(
     (Array.isArray(baseExclusions) ? baseExclusions : [])
-      .map((value) => String(value || "").trim())
+      .map((value) => String(value || "").trim().toLowerCase())
       .filter(Boolean)
   );
   const filteredBase = exclusionSet.size
     ? baseIngredients.filter((item) => {
-      const canonicalKey = String(item?.canonicalName || "").trim();
-      const ingredientKey = item?.ingredientId ? String(item.ingredientId) : "";
+      const canonicalKey = String(item?.canonicalName || "").trim().toLowerCase();
+      const ingredientKey = item?.ingredientId ? String(item.ingredientId).trim().toLowerCase() : "";
       return !exclusionSet.has(canonicalKey) && !exclusionSet.has(ingredientKey);
     })
     : baseIngredients;

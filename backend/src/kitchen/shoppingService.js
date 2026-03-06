@@ -211,6 +211,28 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
       overrides: day.ingredientOverrides,
       baseExclusions: day.baseIngredientExclusions
     });
+    if (process.env.NODE_ENV !== "production") {
+      const baseDishIngredients = [
+        ...(main?.ingredients || []),
+        ...(side?.ingredients || [])
+      ].map((item) => String(item?.ingredientId || item?.canonicalName || "").trim().toLowerCase()).filter(Boolean);
+      const excludedIngredientIds = (Array.isArray(day.baseIngredientExclusions) ? day.baseIngredientExclusions : [])
+        .map((item) => String(item || "").trim().toLowerCase())
+        .filter(Boolean);
+      const extraIngredientIds = (Array.isArray(day.ingredientOverrides) ? day.ingredientOverrides : [])
+        .map((item) => String(item?.ingredientId || item?.canonicalName || "").trim().toLowerCase())
+        .filter(Boolean);
+      const effectiveIngredientIds = ingredients
+        .map((item) => String(item?.ingredientId || item?.canonicalName || "").trim().toLowerCase())
+        .filter(Boolean);
+      console.debug("[kitchen][shopping][effective-ingredients]", {
+        day: day?.date ? new Date(day.date).toISOString().slice(0, 10) : null,
+        baseDishIngredientIds: baseDishIngredients,
+        excludedIngredientIds,
+        extraIngredientIds,
+        effectiveIngredientIds
+      });
+    }
 
     for (const ingredient of ingredients) {
       const normalizedCanonical = normalizeIngredientName(ingredient.canonicalName || ingredient.displayName);

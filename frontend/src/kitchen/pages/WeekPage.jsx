@@ -157,6 +157,10 @@ function resolveDayAttendees(day, users = []) {
   return users.filter((member) => isActiveMember(member)).map((member) => String(member.id));
 }
 
+function normalizeExclusionKey(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
 export default function WeekPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1336,7 +1340,7 @@ export default function WeekPage() {
                   : "";
                 const canDeletePlanning = isOwnerAdmin || isAssignedToSelf;
                 const baseIngredientExclusions = Array.isArray(day.baseIngredientExclusions)
-                  ? day.baseIngredientExclusions.map((item) => String(item))
+                  ? day.baseIngredientExclusions.map((item) => normalizeExclusionKey(item))
                   : [];
                 const baseExclusionSet = new Set(baseIngredientExclusions);
                 const baseIngredientsRaw = mergeIngredientLists(
@@ -1344,8 +1348,8 @@ export default function WeekPage() {
                   sideDish?.ingredients || []
                 );
                 const baseIngredients = baseIngredientsRaw.filter((item) => {
-                  const canonicalKey = String(item?.canonicalName || "").trim();
-                  const idKey = item?.ingredientId ? String(item.ingredientId) : "";
+                  const canonicalKey = normalizeExclusionKey(item?.canonicalName);
+                  const idKey = item?.ingredientId ? normalizeExclusionKey(item.ingredientId) : "";
                   return !baseExclusionSet.has(canonicalKey) && !baseExclusionSet.has(idKey);
                 });
                 const extraIngredients = day.ingredientOverrides || [];
@@ -1821,14 +1825,14 @@ export default function WeekPage() {
                               type="button"
                               className="kitchen-ingredient-pill is-removable"
                               onClick={() => {
-                                const canonicalKey = String(item?.canonicalName || "").trim();
-                                const idKey = item?.ingredientId ? String(item.ingredientId) : "";
+                                const canonicalKey = normalizeExclusionKey(item?.canonicalName);
+                                const idKey = item?.ingredientId ? normalizeExclusionKey(item.ingredientId) : "";
                                 const nextExclusions = Array.from(
                                   new Set([
                                     ...(Array.isArray(day.baseIngredientExclusions) ? day.baseIngredientExclusions : []),
                                     ...(canonicalKey ? [canonicalKey] : []),
                                     ...(idKey ? [idKey] : [])
-                                  ].map((value) => String(value || "").trim()).filter(Boolean))
+                                  ].map((value) => normalizeExclusionKey(value)).filter(Boolean))
                                 );
                                 setPlan((prevPlan) => {
                                   if (!prevPlan?.days) return prevPlan;
@@ -2277,3 +2281,17 @@ export default function WeekPage() {
 }
 
 
+                if (import.meta.env.DEV && isEditing) {
+                  const effectiveIds = [
+                    ...baseIngredients.map((item) => normalizeExclusionKey(item.ingredientId || item.canonicalName)),
+                    ...extraIngredientsValue.map((item) => normalizeExclusionKey(item.ingredientId || item.canonicalName))
+                  ].filter(Boolean);
+                  console.debug("[kitchen][edit-day][ingredients]", {
+                    dayKey,
+                    mainDishId: day.mainDishId ? String(day.mainDishId) : null,
+                    baseDishIngredientIds: baseIngredientsRaw.map((item) => normalizeExclusionKey(item.ingredientId || item.canonicalName)),
+                    excludedIngredientIds: baseIngredientExclusions,
+                    extraIngredientIds: extraIngredientsValue.map((item) => normalizeExclusionKey(item.ingredientId || item.canonicalName)),
+                    effectiveIngredientIds: effectiveIds
+                  });
+                }
