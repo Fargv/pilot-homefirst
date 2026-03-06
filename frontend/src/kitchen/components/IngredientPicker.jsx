@@ -10,7 +10,8 @@ export default function IngredientPicker({
   categories = [],
   onCategoryCreated,
   onCreateStateChange,
-  mode = "all"
+  mode = "all",
+  showChipList = true
 }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -263,6 +264,7 @@ export default function IngredientPicker({
         ) : null}
       </div>
 
+      {showChipList ? (
       <div className="kitchen-chip-list">
         {value.length === 0 ? (
           <span className="kitchen-muted">Sin ingredientes todavía.</span>
@@ -292,6 +294,7 @@ export default function IngredientPicker({
           })
         )}
       </div>
+      ) : null}
 
       {showCreate ? (
         <div className="kitchen-context-modal-backdrop" role="presentation" onClick={closeCreateFlow}>

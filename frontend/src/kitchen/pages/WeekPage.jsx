@@ -738,7 +738,11 @@ export default function WeekPage() {
       setMoveTargetByDay((prev) => ({ ...prev, [dayKey]: "" }));
       stopEditingDay(dayKey);
       setSelectedDay(targetDate);
-      const targetDay = data?.plan?.days?.find((entry) => entry?.date?.slice(0, 10) === targetDate);
+      const targetDay = data?.plan?.days?.find((entry) => {
+        const key = entry?.date?.slice?.(0, 10)
+          || (entry?.date ? new Date(entry.date).toISOString().slice(0, 10) : "");
+        return key === targetDate;
+      });
       const targetCookId = targetDay?.cookUserId ? String(targetDay.cookUserId) : "";
       const currentUserId = String(userRef.current?.id || userRef.current?._id || "");
       const canEditTarget = isOwnerAdmin || (targetCookId && targetCookId === currentUserId);
@@ -786,6 +790,7 @@ export default function WeekPage() {
     const dayKey = day.date.slice(0, 10);
     const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
     const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
+    setSelectedDay(dayKey);
     setEditingDays({ [dayKey]: true });
     setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
     setAddIngredientsOpen((prev) => ({ ...prev, [dayKey]: Boolean(day.ingredientOverrides?.length) }));
@@ -1885,6 +1890,7 @@ export default function WeekPage() {
                     <div className="kitchen-field kitchen-day-ingredients">
                       <IngredientPicker
                         value={extraIngredientsValue}
+                        showChipList={false}
                         onChange={(next) => {
                           setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: next }));
                           const overrides = next
