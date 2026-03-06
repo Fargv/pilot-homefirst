@@ -133,9 +133,17 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [profileInitials, setProfileInitials] = useState(user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
   const [selectedColorId, setSelectedColorId] = useState(user?.colorId || getUserColorPreference(user?.id) || "lavender");
+  const [profileActive, setProfileActive] = useState(user?.active !== false);
+  const [profileCanCook, setProfileCanCook] = useState(user?.canCook !== false);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [profileEditingMain, setProfileEditingMain] = useState(false);
-  const [profileSnapshot, setProfileSnapshot] = useState({ displayName: "", initials: "", colorId: "lavender" });
+  const [profileSnapshot, setProfileSnapshot] = useState({
+    displayName: "",
+    initials: "",
+    colorId: "lavender",
+    active: true,
+    canCook: true
+  });
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [categoryModal, setCategoryModal] = useState({
     open: false,
@@ -204,7 +212,13 @@ export default function SettingsPage() {
   };
 
   const enterProfileEdit = () => {
-    setProfileSnapshot({ displayName, initials: profileInitials, colorId: selectedColorId });
+    setProfileSnapshot({
+      displayName,
+      initials: profileInitials,
+      colorId: selectedColorId,
+      active: profileActive,
+      canCook: profileCanCook
+    });
     setProfileEditingMain(true);
   };
 
@@ -212,6 +226,8 @@ export default function SettingsPage() {
     setDisplayName(profileSnapshot.displayName);
     setProfileInitials(profileSnapshot.initials);
     setSelectedColorId(profileSnapshot.colorId);
+    setProfileActive(profileSnapshot.active);
+    setProfileCanCook(profileSnapshot.canCook);
     setProfileEditingMain(false);
   };
 
@@ -262,10 +278,14 @@ export default function SettingsPage() {
       setDisplayName(user?.displayName || "");
       setProfileInitials(user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
       setSelectedColorId(user?.colorId || getUserColorPreference(user?.id) || "lavender");
+      setProfileActive(user?.active !== false);
+      setProfileCanCook(user?.canCook !== false);
       setProfileSnapshot({
         displayName: user?.displayName || "",
         initials: user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""),
-        colorId: user?.colorId || getUserColorPreference(user?.id) || "lavender"
+        colorId: user?.colorId || getUserColorPreference(user?.id) || "lavender",
+        active: user?.active !== false,
+        canCook: user?.canCook !== false
       });
     } catch (err) {
       setError(err.message || "No se pudo cargar configuracion.");
@@ -322,9 +342,16 @@ export default function SettingsPage() {
     }
     try {
       const safeInitials = (profileInitials.trim().toUpperCase() || initialsFromName(safeDisplayName)).slice(0, 3);
+      const canEditOwnActive = isOwner || isDiod;
       const data = await apiRequest("/api/kitchen/users/me", {
         method: "PATCH",
-        body: JSON.stringify({ displayName: safeDisplayName, initials: safeInitials, colorId: selectedColorId })
+        body: JSON.stringify({
+          displayName: safeDisplayName,
+          initials: safeInitials,
+          colorId: selectedColorId,
+          canCook: profileCanCook,
+          ...(canEditOwnActive ? { active: profileActive } : {})
+        })
       });
       if (data?.user) setUser((prev) => ({ ...prev, ...data.user }));
       setUserInitialsPreference(user?.id, safeInitials);
@@ -765,6 +792,38 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
+        <label className="kitchen-field kitchen-toggle-field">
+          <div className="kitchen-toggle-row">
+            <span className="kitchen-label">Activo</span>
+            <label className="kitchen-toggle">
+              <input
+                type="checkbox"
+                className="kitchen-toggle-input"
+                checked={profileActive}
+                disabled={!profileEditingMain || (!isOwner && !isDiod)}
+                onChange={(event) => setProfileActive(event.target.checked)}
+              />
+              <span className="kitchen-toggle-track" />
+            </label>
+          </div>
+          <p className="kitchen-muted">Participa por defecto en planificacion y listas de asistencia.</p>
+        </label>
+        <label className="kitchen-field kitchen-toggle-field">
+          <div className="kitchen-toggle-row">
+            <span className="kitchen-label">Puede cocinar</span>
+            <label className="kitchen-toggle">
+              <input
+                type="checkbox"
+                className="kitchen-toggle-input"
+                checked={profileCanCook}
+                disabled={!profileEditingMain}
+                onChange={(event) => setProfileCanCook(event.target.checked)}
+              />
+              <span className="kitchen-toggle-track" />
+            </label>
+          </div>
+          <p className="kitchen-muted">Puede asignarse automaticamente como cocinero en randomizacion.</p>
+        </label>
         <p className="kitchen-muted">Email: {user?.email || "Sin email"}</p>
       </div>
       <div className="settings-block">
@@ -1118,12 +1177,13 @@ export default function SettingsPage() {
                   type="checkbox"
                   className="kitchen-toggle-input"
                   checked={memberModal.form.active}
-                  disabled={!canManageHousehold || String(memberModal.member?.id) === String(user?.id)}
+                  disabled={!canManageHousehold}
                   onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, active: event.target.checked } }))}
                 />
                 <span className="kitchen-toggle-track" />
               </label>
             </div>
+            <p className="kitchen-muted">Participa por defecto en planificacion y listas de asistencia.</p>
           </label>
           <label className="kitchen-field kitchen-toggle-field">
             <div className="kitchen-toggle-row">
@@ -1139,6 +1199,7 @@ export default function SettingsPage() {
                 <span className="kitchen-toggle-track" />
               </label>
             </div>
+            <p className="kitchen-muted">Puede asignarse automaticamente como cocinero en randomizacion.</p>
           </label>
           {!memberModal.member?.isPlaceholder && canManageHousehold && String(memberModal.member?.id) !== String(user?.id) ? <button type="button" className="kitchen-button secondary" onClick={() => askDeleteMember(memberModal.member)}>Eliminar usuario</button> : null}
           {memberModal.member?.isPlaceholder ? (

@@ -239,6 +239,15 @@ router.patch("/me", requireAuth, async (req, res) => {
     req.kitchenUser.lastName = req.body?.lastName ? String(req.body.lastName).trim() : req.kitchenUser.lastName;
     req.kitchenUser.initials = normalizeInitials(req.body?.initials, safeDisplayName);
     req.kitchenUser.colorId = normalizeColorId(req.body?.colorId);
+    if (typeof req.body?.canCook === "boolean") {
+      req.kitchenUser.canCook = req.body.canCook;
+    }
+    if (typeof req.body?.active === "boolean") {
+      if (!isHouseholdAdmin(req.kitchenUser)) {
+        return res.status(403).json({ ok: false, error: "No tienes permisos para cambiar el estado activo." });
+      }
+      req.kitchenUser.active = req.body.active;
+    }
     await req.kitchenUser.save();
 
     return res.json({ ok: true, user: req.kitchenUser.toSafeJSON() });
@@ -416,9 +425,6 @@ router.put("/members/:id", requireAuth, async (req, res) => {
     if (typeof req.body?.active === "boolean") {
       if (!isAdmin) {
         return res.status(403).json({ ok: false, error: "No tienes permisos para activar o desactivar miembros." });
-      }
-      if (isSelf && req.body.active === false) {
-        return res.status(400).json({ ok: false, error: "No puedes desactivarte a ti mismo." });
       }
       member.active = req.body.active;
     }
