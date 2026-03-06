@@ -66,7 +66,8 @@ async function rebuildShoppingListForPlan(plan, householdId) {
     const ingredients = combineDayIngredients({
       mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
       sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
-      overrides: day.ingredientOverrides
+      overrides: day.ingredientOverrides,
+      baseExclusions: day.baseIngredientExclusions
     });
 
     ingredients.forEach((item) => {
@@ -151,7 +152,8 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
       const ingredients = combineDayIngredients({
         mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
         sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
-        overrides: day.ingredientOverrides
+        overrides: day.ingredientOverrides,
+        baseExclusions: day.baseIngredientExclusions
       });
 
       ingredients.forEach((item) => {

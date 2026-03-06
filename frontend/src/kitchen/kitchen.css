@@ -4571,6 +4571,41 @@ body {
   cursor: default;
 }
 
+.kitchen-link-add-ingredient {
+  border: none;
+  background: transparent;
+  color: #5b21b6;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.kitchen-link-add-ingredient:hover {
+  color: #4338ca;
+}
+
+.kitchen-ingredient-pill.is-removable {
+  cursor: pointer;
+}
+
+.kitchen-ingredient-pill.is-removable span {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.kitchen-day-edit-toolbar {
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(99, 102, 241, 0.18);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
 @media (max-width: 420px) {
   .kitchen-day-footer {
     gap: 8px 10px;

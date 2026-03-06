@@ -20,7 +20,8 @@ const WeekDaySchema = new mongoose.Schema(
     servings: { type: Number, default: 4 },
     mainDishId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDish" },
     sideDishId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDish" },
-    ingredientOverrides: { type: [IngredientOverrideSchema], default: [] }
+    ingredientOverrides: { type: [IngredientOverrideSchema], default: [] },
+    baseIngredientExclusions: { type: [String], default: [] }
   },
   { _id: false }
 );

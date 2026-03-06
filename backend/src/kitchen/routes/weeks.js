@@ -41,6 +41,10 @@ function normalizeIngredientOverrides(ingredientOverrides = []) {
   }));
 }
 
+function normalizeBaseIngredientExclusions(values = []) {
+  return dedupeIds((Array.isArray(values) ? values : []).map((value) => String(value || "").trim()));
+}
+
 function buildDishVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
   const hasActiveFilter = Object.prototype.hasOwnProperty.call(extraFilter, "active");
   return {
@@ -241,7 +245,8 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       mainDishId,
       sideDishId,
       ingredientOverrides,
-      attendeeIds
+      attendeeIds,
+      baseIngredientExclusions
     } = req.body;
 
     const invalidIdMessage =
@@ -268,6 +273,9 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       if (invalidAttendeeId) {
         return res.status(400).json({ ok: false, error: "Algun attendeeId no es valido." });
       }
+    }
+    if (baseIngredientExclusions !== undefined && !Array.isArray(baseIngredientExclusions)) {
+      return res.status(400).json({ ok: false, error: "baseIngredientExclusions debe ser una lista." });
     }
 
     if (hasAdministrativePlanChange(req, day, req.body || {})) {
@@ -323,6 +331,9 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
     if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
     if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = normalizeIngredientOverrides(ingredientOverrides);
+    if (Array.isArray(baseIngredientExclusions)) {
+      day.baseIngredientExclusions = normalizeBaseIngredientExclusions(baseIngredientExclusions);
+    }
     applyAttendeesToDay(day, nextAttendeeIds);
 
     await plan.save();
@@ -678,7 +689,8 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
       servings: day.servings,
       mainDishId: day.mainDishId,
       sideDishId: day.sideDishId,
-      ingredientOverrides: day.ingredientOverrides
+      ingredientOverrides: day.ingredientOverrides,
+      baseIngredientExclusions: day.baseIngredientExclusions
     }));
 
     await targetPlan.save();
@@ -766,6 +778,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       mainDishId: sourceDay.mainDishId || null,
       sideDishId: sourceDay.sideDishId || null,
       ingredientOverrides: cloneIngredientOverrides(sourceDay.ingredientOverrides),
+      baseIngredientExclusions: normalizeBaseIngredientExclusions(sourceDay.baseIngredientExclusions),
       attendeeIds: cloneAttendeeIds(sourceDay.attendeeIds)
     };
     const targetSnapshot = {
@@ -775,6 +788,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       mainDishId: targetDay.mainDishId || null,
       sideDishId: targetDay.sideDishId || null,
       ingredientOverrides: cloneIngredientOverrides(targetDay.ingredientOverrides),
+      baseIngredientExclusions: normalizeBaseIngredientExclusions(targetDay.baseIngredientExclusions),
       attendeeIds: cloneAttendeeIds(targetDay.attendeeIds)
     };
 
@@ -784,6 +798,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     sourceDay.mainDishId = targetSnapshot.mainDishId;
     sourceDay.sideDishId = targetSnapshot.sideDishId;
     sourceDay.ingredientOverrides = targetSnapshot.ingredientOverrides;
+    sourceDay.baseIngredientExclusions = targetSnapshot.baseIngredientExclusions;
     applyAttendeesToDay(sourceDay, targetSnapshot.attendeeIds);
 
     targetDay.cookUserId = sourceSnapshot.cookUserId;
@@ -792,6 +807,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     targetDay.mainDishId = sourceSnapshot.mainDishId;
     targetDay.sideDishId = sourceSnapshot.sideDishId;
     targetDay.ingredientOverrides = sourceSnapshot.ingredientOverrides;
+    targetDay.baseIngredientExclusions = sourceSnapshot.baseIngredientExclusions;
     applyAttendeesToDay(targetDay, sourceSnapshot.attendeeIds);
 
     await plan.save();

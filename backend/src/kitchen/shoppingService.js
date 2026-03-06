@@ -208,7 +208,8 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
     const ingredients = combineDayIngredients({
       mainDish: main,
       sideDish: side,
-      overrides: day.ingredientOverrides
+      overrides: day.ingredientOverrides,
+      baseExclusions: day.baseIngredientExclusions
     });
 
     for (const ingredient of ingredients) {

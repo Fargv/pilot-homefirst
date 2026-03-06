@@ -25,11 +25,23 @@ export function mergeIngredientLists(...lists) {
   return Array.from(merged.values());
 }
 
-export function combineDayIngredients({ mainDish, sideDish, overrides }) {
+export function combineDayIngredients({ mainDish, sideDish, overrides, baseExclusions = [] }) {
   const baseIngredients = normalizeIngredientList([
     ...(mainDish?.ingredients || []),
     ...(sideDish?.ingredients || [])
   ]);
+  const exclusionSet = new Set(
+    (Array.isArray(baseExclusions) ? baseExclusions : [])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+  );
+  const filteredBase = exclusionSet.size
+    ? baseIngredients.filter((item) => {
+      const canonicalKey = String(item?.canonicalName || "").trim();
+      const ingredientKey = item?.ingredientId ? String(item.ingredientId) : "";
+      return !exclusionSet.has(canonicalKey) && !exclusionSet.has(ingredientKey);
+    })
+    : baseIngredients;
   const extraIngredients = normalizeIngredientList(overrides || []);
-  return mergeIngredientLists(baseIngredients, extraIngredients);
+  return mergeIngredientLists(filteredBase, extraIngredients);
 }

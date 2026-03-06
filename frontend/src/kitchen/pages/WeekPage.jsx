@@ -111,6 +111,20 @@ function TrashIcon(props) {
     </svg>
   );
 }
+function SaveIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M5 12.5l4.2 4.2L19 6.9" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function CloseIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 const MAX_DISH_RESULTS = 8;
 
@@ -162,7 +176,7 @@ export default function WeekPage() {
   const [dayErrors, setDayErrors] = useState({});
   const [dayAttendanceBusy, setDayAttendanceBusy] = useState({});
   const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
-  const [extraIngredientsEnabled, setExtraIngredientsEnabled] = useState({});
+  const [addIngredientsOpen, setAddIngredientsOpen] = useState({});
   const [selectedDay, setSelectedDay] = useState("");
   const [editingDays, setEditingDays] = useState({});
   const [sideDishEnabled, setSideDishEnabled] = useState({});
@@ -499,6 +513,26 @@ export default function WeekPage() {
     selectedDayRef.current = selectedDay;
   }, [selectedDay]);
 
+  useEffect(() => {
+    const editingEntry = Object.entries(editingDays).find(([, open]) => Boolean(open));
+    if (!editingEntry) return;
+    const [editingDayKey] = editingEntry;
+    if (!selectedDay || selectedDay === editingDayKey) return;
+    const targetDay = safeDays.find((day) => day?.date?.slice(0, 10) === selectedDay);
+    if (!targetDay) {
+      setEditingDays({});
+      return;
+    }
+    const targetCookId = targetDay?.cookUserId ? String(targetDay.cookUserId) : "";
+    const currentUserId = String(user?.id || user?._id || "");
+    const canEditTarget = isOwnerAdmin || (targetCookId && targetCookId === currentUserId);
+    if (canEditTarget) {
+      startEditingDay(targetDay);
+    } else {
+      setEditingDays({});
+    }
+  }, [editingDays, isOwnerAdmin, safeDays, selectedDay, user?.id, user?._id]);
+
   const dayKeys = useMemo(
     () => safeDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
     [safeDays]
@@ -650,7 +684,8 @@ export default function WeekPage() {
       cookUserId: null,
       mainDishId: null,
       sideDishId: null,
-      ingredientOverrides: []
+      ingredientOverrides: [],
+      baseIngredientExclusions: []
     });
     if (result) {
       stopEditingDay(dayKey);
@@ -701,6 +736,15 @@ export default function WeekPage() {
       setPlan(data.plan);
       setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
       setMoveTargetByDay((prev) => ({ ...prev, [dayKey]: "" }));
+      stopEditingDay(dayKey);
+      setSelectedDay(targetDate);
+      const targetDay = data?.plan?.days?.find((entry) => entry?.date?.slice(0, 10) === targetDate);
+      const targetCookId = targetDay?.cookUserId ? String(targetDay.cookUserId) : "";
+      const currentUserId = String(userRef.current?.id || userRef.current?._id || "");
+      const canEditTarget = isOwnerAdmin || (targetCookId && targetCookId === currentUserId);
+      if (targetDay && canEditTarget) {
+        startEditingDay(targetDay);
+      }
       return data.plan;
     } catch (err) {
       const message = err.message || "No se pudo mover la asignación del día.";
@@ -742,12 +786,9 @@ export default function WeekPage() {
     const dayKey = day.date.slice(0, 10);
     const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
     const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
-    setEditingDays((prev) => ({ ...prev, [dayKey]: true }));
+    setEditingDays({ [dayKey]: true });
     setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
-    setExtraIngredientsEnabled((prev) => ({
-      ...prev,
-      [dayKey]: Boolean(day.ingredientOverrides?.length)
-    }));
+    setAddIngredientsOpen((prev) => ({ ...prev, [dayKey]: Boolean(day.ingredientOverrides?.length) }));
     setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
     setSideDishQueries((prev) => ({ ...prev, [dayKey]: sideDishName || "" }));
@@ -755,9 +796,10 @@ export default function WeekPage() {
   };
 
   const stopEditingDay = (dayKey) => {
-    setEditingDays((prev) => ({ ...prev, [dayKey]: false }));
+    setEditingDays({});
     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
     setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+    setAddIngredientsOpen((prev) => ({ ...prev, [dayKey]: false }));
   };
 
   const focusMainDish = (dayKey) => {
@@ -802,7 +844,7 @@ export default function WeekPage() {
           focusSideDish(targetDate);
         } else if (targetDish) {
           setMainDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
-          updateDay(targetDay, { mainDishId: targetDish._id });
+          updateDay(targetDay, { mainDishId: targetDish._id, baseIngredientExclusions: [] });
           focusMainDish(targetDate);
         }
       }
@@ -1008,7 +1050,7 @@ export default function WeekPage() {
 
     let updateResult = await updateDay(
       targetDay,
-      { mainDishId: randomDish._id },
+      { mainDishId: randomDish._id, baseIngredientExclusions: [] },
       { weekStart: clickWeekStart, returnErrorObject: true }
     );
 
@@ -1033,7 +1075,7 @@ export default function WeekPage() {
         }
         updateResult = await updateDay(
           targetDay,
-          { mainDishId: retryDish._id },
+          { mainDishId: retryDish._id, baseIngredientExclusions: [] },
           { weekStart: clickWeekStart, returnErrorObject: true }
         );
         randomDish = retryDish;
@@ -1094,7 +1136,7 @@ export default function WeekPage() {
           setSideDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
           setSideDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
         } else {
-          updateDay(targetDay, { mainDishId: dish._id });
+          updateDay(targetDay, { mainDishId: dish._id, baseIngredientExclusions: [] });
           setMainDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
           setMainDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
         }
@@ -1296,10 +1338,19 @@ export default function WeekPage() {
                   ? `${mainDish?.name || ""}${sideDish?.name ? ` con ${sideDish.name}` : ""}`.trim()
                   : "";
                 const canDeletePlanning = isOwnerAdmin || isAssignedToSelf;
-                const baseIngredients = mergeIngredientLists(
+                const baseIngredientExclusions = Array.isArray(day.baseIngredientExclusions)
+                  ? day.baseIngredientExclusions.map((item) => String(item))
+                  : [];
+                const baseExclusionSet = new Set(baseIngredientExclusions);
+                const baseIngredientsRaw = mergeIngredientLists(
                   mainDish?.ingredients || [],
                   sideDish?.ingredients || []
                 );
+                const baseIngredients = baseIngredientsRaw.filter((item) => {
+                  const canonicalKey = String(item?.canonicalName || "").trim();
+                  const idKey = item?.ingredientId ? String(item.ingredientId) : "";
+                  return !baseExclusionSet.has(canonicalKey) && !baseExclusionSet.has(idKey);
+                });
                 const extraIngredients = day.ingredientOverrides || [];
                 const extraIngredientsValue =
                   extraIngredientsByDay[dayKey] ||
@@ -1341,8 +1392,7 @@ export default function WeekPage() {
               (dish) => normalizeIngredientName(dish.name || "") === normalizedSideDishQuery
             )
             : false;
-          const extrasOn = extraIngredientsEnabled[dayKey] ?? Boolean(extraIngredients.length);
-          const extrasToggleId = `extras-toggle-${dayKey}`;
+          const extrasOn = Boolean(extraIngredientsValue.length);
           return (
             <div
               key={day.date}
@@ -1381,26 +1431,7 @@ export default function WeekPage() {
                         <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
                       ) : null}
                     </div>
-                    <div className="kitchen-day-cta">
-                      {isEditing ? (
-                        <div className="kitchen-day-edit-actions">
-                          <button
-                            type="button"
-                            className="kitchen-button is-small"
-                            onClick={() => stopEditingDay(dayKey)}
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            type="button"
-                            className="kitchen-button secondary is-small"
-                            onClick={() => stopEditingDay(dayKey)}
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      ) : null}
-                    </div>
+                    <div className="kitchen-day-cta" />
                   </>
                 ) : null}
               </div>
@@ -1570,10 +1601,10 @@ export default function WeekPage() {
                             (dish) => normalizeIngredientName(dish.name || "") === normalized
                           );
                           if (!trimmed) {
-                            updateDay(day, { mainDishId: null });
+                            updateDay(day, { mainDishId: null, baseIngredientExclusions: [] });
                             setMainDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
                           } else if (match) {
-                            updateDay(day, { mainDishId: match._id });
+                            updateDay(day, { mainDishId: match._id, baseIngredientExclusions: [] });
                             setMainDishQueries((prev) => ({ ...prev, [dayKey]: match.name }));
                           } else {
                             setMainDishQueries((prev) => ({
@@ -1598,7 +1629,7 @@ export default function WeekPage() {
                                 type="button"
                                 onMouseDown={(event) => {
                                   event.preventDefault();
-                                  updateDay(day, { mainDishId: null });
+                                  updateDay(day, { mainDishId: null, baseIngredientExclusions: [] });
                                   setMainDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
                                   setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
                                 }}
@@ -1613,7 +1644,7 @@ export default function WeekPage() {
                                     type="button"
                                     onMouseDown={(event) => {
                                       event.preventDefault();
-                                      updateDay(day, { mainDishId: dish._id });
+                                      updateDay(day, { mainDishId: dish._id, baseIngredientExclusions: [] });
                                       setMainDishQueries((prev) => ({ ...prev, [dayKey]: dish.name }));
                                       setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
                                     }}
@@ -1782,62 +1813,76 @@ export default function WeekPage() {
                     </label>
                   ) : null}
 
-                  <label className="kitchen-field">
-                    <span className="kitchen-label">Cuándo se cocina</span>
-                    <select
-                      className="kitchen-select"
-                      value={day.cookTiming}
-                      onChange={(event) => updateDay(day, { cookTiming: event.target.value })}
-                    >
-                      <option value="previous_day">Día anterior</option>
-                      <option value="same_day">Mismo día</option>
-                    </select>
-                  </label>
-
                   <div className="kitchen-day-ingredients">
-                    <span className="kitchen-label">Ingredientes base</span>
+                    <span className="kitchen-label">Ingredientes</span>
                     <div className="kitchen-day-ingredient-pills">
-                      {baseIngredients.length ? (
-                        baseIngredients.map((item) => (
-                          <span
-                            key={item.ingredientId || item.canonicalName || item.displayName}
-                            className="kitchen-ingredient-pill"
-                          >
-                            {item.displayName}
-                          </span>
-                        ))
+                      {baseIngredients.length || extraIngredientsValue.length ? (
+                        <>
+                          {baseIngredients.map((item) => (
+                            <button
+                              key={`base-${item.ingredientId || item.canonicalName || item.displayName}`}
+                              type="button"
+                              className="kitchen-ingredient-pill is-removable"
+                              onClick={() => {
+                                const canonicalKey = String(item?.canonicalName || "").trim();
+                                const idKey = item?.ingredientId ? String(item.ingredientId) : "";
+                                const nextExclusions = Array.from(
+                                  new Set([
+                                    ...(Array.isArray(day.baseIngredientExclusions) ? day.baseIngredientExclusions : []),
+                                    ...(canonicalKey ? [canonicalKey] : []),
+                                    ...(idKey ? [idKey] : [])
+                                  ].map((value) => String(value || "").trim()).filter(Boolean))
+                                );
+                                updateDay(day, { baseIngredientExclusions: nextExclusions });
+                              }}
+                            >
+                              {item.displayName}
+                              <span aria-hidden="true">×</span>
+                            </button>
+                          ))}
+                          {extraIngredientsValue.map((item) => (
+                            <button
+                              key={`extra-${item.ingredientId || item.canonicalName || item.displayName}`}
+                              type="button"
+                              className="kitchen-ingredient-pill is-extra is-removable"
+                              onClick={() => {
+                                const nextExtras = extraIngredientsValue.filter((entry) => {
+                                  const left = String(entry.ingredientId || entry.canonicalName || entry.displayName);
+                                  const right = String(item.ingredientId || item.canonicalName || item.displayName);
+                                  return left !== right;
+                                });
+                                setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: nextExtras }));
+                                const overrides = nextExtras
+                                  .map((entry) => ({
+                                    displayName: entry.displayName,
+                                    canonicalName: entry.canonicalName,
+                                    ...(entry.ingredientId ? { ingredientId: entry.ingredientId } : {})
+                                  }))
+                                  .filter((entry) => entry.displayName && entry.canonicalName);
+                                updateDay(day, { ingredientOverrides: overrides });
+                              }}
+                            >
+                              {item.displayName}
+                              <span aria-hidden="true">×</span>
+                            </button>
+                          ))}
+                        </>
                       ) : (
-                        <span className="kitchen-muted">Sin ingredientes base.</span>
+                        <span className="kitchen-muted">Sin ingredientes.</span>
                       )}
                     </div>
                   </div>
 
-                  <div className="kitchen-field kitchen-toggle-field">
-                    <div className="kitchen-toggle-row">
-                      <span className="kitchen-label">Añadir extras</span>
-                      <label className="kitchen-toggle" htmlFor={extrasToggleId}>
-                        <input
-                          id={extrasToggleId}
-                          type="checkbox"
-                          className="kitchen-toggle-input"
-                          checked={extrasOn}
-                          onChange={(event) => {
-                            const nextValue = event.target.checked;
-                            setExtraIngredientsEnabled((prev) => ({ ...prev, [dayKey]: nextValue }));
-                            if (!nextValue) {
-                              setExtraIngredientsByDay((prev) => ({ ...prev, [dayKey]: [] }));
-                              updateDay(day, { ingredientOverrides: [] });
-                            }
-                          }}
-                        />
-                        <span className="kitchen-toggle-track" aria-hidden="true" />
-                      </label>
-                    </div>
-                  </div>
-
-                  {extrasOn ? (
+                  {!addIngredientsOpen[dayKey] ? (
+                    <button
+                      type="button"
+                      className="kitchen-link-add-ingredient"
+                      onClick={() => setAddIngredientsOpen((prev) => ({ ...prev, [dayKey]: true }))}
+                    >
+                      + Añadir ingredientes
+                    </button>
+                  ) : (
                     <div className="kitchen-field kitchen-day-ingredients">
-                      <span className="kitchen-label">Extras</span>
                       <IngredientPicker
                         value={extraIngredientsValue}
                         onChange={(next) => {
@@ -1855,7 +1900,7 @@ export default function WeekPage() {
                         onCategoryCreated={handleCategoryCreated}
                       />
                     </div>
-                  ) : null}
+                  )}
 
                   <div className="kitchen-actions">
                     {isOwnerAdmin ? (
@@ -1969,14 +2014,38 @@ export default function WeekPage() {
                             </button>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          className="kitchen-button secondary is-small"
-                          onClick={() => requestRemoveDayAssignment(day)}
-                        >
-                          Eliminar plato de la planificacion
-                        </button>
                       </>
+                    ) : null}
+                  </div>
+                  <div className="kitchen-day-edit-toolbar">
+                    <button
+                      type="button"
+                      className="kitchen-day-icon-action"
+                      onClick={() => stopEditingDay(dayKey)}
+                      aria-label="Guardar edición"
+                      title="Guardar"
+                    >
+                      <SaveIcon />
+                    </button>
+                    <button
+                      type="button"
+                      className="kitchen-day-icon-action"
+                      onClick={() => stopEditingDay(dayKey)}
+                      aria-label="Cancelar edición"
+                      title="Cancelar"
+                    >
+                      <CloseIcon />
+                    </button>
+                    {canDeletePlanning ? (
+                      <button
+                        type="button"
+                        className="kitchen-day-icon-action is-danger"
+                        onClick={() => requestRemoveDayAssignment(day)}
+                        aria-label="Eliminar plato de la planificación"
+                        title="Eliminar plato de la planificación"
+                      >
+                        <TrashIcon />
+                      </button>
                     ) : null}
                   </div>
                 </>
