@@ -93,8 +93,12 @@ function hasAdministrativePlanChange(req, day, updates) {
   const clearsSideDish = Object.prototype.hasOwnProperty.call(updates, "sideDishId")
     && !updates.sideDishId
     && Boolean(day.sideDishId);
+  const isCurrentCook = day?.cookUserId && isSelfAssignment(req, day.cookUserId);
 
-  return clearsMainDish || clearsSideDish;
+  if (clearsMainDish || clearsSideDish) {
+    return !isCurrentCook;
+  }
+  return false;
 }
 
 function isActiveMember(member) {
@@ -742,23 +746,53 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "No encontramos los días de origen o destino en esa semana." });
     }
 
-    targetDay.cookUserId = sourceDay.cookUserId || null;
-    targetDay.cookTiming = sourceDay.cookTiming || "previous_day";
-    targetDay.servings = sourceDay.servings || 4;
-    targetDay.mainDishId = sourceDay.mainDishId || null;
-    targetDay.sideDishId = sourceDay.sideDishId || null;
-    targetDay.ingredientOverrides = Array.isArray(sourceDay.ingredientOverrides)
-      ? sourceDay.ingredientOverrides.map((item) => ({
-        displayName: item.displayName,
-        canonicalName: item.canonicalName,
-        ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
-      }))
-      : [];
+    const cloneIngredientOverrides = (items = []) => (
+      Array.isArray(items)
+        ? items.map((item) => ({
+          displayName: item.displayName,
+          canonicalName: item.canonicalName,
+          ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
+        }))
+        : []
+    );
+    const cloneAttendeeIds = (items = []) => (
+      Array.isArray(items) ? dedupeIds(items) : []
+    );
 
-    sourceDay.cookUserId = null;
-    sourceDay.mainDishId = null;
-    sourceDay.sideDishId = null;
-    sourceDay.ingredientOverrides = [];
+    const sourceSnapshot = {
+      cookUserId: sourceDay.cookUserId || null,
+      cookTiming: sourceDay.cookTiming || "previous_day",
+      servings: sourceDay.servings || 4,
+      mainDishId: sourceDay.mainDishId || null,
+      sideDishId: sourceDay.sideDishId || null,
+      ingredientOverrides: cloneIngredientOverrides(sourceDay.ingredientOverrides),
+      attendeeIds: cloneAttendeeIds(sourceDay.attendeeIds)
+    };
+    const targetSnapshot = {
+      cookUserId: targetDay.cookUserId || null,
+      cookTiming: targetDay.cookTiming || "previous_day",
+      servings: targetDay.servings || 4,
+      mainDishId: targetDay.mainDishId || null,
+      sideDishId: targetDay.sideDishId || null,
+      ingredientOverrides: cloneIngredientOverrides(targetDay.ingredientOverrides),
+      attendeeIds: cloneAttendeeIds(targetDay.attendeeIds)
+    };
+
+    sourceDay.cookUserId = targetSnapshot.cookUserId;
+    sourceDay.cookTiming = targetSnapshot.cookTiming;
+    sourceDay.servings = targetSnapshot.servings;
+    sourceDay.mainDishId = targetSnapshot.mainDishId;
+    sourceDay.sideDishId = targetSnapshot.sideDishId;
+    sourceDay.ingredientOverrides = targetSnapshot.ingredientOverrides;
+    applyAttendeesToDay(sourceDay, targetSnapshot.attendeeIds);
+
+    targetDay.cookUserId = sourceSnapshot.cookUserId;
+    targetDay.cookTiming = sourceSnapshot.cookTiming;
+    targetDay.servings = sourceSnapshot.servings;
+    targetDay.mainDishId = sourceSnapshot.mainDishId;
+    targetDay.sideDishId = sourceSnapshot.sideDishId;
+    targetDay.ingredientOverrides = sourceSnapshot.ingredientOverrides;
+    applyAttendeesToDay(targetDay, sourceSnapshot.attendeeIds);
 
     await plan.save();
     const warning = await rebuildShoppingListBestEffort({

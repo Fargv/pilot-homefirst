@@ -4323,3 +4323,140 @@ body {
     padding-top: 10px;
   }
 }
+
+.kitchen-day-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kitchen-day-header-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+
+.kitchen-day-cook-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  gap: 2px;
+}
+
+.kitchen-day-cook-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.kitchen-day-cook-attendees {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.kitchen-day-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.kitchen-day-dish-display {
+  text-transform: uppercase;
+  text-align: center;
+  font-size: clamp(1.02rem, 2vw, 1.18rem);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  line-height: 1.25;
+  color: #111827;
+  margin: 6px 2px 0;
+}
+
+.kitchen-day-actions-row {
+  margin-top: auto;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.kitchen-day-icon-action {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(255, 255, 255, 0.86);
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.kitchen-day-icon-action svg {
+  width: 18px;
+  height: 18px;
+}
+
+.kitchen-day-icon-action.is-danger {
+  color: #b42318;
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.kitchen-day-icon-action:hover {
+  background: #ffffff;
+  border-color: rgba(99, 102, 241, 0.55);
+}
+
+.kitchen-day-info-popover-wrap {
+  position: relative;
+}
+
+.kitchen-day-info-popover {
+  position: absolute;
+  bottom: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(260px, 70vw);
+  background: #ffffff;
+  border: 1px solid #d8defd;
+  border-radius: 12px;
+  box-shadow: 0 14px 30px rgba(76, 81, 169, 0.18);
+  padding: 10px 12px;
+  z-index: 5;
+}
+
+.kitchen-day-info-popover strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #27336a;
+  font-size: 0.82rem;
+}
+
+.kitchen-day-info-popover ul {
+  margin: 0;
+  padding-left: 16px;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.kitchen-day-info-popover li {
+  font-size: 0.82rem;
+  line-height: 1.3;
+  color: #334155;
+}
+
+.kitchen-day-attendance-check {
+  border-color: rgba(108, 99, 255, 0.35);
+  background: rgba(245, 244, 255, 0.95);
+  color: #312e81;
+}
+
+.kitchen-day-attendance-check input {
+  accent-color: #6d28d9;
+}
