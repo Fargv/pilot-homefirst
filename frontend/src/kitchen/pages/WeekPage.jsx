@@ -178,6 +178,8 @@ export default function WeekPage() {
   const [swapDialogDay, setSwapDialogDay] = useState(null);
   const [swapTargetDate, setSwapTargetDate] = useState("");
   const [swapBusy, setSwapBusy] = useState(false);
+  const [deleteDialogDay, setDeleteDialogDay] = useState(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [dishModalOpen, setDishModalOpen] = useState(false);
   const [dishModalName, setDishModalName] = useState("");
   const [dishModalDayKey, setDishModalDayKey] = useState(null);
@@ -644,8 +646,6 @@ export default function WeekPage() {
 
   const removeDayAssignment = async (day) => {
     const dayKey = day.date.slice(0, 10);
-    const confirmed = window.confirm("Se eliminara el plato de la planificacion de este dia. ¿Continuar?");
-    if (!confirmed) return null;
     const result = await updateDay(day, {
       cookUserId: null,
       mainDishId: null,
@@ -656,6 +656,35 @@ export default function WeekPage() {
       stopEditingDay(dayKey);
     }
     return result;
+  };
+
+  const requestRemoveDayAssignment = (day) => {
+    const dayKey = day?.date?.slice(0, 10);
+    if (!dayKey) return;
+    setDeleteDialogDay(dayKey);
+  };
+
+  const closeDeleteDialog = () => {
+    if (deleteBusy) return;
+    setDeleteDialogDay(null);
+  };
+
+  const confirmRemoveDayAssignment = async () => {
+    if (!deleteDialogDay || deleteBusy) return;
+    const day = safeDaysRef.current.find((entry) => entry?.date?.slice(0, 10) === deleteDialogDay);
+    if (!day) {
+      closeDeleteDialog();
+      return;
+    }
+    setDeleteBusy(true);
+    try {
+      const result = await removeDayAssignment(day);
+      if (result) {
+        setDeleteDialogDay(null);
+      }
+    } finally {
+      setDeleteBusy(false);
+    }
   };
 
   const moveDayAssignment = async (day, targetDate) => {
@@ -1236,6 +1265,9 @@ export default function WeekPage() {
                 const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
                 const dayAttendeeIds = resolveDayAttendees(day, users);
                 const attendeeCount = dayAttendeeIds.length;
+                const dayAttendeeNames = dayAttendeeIds
+                  .map((id) => userMap.get(id)?.displayName)
+                  .filter((name) => String(name || "").trim());
                 const currentUserId = String(user?.id || user?._id || "");
                 const isSelfAttending = Boolean(currentUserId) && dayAttendeeIds.includes(currentUserId);
                 const cookInitials = getUserInitialsFromProfile(cookUser?.initials, cookUser?.id, cookUser?.displayName);
@@ -1401,7 +1433,45 @@ export default function WeekPage() {
                   </div>
                 ) : (
                   <div className="kitchen-day-view">
-                    <div className="kitchen-day-dish-display">{displayDishName || "Sin plato"}</div>
+                    <div className="kitchen-day-dish-row">
+                      <div className="kitchen-day-dish-display">{displayDishName || "Sin plato"}</div>
+                      {isPlanned ? (
+                        <div className="kitchen-day-title-info-wrap">
+                          <button
+                            type="button"
+                            className="kitchen-day-title-info-action"
+                            onClick={() => setInfoOpenByDay((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))}
+                            aria-label="Ver detalles del plato"
+                            title="Detalles del plato"
+                          >
+                            <InfoIcon />
+                          </button>
+                          {infoOpenByDay[dayKey] ? (
+                            <div className="kitchen-day-info-popover is-title" role="dialog" aria-label="Detalles del día">
+                              <strong>Ingredientes</strong>
+                              <ul>
+                                {baseIngredients.length ? baseIngredients.map((item) => (
+                                  <li key={item.ingredientId || item.canonicalName || item.displayName}>
+                                    {item.displayName}
+                                  </li>
+                                )) : <li>Sin ingredientes base</li>}
+                                {extraIngredients.length && extrasOn ? extraIngredients.map((item) => (
+                                  <li key={`extra-${item.ingredientId || item.canonicalName || item.displayName}`}>
+                                    + {item.displayName}
+                                  </li>
+                                )) : null}
+                              </ul>
+                              <strong>Comensales</strong>
+                              <ul>
+                                {dayAttendeeNames.length ? dayAttendeeNames.map((name, idx) => (
+                                  <li key={`attendee-${idx}-${name}`}>{name}</li>
+                                )) : <li>Sin comensales</li>}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
                     {!isPlanned && canShowAssignCta ? (
                       <div className="kitchen-day-assign-actions">
                         <button
@@ -1453,34 +1523,6 @@ export default function WeekPage() {
                               <EditIcon />
                             </button>
                           ) : null}
-                          <div className="kitchen-day-info-popover-wrap">
-                            <button
-                              type="button"
-                              className="kitchen-day-icon-action"
-                              onClick={() => setInfoOpenByDay((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))}
-                              aria-label="Ver ingredientes"
-                              title="Ingredientes"
-                            >
-                              <InfoIcon />
-                            </button>
-                            {infoOpenByDay[dayKey] ? (
-                              <div className="kitchen-day-info-popover" role="dialog" aria-label="Ingredientes del día">
-                                <strong>Ingredientes</strong>
-                                <ul>
-                                  {baseIngredients.length ? baseIngredients.map((item) => (
-                                    <li key={item.ingredientId || item.canonicalName || item.displayName}>
-                                      {item.displayName}
-                                    </li>
-                                  )) : <li>Sin ingredientes base</li>}
-                                  {extraIngredients.length && extrasOn ? extraIngredients.map((item) => (
-                                    <li key={`extra-${item.ingredientId || item.canonicalName || item.displayName}`}>
-                                      + {item.displayName}
-                                    </li>
-                                  )) : null}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
                           {isOwnerAdmin ? (
                             <button
                               type="button"
@@ -1496,7 +1538,7 @@ export default function WeekPage() {
                             <button
                               type="button"
                               className="kitchen-day-icon-action is-danger"
-                              onClick={() => removeDayAssignment(day)}
+                              onClick={() => requestRemoveDayAssignment(day)}
                               aria-label="Eliminar plato de la planificación"
                               title="Eliminar plato de la planificación"
                             >
@@ -1934,7 +1976,7 @@ export default function WeekPage() {
                         <button
                           type="button"
                           className="kitchen-button secondary is-small"
-                          onClick={() => removeDayAssignment(day)}
+                          onClick={() => requestRemoveDayAssignment(day)}
                         >
                           Eliminar plato de la planificacion
                         </button>
@@ -2072,6 +2114,40 @@ export default function WeekPage() {
                 disabled={swapBusy || !swapTargetDate}
               >
                 {swapBusy ? "Intercambiando..." : "Intercambiar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {deleteDialogDay ? (
+        <div className="kitchen-modal-backdrop" role="presentation">
+          <div
+            className="kitchen-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Eliminar plato de la planificación"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <h3>Eliminar plato de la planificación</h3>
+              <p className="kitchen-muted">Esta acción quitará el plato del día y lo dejará vacío.</p>
+            </div>
+            <div className="kitchen-modal-actions">
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                onClick={closeDeleteDialog}
+                disabled={deleteBusy}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="kitchen-button"
+                onClick={confirmRemoveDayAssignment}
+                disabled={deleteBusy}
+              >
+                {deleteBusy ? "Eliminando..." : "Eliminar"}
               </button>
             </div>
           </div>
