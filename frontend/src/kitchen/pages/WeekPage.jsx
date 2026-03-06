@@ -135,6 +135,15 @@ function CloseIcon(props) {
 }
 
 const MAX_DISH_RESULTS = 8;
+const WEEK_MEAL_TAB_KEY = "kitchen_week_meal_tab";
+
+function normalizeMealType(value) {
+  return String(value || "").toLowerCase() === "dinner" ? "dinner" : "lunch";
+}
+
+function dayMealType(day) {
+  return normalizeMealType(day?.mealType || "lunch");
+}
 
 function mergeIngredientLists(...lists) {
   const merged = new Map();
@@ -160,9 +169,16 @@ function isActiveMember(user) {
   return user?.active !== false;
 }
 
-function resolveDayAttendees(day, users = []) {
+function resolveDayAttendees(day, users = [], mealType = "lunch") {
   if (Array.isArray(day?.attendeeIds)) return day.attendeeIds.map((item) => String(item));
-  return users.filter((member) => isActiveMember(member)).map((member) => String(member.id));
+  if (normalizeMealType(mealType) === "dinner") {
+    return users
+      .filter((member) => isActiveMember(member) && member?.dinnerActive !== false)
+      .map((member) => String(member.id));
+  }
+  return users
+    .filter((member) => isActiveMember(member))
+    .map((member) => String(member.id));
 }
 
 function normalizeExclusionKey(value) {
@@ -178,6 +194,11 @@ export default function WeekPage() {
   const [sideDishes, setSideDishes] = useState([]);
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [dinnersEnabled, setDinnersEnabled] = useState(false);
+  const [mealTab, setMealTab] = useState(() => {
+    if (typeof window === "undefined") return "lunch";
+    return normalizeMealType(window.localStorage.getItem(WEEK_MEAL_TAB_KEY) || "lunch");
+  });
   const [loading, setLoading] = useState(true);
   const [dishesLoading, setDishesLoading] = useState(false);
   const [dishesLoadedForHouseholdKey, setDishesLoadedForHouseholdKey] = useState("");
@@ -198,6 +219,9 @@ export default function WeekPage() {
   const [mainDishOpen, setMainDishOpen] = useState({});
   const [sideDishQueries, setSideDishQueries] = useState({});
   const [sideDishOpen, setSideDishOpen] = useState({});
+  const [leftoversByDay, setLeftoversByDay] = useState({});
+  const [leftoverOptionsByDay, setLeftoverOptionsByDay] = useState({});
+  const [leftoverLoadingByDay, setLeftoverLoadingByDay] = useState({});
   const [assigneeOpen, setAssigneeOpen] = useState({});
   const [moveTargetByDay, setMoveTargetByDay] = useState({});
   const [infoOpenByDay, setInfoOpenByDay] = useState({});
@@ -216,6 +240,7 @@ export default function WeekPage() {
   const [dishModalDayKey, setDishModalDayKey] = useState(null);
   const [dishModalMode, setDishModalMode] = useState("main");
   const [dishModalSidedish, setDishModalSidedish] = useState(false);
+  const [dishModalMealType, setDishModalMealType] = useState("lunch");
   const [weekRandomizeConfirmOpen, setWeekRandomizeConfirmOpen] = useState(false);
   const [weekRandomizing, setWeekRandomizing] = useState(false);
   const ingredientCache = useRef(new Map());
@@ -233,14 +258,19 @@ export default function WeekPage() {
   const userRef = useRef(user);
   const weekStartRef = useRef(weekStart);
   const dishesRef = useRef(dishes);
-  const safeDaysRef = useRef([]);
+  const visibleDaysRef = useRef([]);
   const [missingWeekPromptOpen, setMissingWeekPromptOpen] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
+  const selectedMealType = dinnersEnabled ? normalizeMealType(mealTab) : "lunch";
+  const visibleDays = useMemo(
+    () => safeDays.filter((day) => dayMealType(day) === selectedMealType),
+    [safeDays, selectedMealType]
+  );
   const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
   const canManageAttendees = isOwnerAdmin;
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
-  const hasAnyMainDishInWeek = safeDays.some((day) => Boolean(day?.mainDishId));
-  const canShowWeekRandomize = Boolean(plan && safeDays.length && !hasAnyMainDishInWeek);
+  const hasAnyMainDishInWeek = visibleDays.some((day) => Boolean(day?.mainDishId));
+  const canShowWeekRandomize = Boolean(plan && visibleDays.length && !hasAnyMainDishInWeek);
   const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
   const currentHouseholdKey = currentHouseholdId ? String(currentHouseholdId) : "__no_household__";
   const dishesReadyForCurrentHousehold = !dishesLoading && dishesLoadedForHouseholdKey === currentHouseholdKey;
@@ -252,11 +282,12 @@ export default function WeekPage() {
   const refreshCurrentDishes = useCallback(async () => {
     const householdIdAtRequest = getCurrentHouseholdId();
     const householdKeyAtRequest = householdIdAtRequest ? String(householdIdAtRequest) : "__no_household__";
+    const dinnerQuery = selectedMealType === "dinner" ? "true" : "false";
     setDishesLoading(true);
     try {
       const [dishesData, sideDishesData] = await Promise.all([
-        apiRequest("/api/kitchen/dishes"),
-        apiRequest("/api/kitchen/dishes?sidedish=true")
+        apiRequest(`/api/kitchen/dishes?isDinner=${dinnerQuery}`),
+        apiRequest(`/api/kitchen/dishes?sidedish=true&isDinner=${dinnerQuery}`)
       ]);
       setDishes(dishesData.dishes || []);
       setSideDishes(sideDishesData.dishes || []);
@@ -268,7 +299,7 @@ export default function WeekPage() {
     } finally {
       setDishesLoading(false);
     }
-  }, [getCurrentHouseholdId]);
+  }, [getCurrentHouseholdId, selectedMealType]);
 
   const handleConfirmWeekRandomize = useCallback(async () => {
     setWeekRandomizing(true);
@@ -276,7 +307,7 @@ export default function WeekPage() {
     try {
       const data = await apiRequest(`/api/kitchen/weeks/${weekStartRef.current}/randomize`, {
         method: "POST",
-        body: JSON.stringify({ overwriteAll: false })
+        body: JSON.stringify({ overwriteAll: false, mealType: selectedMealType })
       });
       setPlan(data.plan || null);
       const warningMessages = Array.isArray(data.warnings)
@@ -309,7 +340,7 @@ export default function WeekPage() {
     } finally {
       setWeekRandomizing(false);
     }
-  }, []);
+  }, [selectedMealType]);
 
   const loadData = async () => {
     const requestSeq = loadRequestSeqRef.current + 1;
@@ -338,10 +369,11 @@ export default function WeekPage() {
     setSideDishes([]);
     setDishesLoadedForHouseholdKey("");
     try {
+      const dinnerQuery = selectedMealType === "dinner" ? "true" : "false";
       const [planData, dishesData, sideDishesData] = await Promise.all([
         apiRequest(`/api/kitchen/weeks/${weekStart}`),
-        apiRequest("/api/kitchen/dishes"),
-        apiRequest("/api/kitchen/dishes?sidedish=true")
+        apiRequest(`/api/kitchen/dishes?isDinner=${dinnerQuery}`),
+        apiRequest(`/api/kitchen/dishes?sidedish=true&isDinner=${dinnerQuery}`)
       ]);
       if (requestSeq !== loadRequestSeqRef.current) return;
       setPlan(planData.plan || null);
@@ -351,9 +383,13 @@ export default function WeekPage() {
       setDishes(dishesData.dishes || []);
       setSideDishes(sideDishesData.dishes || []);
       setDishesLoadedForHouseholdKey(householdKeyAtRequest);
-      const usersData = await apiRequest("/api/kitchen/users/members");
+      const [usersData, householdData] = await Promise.all([
+        apiRequest("/api/kitchen/users/members"),
+        apiRequest("/api/kitchen/household/summary")
+      ]);
       if (requestSeq !== loadRequestSeqRef.current) return;
       setUsers(usersData.users || []);
+      setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
     } catch (err) {
       if (requestSeq !== loadRequestSeqRef.current) return;
       setLoadError(err.message || "No se pudo cargar la semana.");
@@ -366,7 +402,7 @@ export default function WeekPage() {
 
   useEffect(() => {
     loadData();
-  }, [user, weekStart, isOwnerAdmin, isDiodGlobalMode]);
+  }, [user, weekStart, isOwnerAdmin, isDiodGlobalMode, selectedMealType]);
 
   useEffect(() => {
     userRef.current = user;
@@ -381,8 +417,8 @@ export default function WeekPage() {
   }, [dishes]);
 
   useEffect(() => {
-    safeDaysRef.current = safeDays;
-  }, [safeDays]);
+    visibleDaysRef.current = visibleDays;
+  }, [visibleDays]);
 
   useEffect(() => {
     if (!weekNotice) return undefined;
@@ -391,6 +427,16 @@ export default function WeekPage() {
     }, 3200);
     return () => window.clearTimeout(timer);
   }, [weekNotice]);
+
+  useEffect(() => {
+    if (!dinnersEnabled && mealTab !== "lunch") {
+      setMealTab("lunch");
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(WEEK_MEAL_TAB_KEY, normalizeMealType(mealTab));
+    }
+  }, [mealTab, dinnersEnabled]);
 
   useEffect(() => {
     if (!isDiodGlobalMode) return;
@@ -465,13 +511,13 @@ export default function WeekPage() {
   );
 
   useEffect(() => {
-    if (!safeDays.length) {
+    if (!visibleDays.length) {
       return;
     }
     let active = true;
     const loadExtras = async () => {
       const resolved = await Promise.all(
-        safeDays.map(async (day) => {
+        visibleDays.map(async (day) => {
           if (!day?.date) {
             return ["", []];
           }
@@ -494,15 +540,15 @@ export default function WeekPage() {
     return () => {
       active = false;
     };
-  }, [plan, resolveIngredients]);
+  }, [visibleDays, resolveIngredients]);
 
   useEffect(() => {
-    if (!safeDays.length) {
+    if (!visibleDays.length) {
       return;
     }
     const todayKey = new Date().toISOString().slice(0, 10);
-    const fallbackDay = safeDays[0]?.date?.slice(0, 10) || "";
-    const todayIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === todayKey);
+    const fallbackDay = visibleDays[0]?.date?.slice(0, 10) || "";
+    const todayIndex = visibleDays.findIndex((day) => day.date?.slice(0, 10) === todayKey);
     const containsToday = todayIndex !== -1;
 
     if (!hasInitializedRef.current) {
@@ -520,20 +566,20 @@ export default function WeekPage() {
     }
 
     setSelectedDay((prev) => {
-      if (prev && safeDays.some((day) => day.date?.slice(0, 10) === prev)) {
+      if (prev && visibleDays.some((day) => day.date?.slice(0, 10) === prev)) {
         return prev;
       }
       return fallbackDay;
     });
-  }, [safeDays, weekStart]);
+  }, [visibleDays, weekStart]);
 
   useEffect(() => {
     selectedDayRef.current = selectedDay;
   }, [selectedDay]);
 
   const dayKeys = useMemo(
-    () => safeDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
-    [safeDays]
+    () => visibleDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
+    [visibleDays]
   );
   const dishMap = useMemo(() => {
     const map = new Map();
@@ -543,12 +589,12 @@ export default function WeekPage() {
     return map;
   }, [dishes, sideDishes]);
   const showCookTiming = useMemo(() => {
-    if (!safeDays.length) {
+    if (!visibleDays.length) {
       return false;
     }
-    const [first] = safeDays;
-    return safeDays.some((day) => day.cookTiming !== first.cookTiming);
-  }, [safeDays]);
+    const [first] = visibleDays;
+    return visibleDays.some((day) => day.cookTiming !== first.cookTiming);
+  }, [visibleDays]);
 
   useEffect(() => {
     const element = carouselRef.current;
@@ -628,9 +674,10 @@ export default function WeekPage() {
           mainDishId: updates?.mainDishId ? String(updates.mainDishId) : null
         });
       }
-      const data = await apiRequest(`/api/kitchen/weeks/${targetWeekStart}/day/${day.date.slice(0, 10)}`, {
+      const mealType = dayMealType(day);
+      const data = await apiRequest(`/api/kitchen/weeks/${targetWeekStart}/day/${day.date.slice(0, 10)}?mealType=${mealType}`, {
         method: "PUT",
-        body: JSON.stringify(updates)
+        body: JSON.stringify({ ...updates, mealType })
       });
       setPlan(data.plan);
       setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
@@ -665,8 +712,10 @@ export default function WeekPage() {
     setDayAttendanceBusy((prev) => ({ ...prev, [dayKey]: true }));
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
     try {
+      const mealType = dayMealType(day);
       const data = await apiRequest(`/api/kitchen/weeks/${weekStartRef.current}/day/${dayKey}/toggle-attendance`, {
-        method: "POST"
+        method: "POST",
+        body: JSON.stringify({ mealType })
       });
       setPlan(data?.plan || null);
     } catch (err) {
@@ -682,6 +731,10 @@ export default function WeekPage() {
       cookUserId: null,
       mainDishId: null,
       sideDishId: null,
+      isLeftovers: false,
+      leftoversSourceDate: null,
+      leftoversSourceMealType: null,
+      leftoversSourceDishId: null,
       ingredientOverrides: [],
       baseIngredientExclusions: []
     });
@@ -690,6 +743,22 @@ export default function WeekPage() {
     }
     return result;
   };
+
+  const loadLeftoverOptions = useCallback(async (day) => {
+    const dayKey = day?.date?.slice?.(0, 10);
+    if (!dayKey) return;
+    setLeftoverLoadingByDay((prev) => ({ ...prev, [dayKey]: true }));
+    try {
+      const data = await apiRequest(
+        `/api/kitchen/weeks/${weekStartRef.current}/day/${dayKey}/leftovers?mealType=dinner`
+      );
+      setLeftoverOptionsByDay((prev) => ({ ...prev, [dayKey]: data?.leftovers || [] }));
+    } catch (err) {
+      setLeftoverOptionsByDay((prev) => ({ ...prev, [dayKey]: [] }));
+    } finally {
+      setLeftoverLoadingByDay((prev) => ({ ...prev, [dayKey]: false }));
+    }
+  }, []);
 
   const openAttendeeDialog = (day, editable) => {
     const dayKey = day?.date?.slice?.(0, 10);
@@ -719,7 +788,7 @@ export default function WeekPage() {
 
   const saveAttendeeDialog = async () => {
     if (!attendeeDialogDay || attendeeDialogBusy || !attendeeDialogEditable) return;
-    const day = safeDaysRef.current.find((entry) => entry?.date?.slice(0, 10) === attendeeDialogDay);
+    const day = visibleDaysRef.current.find((entry) => entry?.date?.slice(0, 10) === attendeeDialogDay);
     if (!day) {
       closeAttendeeDialog();
       return;
@@ -760,7 +829,7 @@ export default function WeekPage() {
 
   const confirmRemoveDayAssignment = async () => {
     if (!deleteDialogDay || deleteBusy) return;
-    const day = safeDaysRef.current.find((entry) => entry?.date?.slice(0, 10) === deleteDialogDay);
+    const day = visibleDaysRef.current.find((entry) => entry?.date?.slice(0, 10) === deleteDialogDay);
     if (!day) {
       closeDeleteDialog();
       return;
@@ -783,9 +852,10 @@ export default function WeekPage() {
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
     setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
     try {
-      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${dayKey}/move`, {
+      const mealType = dayMealType(day);
+      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${dayKey}/move?mealType=${mealType}`, {
         method: "POST",
-        body: JSON.stringify({ targetDate })
+        body: JSON.stringify({ targetDate, mealType })
       });
       setPlan(data.plan);
       setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
@@ -845,7 +915,7 @@ export default function WeekPage() {
 
   const confirmSwapDay = async () => {
     if (!swapDialogDay || !swapTargetDate || swapBusy) return;
-    const sourceDay = safeDays.find((item) => item?.date?.slice(0, 10) === swapDialogDay);
+    const sourceDay = visibleDays.find((item) => item?.date?.slice(0, 10) === swapDialogDay);
     if (!sourceDay) {
       closeSwapDialog();
       return;
@@ -871,6 +941,19 @@ export default function WeekPage() {
     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
     setSideDishQueries((prev) => ({ ...prev, [dayKey]: sideDishName || "" }));
     setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+    const isDinnerDay = dayMealType(day) === "dinner";
+    setLeftoversByDay((prev) => ({
+      ...prev,
+      [dayKey]: {
+        enabled: isDinnerDay && Boolean(day?.isLeftovers),
+        sourceKey: day?.leftoversSourceDate && day?.leftoversSourceDishId
+          ? `${new Date(day.leftoversSourceDate).toISOString().slice(0, 10)}|${normalizeMealType(day.leftoversSourceMealType)}|${day.leftoversSourceDishId}`
+          : ""
+      }
+    }));
+    if (isDinnerDay) {
+      void loadLeftoverOptions(day);
+    }
   };
 
   const stopEditingDay = (dayKey) => {
@@ -900,11 +983,11 @@ export default function WeekPage() {
 
   const openDayEditor = useCallback(
     (targetDate, plateId) => {
-      if (!targetDate || !safeDays.length) return false;
-      const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === targetDate);
+      if (!targetDate || !visibleDays.length) return false;
+      const targetDay = visibleDays.find((day) => day.date?.slice(0, 10) === targetDate);
       if (!targetDay) return false;
 
-      const targetIndex = safeDays.findIndex((day) => day.date?.slice(0, 10) === targetDate);
+      const targetIndex = visibleDays.findIndex((day) => day.date?.slice(0, 10) === targetDate);
       setSelectedDay(targetDate);
       if (targetIndex >= 0) {
         setActiveIndex(targetIndex);
@@ -951,7 +1034,7 @@ export default function WeekPage() {
       dishes,
       focusMainDish,
       focusSideDish,
-      safeDays,
+      visibleDays,
       sideDishes,
       startEditingDay,
       updateDay
@@ -961,9 +1044,10 @@ export default function WeekPage() {
   useEffect(() => {
     const assignPlateId = searchParams.get("assignPlateId") || searchParams.get("plateId");
     const assignDate = searchParams.get("date");
+    const assignMealType = normalizeMealType(searchParams.get("mealType") || "lunch");
     if (!assignPlateId || !assignDate) return;
 
-    const intentKey = `${assignPlateId}-${assignDate}`;
+    const intentKey = `${assignPlateId}-${assignDate}-${assignMealType}`;
     if (assignIntentRef.current?.key === intentKey) {
       return;
     }
@@ -972,8 +1056,10 @@ export default function WeekPage() {
       key: intentKey,
       handled: false,
       plateId: assignPlateId,
-      date: assignDate
+      date: assignDate,
+      mealType: assignMealType
     };
+    setMealTab(assignMealType);
 
     const targetWeekStart = getMondayISO(new Date(assignDate));
     if (weekStart !== targetWeekStart) {
@@ -987,21 +1073,23 @@ export default function WeekPage() {
     nextParams.delete("plateId");
     nextParams.delete("assign");
     nextParams.delete("date");
+    nextParams.delete("mealType");
     setSearchParams(nextParams, { replace: true });
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const intent = assignIntentRef.current;
     if (!intent || intent.handled) return;
-    if (loading || !plan || !safeDays.length) return;
+    if (loading || !plan || !visibleDays.length) return;
 
     const planWeekStart = plan?.weekStart
       ? getMondayISO(new Date(plan.weekStart))
       : null;
     if (planWeekStart && planWeekStart !== weekStart) return;
 
-    const { date: assignDate, plateId: assignPlateId, key: intentKey } = intent;
-    const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === assignDate);
+    const { date: assignDate, plateId: assignPlateId, key: intentKey, mealType: assignMealType } = intent;
+    if (normalizeMealType(assignMealType) !== selectedMealType) return;
+    const targetDay = visibleDays.find((day) => day.date?.slice(0, 10) === assignDate);
     if (!targetDay) {
       assignIntentRef.current = { key: intentKey, handled: true };
       clearAssignParams();
@@ -1016,7 +1104,8 @@ export default function WeekPage() {
     loading,
     openDayEditor,
     plan,
-    safeDays,
+    selectedMealType,
+    visibleDays,
     weekStart
   ]);
 
@@ -1059,7 +1148,7 @@ export default function WeekPage() {
     const clickHouseholdId = getCurrentHouseholdId();
     const clickWeekStart = weekStartRef.current;
     const usedIds = new Set(
-      (safeDaysRef.current || [])
+      (visibleDaysRef.current || [])
         .map((entry) => entry?.mainDishId)
         .filter(Boolean)
         .map((value) => String(value))
@@ -1086,8 +1175,10 @@ export default function WeekPage() {
     }
 
     const fetchRandomCandidate = async () => {
+      const mealType = dayMealType(day);
       return apiRequest(`/api/kitchen/weeks/${clickWeekStart}/day/${dayKey}/random-main`, {
-        method: "POST"
+        method: "POST",
+        body: JSON.stringify({ mealType })
       });
     };
 
@@ -1169,11 +1260,12 @@ export default function WeekPage() {
   };
 
   const openDishModal = (dayKey, name, options = {}) => {
-    const { mode = "main", sidedish = false } = options;
+    const { mode = "main", sidedish = false, mealType = selectedMealType } = options;
     setDishModalDayKey(dayKey);
     setDishModalName(name);
     setDishModalMode(mode);
     setDishModalSidedish(sidedish);
+    setDishModalMealType(normalizeMealType(mealType));
     setDishModalOpen(true);
   };
 
@@ -1183,6 +1275,7 @@ export default function WeekPage() {
     setDishModalDayKey(null);
     setDishModalMode("main");
     setDishModalSidedish(false);
+    setDishModalMealType("lunch");
   };
 
   const attendeeDialogMembers = useMemo(
@@ -1216,7 +1309,7 @@ export default function WeekPage() {
       return [dish, ...prev];
     });
     if (dishModalDayKey) {
-      const targetDay = safeDays.find((day) => day.date?.slice(0, 10) === dishModalDayKey);
+      const targetDay = visibleDays.find((day) => day.date?.slice(0, 10) === dishModalDayKey);
       if (targetDay) {
         if (dishModalMode === "side") {
           updateDay(targetDay, { sideDishId: dish._id });
@@ -1319,7 +1412,7 @@ export default function WeekPage() {
     <KitchenLayout>
       <div className="kitchen-week-controls">
         <WeekDaysStrip
-          days={safeDays}
+          days={visibleDays}
           userMap={userMap}
           selectedDay={selectedDay}
           onSelectDay={handleSelectDay}
@@ -1334,6 +1427,28 @@ export default function WeekPage() {
                 onPrevious={() => handleWeekShift(-7)}
                 onNext={() => handleWeekShift(7)}
               />
+              {dinnersEnabled ? (
+                <div className="kitchen-meal-tabs" role="tablist" aria-label="Tipo de planificacion">
+                  <button
+                    type="button"
+                    className={`kitchen-meal-tab ${selectedMealType === "lunch" ? "is-active" : ""}`}
+                    role="tab"
+                    aria-selected={selectedMealType === "lunch"}
+                    onClick={() => setMealTab("lunch")}
+                  >
+                    Comidas
+                  </button>
+                  <button
+                    type="button"
+                    className={`kitchen-meal-tab ${selectedMealType === "dinner" ? "is-active" : ""}`}
+                    role="tab"
+                    aria-selected={selectedMealType === "dinner"}
+                    onClick={() => setMealTab("dinner")}
+                  >
+                    Cenas
+                  </button>
+                </div>
+              ) : null}
               {canShowWeekRandomize ? (
                 <button
                   type="button"
@@ -1380,7 +1495,7 @@ export default function WeekPage() {
                   </button>
                 </div>
               ) : null}
-              {safeDays.map((day, index) => {
+              {visibleDays.map((day, index) => {
                 if (!day?.date) {
                   return (
                     <div key={`day-${index}`} className="kitchen-card kitchen-day-card">
@@ -1393,7 +1508,7 @@ export default function WeekPage() {
                 }
                 const dayKey = day.date.slice(0, 10);
                 const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
-                const dayAttendeeIds = resolveDayAttendees(day, users);
+                const dayAttendeeIds = resolveDayAttendees(day, users, selectedMealType);
                 const attendeeCount = dayAttendeeIds.length;
                 const dayAttendeeNames = dayAttendeeIds
                   .map((id) => userMap.get(id)?.displayName)
@@ -1422,7 +1537,12 @@ export default function WeekPage() {
                 const cardColors = isAssigned && cookUser
                   ? cookColors
                   : { background: dayVisual.background, text: dayVisual.color };
-                const displayDishName = mainDish
+                const leftoversDishName = day?.leftoversSourceDishId
+                  ? dishMap.get(day.leftoversSourceDishId)?.name
+                  : "";
+                const displayDishName = day?.isLeftovers
+                  ? `Sobras de ${leftoversDishName || "plato anterior"}`
+                  : mainDish
                   ? `${mainDish?.name || ""}${sideDish?.name ? ` con ${sideDish.name}` : ""}`.trim()
                   : "";
                 const canDeletePlanning = isOwnerAdmin || isAssignedToSelf;
@@ -1481,6 +1601,10 @@ export default function WeekPage() {
             )
             : false;
           const extrasOn = Boolean(extraIngredientsValue.length);
+          const currentMealType = dayMealType(day);
+          const leftoversState = leftoversByDay[dayKey] || { enabled: false, sourceKey: "" };
+          const leftoversOptions = leftoverOptionsByDay[dayKey] || [];
+          const leftoversLoading = Boolean(leftoverLoadingByDay[dayKey]);
           return (
             <div
               key={day.date}
@@ -1490,7 +1614,7 @@ export default function WeekPage() {
                 "--day-card-text": cardColors.text,
                 "--day-card-highlight": cardColors.text
               }}
-              className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""}`}
+              className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""} ${selectedMealType === "dinner" ? "is-dinner-mode" : ""}`}
               tabIndex={-1}
               ref={(node) => {
                 if (!node) {
@@ -1678,6 +1802,73 @@ export default function WeekPage() {
                 )
               ) : (
                 <>
+                  {currentMealType === "dinner" ? (
+                    <div className="kitchen-field kitchen-toggle-field">
+                      <div className="kitchen-toggle-row">
+                        <span className="kitchen-label">Cenar sobras</span>
+                        <label className="kitchen-toggle">
+                          <input
+                            type="checkbox"
+                            className="kitchen-toggle-input"
+                            checked={Boolean(leftoversState.enabled)}
+                            onChange={async (event) => {
+                              const enabled = event.target.checked;
+                              setLeftoversByDay((prev) => ({
+                                ...prev,
+                                [dayKey]: { ...(prev[dayKey] || {}), enabled, sourceKey: enabled ? (prev[dayKey]?.sourceKey || "") : "" }
+                              }));
+                              if (enabled) {
+                                await loadLeftoverOptions(day);
+                                await updateDay(day, {
+                                  isLeftovers: true,
+                                  leftoversSourceDate: null,
+                                  leftoversSourceMealType: null,
+                                  leftoversSourceDishId: null
+                                });
+                              } else {
+                                await updateDay(day, { isLeftovers: false });
+                              }
+                            }}
+                          />
+                          <span className="kitchen-toggle-track" />
+                        </label>
+                      </div>
+                      <p className="kitchen-muted">Las sobras no anaden ingredientes a la compra.</p>
+                    </div>
+                  ) : null}
+                  {currentMealType === "dinner" && leftoversState.enabled ? (
+                    <label className="kitchen-field">
+                      <span className="kitchen-label">Elegir sobras (hoy y ultimos 7 dias)</span>
+                      <select
+                        className="kitchen-select"
+                        value={leftoversState.sourceKey || ""}
+                        onChange={async (event) => {
+                          const sourceKey = event.target.value;
+                          setLeftoversByDay((prev) => ({
+                            ...prev,
+                            [dayKey]: { ...(prev[dayKey] || {}), sourceKey }
+                          }));
+                          const [sourceDate, sourceMealType, sourceDishId] = String(sourceKey || "").split("|");
+                          await updateDay(day, {
+                            isLeftovers: true,
+                            leftoversSourceDate: sourceDate || null,
+                            leftoversSourceMealType: sourceMealType || null,
+                            leftoversSourceDishId: sourceDishId || null
+                          });
+                        }}
+                      >
+                        <option value="">{leftoversLoading ? "Cargando sobras..." : "Seleccionar plato"}</option>
+                        {leftoversOptions.map((item) => (
+                          <option
+                            key={`${item.date}-${item.mealType}-${item.mainDishId}`}
+                            value={`${item.date}|${item.mealType}|${item.mainDishId}`}
+                          >
+                            {`${item.date} - ${item.dishName}`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                   <label className="kitchen-field">
                     <span className="kitchen-label">Plato principal</span>
                     <div className="kitchen-ingredient-search">
@@ -1692,6 +1883,7 @@ export default function WeekPage() {
                         className="kitchen-input"
                         value={mainDishQuery}
                         placeholder="Busca un plato…"
+                        disabled={currentMealType === "dinner" && leftoversState.enabled}
                         onFocus={() => setMainDishOpen((prev) => ({ ...prev, [dayKey]: true }))}
                         onBlur={() => {
                           const trimmed = mainDishQuery.trim();
@@ -1816,6 +2008,7 @@ export default function WeekPage() {
                           className="kitchen-input"
                           value={sideDishQuery}
                           placeholder="Busca una guarnición…"
+                          disabled={currentMealType === "dinner" && leftoversState.enabled}
                           onFocus={() => setSideDishOpen((prev) => ({ ...prev, [dayKey]: true }))}
                           onBlur={() => {
                             if (sideDishPickingRef.current[dayKey]) {
@@ -2108,7 +2301,7 @@ export default function WeekPage() {
                               }}
                             >
                               <option value="">Seleccionar día</option>
-                              {safeDays
+                              {visibleDays
                                 .filter((item) => item?.date?.slice(0, 10) !== dayKey)
                                 .map((item) => (
                                   <option key={item.date} value={item.date.slice(0, 10)}>
@@ -2360,7 +2553,7 @@ export default function WeekPage() {
                 disabled={swapBusy}
               >
                 <option value="">Seleccionar día</option>
-                {safeDays
+                {visibleDays
                   .filter((item) => item?.date?.slice(0, 10) !== swapDialogDay)
                   .map((item) => (
                     <option key={item.date} value={item.date.slice(0, 10)}>
@@ -2467,6 +2660,7 @@ export default function WeekPage() {
         onCategoryCreated={handleCategoryCreated}
         initialName={dishModalName}
         initialSidedish={dishModalSidedish}
+        initialIsDinner={dishModalMealType === "dinner"}
       />
     </KitchenLayout>
   );

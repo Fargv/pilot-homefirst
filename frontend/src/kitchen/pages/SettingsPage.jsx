@@ -119,6 +119,7 @@ export default function SettingsPage() {
   const [householdName, setHouseholdName] = useState("");
   const [householdNameDraft, setHouseholdNameDraft] = useState("");
   const [householdNameEditing, setHouseholdNameEditing] = useState(false);
+  const [dinnersEnabled, setDinnersEnabled] = useState(false);
   const [avoidRepeatsEnabled, setAvoidRepeatsEnabled] = useState(false);
   const [avoidRepeatsWeeks, setAvoidRepeatsWeeks] = useState(1);
   const [avoidRepeatsInfoOpen, setAvoidRepeatsInfoOpen] = useState(false);
@@ -135,6 +136,8 @@ export default function SettingsPage() {
   const [selectedColorId, setSelectedColorId] = useState(user?.colorId || getUserColorPreference(user?.id) || "lavender");
   const [profileActive, setProfileActive] = useState(user?.active !== false);
   const [profileCanCook, setProfileCanCook] = useState(user?.canCook !== false);
+  const [profileDinnerActive, setProfileDinnerActive] = useState(user?.dinnerActive !== false);
+  const [profileDinnerCanCook, setProfileDinnerCanCook] = useState(user?.dinnerCanCook !== false);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [profileEditingMain, setProfileEditingMain] = useState(false);
   const [profileSnapshot, setProfileSnapshot] = useState({
@@ -142,7 +145,9 @@ export default function SettingsPage() {
     initials: "",
     colorId: "lavender",
     active: true,
-    canCook: true
+    canCook: true,
+    dinnerActive: true,
+    dinnerCanCook: true
   });
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [categoryModal, setCategoryModal] = useState({
@@ -162,13 +167,23 @@ export default function SettingsPage() {
       colorId: "lavender",
       role: "member",
       active: true,
-      canCook: true
+      canCook: true,
+      dinnerActive: true,
+      dinnerCanCook: true
     }
   });
   const [convertModal, setConvertModal] = useState({ open: false, memberId: "", email: "", password: "" });
   const [dinerModal, setDinerModal] = useState({
     open: false,
-    form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false }
+    form: {
+      displayName: "",
+      initials: "",
+      colorId: "lavender",
+      active: true,
+      canCook: false,
+      dinnerActive: true,
+      dinnerCanCook: false
+    }
   });
   const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", onConfirm: null, dangerLabel: "Confirmar" });
   const [deleteProfileModal, setDeleteProfileModal] = useState({
@@ -220,7 +235,9 @@ export default function SettingsPage() {
       initials: profileInitials,
       colorId: selectedColorId,
       active: profileActive,
-      canCook: profileCanCook
+      canCook: profileCanCook,
+      dinnerActive: profileDinnerActive,
+      dinnerCanCook: profileDinnerCanCook
     });
     setProfileEditingMain(true);
   };
@@ -231,6 +248,8 @@ export default function SettingsPage() {
     setSelectedColorId(profileSnapshot.colorId);
     setProfileActive(profileSnapshot.active);
     setProfileCanCook(profileSnapshot.canCook);
+    setProfileDinnerActive(profileSnapshot.dinnerActive);
+    setProfileDinnerCanCook(profileSnapshot.dinnerCanCook);
     setProfileEditingMain(false);
   };
 
@@ -273,6 +292,7 @@ export default function SettingsPage() {
       setCategories(categoryData.categories || []);
       setHouseholdName(householdData?.household?.name || "");
       setHouseholdNameDraft(householdData?.household?.name || "");
+      setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
       setAvoidRepeatsEnabled(Boolean(householdData?.household?.avoidRepeatsEnabled));
       setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(householdData?.household?.avoidRepeatsWeeks));
       setMembers(memberData.users || []);
@@ -283,12 +303,16 @@ export default function SettingsPage() {
       setSelectedColorId(user?.colorId || getUserColorPreference(user?.id) || "lavender");
       setProfileActive(user?.active !== false);
       setProfileCanCook(user?.canCook !== false);
+      setProfileDinnerActive(user?.dinnerActive !== false);
+      setProfileDinnerCanCook(user?.dinnerCanCook !== false);
       setProfileSnapshot({
         displayName: user?.displayName || "",
         initials: user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""),
         colorId: user?.colorId || getUserColorPreference(user?.id) || "lavender",
         active: user?.active !== false,
-        canCook: user?.canCook !== false
+        canCook: user?.canCook !== false,
+        dinnerActive: user?.dinnerActive !== false,
+        dinnerCanCook: user?.dinnerCanCook !== false
       });
     } catch (err) {
       setError(err.message || "No se pudo cargar configuracion.");
@@ -353,6 +377,8 @@ export default function SettingsPage() {
           initials: safeInitials,
           colorId: selectedColorId,
           canCook: profileCanCook,
+          dinnerCanCook: profileDinnerCanCook,
+          dinnerActive: profileDinnerActive,
           ...(canEditOwnActive ? { active: profileActive } : {})
         })
       });
@@ -414,6 +440,9 @@ export default function SettingsPage() {
     const nextEnabled = Object.prototype.hasOwnProperty.call(nextValues, "avoidRepeatsEnabled")
       ? Boolean(nextValues.avoidRepeatsEnabled)
       : Boolean(avoidRepeatsEnabled);
+    const nextDinnersEnabled = Object.prototype.hasOwnProperty.call(nextValues, "dinnersEnabled")
+      ? Boolean(nextValues.dinnersEnabled)
+      : Boolean(dinnersEnabled);
     const nextWeeks = clampAvoidRepeatWeeks(
       Object.prototype.hasOwnProperty.call(nextValues, "avoidRepeatsWeeks")
         ? nextValues.avoidRepeatsWeeks
@@ -426,9 +455,11 @@ export default function SettingsPage() {
         method: "PATCH",
         body: JSON.stringify({
           avoidRepeatsEnabled: nextEnabled,
+          dinnersEnabled: nextDinnersEnabled,
           avoidRepeatsWeeks: Number(nextWeeks)
         })
       });
+      setDinnersEnabled(Boolean(data?.household?.dinnersEnabled));
       setAvoidRepeatsEnabled(Boolean(data?.household?.avoidRepeatsEnabled));
       setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(data?.household?.avoidRepeatsWeeks));
       updateSuccess("Preferencia del household actualizada.");
@@ -537,7 +568,9 @@ export default function SettingsPage() {
         colorId: member.colorId || "lavender",
         role: member.role || "member",
         active: member.active !== false,
-        canCook: member.canCook !== false
+        canCook: member.canCook !== false,
+        dinnerActive: member.dinnerActive !== false,
+        dinnerCanCook: member.dinnerCanCook !== false
       }
     });
   };
@@ -552,7 +585,9 @@ export default function SettingsPage() {
         colorId: "lavender",
         role: "member",
         active: true,
-        canCook: true
+        canCook: true,
+        dinnerActive: true,
+        dinnerCanCook: true
       }
     });
   };
@@ -568,9 +603,11 @@ export default function SettingsPage() {
           colorId: memberModal.form.colorId,
           role: memberModal.form.role,
           active: memberModal.form.active,
-          canCook: memberModal.form.canCook
+          canCook: memberModal.form.canCook,
+          dinnerActive: memberModal.form.dinnerActive,
+          dinnerCanCook: memberModal.form.dinnerCanCook
         }
-        : (isSelf ? { canCook: memberModal.form.canCook } : {});
+        : (isSelf ? { canCook: memberModal.form.canCook, dinnerCanCook: memberModal.form.dinnerCanCook } : {});
       const data = await apiRequest(`/api/kitchen/users/members/${memberModal.member.id}`, {
         method: "PUT",
         body: JSON.stringify(payload)
@@ -615,10 +652,23 @@ export default function SettingsPage() {
           initials: dinerModal.form.initials.trim().toUpperCase().slice(0, 3),
           colorId: dinerModal.form.colorId,
           active: dinerModal.form.active,
-          canCook: dinerModal.form.canCook
+          canCook: dinerModal.form.canCook,
+          dinnerActive: dinerModal.form.dinnerActive,
+          dinnerCanCook: dinerModal.form.dinnerCanCook
         })
       });
-      setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false } });
+      setDinerModal({
+        open: false,
+        form: {
+          displayName: "",
+          initials: "",
+          colorId: "lavender",
+          active: true,
+          canCook: false,
+          dinnerActive: true,
+          dinnerCanCook: false
+        }
+      });
       updateSuccess("Comensal creado.");
       await loadData();
     } catch (err) {
@@ -829,6 +879,38 @@ export default function SettingsPage() {
           </div>
           <p className="kitchen-muted">Puede asignarse automaticamente como cocinero en randomizacion.</p>
         </label>
+        <label className="kitchen-field kitchen-toggle-field">
+          <div className="kitchen-toggle-row">
+            <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
+            <label className="kitchen-toggle">
+              <input
+                type="checkbox"
+                className="kitchen-toggle-input"
+                checked={profileDinnerActive}
+                disabled={!profileEditingMain || (!isOwner && !isDiod)}
+                onChange={(event) => setProfileDinnerActive(event.target.checked)}
+              />
+              <span className="kitchen-toggle-track" />
+            </label>
+          </div>
+          <p className="kitchen-muted">Si está activado, aparecerá automáticamente como comensal en cenas.</p>
+        </label>
+        <label className="kitchen-field kitchen-toggle-field">
+          <div className="kitchen-toggle-row">
+            <span className="kitchen-label">Puede cocinar cenas</span>
+            <label className="kitchen-toggle">
+              <input
+                type="checkbox"
+                className="kitchen-toggle-input"
+                checked={profileDinnerCanCook}
+                disabled={!profileEditingMain}
+                onChange={(event) => setProfileDinnerCanCook(event.target.checked)}
+              />
+              <span className="kitchen-toggle-track" />
+            </label>
+          </div>
+          <p className="kitchen-muted">Si está activado, podrá asignarse automáticamente para cocinar cenas.</p>
+        </label>
         <p className="kitchen-muted">Email: {user?.email || "Sin email"}</p>
       </div>
       <div className="settings-block">
@@ -879,7 +961,7 @@ export default function SettingsPage() {
         {canManageHousehold ? (
           <div className="settings-members-actions">
             <button type="button" className="kitchen-button" onClick={openInvitesPanel}>Invitar</button>
-            <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false } })}>Crear comensal</button>
+            <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })}>Crear comensal</button>
           </div>
         ) : null}
       </div>
@@ -905,6 +987,28 @@ export default function SettingsPage() {
         <div className="settings-block">
         <div className="settings-inline-heading">
           <h3 className="settings-subtitle">Preferencias del household</h3>
+        </div>
+        <div className="settings-household-pref-row">
+          <div className="settings-household-pref-main">
+            <div className="settings-household-pref-title">
+              <span>Planificar tambien cenas</span>
+            </div>
+            <p className="kitchen-muted">Si esta activado, cada semana incluira tambien planificacion de cenas.</p>
+          </div>
+          <label className="kitchen-toggle" aria-label="Planificar cenas">
+            <input
+              type="checkbox"
+              className="kitchen-toggle-input"
+              checked={dinnersEnabled}
+              disabled={householdPrefsSaving}
+              onChange={(event) => {
+                const checked = event.target.checked;
+                setDinnersEnabled(checked);
+                void saveHouseholdPreferences({ dinnersEnabled: checked });
+              }}
+            />
+            <span className="kitchen-toggle-track" />
+          </label>
         </div>
         <div className="settings-household-pref-row">
           <div className="settings-household-pref-main">
@@ -1206,6 +1310,38 @@ export default function SettingsPage() {
             </div>
             <p className="kitchen-muted">Puede asignarse automaticamente como cocinero en randomizacion.</p>
           </label>
+          <label className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
+              <label className="kitchen-toggle">
+                <input
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={memberModal.form.dinnerActive}
+                  disabled={!canManageHousehold}
+                  onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, dinnerActive: event.target.checked } }))}
+                />
+                <span className="kitchen-toggle-track" />
+              </label>
+            </div>
+            <p className="kitchen-muted">Si está activado, esta persona aparecerá automáticamente como comensal en cenas.</p>
+          </label>
+          <label className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Puede cocinar cenas</span>
+              <label className="kitchen-toggle">
+                <input
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={memberModal.form.dinnerCanCook}
+                  disabled={!canManageHousehold && String(memberModal.member?.id) !== String(user?.id)}
+                  onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, dinnerCanCook: event.target.checked } }))}
+                />
+                <span className="kitchen-toggle-track" />
+              </label>
+            </div>
+            <p className="kitchen-muted">Si está activado, podrá asignarse automáticamente para cocinar cenas.</p>
+          </label>
           {!memberModal.member?.isPlaceholder && canManageHousehold && String(memberModal.member?.id) !== String(user?.id) ? <button type="button" className="kitchen-button secondary" onClick={() => askDeleteMember(memberModal.member)}>Eliminar usuario</button> : null}
           {memberModal.member?.isPlaceholder ? (
             <div className="settings-block">
@@ -1222,7 +1358,7 @@ export default function SettingsPage() {
         </div>
       </ModalSheet>
 
-      <ModalSheet open={dinerModal.open} title="Crear comensal" onClose={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false } })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false } })}>Cancelar</button><button type="button" className="kitchen-button" onClick={createDiner}>Guardar</button></>}>
+      <ModalSheet open={dinerModal.open} title="Crear comensal" onClose={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })}>Cancelar</button><button type="button" className="kitchen-button" onClick={createDiner}>Guardar</button></>}>
         <div className="kitchen-actions">
           <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={dinerModal.form.displayName} onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, displayName: event.target.value } }))} /></label>
           <label className="kitchen-field"><span className="kitchen-label">Iniciales</span><input className="kitchen-input" maxLength={3} value={dinerModal.form.initials} onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, initials: event.target.value.toUpperCase() } }))} /></label>
@@ -1256,6 +1392,36 @@ export default function SettingsPage() {
               </label>
             </div>
             <p className="kitchen-muted">Si está activado, podrá ser asignado automáticamente para cocinar.</p>
+          </label>
+          <label className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
+              <label className="kitchen-toggle">
+                <input
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={dinerModal.form.dinnerActive}
+                  onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, dinnerActive: event.target.checked } }))}
+                />
+                <span className="kitchen-toggle-track" />
+              </label>
+            </div>
+            <p className="kitchen-muted">Si está activado, aparecerá automáticamente como comensal en cenas.</p>
+          </label>
+          <label className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Puede cocinar cenas</span>
+              <label className="kitchen-toggle">
+                <input
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={dinerModal.form.dinnerCanCook}
+                  onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, dinnerCanCook: event.target.checked } }))}
+                />
+                <span className="kitchen-toggle-track" />
+              </label>
+            </div>
+            <p className="kitchen-muted">Si está activado, podrá asignarse automáticamente para cocinar cenas.</p>
           </label>
         </div>
       </ModalSheet>

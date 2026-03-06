@@ -13,6 +13,7 @@ const IngredientOverrideSchema = new mongoose.Schema(
 const WeekDaySchema = new mongoose.Schema(
   {
     date: { type: Date, required: true },
+    mealType: { type: String, enum: ["lunch", "dinner"], default: "lunch" },
     cookUserId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" },
     attendeeIds: { type: [mongoose.Schema.Types.ObjectId], ref: "KitchenUser" },
     attendeeCount: { type: Number },
@@ -20,6 +21,10 @@ const WeekDaySchema = new mongoose.Schema(
     servings: { type: Number, default: 4 },
     mainDishId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDish" },
     sideDishId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDish" },
+    isLeftovers: { type: Boolean, default: false },
+    leftoversSourceDate: { type: Date, default: null },
+    leftoversSourceMealType: { type: String, enum: ["lunch", "dinner", null], default: null },
+    leftoversSourceDishId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDish", default: null },
     ingredientOverrides: { type: [IngredientOverrideSchema], default: [] },
     baseIngredientExclusions: { type: [String], default: [] }
   },

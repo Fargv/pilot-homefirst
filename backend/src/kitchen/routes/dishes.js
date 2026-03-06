@@ -63,6 +63,7 @@ async function rebuildShoppingListForPlan(plan, householdId) {
 
   const merged = new Map();
   plan.days.forEach((day) => {
+    if (day?.isLeftovers) return;
     const ingredients = combineDayIngredients({
       mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
       sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
@@ -100,7 +101,7 @@ async function unassignDishFromCurrentAndFutureWeeks({ householdId, dishId }) {
   const plans = await KitchenWeekPlan.find({
     householdId,
     weekStart: { $gte: currentWeekStart },
-    $or: [{ "days.mainDishId": dishId }, { "days.sideDishId": dishId }]
+    $or: [{ "days.mainDishId": dishId }, { "days.sideDishId": dishId }, { "days.leftoversSourceDishId": dishId }]
   });
 
   let affectedWeeks = 0;
@@ -115,6 +116,13 @@ async function unassignDishFromCurrentAndFutureWeeks({ householdId, dishId }) {
       }
       if (day.sideDishId && String(day.sideDishId) === String(dishId)) {
         day.sideDishId = null;
+        dayChanged = true;
+      }
+      if (day.leftoversSourceDishId && String(day.leftoversSourceDishId) === String(dishId)) {
+        day.isLeftovers = false;
+        day.leftoversSourceDishId = null;
+        day.leftoversSourceDate = null;
+        day.leftoversSourceMealType = null;
         dayChanged = true;
       }
       if (dayChanged) {
@@ -149,6 +157,7 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
 
     const merged = new Map();
     plan.days.forEach((day) => {
+      if (day?.isLeftovers) return;
       const ingredients = combineDayIngredients({
         mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
         sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
@@ -183,17 +192,19 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
 
 router.get("/", requireAuth, async (req, res) => {
   try {
-    const { sidedish, includeInactive } = req.query;
+    const { sidedish, includeInactive, isDinner } = req.query;
     const optionalHouseholdId = getOptionalHouseholdId(req.user);
     const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
     const activeFilter = shouldIncludeInactive ? {} : { active: true };
+    const hasIsDinnerFilter = isDinner === "true" || isDinner === "false";
+    const isDinnerFilter = hasIsDinnerFilter ? { isDinner: isDinner === "true" } : {};
 
     if (sidedish === "true") {
       const dishes = await resolveCatalogForHousehold({
         Model: KitchenDish,
         householdId: optionalHouseholdId,
         type: "side",
-        baseFilter: { sidedish: true },
+        baseFilter: { sidedish: true, ...isDinnerFilter },
         masterFilter: activeFilter,
         householdFilter: activeFilter,
         overrideFilter: activeFilter,
@@ -206,6 +217,7 @@ router.get("/", requireAuth, async (req, res) => {
       ? await KitchenDish.find(buildScopedFilter(optionalHouseholdId, {
           sidedish: { $ne: true },
           isArchived: { $ne: true },
+          ...isDinnerFilter,
           ...activeFilter
         })).sort({
           createdAt: -1
@@ -214,6 +226,7 @@ router.get("/", requireAuth, async (req, res) => {
           scope: CATALOG_SCOPES.MASTER,
           sidedish: { $ne: true },
           isArchived: { $ne: true },
+          ...isDinnerFilter,
           ...activeFilter
         }).sort({
           createdAt: -1
@@ -229,12 +242,13 @@ router.get("/", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients, sidedish, special, scope, active, isArchived } = req.body;
+    const { name, ingredients, sidedish, special, isDinner, scope, active, isArchived } = req.body;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
 
     const normalizedIngredients = normalizeIngredientList(ingredients || []);
     const isSideDish = parseBooleanField(sidedish, false);
     const isSpecial = parseBooleanField(special, false);
+    const dinnerDish = parseBooleanField(isDinner, false);
     const isActive = parseBooleanField(active, true);
     const nextIsArchived = parseBooleanField(isArchived, false);
     const isDiod = isDiodUser(req.kitchenUser);
@@ -249,6 +263,7 @@ router.post("/", requireAuth, async (req, res) => {
       name: String(name).trim(),
       ingredients: normalizedIngredients,
       sidedish: isSideDish,
+      isDinner: dinnerDish,
       special: isSpecial,
       active: isActive,
       isArchived: nextIsArchived,
@@ -272,7 +287,7 @@ router.post("/", requireAuth, async (req, res) => {
 
 router.put("/:id", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients, sidedish, special, active, isArchived } = req.body;
+    const { name, ingredients, sidedish, special, isDinner, active, isArchived } = req.body;
     const optionalHouseholdId = getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const dish = await KitchenDish.findById(req.params.id);
@@ -282,6 +297,7 @@ router.put("/:id", requireAuth, async (req, res) => {
       scope: dish.scope,
       active: parseBooleanField(active, dish.active !== false),
       special: parseBooleanField(special, Boolean(dish.special)),
+      isDinner: parseBooleanField(isDinner, Boolean(dish.isDinner)),
       sidedish: parseBooleanField(sidedish, Boolean(dish.sidedish)),
       isArchived: parseBooleanField(isArchived, Boolean(dish.isArchived))
     };
@@ -315,6 +331,7 @@ router.put("/:id", requireAuth, async (req, res) => {
           masterId: dish._id,
           householdId: requiredHouseholdId,
           sidedish: nextData.sidedish,
+          isDinner: nextData.isDinner,
           active: nextData.active,
           special: nextData.special,
           isArchived: nextData.isArchived

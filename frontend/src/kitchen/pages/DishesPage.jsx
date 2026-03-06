@@ -351,6 +351,8 @@ export default function DishesPage() {
         (data?.plan?.days || []).forEach((day) => {
           const dayKey = day?.date?.slice(0, 10);
           if (!dayKey) return;
+          const expectedMealType = assignDish?.isDinner ? "dinner" : "lunch";
+          if (normalizeMealType(day?.mealType) !== expectedMealType) return;
           if (day.mainDishId) {
             occupied[dayKey] = true;
             const dishName = dishMap.get(day.mainDishId)?.name;
@@ -369,7 +371,7 @@ export default function DishesPage() {
     return () => {
       isActive = false;
     };
-  }, [assignModalOpen, assignWeekStart, dishMap, isDiodGlobalMode]);
+  }, [assignModalOpen, assignWeekStart, dishMap, isDiodGlobalMode, assignDish?.isDinner]);
 
   useEffect(() => {
     if (!assignModalOpen) return;
@@ -413,7 +415,8 @@ export default function DishesPage() {
   const confirmAssign = () => {
     if (isDiodGlobalMode) return;
     if (!assignDish?._id || !assignDate) return;
-    navigate(`/kitchen/semana?assignPlateId=${assignDish._id}&date=${assignDate}`);
+    const mealType = assignDish?.isDinner ? "dinner" : "lunch";
+    navigate(`/kitchen/semana?assignPlateId=${assignDish._id}&date=${assignDate}&mealType=${mealType}`);
     closeAssignModal();
   };
 
@@ -986,6 +989,7 @@ export default function DishesPage() {
         onCategoryCreated={onCategoryCreated}
         initialDish={activeDish}
         initialSidedish={initialSidedish}
+        initialIsDinner={Boolean(activeDish?.isDinner)}
         scope={isDiodGlobalMode ? "master" : undefined}
       />
       <IngredientModal
@@ -1203,3 +1207,8 @@ export default function DishesPage() {
     </KitchenLayout>
   );
 }
+
+function normalizeMealType(value) {
+  return String(value || "").toLowerCase() === "dinner" ? "dinner" : "lunch";
+}
+

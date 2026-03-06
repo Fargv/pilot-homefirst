@@ -20,7 +20,9 @@ export default function InviteLandingPage() {
     password: "",
     displayName: "",
     active: true,
-    canCook: true
+    canCook: true,
+    dinnerActive: true,
+    dinnerCanCook: true
   });
 
   const validateInvite = async () => {
@@ -65,7 +67,9 @@ export default function InviteLandingPage() {
         password: form.password,
         displayName: mode === "signup" ? form.displayName : undefined,
         active: mode === "signup" ? Boolean(form.active) : undefined,
-        canCook: mode === "signup" ? Boolean(form.canCook) : undefined
+        canCook: mode === "signup" ? Boolean(form.canCook) : undefined,
+        dinnerActive: mode === "signup" ? Boolean(form.dinnerActive) : undefined,
+        dinnerCanCook: mode === "signup" ? Boolean(form.dinnerCanCook) : undefined
       };
       const data = await apiRequest("/api/kitchen/auth/accept-invite", {
         method: "POST",
@@ -180,6 +184,36 @@ export default function InviteLandingPage() {
                       </label>
                     </div>
                     <p className="kitchen-muted">Si está activado, podrás ser asignado automáticamente para cocinar cuando se utilice la asignación aleatoria.</p>
+                  </label>
+                  <label className="kitchen-field kitchen-toggle-field">
+                    <div className="kitchen-toggle-row">
+                      <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
+                      <label className="kitchen-toggle">
+                        <input
+                          type="checkbox"
+                          className="kitchen-toggle-input"
+                          checked={form.dinnerActive}
+                          onChange={(event) => setForm((prev) => ({ ...prev, dinnerActive: event.target.checked }))}
+                        />
+                        <span className="kitchen-toggle-track" />
+                      </label>
+                    </div>
+                    <p className="kitchen-muted">Si esta activado, apareceras automaticamente como comensal cuando se planifiquen cenas.</p>
+                  </label>
+                  <label className="kitchen-field kitchen-toggle-field">
+                    <div className="kitchen-toggle-row">
+                      <span className="kitchen-label">Puede cocinar cenas</span>
+                      <label className="kitchen-toggle">
+                        <input
+                          type="checkbox"
+                          className="kitchen-toggle-input"
+                          checked={form.dinnerCanCook}
+                          onChange={(event) => setForm((prev) => ({ ...prev, dinnerCanCook: event.target.checked }))}
+                        />
+                        <span className="kitchen-toggle-track" />
+                      </label>
+                    </div>
+                    <p className="kitchen-muted">Si esta activado, podras asignarte automaticamente para cocinar cenas.</p>
                   </label>
                 </>
               ) : null}

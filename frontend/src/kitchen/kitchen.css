@@ -455,6 +455,35 @@ body {
   background: #6366f1;
 }
 
+.kitchen-meal-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(224, 231, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  align-self: flex-start;
+}
+
+.kitchen-meal-tab {
+  border: none;
+  background: transparent;
+  color: #334155;
+  border-radius: 999px;
+  padding: 8px 13px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.kitchen-meal-tab.is-active {
+  background: #ffffff;
+  color: #1d4ed8;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.18);
+}
+
 .kitchen-dishes-page {
   display: flex;
   flex-direction: column;
@@ -4329,6 +4358,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition: background 220ms ease, border-color 220ms ease;
+}
+
+.kitchen-day-card.is-dinner-mode {
+  background: linear-gradient(180deg, #f0f4ff 0%, #e9efff 100%);
+  border: 1px solid #d8e2ff;
 }
 
 .kitchen-day-header-row {
@@ -4371,17 +4406,19 @@ body {
 }
 
 .kitchen-day-subtitle-row {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 9px;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .kitchen-day-attendees-action {
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  border-radius: 10px;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 9px;
   border: 1px solid rgba(148, 163, 184, 0.45);
   background: rgba(255, 255, 255, 0.8);
   color: #334155;
@@ -4397,8 +4434,8 @@ body {
 }
 
 .kitchen-day-attendees-action svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 .kitchen-day-view {

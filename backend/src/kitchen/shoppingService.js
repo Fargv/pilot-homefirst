@@ -203,6 +203,9 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
 
   const merged = new Map();
   for (const day of plan.days) {
+    if (day?.isLeftovers) {
+      continue;
+    }
     const main = day.mainDishId ? dishMap.get(day.mainDishId.toString()) : null;
     const side = day.sideDishId ? dishMap.get(day.sideDishId.toString()) : null;
     const ingredients = combineDayIngredients({

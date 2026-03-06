@@ -7,6 +7,7 @@ const EMPTY_FORM = {
   name: "",
   ingredients: [],
   sidedish: false,
+  isDinner: false,
   special: false,
   active: true,
   isArchived: false
@@ -21,6 +22,7 @@ export default function DishModal({
   initialDish = null,
   initialName = "",
   initialSidedish = false,
+  initialIsDinner = false,
   scope = undefined
 }) {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -81,6 +83,7 @@ export default function DishModal({
           name: initialDish.name || "",
           ingredients,
           sidedish: Boolean(initialDish.sidedish),
+          isDinner: Boolean(initialDish.isDinner),
           special: Boolean(initialDish.special),
           active: initialDish.active !== false,
           isArchived: Boolean(initialDish.isArchived)
@@ -91,6 +94,7 @@ export default function DishModal({
           name: initialName || "",
           ingredients: [],
           sidedish: Boolean(initialSidedish),
+          isDinner: Boolean(initialIsDinner),
           special: false,
           active: true,
           isArchived: false
@@ -102,7 +106,7 @@ export default function DishModal({
     return () => {
       active = false;
     };
-  }, [initialDish, initialName, initialSidedish, isOpen, resolveIngredients]);
+  }, [initialDish, initialName, initialSidedish, initialIsDinner, isOpen, resolveIngredients]);
 
   const pendingCount = useMemo(
     () => (form.ingredients || []).filter((item) => item.status === "pending").length,
@@ -128,6 +132,7 @@ export default function DishModal({
         active: Boolean(form.active),
         isArchived: Boolean(form.isArchived),
         sidedish: form.sidedish,
+        isDinner: form.isDinner,
         special: form.special,
         ingredients: (form.ingredients || []).map((item) => ({
           ingredientId: item.ingredientId,
@@ -210,6 +215,23 @@ export default function DishModal({
                   checked={form.sidedish}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, sidedish: event.target.checked }))
+                  }
+                />
+                <span className="kitchen-toggle-track" aria-hidden="true" />
+              </label>
+            </div>
+          </div>
+          <div className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Plato de cena</span>
+              <label className="kitchen-toggle" htmlFor="dish-dinnerswitch">
+                <input
+                  id="dish-dinnerswitch"
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={form.isDinner}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, isDinner: event.target.checked }))
                   }
                 />
                 <span className="kitchen-toggle-track" aria-hidden="true" />

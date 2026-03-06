@@ -175,7 +175,7 @@ router.get("/members", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
   try {
-    const { email, password, firstName, lastName, name, displayName } = req.body;
+    const { email, password, firstName, lastName, name, displayName, active, canCook, dinnerActive, dinnerCanCook } = req.body;
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail || !password) {
       return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
@@ -207,8 +207,10 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       colorId: normalizeColorId(req.body?.colorId),
       type: "user",
       hasLogin: true,
-      active: true,
-      canCook: true,
+      active: typeof active === "boolean" ? active : true,
+      canCook: typeof canCook === "boolean" ? canCook : true,
+      dinnerActive: typeof dinnerActive === "boolean" ? dinnerActive : true,
+      dinnerCanCook: typeof dinnerCanCook === "boolean" ? dinnerCanCook : true,
       role: normalizeRole(req.body.role),
       householdId: effectiveHouseholdId,
       passwordHash
@@ -241,6 +243,15 @@ router.patch("/me", requireAuth, async (req, res) => {
     req.kitchenUser.colorId = normalizeColorId(req.body?.colorId);
     if (typeof req.body?.canCook === "boolean") {
       req.kitchenUser.canCook = req.body.canCook;
+    }
+    if (typeof req.body?.dinnerCanCook === "boolean") {
+      req.kitchenUser.dinnerCanCook = req.body.dinnerCanCook;
+    }
+    if (typeof req.body?.dinnerActive === "boolean") {
+      if (!isHouseholdAdmin(req.kitchenUser)) {
+        return res.status(403).json({ ok: false, error: "No tienes permisos para cambiar inclusion por defecto en cenas." });
+      }
+      req.kitchenUser.dinnerActive = req.body.dinnerActive;
     }
     if (typeof req.body?.active === "boolean") {
       if (!isHouseholdAdmin(req.kitchenUser)) {
@@ -399,8 +410,8 @@ router.put("/members/:id", requireAuth, async (req, res) => {
     if (!isAdmin && !isSelf) {
       return res.status(403).json({ ok: false, error: "No tienes permisos para editar este miembro." });
     }
-    if (!isAdmin && Object.keys(req.body || {}).some((key) => key !== "canCook")) {
-      return res.status(403).json({ ok: false, error: "Solo puedes editar tu preferencia de cocina." });
+    if (!isAdmin && Object.keys(req.body || {}).some((key) => key !== "canCook" && key !== "dinnerCanCook")) {
+      return res.status(403).json({ ok: false, error: "Solo puedes editar tus preferencias de cocina." });
     }
     const nextRole = req.body?.role ? normalizeRole(req.body.role) : member.role;
     if (req.body?.role && isAdmin) {
@@ -430,6 +441,15 @@ router.put("/members/:id", requireAuth, async (req, res) => {
     }
     if (typeof req.body?.canCook === "boolean") {
       member.canCook = req.body.canCook;
+    }
+    if (typeof req.body?.dinnerCanCook === "boolean") {
+      member.dinnerCanCook = req.body.dinnerCanCook;
+    }
+    if (typeof req.body?.dinnerActive === "boolean") {
+      if (!isAdmin) {
+        return res.status(403).json({ ok: false, error: "No tienes permisos para activar o desactivar inclusion en cenas." });
+      }
+      member.dinnerActive = req.body.dinnerActive;
     }
 
     await member.save();

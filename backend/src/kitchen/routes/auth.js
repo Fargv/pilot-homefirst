@@ -125,7 +125,7 @@ router.get("/resolve-household/:inviteCode", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, displayName, householdName, inviteCode, active, canCook } = req.body;
+    const { email, password, displayName, householdName, inviteCode, active, canCook, dinnerActive, dinnerCanCook } = req.body;
     const normalizedEmail = normalizeEmail(email);
     const safeDisplayName = buildDisplayName({ displayName, name: displayName });
     const normalizedInviteCode = String(inviteCode || "").trim();
@@ -173,6 +173,8 @@ router.post("/register", async (req, res) => {
       hasLogin: true,
       active: parseBooleanWithDefault(active, true),
       canCook: parseBooleanWithDefault(canCook, true),
+      dinnerActive: parseBooleanWithDefault(dinnerActive, true),
+      dinnerCanCook: parseBooleanWithDefault(dinnerCanCook, true),
       role,
       householdId: null,
       isPlaceholder: false
@@ -219,7 +221,7 @@ router.post("/register", async (req, res) => {
 
 router.post("/accept-invite", async (req, res) => {
   try {
-    const { token, email, password, displayName, active, canCook } = req.body;
+    const { token, email, password, displayName, active, canCook, dinnerActive, dinnerCanCook } = req.body;
     const normalizedEmail = normalizeEmail(email);
 
     if (!token || !normalizedEmail || !password) {
@@ -263,6 +265,8 @@ router.post("/accept-invite", async (req, res) => {
         user.hasLogin = true;
         user.active = true;
         user.canCook = true;
+        user.dinnerActive = true;
+        user.dinnerCanCook = true;
       } else {
         const passwordOk = await bcrypt.compare(password, user.passwordHash);
         if (!passwordOk) {
@@ -277,6 +281,8 @@ router.post("/accept-invite", async (req, res) => {
         user.hasLogin = true;
         user.active = true;
         user.canCook = true;
+        user.dinnerActive = true;
+        user.dinnerCanCook = true;
       }
 
       if (displayName && String(displayName).trim()) {
@@ -301,6 +307,8 @@ router.post("/accept-invite", async (req, res) => {
         hasLogin: true,
         active: parseBooleanWithDefault(active, true),
         canCook: parseBooleanWithDefault(canCook, true),
+        dinnerActive: parseBooleanWithDefault(dinnerActive, true),
+        dinnerCanCook: parseBooleanWithDefault(dinnerCanCook, true),
         role: invitation.role || "member",
         householdId: invitation.householdId,
         isPlaceholder: false

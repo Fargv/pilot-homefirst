@@ -63,7 +63,7 @@ router.get("/summary", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("_id name inviteCode ownerUserId avoidRepeatsEnabled avoidRepeatsWeeks")
+      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks")
       .lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
@@ -75,6 +75,7 @@ router.get("/summary", requireAuth, async (req, res) => {
         name: household.name || "Mi household",
         inviteCode: household.inviteCode || null,
         ownerUserId: household.ownerUserId || null,
+        dinnersEnabled: Boolean(household.dinnersEnabled),
         avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
         avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks)
       }
@@ -109,6 +110,7 @@ router.patch("/name", requireAuth, requireRole("owner"), async (req, res) => {
         name: household.name,
         inviteCode: household.inviteCode || null,
         ownerUserId: household.ownerUserId || null,
+        dinnersEnabled: Boolean(household.dinnersEnabled),
         avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
         avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks)
       }
@@ -129,11 +131,18 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     }
 
     const incomingEnabled = req.body?.avoidRepeatsEnabled;
+    const incomingDinnersEnabled = req.body?.dinnersEnabled;
     const parsedEnabled = incomingEnabled === undefined
       ? { ok: true, value: Boolean(household.avoidRepeatsEnabled) }
       : parseBooleanInput(incomingEnabled);
     if (!parsedEnabled.ok) {
       return res.status(400).json({ ok: false, error: "avoidRepeatsEnabled debe ser booleano." });
+    }
+    const parsedDinnersEnabled = incomingDinnersEnabled === undefined
+      ? { ok: true, value: Boolean(household.dinnersEnabled) }
+      : parseBooleanInput(incomingDinnersEnabled);
+    if (!parsedDinnersEnabled.ok) {
+      return res.status(400).json({ ok: false, error: "dinnersEnabled debe ser booleano." });
     }
 
     const parsedWeeks = parseWeeksInput(req.body?.avoidRepeatsWeeks);
@@ -151,6 +160,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       {
         $set: {
           avoidRepeatsEnabled: parsedEnabled.value,
+          dinnersEnabled: parsedDinnersEnabled.value,
           avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(nextWeeks)
         }
       },
@@ -167,6 +177,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
         name: updated.name,
         inviteCode: updated.inviteCode || null,
         ownerUserId: updated.ownerUserId || null,
+        dinnersEnabled: Boolean(updated.dinnersEnabled),
         avoidRepeatsEnabled: Boolean(updated.avoidRepeatsEnabled),
         avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(updated.avoidRepeatsWeeks)
       }
@@ -276,7 +287,7 @@ router.get("/invitations", requireAuth, requireRole("owner"), async (req, res) =
 
 router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res) => {
   try {
-    const { displayName, initials, colorId, active, canCook } = req.body;
+    const { displayName, initials, colorId, active, canCook, dinnerActive, dinnerCanCook } = req.body;
     const safeDisplayName = buildDisplayName({ displayName, name: displayName });
     if (!safeDisplayName) {
       return res.status(400).json({ ok: false, error: "El nombre del comensal es obligatorio." });
@@ -299,6 +310,8 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
       isPlaceholder: true,
       active: parseBooleanWithDefault(active, true),
       canCook: parseBooleanWithDefault(canCook, false),
+      dinnerActive: parseBooleanWithDefault(dinnerActive, true),
+      dinnerCanCook: parseBooleanWithDefault(dinnerCanCook, false),
       role: "member",
       householdId: effectiveHouseholdId,
       createdByUserId: req.kitchenUser?._id || null,
@@ -379,6 +392,8 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
     placeholder.isPlaceholder = false;
     placeholder.active = true;
     placeholder.canCook = true;
+    placeholder.dinnerActive = true;
+    placeholder.dinnerCanCook = true;
     placeholder.claimedAt = new Date();
     await placeholder.save();
 
