@@ -18,6 +18,7 @@ import {
 } from "../utils/catalogScopes.js";
 
 const router = express.Router();
+const GUARNICIONES_FALLBACK_ID = "69ac7016c0755cd97c6a9b63";
 
 function parseBooleanField(value, fallback = false) {
   if (typeof value === "boolean") return value;
@@ -44,6 +45,20 @@ async function resolveDishCategoryId(rawValue) {
     throw new Error("La categoría de plato seleccionada no existe.");
   }
   return category._id;
+}
+
+async function resolveGuarnicionesCategoryId() {
+  const byCode = await KitchenDishCategory.findOne({ code: "guarniciones", active: { $ne: false } })
+    .select("_id")
+    .lean();
+  if (byCode?._id) return byCode._id;
+  if (mongoose.isValidObjectId(GUARNICIONES_FALLBACK_ID)) {
+    const byFallbackId = await KitchenDishCategory.findOne({ _id: GUARNICIONES_FALLBACK_ID, active: { $ne: false } })
+      .select("_id")
+      .lean();
+    if (byFallbackId?._id) return byFallbackId._id;
+  }
+  throw new Error("La categoría 'Guarniciones' no existe o está inactiva.");
 }
 
 function buildDishVisibilityFilter(householdId, extraFilter = {}) {
@@ -298,11 +313,12 @@ router.post("/", requireAuth, async (req, res) => {
     const resolvedDishCategoryId = dishCategoryId
       ? await resolveDishCategoryId(dishCategoryId)
       : null;
+    const guarnicionesCategoryId = isSideDish ? await resolveGuarnicionesCategoryId() : null;
 
     const dish = await KitchenDish.create({
       name: String(name).trim(),
       ingredients: normalizedIngredients,
-      dishCategoryId: isSideDish ? null : (resolvedDishCategoryId ?? null),
+      dishCategoryId: isSideDish ? guarnicionesCategoryId : (resolvedDishCategoryId ?? null),
       sidedish: isSideDish,
       isDinner: dinnerDish,
       special: isSpecial,
@@ -320,7 +336,11 @@ router.post("/", requireAuth, async (req, res) => {
 
     return res.status(201).json({ ok: true, dish });
   } catch (error) {
-    if (error?.message === "Categoría de plato no válida." || error?.message === "La categoría de plato seleccionada no existe.") {
+    if (
+      error?.message === "Categoría de plato no válida."
+      || error?.message === "La categoría de plato seleccionada no existe."
+      || error?.message === "La categoría 'Guarniciones' no existe o está inactiva."
+    ) {
       return res.status(400).json({ ok: false, error: error.message });
     }
     const handled = handleHouseholdError(res, error);
@@ -356,9 +376,11 @@ router.put("/:id", requireAuth, async (req, res) => {
     if (Array.isArray(ingredients)) nextData.ingredients = normalizeIngredientList(ingredients);
     else nextData.ingredients = dish.ingredients;
     if (nextData.sidedish) {
-      nextData.dishCategoryId = null;
+      nextData.dishCategoryId = await resolveGuarnicionesCategoryId();
     } else if (resolvedDishCategoryId !== undefined) {
       nextData.dishCategoryId = resolvedDishCategoryId;
+    } else if (dish.sidedish && !nextData.sidedish) {
+      nextData.dishCategoryId = null;
     } else {
       nextData.dishCategoryId = dish.dishCategoryId || null;
     }
@@ -418,7 +440,11 @@ router.put("/:id", requireAuth, async (req, res) => {
     });
     return res.json({ ok: true, dish, ...(warning ? { warning } : {}) });
   } catch (error) {
-    if (error?.message === "Categoría de plato no válida." || error?.message === "La categoría de plato seleccionada no existe.") {
+    if (
+      error?.message === "Categoría de plato no válida."
+      || error?.message === "La categoría de plato seleccionada no existe."
+      || error?.message === "La categoría 'Guarniciones' no existe o está inactiva."
+    ) {
       return res.status(400).json({ ok: false, error: error.message });
     }
     const handled = handleHouseholdError(res, error);

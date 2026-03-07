@@ -513,6 +513,49 @@ body {
   display: flex;
 }
 
+.kitchen-dish-category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.kitchen-filter-chip {
+  border: 1px solid #dbe2f0;
+  background: #f8fafc;
+  color: #334155;
+  border-radius: 999px;
+  min-height: 34px;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.kitchen-filter-chip:hover {
+  background: #eef2ff;
+}
+
+.kitchen-filter-chip.is-active {
+  border-color: #7c8ac9;
+  color: #1f2a5c;
+}
+
+.kitchen-filter-chip.is-all {
+  background: #eef2ff;
+}
+
+.kitchen-filter-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
 .kitchen-dishes-tabs {
   display: inline-flex;
   gap: 8px;

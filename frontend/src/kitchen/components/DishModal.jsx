@@ -13,6 +13,7 @@ const EMPTY_FORM = {
   active: true,
   isArchived: false
 };
+const GUARNICIONES_CATEGORY_ID = "69ac7016c0755cd97c6a9b63";
 
 export default function DishModal({
   isOpen,
@@ -72,6 +73,10 @@ export default function DishModal({
     },
     [fetchIngredientMatch]
   );
+  const guarnicionesCategoryId = useMemo(
+    () => dishCategories.find((category) => String(category?.code || "").toLowerCase() === "guarniciones")?._id || GUARNICIONES_CATEGORY_ID,
+    [dishCategories]
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -84,7 +89,9 @@ export default function DishModal({
         setForm({
           name: initialDish.name || "",
           ingredients,
-          dishCategoryId: initialDish.dishCategoryId?._id || initialDish.dishCategoryId || "",
+          dishCategoryId: Boolean(initialDish.sidedish)
+            ? guarnicionesCategoryId
+            : (initialDish.dishCategoryId?._id || initialDish.dishCategoryId || ""),
           sidedish: Boolean(initialDish.sidedish),
           isDinner: Boolean(initialDish.isDinner),
           special: Boolean(initialDish.special),
@@ -96,7 +103,7 @@ export default function DishModal({
         setForm({
           name: initialName || "",
           ingredients: [],
-          dishCategoryId: "",
+          dishCategoryId: initialSidedish ? guarnicionesCategoryId : "",
           sidedish: Boolean(initialSidedish),
           isDinner: Boolean(initialIsDinner),
           special: false,
@@ -110,7 +117,7 @@ export default function DishModal({
     return () => {
       active = false;
     };
-  }, [initialDish, initialName, initialSidedish, initialIsDinner, isOpen, resolveIngredients]);
+  }, [guarnicionesCategoryId, initialDish, initialName, initialSidedish, initialIsDinner, isOpen, resolveIngredients]);
 
   const pendingCount = useMemo(
     () => (form.ingredients || []).filter((item) => item.status === "pending").length,
@@ -139,7 +146,7 @@ export default function DishModal({
         scope: scope || initialDish?.scope || "household",
         active: Boolean(form.active),
         isArchived: Boolean(form.isArchived),
-        dishCategoryId: form.sidedish ? null : (form.dishCategoryId || null),
+        dishCategoryId: form.sidedish ? guarnicionesCategoryId : (form.dishCategoryId || null),
         sidedish: form.sidedish,
         isDinner: form.isDinner,
         special: form.special,
@@ -226,7 +233,9 @@ export default function DishModal({
                     setForm((prev) => ({
                       ...prev,
                       sidedish: event.target.checked,
-                      dishCategoryId: event.target.checked ? "" : prev.dishCategoryId
+                      dishCategoryId: event.target.checked
+                        ? guarnicionesCategoryId
+                        : (String(prev.dishCategoryId || "") === String(guarnicionesCategoryId) ? "" : prev.dishCategoryId)
                     }))
                   }
                 />
