@@ -277,7 +277,9 @@ router.get("/", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients, sidedish, special, isDinner, scope, active, isArchived, dishCategoryId } = req.body;
+    const body = req.body || {};
+    const { name, ingredients, sidedish, special, isDinner, scope, active, isArchived } = body;
+    const dishCategoryId = body?.dishCategoryId ?? null;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
 
     const normalizedIngredients = normalizeIngredientList(ingredients || []);
@@ -293,6 +295,9 @@ router.post("/", requireAuth, async (req, res) => {
     if (isMasterWrite && !isDiod) {
       return res.status(403).json({ ok: false, error: "Solo DIOD puede crear platos master." });
     }
+    const resolvedDishCategoryId = dishCategoryId
+      ? await resolveDishCategoryId(dishCategoryId)
+      : null;
 
     const dish = await KitchenDish.create({
       name: String(name).trim(),
@@ -326,7 +331,10 @@ router.post("/", requireAuth, async (req, res) => {
 
 router.put("/:id", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients, sidedish, special, isDinner, active, isArchived, dishCategoryId } = req.body;
+    const body = req.body || {};
+    const { name, ingredients, sidedish, special, isDinner, active, isArchived } = body;
+    const hasDishCategoryInput = Object.prototype.hasOwnProperty.call(body, "dishCategoryId");
+    const dishCategoryId = hasDishCategoryInput ? body.dishCategoryId : undefined;
     const optionalHouseholdId = getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const dish = await KitchenDish.findById(req.params.id);
@@ -340,7 +348,9 @@ router.put("/:id", requireAuth, async (req, res) => {
       sidedish: parseBooleanField(sidedish, Boolean(dish.sidedish)),
       isArchived: parseBooleanField(isArchived, Boolean(dish.isArchived))
     };
-    const resolvedDishCategoryId = await resolveDishCategoryId(dishCategoryId);
+    const resolvedDishCategoryId = dishCategoryId === undefined
+      ? undefined
+      : (dishCategoryId ? await resolveDishCategoryId(dishCategoryId) : null);
     if (name) nextData.name = String(name).trim();
     else nextData.name = dish.name;
     if (Array.isArray(ingredients)) nextData.ingredients = normalizeIngredientList(ingredients);
@@ -524,5 +534,3 @@ router.post("/:id/restore", requireAuth, async (req, res) => {
 });
 
 export default router;
-
-    const resolvedDishCategoryId = await resolveDishCategoryId(dishCategoryId);
