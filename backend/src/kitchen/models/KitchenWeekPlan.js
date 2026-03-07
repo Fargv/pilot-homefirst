@@ -27,6 +27,7 @@ const WeekDaySchema = new mongoose.Schema(
     leftoversSourceDate: { type: Date, default: null },
     leftoversSourceMealType: { type: String, enum: ["lunch", "dinner", null], default: null },
     leftoversSourceDishId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDish", default: null },
+    leftoversSourceDishName: { type: String, default: null, trim: true },
     ingredientOverrides: { type: [IngredientOverrideSchema], default: [] },
     baseIngredientExclusions: { type: [String], default: [] }
   },

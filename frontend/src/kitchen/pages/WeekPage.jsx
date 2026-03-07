@@ -1520,8 +1520,7 @@ export default function WeekPage() {
   };
 
   const handleCreateDishFromStrip = (dayKey) => {
-    setSelectedDay(dayKey);
-    openDishModal(dayKey, "", { mode: "main", sidedish: false });
+    openDayEditor(dayKey);
   };
 
   const handleCarouselScroll = (direction) => {
@@ -1543,7 +1542,7 @@ export default function WeekPage() {
 
   return (
     <KitchenLayout>
-      <div className="kitchen-week-controls">
+      <div className={`kitchen-week-controls ${selectedMealType === "dinner" ? "is-dinner-theme" : ""}`}>
         <WeekDaysStrip
           days={visibleDays}
           userMap={userMap}

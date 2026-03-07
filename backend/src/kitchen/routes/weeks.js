@@ -411,6 +411,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       day.leftoversSourceDate = null;
       day.leftoversSourceMealType = null;
       day.leftoversSourceDishId = null;
+      day.leftoversSourceDishName = null;
       if (isDinnerMeal(mealType) && typeof includeMainIngredients !== "boolean") {
         day.includeMainIngredients = false;
       }
@@ -426,10 +427,21 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       day.leftoversSourceDate = null;
       day.leftoversSourceMealType = null;
       day.leftoversSourceDishId = null;
+      day.leftoversSourceDishName = null;
     } else if (day.isLeftovers) {
       day.leftoversSourceDate = leftoversSourceDate ? parseISODate(leftoversSourceDate) : null;
       day.leftoversSourceMealType = leftoversSourceMealType ? normalizeMealType(leftoversSourceMealType) : null;
       day.leftoversSourceDishId = leftoversSourceDishId || null;
+      if (day.leftoversSourceDishId) {
+        const sourceDish = await KitchenDish.findOne(
+          buildDishVisibilityFilter(effectiveHouseholdId, { _id: day.leftoversSourceDishId })
+        )
+          .select("name")
+          .lean();
+        day.leftoversSourceDishName = sourceDish?.name || null;
+      } else {
+        day.leftoversSourceDishName = null;
+      }
       day.mainDishId = day.leftoversSourceDishId || null;
       day.includeMainIngredients = false;
       if (typeof includeSideIngredients !== "boolean") {
@@ -441,6 +453,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       day.leftoversSourceDate = null;
       day.leftoversSourceMealType = null;
       day.leftoversSourceDishId = null;
+      day.leftoversSourceDishName = null;
     }
     if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = normalizeIngredientOverrides(ingredientOverrides);
     if (Array.isArray(baseIngredientExclusions)) {
@@ -730,6 +743,7 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       day.leftoversSourceDate = null;
       day.leftoversSourceMealType = null;
       day.leftoversSourceDishId = null;
+      day.leftoversSourceDishName = null;
       day.includeMainIngredients = isDinnerMeal(mealType) ? false : true;
       day.includeSideIngredients = isDinnerMeal(mealType) ? false : true;
       applyAttendeesToDay(day, resolveDayAttendeeIds(day, defaultAttendeeIds, mealType));
@@ -830,6 +844,7 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
       leftoversSourceDate: day.leftoversSourceDate || null,
       leftoversSourceMealType: day.leftoversSourceMealType || null,
       leftoversSourceDishId: day.leftoversSourceDishId || null,
+      leftoversSourceDishName: day.leftoversSourceDishName || null,
       ingredientOverrides: day.ingredientOverrides,
       baseIngredientExclusions: day.baseIngredientExclusions
     }));
@@ -1005,6 +1020,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       leftoversSourceDate: sourceDay.leftoversSourceDate || null,
       leftoversSourceMealType: sourceDay.leftoversSourceMealType || null,
       leftoversSourceDishId: sourceDay.leftoversSourceDishId || null,
+      leftoversSourceDishName: sourceDay.leftoversSourceDishName || null,
       ingredientOverrides: cloneIngredientOverrides(sourceDay.ingredientOverrides),
       baseIngredientExclusions: normalizeBaseIngredientExclusions(sourceDay.baseIngredientExclusions),
       attendeeIds: cloneAttendeeIds(sourceDay.attendeeIds)
@@ -1026,6 +1042,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       leftoversSourceDate: targetDay.leftoversSourceDate || null,
       leftoversSourceMealType: targetDay.leftoversSourceMealType || null,
       leftoversSourceDishId: targetDay.leftoversSourceDishId || null,
+      leftoversSourceDishName: targetDay.leftoversSourceDishName || null,
       ingredientOverrides: cloneIngredientOverrides(targetDay.ingredientOverrides),
       baseIngredientExclusions: normalizeBaseIngredientExclusions(targetDay.baseIngredientExclusions),
       attendeeIds: cloneAttendeeIds(targetDay.attendeeIds)
@@ -1042,6 +1059,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     sourceDay.leftoversSourceDate = targetSnapshot.leftoversSourceDate;
     sourceDay.leftoversSourceMealType = targetSnapshot.leftoversSourceMealType;
     sourceDay.leftoversSourceDishId = targetSnapshot.leftoversSourceDishId;
+    sourceDay.leftoversSourceDishName = targetSnapshot.leftoversSourceDishName;
     sourceDay.ingredientOverrides = targetSnapshot.ingredientOverrides;
     sourceDay.baseIngredientExclusions = targetSnapshot.baseIngredientExclusions;
     applyAttendeesToDay(sourceDay, targetSnapshot.attendeeIds);
@@ -1057,6 +1075,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     targetDay.leftoversSourceDate = sourceSnapshot.leftoversSourceDate;
     targetDay.leftoversSourceMealType = sourceSnapshot.leftoversSourceMealType;
     targetDay.leftoversSourceDishId = sourceSnapshot.leftoversSourceDishId;
+    targetDay.leftoversSourceDishName = sourceSnapshot.leftoversSourceDishName;
     targetDay.ingredientOverrides = sourceSnapshot.ingredientOverrides;
     targetDay.baseIngredientExclusions = sourceSnapshot.baseIngredientExclusions;
     applyAttendeesToDay(targetDay, sourceSnapshot.attendeeIds);
