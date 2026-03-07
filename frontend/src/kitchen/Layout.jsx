@@ -83,7 +83,7 @@ function getFirstName(displayName = "") {
   return String(displayName).trim().split(/\s+/)[0] || "";
 }
 
-export default function KitchenLayout({ children }) {
+export default function KitchenLayout({ children, containerClassName = "" }) {
   const { user, logout, refreshUser, setUser } = useAuth();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -301,7 +301,7 @@ export default function KitchenLayout({ children }) {
           <div className="kitchen-user-placeholder" />
         )}
       />
-      <div className="kitchen-container">{children}</div>
+      <div className={`kitchen-container ${containerClassName}`.trim()}>{children}</div>
       <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
     </div>
   );

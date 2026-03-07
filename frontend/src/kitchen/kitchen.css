@@ -1230,58 +1230,35 @@ body {
   transition: background 250ms ease, border-color 250ms ease, box-shadow 250ms ease;
 }
 
-.kitchen-week-controls.is-dinner-theme {
-  background: linear-gradient(180deg, #eef3fb 0%, #e6ecf7 100%);
-  border: 1px solid rgba(170, 186, 214, 0.46);
-  border-radius: 28px;
-  padding: 14px;
-  box-shadow: 0 10px 30px rgba(30, 60, 120, 0.12);
+.kitchen-container.kitchen-week-canvas {
+  transition: background 250ms ease, color 250ms ease;
 }
 
-.kitchen-week-controls.is-dinner-theme .kitchen-weekdays-strip {
-  background: #f7f9fd;
-  border-color: rgba(170, 186, 214, 0.42);
-  box-shadow: 0 10px 30px rgba(30, 60, 120, 0.12);
+.kitchen-container.kitchen-week-canvas.kitchen-dinner-canvas {
+  background: linear-gradient(180deg, #dce7f5 0%, #d6e2f3 100%);
 }
 
-.kitchen-week-controls.is-dinner-theme .kitchen-weekdays-carousel.is-carousel::before {
-  background: linear-gradient(90deg, #f7f9fd 0%, rgba(247, 249, 253, 0) 100%);
+.kitchen-container.kitchen-week-canvas.kitchen-dinner-canvas .kitchen-meal-tabs {
+  background: #d7e3f3;
+  border-color: rgba(146, 163, 192, 0.42);
 }
 
-.kitchen-week-controls.is-dinner-theme .kitchen-weekdays-carousel.is-carousel::after {
-  background: linear-gradient(270deg, #f7f9fd 0%, rgba(247, 249, 253, 0) 100%);
-}
-
-.kitchen-week-controls.is-dinner-theme .kitchen-week-mobile-frame {
-  background: #f7f9fd;
-  border: 1px solid rgba(170, 186, 214, 0.38);
-  border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(30, 60, 120, 0.12);
-  padding: 14px;
-}
-
-.kitchen-week-controls.is-dinner-theme .kitchen-meal-tabs {
-  background: #e6ecf7;
-  border-color: rgba(170, 186, 214, 0.5);
-}
-
-.kitchen-week-controls.is-dinner-theme .kitchen-meal-tab {
+.kitchen-container.kitchen-week-canvas.kitchen-dinner-canvas .kitchen-meal-tab {
   color: #6b7280;
 }
 
-.kitchen-week-controls.is-dinner-theme .kitchen-meal-tab.is-active {
+.kitchen-container.kitchen-week-canvas.kitchen-dinner-canvas .kitchen-meal-tab.is-active {
   background: #ffffff;
   color: #1f2937;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.kitchen-week-controls.is-dinner-theme,
-.kitchen-week-controls.is-dinner-theme .kitchen-week-header,
-.kitchen-week-controls.is-dinner-theme .kitchen-label {
+.kitchen-container.kitchen-week-canvas.kitchen-dinner-canvas .kitchen-week-header,
+.kitchen-container.kitchen-week-canvas.kitchen-dinner-canvas .kitchen-label {
   color: #1f2937;
 }
 
-.kitchen-week-controls.is-dinner-theme .kitchen-muted {
+.kitchen-container.kitchen-week-canvas.kitchen-dinner-canvas .kitchen-muted {
   color: #6b7280;
 }
 
@@ -2143,11 +2120,6 @@ body {
   .kitchen-week-controls {
     gap: 12px;
     margin-bottom: 16px;
-  }
-
-  .kitchen-week-controls.is-dinner-theme {
-    border-radius: 20px;
-    padding: 10px;
   }
 
   .kitchen-weekdays-strip {

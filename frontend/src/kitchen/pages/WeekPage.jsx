@@ -1541,8 +1541,8 @@ export default function WeekPage() {
   }
 
   return (
-    <KitchenLayout>
-      <div className={`kitchen-week-controls ${selectedMealType === "dinner" ? "is-dinner-theme" : ""}`}>
+    <KitchenLayout containerClassName={`kitchen-week-canvas ${selectedMealType === "dinner" ? "kitchen-dinner-canvas" : ""}`}>
+      <div className="kitchen-week-controls">
         <WeekDaysStrip
           days={visibleDays}
           userMap={userMap}
