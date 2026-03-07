@@ -125,6 +125,11 @@ export default function SettingsPage() {
   const [avoidRepeatsInfoOpen, setAvoidRepeatsInfoOpen] = useState(false);
   const [householdPrefsSaving, setHouseholdPrefsSaving] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [dishCategories, setDishCategories] = useState([]);
+  const [categoriesAccordion, setCategoriesAccordion] = useState({
+    dishes: false,
+    ingredients: false
+  });
   const [deletedTab, setDeletedTab] = useState("dishes");
   const [deletedItems, setDeletedItems] = useState({ dishes: [], sides: [], ingredients: [] });
   const [deletedLoading, setDeletedLoading] = useState(false);
@@ -152,11 +157,13 @@ export default function SettingsPage() {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [categoryModal, setCategoryModal] = useState({
     open: false,
+    kind: "ingredient",
     mode: "create",
     category: null,
     name: "",
     colorBg: CATEGORY_COLORS[0].colorBg,
-    colorText: CATEGORY_COLORS[0].colorText
+    colorText: CATEGORY_COLORS[0].colorText,
+    active: true
   });
   const [memberModal, setMemberModal] = useState({
     open: false,
@@ -229,6 +236,43 @@ export default function SettingsPage() {
     window.dispatchEvent(new CustomEvent("kitchen:catalog-invalidated"));
   };
 
+  const buildClosedCategoryModal = () => ({
+    open: false,
+    kind: "ingredient",
+    mode: "create",
+    category: null,
+    name: "",
+    colorBg: CATEGORY_COLORS[0].colorBg,
+    colorText: CATEGORY_COLORS[0].colorText,
+    active: true
+  });
+
+  const openCreateCategoryModal = (kind) => {
+    setCategoryModal({
+      open: true,
+      kind,
+      mode: "create",
+      category: null,
+      name: "",
+      colorBg: CATEGORY_COLORS[0].colorBg,
+      colorText: CATEGORY_COLORS[0].colorText,
+      active: true
+    });
+  };
+
+  const openEditCategoryModal = (kind, category) => {
+    setCategoryModal({
+      open: true,
+      kind,
+      mode: "edit",
+      category,
+      name: category?.name || "",
+      colorBg: category?.colorBg || CATEGORY_COLORS[0].colorBg,
+      colorText: category?.colorText || CATEGORY_COLORS[0].colorText,
+      active: category?.active !== false
+    });
+  };
+
   const enterProfileEdit = () => {
     setProfileSnapshot({
       displayName,
@@ -274,7 +318,11 @@ export default function SettingsPage() {
       const householdSummaryRequest = (!isDiod || user?.activeHouseholdId)
         ? apiRequest("/api/kitchen/household/summary")
         : Promise.resolve({ household: { name: "", inviteCode: "" } });
-      const requests = [apiRequest("/api/categories"), householdSummaryRequest];
+      const requests = [
+        apiRequest("/api/categories?includeInactive=true"),
+        apiRequest("/api/kitchen/dish-categories?includeInactive=true"),
+        householdSummaryRequest
+      ];
       if (!isDiod || user?.activeHouseholdId) {
         requests.push(apiRequest("/api/kitchen/users/members"));
       } else {
@@ -288,8 +336,9 @@ export default function SettingsPage() {
         requests.push(Promise.resolve({ inviteCode: "" }));
       }
 
-      const [categoryData, householdData, memberData, invitationData, codeData] = await Promise.all(requests);
+      const [categoryData, dishCategoryData, householdData, memberData, invitationData, codeData] = await Promise.all(requests);
       setCategories(categoryData.categories || []);
+      setDishCategories(dishCategoryData.categories || []);
       setHouseholdName(householdData?.household?.name || "");
       setHouseholdNameDraft(householdData?.household?.name || "");
       setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
@@ -701,27 +750,30 @@ export default function SettingsPage() {
     }
   };
 
-  const createCategory = async (sourceName, colorBg, colorText) => {
+  const createCategory = async (kind, sourceName, colorBg, colorText, active) => {
     const safeName = String(sourceName || "").trim();
     if (!safeName) return;
     try {
-      await apiRequest("/api/categories", {
+      const endpoint = kind === "dish" ? "/api/kitchen/dish-categories" : "/api/categories";
+      const payload = kind === "dish"
+        ? {
+            name: safeName,
+            colorBg,
+            colorText,
+            active: active !== false
+          }
+        : {
+            name: safeName,
+            colorBg,
+            colorText,
+            active: active !== false,
+            ...(isDiod ? { scope: "master" } : {})
+          };
+      await apiRequest(endpoint, {
         method: "POST",
-        body: JSON.stringify({
-          name: safeName,
-          colorBg,
-          colorText,
-          ...(isDiod ? { scope: "master" } : {})
-        })
+        body: JSON.stringify(payload)
       });
-      setCategoryModal({
-        open: false,
-        mode: "create",
-        category: null,
-        name: "",
-        colorBg: CATEGORY_COLORS[0].colorBg,
-        colorText: CATEGORY_COLORS[0].colorText
-      });
+      setCategoryModal(buildClosedCategoryModal());
       notifyCatalogInvalidated();
       updateSuccess("Categoria creada.");
       await loadData();
@@ -730,28 +782,32 @@ export default function SettingsPage() {
     }
   };
 
-  const editCategory = async (category, nextName, colorBg, colorText) => {
+  const editCategory = async (kind, category, nextName, colorBg, colorText, active) => {
     const safeName = String(nextName || "").trim();
     if (!safeName) return;
     try {
-      await apiRequest(`/api/categories/${category._id}`, {
+      const endpoint = kind === "dish"
+        ? `/api/kitchen/dish-categories/${category._id}`
+        : `/api/categories/${category._id}`;
+      const payload = kind === "dish"
+        ? {
+            name: safeName,
+            colorBg,
+            colorText,
+            active: active !== false
+          }
+        : {
+            name: safeName,
+            colorBg,
+            colorText,
+            active: active !== false,
+            forRecipes: category.forRecipes
+          };
+      await apiRequest(endpoint, {
         method: "PUT",
-        body: JSON.stringify({
-          name: safeName,
-          colorBg,
-          colorText,
-          active: category.active,
-          forRecipes: category.forRecipes
-        })
+        body: JSON.stringify(payload)
       });
-      setCategoryModal({
-        open: false,
-        mode: "create",
-        category: null,
-        name: "",
-        colorBg: CATEGORY_COLORS[0].colorBg,
-        colorText: CATEGORY_COLORS[0].colorText
-      });
+      setCategoryModal(buildClosedCategoryModal());
       notifyCatalogInvalidated();
       updateSuccess("Categoria actualizada.");
       await loadData();
@@ -760,14 +816,17 @@ export default function SettingsPage() {
     }
   };
 
-  const removeCategory = async (category) => {
+  const removeCategory = async (kind, category) => {
     setConfirmModal({
       open: true,
       title: "Eliminar categoria",
       message: `Se eliminara la categoria "${category.name}".`,
       dangerLabel: "Eliminar",
       onConfirm: async () => {
-        await apiRequest(`/api/categories/${category._id}`, { method: "DELETE" });
+        const endpoint = kind === "dish"
+          ? `/api/kitchen/dish-categories/${category._id}`
+          : `/api/categories/${category._id}`;
+        await apiRequest(endpoint, { method: "DELETE" });
         notifyCatalogInvalidated();
         updateSuccess("Categoria eliminada.");
         await loadData();
@@ -1118,51 +1177,78 @@ export default function SettingsPage() {
     <div className="settings-panel">
       <div className="settings-panel-header">
         <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
-        <h2>{isDiod ? "Categorias master" : "Categorias de ingredientes"}</h2>
+        <h2>Categorias</h2>
       </div>
-      <div className="settings-block">
-        <button
-          type="button"
-          className="kitchen-button"
-          onClick={() => setCategoryModal({
-            open: true,
-            mode: "create",
-            category: null,
-            name: "",
-            colorBg: CATEGORY_COLORS[0].colorBg,
-            colorText: CATEGORY_COLORS[0].colorText
-          })}
-        >
-          Nueva categoria
-        </button>
-      </div>
-      <div className="settings-block">
-        {categories.map((category) => (
-          <div key={category._id} className="settings-row-card">
-            <div>
-              <strong>{category.name}<span className="settings-category-dot" style={{ color: category.colorText, background: category.colorBg }}>●</span></strong>
-              <p className="kitchen-muted">{category.scope || "household"}</p>
-            </div>
-            <div className="settings-row-actions">
-              <button
-                type="button"
-                className="settings-mini-icon"
-                onClick={() => setCategoryModal({
-                  open: true,
-                  mode: "edit",
-                  category,
-                  name: category.name,
-                  colorBg: category.colorBg || CATEGORY_COLORS[0].colorBg,
-                  colorText: category.colorText || CATEGORY_COLORS[0].colorText
-                })}
-                aria-label="Editar categoria"
-              >
-                <PencilIcon />
-              </button>
-              <button type="button" className="settings-mini-icon danger" onClick={() => removeCategory(category)} aria-label="Eliminar categoria"><TrashIcon /></button>
-            </div>
+      <div className="settings-block settings-accordion-stack">
+        <div className={`settings-accordion ${categoriesAccordion.dishes ? "is-open" : ""}`}>
+          <div className="settings-accordion-header">
+            <button
+              type="button"
+              className="settings-accordion-trigger"
+              onClick={() => setCategoriesAccordion((prev) => ({ ...prev, dishes: !prev.dishes }))}
+              aria-expanded={categoriesAccordion.dishes}
+            >
+              <span className="settings-accordion-chevron">{categoriesAccordion.dishes ? "▾" : "▸"}</span>
+              <span>Categorias de platos</span>
+            </button>
+            <button type="button" className="settings-mini-icon" onClick={() => openCreateCategoryModal("dish")} aria-label="Nueva categoria de plato">+</button>
           </div>
-        ))}
+          {categoriesAccordion.dishes ? (
+            <div className="settings-accordion-content">
+              {dishCategories.map((category) => (
+                <div key={category._id} className="settings-row-card">
+                  <div>
+                    <strong>
+                      <span className="settings-category-dot-solid" style={{ background: category.colorText || "#344054" }} />
+                      {category.name}
+                    </strong>
+                    <p className="kitchen-muted">{category.active === false ? "Inactiva" : "Activa"}</p>
+                  </div>
+                  <div className="settings-row-actions">
+                    <button type="button" className="settings-mini-icon" onClick={() => openEditCategoryModal("dish", category)} aria-label="Editar categoria de plato"><PencilIcon /></button>
+                    <button type="button" className="settings-mini-icon danger" onClick={() => removeCategory("dish", category)} aria-label="Eliminar categoria de plato"><TrashIcon /></button>
+                  </div>
+                </div>
+              ))}
+              {!dishCategories.length ? <p className="kitchen-muted">No hay categorias de platos.</p> : null}
+            </div>
+          ) : null}
+        </div>
+
+        <div className={`settings-accordion ${categoriesAccordion.ingredients ? "is-open" : ""}`}>
+          <div className="settings-accordion-header">
+            <button
+              type="button"
+              className="settings-accordion-trigger"
+              onClick={() => setCategoriesAccordion((prev) => ({ ...prev, ingredients: !prev.ingredients }))}
+              aria-expanded={categoriesAccordion.ingredients}
+            >
+              <span className="settings-accordion-chevron">{categoriesAccordion.ingredients ? "▾" : "▸"}</span>
+              <span>Categorias de ingredientes</span>
+            </button>
+            <button type="button" className="settings-mini-icon" onClick={() => openCreateCategoryModal("ingredient")} aria-label="Nueva categoria de ingrediente">+</button>
+          </div>
+          {categoriesAccordion.ingredients ? (
+            <div className="settings-accordion-content">
+              {categories.map((category) => (
+                <div key={category._id} className="settings-row-card">
+                  <div>
+                    <strong>
+                      <span className="settings-category-dot-solid" style={{ background: category.colorText || "#344054" }} />
+                      {category.name}
+                    </strong>
+                    <p className="kitchen-muted">{category.scope || "household"} · {category.active === false ? "Inactiva" : "Activa"}</p>
+                  </div>
+                  <div className="settings-row-actions">
+                    <button type="button" className="settings-mini-icon" onClick={() => openEditCategoryModal("ingredient", category)} aria-label="Editar categoria de ingrediente"><PencilIcon /></button>
+                    <button type="button" className="settings-mini-icon danger" onClick={() => removeCategory("ingredient", category)} aria-label="Eliminar categoria de ingrediente"><TrashIcon /></button>
+                  </div>
+                </div>
+              ))}
+              {!categories.length ? <p className="kitchen-muted">No hay categorias de ingredientes.</p> : null}
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -1428,11 +1514,22 @@ export default function SettingsPage() {
 
       <ModalSheet
         open={categoryModal.open}
-        title={categoryModal.mode === "edit" ? "Editar categoria" : "Nueva categoria"}
-        onClose={() => setCategoryModal({ open: false, mode: "create", category: null, name: "", colorBg: CATEGORY_COLORS[0].colorBg, colorText: CATEGORY_COLORS[0].colorText })}
-        actions={<><button type="button" className="kitchen-button secondary" onClick={() => setCategoryModal({ open: false, mode: "create", category: null, name: "", colorBg: CATEGORY_COLORS[0].colorBg, colorText: CATEGORY_COLORS[0].colorText })}>Cancelar</button><button type="button" className="kitchen-button" onClick={() => (categoryModal.mode === "edit" ? editCategory(categoryModal.category, categoryModal.name, categoryModal.colorBg, categoryModal.colorText) : createCategory(categoryModal.name, categoryModal.colorBg, categoryModal.colorText))}>Guardar</button></>}
+        title={categoryModal.mode === "edit"
+          ? `Editar categoria de ${categoryModal.kind === "dish" ? "plato" : "ingrediente"}`
+          : `Nueva categoria de ${categoryModal.kind === "dish" ? "plato" : "ingrediente"}`}
+        onClose={() => setCategoryModal(buildClosedCategoryModal())}
+        actions={<><button type="button" className="kitchen-button secondary" onClick={() => setCategoryModal(buildClosedCategoryModal())}>Cancelar</button><button type="button" className="kitchen-button" onClick={() => (categoryModal.mode === "edit" ? editCategory(categoryModal.kind, categoryModal.category, categoryModal.name, categoryModal.colorBg, categoryModal.colorText, categoryModal.active) : createCategory(categoryModal.kind, categoryModal.name, categoryModal.colorBg, categoryModal.colorText, categoryModal.active))}>Guardar</button></>}
       >
-        <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={categoryModal.name} onChange={(event) => setCategoryModal((prev) => ({ ...prev, name: event.target.value }))} placeholder="Verduras" /></label>
+        <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={categoryModal.name} onChange={(event) => setCategoryModal((prev) => ({ ...prev, name: event.target.value }))} placeholder={categoryModal.kind === "dish" ? "Carnes" : "Verduras"} /></label>
+        <label className="kitchen-field kitchen-toggle-field">
+          <div className="kitchen-toggle-row">
+            <span className="kitchen-label">Activa</span>
+            <label className="kitchen-toggle">
+              <input type="checkbox" className="kitchen-toggle-input" checked={categoryModal.active !== false} onChange={(event) => setCategoryModal((prev) => ({ ...prev, active: event.target.checked }))} />
+              <span className="kitchen-toggle-track" />
+            </label>
+          </div>
+        </label>
         <div className="settings-category-color-preview" style={{ background: categoryModal.colorBg, color: categoryModal.colorText }}>Color actual</div>
         <div className="settings-category-color-grid">
           {CATEGORY_COLORS.map((color) => {

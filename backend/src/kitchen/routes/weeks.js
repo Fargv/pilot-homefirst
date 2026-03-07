@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import { KitchenDish } from "../models/KitchenDish.js";
+import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { Household } from "../models/Household.js";
@@ -162,6 +163,22 @@ function buildDefaultAttendeeIds(members = [], mealType = "lunch") {
 function dishCategoryKey(dish) {
   if (!dish?.dishCategoryId) return "";
   return String(dish.dishCategoryId);
+}
+
+async function resolveExcludedGuarnicionesCategoryIds(dishes = []) {
+  const categoryIds = dedupeIds(
+    dishes
+      .map((dish) => dishCategoryKey(dish))
+      .filter(Boolean)
+  );
+  if (!categoryIds.length) return new Set();
+  const categories = await KitchenDishCategory.find({
+    _id: { $in: categoryIds },
+    code: "guarniciones"
+  })
+    .select("_id")
+    .lean();
+  return new Set(categories.map((category) => String(category._id)));
 }
 
 function resolveDayAttendeeIds(day, defaultAttendeeIds = [], mealType = "lunch") {
@@ -572,7 +589,12 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       special: { $ne: true },
       isDinner: isDinnerMeal(mealType)
     });
-    const allEligible = await KitchenDish.find(baseDishFilter).select("_id name householdId scope dishCategoryId").lean();
+    const allEligibleRaw = await KitchenDish.find(baseDishFilter).select("_id name householdId scope dishCategoryId").lean();
+    const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(allEligibleRaw);
+    const allEligible = allEligibleRaw.filter((dish) => {
+      const categoryId = dishCategoryKey(dish);
+      return !categoryId || !excludedGuarnicionesCategoryIds.has(categoryId);
+    });
     if (!allEligible.length) {
       const allVisibleCount = await KitchenDish.countDocuments(
         buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true }, isDinner: isDinnerMeal(mealType) })
@@ -697,7 +719,7 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       .map((dishId) => String(dishId));
     const usedInCurrentWeek = new Set(alreadyAssignedDishIds);
 
-    const candidates = await KitchenDish.find(
+    const candidatesRaw = await KitchenDish.find(
       buildDishVisibilityFilter(effectiveHouseholdId, {
         sidedish: { $ne: true },
         special: { $ne: true },
@@ -706,6 +728,11 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     )
       .select("_id dishCategoryId")
       .lean();
+    const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(candidatesRaw);
+    const candidates = candidatesRaw.filter((dish) => {
+      const categoryId = dishCategoryKey(dish);
+      return !categoryId || !excludedGuarnicionesCategoryIds.has(categoryId);
+    });
 
     const allDishIds = candidates.map((dish) => String(dish._id));
     const candidateById = new Map(candidates.map((dish) => [String(dish._id), dish]));

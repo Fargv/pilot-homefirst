@@ -116,6 +116,10 @@ export default function DishModal({
     () => (form.ingredients || []).filter((item) => item.status === "pending").length,
     [form.ingredients]
   );
+  const selectedDishCategory = useMemo(
+    () => dishCategories.find((category) => String(category?._id) === String(form.dishCategoryId || "")) || null,
+    [dishCategories, form.dishCategoryId]
+  );
 
   const resetAndClose = () => {
     setForm(EMPTY_FORM);
@@ -234,17 +238,23 @@ export default function DishModal({
             <label className="kitchen-field">
               <span className="kitchen-label">Categoría del plato</span>
               <select
-                className="kitchen-select"
+                className="kitchen-select kitchen-category-select"
                 value={form.dishCategoryId || ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, dishCategoryId: event.target.value }))}
               >
                 <option value="">Sin categoría</option>
                 {dishCategories.map((category) => (
                   <option key={category._id} value={category._id}>
-                    {category.name}
+                    {`● ${category.name}`}
                   </option>
                 ))}
               </select>
+              {selectedDishCategory ? (
+                <span className="kitchen-category-preview">
+                  <span className="kitchen-category-preview-dot" style={{ background: selectedDishCategory.colorText || "#344054" }} />
+                  {selectedDishCategory.name}
+                </span>
+              ) : null}
             </label>
           ) : null}
           <div className="kitchen-field kitchen-toggle-field">
