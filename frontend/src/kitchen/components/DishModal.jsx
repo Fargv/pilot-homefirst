@@ -6,6 +6,7 @@ import { normalizeIngredientName } from "../utils/normalize.js";
 const EMPTY_FORM = {
   name: "",
   ingredients: [],
+  dishCategoryId: "",
   sidedish: false,
   isDinner: false,
   special: false,
@@ -18,6 +19,7 @@ export default function DishModal({
   onClose,
   onSaved,
   categories = [],
+  dishCategories = [],
   onCategoryCreated,
   initialDish = null,
   initialName = "",
@@ -82,6 +84,7 @@ export default function DishModal({
         setForm({
           name: initialDish.name || "",
           ingredients,
+          dishCategoryId: initialDish.dishCategoryId?._id || initialDish.dishCategoryId || "",
           sidedish: Boolean(initialDish.sidedish),
           isDinner: Boolean(initialDish.isDinner),
           special: Boolean(initialDish.special),
@@ -93,6 +96,7 @@ export default function DishModal({
         setForm({
           name: initialName || "",
           ingredients: [],
+          dishCategoryId: "",
           sidedish: Boolean(initialSidedish),
           isDinner: Boolean(initialIsDinner),
           special: false,
@@ -131,6 +135,7 @@ export default function DishModal({
         scope: scope || initialDish?.scope || "household",
         active: Boolean(form.active),
         isArchived: Boolean(form.isArchived),
+        dishCategoryId: form.sidedish ? null : (form.dishCategoryId || null),
         sidedish: form.sidedish,
         isDinner: form.isDinner,
         special: form.special,
@@ -214,13 +219,34 @@ export default function DishModal({
                   className="kitchen-toggle-input"
                   checked={form.sidedish}
                   onChange={(event) =>
-                    setForm((prev) => ({ ...prev, sidedish: event.target.checked }))
+                    setForm((prev) => ({
+                      ...prev,
+                      sidedish: event.target.checked,
+                      dishCategoryId: event.target.checked ? "" : prev.dishCategoryId
+                    }))
                   }
                 />
                 <span className="kitchen-toggle-track" aria-hidden="true" />
               </label>
             </div>
           </div>
+          {!form.sidedish ? (
+            <label className="kitchen-field">
+              <span className="kitchen-label">Categoría del plato</span>
+              <select
+                className="kitchen-select"
+                value={form.dishCategoryId || ""}
+                onChange={(event) => setForm((prev) => ({ ...prev, dishCategoryId: event.target.value }))}
+              >
+                <option value="">Sin categoría</option>
+                {dishCategories.map((category) => (
+                  <option key={category._id} value={category._id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <div className="kitchen-field kitchen-toggle-field">
             <div className="kitchen-toggle-row">
               <span className="kitchen-label">Plato de cena</span>

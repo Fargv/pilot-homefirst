@@ -1,5 +1,7 @@
 import express from "express";
+import mongoose from "mongoose";
 import { KitchenDish } from "../models/KitchenDish.js";
+import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { normalizeIngredientList } from "../utils/normalize.js";
 import { combineDayIngredients } from "../utils/ingredients.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
@@ -25,6 +27,23 @@ function parseBooleanField(value, fallback = false) {
     if (normalized === "false") return false;
   }
   return fallback;
+}
+
+async function resolveDishCategoryId(rawValue) {
+  if (rawValue === undefined) return undefined;
+  if (rawValue === null) return null;
+  const normalized = String(rawValue || "").trim();
+  if (!normalized) return null;
+  if (!mongoose.isValidObjectId(normalized)) {
+    throw new Error("Categoría de plato no válida.");
+  }
+  const category = await KitchenDishCategory.findOne({ _id: normalized, active: { $ne: false } })
+    .select("_id")
+    .lean();
+  if (!category) {
+    throw new Error("La categoría de plato seleccionada no existe.");
+  }
+  return category._id;
 }
 
 function buildDishVisibilityFilter(householdId, extraFilter = {}) {
@@ -258,7 +277,7 @@ router.get("/", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients, sidedish, special, isDinner, scope, active, isArchived } = req.body;
+    const { name, ingredients, sidedish, special, isDinner, scope, active, isArchived, dishCategoryId } = req.body;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
 
     const normalizedIngredients = normalizeIngredientList(ingredients || []);
@@ -278,6 +297,7 @@ router.post("/", requireAuth, async (req, res) => {
     const dish = await KitchenDish.create({
       name: String(name).trim(),
       ingredients: normalizedIngredients,
+      dishCategoryId: isSideDish ? null : (resolvedDishCategoryId ?? null),
       sidedish: isSideDish,
       isDinner: dinnerDish,
       special: isSpecial,
@@ -295,6 +315,9 @@ router.post("/", requireAuth, async (req, res) => {
 
     return res.status(201).json({ ok: true, dish });
   } catch (error) {
+    if (error?.message === "Categoría de plato no válida." || error?.message === "La categoría de plato seleccionada no existe.") {
+      return res.status(400).json({ ok: false, error: error.message });
+    }
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo guardar el plato." });
@@ -303,7 +326,7 @@ router.post("/", requireAuth, async (req, res) => {
 
 router.put("/:id", requireAuth, async (req, res) => {
   try {
-    const { name, ingredients, sidedish, special, isDinner, active, isArchived } = req.body;
+    const { name, ingredients, sidedish, special, isDinner, active, isArchived, dishCategoryId } = req.body;
     const optionalHouseholdId = getOptionalHouseholdId(req.user);
     const isDiod = isDiodUser(req.kitchenUser);
     const dish = await KitchenDish.findById(req.params.id);
@@ -317,10 +340,18 @@ router.put("/:id", requireAuth, async (req, res) => {
       sidedish: parseBooleanField(sidedish, Boolean(dish.sidedish)),
       isArchived: parseBooleanField(isArchived, Boolean(dish.isArchived))
     };
+    const resolvedDishCategoryId = await resolveDishCategoryId(dishCategoryId);
     if (name) nextData.name = String(name).trim();
     else nextData.name = dish.name;
     if (Array.isArray(ingredients)) nextData.ingredients = normalizeIngredientList(ingredients);
     else nextData.ingredients = dish.ingredients;
+    if (nextData.sidedish) {
+      nextData.dishCategoryId = null;
+    } else if (resolvedDishCategoryId !== undefined) {
+      nextData.dishCategoryId = resolvedDishCategoryId;
+    } else {
+      nextData.dishCategoryId = dish.dishCategoryId || null;
+    }
 
     if (dish.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {
@@ -348,6 +379,7 @@ router.put("/:id", requireAuth, async (req, res) => {
           householdId: requiredHouseholdId,
           sidedish: nextData.sidedish,
           isDinner: nextData.isDinner,
+          dishCategoryId: nextData.dishCategoryId,
           active: nextData.active,
           special: nextData.special,
           isArchived: nextData.isArchived
@@ -376,6 +408,9 @@ router.put("/:id", requireAuth, async (req, res) => {
     });
     return res.json({ ok: true, dish, ...(warning ? { warning } : {}) });
   } catch (error) {
+    if (error?.message === "Categoría de plato no válida." || error?.message === "La categoría de plato seleccionada no existe.") {
+      return res.status(400).json({ ok: false, error: error.message });
+    }
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el plato." });
@@ -490,3 +525,4 @@ router.post("/:id/restore", requireAuth, async (req, res) => {
 
 export default router;
 
+    const resolvedDishCategoryId = await resolveDishCategoryId(dishCategoryId);

@@ -194,6 +194,7 @@ export default function WeekPage() {
   const [sideDishes, setSideDishes] = useState([]);
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [dishCategories, setDishCategories] = useState([]);
   const [dinnersEnabled, setDinnersEnabled] = useState(false);
   const [mealTab, setMealTab] = useState(() => {
     if (typeof window === "undefined") return "lunch";
@@ -458,6 +459,19 @@ export default function WeekPage() {
   useEffect(() => {
     loadCategories();
   }, [isDiodGlobalMode]);
+
+  const loadDishCategories = async () => {
+    try {
+      const data = await apiRequest("/api/kitchen/dish-categories");
+      setDishCategories(data.categories || []);
+    } catch (err) {
+      setLoadError(err.message || "No se pudieron cargar las categorías de plato.");
+    }
+  };
+
+  useEffect(() => {
+    loadDishCategories();
+  }, []);
 
   useEffect(() => {
     const onCatalogInvalidated = () => {
@@ -2842,6 +2856,7 @@ export default function WeekPage() {
         onClose={closeDishModal}
         onSaved={handleDishSaved}
         categories={categories}
+        dishCategories={dishCategories}
         onCategoryCreated={handleCategoryCreated}
         initialName={dishModalName}
         initialSidedish={dishModalSidedish}

@@ -159,6 +159,11 @@ function buildDefaultAttendeeIds(members = [], mealType = "lunch") {
   );
 }
 
+function dishCategoryKey(dish) {
+  if (!dish?.dishCategoryId) return "";
+  return String(dish.dishCategoryId);
+}
+
 function resolveDayAttendeeIds(day, defaultAttendeeIds = [], mealType = "lunch") {
   const normalizedMeal = normalizeMealType(mealType);
   const dayType = dayMealType(day);
@@ -555,20 +560,19 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       });
     }
 
-    const usedMainDishIds = new Set(
-      plan.days
-        .filter((entry) => dayMealType(entry) === mealType && !isSameDay(entry.date, date))
-        .map((entry) => entry?.mainDishId)
-        .filter(Boolean)
-        .map((dishId) => String(dishId))
-    );
+    const previouslyAssignedDishIds = plan.days
+      .filter((entry) => dayMealType(entry) === mealType && !isSameDay(entry.date, date))
+      .map((entry) => entry?.mainDishId)
+      .filter(Boolean)
+      .map((dishId) => String(dishId));
+    const usedMainDishIds = new Set(previouslyAssignedDishIds);
 
     const baseDishFilter = buildDishVisibilityFilter(effectiveHouseholdId, {
       sidedish: { $ne: true },
       special: { $ne: true },
       isDinner: isDinnerMeal(mealType)
     });
-    const allEligible = await KitchenDish.find(baseDishFilter).select("_id name householdId scope").lean();
+    const allEligible = await KitchenDish.find(baseDishFilter).select("_id name householdId scope dishCategoryId").lean();
     if (!allEligible.length) {
       const allVisibleCount = await KitchenDish.countDocuments(
         buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true }, isDinner: isDinnerMeal(mealType) })
@@ -588,11 +592,29 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       ? await getRecentWeeksDishIds(effectiveHouseholdId, monday, avoidRepeatsWeeks, mealType)
       : new Set();
 
-    const candidatesRelaxed = allEligible.filter((dish) => !usedMainDishIds.has(String(dish._id)));
-    const candidatesStrict = candidatesRelaxed.filter((dish) => !recentDishIds.has(String(dish._id)));
+    const previouslyAssignedDishes = previouslyAssignedDishIds.length
+      ? await KitchenDish.find({ _id: { $in: previouslyAssignedDishIds } }).select("_id dishCategoryId").lean()
+      : [];
+    const usedCategoryIds = new Set(
+      previouslyAssignedDishes
+        .map((dish) => dishCategoryKey(dish))
+        .filter(Boolean)
+    );
 
-    if (candidatesStrict.length) {
-      const dish = pickRandomItem(candidatesStrict);
+    const candidatesNoDishRepeat = allEligible.filter((dish) => !usedMainDishIds.has(String(dish._id)));
+    const candidatesNoDishAndCategoryAndRecent = candidatesNoDishRepeat.filter((dish) => {
+      const categoryId = dishCategoryKey(dish);
+      if (categoryId && usedCategoryIds.has(categoryId)) return false;
+      return !recentDishIds.has(String(dish._id));
+    });
+    const candidatesNoDishAndCategory = candidatesNoDishRepeat.filter((dish) => {
+      const categoryId = dishCategoryKey(dish);
+      return !categoryId || !usedCategoryIds.has(categoryId);
+    });
+    const candidatesNoDishAndRecent = candidatesNoDishRepeat.filter((dish) => !recentDishIds.has(String(dish._id)));
+
+    if (candidatesNoDishAndCategoryAndRecent.length) {
+      const dish = pickRandomItem(candidatesNoDishAndCategoryAndRecent);
       return res.json({
         ok: true,
         dish,
@@ -600,8 +622,8 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       });
     }
 
-    if (candidatesRelaxed.length) {
-      const dish = pickRandomItem(candidatesRelaxed);
+    if (candidatesNoDishAndCategory.length) {
+      const dish = pickRandomItem(candidatesNoDishAndCategory);
       return res.json({
         ok: true,
         dish,
@@ -609,7 +631,25 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       });
     }
 
-    if (!candidatesRelaxed.length) {
+    if (candidatesNoDishAndRecent.length) {
+      const dish = pickRandomItem(candidatesNoDishAndRecent);
+      return res.json({
+        ok: true,
+        dish,
+        reason: "category_relaxed"
+      });
+    }
+
+    if (candidatesNoDishRepeat.length) {
+      const dish = pickRandomItem(candidatesNoDishRepeat);
+      return res.json({
+        ok: true,
+        dish,
+        reason: avoidRepeatsEnabled ? "avoid_repeats_relaxed" : "category_relaxed"
+      });
+    }
+
+    if (!candidatesNoDishRepeat.length) {
       return res.json({ ok: true, dish: null, reason: "all_used" });
     }
     return res.json({ ok: true, dish: null, reason: "no_dishes" });
@@ -650,13 +690,12 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       });
     }
 
-    const usedInCurrentWeek = new Set(
-      plan.days
-        .filter((day) => dayMealType(day) === mealType && !targetDays.includes(day))
-        .map((day) => day?.mainDishId)
-        .filter(Boolean)
-        .map((dishId) => String(dishId))
-    );
+    const alreadyAssignedDishIds = plan.days
+      .filter((day) => dayMealType(day) === mealType && !targetDays.includes(day))
+      .map((day) => day?.mainDishId)
+      .filter(Boolean)
+      .map((dishId) => String(dishId));
+    const usedInCurrentWeek = new Set(alreadyAssignedDishIds);
 
     const candidates = await KitchenDish.find(
       buildDishVisibilityFilter(effectiveHouseholdId, {
@@ -665,10 +704,11 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
         isDinner: isDinnerMeal(mealType)
       })
     )
-      .select("_id")
+      .select("_id dishCategoryId")
       .lean();
 
     const allDishIds = candidates.map((dish) => String(dish._id));
+    const candidateById = new Map(candidates.map((dish) => [String(dish._id), dish]));
     if (!allDishIds.length) {
       const allVisibleCount = await KitchenDish.countDocuments(
         buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true }, isDinner: isDinnerMeal(mealType) })
@@ -704,9 +744,19 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       ? await getRecentWeeksDishIds(effectiveHouseholdId, monday, avoidRepeatsWeeks, mealType)
       : new Set();
 
+    const alreadyAssignedDishes = alreadyAssignedDishIds.length
+      ? await KitchenDish.find({ _id: { $in: alreadyAssignedDishIds } }).select("_id dishCategoryId").lean()
+      : [];
+    const usedCategoryIds = new Set(
+      alreadyAssignedDishes
+        .map((dish) => dishCategoryKey(dish))
+        .filter(Boolean)
+    );
+
     const randomizedDays = shuffleArray([...targetDays]);
     let assignedCount = 0;
     let relaxedCrossWeekRule = false;
+    let relaxedCategoryRule = false;
     let relaxedSameWeekRule = false;
     const members = await loadHouseholdMembers(effectiveHouseholdId);
     const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);
@@ -714,25 +764,40 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     const mustKeepSameWeekUnique = uniqueDishCapacity >= targetDays.length;
 
     for (const day of randomizedDays) {
-      const strictEligible = allDishIds.filter(
-        (dishId) => !usedInCurrentWeek.has(dishId) && !recentDishIds.has(dishId)
-      );
-      let pickedDishId = pickRandomItem(strictEligible);
+      const baseEligible = candidates.filter((dish) => !usedInCurrentWeek.has(String(dish._id)));
+      const groupA = baseEligible.filter((dish) => {
+        const categoryId = dishCategoryKey(dish);
+        if (categoryId && usedCategoryIds.has(categoryId)) return false;
+        return !recentDishIds.has(String(dish._id));
+      });
+      const groupB = baseEligible.filter((dish) => {
+        const categoryId = dishCategoryKey(dish);
+        return !categoryId || !usedCategoryIds.has(categoryId);
+      });
+      const groupC = baseEligible.filter((dish) => !recentDishIds.has(String(dish._id)));
 
-      if (!pickedDishId) {
-        const sameWeekEligible = allDishIds.filter((dishId) => !usedInCurrentWeek.has(dishId));
-        pickedDishId = pickRandomItem(sameWeekEligible);
+      let pickedDishId = null;
+      if (groupA.length) {
+        pickedDishId = String(pickRandomItem(groupA)?._id || "");
+      } else if (groupB.length) {
+        pickedDishId = String(pickRandomItem(groupB)?._id || "");
+        if (avoidRepeatsEnabled) relaxedCrossWeekRule = true;
+      } else if (groupC.length) {
+        pickedDishId = String(pickRandomItem(groupC)?._id || "");
+        relaxedCategoryRule = true;
+      } else if (baseEligible.length) {
+        pickedDishId = String(pickRandomItem(baseEligible)?._id || "");
+        relaxedCategoryRule = true;
+        if (avoidRepeatsEnabled) relaxedCrossWeekRule = true;
+      } else {
+        if (mustKeepSameWeekUnique) {
+          continue;
+        }
+        pickedDishId = String(pickRandomItem(candidates)?._id || "");
         if (pickedDishId) {
-          relaxedCrossWeekRule = true;
-        } else {
-          if (mustKeepSameWeekUnique) {
-            continue;
-          }
-          pickedDishId = pickRandomItem(allDishIds);
-          if (pickedDishId) {
-            relaxedCrossWeekRule = true;
-            relaxedSameWeekRule = true;
-          }
+          relaxedCategoryRule = true;
+          if (avoidRepeatsEnabled) relaxedCrossWeekRule = true;
+          relaxedSameWeekRule = true;
         }
       }
 
@@ -748,6 +813,10 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       day.includeSideIngredients = isDinnerMeal(mealType) ? false : true;
       applyAttendeesToDay(day, resolveDayAttendeeIds(day, defaultAttendeeIds, mealType));
       usedInCurrentWeek.add(pickedDishId);
+      const pickedCategoryId = dishCategoryKey(candidateById.get(pickedDishId));
+      if (pickedCategoryId) {
+        usedCategoryIds.add(pickedCategoryId);
+      }
       assignedCount += 1;
     }
 
@@ -778,6 +847,12 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
         `No se pudo evitar repetir platos en las ultimas ${avoidRepeatsWeeks} semanas por falta de platos disponibles. Se ha aplicado la regla hasta donde ha sido posible.`
       );
       warningCodes.push("avoid_repeats_relaxed");
+    }
+    if (relaxedCategoryRule) {
+      warnings.push(
+        "No se pudo evitar repetir categorías de plato en toda la semana por falta de variedad disponible. Se aplicó la regla hasta donde fue posible."
+      );
+      warningCodes.push("category_variety_relaxed");
     }
     if (relaxedSameWeekRule) {
       warnings.push(

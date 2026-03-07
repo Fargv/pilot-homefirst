@@ -72,6 +72,7 @@ export default function DishesPage() {
   const navigate = useNavigate();
   const [dishes, setDishes] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [dishCategories, setDishCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dishError, setDishError] = useState("");
   const [dishSuccess, setDishSuccess] = useState("");
@@ -173,6 +174,19 @@ export default function DishesPage() {
     loadCategories();
   }, []);
 
+  const loadDishCategories = async () => {
+    try {
+      const data = await apiRequest("/api/kitchen/dish-categories");
+      setDishCategories(data.categories || []);
+    } catch (err) {
+      setDishError(err.message || "No se pudieron cargar las categorías de plato.");
+    }
+  };
+
+  useEffect(() => {
+    loadDishCategories();
+  }, []);
+
   const startEdit = useCallback(
     (dish) => {
       setDishError("");
@@ -240,6 +254,13 @@ export default function DishesPage() {
     });
     return map;
   }, [dishes]);
+  const dishCategoryMap = useMemo(() => {
+    const map = new Map();
+    dishCategories.forEach((category) => {
+      if (category?._id) map.set(String(category._id), category);
+    });
+    return map;
+  }, [dishCategories]);
 
   const emptyMessage = useMemo(() => {
     if (dishes.length === 0) {
@@ -818,6 +839,8 @@ export default function DishesPage() {
                 .map((item) => item.displayName)
                 .filter(Boolean);
               const isInfoOpen = dishInfoOpenId === dish._id && !isInfoMobile;
+              const categoryKey = dish?.dishCategoryId?._id || dish?.dishCategoryId || "";
+              const dishCategory = categoryKey ? dishCategoryMap.get(String(categoryKey)) : null;
               return (
                 <article
                   className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
@@ -836,6 +859,9 @@ export default function DishesPage() {
                         </span>
                       ) : null}
                     </div>
+                    {!dish.sidedish ? (
+                      <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
+                    ) : null}
                   </div>
                   <div className="kitchen-dish-actions-bar">
                     <div className="kitchen-dish-actions">
@@ -986,6 +1012,7 @@ export default function DishesPage() {
           await loadDishes();
         }}
         categories={categories}
+        dishCategories={dishCategories}
         onCategoryCreated={onCategoryCreated}
         initialDish={activeDish}
         initialSidedish={initialSidedish}
