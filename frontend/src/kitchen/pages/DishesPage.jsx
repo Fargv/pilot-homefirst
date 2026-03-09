@@ -938,7 +938,6 @@ export default function DishesPage() {
                     </div>
                     {!dish.sidedish ? (
                       <div className="kitchen-dish-category-meta">
-                        <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
                         {showCategoryIcon ? (
                           <CategoryIcon
                             categoryCode={dishCategoryCode}
@@ -946,6 +945,7 @@ export default function DishesPage() {
                             title={dishCategory?.name || dishCategoryCode}
                           />
                         ) : null}
+                        <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
                       </div>
                     ) : null}
                   </div>

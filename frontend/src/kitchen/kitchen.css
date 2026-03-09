@@ -4487,14 +4487,20 @@ body {
 .kitchen-dish-category-meta {
   min-height: 32px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 4px;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  flex-wrap: wrap;
 }
 
 .kitchen-dish-category-icon {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
   opacity: 0.8;
+  flex: 0 0 auto;
 }
 
 .kitchen-card-subtitle {
