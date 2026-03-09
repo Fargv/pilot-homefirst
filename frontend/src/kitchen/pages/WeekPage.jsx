@@ -133,6 +133,15 @@ function CloseIcon(props) {
     </svg>
   );
 }
+function TodayIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M8 3.5v2.2M16 3.5v2.2M4.5 9h15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <rect x="4.5" y="5.8" width="15" height="14.7" rx="2.4" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="14" r="2.1" fill="currentColor" />
+    </svg>
+  );
+}
 
 const MAX_DISH_RESULTS = 8;
 const WEEK_MEAL_TAB_KEY = "kitchen_week_meal_tab";
@@ -254,6 +263,7 @@ export default function WeekPage() {
   const sideDishPickingRef = useRef({});
   const selectedDayRef = useRef(selectedDay);
   const hasInitializedRef = useRef(false);
+  const pendingJumpToCurrentRef = useRef(false);
   const assignIntentRef = useRef(null);
   const dismissedMissingWeekPromptRef = useRef(new Set());
   const loadRequestSeqRef = useRef(0);
@@ -567,7 +577,7 @@ export default function WeekPage() {
     const todayIndex = visibleDays.findIndex((day) => day.date?.slice(0, 10) === todayKey);
     const containsToday = todayIndex !== -1;
 
-    if (!hasInitializedRef.current) {
+    if (!hasInitializedRef.current || pendingJumpToCurrentRef.current) {
       const nextDay = containsToday ? todayKey : fallbackDay;
       setSelectedDay(nextDay);
       const targetIndex = containsToday && todayIndex >= 0 ? todayIndex : 0;
@@ -575,8 +585,12 @@ export default function WeekPage() {
       requestAnimationFrame(() => {
         const element = carouselRef.current;
         if (!element) return;
-        element.scrollTo({ left: targetIndex * element.clientWidth, behavior: "auto" });
+        element.scrollTo({
+          left: targetIndex * element.clientWidth,
+          behavior: pendingJumpToCurrentRef.current ? "smooth" : "auto"
+        });
       });
+      pendingJumpToCurrentRef.current = false;
       hasInitializedRef.current = true;
       return;
     }
@@ -1511,6 +1525,14 @@ export default function WeekPage() {
     setWeekStart((prev) => addDaysToISO(prev, days));
   };
 
+  const handleJumpToCurrentPeriod = useCallback(() => {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const currentWeekStart = getMondayISO();
+    pendingJumpToCurrentRef.current = true;
+    setWeekStart(currentWeekStart);
+    setSelectedDay(todayKey);
+  }, [setWeekStart]);
+
   const handleDismissMissingWeekPrompt = () => {
     dismissedMissingWeekPromptRef.current.add(weekStart);
     setMissingWeekPromptOpen(false);
@@ -1567,12 +1589,24 @@ export default function WeekPage() {
         <div className="kitchen-week-mobile-frame">
           <section className="kitchen-week-header">
             <div className="kitchen-week-header-actions">
-              <WeekNavigator
-                value={weekStart}
-                onChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
-                onPrevious={() => handleWeekShift(-7)}
-                onNext={() => handleWeekShift(7)}
-              />
+              <div className="kitchen-week-nav-row">
+                <WeekNavigator
+                  value={weekStart}
+                  onChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
+                  onPrevious={() => handleWeekShift(-7)}
+                  onNext={() => handleWeekShift(7)}
+                />
+                <button
+                  type="button"
+                  className="kitchen-week-now-button"
+                  onClick={handleJumpToCurrentPeriod}
+                  aria-label="Volver a hoy"
+                  title="Volver a hoy"
+                >
+                  <TodayIcon className="kitchen-week-now-icon" />
+                  <span>Hoy</span>
+                </button>
+              </div>
               {dinnersEnabled ? (
                 <div className="kitchen-meal-tabs" role="tablist" aria-label="Tipo de planificacion">
                   <button

@@ -1159,6 +1159,14 @@ body {
   align-items: center;
 }
 
+.kitchen-week-nav-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 .kitchen-week-mobile-frame {
   width: 100%;
   display: flex;
@@ -1241,6 +1249,45 @@ body {
 .kitchen-week-arrow:focus-visible {
   outline: 2px solid #6366f1;
   outline-offset: 2px;
+}
+
+.kitchen-week-now-button {
+  min-height: var(--kitchen-week-nav-control-height);
+  height: var(--kitchen-week-nav-control-height);
+  border-radius: 14px;
+  border: 1px solid rgba(176, 188, 229, 0.72);
+  background: linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
+  color: #344054;
+  box-shadow: 0 8px 16px rgba(88, 100, 167, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kitchen-week-now-button:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%);
+  border-color: rgba(147, 163, 221, 0.9);
+  color: #1d2939;
+}
+
+.kitchen-week-now-button:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.kitchen-week-now-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
 }
 
 .kitchen-title {
@@ -2158,6 +2205,11 @@ body {
     --kitchen-week-nav-control-height: 42px;
     gap: 8px;
     max-width: 100%;
+  }
+
+  .kitchen-week-now-button {
+    padding-inline: 10px;
+    font-size: 12px;
   }
 
   .kitchen-week-controls {

@@ -18,14 +18,12 @@ function normalizeWeekStart(value) {
 const ActiveWeekContext = createContext(null);
 
 export function ActiveWeekProvider({ children }) {
-  const [activeWeek, setActiveWeekState] = useState(() => normalizeWeekStart(localStorage.getItem("kitchen_active_week") || ""));
+  const [activeWeek, setActiveWeekState] = useState(() => normalizeWeekStart(""));
 
   const setActiveWeek = (valueOrUpdater) => {
     setActiveWeekState((prev) => {
       const resolved = typeof valueOrUpdater === "function" ? valueOrUpdater(prev) : valueOrUpdater;
-      const normalized = normalizeWeekStart(resolved);
-      localStorage.setItem("kitchen_active_week", normalized);
-      return normalized;
+      return normalizeWeekStart(resolved);
     });
   };
 
