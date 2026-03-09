@@ -10,6 +10,7 @@ import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
 import usersRouter from "./users/index.js";
 import adminRouter from "./kitchen/routes/admin.js";
 import testEmailRouter from "./routes/testEmail.js";
+import authRoutes from "./kitchen/routes/auth.js";
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use("/api/admin", adminRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/auth", authRoutes);
 app.use("/api", testEmailRouter);
 
 connectDb()

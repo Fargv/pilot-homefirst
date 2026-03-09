@@ -9,6 +9,8 @@ import { buildDisplayName, isValidEmail, normalizeEmail, normalizeInitials } fro
 import { generateUniqueHouseholdInviteCode, isValidInviteCodeFormat } from "../householdInviteCode.js";
 import { getWeekStart } from "../utils/dates.js";
 import { ensureWeekPlan } from "../weekPlanService.js";
+import { sendEmail } from "../../services/emailService.js";
+import { config } from "../../config.js";
 
 const DIOD_EMAIL = "admin@admin.com";
 
@@ -27,6 +29,33 @@ function parseBooleanWithDefault(value, fallback) {
 
 function hashInviteToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function hashResetPasswordToken(token) {
+  return crypto
+    .createHmac("sha256", config.resetPasswordTokenSecret)
+    .update(token)
+    .digest("hex");
+}
+
+function buildResetPasswordEmail(resetUrl) {
+  return `
+    <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 560px; margin: 0 auto;">
+      <h1 style="font-size: 24px; margin-bottom: 16px; color: #111827;">HomeFirst</h1>
+      <p style="margin: 0 0 16px;">We received a request to reset your password.</p>
+      <p style="margin: 0 0 24px;">Use the button below to choose a new password for your HomeFirst account.</p>
+      <p style="margin: 0 0 24px;">
+        <a
+          href="${resetUrl}"
+          style="display: inline-block; padding: 12px 20px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600;"
+        >
+          Reset password
+        </a>
+      </p>
+      <p style="margin: 0 0 16px;">This link expires in 1 hour.</p>
+      <p style="margin: 0;">If you did not request this change, you can safely ignore this email.</p>
+    </div>
+  `;
 }
 
 async function findActiveInvitationByToken(token) {
@@ -350,6 +379,86 @@ router.get("/me", requireAuth, async (req, res) => {
     });
   } catch {
     return res.status(500).json({ ok: false, error: "No se pudo cargar el perfil." });
+  }
+});
+
+router.post("/forgot-password", async (req, res) => {
+  const genericResponse = {
+    success: true,
+    message: "If an account exists for that email, a password reset link has been sent."
+  };
+  let user = null;
+
+  try {
+    const normalizedEmail = normalizeEmail(req.body?.email);
+
+    if (!normalizedEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required."
+      });
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is invalid."
+      });
+    }
+
+    console.log("[auth] Forgot password requested", { email: normalizedEmail });
+
+    user = await KitchenUser.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      console.log("[auth] Forgot password requested for non-existing email", { email: normalizedEmail });
+      return res.json(genericResponse);
+    }
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = hashResetPasswordToken(rawToken);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = expiresAt;
+    await user.save();
+
+    const resetUrl = `${String(config.appUrl || "").replace(/\/$/, "")}/reset-password?token=${rawToken}`;
+
+    await sendEmail({
+      to: normalizedEmail,
+      subject: "HomeFirst password reset",
+      html: buildResetPasswordEmail(resetUrl)
+    });
+
+    console.log("[auth] Forgot password email sent", {
+      email: normalizedEmail,
+      expiresAt: expiresAt.toISOString()
+    });
+
+    return res.json(genericResponse);
+  } catch (error) {
+    if (user?.resetPasswordToken) {
+      try {
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+      } catch (cleanupError) {
+        console.error("[auth] Forgot password cleanup failed", {
+          email: user.email,
+          message: cleanupError?.message
+        });
+      }
+    }
+
+    console.error("[auth] Forgot password failed", {
+      email: normalizeEmail(req.body?.email),
+      message: error?.message
+    });
+    return res.status(500).json({
+      success: false,
+      message: "Unable to process forgot password request."
+    });
   }
 });
 

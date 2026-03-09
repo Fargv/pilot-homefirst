@@ -21,6 +21,8 @@ export const config = {
     "http://localhost:5173",
 
   jwtSecret: process.env.JWT_SECRET || "dev-kitchen-secret",
+  resetPasswordTokenSecret:
+    process.env.RESET_PASSWORD_TOKEN_SECRET || "dev-reset-password-token-secret",
 
   brevo: {
     apiKey: process.env.BREVO_API_KEY
