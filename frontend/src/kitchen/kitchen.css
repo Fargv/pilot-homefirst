@@ -4475,12 +4475,16 @@ body {
   object-fit: contain;
 }
 
-.kitchen-dish-special-inline-icon {
+.kitchen-dish-special-inline-star {
   display: inline-flex;
-  width: 16px;
-  height: 16px;
-  margin-top: 2px;
-  opacity: 0.92;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  margin-top: 3px;
+  font-size: 13px;
+  line-height: 1;
+  color: #ca8a04;
   flex: 0 0 auto;
 }
 
@@ -4496,10 +4500,10 @@ body {
 }
 
 .kitchen-dish-category-icon {
-  width: 19px;
-  height: 19px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
-  opacity: 0.8;
+  opacity: 0.95;
   flex: 0 0 auto;
 }
 

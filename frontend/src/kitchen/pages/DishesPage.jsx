@@ -917,7 +917,7 @@ export default function DishesPage() {
               const categoryKey = dish?.dishCategoryId?._id || dish?.dishCategoryId || "";
               const dishCategory = categoryKey ? dishCategoryMap.get(String(categoryKey)) : null;
               const dishCategoryCode = resolveCategoryCode(dishCategory);
-              const showCategoryIcon = !dish.sidedish && !dish.special && Boolean(dishCategoryCode);
+              const showCategoryIcon = !dish.sidedish && Boolean(dishCategoryCode);
               return (
                 <article
                   className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
@@ -928,11 +928,13 @@ export default function DishesPage() {
                       <div className={`kitchen-dish-title-inline ${dish.special ? "is-special" : ""}`}>
                         <h3 className="kitchen-dish-name">{dish.name}</h3>
                         {dish.special ? (
-                          <CategoryIcon
-                            categoryCode="especial"
-                            className="kitchen-dish-special-inline-icon"
+                          <span
+                            className="kitchen-dish-special-inline-star"
                             title="Plato especial (excluido de randomización)"
-                          />
+                            aria-label="Plato especial"
+                          >
+                            ★
+                          </span>
                         ) : null}
                       </div>
                     </div>

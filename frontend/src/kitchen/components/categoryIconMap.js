@@ -6,7 +6,6 @@ import meatIcon from "../../assets/category-icons/Meat_tp.png";
 import pastaIcon from "../../assets/category-icons/Pasta_tp.png";
 import riceIcon from "../../assets/category-icons/Rice_tp.png";
 import sidesIcon from "../../assets/category-icons/Sides_tp.png";
-import specialIcon from "../../assets/category-icons/Special_tp.png";
 import vegetablesIcon from "../../assets/category-icons/Vegetables_tp.png";
 
 const CATEGORY_ICON_BY_CODE = {
@@ -18,16 +17,14 @@ const CATEGORY_ICON_BY_CODE = {
   arroz: riceIcon,
   verduras: vegetablesIcon,
   huevos: eggsIcon,
-  guarniciones: sidesIcon,
-  especial: specialIcon
+  guarniciones: sidesIcon
 };
 
 const CATEGORY_CODE_ALIASES = {
   pollo: "pollo_aves",
   ave: "pollo_aves",
   aves: "pollo_aves",
-  guarnicion: "guarniciones",
-  especiales: "especial"
+  guarnicion: "guarniciones"
 };
 
 export function normalizeCategoryCode(rawValue) {
