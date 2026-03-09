@@ -1,32 +1,11 @@
-import nodemailer from "nodemailer";
-import { config } from "./config.js";
-
-export function createTransport() {
-  if (!config.brevo.user || !config.brevo.pass) {
-    throw new Error("Faltan credenciales SMTP de Brevo (BREVO_SMTP_USER / BREVO_SMTP_PASS).");
-  }
-
-  return nodemailer.createTransport({
-    host: config.brevo.host,
-    port: config.brevo.port,
-    secure: false,
-    auth: {
-      user: config.brevo.user,
-      pass: config.brevo.pass
-    }
-  });
-}
+import { sendEmail } from "./services/emailService.js";
 
 export async function sendTestEmail({ to }) {
-  const transporter = createTransport();
-
-  const info = await transporter.sendMail({
-    from: config.mailFrom,
+  const response = await sendEmail({
     to,
-    subject: "Pilot test ✅",
-    text: "Si lees esto, Brevo SMTP funciona.",
-    html: "<p>Si lees esto, <b>Brevo SMTP</b> funciona ✅</p>"
+    subject: "Pilot test",
+    html: "<p>If you can read this, <b>Brevo transactional email</b> is working.</p>"
   });
 
-  return info.messageId;
+  return response?.messageId || response?.messageIds?.[0] || null;
 }

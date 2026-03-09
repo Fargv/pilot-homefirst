@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+
 dotenv.config();
 
 export const config = {
@@ -8,20 +9,26 @@ export const config = {
   mongodbUri: process.env.MONGODB_URI,
 
   corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
-  frontendUrl: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || "http://localhost:5173",
+  frontendUrl:
+    process.env.APP_URL ||
+    process.env.FRONTEND_URL ||
+    process.env.CORS_ORIGIN ||
+    "http://localhost:5173",
+  appUrl:
+    process.env.APP_URL ||
+    process.env.FRONTEND_URL ||
+    process.env.CORS_ORIGIN ||
+    "http://localhost:5173",
 
   jwtSecret: process.env.JWT_SECRET || "dev-kitchen-secret",
 
   brevo: {
-    host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
-    port: Number(process.env.BREVO_SMTP_PORT || 587),
-    user: process.env.BREVO_SMTP_USER,
-    pass: process.env.BREVO_SMTP_PASS
+    apiKey: process.env.BREVO_API_KEY
   },
 
-  mailFrom: process.env.MAIL_FROM || "Pilot <no-reply@example.com>"
+  mailFrom: process.env.EMAIL_FROM || process.env.MAIL_FROM || "Pilot <no-reply@example.com>"
 };
 
 if (!config.mongodbUri) {
-  console.warn("⚠️ Falta MONGODB_URI (configuración pendiente).");
+  console.warn("Warning: MONGODB_URI is missing.");
 }
