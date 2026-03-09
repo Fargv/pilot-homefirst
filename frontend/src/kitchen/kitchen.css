@@ -4436,6 +4436,15 @@ body {
   align-items: flex-start;
 }
 
+.kitchen-dish-title-inline {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+}
+
 .kitchen-dish-card .kitchen-dish-name {
   width: 100%;
   margin: 0;
@@ -4451,20 +4460,41 @@ body {
   word-break: break-word;
 }
 
-.kitchen-dish-special-pill {
+.kitchen-dish-title-inline .kitchen-dish-name {
+  width: auto;
+  max-width: 100%;
+}
+
+.kitchen-dish-title-inline.is-special .kitchen-dish-name {
+  max-width: calc(100% - 22px);
+}
+
+.kitchen-category-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.kitchen-dish-special-inline-icon {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  margin-left: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #a16207;
-  background: #fef3c7;
-  border: 1px solid #fde68a;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  opacity: 0.92;
   flex: 0 0 auto;
+}
+
+.kitchen-dish-category-meta {
+  min-height: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.kitchen-dish-category-icon {
+  opacity: 0.8;
 }
 
 .kitchen-card-subtitle {

@@ -5,6 +5,8 @@ import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import DishModal from "../components/DishModal.jsx";
 import IngredientModal from "../components/IngredientModal.jsx";
+import CategoryIcon from "../components/CategoryIcon.jsx";
+import { resolveCategoryCode } from "../components/categoryIconMap.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
 const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
@@ -914,6 +916,8 @@ export default function DishesPage() {
               const isInfoOpen = dishInfoOpenId === dish._id && !isInfoMobile;
               const categoryKey = dish?.dishCategoryId?._id || dish?.dishCategoryId || "";
               const dishCategory = categoryKey ? dishCategoryMap.get(String(categoryKey)) : null;
+              const dishCategoryCode = resolveCategoryCode(dishCategory);
+              const showCategoryIcon = !dish.sidedish && !dish.special && Boolean(dishCategoryCode);
               return (
                 <article
                   className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
@@ -921,19 +925,28 @@ export default function DishesPage() {
                 >
                   <div className="kitchen-dish-main">
                     <div className="kitchen-dish-title-row">
-                      <h3 className="kitchen-dish-name">{dish.name}</h3>
-                      {dish.special ? (
-                        <span
-                          className="kitchen-dish-special-pill"
-                          title="Plato especial (excluido de randomización)"
-                          aria-label="Plato especial"
-                        >
-                          ★
-                        </span>
-                      ) : null}
+                      <div className={`kitchen-dish-title-inline ${dish.special ? "is-special" : ""}`}>
+                        <h3 className="kitchen-dish-name">{dish.name}</h3>
+                        {dish.special ? (
+                          <CategoryIcon
+                            categoryCode="especial"
+                            className="kitchen-dish-special-inline-icon"
+                            title="Plato especial (excluido de randomización)"
+                          />
+                        ) : null}
+                      </div>
                     </div>
                     {!dish.sidedish ? (
-                      <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
+                      <div className="kitchen-dish-category-meta">
+                        <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
+                        {showCategoryIcon ? (
+                          <CategoryIcon
+                            categoryCode={dishCategoryCode}
+                            className="kitchen-dish-category-icon"
+                            title={dishCategory?.name || dishCategoryCode}
+                          />
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
                   <div className="kitchen-dish-actions-bar">
