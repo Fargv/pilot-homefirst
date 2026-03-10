@@ -16,6 +16,7 @@ import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
 import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
 import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
 import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
+import DevEnvironmentBanner from "./components/DevEnvironmentBanner.jsx";
 import "./kitchen/kitchen.css";
 import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 
@@ -78,8 +79,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ActiveWeekProvider>
-        <BootstrapRedirect />
-        <Routes>
+          <DevEnvironmentBanner />
+          <BootstrapRedirect />
+          <Routes>
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/bootstrap" element={<BootstrapPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -148,7 +150,7 @@ export default function App() {
             )}
           />
           <Route path="*" element={<HomeRedirect />} />
-        </Routes>
+          </Routes>
         </ActiveWeekProvider>
       </AuthProvider>
     </BrowserRouter>

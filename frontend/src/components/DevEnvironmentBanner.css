@@ -1,0 +1,49 @@
+.dev-environment-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 16px;
+  background: rgba(217, 119, 6, 0.9);
+  color: #fff7ed;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 24px rgba(120, 53, 15, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.dev-environment-banner__text {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.dev-environment-banner-spacer {
+  height: 38px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .dev-environment-banner {
+    min-height: 42px;
+    padding: 8px 12px;
+  }
+
+  .dev-environment-banner__text {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+  }
+
+  .dev-environment-banner-spacer {
+    height: 42px;
+  }
+}
