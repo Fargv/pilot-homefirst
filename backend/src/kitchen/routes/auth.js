@@ -462,6 +462,71 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
+router.post("/reset-password", async (req, res) => {
+  try {
+    const rawToken = String(req.body?.token || "").trim();
+    const newPassword = String(req.body?.newPassword || "");
+
+    if (!rawToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Token is required."
+      });
+    }
+
+    if (!newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password is required."
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters long."
+      });
+    }
+
+    const hashedToken = hashResetPasswordToken(rawToken);
+
+    console.log("[auth] Reset password requested");
+
+    const user = await KitchenUser.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      console.warn("[auth] Reset password failed: invalid or expired token");
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token."
+      });
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    console.log("[auth] Password reset completed", { userId: user._id.toString() });
+
+    return res.json({
+      success: true,
+      message: "Password has been reset successfully."
+    });
+  } catch (error) {
+    console.error("[auth] Reset password failed", {
+      message: error?.message
+    });
+    return res.status(500).json({
+      success: false,
+      message: "Unable to reset password."
+    });
+  }
+});
+
 export default router;
 
 
