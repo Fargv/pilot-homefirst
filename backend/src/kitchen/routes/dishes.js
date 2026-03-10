@@ -283,7 +283,7 @@ router.get("/", requireAuth, async (req, res) => {
 router.post("/", requireAuth, async (req, res) => {
   try {
     const body = req.body || {};
-    const { name, ingredients, sidedish, special, isDinner, scope, active, isArchived } = body;
+    const { name, ingredients, sidedish, special, isDinner, scope, active, isArchived, allowRandom } = body;
     const dishCategoryId = body?.dishCategoryId ?? null;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
 
@@ -291,6 +291,7 @@ router.post("/", requireAuth, async (req, res) => {
     const isSideDish = parseBooleanField(sidedish, false);
     const isSpecial = parseBooleanField(special, false);
     const dinnerDish = parseBooleanField(isDinner, false);
+    const randomAllowed = parseBooleanField(allowRandom, true);
     const isActive = parseBooleanField(active, true);
     const nextIsArchived = parseBooleanField(isArchived, false);
     const isDiod = isDiodUser(req.kitchenUser);
@@ -312,6 +313,7 @@ router.post("/", requireAuth, async (req, res) => {
       sidedish: isSideDish,
       isDinner: dinnerDish,
       special: isSpecial,
+      allowRandom: randomAllowed,
       active: isActive,
       isArchived: nextIsArchived,
       deletedAt: null,
@@ -342,7 +344,7 @@ router.post("/", requireAuth, async (req, res) => {
 router.put("/:id", requireAuth, async (req, res) => {
   try {
     const body = req.body || {};
-    const { name, ingredients, sidedish, special, isDinner, active, isArchived } = body;
+    const { name, ingredients, sidedish, special, isDinner, active, isArchived, allowRandom } = body;
     const hasDishCategoryInput = Object.prototype.hasOwnProperty.call(body, "dishCategoryId");
     const dishCategoryId = hasDishCategoryInput ? body.dishCategoryId : undefined;
     const optionalHouseholdId = getOptionalHouseholdId(req.user);
@@ -356,6 +358,7 @@ router.put("/:id", requireAuth, async (req, res) => {
       special: parseBooleanField(special, Boolean(dish.special)),
       isDinner: parseBooleanField(isDinner, Boolean(dish.isDinner)),
       sidedish: parseBooleanField(sidedish, Boolean(dish.sidedish)),
+      allowRandom: parseBooleanField(allowRandom, dish.allowRandom !== false),
       isArchived: parseBooleanField(isArchived, Boolean(dish.isArchived))
     };
     const resolvedDishCategoryId = dishCategoryId === undefined

@@ -96,6 +96,7 @@ export async function ensureStarterMasterDishes() {
       sidedish: Boolean(seed.sidedish),
       isDinner: Boolean(seed.isDinner),
       special: Boolean(seed.special),
+      allowRandom: true,
       active: true,
       isArchived: false,
       deletedAt: null,

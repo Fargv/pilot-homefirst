@@ -43,6 +43,16 @@ function normalizeIngredientOverrides(ingredientOverrides = []) {
   }));
 }
 
+function buildRandomizableMainDishFilter(mealType) {
+  return {
+    sidedish: { $ne: true },
+    special: { $ne: true },
+    allowRandom: { $ne: false },
+    isDinner: isDinnerMeal(mealType),
+    active: true
+  };
+}
+
 function normalizeBaseIngredientExclusions(values = []) {
   return dedupeIds(
     (Array.isArray(values) ? values : [])
@@ -585,12 +595,7 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
     const allEligibleRaw = await resolveDishCatalogForHousehold({
       Model: KitchenDish,
       householdId: effectiveHouseholdId,
-      filter: {
-        sidedish: { $ne: true },
-        special: { $ne: true },
-        isDinner: isDinnerMeal(mealType),
-        active: true
-      }
+      filter: buildRandomizableMainDishFilter(mealType)
     });
     const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(allEligibleRaw);
     const allEligible = allEligibleRaw.filter((dish) => {
@@ -601,11 +606,7 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       const allVisible = await resolveDishCatalogForHousehold({
         Model: KitchenDish,
         householdId: effectiveHouseholdId,
-        filter: {
-          sidedish: { $ne: true },
-          isDinner: isDinnerMeal(mealType),
-          active: true
-        }
+        filter: buildRandomizableMainDishFilter(mealType)
       });
       const allVisibleCount = allVisible.length;
       if (allVisibleCount > 0) {
@@ -735,12 +736,7 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     const candidatesRaw = await resolveDishCatalogForHousehold({
       Model: KitchenDish,
       householdId: effectiveHouseholdId,
-      filter: {
-        sidedish: { $ne: true },
-        special: { $ne: true },
-        isDinner: isDinnerMeal(mealType),
-        active: true
-      }
+      filter: buildRandomizableMainDishFilter(mealType)
     });
     const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(candidatesRaw);
     const candidates = candidatesRaw.filter((dish) => {
@@ -754,11 +750,7 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       const allVisible = await resolveDishCatalogForHousehold({
         Model: KitchenDish,
         householdId: effectiveHouseholdId,
-        filter: {
-          sidedish: { $ne: true },
-          isDinner: isDinnerMeal(mealType),
-          active: true
-        }
+        filter: buildRandomizableMainDishFilter(mealType)
       });
       const allVisibleCount = allVisible.length;
       if (allVisibleCount > 0) {

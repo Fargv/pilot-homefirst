@@ -96,6 +96,7 @@ export default function DishesPage() {
   const [assignDate, setAssignDate] = useState("");
   const [deleteDishModal, setDeleteDishModal] = useState({ open: false, dish: null, deleting: false });
   const [dishInfoOpenId, setDishInfoOpenId] = useState(null);
+  const [dishTogglePendingId, setDishTogglePendingId] = useState("");
   const [isInfoMobile, setIsInfoMobile] = useState(false);
   const infoPopoverRef = useRef(null);
   const ingredientInfoPopoverRef = useRef(null);
@@ -210,6 +211,70 @@ export default function DishesPage() {
     setIsModalOpen(false);
     setActiveDish(null);
   };
+
+  const persistDishUpdate = useCallback(
+    async (dish, overrides = {}) => {
+      if (!dish?._id) return null;
+      const payload = {
+        name: dish.name || "",
+        scope: dish.scope || "household",
+        active: dish.active !== false,
+        isArchived: Boolean(dish.isArchived),
+        dishCategoryId: dish.sidedish ? null : (dish?.dishCategoryId?._id || dish?.dishCategoryId || null),
+        sidedish: Boolean(dish.sidedish),
+        isDinner: Boolean(dish.isDinner),
+        special: Boolean(dish.special),
+        allowRandom: dish.allowRandom !== false,
+        ingredients: (dish.ingredients || []).map((item) => ({
+          ingredientId: item?.ingredientId,
+          displayName: item?.displayName,
+          canonicalName: item?.canonicalName
+        })),
+        ...overrides
+      };
+      const data = await apiRequest(`/api/kitchen/dishes/${dish._id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload)
+      });
+      return data?.dish || null;
+    },
+    []
+  );
+
+  const toggleDishAllowRandom = useCallback(
+    async (dish, nextAllowRandom) => {
+      if (!dish?._id || dishTogglePendingId === dish._id) return;
+      const previousDishes = dishes;
+      const nextDish = { ...dish, allowRandom: nextAllowRandom };
+
+      setDishTogglePendingId(dish._id);
+      setDishes((prev) => prev.map((entry) => (entry._id === dish._id ? nextDish : entry)));
+      if (activeDish?._id === dish._id) {
+        setActiveDish(nextDish);
+      }
+
+      try {
+        const savedDish = await persistDishUpdate(dish, { allowRandom: nextAllowRandom });
+        if (savedDish?._id) {
+          setDishes((prev) => prev.map((entry) => (entry._id === savedDish._id ? savedDish : entry)));
+          if (activeDish?._id === savedDish._id) {
+            setActiveDish(savedDish);
+          }
+        } else {
+          await loadDishes();
+        }
+      } catch (err) {
+        setDishes(previousDishes);
+        if (activeDish?._id === dish._id) {
+          setActiveDish(dish);
+        }
+        setDishError(err.message || "No se pudo actualizar la randomizaciÃ³n del plato.");
+      } finally {
+        setDishTogglePendingId("");
+      }
+    },
+    [activeDish, dishTogglePendingId, dishes, persistDishUpdate]
+  );
 
   const onCategoryCreated = async (name, colors = null) => {
     const data = await apiRequest("/api/categories", {
@@ -918,6 +983,8 @@ export default function DishesPage() {
               const dishCategory = categoryKey ? dishCategoryMap.get(String(categoryKey)) : null;
               const dishCategoryCode = resolveCategoryCode(dishCategory);
               const showCategoryIcon = !dish.sidedish && Boolean(dishCategoryCode);
+              const randomEnabled = dish.allowRandom !== false;
+              const toggleDisabled = dishTogglePendingId === dish._id;
               return (
                 <article
                   className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
@@ -950,8 +1017,26 @@ export default function DishesPage() {
                         <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
                       </div>
                     ) : null}
+                    <div className="kitchen-dish-random-meta">
+                      <span className={`kitchen-dish-random-badge ${randomEnabled ? "is-enabled" : "is-disabled"}`}>
+                        {randomEnabled ? "Randomizable" : "Fuera de randomizaciÃ³n"}
+                      </span>
+                    </div>
                   </div>
                   <div className="kitchen-dish-actions-bar">
+                    <label className={`kitchen-dish-random-toggle ${toggleDisabled ? "is-loading" : ""}`}>
+                      <span className="kitchen-dish-random-toggle-copy">Permitir en randomizaciÃ³n</span>
+                      <span className="kitchen-toggle">
+                        <input
+                          type="checkbox"
+                          className="kitchen-toggle-input"
+                          checked={randomEnabled}
+                          disabled={toggleDisabled}
+                          onChange={(event) => toggleDishAllowRandom(dish, event.target.checked)}
+                        />
+                        <span className="kitchen-toggle-track" aria-hidden="true" />
+                      </span>
+                    </label>
                     <div className="kitchen-dish-actions">
                       <div className="kitchen-dish-info-wrap">
                         <button

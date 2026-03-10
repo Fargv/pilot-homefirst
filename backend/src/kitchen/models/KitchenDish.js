@@ -25,6 +25,7 @@ const KitchenDishSchema = new mongoose.Schema(
     sidedish: { type: Boolean, default: false },
     isDinner: { type: Boolean, default: false },
     special: { type: Boolean, default: false },
+    allowRandom: { type: Boolean, default: true },
     active: { type: Boolean, default: true },
     deletedAt: { type: Date, default: null },
     isArchived: { type: Boolean, default: false },

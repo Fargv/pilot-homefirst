@@ -10,6 +10,7 @@ const EMPTY_FORM = {
   sidedish: false,
   isDinner: false,
   special: false,
+  allowRandom: true,
   active: true,
   isArchived: false
 };
@@ -95,6 +96,7 @@ export default function DishModal({
           sidedish: Boolean(initialDish.sidedish),
           isDinner: Boolean(initialDish.isDinner),
           special: Boolean(initialDish.special),
+          allowRandom: initialDish.allowRandom !== false,
           active: initialDish.active !== false,
           isArchived: Boolean(initialDish.isArchived)
         });
@@ -107,6 +109,7 @@ export default function DishModal({
           sidedish: Boolean(initialSidedish),
           isDinner: Boolean(initialIsDinner),
           special: false,
+          allowRandom: true,
           active: true,
           isArchived: false
         });
@@ -150,6 +153,7 @@ export default function DishModal({
         sidedish: form.sidedish,
         isDinner: form.isDinner,
         special: form.special,
+        allowRandom: form.allowRandom,
         ingredients: (form.ingredients || []).map((item) => ({
           ingredientId: item.ingredientId,
           displayName: item.displayName,
@@ -300,6 +304,24 @@ export default function DishModal({
               </label>
             </div>
             <p className="kitchen-muted">No aparecera en sugerencias aleatorias.</p>
+          </div>
+          <div className="kitchen-field kitchen-toggle-field">
+            <div className="kitchen-toggle-row">
+              <span className="kitchen-label">Permitir en randomizaciÃ³n</span>
+              <label className="kitchen-toggle" htmlFor="dish-randomswitch">
+                <input
+                  id="dish-randomswitch"
+                  type="checkbox"
+                  className="kitchen-toggle-input"
+                  checked={form.allowRandom}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, allowRandom: event.target.checked }))
+                  }
+                />
+                <span className="kitchen-toggle-track" aria-hidden="true" />
+              </label>
+            </div>
+            <p className="kitchen-muted">Si lo desactivas, este plato nunca entrara en randomizaciones.</p>
           </div>
           <div className="kitchen-field kitchen-dish-ingredients">
             <span className="kitchen-label">Ingredientes</span>
