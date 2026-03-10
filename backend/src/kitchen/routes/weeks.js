@@ -15,6 +15,7 @@ import {
 import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
 import { rebuildShoppingList } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
+import { resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 
 const router = express.Router();
 
@@ -48,20 +49,6 @@ function normalizeBaseIngredientExclusions(values = []) {
       .map((value) => String(value || "").trim().toLowerCase())
       .filter(Boolean)
   );
-}
-
-function buildDishVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
-  const hasActiveFilter = Object.prototype.hasOwnProperty.call(extraFilter, "active");
-  return {
-    ...extraFilter,
-    ...(hasActiveFilter ? {} : { active: true }),
-    isArchived: { $ne: true },
-    $or: [
-      { scope: CATALOG_SCOPES.MASTER },
-      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
-      { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
-    ]
-  };
 }
 
 async function rebuildShoppingListBestEffort({ monday, effectiveHouseholdId, context }) {
@@ -212,11 +199,11 @@ async function hydrateLeftoversDishNames(plan, effectiveHouseholdId) {
       .filter(Boolean)
   );
   if (!leftoversDishIds.length) return;
-  const dishes = await KitchenDish.find(
-    buildDishVisibilityFilter(effectiveHouseholdId, { _id: { $in: leftoversDishIds } })
-  )
-    .select("_id name")
-    .lean();
+  const dishes = await resolveDishCatalogForHousehold({
+    Model: KitchenDish,
+    householdId: effectiveHouseholdId,
+    ids: leftoversDishIds
+  });
   const nameById = new Map(dishes.map((dish) => [String(dish._id), dish.name]));
   for (const day of plan.days || []) {
     if (!day?.leftoversSourceDishId) continue;
@@ -383,22 +370,32 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     }
 
     if (mainDishId) {
-      const mainDish = await KitchenDish.findOne(
-        buildDishVisibilityFilter(effectiveHouseholdId, {
-          _id: mainDishId,
+      const [mainDish] = await resolveDishCatalogForHousehold({
+        Model: KitchenDish,
+        householdId: effectiveHouseholdId,
+        ids: [mainDishId],
+        filter: {
           sidedish: { $ne: true },
-          isDinner: isDinnerMeal(mealType)
-        })
-      ).select("_id");
+          isDinner: isDinnerMeal(mealType),
+          active: true
+        }
+      });
       if (!mainDish) {
         return res.status(400).json({ ok: false, error: "El plato principal no pertenece a este hogar." });
       }
     }
 
     if (sideDishId) {
-      const sideDish = await KitchenDish.findOne(
-        buildDishVisibilityFilter(effectiveHouseholdId, { _id: sideDishId, sidedish: true, isDinner: isDinnerMeal(mealType) })
-      ).select("_id");
+      const [sideDish] = await resolveDishCatalogForHousehold({
+        Model: KitchenDish,
+        householdId: effectiveHouseholdId,
+        ids: [sideDishId],
+        filter: {
+          sidedish: true,
+          isDinner: isDinnerMeal(mealType),
+          active: true
+        }
+      });
       if (!sideDish) {
         return res.status(400).json({ ok: false, error: "La guarnicion no pertenece a este hogar." });
       }
@@ -455,11 +452,12 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       day.leftoversSourceMealType = leftoversSourceMealType ? normalizeMealType(leftoversSourceMealType) : null;
       day.leftoversSourceDishId = leftoversSourceDishId || null;
       if (day.leftoversSourceDishId) {
-        const sourceDish = await KitchenDish.findOne(
-          buildDishVisibilityFilter(effectiveHouseholdId, { _id: day.leftoversSourceDishId })
-        )
-          .select("name")
-          .lean();
+        const [sourceDish] = await resolveDishCatalogForHousehold({
+          Model: KitchenDish,
+          householdId: effectiveHouseholdId,
+          ids: [day.leftoversSourceDishId],
+          filter: { active: true }
+        });
         day.leftoversSourceDishName = sourceDish?.name || null;
       } else {
         day.leftoversSourceDishName = null;
@@ -584,21 +582,32 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       .map((dishId) => String(dishId));
     const usedMainDishIds = new Set(previouslyAssignedDishIds);
 
-    const baseDishFilter = buildDishVisibilityFilter(effectiveHouseholdId, {
-      sidedish: { $ne: true },
-      special: { $ne: true },
-      isDinner: isDinnerMeal(mealType)
+    const allEligibleRaw = await resolveDishCatalogForHousehold({
+      Model: KitchenDish,
+      householdId: effectiveHouseholdId,
+      filter: {
+        sidedish: { $ne: true },
+        special: { $ne: true },
+        isDinner: isDinnerMeal(mealType),
+        active: true
+      }
     });
-    const allEligibleRaw = await KitchenDish.find(baseDishFilter).select("_id name householdId scope dishCategoryId").lean();
     const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(allEligibleRaw);
     const allEligible = allEligibleRaw.filter((dish) => {
       const categoryId = dishCategoryKey(dish);
       return !categoryId || !excludedGuarnicionesCategoryIds.has(categoryId);
     });
     if (!allEligible.length) {
-      const allVisibleCount = await KitchenDish.countDocuments(
-        buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true }, isDinner: isDinnerMeal(mealType) })
-      );
+      const allVisible = await resolveDishCatalogForHousehold({
+        Model: KitchenDish,
+        householdId: effectiveHouseholdId,
+        filter: {
+          sidedish: { $ne: true },
+          isDinner: isDinnerMeal(mealType),
+          active: true
+        }
+      });
+      const allVisibleCount = allVisible.length;
       if (allVisibleCount > 0) {
         return res.json({ ok: true, dish: null, reason: "only_special" });
       }
@@ -615,7 +624,11 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       : new Set();
 
     const previouslyAssignedDishes = previouslyAssignedDishIds.length
-      ? await KitchenDish.find({ _id: { $in: previouslyAssignedDishIds } }).select("_id dishCategoryId").lean()
+      ? await resolveDishCatalogForHousehold({
+          Model: KitchenDish,
+          householdId: effectiveHouseholdId,
+          ids: previouslyAssignedDishIds
+        })
       : [];
     const usedCategoryIds = new Set(
       previouslyAssignedDishes
@@ -719,15 +732,16 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       .map((dishId) => String(dishId));
     const usedInCurrentWeek = new Set(alreadyAssignedDishIds);
 
-    const candidatesRaw = await KitchenDish.find(
-      buildDishVisibilityFilter(effectiveHouseholdId, {
+    const candidatesRaw = await resolveDishCatalogForHousehold({
+      Model: KitchenDish,
+      householdId: effectiveHouseholdId,
+      filter: {
         sidedish: { $ne: true },
         special: { $ne: true },
-        isDinner: isDinnerMeal(mealType)
-      })
-    )
-      .select("_id dishCategoryId")
-      .lean();
+        isDinner: isDinnerMeal(mealType),
+        active: true
+      }
+    });
     const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(candidatesRaw);
     const candidates = candidatesRaw.filter((dish) => {
       const categoryId = dishCategoryKey(dish);
@@ -737,9 +751,16 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     const allDishIds = candidates.map((dish) => String(dish._id));
     const candidateById = new Map(candidates.map((dish) => [String(dish._id), dish]));
     if (!allDishIds.length) {
-      const allVisibleCount = await KitchenDish.countDocuments(
-        buildDishVisibilityFilter(effectiveHouseholdId, { sidedish: { $ne: true }, isDinner: isDinnerMeal(mealType) })
-      );
+      const allVisible = await resolveDishCatalogForHousehold({
+        Model: KitchenDish,
+        householdId: effectiveHouseholdId,
+        filter: {
+          sidedish: { $ne: true },
+          isDinner: isDinnerMeal(mealType),
+          active: true
+        }
+      });
+      const allVisibleCount = allVisible.length;
       if (allVisibleCount > 0) {
         return res.json({
           ok: true,
@@ -772,7 +793,11 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       : new Set();
 
     const alreadyAssignedDishes = alreadyAssignedDishIds.length
-      ? await KitchenDish.find({ _id: { $in: alreadyAssignedDishIds } }).select("_id dishCategoryId").lean()
+      ? await resolveDishCatalogForHousehold({
+          Model: KitchenDish,
+          householdId: effectiveHouseholdId,
+          ids: alreadyAssignedDishIds
+        })
       : [];
     const usedCategoryIds = new Set(
       alreadyAssignedDishes
@@ -1036,11 +1061,11 @@ router.get("/:weekStart/day/:date/leftovers", requireAuth, async (req, res) => {
     }
 
     const dishes = dishIds.size
-      ? await KitchenDish.find(
-        buildDishVisibilityFilter(effectiveHouseholdId, { _id: { $in: Array.from(dishIds) } })
-      )
-        .select("_id name")
-        .lean()
+      ? await resolveDishCatalogForHousehold({
+          Model: KitchenDish,
+          householdId: effectiveHouseholdId,
+          ids: Array.from(dishIds)
+        })
       : [];
     const dishNameById = new Map(dishes.map((dish) => [String(dish._id), dish.name]));
 
@@ -1219,9 +1244,11 @@ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
       applyAttendeesToDay(day, resolveDayAttendeeIds(day, defaultAttendeeIds, mealType));
     }
     const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId, day.leftoversSourceDishId]).filter(Boolean);
-    const dishes = await KitchenDish.find(
-      buildDishVisibilityFilter(effectiveHouseholdId, { _id: { $in: dishIds } })
-    );
+    const dishes = await resolveDishCatalogForHousehold({
+      Model: KitchenDish,
+      householdId: effectiveHouseholdId,
+      ids: dishIds
+    });
 
     res.json({ ok: true, weekStart: formatDateISO(monday), plan, dishes });
   } catch (error) {

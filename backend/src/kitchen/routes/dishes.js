@@ -8,14 +8,14 @@ import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
 import { getWeekStart } from "../utils/dates.js";
 import { requireAuth } from "../middleware.js";
-import { buildScopedFilter, getEffectiveHouseholdId, getOptionalHouseholdId, handleHouseholdError } from "../householdScope.js";
+import { getEffectiveHouseholdId, getOptionalHouseholdId, handleHouseholdError } from "../householdScope.js";
 import {
   CATALOG_SCOPES,
   clearHiddenMasterForHousehold,
   hideMasterForHousehold,
-  isDiodUser,
-  resolveCatalogForHousehold
+  isDiodUser
 } from "../utils/catalogScopes.js";
+import { getDishHiddenMasterType, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 
 const router = express.Router();
 const GUARNICIONES_FALLBACK_ID = "69ac7016c0755cd97c6a9b63";
@@ -61,20 +61,6 @@ async function resolveGuarnicionesCategoryId() {
   throw new Error("La categoría 'Guarniciones' no existe o está inactiva.");
 }
 
-function buildDishVisibilityFilter(householdId, extraFilter = {}) {
-  const hasActiveFilter = Object.prototype.hasOwnProperty.call(extraFilter, "active");
-  return {
-    ...extraFilter,
-    ...(hasActiveFilter ? {} : { active: true }),
-    isArchived: { $ne: true },
-    $or: [
-      { scope: CATALOG_SCOPES.MASTER },
-      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId },
-      { scope: CATALOG_SCOPES.OVERRIDE, householdId }
-    ]
-  };
-}
-
 function shouldIncludeMainInShopping(day) {
   if (day?.isLeftovers) return false;
   if (typeof day?.includeMainIngredients === "boolean") return day.includeMainIngredients;
@@ -104,7 +90,11 @@ async function rebuildFutureShoppingListsSafe({ householdId, dishId, context }) 
 
 async function rebuildShoppingListForPlan(plan, householdId) {
   const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-  const dishes = await KitchenDish.find(buildDishVisibilityFilter(householdId, { _id: { $in: dishIds } }));
+  const dishes = await resolveDishCatalogForHousehold({
+    Model: KitchenDish,
+    householdId,
+    ids: dishIds
+  });
   const dishMap = new Map(dishes.map((entry) => [String(entry._id), entry]));
 
   const merged = new Map();
@@ -200,7 +190,11 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
 
   for (const plan of plans) {
     const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-    const dishes = await KitchenDish.find(buildDishVisibilityFilter(householdId, { _id: { $in: dishIds } }));
+    const dishes = await resolveDishCatalogForHousehold({
+      Model: KitchenDish,
+      householdId,
+      ids: dishIds
+    });
     const dishMap = new Map(dishes.map((entry) => [String(entry._id), entry]));
 
     const merged = new Map();
@@ -250,27 +244,25 @@ router.get("/", requireAuth, async (req, res) => {
     const isDinnerFilter = hasIsDinnerFilter ? { isDinner: isDinner === "true" } : {};
 
     if (sidedish === "true") {
-      const dishes = await resolveCatalogForHousehold({
+      const dishes = await resolveDishCatalogForHousehold({
         Model: KitchenDish,
         householdId: optionalHouseholdId,
-        type: "side",
-        baseFilter: { sidedish: true, ...isDinnerFilter },
-        masterFilter: activeFilter,
-        householdFilter: activeFilter,
-        overrideFilter: activeFilter,
+        filter: { sidedish: true, ...isDinnerFilter, ...activeFilter },
         sort: { createdAt: -1 }
       });
       return res.json({ ok: true, dishes });
     }
 
     const dishes = optionalHouseholdId
-      ? await KitchenDish.find(buildScopedFilter(optionalHouseholdId, {
-          sidedish: { $ne: true },
-          isArchived: { $ne: true },
-          ...isDinnerFilter,
-          ...activeFilter
-        })).sort({
-          createdAt: -1
+      ? await resolveDishCatalogForHousehold({
+          Model: KitchenDish,
+          householdId: optionalHouseholdId,
+          filter: {
+            sidedish: { $ne: true },
+            ...isDinnerFilter,
+            ...activeFilter
+          },
+          sort: { createdAt: -1 }
         })
       : await KitchenDish.find({
           scope: CATALOG_SCOPES.MASTER,
@@ -278,9 +270,7 @@ router.get("/", requireAuth, async (req, res) => {
           isArchived: { $ne: true },
           ...isDinnerFilter,
           ...activeFilter
-        }).sort({
-          createdAt: -1
-        });
+        }).sort({ createdAt: -1 });
 
     res.json({ ok: true, dishes });
   } catch (error) {
@@ -418,7 +408,11 @@ router.put("/:id", requireAuth, async (req, res) => {
         },
         { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
       );
-      if (dish.sidedish) await clearHiddenMasterForHousehold({ householdId: requiredHouseholdId, type: "side", masterId: dish._id });
+      await clearHiddenMasterForHousehold({
+        householdId: requiredHouseholdId,
+        type: getDishHiddenMasterType(dish),
+        masterId: dish._id
+      });
       const warning = await rebuildFutureShoppingListsSafe({
         householdId: requiredHouseholdId,
         dishId: override._id,
@@ -465,13 +459,11 @@ router.delete("/:id", requireAuth, async (req, res) => {
         dish.deletedAt = new Date();
         await dish.save();
       } else {
-        if (dish.sidedish) {
-          await hideMasterForHousehold({
-            householdId: getEffectiveHouseholdId(req.user),
-            type: "side",
-            masterId: dish._id
-          });
-        }
+        await hideMasterForHousehold({
+          householdId: getEffectiveHouseholdId(req.user),
+          type: getDishHiddenMasterType(dish),
+          masterId: dish._id
+        });
       }
       return res.json({ ok: true, dishId: String(dish._id), active: false });
     }

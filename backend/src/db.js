@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { config } from "./config.js";
+import { ensureStarterMasterDishes } from "./kitchen/bootstrap/masterDishes.js";
 
 function isNamespaceNotFoundError(error) {
   return error?.codeName === "NamespaceNotFound" || error?.code === 26;
@@ -95,9 +96,13 @@ export async function connectDb() {
   await ensureWeekPlanIndexes();
   await ensureShoppingListIndexes();
   await ensureKitchenUserEmailIndex();
+  const masterDishSeed = await ensureStarterMasterDishes();
   const match = config.mongodbUri.match(/\/([^/?]+)(\?|$)/);
   const dbName = match ? match[1] : "desconocida";
   console.log("MongoDB conectado");
+  if (masterDishSeed.createdCount > 0) {
+    console.log(`[db] Seeded ${masterDishSeed.createdCount} starter master dishes.`);
+  }
   if (config.nodeEnv === "development") {
     console.log(`MongoDB DB: ${dbName}`);
   }

@@ -8,6 +8,7 @@ import { combineDayIngredients } from "./utils/ingredients.js";
 import { normalizeIngredientName } from "./utils/normalize.js";
 import { CATALOG_SCOPES } from "./utils/catalogScopes.js";
 import { ensureDefaultCategory } from "./utils/categoryMatching.js";
+import { resolveDishCatalogForHousehold } from "./utils/dishCatalog.js";
 import mongoose from "mongoose";
 
 const INGREDIENT_SCOPE_PRIORITY = {
@@ -23,18 +24,6 @@ function compareByScopePriority(a, b) {
 }
 
 function buildIngredientVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
-  return {
-    ...extraFilter,
-    isArchived: { $ne: true },
-    $or: [
-      { scope: CATALOG_SCOPES.MASTER },
-      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
-      { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
-    ]
-  };
-}
-
-function buildDishVisibilityFilter(effectiveHouseholdId, extraFilter = {}) {
   return {
     ...extraFilter,
     isArchived: { $ne: true },
@@ -210,7 +199,11 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
   if (!plan) return [];
 
   const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-  const dishes = await KitchenDish.find(buildDishVisibilityFilter(effectiveHouseholdId, { _id: { $in: dishIds } }));
+  const dishes = await resolveDishCatalogForHousehold({
+    Model: KitchenDish,
+    householdId: effectiveHouseholdId,
+    ids: dishIds
+  });
   const dishMap = new Map(dishes.map((dish) => [dish._id.toString(), dish]));
 
   const merged = new Map();
