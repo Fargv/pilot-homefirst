@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import { useAuth } from "../auth";
 import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
@@ -196,6 +196,7 @@ function normalizeExclusionKey(value) {
 
 export default function WeekPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [plan, setPlan] = useState(null);
@@ -1533,6 +1534,10 @@ export default function WeekPage() {
     setSelectedDay(todayKey);
   }, [setWeekStart]);
 
+  const handleOpenCurrentShoppingList = useCallback(() => {
+    navigate("/kitchen/compra");
+  }, [navigate]);
+
   const handleDismissMissingWeekPrompt = () => {
     dismissedMissingWeekPromptRef.current.add(weekStart);
     setMissingWeekPromptOpen(false);
@@ -1608,12 +1613,11 @@ export default function WeekPage() {
                 </button>
               </div>
               {dinnersEnabled ? (
-                <div className="kitchen-meal-tabs" role="tablist" aria-label="Tipo de planificacion">
+                <div className="kitchen-meal-tabs kitchen-meal-tabs-with-link" role="group" aria-label="Navegación semanal">
                   <button
                     type="button"
                     className={`kitchen-meal-tab ${selectedMealType === "lunch" ? "is-active" : ""}`}
-                    role="tab"
-                    aria-selected={selectedMealType === "lunch"}
+                    aria-pressed={selectedMealType === "lunch"}
                     onClick={() => setMealTab("lunch")}
                   >
                     Comidas
@@ -1621,11 +1625,17 @@ export default function WeekPage() {
                   <button
                     type="button"
                     className={`kitchen-meal-tab ${selectedMealType === "dinner" ? "is-active" : ""}`}
-                    role="tab"
-                    aria-selected={selectedMealType === "dinner"}
+                    aria-pressed={selectedMealType === "dinner"}
                     onClick={() => setMealTab("dinner")}
                   >
                     Cenas
+                  </button>
+                  <button
+                    type="button"
+                    className="kitchen-meal-tab kitchen-meal-tab-link"
+                    onClick={handleOpenCurrentShoppingList}
+                  >
+                    Compra
                   </button>
                 </div>
               ) : null}

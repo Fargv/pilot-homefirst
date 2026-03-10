@@ -468,6 +468,11 @@ body {
   transition: background 250ms ease, border-color 250ms ease;
 }
 
+.kitchen-meal-tabs-with-link {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .kitchen-meal-tab {
   border: none;
   background: transparent;
@@ -484,6 +489,16 @@ body {
   background: #ffffff;
   color: #1f2937;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.kitchen-meal-tab-link {
+  color: #334155;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.kitchen-meal-tab-link:hover {
+  background: rgba(255, 255, 255, 0.82);
+  color: #1f2937;
 }
 
 .kitchen-dishes-page {
@@ -4812,31 +4827,28 @@ body {
   line-height: 1.35;
 }
 
-.kitchen-dish-random-meta {
+.kitchen-dish-random-toggle-text {
   display: flex;
-  justify-content: center;
-  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
 }
 
-.kitchen-dish-random-badge {
+.kitchen-dish-random-status {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: 28px;
-  padding: 5px 12px;
-  border-radius: 999px;
+  min-height: 18px;
+  padding: 0;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 
-.kitchen-dish-random-badge.is-enabled {
-  background: #e7f8ee;
+.kitchen-dish-random-status.is-enabled {
   color: #067647;
 }
 
-.kitchen-dish-random-badge.is-disabled {
-  background: #fff1f2;
+.kitchen-dish-random-status.is-disabled {
   color: #b42318;
 }
 
@@ -5280,6 +5292,10 @@ body {
   padding: 0;
   cursor: pointer;
   align-self: flex-start;
+}
+
+.kitchen-dishes-subtabs {
+  margin-top: 4px;
 }
 
 .kitchen-link-add-ingredient:hover {

@@ -307,7 +307,7 @@ export default function DishModal({
           </div>
           <div className="kitchen-field kitchen-toggle-field">
             <div className="kitchen-toggle-row">
-              <span className="kitchen-label">Permitir en randomizaciÃ³n</span>
+              <span className="kitchen-label">Permitir en randomización</span>
               <label className="kitchen-toggle" htmlFor="dish-randomswitch">
                 <input
                   id="dish-randomswitch"

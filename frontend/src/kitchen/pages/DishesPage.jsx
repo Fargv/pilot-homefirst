@@ -70,6 +70,11 @@ function ChevronIcon(props) {
 }
 
 export default function DishesPage() {
+  const MEAL_FILTERS = {
+    ALL: "all",
+    LUNCH: "lunch",
+    DINNER: "dinner"
+  };
   const { user } = useAuth();
   const navigate = useNavigate();
   const [dishes, setDishes] = useState([]);
@@ -81,7 +86,8 @@ export default function DishesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeDish, setActiveDish] = useState(null);
   const [dishSearchTerm, setDishSearchTerm] = useState("");
-  const [selectedDishCategoryIds, setSelectedDishCategoryIds] = useState([]);
+  const [selectedDishCategoryId, setSelectedDishCategoryId] = useState("");
+  const [selectedMealFilter, setSelectedMealFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("main");
   const [initialSidedish, setInitialSidedish] = useState(false);
   const [ingredients, setIngredients] = useState([]);
@@ -268,7 +274,7 @@ export default function DishesPage() {
         if (activeDish?._id === dish._id) {
           setActiveDish(dish);
         }
-        setDishError(err.message || "No se pudo actualizar la randomizaciÃ³n del plato.");
+        setDishError(err.message || "No se pudo actualizar la randomización del plato.");
       } finally {
         setDishTogglePendingId("");
       }
@@ -303,14 +309,20 @@ export default function DishesPage() {
     const shouldShowSide = activeTab === "side";
     return dishes.filter((dish) => Boolean(dish.sidedish) === shouldShowSide);
   }, [activeTab, dishes]);
+  const mealFilteredDishes = useMemo(() => {
+    if (selectedMealFilter === MEAL_FILTERS.ALL) return tabFilteredDishes;
+    if (selectedMealFilter === MEAL_FILTERS.DINNER) {
+      return tabFilteredDishes.filter((dish) => dish.isDinner === true);
+    }
+    return tabFilteredDishes.filter((dish) => dish.isDinner !== true);
+  }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, selectedMealFilter, tabFilteredDishes]);
   const categoryFilteredDishes = useMemo(() => {
-    if (!selectedDishCategoryIds.length) return tabFilteredDishes;
-    const selectedSet = new Set(selectedDishCategoryIds.map((id) => String(id)));
-    return tabFilteredDishes.filter((dish) => {
+    if (!selectedDishCategoryId) return mealFilteredDishes;
+    return mealFilteredDishes.filter((dish) => {
       const categoryId = dish?.dishCategoryId?._id || dish?.dishCategoryId || "";
-      return categoryId ? selectedSet.has(String(categoryId)) : false;
+      return categoryId ? String(categoryId) === String(selectedDishCategoryId) : false;
     });
-  }, [selectedDishCategoryIds, tabFilteredDishes]);
+  }, [mealFilteredDishes, selectedDishCategoryId]);
   const visibleDishes = useMemo(() => {
     if (!normalizedSearch) return categoryFilteredDishes;
     return categoryFilteredDishes.filter((dish) => {
@@ -339,19 +351,18 @@ export default function DishesPage() {
   }, [dishCategories]);
   const filterChips = useMemo(() => {
     const inTabIds = new Set(
-      tabFilteredDishes
+      mealFilteredDishes
         .map((dish) => dish?.dishCategoryId?._id || dish?.dishCategoryId || "")
         .filter(Boolean)
         .map((id) => String(id))
     );
-    const selectedSet = new Set(selectedDishCategoryIds.map((id) => String(id)));
     const activeCategories = dishCategories.filter((category) => category?.active !== false);
     const scoped = activeCategories.filter((category) => {
       const id = String(category?._id || "");
-      return inTabIds.has(id) || selectedSet.has(id);
+      return inTabIds.has(id) || id === String(selectedDishCategoryId || "");
     });
     return scoped.length ? scoped : activeCategories;
-  }, [dishCategories, selectedDishCategoryIds, tabFilteredDishes]);
+  }, [dishCategories, mealFilteredDishes, selectedDishCategoryId]);
 
   const emptyMessage = useMemo(() => {
     if (dishes.length === 0) {
@@ -361,30 +372,35 @@ export default function DishesPage() {
       if (dishSearchTerm.trim()) {
         return "No encontramos platos con ese criterio.";
       }
-      if (selectedDishCategoryIds.length) {
-        return "No hay platos en las categorías seleccionadas.";
+      if (selectedDishCategoryId) {
+        return "No hay platos en la categoría seleccionada.";
+      }
+      if (selectedMealFilter !== MEAL_FILTERS.ALL) {
+        return selectedMealFilter === MEAL_FILTERS.DINNER
+          ? "No hay cenas disponibles con este filtro."
+          : "No hay comidas disponibles con este filtro.";
       }
       return activeTab === "side"
         ? "No hay guarniciones aún. Crea la primera."
         : "No hay platos principales aún. Crea el primero.";
     }
     return "";
-  }, [activeTab, dishSearchTerm, dishes.length, selectedDishCategoryIds.length, visibleDishes.length]);
+  }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, activeTab, dishSearchTerm, dishes.length, selectedDishCategoryId, selectedMealFilter, visibleDishes.length]);
 
   useEffect(() => {
-    setSelectedDishCategoryIds((previous) => {
-      if (!previous.length) return previous;
+    setSelectedDishCategoryId((previous) => {
+      if (!previous) return previous;
       const available = new Set(dishCategories.map((category) => String(category?._id || "")));
-      const next = previous.filter((id) => available.has(String(id)));
-      return next.length === previous.length ? previous : next;
+      return available.has(String(previous)) ? previous : "";
     });
   }, [dishCategories]);
 
   useEffect(() => {
-    if (activeTab === "ingredients" && selectedDishCategoryIds.length) {
-      setSelectedDishCategoryIds([]);
+    if (activeTab === "ingredients") {
+      setSelectedDishCategoryId("");
+      setSelectedMealFilter(MEAL_FILTERS.ALL);
     }
-  }, [activeTab, selectedDishCategoryIds.length]);
+  }, [MEAL_FILTERS.ALL, activeTab]);
 
   const loadIngredients = useCallback(async (query = "") => {
     setIngredientsLoading(true);
@@ -785,28 +801,48 @@ export default function DishesPage() {
           />
         </div>
         {!isIngredientsTab ? (
-          <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar por categoría">
+          <>
+            <div className="kitchen-dishes-tabs kitchen-dishes-subtabs" role="tablist" aria-label="Filtrar por tipo de comida">
+              <button
+                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.ALL ? "is-active" : ""}`}
+                type="button"
+                onClick={() => setSelectedMealFilter(MEAL_FILTERS.ALL)}
+              >
+                Todos
+              </button>
+              <button
+                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.LUNCH ? "is-active" : ""}`}
+                type="button"
+                onClick={() => setSelectedMealFilter(MEAL_FILTERS.LUNCH)}
+              >
+                Comidas
+              </button>
+              <button
+                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.DINNER ? "is-active" : ""}`}
+                type="button"
+                onClick={() => setSelectedMealFilter(MEAL_FILTERS.DINNER)}
+              >
+                Cenas
+              </button>
+            </div>
+            <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar por categoría">
             <button
               type="button"
-              className={`kitchen-filter-chip ${selectedDishCategoryIds.length === 0 ? "is-active is-all" : ""}`}
-              onClick={() => setSelectedDishCategoryIds([])}
+              className={`kitchen-filter-chip ${!selectedDishCategoryId ? "is-active is-all" : ""}`}
+              onClick={() => setSelectedDishCategoryId("")}
             >
               Todos
             </button>
             {filterChips.map((category) => {
               const categoryId = String(category?._id || "");
-              const selected = selectedDishCategoryIds.some((id) => String(id) === categoryId);
+              const selected = String(selectedDishCategoryId || "") === categoryId;
               return (
                 <button
                   key={categoryId}
                   type="button"
                   className={`kitchen-filter-chip ${selected ? "is-active" : ""}`}
                   style={selected ? { background: category.colorBg || "#eef2ff", borderColor: category.colorText || "#667085" } : undefined}
-                  onClick={() => setSelectedDishCategoryIds((previous) => {
-                    const exists = previous.some((id) => String(id) === categoryId);
-                    if (exists) return previous.filter((id) => String(id) !== categoryId);
-                    return [...previous, categoryId];
-                  })}
+                  onClick={() => setSelectedDishCategoryId((previous) => (String(previous || "") === categoryId ? "" : categoryId))}
                 >
                   <span className="kitchen-filter-chip-dot" style={{ background: category.colorText || "#475467" }} />
                   <span>{category.name}</span>
@@ -814,6 +850,7 @@ export default function DishesPage() {
               );
             })}
           </div>
+          </>
         ) : null}
         {isIngredientsTab ? (
           ingredientsLoading ? (
@@ -1017,15 +1054,15 @@ export default function DishesPage() {
                         <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
                       </div>
                     ) : null}
-                    <div className="kitchen-dish-random-meta">
-                      <span className={`kitchen-dish-random-badge ${randomEnabled ? "is-enabled" : "is-disabled"}`}>
-                        {randomEnabled ? "Randomizable" : "Fuera de randomizaciÃ³n"}
-                      </span>
-                    </div>
                   </div>
                   <div className="kitchen-dish-actions-bar">
                     <label className={`kitchen-dish-random-toggle ${toggleDisabled ? "is-loading" : ""}`}>
-                      <span className="kitchen-dish-random-toggle-copy">Permitir en randomizaciÃ³n</span>
+                      <div className="kitchen-dish-random-toggle-text">
+                        <span className="kitchen-dish-random-toggle-copy">Permitir en randomización</span>
+                        <span className={`kitchen-dish-random-status ${randomEnabled ? "is-enabled" : "is-disabled"}`}>
+                          {randomEnabled ? "En randomización" : "Fuera de randomización"}
+                        </span>
+                      </div>
                       <span className="kitchen-toggle">
                         <input
                           type="checkbox"
