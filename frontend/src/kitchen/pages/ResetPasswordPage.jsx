@@ -9,7 +9,7 @@ const MIN_PASSWORD_LENGTH = 8;
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = useMemo(() => String(searchParams.get("token") || "").trim(), [searchParams]);
+  const token = useMemo(() => String(searchParams.get("token") || ""), [searchParams]);
   const [form, setForm] = useState({ newPassword: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,6 +39,11 @@ export default function ResetPasswordPage() {
       setError("Las contrasenas no coinciden.");
       return;
     }
+
+    console.info("[reset-password] submitting token", {
+      tokenLength: token.length,
+      tokenPreview: token ? `${token.slice(0, 6)}...${token.slice(-6)}` : ""
+    });
 
     setLoading(true);
     setError("");

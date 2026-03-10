@@ -32,10 +32,64 @@ function hashInviteToken(token) {
 }
 
 function hashResetPasswordToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function hashResetPasswordTokenLegacy(token) {
   return crypto
     .createHmac("sha256", config.resetPasswordTokenSecret)
     .update(token)
     .digest("hex");
+}
+
+function createResetPasswordToken() {
+  return crypto.randomBytes(32).toString("base64url");
+}
+
+function buildResetPasswordTokenCandidates(token) {
+  const variants = new Set();
+  const baseToken = String(token || "");
+
+  if (!baseToken) {
+    return {
+      rawVariants: [],
+      hashedVariants: []
+    };
+  }
+
+  variants.add(baseToken);
+
+  try {
+    variants.add(decodeURIComponent(baseToken));
+  } catch {
+    // Ignore malformed URI sequences and continue with the raw token.
+  }
+
+  if (baseToken.includes(" ")) {
+    variants.add(baseToken.replace(/ /g, "+"));
+  }
+
+  const rawVariants = Array.from(variants).filter(Boolean);
+  const hashedVariants = Array.from(
+    new Set(
+      rawVariants.flatMap((rawVariant) => [
+        hashResetPasswordToken(rawVariant),
+        hashResetPasswordTokenLegacy(rawVariant)
+      ])
+    )
+  );
+
+  return {
+    rawVariants,
+    hashedVariants
+  };
+}
+
+function tokenPreview(token) {
+  const normalized = String(token || "");
+  if (!normalized) return "";
+  if (normalized.length <= 12) return normalized;
+  return `${normalized.slice(0, 6)}...${normalized.slice(-6)}`;
 }
 
 function buildResetPasswordEmail(resetUrl) {
@@ -452,7 +506,7 @@ router.post("/forgot-password", async (req, res) => {
       return res.json(genericResponse);
     }
 
-    const rawToken = crypto.randomBytes(32).toString("hex");
+    const rawToken = createResetPasswordToken();
     const hashedToken = hashResetPasswordToken(rawToken);
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
@@ -460,7 +514,15 @@ router.post("/forgot-password", async (req, res) => {
     user.resetPasswordExpires = expiresAt;
     await user.save();
 
-    const resetUrl = `${String(config.appUrl || "").replace(/\/$/, "")}/reset-password?token=${rawToken}`;
+    const resetUrl = `${String(config.appUrl || "").replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(rawToken)}`;
+
+    console.log("[auth] Forgot password token stored", {
+      email: normalizedEmail,
+      tokenPreview: tokenPreview(rawToken),
+      tokenLength: rawToken.length,
+      tokenHashPreview: tokenPreview(hashedToken),
+      expiresAt: expiresAt.toISOString()
+    });
 
     await sendEmail({
       to: normalizedEmail,
@@ -501,7 +563,7 @@ router.post("/forgot-password", async (req, res) => {
 
 router.post("/reset-password", async (req, res) => {
   try {
-    const rawToken = String(req.body?.token || "").trim();
+    const rawToken = String(req.body?.token || "");
     const newPassword = String(req.body?.newPassword || "");
 
     if (!rawToken) {
@@ -525,17 +587,31 @@ router.post("/reset-password", async (req, res) => {
       });
     }
 
-    const hashedToken = hashResetPasswordToken(rawToken);
+    const { rawVariants, hashedVariants } = buildResetPasswordTokenCandidates(rawToken);
 
-    console.log("[auth] Reset password requested");
+    console.log("[auth] Reset password requested", {
+      tokenPreview: tokenPreview(rawToken),
+      tokenLength: rawToken.length,
+      hashedPreview: hashedVariants.map((hash) => tokenPreview(hash))
+    });
 
     const user = await KitchenUser.findOne({
-      resetPasswordToken: hashedToken,
+      resetPasswordToken: { $in: hashedVariants },
       resetPasswordExpires: { $gt: new Date() }
     });
 
     if (!user) {
-      console.warn("[auth] Reset password failed: invalid or expired token");
+      const matchingTokenWithoutExpiry = await KitchenUser.findOne({
+        resetPasswordToken: { $in: hashedVariants }
+      }).select("_id resetPasswordExpires");
+
+      console.warn("[auth] Reset password failed: invalid or expired token", {
+        tokenPreview: tokenPreview(rawToken),
+        rawVariantPreviews: rawVariants.map((variant) => tokenPreview(variant)),
+        matchedStoredToken: Boolean(matchingTokenWithoutExpiry),
+        storedExpiry: matchingTokenWithoutExpiry?.resetPasswordExpires?.toISOString?.() || null
+      });
+
       return res.status(400).json({
         success: false,
         message: "Invalid or expired reset token."
