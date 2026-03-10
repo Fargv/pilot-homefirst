@@ -70,29 +70,64 @@ function normalizeRequestedHouseholdId(value) {
 async function resolveShareHousehold(req, requestedHouseholdId) {
   if (isDiodUser(req)) {
     const householdId = normalizeRequestedHouseholdId(requestedHouseholdId);
+    console.info("[kitchen/household] resolving share household", {
+      userId: req.user?.id || null,
+      isDiod: true,
+      requestedHouseholdId: householdId || null
+    });
     if (!householdId) {
       return { error: { status: 400, message: "Debes seleccionar un household para enviar invitaciones." } };
     }
     if (!mongoose.isValidObjectId(householdId)) {
       return { error: { status: 400, message: "El household seleccionado no es válido." } };
     }
-    const household = await Household.findById(householdId);
+    const household = await Household.findById(householdId)
+      .select("_id name inviteCode ownerUserId")
+      .lean();
     if (!household) {
+      console.warn("[kitchen/household] share household not found", {
+        userId: req.user?.id || null,
+        requestedHouseholdId: householdId
+      });
       return { error: { status: 404, message: "No encontramos el household seleccionado." } };
     }
+    console.info("[kitchen/household] share household resolved", {
+      userId: req.user?.id || null,
+      householdId: String(household._id),
+      hasInviteCode: Boolean(household.inviteCode),
+      hasOwnerUserId: Boolean(household.ownerUserId)
+    });
     return { household };
   }
 
   const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
   const requestedId = normalizeRequestedHouseholdId(requestedHouseholdId);
+  console.info("[kitchen/household] resolving share household", {
+    userId: req.user?.id || null,
+    isDiod: false,
+    requestedHouseholdId: requestedId || null,
+    effectiveHouseholdId: String(effectiveHouseholdId)
+  });
   if (requestedId && requestedId !== String(effectiveHouseholdId)) {
     return { error: { status: 403, message: "Solo puedes invitar personas a tu propio household." } };
   }
 
-  const household = await Household.findById(effectiveHouseholdId);
+  const household = await Household.findById(effectiveHouseholdId)
+    .select("_id name inviteCode ownerUserId")
+    .lean();
   if (!household) {
+    console.warn("[kitchen/household] share household not found", {
+      userId: req.user?.id || null,
+      effectiveHouseholdId: String(effectiveHouseholdId)
+    });
     return { error: { status: 404, message: "No encontramos el hogar." } };
   }
+  console.info("[kitchen/household] share household resolved", {
+    userId: req.user?.id || null,
+    householdId: String(household._id),
+    hasInviteCode: Boolean(household.inviteCode),
+    hasOwnerUserId: Boolean(household.ownerUserId)
+  });
   return { household };
 }
 
@@ -348,6 +383,12 @@ router.get("/invitations", requireAuth, requireRole("owner"), async (req, res) =
 
 router.post("/invitations/email", requireAuth, requireRole("owner"), async (req, res) => {
   try {
+    console.info("[kitchen/household] invitation email send requested", {
+      userId: req.user?.id || null,
+      requestedHouseholdId: req.body?.householdId || null,
+      emailCount: Array.isArray(req.body?.emails) ? req.body.emails.length : 0
+    });
+
     const { household, error } = await resolveShareHousehold(req, req.body?.householdId);
     if (error) {
       return res.status(error.status).json({ ok: false, error: error.message });
@@ -365,12 +406,25 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
       });
     }
 
+    console.info("[kitchen/household] invitation email payload prepared", {
+      userId: req.user?.id || null,
+      householdId: String(household._id),
+      householdName: household.name || "",
+      normalizedEmailCount: emails.length,
+      needsInviteCodePersistence: !household.inviteCode
+    });
+
     const inviteCode = await ensureHouseholdInviteCode(household);
     const inviterName = req.kitchenUser?.displayName || req.kitchenUser?.email || "HomeFirst";
     const results = await Promise.all(
       emails.map(async (email) => {
         let createdInvitation = null;
         try {
+          console.info("[kitchen/household] preparing invitation email", {
+            householdId: String(household._id),
+            email
+          });
+
           const { invitation, inviteLink } = await createHouseholdInvitation({
             householdId: household._id,
             createdByUserId: req.kitchenUser._id,
@@ -411,6 +465,13 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
 
     const sentCount = results.filter((result) => result.ok).length;
     const failedCount = results.length - sentCount;
+
+    console.info("[kitchen/household] invitation email send completed", {
+      userId: req.user?.id || null,
+      householdId: String(household._id),
+      sentCount,
+      failedCount
+    });
 
     return res.status(sentCount ? 201 : 500).json({
       ok: sentCount > 0,
