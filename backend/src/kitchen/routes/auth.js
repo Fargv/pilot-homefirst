@@ -11,6 +11,7 @@ import { getWeekStart } from "../utils/dates.js";
 import { ensureWeekPlan } from "../weekPlanService.js";
 import { sendEmail } from "../../services/emailService.js";
 import { config } from "../../config.js";
+import { findActiveInvitationByToken } from "../invitationService.js";
 
 const DIOD_EMAIL = "admin@admin.com";
 
@@ -26,10 +27,6 @@ function parseBooleanWithDefault(value, fallback) {
   return fallback;
 }
 
-
-function hashInviteToken(token) {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
 
 function hashResetPasswordToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -149,14 +146,6 @@ function buildResetPasswordEmail(resetUrl) {
   `;
 }
 
-async function findActiveInvitationByToken(token) {
-  return Invitation.findOne({
-    tokenHash: hashInviteToken(token),
-    usedAt: null,
-    expiresAt: { $gt: new Date() }
-  });
-}
-
 router.get("/invite/:token", async (req, res) => {
   try {
     const { token } = req.params;
@@ -174,7 +163,8 @@ router.get("/invite/:token", async (req, res) => {
       ok: true,
       role: invitation.role,
       householdName: household?.name || "",
-      expiresAt: invitation.expiresAt
+      expiresAt: invitation.expiresAt,
+      recipientEmail: invitation.recipientEmail || ""
     });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo validar la invitaciÃ³n." });
@@ -359,6 +349,13 @@ router.post("/accept-invite", async (req, res) => {
 
     if (!invitation) {
       return res.status(400).json({ ok: false, error: "La invitaciÃ³n no es vÃ¡lida o expirÃ³." });
+    }
+
+    if (invitation.recipientEmail && invitation.recipientEmail !== normalizedEmail) {
+      return res.status(403).json({
+        ok: false,
+        error: "Esta invitaciÃ³n fue enviada a otro email. Usa ese correo o pide una nueva invitaciÃ³n."
+      });
     }
 
     let user = await KitchenUser.findOne({ email: normalizedEmail });

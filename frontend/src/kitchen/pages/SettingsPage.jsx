@@ -4,6 +4,7 @@ import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import { apiRequest } from "../api.js";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
+import SettingsSharePanel from "../components/SettingsSharePanel.jsx";
 import { getColorPalette, getUserColorById, getUserColorPreference, setUserColorPreference } from "../utils/userColors.js";
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 
@@ -207,9 +208,12 @@ export default function SettingsPage() {
   const canViewHousehold = Boolean(user?.activeHouseholdId || user?.householdId) && !(isDiod && !user?.activeHouseholdId);
   const canManageCategories = isDiod || isOwner;
   const canManageHousehold = isOwner && !(isDiod && !user?.activeHouseholdId);
+  const canAccessShare = isOwner || isDiod;
   const canManageDeleted = isDiod || isOwner;
 
-  const activePanel = (searchParams.get("section") || "").toLowerCase();
+  const activePanel = ((searchParams.get("section") || "").toLowerCase() === "household-invitations"
+    ? "share"
+    : (searchParams.get("section") || "").toLowerCase());
   const isHub = !activePanel;
   const userInitials = (user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || "")).slice(0, 3);
   const selectedColor = useMemo(
@@ -572,17 +576,6 @@ export default function SettingsPage() {
     }
   };
 
-  const generateInvite = async () => {
-    try {
-      const data = await apiRequest("/api/kitchen/household/invitations", { method: "POST" });
-      setInviteLink(data.inviteLink || "");
-      updateSuccess("Invitacion generada.");
-      await loadData();
-    } catch (err) {
-      setError(err.message || "No se pudo generar la invitacion.");
-    }
-  };
-
   const generateHouseholdCode = async () => {
     try {
       const data = await apiRequest("/api/kitchen/household/invite-code", { method: "POST" });
@@ -593,17 +586,8 @@ export default function SettingsPage() {
     }
   };
 
-  useEffect(() => {
-    if (activePanel !== "household-invitations") return;
-    if (!canManageHousehold) return;
-    if (inviteLink) return;
-    void generateInvite();
-  }, [activePanel, canManageHousehold, inviteLink]);
-
   const openInvitesPanel = async () => {
-    setPanel("household-invitations");
-    if (inviteLink) return;
-    await generateInvite();
+    setPanel("share");
   };
 
   const openMemberModal = (member) => {
@@ -1139,38 +1123,13 @@ export default function SettingsPage() {
   );
 
   const HouseholdInvitesPanel = (
-    <div className="settings-panel">
-      <div className="settings-panel-header">
-        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
-        <h2>Invitar usuario</h2>
-      </div>
-      <div className="settings-block">
-        <p className="kitchen-muted">
-          Comparte el codigo con otra persona: se registra o inicia sesion y lo introduce para unirse al household.
-          Tambien puedes compartir el enlace directo.
-        </p>
-        <div className="settings-copy-box">
-          <span>{inviteLink || "Sin enlace generado"}</span>
-          <button type="button" className={`settings-mini-icon ${copiedField === "inviteLink" ? "is-copied" : ""}`} onClick={() => copyText(inviteLink, "Enlace", "inviteLink")} disabled={!inviteLink} aria-label="Copiar enlace">
-            <CopyIcon />
-          </button>
-        </div>
-        {!householdCode ? <button type="button" className="kitchen-button secondary" onClick={generateHouseholdCode}>Generar codigo</button> : null}
-        <div className="settings-copy-box">
-          <span>{householdCode || "Sin codigo generado"}</span>
-          <button type="button" className={`settings-mini-icon ${copiedField === "householdCode" ? "is-copied" : ""}`} onClick={() => copyText(householdCode, "Codigo", "householdCode")} disabled={!householdCode} aria-label="Copiar codigo">
-            <CopyIcon />
-          </button>
-        </div>
-        {invitations.length > 0 ? (
-          <ul className="kitchen-list">
-            {invitations.map((invitation) => (
-              <li key={invitation.id}>Invitacion activa hasta {new Date(invitation.expiresAt).toLocaleString()}</li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
-    </div>
+    <SettingsSharePanel
+      isDiod={isDiod}
+      user={user}
+      householdName={householdName}
+      initialHouseholdCode={householdCode}
+      onBack={() => setPanel("")}
+    />
   );
 
   const CategoriesPanel = (
@@ -1326,7 +1285,8 @@ export default function SettingsPage() {
           <div className="settings-hub-grid">
             <CardButton title="Perfil" subtitle="Informacion personal, password y color." onClick={() => setPanel("perfil")} />
             <CardButton title="Preferencias" subtitle="Idioma, dark mode y notificaciones." onClick={() => setPanel("preferencias")} />
-            {canViewHousehold ? <CardButton title="Household" subtitle="Miembros e invitaciones." onClick={() => setPanel("household-members")} /> : null}
+            {canViewHousehold ? <CardButton title="Household" subtitle="Miembros y ajustes del hogar." onClick={() => setPanel("household-members")} /> : null}
+            {canAccessShare ? <CardButton title="Compartir" subtitle="Invitaciones por email y código de acceso." onClick={() => setPanel("share")} /> : null}
             {canManageCategories ? <CardButton title="Categorias" subtitle="Gestion de categorias." onClick={() => setPanel("categorias")} /> : null}
             {canManageDeleted ? <CardButton title="Eliminados" subtitle="Recupera platos, guarniciones e ingredientes." onClick={() => setPanel("eliminados")} /> : null}
             <div className="settings-upgrade-card">
@@ -1345,7 +1305,7 @@ export default function SettingsPage() {
         {!loading && activePanel === "perfil" ? ProfilePanel : null}
         {!loading && activePanel === "preferencias" ? PreferencesPanel : null}
         {!loading && activePanel === "household-members" && canViewHousehold ? HouseholdMembersPanel : null}
-        {!loading && activePanel === "household-invitations" && canManageHousehold ? HouseholdInvitesPanel : null}
+        {!loading && activePanel === "share" && canAccessShare ? HouseholdInvitesPanel : null}
         {!loading && activePanel === "categorias" && canManageCategories ? CategoriesPanel : null}
         {!loading && activePanel === "eliminados" && canManageDeleted ? DeletedPanel : null}
       </div>

@@ -1,6 +1,7 @@
 ﻿import crypto from "crypto";
 import express from "express";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import { Invitation } from "../models/Invitation.js";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { requireAuth, requireRole } from "../middleware.js";
@@ -12,9 +13,11 @@ import {
   normalizeInitials,
   normalizeColorId
 } from "../../users/utils.js";
-import { config } from "../../config.js";
 import { Household } from "../models/Household.js";
 import { ensureHouseholdInviteCode } from "../householdInviteCode.js";
+import { sendEmail } from "../../services/emailService.js";
+import { buildHouseholdInvitationEmail } from "../householdInvitationEmail.js";
+import { createHouseholdInvitation } from "../invitationService.js";
 
 const router = express.Router();
 
@@ -55,8 +58,64 @@ function parseBooleanWithDefault(value, fallback) {
   return fallback;
 }
 
-function hashToken(token) {
-  return crypto.createHash("sha256").update(token).digest("hex");
+function isDiodUser(req) {
+  return req.kitchenUser?.globalRole === "diod";
+}
+
+function normalizeRequestedHouseholdId(value) {
+  if (value === null || value === undefined || value === "") return null;
+  return String(value).trim();
+}
+
+async function resolveShareHousehold(req, requestedHouseholdId) {
+  if (isDiodUser(req)) {
+    const householdId = normalizeRequestedHouseholdId(requestedHouseholdId);
+    if (!householdId) {
+      return { error: { status: 400, message: "Debes seleccionar un household para enviar invitaciones." } };
+    }
+    if (!mongoose.isValidObjectId(householdId)) {
+      return { error: { status: 400, message: "El household seleccionado no es válido." } };
+    }
+    const household = await Household.findById(householdId);
+    if (!household) {
+      return { error: { status: 404, message: "No encontramos el household seleccionado." } };
+    }
+    return { household };
+  }
+
+  const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+  const requestedId = normalizeRequestedHouseholdId(requestedHouseholdId);
+  if (requestedId && requestedId !== String(effectiveHouseholdId)) {
+    return { error: { status: 403, message: "Solo puedes invitar personas a tu propio household." } };
+  }
+
+  const household = await Household.findById(effectiveHouseholdId);
+  if (!household) {
+    return { error: { status: 404, message: "No encontramos el hogar." } };
+  }
+  return { household };
+}
+
+function normalizeInvitationEmails(emails) {
+  if (!Array.isArray(emails)) return { emails: [], invalidEmails: [] };
+
+  const seen = new Set();
+  const validEmails = [];
+  const invalidEmails = [];
+
+  for (const rawEmail of emails) {
+    const email = normalizeEmail(rawEmail);
+    if (!email) continue;
+    if (seen.has(email)) continue;
+    seen.add(email);
+    if (!isValidEmail(email)) {
+      invalidEmails.push(email);
+      continue;
+    }
+    validEmails.push(email);
+  }
+
+  return { emails: validEmails, invalidEmails };
 }
 
 router.get("/summary", requireAuth, async (req, res) => {
@@ -201,10 +260,9 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
 
 router.get("/invite-code", requireAuth, requireRole("owner"), async (req, res) => {
   try {
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const household = await Household.findById(effectiveHouseholdId).select("inviteCode");
-    if (!household) {
-      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    const { household, error } = await resolveShareHousehold(req, req.query?.householdId);
+    if (error) {
+      return res.status(error.status).json({ ok: false, error: error.message });
     }
     return res.json({ ok: true, inviteCode: household.inviteCode || null });
   } catch (error) {
@@ -216,10 +274,9 @@ router.get("/invite-code", requireAuth, requireRole("owner"), async (req, res) =
 
 router.post("/invite-code", requireAuth, requireRole("owner"), async (req, res) => {
   try {
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const household = await Household.findById(effectiveHouseholdId);
-    if (!household) {
-      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    const { household, error } = await resolveShareHousehold(req, req.body?.householdId);
+    if (error) {
+      return res.status(error.status).json({ ok: false, error: error.message });
     }
 
     const inviteCode = await ensureHouseholdInviteCode(household);
@@ -233,22 +290,22 @@ router.post("/invite-code", requireAuth, requireRole("owner"), async (req, res) 
 
 router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) => {
   try {
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = hashToken(rawToken);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const { household, error } = await resolveShareHousehold(req, req.body?.householdId);
+    if (error) {
+      return res.status(error.status).json({ ok: false, error: error.message });
+    }
 
-    await Invitation.create({
-      householdId: effectiveHouseholdId,
-      tokenHash,
-      role: "member",
-      createdByUserId: req.kitchenUser._id,
-      expiresAt
+    const { rawToken, inviteLink, invitation } = await createHouseholdInvitation({
+      householdId: household._id,
+      createdByUserId: req.kitchenUser._id
     });
 
-    const frontendBaseUrl = String(config.frontendUrl || "").replace(/\/$/, "");
-    const inviteLink = `${frontendBaseUrl}/invite/${rawToken}`;
-    return res.status(201).json({ ok: true, inviteLink, token: rawToken, expiresAt });
+    return res.status(201).json({
+      ok: true,
+      inviteLink,
+      token: rawToken,
+      expiresAt: invitation.expiresAt
+    });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
@@ -258,10 +315,13 @@ router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) 
 
 router.get("/invitations", requireAuth, requireRole("owner"), async (req, res) => {
   try {
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const { household, error } = await resolveShareHousehold(req, req.query?.householdId);
+    if (error) {
+      return res.status(error.status).json({ ok: false, error: error.message });
+    }
     const now = new Date();
     const invitations = await Invitation.find(
-      buildScopedFilter(effectiveHouseholdId, {
+      buildScopedFilter(household._id, {
         usedAt: null,
         expiresAt: { $gt: now }
       })
@@ -274,6 +334,7 @@ router.get("/invitations", requireAuth, requireRole("owner"), async (req, res) =
       invitations: invitations.map((invitation) => ({
         id: invitation._id,
         role: invitation.role,
+        recipientEmail: invitation.recipientEmail || "",
         expiresAt: invitation.expiresAt,
         createdAt: invitation.createdAt
       }))
@@ -282,6 +343,96 @@ router.get("/invitations", requireAuth, requireRole("owner"), async (req, res) =
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudieron cargar las invitaciones." });
+  }
+});
+
+router.post("/invitations/email", requireAuth, requireRole("owner"), async (req, res) => {
+  try {
+    const { household, error } = await resolveShareHousehold(req, req.body?.householdId);
+    if (error) {
+      return res.status(error.status).json({ ok: false, error: error.message });
+    }
+
+    const { emails, invalidEmails } = normalizeInvitationEmails(req.body?.emails);
+    if (!emails.length) {
+      return res.status(400).json({ ok: false, error: "Debes indicar al menos un email válido." });
+    }
+    if (invalidEmails.length) {
+      return res.status(400).json({
+        ok: false,
+        error: "Hay emails no válidos en la lista.",
+        invalidEmails
+      });
+    }
+
+    const inviteCode = await ensureHouseholdInviteCode(household);
+    const inviterName = req.kitchenUser?.displayName || req.kitchenUser?.email || "HomeFirst";
+    const results = await Promise.all(
+      emails.map(async (email) => {
+        let createdInvitation = null;
+        try {
+          const { invitation, inviteLink } = await createHouseholdInvitation({
+            householdId: household._id,
+            createdByUserId: req.kitchenUser._id,
+            recipientEmail: email
+          });
+          createdInvitation = invitation;
+
+          await sendEmail({
+            to: email,
+            subject: `Join ${household.name} on HomeFirst`,
+            html: buildHouseholdInvitationEmail({
+              householdName: household.name,
+              inviteLink,
+              inviteCode,
+              inviterName,
+              recipientEmail: email
+            })
+          });
+
+          return {
+            email,
+            ok: true,
+            inviteLink,
+            expiresAt: invitation.expiresAt
+          };
+        } catch (sendError) {
+          if (createdInvitation?._id) {
+            await Invitation.deleteOne({ _id: createdInvitation._id }).catch(() => {});
+          }
+          return {
+            email,
+            ok: false,
+            error: sendError?.message || "No se pudo enviar la invitación."
+          };
+        }
+      })
+    );
+
+    const sentCount = results.filter((result) => result.ok).length;
+    const failedCount = results.length - sentCount;
+
+    return res.status(sentCount ? 201 : 500).json({
+      ok: sentCount > 0,
+      household: {
+        id: household._id,
+        name: household.name,
+        inviteCode
+      },
+      results,
+      sentCount,
+      failedCount
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    console.error("[kitchen/household] send invitation emails failed", {
+      userId: req.user?.id || null,
+      householdId: req.body?.householdId || req.user?.activeHouseholdId || req.user?.householdId || null,
+      error: error?.message,
+      stack: error?.stack
+    });
+    return res.status(500).json({ ok: false, error: "No se pudieron enviar las invitaciones por email." });
   }
 });
 

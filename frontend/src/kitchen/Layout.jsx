@@ -71,6 +71,16 @@ function UserIcon(props) {
   );
 }
 
+function ShareIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M7 12h10" />
+      <path d="m12 7 5 5-5 5" />
+      <path d="M7 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2" />
+    </svg>
+  );
+}
+
 function ChevronDownIcon(props) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -286,6 +296,12 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                   <UserIcon className="kitchen-user-menu-icon" />
                   Editar mi perfil
                 </button>
+                {(user?.role === "owner" || user?.role === "admin" || isDiod) ? (
+                  <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion?section=share")}>
+                    <ShareIcon className="kitchen-user-menu-icon" />
+                    Compartir
+                  </button>
+                ) : null}
                 <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion")}>
                   <SettingsIcon className="kitchen-user-menu-icon" />
                   Configuración

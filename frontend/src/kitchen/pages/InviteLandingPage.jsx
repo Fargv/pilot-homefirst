@@ -40,6 +40,10 @@ export default function InviteLandingPage() {
       const data = await apiRequest(`/api/kitchen/auth/invite/${token}`);
       setHouseholdName(data.householdName || "");
       setExpiresAt(data.expiresAt || "");
+      setForm((prev) => ({
+        ...prev,
+        email: data.recipientEmail || prev.email
+      }));
       setInviteValid(true);
     } catch (err) {
       setError(err.message || "No se pudo validar la invitación.");
