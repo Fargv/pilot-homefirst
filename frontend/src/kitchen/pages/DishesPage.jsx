@@ -1057,12 +1057,7 @@ export default function DishesPage() {
                   </div>
                   <div className="kitchen-dish-actions-bar">
                     <label className={`kitchen-dish-random-toggle ${toggleDisabled ? "is-loading" : ""}`}>
-                      <div className="kitchen-dish-random-toggle-text">
-                        <span className="kitchen-dish-random-toggle-copy">Permitir en randomización</span>
-                        <span className={`kitchen-dish-random-status ${randomEnabled ? "is-enabled" : "is-disabled"}`}>
-                          {randomEnabled ? "En randomización" : "Fuera de randomización"}
-                        </span>
-                      </div>
+                      <span className="kitchen-dish-random-toggle-copy">Permitir en randomización</span>
                       <span className="kitchen-toggle">
                         <input
                           type="checkbox"

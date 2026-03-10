@@ -4827,31 +4827,6 @@ body {
   line-height: 1.35;
 }
 
-.kitchen-dish-random-toggle-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-}
-
-.kitchen-dish-random-status {
-  display: inline-flex;
-  align-items: center;
-  min-height: 18px;
-  padding: 0;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.kitchen-dish-random-status.is-enabled {
-  color: #067647;
-}
-
-.kitchen-dish-random-status.is-disabled {
-  color: #b42318;
-}
-
 .kitchen-card-inactive {
   margin: 0;
   text-align: center;
