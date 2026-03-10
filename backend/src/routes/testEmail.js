@@ -19,11 +19,11 @@ router.post("/test-email", async (req, res) => {
 
     await sendEmail({
       to: String(to).trim(),
-      subject: "HomeFirst test email",
+      subject: "Lunchfy test email",
       html: `
         <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6;">
-          <h2 style="margin-bottom: 16px;">HomeFirst test email</h2>
-          <p>This is a test email from HomeFirst.</p>
+          <h2 style="margin-bottom: 16px;">Lunchfy test email</h2>
+          <p>This is a test email from Lunchfy.</p>
           <p>Brevo transactional email sending is configured and working correctly.</p>
         </div>
       `

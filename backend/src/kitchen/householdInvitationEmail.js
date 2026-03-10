@@ -17,7 +17,7 @@ export function buildHouseholdInvitationEmail({
   const safeHouseholdName = escapeHtml(householdName || "your household");
   const safeInviteLink = escapeHtml(inviteLink || "");
   const safeInviteCode = escapeHtml(inviteCode || "");
-  const safeInviterName = escapeHtml(inviterName || "Someone from HomeFirst");
+  const safeInviterName = escapeHtml(inviterName || "Someone from Lunchfy");
   const safeRecipientEmail = escapeHtml(recipientEmail || "");
 
   return `
@@ -29,7 +29,7 @@ export function buildHouseholdInvitationEmail({
               <tr>
                 <td style="padding-bottom:18px;text-align:center;">
                   <div style="display:inline-block;padding:10px 18px;border-radius:999px;background:#e8eeff;color:#3147b8;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">
-                    HomeFirst
+                    Lunchfy
                   </div>
                 </td>
               </tr>
@@ -45,7 +45,7 @@ export function buildHouseholdInvitationEmail({
                   <div style="padding:28px 32px 10px;">
                     <h2 style="margin:0 0 10px;font-size:18px;line-height:1.4;color:#182230;">Option 1: join with one click</h2>
                     <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#475467;">
-                      Click the button below to open your HomeFirst invitation. If you do not have an account yet, we will guide you through signup and connect you to the right household automatically.
+                      Click the button below to open your Lunchfy invitation. If you do not have an account yet, we will guide you through signup and connect you to the right household automatically.
                     </p>
                     <table role="presentation" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 16px;">
                       <tr>
@@ -65,7 +65,7 @@ export function buildHouseholdInvitationEmail({
                     <div style="border-top:1px solid #edf1ff;padding-top:24px;">
                       <h2 style="margin:0 0 10px;font-size:18px;line-height:1.4;color:#182230;">Option 2: sign up manually with this household code</h2>
                       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#475467;">
-                        Prefer the scenic route? Create your account in HomeFirst and enter this code during signup:
+                        Prefer the scenic route? Create your account in Lunchfy and enter this code during signup:
                       </p>
                       <div style="display:inline-block;padding:14px 18px;border-radius:18px;background:#f5f7ff;border:1px solid #d8e1ff;font-size:24px;letter-spacing:0.22em;font-weight:800;color:#22304a;">
                         ${safeInviteCode}
@@ -77,7 +77,7 @@ export function buildHouseholdInvitationEmail({
                   </div>
                   <div style="padding:18px 32px 28px;">
                     <p style="margin:0;font-size:12px;line-height:1.7;color:#98a2b3;">
-                      Sent by HomeFirst. This mailbox is not monitored, but the household probably is.
+                      Sent by Lunchfy. This mailbox is not monitored, but the household probably is.
                     </p>
                   </div>
                 </td>

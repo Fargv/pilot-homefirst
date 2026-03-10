@@ -238,7 +238,7 @@ export default function SettingsSharePanel({
           <span className="settings-share-eyebrow">Invitaciones por email</span>
           <h3>Invita a alguien a {shareHouseholdName}</h3>
           <p>
-            El camino principal ahora es simple: escribe uno o varios emails y HomeFirst enviará una invitación bonita,
+            El camino principal ahora es simple: escribe uno o varios emails y Lunchfy enviará una invitación bonita,
             clara y con acceso directo. El código del household sigue aquí como plan B.
           </p>
         </div>

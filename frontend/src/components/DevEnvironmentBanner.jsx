@@ -13,7 +13,7 @@ export default function DevEnvironmentBanner() {
     <>
       <div className="dev-environment-banner" role="status" aria-live="polite">
         <span className="dev-environment-banner__text">
-          ⚠ DEV ENVIRONMENT — HomeFirst Development
+          ⚠ DEV ENVIRONMENT — Lunchfy Development
         </span>
       </div>
       <div className="dev-environment-banner-spacer" aria-hidden="true" />

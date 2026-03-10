@@ -1,4 +1,4 @@
-ï»¿import crypto from "crypto";
+import crypto from "crypto";
 import express from "express";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
@@ -79,7 +79,7 @@ async function resolveShareHousehold(req, requestedHouseholdId) {
       return { error: { status: 400, message: "Debes seleccionar un household para enviar invitaciones." } };
     }
     if (!mongoose.isValidObjectId(householdId)) {
-      return { error: { status: 400, message: "El household seleccionado no es vÃ¡lido." } };
+      return { error: { status: 400, message: "El household seleccionado no es válido." } };
     }
     const household = await Household.findById(householdId)
       .select("_id name inviteCode ownerUserId")
@@ -280,7 +280,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     if (error?.name === "ValidationError" || error?.name === "CastError") {
-      return res.status(400).json({ ok: false, error: "Preferencias del household no vÃ¡lidas." });
+      return res.status(400).json({ ok: false, error: "Preferencias del household no válidas." });
     }
     console.error("[kitchen/household] update preferences failed", {
       userId: req.user?.id || null,
@@ -303,7 +303,7 @@ router.get("/invite-code", requireAuth, requireRole("owner"), async (req, res) =
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
-    return res.status(500).json({ ok: false, error: "No se pudo cargar el cÃ³digo del hogar." });
+    return res.status(500).json({ ok: false, error: "No se pudo cargar el código del hogar." });
   }
 });
 
@@ -319,7 +319,7 @@ router.post("/invite-code", requireAuth, requireRole("owner"), async (req, res) 
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
-    return res.status(500).json({ ok: false, error: "No se pudo generar el cÃ³digo del hogar." });
+    return res.status(500).json({ ok: false, error: "No se pudo generar el código del hogar." });
   }
 });
 
@@ -344,7 +344,7 @@ router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) 
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
-    return res.status(500).json({ ok: false, error: "No se pudo crear la invitaciÃ³n." });
+    return res.status(500).json({ ok: false, error: "No se pudo crear la invitación." });
   }
 });
 
@@ -396,12 +396,12 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
 
     const { emails, invalidEmails } = normalizeInvitationEmails(req.body?.emails);
     if (!emails.length) {
-      return res.status(400).json({ ok: false, error: "Debes indicar al menos un email vÃ¡lido." });
+      return res.status(400).json({ ok: false, error: "Debes indicar al menos un email válido." });
     }
     if (invalidEmails.length) {
       return res.status(400).json({
         ok: false,
-        error: "Hay emails no vÃ¡lidos en la lista.",
+        error: "Hay emails no válidos en la lista.",
         invalidEmails
       });
     }
@@ -415,7 +415,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
     });
 
     const inviteCode = await ensureHouseholdInviteCode(household);
-    const inviterName = req.kitchenUser?.displayName || req.kitchenUser?.email || "HomeFirst";
+    const inviterName = req.kitchenUser?.displayName || req.kitchenUser?.email || "Lunchfy";
     const results = await Promise.all(
       emails.map(async (email) => {
         let createdInvitation = null;
@@ -434,7 +434,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
 
           await sendEmail({
             to: email,
-            subject: `Join ${household.name} on HomeFirst`,
+            subject: `Join ${household.name} on Lunchfy`,
             html: buildHouseholdInvitationEmail({
               householdName: household.name,
               inviteLink,
@@ -457,7 +457,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
           return {
             email,
             ok: false,
-            error: sendError?.message || "No se pudo enviar la invitaciÃ³n."
+            error: sendError?.message || "No se pudo enviar la invitación."
           };
         }
       })
@@ -554,13 +554,13 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     if (error?.name === "ValidationError" || error?.name === "CastError") {
-      return res.status(400).json({ ok: false, error: "Datos de comensal no vÃ¡lidos." });
+      return res.status(400).json({ ok: false, error: "Datos de comensal no válidos." });
     }
     if (error?.code === 11000) {
       if (error?.keyPattern?.email) {
         return res.status(409).json({ ok: false, error: "No se pudo crear el comensal: email duplicado." });
       }
-      return res.status(409).json({ ok: false, error: "No se pudo crear el comensal: conflicto de datos Ãºnicos." });
+      return res.status(409).json({ ok: false, error: "No se pudo crear el comensal: conflicto de datos únicos." });
     }
     return res.status(500).json({ ok: false, error: "No se pudo crear el comensal." });
   }
@@ -571,10 +571,10 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
     const { email, password } = req.body;
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
-      return res.status(400).json({ ok: false, error: "Debes indicar un email vÃ¡lido." });
+      return res.status(400).json({ ok: false, error: "Debes indicar un email válido." });
     }
     if (password && String(password).length < 8) {
-      return res.status(400).json({ ok: false, error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
     }
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
@@ -588,7 +588,7 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
 
     const emailInUse = await KitchenUser.findOne({ email: normalizedEmail, _id: { $ne: placeholder._id } });
     if (emailInUse) {
-      return res.status(409).json({ ok: false, error: "Ese email ya estÃ¡ en uso por otra cuenta." });
+      return res.status(409).json({ ok: false, error: "Ese email ya está en uso por otra cuenta." });
     }
 
     placeholder.email = normalizedEmail;
@@ -614,10 +614,10 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     if (error?.name === "ValidationError" || error?.name === "CastError") {
-      return res.status(400).json({ ok: false, error: "Datos de conversiÃ³n no vÃ¡lidos." });
+      return res.status(400).json({ ok: false, error: "Datos de conversión no válidos." });
     }
     if (error?.code === 11000 && error?.keyPattern?.email) {
-      return res.status(409).json({ ok: false, error: "Ese email ya estÃ¡ en uso por otra cuenta." });
+      return res.status(409).json({ ok: false, error: "Ese email ya está en uso por otra cuenta." });
     }
     console.error("[kitchen/household] convert placeholder failed", {
       userId: req.user?.id || null,

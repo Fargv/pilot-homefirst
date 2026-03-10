@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
@@ -99,7 +99,7 @@ function buildResetPasswordEmail(resetUrl) {
               <tr>
                 <td style="padding-bottom: 18px; text-align: center;">
                   <div style="display: inline-block; padding: 10px 18px; border-radius: 999px; background: #eef2ff; color: #4338ca; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">
-                    HomeFirst
+                    Lunchfy
                   </div>
                 </td>
               </tr>
@@ -107,7 +107,7 @@ function buildResetPasswordEmail(resetUrl) {
                 <td style="background: #ffffff; border: 1px solid #e4e7ec; border-radius: 24px; padding: 36px 32px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);">
                   <h1 style="margin: 0 0 14px; font-size: 28px; line-height: 1.2; color: #111827;">Reset your password</h1>
                   <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.6; color: #475467;">
-                    We received a request to reset the password for your HomeFirst account.
+                    We received a request to reset the password for your Lunchfy account.
                   </p>
                   <p style="margin: 0 0 26px; font-size: 15px; line-height: 1.6; color: #475467;">
                     Use the button below to choose a new password. For your security, this link will expire in 1 hour.
@@ -134,7 +134,7 @@ function buildResetPasswordEmail(resetUrl) {
                     If you did not request a password reset, you can safely ignore this email.
                   </p>
                   <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #98a2b3;">
-                    This message was sent automatically by HomeFirst. Please do not reply directly to this email.
+                    This message was sent automatically by Lunchfy. Please do not reply directly to this email.
                   </p>
                 </td>
               </tr>
@@ -150,12 +150,12 @@ router.get("/invite/:token", async (req, res) => {
   try {
     const { token } = req.params;
     if (!token) {
-      return res.status(400).json({ ok: false, error: "Token de invitaciÃ³n invÃ¡lido." });
+      return res.status(400).json({ ok: false, error: "Token de invitación inválido." });
     }
 
     const invitation = await findActiveInvitationByToken(token);
     if (!invitation) {
-      return res.status(404).json({ ok: false, error: "La invitaciÃ³n no es vÃ¡lida o expirÃ³." });
+      return res.status(404).json({ ok: false, error: "La invitación no es válida o expiró." });
     }
 
     const household = await Household.findById(invitation.householdId).select("name");
@@ -167,7 +167,7 @@ router.get("/invite/:token", async (req, res) => {
       recipientEmail: invitation.recipientEmail || ""
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: "No se pudo validar la invitaciÃ³n." });
+    return res.status(500).json({ ok: false, error: "No se pudo validar la invitación." });
   }
 });
 
@@ -177,18 +177,18 @@ router.post("/login", async (req, res) => {
     const { email, password, username } = req.body;
     const loginValue = normalizeEmail(email || username);
     if (!loginValue || !password) {
-      return res.status(400).json({ ok: false, error: "Email y contraseÃ±a son obligatorios." });
+      return res.status(400).json({ ok: false, error: "Email y contraseña son obligatorios." });
     }
 
     const user = await KitchenUser.findOne({ email: loginValue });
-    if (!user) return res.status(401).json({ ok: false, error: "Credenciales invÃ¡lidas." });
+    if (!user) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
 
     if (!user.passwordHash || user.isPlaceholder || user.type === "placeholder" || user.hasLogin === false) {
-      return res.status(401).json({ ok: false, error: "Credenciales invÃ¡lidas." });
+      return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
     }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return res.status(401).json({ ok: false, error: "Credenciales invÃ¡lidas." });
+    if (!ok) return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
 
     const isDiod = loginValue === DIOD_EMAIL;
     const shouldUpdateGlobalRole = (isDiod && user.globalRole !== "diod") || (!isDiod && user.globalRole);
@@ -204,7 +204,7 @@ router.post("/login", async (req, res) => {
     };
     return res.json({ ok: true, token, user: safeUser });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: "No se pudo iniciar sesiÃ³n." });
+    return res.status(500).json({ ok: false, error: "No se pudo iniciar sesión." });
   }
 });
 
@@ -213,12 +213,12 @@ router.get("/resolve-household/:inviteCode", async (req, res) => {
   try {
     const inviteCode = String(req.params.inviteCode || "").trim();
     if (!isValidInviteCodeFormat(inviteCode)) {
-      return res.status(400).json({ ok: false, error: "El cÃ³digo debe tener 6 dÃ­gitos numÃ©ricos." });
+      return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
     }
 
     const household = await Household.findOne({ inviteCode }).select("_id name");
     if (!household) {
-      return res.status(404).json({ ok: false, error: "El cÃ³digo del hogar no es vÃ¡lido." });
+      return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
     }
 
     return res.json({
@@ -229,7 +229,7 @@ router.get("/resolve-household/:inviteCode", async (req, res) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: "No se pudo validar el cÃ³digo del hogar." });
+    return res.status(500).json({ ok: false, error: "No se pudo validar el código del hogar." });
   }
 });
 
@@ -241,20 +241,20 @@ router.post("/register", async (req, res) => {
     const normalizedInviteCode = String(inviteCode || "").trim();
 
     if (!normalizedEmail || !password || !safeDisplayName) {
-      return res.status(400).json({ ok: false, error: "Nombre, email y contraseÃ±a son obligatorios." });
+      return res.status(400).json({ ok: false, error: "Nombre, email y contraseña son obligatorios." });
     }
 
     if (!isValidEmail(normalizedEmail)) {
-      return res.status(400).json({ ok: false, error: "El email no es vÃ¡lido." });
+      return res.status(400).json({ ok: false, error: "El email no es válido." });
     }
 
     if (String(password).length < 8) {
-      return res.status(400).json({ ok: false, error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
     }
 
     const existingUser = await KitchenUser.findOne({ email: normalizedEmail });
     if (existingUser) {
-      return res.status(409).json({ ok: false, error: "El email ya estÃ¡ registrado." });
+      return res.status(409).json({ ok: false, error: "El email ya está registrado." });
     }
 
     const mode = normalizedInviteCode ? "join" : "create";
@@ -263,12 +263,12 @@ router.post("/register", async (req, res) => {
 
     if (mode === "join") {
       if (!isValidInviteCodeFormat(normalizedInviteCode)) {
-        return res.status(400).json({ ok: false, error: "El cÃ³digo debe tener 6 dÃ­gitos numÃ©ricos." });
+        return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
       }
 
       household = await Household.findOne({ inviteCode: normalizedInviteCode });
       if (!household) {
-        return res.status(404).json({ ok: false, error: "El cÃ³digo del hogar no es vÃ¡lido." });
+        return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
       }
       role = "member";
     }
@@ -306,7 +306,7 @@ router.post("/register", async (req, res) => {
       try {
         await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
       } catch (error) {
-        console.error("No se pudo crear automÃ¡ticamente el plan semanal durante el registro:", error?.message || error);
+        console.error("No se pudo crear automáticamente el plan semanal durante el registro:", error?.message || error);
       }
     }
 
@@ -337,24 +337,24 @@ router.post("/accept-invite", async (req, res) => {
     if (!token || !normalizedEmail || !password) {
       return res.status(400).json({
         ok: false,
-        error: "Token, email y contraseÃ±a son obligatorios."
+        error: "Token, email y contraseña son obligatorios."
       });
     }
 
     if (String(password).length < 8) {
-      return res.status(400).json({ ok: false, error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+      return res.status(400).json({ ok: false, error: "La contraseña debe tener al menos 8 caracteres." });
     }
 
     const invitation = await findActiveInvitationByToken(token);
 
     if (!invitation) {
-      return res.status(400).json({ ok: false, error: "La invitaciÃ³n no es vÃ¡lida o expirÃ³." });
+      return res.status(400).json({ ok: false, error: "La invitación no es válida o expiró." });
     }
 
     if (invitation.recipientEmail && invitation.recipientEmail !== normalizedEmail) {
       return res.status(403).json({
         ok: false,
-        error: "Esta invitaciÃ³n fue enviada a otro email. Usa ese correo o pide una nueva invitaciÃ³n."
+        error: "Esta invitación fue enviada a otro email. Usa ese correo o pide una nueva invitación."
       });
     }
 
@@ -364,7 +364,7 @@ router.post("/accept-invite", async (req, res) => {
       if (user.householdId && user.householdId.toString() !== invitation.householdId.toString()) {
         return res.status(409).json({
           ok: false,
-          error: "Ese email ya pertenece a otro hogar y no se puede unir con esta invitaciÃ³n."
+          error: "Ese email ya pertenece a otro hogar y no se puede unir con esta invitación."
         });
       }
 
@@ -387,7 +387,7 @@ router.post("/accept-invite", async (req, res) => {
       } else {
         const passwordOk = await bcrypt.compare(password, user.passwordHash);
         if (!passwordOk) {
-          return res.status(401).json({ ok: false, error: "Credenciales invÃ¡lidas." });
+          return res.status(401).json({ ok: false, error: "Credenciales inválidas." });
         }
       }
 
@@ -439,7 +439,7 @@ router.post("/accept-invite", async (req, res) => {
     const jwt = createToken(user);
     return res.json({ ok: true, token: jwt, user: user.toSafeJSON() });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitaciÃ³n." });
+    return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitación." });
   }
 });
 
@@ -523,7 +523,7 @@ router.post("/forgot-password", async (req, res) => {
 
     await sendEmail({
       to: normalizedEmail,
-      subject: "HomeFirst password reset",
+      subject: "Lunchfy password reset",
       html: buildResetPasswordEmail(resetUrl)
     });
 
