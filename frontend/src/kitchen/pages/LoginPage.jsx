@@ -17,11 +17,12 @@ export default function LoginPage() {
     event.preventDefault();
     setError("");
     setLoading(true);
+
     try {
       await login(form.email, form.password);
       navigate("/kitchen/semana", { replace: true });
     } catch (err) {
-      setError(err.message || "No se pudo iniciar sesión.");
+      setError(err.message || "No se pudo iniciar sesion.");
     } finally {
       setLoading(false);
     }
@@ -37,13 +38,13 @@ export default function LoginPage() {
               <img className="kitchen-login-icon" src={lunchfyIcon} alt="" />
             </div>
           </div>
-          <h2 className="kitchen-login-title">¡Bienvenido de nuevo!</h2>
-          <p className="kitchen-login-subtitle">Hay planes deliciosos esperándote.</p>
+          <h2 className="kitchen-login-title">Bienvenido de nuevo</h2>
+          <p className="kitchen-login-subtitle">Hay planes deliciosos esperandote.</p>
           {profileDeleted ? <div className="kitchen-alert success">Perfil eliminado correctamente. Puedes iniciar sesion o registrarte de nuevo.</div> : null}
           <form onSubmit={onSubmit} className="kitchen-login-form">
             <div className="kitchen-login-fields">
               <label className="kitchen-ui-input-group" htmlFor="login-email">
-                <span className="kitchen-login-label">CORREO ELECTRÓNICO</span>
+                <span className="kitchen-login-label">CORREO ELECTRONICO</span>
                 <div className="kitchen-login-input-wrap">
                   <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
                     <path d="M3.5 7.5h17v9h-17z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
@@ -61,7 +62,7 @@ export default function LoginPage() {
                 </div>
               </label>
               <label className="kitchen-ui-input-group" htmlFor="login-password">
-                <span className="kitchen-login-label">CONTRASEÑA</span>
+                <span className="kitchen-login-label">CONTRASENA</span>
                 <div className="kitchen-login-input-wrap">
                   <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
                     <path d="M7.5 11V8a4.5 4.5 0 0 1 9 0v3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -73,10 +74,10 @@ export default function LoginPage() {
                     type="password"
                     value={form.password}
                     onChange={(event) => setForm({ ...form, password: event.target.value })}
-                    placeholder="••••••••"
+                    placeholder="........"
                     required
                   />
-                  <button type="button" className="kitchen-login-eye" aria-label="Mostrar contraseña">
+                  <button type="button" className="kitchen-login-eye" aria-label="Mostrar contrasena">
                     <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-input-icon">
                       <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
                       <circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" strokeWidth="1.7" />
@@ -85,12 +86,18 @@ export default function LoginPage() {
                 </div>
               </label>
               <div className="kitchen-login-forgot-row">
-                <button type="button" className="kitchen-login-link">¿Olvidaste tu contraseña?</button>
+                <button
+                  type="button"
+                  className="kitchen-login-link"
+                  onClick={() => navigate("/forgot-password")}
+                >
+                  Olvidaste tu contrasena?
+                </button>
               </div>
             </div>
             {error ? <div className="kitchen-login-error">{error}</div> : null}
             <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={loading}>
-              {loading ? "Entrando..." : "Iniciar sesión →"}
+              {loading ? "Entrando..." : "Iniciar sesion ->"}
             </button>
             <div className="kitchen-login-divider">O CONTINUAR CON</div>
             <div className="kitchen-login-socials">
@@ -115,7 +122,12 @@ export default function LoginPage() {
               </button>
             </div>
           </form>
-          <p className="kitchen-login-footer">¿No tienes cuenta? <button type="button" className="kitchen-login-link" onClick={() => navigate("/register")}>Regístrate</button></p>
+          <p className="kitchen-login-footer">
+            No tienes cuenta?{" "}
+            <button type="button" className="kitchen-login-link" onClick={() => navigate("/register")}>
+              Registrate
+            </button>
+          </p>
         </Card>
       </div>
     </div>

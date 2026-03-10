@@ -40,20 +40,57 @@ function hashResetPasswordToken(token) {
 
 function buildResetPasswordEmail(resetUrl) {
   return `
-    <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6; max-width: 560px; margin: 0 auto;">
-      <h1 style="font-size: 24px; margin-bottom: 16px; color: #111827;">HomeFirst</h1>
-      <p style="margin: 0 0 16px;">We received a request to reset your password.</p>
-      <p style="margin: 0 0 24px;">Use the button below to choose a new password for your HomeFirst account.</p>
-      <p style="margin: 0 0 24px;">
-        <a
-          href="${resetUrl}"
-          style="display: inline-block; padding: 12px 20px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600;"
-        >
-          Reset password
-        </a>
-      </p>
-      <p style="margin: 0 0 16px;">This link expires in 1 hour.</p>
-      <p style="margin: 0;">If you did not request this change, you can safely ignore this email.</p>
+    <div style="margin: 0; padding: 32px 16px; background: #f8fafc; font-family: Arial, sans-serif; color: #1f2937;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width: 100%; max-width: 560px; border-collapse: collapse;">
+              <tr>
+                <td style="padding-bottom: 18px; text-align: center;">
+                  <div style="display: inline-block; padding: 10px 18px; border-radius: 999px; background: #eef2ff; color: #4338ca; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">
+                    HomeFirst
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="background: #ffffff; border: 1px solid #e4e7ec; border-radius: 24px; padding: 36px 32px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);">
+                  <h1 style="margin: 0 0 14px; font-size: 28px; line-height: 1.2; color: #111827;">Reset your password</h1>
+                  <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.6; color: #475467;">
+                    We received a request to reset the password for your HomeFirst account.
+                  </p>
+                  <p style="margin: 0 0 26px; font-size: 15px; line-height: 1.6; color: #475467;">
+                    Use the button below to choose a new password. For your security, this link will expire in 1 hour.
+                  </p>
+                  <table role="presentation" cellspacing="0" cellpadding="0" style="border-collapse: collapse; margin: 0 0 22px;">
+                    <tr>
+                      <td style="border-radius: 999px; background: #4338ca; text-align: center;">
+                        <a
+                          href="${resetUrl}"
+                          style="display: inline-block; padding: 14px 24px; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700;"
+                        >
+                          Reset password
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin: 0 0 10px; font-size: 13px; line-height: 1.6; color: #667085;">
+                    If the button does not work, copy and paste this link into your browser:
+                  </p>
+                  <p style="margin: 0 0 24px; font-size: 13px; line-height: 1.6; word-break: break-word;">
+                    <a href="${resetUrl}" style="color: #4338ca; text-decoration: underline;">${resetUrl}</a>
+                  </p>
+                  <p style="margin: 0 0 8px; font-size: 13px; line-height: 1.6; color: #667085;">
+                    If you did not request a password reset, you can safely ignore this email.
+                  </p>
+                  <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #98a2b3;">
+                    This message was sent automatically by HomeFirst. Please do not reply directly to this email.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </div>
   `;
 }

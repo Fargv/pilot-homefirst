@@ -52,7 +52,7 @@ export async function apiRequest(path, options = {}) {
   const shouldParseJson = canHaveBody && (contentType.includes("application/json") || (Number.isFinite(contentLength) && contentLength > 0));
   const data = shouldParseJson ? await response.json().catch(() => ({})) : {};
   if (!response.ok) {
-    const message = data?.error || "Error inesperado";
+    const message = data?.error || data?.message || "Error inesperado";
     throw new ApiRequestError(message, {
       path,
       url,
@@ -62,4 +62,18 @@ export async function apiRequest(path, options = {}) {
   }
 
   return data;
+}
+
+export function requestForgotPassword(email) {
+  return apiRequest("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email })
+  });
+}
+
+export function requestResetPassword(token, newPassword) {
+  return apiRequest("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, newPassword })
+  });
 }
