@@ -1245,6 +1245,46 @@ export default function WeekPage() {
     weekStart
   ]);
 
+  useEffect(() => {
+    const hasAssignIntent = Boolean(searchParams.get("assignPlateId") || searchParams.get("plateId"));
+    if (hasAssignIntent) return;
+
+    const targetDate = String(searchParams.get("date") || "").trim();
+    if (!targetDate) return;
+
+    const parsedTargetDate = parseISODateInput(targetDate);
+    if (!parsedTargetDate) return;
+
+    const targetMealType = normalizeMealType(searchParams.get("mealType") || "lunch");
+    if (targetMealType !== mealTab) {
+      setMealTab(targetMealType);
+    }
+
+    const targetWeekStart = getMondayISO(parsedTargetDate);
+    if (weekStart !== targetWeekStart) {
+      setWeekStart(targetWeekStart);
+      return;
+    }
+
+    const targetDayExists = visibleDays.some((day) => day?.date?.slice(0, 10) === targetDate);
+    if (!targetDayExists) return;
+
+    if (selectedDayRef.current !== targetDate) {
+      setSelectedDay(targetDate);
+    }
+
+    requestAnimationFrame(() => {
+      const target = dayRefs.current.get(targetDate) || document.getElementById(`daycard-${targetDate}`);
+      target?.scrollIntoView?.({ behavior: "smooth", block: "nearest", inline: "start" });
+      target?.focus?.({ preventScroll: true });
+    });
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("date");
+    nextParams.delete("mealType");
+    setSearchParams(nextParams, { replace: true });
+  }, [mealTab, searchParams, setSearchParams, setWeekStart, visibleDays, weekStart]);
+
   const handleAssignCta = async (day, canEdit, isAssigned) => {
     const dayKey = day.date.slice(0, 10);
     if (canEdit) {

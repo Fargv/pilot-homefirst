@@ -28,7 +28,13 @@ export const config = {
     apiKey: process.env.BREVO_API_KEY
   },
 
-  mailFrom: process.env.EMAIL_FROM || process.env.MAIL_FROM || "Pilot <no-reply@example.com>"
+  mailFrom: process.env.EMAIL_FROM || process.env.MAIL_FROM || "Pilot <no-reply@example.com>",
+
+  webPush: {
+    publicKey: process.env.WEB_PUSH_PUBLIC_KEY || "",
+    privateKey: process.env.WEB_PUSH_PRIVATE_KEY || "",
+    contactEmail: process.env.WEB_PUSH_CONTACT_EMAIL || ""
+  }
 };
 
 if (!config.mongodbUri) {

@@ -5,6 +5,7 @@ import { useAuth } from "../auth";
 import { apiRequest } from "../api.js";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import SettingsSharePanel from "../components/SettingsSharePanel.jsx";
+import PushNotificationsPanel from "../components/PushNotificationsPanel.jsx";
 import { getColorPalette, getUserColorById, getUserColorPreference, setUserColorPreference } from "../utils/userColors.js";
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 
@@ -976,8 +977,8 @@ export default function SettingsPage() {
       <div className="settings-block">
         <div className="settings-coming-row"><span>Idioma</span><span className="kitchen-pill">Coming soon</span></div>
         <div className="settings-coming-row"><span>Dark mode</span><span className="kitchen-pill">Coming soon</span></div>
-        <div className="settings-coming-row"><span>Notificaciones</span><span className="kitchen-pill">Coming soon</span></div>
       </div>
+      <PushNotificationsPanel refreshKey={user?.id || ""} />
     </div>
   );
 

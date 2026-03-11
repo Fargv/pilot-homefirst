@@ -8,6 +8,7 @@ import userRoutes from "./routes/users.js";
 import adminRoutes from "./routes/admin.js";
 import householdRoutes from "./routes/household.js";
 import dishCategoryRoutes from "./routes/dishCategories.js";
+import pushRoutes from "./routes/push.js";
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use("/users", userRoutes);
 router.use("/admin", adminRoutes);
 router.use("/household", householdRoutes);
 router.use("/dish-categories", dishCategoryRoutes);
+router.use("/push", pushRoutes);
 
 export default router;

@@ -4317,6 +4317,20 @@ body {
   background: #fff;
 }
 
+.settings-notification-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.settings-notification-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .settings-counter {
   margin: 0;
   font-size: 14px;
