@@ -2114,7 +2114,23 @@ export default function WeekPage() {
             >
               <div className="kitchen-day-header">
                 <div className="kitchen-day-header-row">
-                  <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
+                  <div className="kitchen-day-header-main">
+                    <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
+                    <div className="kitchen-day-subtitle-row">
+                      <div className="kitchen-day-subtitle">
+                        Comen {attendeeCount} {attendeeCount === 1 ? "persona" : "personas"}
+                      </div>
+                      <button
+                        type="button"
+                        className="kitchen-day-attendees-action"
+                        onClick={() => openAttendeeDialog(day, canManageAttendees)}
+                        aria-label={canManageAttendees ? "Editar comensales" : "Ver comensales"}
+                        title={canManageAttendees ? "Editar comensales" : "Ver comensales"}
+                      >
+                        {canManageAttendees ? <EditIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
+                  </div>
                   <div className={`kitchen-day-cook-block ${isEditing && isOwnerAdmin ? "is-editing" : ""}`}>
                     {isEditing && isOwnerAdmin ? (
                       renderAssigneePicker(day, dayKey, cookColors, cookInitials, cookUser)
@@ -2124,20 +2140,6 @@ export default function WeekPage() {
                       </span>
                     )}
                   </div>
-                </div>
-                <div className="kitchen-day-subtitle-row">
-                  <div className="kitchen-day-subtitle">
-                    Comen {attendeeCount} {attendeeCount === 1 ? "persona" : "personas"}
-                  </div>
-                  <button
-                    type="button"
-                    className="kitchen-day-attendees-action"
-                    onClick={() => openAttendeeDialog(day, canManageAttendees)}
-                    aria-label={canManageAttendees ? "Editar comensales" : "Ver comensales"}
-                    title={canManageAttendees ? "Editar comensales" : "Ver comensales"}
-                  >
-                    {canManageAttendees ? <EditIcon /> : <EyeIcon />}
-                  </button>
                 </div>
                 {!isEmptyState ? (
                   <>
