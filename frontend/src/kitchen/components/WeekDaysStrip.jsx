@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { getUnassignedColor, getUserColorById } from "../utils/userColors";
-import { getUserInitialsFromProfile } from "../utils/userInitials.js";
 
 const DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
-const DAY_LONG = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const DAY_LONG = ["domingo", "lunes", "martes", "miÃ©rcoles", "jueves", "viernes", "sÃ¡bado"];
 
 function getDayAbbreviation(dateString) {
   if (!dateString) return "-";
@@ -47,9 +46,6 @@ export default function WeekDaysStrip({
     return safeDays.map((day, index) => {
       const dayKey = day?.date ? day.date.slice(0, 10) : `day-${index}`;
       const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
-      const initials = cookUser
-        ? getUserInitialsFromProfile(cookUser.initials, cookUser.id, cookUser.displayName)
-        : "";
       return {
         key: dayKey,
         date: day.date,
@@ -57,7 +53,7 @@ export default function WeekDaysStrip({
         isAssigned: Boolean(day.cookUserId),
         cookUserId: day.cookUserId,
         cookName: cookUser?.displayName || "Sin asignar",
-        initials
+        dayLabel: getDayAbbreviation(day.date)
       };
     });
   }, [safeDays, userMap]);
@@ -102,14 +98,14 @@ export default function WeekDaysStrip({
   };
 
   return (
-    <section className="kitchen-weekdays-strip kitchen-card" aria-label="Panel de días">
+    <section className="kitchen-weekdays-strip kitchen-card" aria-label="Panel de dÃ­as">
       <div className={`kitchen-weekdays-carousel ${isCarousel ? "is-carousel" : ""}`}>
         {isCarousel ? (
           <button
             className="kitchen-weekdays-arrow is-left"
             type="button"
             onClick={() => scrollByOffset(-1)}
-            aria-label="Desplazar días a la izquierda"
+            aria-label="Desplazar dÃ­as a la izquierda"
           >
             <ChevronIcon className="kitchen-weekdays-arrow-icon" />
           </button>
@@ -135,13 +131,19 @@ export default function WeekDaysStrip({
                 style={{
                   "--weekday-bg": colors.background,
                   "--weekday-text": colors.text,
-                  "--weekday-border": colors.border || "transparent"
+                  "--weekday-border": colors.border || "transparent",
+                  "--weekday-label-text": entry.isAssigned ? colors.text : "#475467"
                 }}
               >
                 <span className="kitchen-weekdays-circle" aria-hidden="true">
-                  {entry.hasDish ? (entry.isAssigned ? entry.initials : "•") : "+"}
+                  {entry.isAssigned ? entry.dayLabel : "+"}
                 </span>
-                <span className="kitchen-weekdays-label">{getDayAbbreviation(entry.date)}</span>
+                <span
+                  className={`kitchen-weekdays-label ${entry.isAssigned ? "is-assigned" : "is-day"}`}
+                  title={entry.isAssigned ? entry.cookName : getDayLong(entry.date)}
+                >
+                  {entry.isAssigned ? entry.cookName : entry.dayLabel}
+                </span>
               </button>
             );
           })}
@@ -168,7 +170,7 @@ export default function WeekDaysStrip({
             className="kitchen-weekdays-arrow is-right"
             type="button"
             onClick={() => scrollByOffset(1)}
-            aria-label="Desplazar días a la derecha"
+            aria-label="Desplazar dÃ­as a la derecha"
           >
             <ChevronIcon className="kitchen-weekdays-arrow-icon is-next" />
           </button>
