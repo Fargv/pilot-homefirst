@@ -977,6 +977,37 @@ body {
   height: 16px;
 }
 
+.kitchen-week-header-utility-row {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.kitchen-week-delete-button,
+.kitchen-week-randomize-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.kitchen-week-delete-button svg,
+.kitchen-week-randomize-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.kitchen-week-delete-button {
+  border-color: rgba(180, 35, 24, 0.2);
+  box-shadow: 0 6px 18px rgba(180, 35, 24, 0.08);
+}
+
+.kitchen-week-delete-button:hover {
+  box-shadow: 0 10px 20px rgba(180, 35, 24, 0.12);
+}
+
 .kitchen-input,
 .kitchen-select,
 .kitchen-textarea {
@@ -2239,6 +2270,15 @@ body {
   .kitchen-week-header-actions {
     width: 100%;
     align-items: stretch;
+  }
+
+  .kitchen-week-header-utility-row {
+    justify-content: stretch;
+  }
+
+  .kitchen-week-delete-button,
+  .kitchen-week-randomize-button {
+    width: 100%;
   }
 
   .kitchen-week-nav {

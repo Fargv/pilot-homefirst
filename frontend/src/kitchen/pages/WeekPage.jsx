@@ -205,6 +205,12 @@ function formatWeekendOptionLabel(dayKey) {
   return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString("es-ES", { weekday: "long" });
 }
 
+function isOptionalWeekendDayKey(dayKey, weekStart) {
+  if (!dayKey || !weekStart) return false;
+  return dayKey === addDaysToISO(weekStart, OPTIONAL_WEEKEND_DAY_OFFSETS.saturday)
+    || dayKey === addDaysToISO(weekStart, OPTIONAL_WEEKEND_DAY_OFFSETS.sunday);
+}
+
 export default function WeekPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -266,6 +272,8 @@ export default function WeekPage() {
   const [dinnerShoppingChoiceDialog, setDinnerShoppingChoiceDialog] = useState(null);
   const [weekRandomizeConfirmOpen, setWeekRandomizeConfirmOpen] = useState(false);
   const [weekRandomizing, setWeekRandomizing] = useState(false);
+  const [weekDeleteConfirmOpen, setWeekDeleteConfirmOpen] = useState(false);
+  const [weekDeleteBusy, setWeekDeleteBusy] = useState(false);
   const [weekendDialogOpen, setWeekendDialogOpen] = useState(false);
   const [weekendBusy, setWeekendBusy] = useState(false);
   const ingredientCache = useRef(new Map());
@@ -388,6 +396,32 @@ export default function WeekPage() {
       setWeekRandomizing(false);
     }
   }, [selectedMealType]);
+
+  const handleConfirmWeekDelete = useCallback(async () => {
+    if (weekDeleteBusy) return;
+    setWeekDeleteBusy(true);
+    setWeekNotice(null);
+    setLoadError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/weeks/${weekStartRef.current}/reset`, {
+        method: "POST",
+        body: JSON.stringify({ mealType: selectedMealType })
+      });
+      setPlan(data?.plan || null);
+      setWeekDeleteConfirmOpen(false);
+      setWeekNotice({
+        type: "success",
+        message: `Programacion semanal de ${selectedMealType === "dinner" ? "cenas" : "comidas"} borrada`
+      });
+    } catch (err) {
+      setWeekNotice({
+        type: "error",
+        message: err.message || "No se pudo borrar la semana."
+      });
+    } finally {
+      setWeekDeleteBusy(false);
+    }
+  }, [selectedMealType, weekDeleteBusy]);
 
   const loadData = async () => {
     const requestSeq = loadRequestSeqRef.current + 1;
@@ -800,7 +834,8 @@ export default function WeekPage() {
       leftoversSourceMealType: null,
       leftoversSourceDishId: null,
       ingredientOverrides: [],
-      baseIngredientExclusions: []
+      baseIngredientExclusions: [],
+      removeDay: isOptionalWeekendDayKey(dayKey, weekStartRef.current)
     });
     if (result) {
       stopEditingDay(dayKey);
@@ -1789,16 +1824,31 @@ export default function WeekPage() {
                   </button>
                 </div>
               ) : null}
-              {canShowWeekRandomize ? (
-                <button
-                  type="button"
-                  className="kitchen-button secondary is-small kitchen-week-randomize-button"
-                  onClick={() => setWeekRandomizeConfirmOpen(true)}
-                  disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                  title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar semana"}
-                >
-                  <DiceIcon /> Randomizar semana
-                </button>
+              {canShowWeekRandomize || isOwnerAdmin ? (
+                <div className="kitchen-week-header-utility-row">
+                  {canShowWeekRandomize ? (
+                    <button
+                      type="button"
+                      className="kitchen-button secondary is-small kitchen-week-randomize-button"
+                      onClick={() => setWeekRandomizeConfirmOpen(true)}
+                      disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+                      title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar semana"}
+                    >
+                      <DiceIcon /> Randomizar semana
+                    </button>
+                  ) : null}
+                  {isOwnerAdmin ? (
+                    <button
+                      type="button"
+                      className="kitchen-button secondary danger is-small kitchen-week-delete-button"
+                      onClick={() => setWeekDeleteConfirmOpen(true)}
+                      disabled={weekDeleteBusy}
+                      title="Borrar la programacion visible de esta semana"
+                    >
+                      <TrashIcon /> Borrar semana
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
               {weekNotice ? (
                 <div className={`kitchen-alert ${weekNotice.type === "success" ? "success" : "error"}`}>
@@ -2944,6 +2994,50 @@ export default function WeekPage() {
           </div>
         </div>
       ) : null}
+      {weekDeleteConfirmOpen ? (
+        <div
+          className="kitchen-modal-backdrop"
+          role="presentation"
+          onClick={() => {
+            if (weekDeleteBusy) return;
+            setWeekDeleteConfirmOpen(false);
+          }}
+        >
+          <div
+            className="kitchen-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Borrar programacion semanal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <h3>Borrar semana</h3>
+              <p className="kitchen-muted">
+                Se borrara toda la programacion visible de {selectedMealType === "dinner" ? "cenas" : "comidas"} para esta semana.
+                Los dias base de lunes a viernes seguiran visibles vacios y el FINDE opcional se eliminara si existe.
+              </p>
+            </div>
+            <div className="kitchen-modal-actions">
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                onClick={() => setWeekDeleteConfirmOpen(false)}
+                disabled={weekDeleteBusy}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="kitchen-button danger"
+                onClick={handleConfirmWeekDelete}
+                disabled={weekDeleteBusy}
+              >
+                {weekDeleteBusy ? "Borrando..." : "Borrar semana"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {dinnerShoppingChoiceDialog ? (
         <div className="kitchen-modal-backdrop" role="presentation">
           <div
@@ -3046,12 +3140,16 @@ export default function WeekPage() {
             className="kitchen-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Eliminar plato de la planificación"
+            aria-label={isOptionalWeekendDayKey(deleteDialogDay, weekStart) ? "Eliminar dia opcional" : "Eliminar plato de la planificación"}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="kitchen-modal-header">
-              <h3>Eliminar plato de la planificación</h3>
-              <p className="kitchen-muted">Esta acción quitará el plato del día y lo dejará vacío.</p>
+              <h3>{isOptionalWeekendDayKey(deleteDialogDay, weekStart) ? "Eliminar dia opcional" : "Eliminar plato de la planificación"}</h3>
+              <p className="kitchen-muted">
+                {isOptionalWeekendDayKey(deleteDialogDay, weekStart)
+                  ? "Este dia es opcional. Se eliminara del WeekNavigator y de la semana visible, y podras volver a anadirlo despues desde FINDE."
+                  : "Esta acción quitará el plato del día y lo dejará vacío."}
+              </p>
             </div>
             <div className="kitchen-modal-actions">
               <button
@@ -3064,11 +3162,15 @@ export default function WeekPage() {
               </button>
               <button
                 type="button"
-                className="kitchen-button"
+                className={`kitchen-button ${isOptionalWeekendDayKey(deleteDialogDay, weekStart) ? "danger" : ""}`}
                 onClick={confirmRemoveDayAssignment}
                 disabled={deleteBusy}
               >
-                {deleteBusy ? "Eliminando..." : "Eliminar"}
+                {deleteBusy
+                  ? "Eliminando..."
+                  : isOptionalWeekendDayKey(deleteDialogDay, weekStart)
+                    ? "Eliminar dia"
+                    : "Eliminar"}
               </button>
             </div>
           </div>

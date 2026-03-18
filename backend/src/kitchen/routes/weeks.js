@@ -196,6 +196,59 @@ function applyAttendeesToDay(day, attendeeIds) {
   day.attendeeCount = day.attendeeIds.length;
 }
 
+function getWeekOffset(monday, date) {
+  const mondayUtc = Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate());
+  const dateUtc = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+  return Math.round((dateUtc - mondayUtc) / 86400000);
+}
+
+function isOptionalWeekendDate(monday, date) {
+  const offset = getWeekOffset(monday, date);
+  return offset === 5 || offset === 6;
+}
+
+function createDefaultDaySlot(date, mealType, attendeeIds = []) {
+  const isDinner = isDinnerMeal(mealType);
+  return {
+    date,
+    mealType,
+    attendeeIds: [...attendeeIds],
+    attendeeCount: attendeeIds.length,
+    cookTiming: isDinner ? "same_day" : "previous_day",
+    servings: 4,
+    includeMainIngredients: !isDinner,
+    includeSideIngredients: !isDinner,
+    isLeftovers: false,
+    leftoversSourceDate: null,
+    leftoversSourceMealType: null,
+    leftoversSourceDishId: null,
+    leftoversSourceDishName: null,
+    ingredientOverrides: [],
+    baseIngredientExclusions: []
+  };
+}
+
+function resetDayPlanning(day, attendeeIds = []) {
+  const defaults = createDefaultDaySlot(day.date, dayMealType(day), attendeeIds);
+  day.cookUserId = null;
+  day.attendeeIds = [...defaults.attendeeIds];
+  day.attendeeCount = defaults.attendeeCount;
+  day.cookTiming = defaults.cookTiming;
+  day.servings = defaults.servings;
+  day.mainDishId = null;
+  day.includeMainIngredients = defaults.includeMainIngredients;
+  day.sideDishId = null;
+  day.includeSideIngredients = defaults.includeSideIngredients;
+  day.isLeftovers = false;
+  day.leftoversSourceDate = null;
+  day.leftoversSourceMealType = null;
+  day.leftoversSourceDishId = null;
+  day.leftoversSourceDishName = null;
+  day.ingredientOverrides = [];
+  day.baseIngredientExclusions = [];
+  return day;
+}
+
 function snapshotAssignment(day) {
   return {
     cookUserId: day?.cookUserId || null,
@@ -398,6 +451,64 @@ router.post("/:weekStart/weekend", requireAuth, async (req, res) => {
   }
 });
 
+router.post("/:weekStart/reset", requireAuth, async (req, res) => {
+  try {
+    if (!isHouseholdAdmin(req.kitchenUser)) {
+      return res.status(403).json({ ok: false, error: "Solo owner/admin puede borrar una semana completa." });
+    }
+
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) {
+      return res.status(400).json({ ok: false, error: "Fecha invalida." });
+    }
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const mealType = normalizeMealType(req.body?.mealType || req.query?.mealType || "lunch");
+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+    const members = await loadHouseholdMembers(effectiveHouseholdId);
+    const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);
+    const weekdayDates = [0, 1, 2, 3, 4].map((offset) => getWeekDate(monday, offset));
+    const nextDays = [];
+
+    for (const day of plan.days || []) {
+      if (dayMealType(day) !== mealType) {
+        nextDays.push(day);
+      }
+    }
+
+    for (const targetDate of weekdayDates) {
+      const existingDay = findDayByDateAndMeal(plan, targetDate, mealType);
+      if (existingDay) {
+        resetDayPlanning(existingDay, defaultAttendeeIds);
+        nextDays.push(existingDay);
+      } else {
+        nextDays.push(createDefaultDaySlot(targetDate, mealType, defaultAttendeeIds));
+      }
+    }
+
+    plan.days = nextDays;
+    sortPlanDays(plan);
+    await plan.save();
+    await hydrateLeftoversDishNames(plan, effectiveHouseholdId);
+    const warning = await rebuildShoppingListBestEffort({
+      monday,
+      effectiveHouseholdId,
+      context: "reset-week"
+    });
+
+    return res.json({ ok: true, plan, ...(warning ? { warning } : {}) });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    logKitchenError("reset-week", error, {
+      weekStart: req.params.weekStart,
+      userId: String(req.kitchenUser?._id || "")
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo borrar la semana." });
+  }
+});
+
 router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
   try {
     const weekStart = parseISODate(req.params.weekStart);
@@ -426,7 +537,8 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       isLeftovers,
       leftoversSourceDate,
       leftoversSourceMealType,
-      leftoversSourceDishId
+      leftoversSourceDishId,
+      removeDay
     } = req.body;
 
     const invalidIdMessage =
@@ -511,11 +623,27 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     const validMemberIdSet = new Set(dedupeIds(members.map((member) => member._id)));
     const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);
     const previousAssignment = snapshotAssignment(day);
+    const shouldRemoveOptionalDay = Boolean(removeDay) && isOptionalWeekendDate(monday, date);
     const nextAttendeeIds = Array.isArray(attendeeIds)
       ? dedupeIds(attendeeIds)
       : resolveDayAttendeeIds(day, defaultAttendeeIds, mealType);
     if (nextAttendeeIds.some((id) => !validMemberIdSet.has(id))) {
       return res.status(400).json({ ok: false, error: "Algun comensal no pertenece a este hogar." });
+    }
+
+    if (shouldRemoveOptionalDay) {
+      plan.days = (plan.days || []).filter(
+        (entry) => !(isSameDay(entry.date, date) && dayMealType(entry) === mealType)
+      );
+      sortPlanDays(plan);
+      await plan.save();
+      await hydrateLeftoversDishNames(plan, effectiveHouseholdId);
+      const warning = await rebuildShoppingListBestEffort({
+        monday,
+        effectiveHouseholdId,
+        context: "remove-optional-day"
+      });
+      return res.json({ ok: true, plan, ...(warning ? { warning } : {}) });
     }
 
     if (cookUserId !== undefined) day.cookUserId = cookUserId || null;
