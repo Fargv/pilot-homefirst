@@ -34,7 +34,7 @@ function buildTestPayload(targetDate) {
   url.searchParams.set("mealType", "lunch");
 
   return {
-    title: "HOMEFIRST",
+    title: "Lunchfy",
     body: "Se te ha asignado cocinar Tortilla de patatas el 14/03/2026 para 4 personas",
     data: {
       targetDate,

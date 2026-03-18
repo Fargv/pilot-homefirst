@@ -11,6 +11,7 @@ import usersRouter from "./users/index.js";
 import adminRouter from "./kitchen/routes/admin.js";
 import testEmailRouter from "./routes/testEmail.js";
 import authRoutes from "./kitchen/routes/auth.js";
+import internalPushRouter from "./routes/internalPush.js";
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/auth", authRoutes);
 app.use("/api", testEmailRouter);
+app.use("/api/internal/push", internalPushRouter);
 
 connectDb()
   .then(() => {

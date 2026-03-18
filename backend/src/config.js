@@ -23,6 +23,7 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || "dev-kitchen-secret",
   resetPasswordTokenSecret:
     process.env.RESET_PASSWORD_TOKEN_SECRET || "dev-reset-password-token-secret",
+  cronSecret: process.env.CRON_SECRET || "",
 
   brevo: {
     apiKey: process.env.BREVO_API_KEY

@@ -54,7 +54,7 @@ function buildPayload({ day, dishName }) {
   url.searchParams.set("mealType", mealType);
 
   return {
-    title: "HOMEFIRST",
+    title: "Lunchfy",
     body,
     data: {
       type: "COOK_ASSIGNMENT",

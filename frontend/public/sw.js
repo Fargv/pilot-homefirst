@@ -9,7 +9,7 @@ self.addEventListener("activate", (event) => {
 function buildNotificationPayload(event) {
   if (!event?.data) {
     return {
-      title: "HOMEFIRST",
+      title: "Lunchfy",
       body: "",
       data: {}
     };
@@ -18,13 +18,13 @@ function buildNotificationPayload(event) {
   try {
     const parsed = event.data.json();
     return {
-      title: parsed?.title || "HOMEFIRST",
+      title: parsed?.title || "Lunchfy",
       body: parsed?.body || "",
       data: parsed?.data || {}
     };
   } catch {
     return {
-      title: "HOMEFIRST",
+      title: "Lunchfy",
       body: event.data.text() || "",
       data: {}
     };
@@ -56,7 +56,7 @@ self.addEventListener("push", (event) => {
   const payload = buildNotificationPayload(event);
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || "HOMEFIRST", {
+    self.registration.showNotification(payload.title || "Lunchfy", {
       body: payload.body || "",
       data: payload.data || {},
       icon: "/icons/icon-192.png",
