@@ -17,6 +17,7 @@ import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
 import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
 import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
 import DevEnvironmentBanner from "./components/DevEnvironmentBanner.jsx";
+import { AppLoadingScreen } from "./kitchen/components/WeekPageSkeleton.jsx";
 import "./kitchen/kitchen.css";
 import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 
@@ -33,16 +34,10 @@ function HomeRedirect() {
   }, [loading, navigate, user]);
 
   return (
-    <div className="kitchen-app">
-      <div className="kitchen-container" style={{ maxWidth: 520 }}>
-        <div className="kitchen-card">
-          <h2>Cargando Lunchfy...</h2>
-          <p className="kitchen-muted">
-            Estamos preparando tu acceso a Lunchfy. En unos segundos te redirigimos.
-          </p>
-        </div>
-      </div>
-    </div>
+    <AppLoadingScreen
+      title="Cargando Lunchfy"
+      subtitle="Estamos preparando tu acceso y recuperando tu programacion."
+    />
   );
 }
 

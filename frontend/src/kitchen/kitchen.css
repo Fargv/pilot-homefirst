@@ -379,6 +379,314 @@ body {
   min-width: 0;
 }
 
+.kitchen-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.9) 0%,
+    rgba(241, 245, 249, 0.96) 42%,
+    rgba(226, 232, 240, 0.88) 100%
+  );
+}
+
+.kitchen-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.54) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: kitchen-skeleton-shimmer 1.7s ease-in-out infinite;
+}
+
+@keyframes kitchen-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.kitchen-skeleton-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.98) 100%),
+    #fff;
+}
+
+.kitchen-loading-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.kitchen-loading-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.kitchen-loading-copy-text h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  color: #0f172a;
+}
+
+.kitchen-loading-copy-text p {
+  margin: 6px 0 0;
+}
+
+.kitchen-loading-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(199, 210, 254, 0.8);
+  color: #475467;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.kitchen-loading-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(99, 102, 241, 0.18);
+  border-top-color: rgba(79, 70, 229, 0.92);
+  animation: kitchen-loading-spin 0.9s linear infinite;
+}
+
+@keyframes kitchen-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.kitchen-skeleton-weekdays-list {
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.kitchen-skeleton-weekdays-list::-webkit-scrollbar {
+  display: none;
+}
+
+.kitchen-skeleton-weekday {
+  min-width: 64px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.kitchen-skeleton-weekday-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+}
+
+.kitchen-skeleton-weekday-label {
+  width: 48px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.kitchen-skeleton-week-nav {
+  pointer-events: none;
+}
+
+.kitchen-skeleton-week-arrow {
+  width: var(--kitchen-week-nav-control-height);
+  height: var(--kitchen-week-nav-control-height);
+  border-radius: 14px;
+}
+
+.kitchen-skeleton-week-input {
+  width: 100%;
+  height: var(--kitchen-week-nav-control-height);
+  border-radius: 14px;
+}
+
+.kitchen-skeleton-now-button {
+  width: 84px;
+  height: var(--kitchen-week-nav-control-height);
+  border-radius: 14px;
+  flex: 0 0 auto;
+}
+
+.kitchen-skeleton-tabs {
+  pointer-events: none;
+}
+
+.kitchen-skeleton-tab {
+  flex: 1 1 0;
+  height: 40px;
+  border-radius: 14px;
+}
+
+.kitchen-skeleton-tab.is-active {
+  flex-basis: 1.1;
+}
+
+.kitchen-skeleton-tab-link {
+  flex-basis: 0.9;
+}
+
+.kitchen-skeleton-utility-pill {
+  width: 174px;
+  max-width: 100%;
+  height: 34px;
+  border-radius: 999px;
+}
+
+.kitchen-skeleton-inline-copy {
+  width: min(100%, 280px);
+  height: 12px;
+  border-radius: 999px;
+}
+
+.kitchen-skeleton-carousel {
+  overflow: visible;
+}
+
+.kitchen-skeleton-week-days {
+  align-items: stretch;
+}
+
+.kitchen-skeleton-day-card {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%),
+    radial-gradient(circle at top right, var(--skeleton-accent) 0%, rgba(255, 255, 255, 0) 48%);
+  border-color: rgba(228, 231, 236, 0.94);
+  min-height: 310px;
+}
+
+.kitchen-skeleton-day-title {
+  width: min(78%, 220px);
+  height: 28px;
+  border-radius: 12px;
+}
+
+.kitchen-skeleton-day-subtitle-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.kitchen-skeleton-day-subtitle {
+  width: 108px;
+  height: 11px;
+}
+
+.kitchen-skeleton-day-subtitle-action {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+}
+
+.kitchen-skeleton-cook-block {
+  flex: 0 1 112px;
+  min-width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.kitchen-skeleton-cook-line {
+  width: 92px;
+  height: 14px;
+  border-radius: 999px;
+}
+
+.kitchen-skeleton-cook-line.is-short {
+  width: 64px;
+}
+
+.kitchen-skeleton-meta-line {
+  width: 118px;
+  height: 10px;
+}
+
+.kitchen-skeleton-dish-title {
+  width: min(86%, 240px);
+  height: 56px;
+  border-radius: 18px;
+  margin-inline: auto;
+}
+
+.kitchen-skeleton-info-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+.kitchen-skeleton-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.kitchen-skeleton-chip {
+  width: 72px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+.kitchen-skeleton-chip.is-wide {
+  width: 118px;
+}
+
+.kitchen-skeleton-day-footer {
+  border-top-color: rgba(226, 232, 240, 0.92);
+}
+
+.kitchen-skeleton-toggle {
+  width: 132px;
+  height: 36px;
+  border-radius: 999px;
+}
+
+.kitchen-skeleton-icon-actions {
+  display: inline-flex;
+  gap: 10px;
+}
+
+.kitchen-skeleton-icon-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+}
+
+@media (max-width: 767px) {
+  .kitchen-loading-copy {
+    align-items: flex-start;
+  }
+
+  .kitchen-loading-inline {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .kitchen-skeleton-day-card {
+    min-height: 288px;
+  }
+}
+
 .kitchen-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

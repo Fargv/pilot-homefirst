@@ -5,6 +5,7 @@ import { useAuth } from "../auth";
 import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
 import IngredientPicker from "../components/IngredientPicker.jsx";
 import DishModal from "../components/DishModal.jsx";
+import WeekPageSkeleton from "../components/WeekPageSkeleton.jsx";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import KitchenLayout from "../Layout.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
@@ -1933,8 +1934,8 @@ export default function WeekPage() {
 
   if (loading) {
     return (
-      <KitchenLayout>
-        <div className="kitchen-card">Cargando semana...</div>
+      <KitchenLayout containerClassName={`kitchen-week-canvas ${selectedMealType === "dinner" ? "kitchen-dinner-canvas" : ""}`}>
+        <WeekPageSkeleton showTabs />
       </KitchenLayout>
     );
   }

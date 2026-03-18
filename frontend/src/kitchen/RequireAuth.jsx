@@ -1,5 +1,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
+import { AppLoadingScreen } from "./components/WeekPageSkeleton.jsx";
 import { isUserAuthenticated, useAuth } from "./auth";
 
 export default function RequireAuth({ children, roles }) {
@@ -8,10 +9,10 @@ export default function RequireAuth({ children, roles }) {
 
   if (loading) {
     return (
-      <div className="kitchen-card">
-        <h3>Cargando sesión...</h3>
-        <p className="kitchen-muted">Estamos preparando tu módulo Kitchen.</p>
-      </div>
+      <AppLoadingScreen
+        title="Cargando sesion"
+        subtitle="Estamos restaurando tu acceso y preparando la vista principal."
+      />
     );
   }
 
