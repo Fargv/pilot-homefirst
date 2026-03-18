@@ -48,7 +48,10 @@ function buildPayload({ day, dishName }) {
   const { isoDate, formattedDate } = formatTargetDate(day?.date);
   const peopleCount = resolvePeopleCount(day);
   const mealType = normalizeMealType(day?.mealType || "lunch");
-  const body = `Se te ha asignado cocinar ${dishName} el ${formattedDate} para ${peopleCount} personas`;
+  const hasDish = Boolean(toId(day?.mainDishId));
+  const body = hasDish
+    ? `Se te ha asignado cocinar ${dishName} el ${formattedDate} para ${peopleCount} personas`
+    : `Te toca elegir plato para cocinar el ${formattedDate}. Ya tienes asignada la cocina de ese dia.`;
   const url = new URL("/kitchen/semana", "http://localhost");
   url.searchParams.set("date", isoDate);
   url.searchParams.set("mealType", mealType);
@@ -92,10 +95,9 @@ async function resolveDishNames(effectiveHouseholdId, assignments) {
 function shouldNotifyAssignment(item) {
   const previousCookUserId = toId(item?.previousCookUserId);
   const nextCookUserId = toId(item?.day?.cookUserId);
-  const dishId = toId(item?.day?.mainDishId);
   const isoDate = formatTargetDate(item?.day?.date).isoDate;
 
-  return Boolean(nextCookUserId && dishId && isoDate && previousCookUserId !== nextCookUserId);
+  return Boolean(nextCookUserId && isoDate && previousCookUserId !== nextCookUserId);
 }
 
 async function sendAssignmentPushToUser({ effectiveHouseholdId, userId, payload }) {

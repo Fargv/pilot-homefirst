@@ -81,6 +81,19 @@ export default function WeekDaysStrip({
     };
   }, []);
 
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element || !selectedDay) return;
+    const target = element.querySelector(`[data-day-key="${selectedDay}"]`);
+    if (!target) return;
+
+    target.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center"
+    });
+  }, [selectedDay, entries]);
+
   const handleSelect = (entry) => {
     if (!entry) return;
     if (!entry.hasDish && onCreateDish) {
@@ -124,6 +137,7 @@ export default function WeekDaysStrip({
             return (
               <button
                 key={entry.key}
+                data-day-key={entry.key}
                 type="button"
                 className={`kitchen-weekdays-item ${isSelected ? "is-selected" : ""}`}
                 onClick={() => handleSelect(entry)}
@@ -149,6 +163,7 @@ export default function WeekDaysStrip({
           })}
           {weekendAction ? (
             <button
+              data-day-key="weekend-action"
               type="button"
               className={`kitchen-weekdays-item kitchen-weekdays-item-action ${weekendAction.disabled ? "is-disabled" : ""}`}
               onClick={weekendAction.disabled ? undefined : weekendAction.onClick}
