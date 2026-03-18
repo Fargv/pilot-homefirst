@@ -5232,6 +5232,13 @@ body {
   align-items: flex-end;
   text-align: right;
   gap: 2px;
+  min-width: 0;
+  max-width: min(220px, 45%);
+}
+
+.kitchen-day-cook-block.is-editing {
+  width: 100%;
+  max-width: min(260px, 52%);
 }
 
 .kitchen-day-title {
@@ -5245,6 +5252,10 @@ body {
   font-weight: 800;
   line-height: 1.1;
   color: var(--day-card-highlight, currentColor);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kitchen-day-cook-attendees {
@@ -5589,7 +5600,61 @@ body {
   gap: 10px;
 }
 
+.kitchen-edit-main-dish-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.kitchen-day-edit-inline-action {
+  align-self: stretch;
+  min-height: 46px;
+}
+
+.kitchen-day-cook-block.is-editing .kitchen-assignee-picker {
+  width: 100%;
+}
+
+.kitchen-day-cook-block.is-editing .kitchen-assignee-button {
+  min-height: 42px;
+  padding: 7px 11px;
+  border-radius: 14px;
+  justify-content: flex-start;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.kitchen-day-cook-block.is-editing .kitchen-assignee-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kitchen-move-day-modal {
+  width: min(440px, 92vw);
+}
+
 @media (max-width: 420px) {
+  .kitchen-day-header-row {
+    align-items: start;
+  }
+
+  .kitchen-day-cook-block,
+  .kitchen-day-cook-block.is-editing {
+    max-width: 52%;
+  }
+
+  .kitchen-day-cook-block.is-editing .kitchen-assignee-button {
+    min-height: 40px;
+    padding: 6px 10px;
+    gap: 8px;
+  }
+
+  .kitchen-edit-main-dish-row {
+    gap: 8px;
+  }
+
   .kitchen-day-footer {
     gap: 8px 10px;
     padding: 7px 0 1px;

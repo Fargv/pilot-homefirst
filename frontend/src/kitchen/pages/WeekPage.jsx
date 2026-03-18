@@ -256,6 +256,8 @@ export default function WeekPage() {
   const [swapDialogDay, setSwapDialogDay] = useState(null);
   const [swapTargetDate, setSwapTargetDate] = useState("");
   const [swapBusy, setSwapBusy] = useState(false);
+  const [moveDialogDay, setMoveDialogDay] = useState(null);
+  const [moveDialogBusy, setMoveDialogBusy] = useState(false);
   const [deleteDialogDay, setDeleteDialogDay] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [attendeeDialogDay, setAttendeeDialogDay] = useState(null);
@@ -308,8 +310,8 @@ export default function WeekPage() {
   const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
   const canManageAttendees = isOwnerAdmin;
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
-  const hasAnyMainDishInWeek = visibleDays.some((day) => Boolean(day?.mainDishId));
-  const canShowWeekRandomize = Boolean(plan && visibleDays.length && !hasAnyMainDishInWeek);
+  const hasIncompleteVisibleDays = visibleDays.some((day) => !day?.mainDishId && !day?.isLeftovers);
+  const canShowWeekRandomize = Boolean(plan && visibleDays.length && hasIncompleteVisibleDays);
   const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
   const currentHouseholdKey = currentHouseholdId ? String(currentHouseholdId) : "__no_household__";
   const dishesReadyForCurrentHousehold = !dishesLoading && dishesLoadedForHouseholdKey === currentHouseholdKey;
@@ -1132,6 +1134,114 @@ export default function WeekPage() {
     }
   };
 
+  const requestMoveDayAssignment = (day) => {
+    const dayKey = day?.date?.slice?.(0, 10);
+    if (!dayKey) return;
+    setMoveDialogDay(dayKey);
+    setMoveDialogBusy(false);
+    setMoveTargetByDay((prev) => ({ ...prev, [dayKey]: prev[dayKey] || "" }));
+  };
+
+  const closeMoveDialog = () => {
+    if (moveDialogBusy) return;
+    setMoveDialogDay(null);
+  };
+
+  const confirmMoveDialog = async () => {
+    if (!moveDialogDay || moveDialogBusy) return;
+    const sourceDay = visibleDays.find((item) => item?.date?.slice(0, 10) === moveDialogDay);
+    const targetDate = moveTargetByDay[moveDialogDay] || "";
+    if (!sourceDay || !targetDate) return;
+
+    setMoveDialogBusy(true);
+    try {
+      const result = await moveDayAssignment(sourceDay, targetDate);
+      if (result) {
+        setMoveDialogDay(null);
+      }
+    } finally {
+      setMoveDialogBusy(false);
+    }
+  };
+
+  const renderAssigneePicker = (day, dayKey, cookColors, cookInitials, cookUser) => (
+    <div
+      className="kitchen-assignee-picker"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+        }
+      }}
+    >
+      <button
+        type="button"
+        className="kitchen-assignee-button"
+        onClick={() =>
+          setAssigneeOpen((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))
+        }
+        aria-haspopup="listbox"
+        aria-expanded={assigneeOpen[dayKey] ? "true" : "false"}
+      >
+        <span
+          className="kitchen-assignee-avatar"
+          style={{
+            background: cookColors.background,
+            color: cookColors.text
+          }}
+          aria-hidden="true"
+        >
+          {cookInitials || "+"}
+        </span>
+        <span className="kitchen-assignee-name">
+          {cookUser?.displayName || "Sin asignar"}
+        </span>
+      </button>
+      {assigneeOpen[dayKey] ? (
+        <div className="kitchen-suggestion-list is-scrollable" role="listbox">
+          <button
+            className="kitchen-suggestion"
+            type="button"
+            onMouseDown={(event) => {
+              event.preventDefault();
+              updateDay(day, { cookUserId: null });
+              setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+            }}
+          >
+            Yo ({user?.displayName || "mi usuario"})
+          </button>
+          {users.map((person) => {
+            const initials = getUserInitialsFromProfile(person.initials, person.id, person.displayName);
+            const colors = getUserColorById(person.colorId, person.id);
+            return (
+              <button
+                className="kitchen-suggestion is-assignee"
+                key={person.id}
+                type="button"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  updateDay(day, { cookUserId: person.id });
+                  setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+                }}
+              >
+                <span
+                  className="kitchen-assignee-avatar"
+                  style={{
+                    background: colors.background,
+                    color: colors.text
+                  }}
+                  aria-hidden="true"
+                >
+                  {initials || "+"}
+                </span>
+                <span className="kitchen-assignee-name">{person.displayName}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+
   const startEditingDay = (day) => {
     const dayKey = day.date.slice(0, 10);
     const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
@@ -1832,9 +1942,9 @@ export default function WeekPage() {
                       className="kitchen-button secondary is-small kitchen-week-randomize-button"
                       onClick={() => setWeekRandomizeConfirmOpen(true)}
                       disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                      title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar semana"}
+                      title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
                     >
-                      <DiceIcon /> Randomizar semana
+                      <DiceIcon /> Randomizar libres
                     </button>
                   ) : null}
                 </div>
@@ -2005,10 +2115,14 @@ export default function WeekPage() {
               <div className="kitchen-day-header">
                 <div className="kitchen-day-header-row">
                   <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
-                  <div className="kitchen-day-cook-block">
-                    <span className="kitchen-day-cook-name">
-                      {cookUser?.displayName || "Sin cocinar"}
-                    </span>
+                  <div className={`kitchen-day-cook-block ${isEditing && isOwnerAdmin ? "is-editing" : ""}`}>
+                    {isEditing && isOwnerAdmin ? (
+                      renderAssigneePicker(day, dayKey, cookColors, cookInitials, cookUser)
+                    ) : (
+                      <span className="kitchen-day-cook-name">
+                        {cookUser?.displayName || "Sin cocinar"}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="kitchen-day-subtitle-row">
@@ -2254,6 +2368,7 @@ export default function WeekPage() {
                   {!(currentMealType === "dinner" && leftoversState.enabled) ? (
                     <label className="kitchen-field">
                       <span className="kitchen-label">Plato principal</span>
+                      <div className="kitchen-edit-main-dish-row">
                       <div className="kitchen-ingredient-search">
                       <input
                         ref={(node) => {
@@ -2349,6 +2464,17 @@ export default function WeekPage() {
                           )}
                         </div>
                       ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        className="kitchen-day-icon-action kitchen-day-edit-inline-action"
+                        onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
+                        disabled={randomDisabled}
+                        aria-label="Asignar plato aleatorio"
+                        title={randomTitle}
+                      >
+                        <DiceIcon />
+                      </button>
                       </div>
                     </label>
                   ) : null}
@@ -2594,6 +2720,7 @@ export default function WeekPage() {
                     </>
                   ) : null}
 
+                  {false ? (
                   <div className="kitchen-actions">
                     {isOwnerAdmin ? (
                       <div className="kitchen-field">
@@ -2709,6 +2836,7 @@ export default function WeekPage() {
                       </>
                     ) : null}
                   </div>
+                  ) : null}
                   <div className="kitchen-day-edit-toolbar">
                     <button
                       type="button"
@@ -2728,6 +2856,17 @@ export default function WeekPage() {
                     >
                       <CloseIcon />
                     </button>
+                    {isOwnerAdmin ? (
+                      <button
+                        type="button"
+                        className="kitchen-day-icon-action"
+                        onClick={() => requestMoveDayAssignment(day)}
+                        aria-label="Mover a otro dÃ­a"
+                        title="Mover a otro dÃ­a"
+                      >
+                        <SwapIcon />
+                      </button>
+                    ) : null}
                     {canDeletePlanning ? (
                       <button
                         type="button"
@@ -2968,7 +3107,7 @@ export default function WeekPage() {
             className="kitchen-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Randomizar semana"
+            aria-label="Randomizar libres"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="kitchen-modal-header">
@@ -2990,7 +3129,65 @@ export default function WeekPage() {
                 onClick={handleConfirmWeekRandomize}
                 disabled={weekRandomizing}
               >
-                {weekRandomizing ? "Randomizando..." : "Randomizar"}
+                {weekRandomizing ? "Randomizando..." : "Randomizar libres"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {moveDialogDay ? (
+        <div
+          className="kitchen-modal-backdrop"
+          role="presentation"
+          onClick={closeMoveDialog}
+        >
+          <div
+            className="kitchen-modal kitchen-move-day-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mover a otro dÃ­a"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <h3>Mover a otro dÃ­a</h3>
+              <p className="kitchen-muted">Se mantendrÃ¡ la misma planificaciÃ³n y solo cambiarÃ¡ el dÃ­a dentro de esta semana visible.</p>
+            </div>
+            <label className="kitchen-field">
+              <span className="kitchen-label">Nuevo dÃ­a</span>
+              <select
+                className="kitchen-select"
+                value={moveTargetByDay[moveDialogDay] || ""}
+                onChange={(event) => {
+                  setMoveTargetByDay((prev) => ({ ...prev, [moveDialogDay]: event.target.value }));
+                }}
+                disabled={moveDialogBusy}
+              >
+                <option value="">Seleccionar dÃ­a</option>
+                {visibleDays
+                  .filter((item) => item?.date?.slice(0, 10) !== moveDialogDay)
+                  .map((item) => (
+                    <option key={item.date} value={item.date.slice(0, 10)}>
+                      {formatDateLabel(item.date)}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <div className="kitchen-modal-actions">
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                onClick={closeMoveDialog}
+                disabled={moveDialogBusy}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="kitchen-button"
+                onClick={confirmMoveDialog}
+                disabled={moveDialogBusy || !moveTargetByDay[moveDialogDay]}
+              >
+                {moveDialogBusy ? "Moviendo..." : "Mover"}
               </button>
             </div>
           </div>
@@ -3227,3 +3424,4 @@ export default function WeekPage() {
     </KitchenLayout>
   );
 }
+
