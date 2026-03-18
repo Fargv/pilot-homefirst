@@ -2105,6 +2105,8 @@ export default function WeekPage() {
                   );
                 }
                 const dayKey = day.date.slice(0, 10);
+                const formattedDayLabel = formatDateLabel(day.date);
+                const [dayTitlePrimary, dayTitleSecondary] = formattedDayLabel.split(", ");
                 const isEditing = Boolean(editingDays[dayKey]);
                 const draftCookUserId = isEditing && Object.prototype.hasOwnProperty.call(draftCookUserByDay, dayKey)
                   ? normalizeCookUserId(draftCookUserByDay[dayKey])
@@ -2227,7 +2229,14 @@ export default function WeekPage() {
               <div className="kitchen-day-header">
                 <div className="kitchen-day-header-row">
                   <div className="kitchen-day-header-main">
-                    <h3 className="kitchen-day-title">{formatDateLabel(day.date).replace(", ", ",\n")}</h3>
+                    <h3 className="kitchen-day-title">
+                      <span className="kitchen-day-title-primary">
+                        {dayTitleSecondary ? `${dayTitlePrimary},` : formattedDayLabel}
+                      </span>
+                      {dayTitleSecondary ? (
+                        <span className="kitchen-day-title-secondary">{dayTitleSecondary}</span>
+                      ) : null}
+                    </h3>
                     <div className="kitchen-day-subtitle-row">
                       <div className="kitchen-day-subtitle">
                         Comen {attendeeCount} {attendeeCount === 1 ? "persona" : "personas"}
