@@ -1824,7 +1824,7 @@ export default function WeekPage() {
                   </button>
                 </div>
               ) : null}
-              {canShowWeekRandomize || isOwnerAdmin ? (
+              {canShowWeekRandomize ? (
                 <div className="kitchen-week-header-utility-row">
                   {canShowWeekRandomize ? (
                     <button
@@ -1835,17 +1835,6 @@ export default function WeekPage() {
                       title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar semana"}
                     >
                       <DiceIcon /> Randomizar semana
-                    </button>
-                  ) : null}
-                  {isOwnerAdmin ? (
-                    <button
-                      type="button"
-                      className="kitchen-button secondary danger is-small kitchen-week-delete-button"
-                      onClick={() => setWeekDeleteConfirmOpen(true)}
-                      disabled={weekDeleteBusy}
-                      title="Borrar la programacion visible de esta semana"
-                    >
-                      <TrashIcon /> Borrar semana
                     </button>
                   ) : null}
                 </div>
@@ -2793,6 +2782,19 @@ export default function WeekPage() {
               ))}
             </div>
           ) : null}
+          {isOwnerAdmin ? (
+            <div className="kitchen-week-delete-row">
+              <button
+                type="button"
+                className="kitchen-button secondary is-small kitchen-week-delete-button"
+                onClick={() => setWeekDeleteConfirmOpen(true)}
+                disabled={weekDeleteBusy}
+                title="Borrar la programacion visible de esta semana"
+              >
+                <TrashIcon /> Borrar semana
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
       {attendeeDialogDay ? (
@@ -3004,7 +3006,7 @@ export default function WeekPage() {
           }}
         >
           <div
-            className="kitchen-modal"
+            className="kitchen-modal kitchen-week-delete-modal"
             role="dialog"
             aria-modal="true"
             aria-label="Borrar programacion semanal"
@@ -3028,7 +3030,7 @@ export default function WeekPage() {
               </button>
               <button
                 type="button"
-                className="kitchen-button danger"
+                className="kitchen-button kitchen-week-delete-confirm"
                 onClick={handleConfirmWeekDelete}
                 disabled={weekDeleteBusy}
               >
