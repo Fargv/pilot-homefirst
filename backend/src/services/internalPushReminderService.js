@@ -199,21 +199,24 @@ async function resolveDishNamesByHousehold(assignments) {
 export function getReminderExecutionOptions(req) {
   const isDevSafe = process.env.NODE_ENV !== "production";
   const force = isDevSafe && parseBoolean(req.query?.force);
+  const forceSend = isDevSafe && parseBoolean(req.query?.forceSend);
   const overrideDateValue = isDevSafe ? String(req.query?.date || "").trim() : "";
   const overrideDate = overrideDateValue ? new Date(overrideDateValue) : null;
 
   return {
     force,
+    forceSend,
     overrideDate: overrideDate && !Number.isNaN(overrideDate.getTime()) ? overrideDate : null
   };
 }
 
-export async function runDailyReminders({ overrideDate = null, force = false } = {}) {
+export async function runDailyReminders({ overrideDate = null, force = false, forceSend = false } = {}) {
   const execution = buildMadridExecutionContext({ overrideDate, force });
   console.info("[push][reminders] daily evaluation", {
     madridToday: execution.madridTodayIso,
     madridTomorrow: execution.madridTomorrowIso,
-    force
+    force,
+    forceSend
   });
 
   if (!isWebPushConfigured()) {
@@ -267,16 +270,18 @@ export async function runDailyReminders({ overrideDate = null, force = false } =
     const householdId = assignment.householdId || null;
     const mealType = assignment.day.mealType || "lunch";
     const targetKey = `${execution.madridTomorrowIso}:${mealType}`;
-    const reserved = await reserveReminderDelivery({
-      reminderType: "daily_cook_tomorrow",
-      targetKey,
-      userId,
-      householdId,
-      metadata: {
-        targetDate: execution.madridTomorrowIso,
-        mealType
-      }
-    });
+    const reserved = forceSend
+      ? true
+      : await reserveReminderDelivery({
+          reminderType: "daily_cook_tomorrow",
+          targetKey,
+          userId,
+          householdId,
+          metadata: {
+            targetDate: execution.madridTomorrowIso,
+            mealType
+          }
+        });
 
     if (!reserved) {
       duplicateCount += 1;
@@ -286,6 +291,14 @@ export async function runDailyReminders({ overrideDate = null, force = false } =
         targetKey
       });
       continue;
+    }
+
+    if (forceSend) {
+      console.info("[push][reminders] deduplication bypassed", {
+        reminderType: "daily_cook_tomorrow",
+        userId: toId(userId),
+        targetKey
+      });
     }
 
     const dishName = dishNamesByHousehold.get(toId(householdId))?.get(toId(assignment.day.mainDishId))
@@ -334,13 +347,14 @@ function isWeekPlanIncomplete(plan) {
   return (plan.days || []).some((day) => !day?.mainDishId || !day?.cookUserId);
 }
 
-export async function runWeeklyReminders({ overrideDate = null, force = false } = {}) {
+export async function runWeeklyReminders({ overrideDate = null, force = false, forceSend = false } = {}) {
   const execution = buildMadridExecutionContext({ overrideDate, force });
   console.info("[push][reminders] weekly evaluation", {
     madridToday: execution.madridTodayIso,
     nextWeekStart: execution.nextWeekStartIso,
     madridDayOfWeek: execution.madridDayOfWeek,
-    force
+    force,
+    forceSend
   });
 
   if (!isWebPushConfigured()) {
@@ -400,15 +414,17 @@ export async function runWeeklyReminders({ overrideDate = null, force = false } 
     const userId = recipient._id;
     const householdId = recipient.householdId || null;
     const targetKey = execution.nextWeekStartIso;
-    const reserved = await reserveReminderDelivery({
-      reminderType: "weekly_next_week_planning",
-      targetKey,
-      userId,
-      householdId,
-      metadata: {
-        nextWeekStart: execution.nextWeekStartIso
-      }
-    });
+    const reserved = forceSend
+      ? true
+      : await reserveReminderDelivery({
+          reminderType: "weekly_next_week_planning",
+          targetKey,
+          userId,
+          householdId,
+          metadata: {
+            nextWeekStart: execution.nextWeekStartIso
+          }
+        });
 
     if (!reserved) {
       duplicateCount += 1;
@@ -418,6 +434,14 @@ export async function runWeeklyReminders({ overrideDate = null, force = false } 
         targetKey
       });
       continue;
+    }
+
+    if (forceSend) {
+      console.info("[push][reminders] deduplication bypassed", {
+        reminderType: "weekly_next_week_planning",
+        userId: toId(userId),
+        targetKey
+      });
     }
 
     const delivery = await sendPayloadToUser({
