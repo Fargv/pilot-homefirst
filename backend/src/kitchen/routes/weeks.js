@@ -16,6 +16,7 @@ import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanSe
 import { rebuildShoppingList } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import { resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
+import { notifyCookAssignments } from "../assignmentPushService.js";
 
 const router = express.Router();
 
@@ -193,6 +194,19 @@ function resolveDayAttendeeIds(day, defaultAttendeeIds = [], mealType = "lunch")
 function applyAttendeesToDay(day, attendeeIds) {
   day.attendeeIds = dedupeIds(attendeeIds);
   day.attendeeCount = day.attendeeIds.length;
+}
+
+function snapshotAssignment(day) {
+  return {
+    cookUserId: day?.cookUserId || null,
+    mainDishId: day?.mainDishId || null,
+    attendeeCount: typeof day?.attendeeCount === "number" ? day.attendeeCount : null,
+    attendeeIds: Array.isArray(day?.attendeeIds) ? dedupeIds(day.attendeeIds) : [],
+    servings: day?.servings || null,
+    date: day?.date ? new Date(day.date) : null,
+    mealType: dayMealType(day),
+    leftoversSourceDishName: day?.leftoversSourceDishName || null
+  };
 }
 
 async function loadHouseholdMembers(effectiveHouseholdId) {
@@ -414,6 +428,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     const members = await loadHouseholdMembers(effectiveHouseholdId);
     const validMemberIdSet = new Set(dedupeIds(members.map((member) => member._id)));
     const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);
+    const previousAssignment = snapshotAssignment(day);
     const nextAttendeeIds = Array.isArray(attendeeIds)
       ? dedupeIds(attendeeIds)
       : resolveDayAttendeeIds(day, defaultAttendeeIds, mealType);
@@ -498,6 +513,16 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     applyAttendeesToDay(day, nextAttendeeIds);
 
     await plan.save();
+    await notifyCookAssignments({
+      effectiveHouseholdId,
+      context: "update-day",
+      assignments: [
+        {
+          previousCookUserId: previousAssignment.cookUserId,
+          day
+        }
+      ]
+    });
     await hydrateLeftoversDishNames(plan, effectiveHouseholdId);
     const warning = await rebuildShoppingListBestEffort({
       monday,
@@ -798,6 +823,9 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     );
 
     const randomizedDays = shuffleArray([...targetDays]);
+    const previousAssignments = new Map(
+      randomizedDays.map((day) => [String(day.date?.toISOString?.() || day.date), snapshotAssignment(day)])
+    );
     let assignedCount = 0;
     let relaxedCrossWeekRule = false;
     let relaxedCategoryRule = false;
@@ -878,6 +906,14 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     }
 
     await plan.save();
+    await notifyCookAssignments({
+      effectiveHouseholdId,
+      context: "randomize-week",
+      assignments: randomizedDays.map((day) => ({
+        previousCookUserId: previousAssignments.get(String(day.date?.toISOString?.() || day.date))?.cookUserId || null,
+        day
+      }))
+    });
     const warning = await rebuildShoppingListBestEffort({
       monday,
       effectiveHouseholdId,
@@ -1123,11 +1159,9 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     );
 
     const sourceSnapshot = {
-      cookUserId: sourceDay.cookUserId || null,
+      ...snapshotAssignment(sourceDay),
       mealType: dayMealType(sourceDay),
       cookTiming: sourceDay.cookTiming || "previous_day",
-      servings: sourceDay.servings || 4,
-      mainDishId: sourceDay.mainDishId || null,
       includeMainIngredients: typeof sourceDay.includeMainIngredients === "boolean"
         ? sourceDay.includeMainIngredients
         : (dayMealType(sourceDay) === "dinner" ? false : true),
@@ -1145,11 +1179,9 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       attendeeIds: cloneAttendeeIds(sourceDay.attendeeIds)
     };
     const targetSnapshot = {
-      cookUserId: targetDay.cookUserId || null,
+      ...snapshotAssignment(targetDay),
       mealType: dayMealType(targetDay),
       cookTiming: targetDay.cookTiming || "previous_day",
-      servings: targetDay.servings || 4,
-      mainDishId: targetDay.mainDishId || null,
       includeMainIngredients: typeof targetDay.includeMainIngredients === "boolean"
         ? targetDay.includeMainIngredients
         : (dayMealType(targetDay) === "dinner" ? false : true),
@@ -1200,6 +1232,20 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     applyAttendeesToDay(targetDay, sourceSnapshot.attendeeIds);
 
     await plan.save();
+    await notifyCookAssignments({
+      effectiveHouseholdId,
+      context: "move-day",
+      assignments: [
+        {
+          previousCookUserId: sourceSnapshot.cookUserId,
+          day: sourceDay
+        },
+        {
+          previousCookUserId: targetSnapshot.cookUserId,
+          day: targetDay
+        }
+      ]
+    });
     const warning = await rebuildShoppingListBestEffort({
       monday,
       effectiveHouseholdId,

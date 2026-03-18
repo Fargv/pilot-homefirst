@@ -9,6 +9,7 @@ import {
   getEffectiveHouseholdId,
   handleHouseholdError
 } from "../householdScope.js";
+import { notifyCookAssignments } from "../assignmentPushService.js";
 
 const router = express.Router();
 
@@ -84,11 +85,27 @@ async function applySwap({ swap, actor, effectiveHouseholdId }) {
   const toDay = plan.days.find((day) => isSameDay(day.date, swap.toDate));
   if (!fromDay || !toDay) return;
 
+  const previousFromCookUserId = fromDay.cookUserId || null;
+  const previousToCookUserId = toDay.cookUserId || null;
   const tempCook = fromDay.cookUserId;
   fromDay.cookUserId = toDay.cookUserId;
   toDay.cookUserId = tempCook;
 
   await plan.save();
+  await notifyCookAssignments({
+    effectiveHouseholdId,
+    context: "swap-apply",
+    assignments: [
+      {
+        previousCookUserId: previousFromCookUserId,
+        day: fromDay
+      },
+      {
+        previousCookUserId: previousToCookUserId,
+        day: toDay
+      }
+    ]
+  });
   await KitchenAuditLog.create({
     action: "swap_applied",
     actorUserId: actor,
