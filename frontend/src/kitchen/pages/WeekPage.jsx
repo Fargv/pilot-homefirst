@@ -2137,9 +2137,11 @@ export default function WeekPage() {
                   ? "Actualizando platos del hogar..."
                   : "Asignar plato aleatorio";
                 const dayVisual = DAY_CARD_STYLES[index % DAY_CARD_STYLES.length];
-                const cardColors = isAssigned && cookUser
-                  ? cookColors
-                  : { background: dayVisual.background, text: dayVisual.color };
+                const cardColors = isPlanned
+                  ? (isAssigned && cookUser
+                    ? cookColors
+                    : { background: dayVisual.background, text: dayVisual.color })
+                  : { background: "#ffffff", text: "var(--hf-text)" };
                 const leftoversDishName = day?.leftoversSourceDishName
                   || (day?.leftoversSourceDishId ? dishMap.get(day.leftoversSourceDishId)?.name : "");
                 const displayDishName = day?.isLeftovers
