@@ -158,7 +158,7 @@ export default function WeekDaysStrip({
                 +
               </span>
               <span className="kitchen-weekdays-label">
-                {weekendAction.label || "Fin"}
+                {weekendAction.label || "FINDE"}
               </span>
             </button>
           ) : null}

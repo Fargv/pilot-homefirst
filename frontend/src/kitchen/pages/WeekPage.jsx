@@ -1731,7 +1731,7 @@ export default function WeekPage() {
           onCreateDish={handleCreateDishFromStrip}
           weekendAction={{
             disabled: weekendOptionState.availableDays.length === 0,
-            label: "Fin",
+            label: "FINDE",
             title: weekendOptionState.availableDays.length
               ? "Anadir sabado o domingo"
               : "Sabado y domingo ya estan anadidos en esta semana",
