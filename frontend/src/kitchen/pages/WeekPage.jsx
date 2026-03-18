@@ -1164,7 +1164,7 @@ export default function WeekPage() {
     }
   };
 
-  const renderAssigneePicker = (day, dayKey, cookColors, cookInitials, cookUser) => (
+  const renderAssigneePicker = (day, dayKey, cookUser) => (
     <div
       className="kitchen-assignee-picker"
       onBlur={(event) => {
@@ -1182,22 +1182,12 @@ export default function WeekPage() {
         aria-haspopup="listbox"
         aria-expanded={assigneeOpen[dayKey] ? "true" : "false"}
       >
-        <span
-          className="kitchen-assignee-avatar"
-          style={{
-            background: cookColors.background,
-            color: cookColors.text
-          }}
-          aria-hidden="true"
-        >
-          {cookInitials || "+"}
-        </span>
         <span className="kitchen-assignee-name">
           {cookUser?.displayName || "Sin asignar"}
         </span>
       </button>
       {assigneeOpen[dayKey] ? (
-        <div className="kitchen-suggestion-list is-scrollable" role="listbox">
+        <div className="kitchen-suggestion-list is-scrollable kitchen-assignee-menu" role="listbox">
           <button
             className="kitchen-suggestion"
             type="button"
@@ -1210,8 +1200,6 @@ export default function WeekPage() {
             Yo ({user?.displayName || "mi usuario"})
           </button>
           {users.map((person) => {
-            const initials = getUserInitialsFromProfile(person.initials, person.id, person.displayName);
-            const colors = getUserColorById(person.colorId, person.id);
             return (
               <button
                 className="kitchen-suggestion is-assignee"
@@ -1223,16 +1211,6 @@ export default function WeekPage() {
                   setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
                 }}
               >
-                <span
-                  className="kitchen-assignee-avatar"
-                  style={{
-                    background: colors.background,
-                    color: colors.text
-                  }}
-                  aria-hidden="true"
-                >
-                  {initials || "+"}
-                </span>
                 <span className="kitchen-assignee-name">{person.displayName}</span>
               </button>
             );
@@ -2004,7 +1982,6 @@ export default function WeekPage() {
                   .filter((name) => String(name || "").trim());
                 const currentUserId = String(user?.id || user?._id || "");
                 const isSelfAttending = Boolean(currentUserId) && dayAttendeeIds.includes(currentUserId);
-                const cookInitials = getUserInitialsFromProfile(cookUser?.initials, cookUser?.id, cookUser?.displayName);
                 const cookColors = getUserColorById(cookUser?.colorId, day.cookUserId);
                 const isAssigned = Boolean(day.cookUserId);
                 const isPlanned = Boolean(day.mainDishId || day.isLeftovers);
@@ -2115,7 +2092,7 @@ export default function WeekPage() {
               <div className="kitchen-day-header">
                 <div className="kitchen-day-header-row">
                   <div className="kitchen-day-header-main">
-                    <h3 className="kitchen-day-title">{formatDateLabel(day.date)}</h3>
+                    <h3 className="kitchen-day-title">{formatDateLabel(day.date).replace(", ", ",\n")}</h3>
                     <div className="kitchen-day-subtitle-row">
                       <div className="kitchen-day-subtitle">
                         Comen {attendeeCount} {attendeeCount === 1 ? "persona" : "personas"}
@@ -2133,7 +2110,7 @@ export default function WeekPage() {
                   </div>
                   <div className={`kitchen-day-cook-block ${isEditing && isOwnerAdmin ? "is-editing" : ""}`}>
                     {isEditing && isOwnerAdmin ? (
-                      renderAssigneePicker(day, dayKey, cookColors, cookInitials, cookUser)
+                      renderAssigneePicker(day, dayKey, cookUser)
                     ) : (
                       <span className="kitchen-day-cook-name">
                         {cookUser?.displayName || "Sin cocinar"}
