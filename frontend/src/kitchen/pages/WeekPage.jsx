@@ -240,6 +240,8 @@ export default function WeekPage() {
   const [addIngredientsOpen, setAddIngredientsOpen] = useState({});
   const [selectedDay, setSelectedDay] = useState("");
   const [editingDays, setEditingDays] = useState({});
+  const [draftCookUserByDay, setDraftCookUserByDay] = useState({});
+  const [persistedCookUserByDay, setPersistedCookUserByDay] = useState({});
   const [sideDishEnabled, setSideDishEnabled] = useState({});
   const [showCarouselControls, setShowCarouselControls] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -286,6 +288,7 @@ export default function WeekPage() {
   const sideDishRefs = useRef(new Map());
   const sideDishPickingRef = useRef({});
   const selectedDayRef = useRef(selectedDay);
+  const editingDayKeyRef = useRef("");
   const hasInitializedRef = useRef(false);
   const pendingJumpToCurrentRef = useRef(false);
   const assignIntentRef = useRef(null);
@@ -677,6 +680,10 @@ export default function WeekPage() {
     selectedDayRef.current = selectedDay;
   }, [selectedDay]);
 
+  useEffect(() => {
+    editingDayKeyRef.current = Object.keys(editingDays).find(Boolean) || "";
+  }, [editingDays]);
+
   const dayKeys = useMemo(
     () => visibleDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
     [visibleDays]
@@ -760,9 +767,28 @@ export default function WeekPage() {
     };
   }, [dayKeys]);
 
+  function normalizeCookUserId(value) {
+    if (value === undefined || value === null || value === "") return null;
+    return String(value);
+  }
+
   const updateDay = async (day, updates, options = {}) => {
     const targetWeekStart = options.weekStart || weekStartRef.current;
     const dayKey = day.date.slice(0, 10);
+    const editingDayKey = editingDayKeyRef.current;
+    const shouldKeepPersistedCook =
+      editingDayKey === dayKey
+      && !Object.prototype.hasOwnProperty.call(updates || {}, "cookUserId");
+    const requestUpdates = shouldKeepPersistedCook
+      ? {
+          ...updates,
+          cookUserId: normalizeCookUserId(
+            Object.prototype.hasOwnProperty.call(persistedCookUserByDay, dayKey)
+              ? persistedCookUserByDay[dayKey]
+              : day?.cookUserId
+          )
+        }
+      : updates;
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
     setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
     try {
@@ -771,13 +797,13 @@ export default function WeekPage() {
           householdId: getCurrentHouseholdId() ? String(getCurrentHouseholdId()) : null,
           weekStart: targetWeekStart,
           day: day.date.slice(0, 10),
-          mainDishId: updates?.mainDishId ? String(updates.mainDishId) : null
+          mainDishId: requestUpdates?.mainDishId ? String(requestUpdates.mainDishId) : null
         });
       }
       const mealType = dayMealType(day);
       const data = await apiRequest(`/api/kitchen/weeks/${targetWeekStart}/day/${day.date.slice(0, 10)}?mealType=${mealType}`, {
         method: "PUT",
-        body: JSON.stringify({ ...updates, mealType })
+        body: JSON.stringify({ ...requestUpdates, mealType })
       });
       setPlan(data.plan);
       setDayStatus((prev) => ({ ...prev, [dayKey]: "saved" }));
@@ -805,6 +831,88 @@ export default function WeekPage() {
   const onAssignSelf = async (day, options = {}) => {
     const currentUserId = userRef.current?.id || userRef.current?._id;
     return updateDay(day, { cookUserId: currentUserId }, options);
+  };
+
+  const clearCookDraftState = (dayKey) => {
+    setDraftCookUserByDay((prev) => {
+      if (!Object.prototype.hasOwnProperty.call(prev, dayKey)) return prev;
+      const next = { ...prev };
+      delete next[dayKey];
+      return next;
+    });
+    setPersistedCookUserByDay((prev) => {
+      if (!Object.prototype.hasOwnProperty.call(prev, dayKey)) return prev;
+      const next = { ...prev };
+      delete next[dayKey];
+      return next;
+    });
+  };
+
+  const persistFinalCookAssignment = async (dayKey, reason = "explicit-save") => {
+    const day = visibleDaysRef.current.find((entry) => entry?.date?.slice(0, 10) === dayKey);
+    if (!day) {
+      clearCookDraftState(dayKey);
+      return true;
+    }
+
+    const previousPersistedCookUserId = normalizeCookUserId(
+      Object.prototype.hasOwnProperty.call(persistedCookUserByDay, dayKey)
+        ? persistedCookUserByDay[dayKey]
+        : day?.cookUserId
+    );
+    const finalCookUserId = normalizeCookUserId(
+      Object.prototype.hasOwnProperty.call(draftCookUserByDay, dayKey)
+        ? draftCookUserByDay[dayKey]
+        : previousPersistedCookUserId
+    );
+
+    if (import.meta.env.DEV) {
+      console.debug("[kitchen][cook-finalize]", {
+        dayKey,
+        reason,
+        previousPersistedCookUserId,
+        finalCookUserId
+      });
+    }
+
+    if (previousPersistedCookUserId === finalCookUserId) {
+      console.info("[kitchen][cook-finalize] push skipped", {
+        dayKey,
+        reason,
+        previousPersistedCookUserId,
+        finalCookUserId,
+        skipReason: finalCookUserId ? "same-cook" : "no-cook"
+      });
+      clearCookDraftState(dayKey);
+      return true;
+    }
+
+    const result = await updateDay(
+      day,
+      { cookUserId: finalCookUserId || null },
+      { returnErrorObject: true }
+    );
+
+    if (result?.error) {
+      console.info("[kitchen][cook-finalize] push skipped", {
+        dayKey,
+        reason,
+        previousPersistedCookUserId,
+        finalCookUserId,
+        skipReason: "save-failed"
+      });
+      return false;
+    }
+
+    console.info("[kitchen][cook-finalize] final save persisted", {
+      dayKey,
+      reason,
+      previousPersistedCookUserId,
+      finalCookUserId,
+      pushStatus: finalCookUserId ? "eligible" : "skipped-no-cook"
+    });
+    clearCookDraftState(dayKey);
+    return true;
   };
 
   const toggleSelfAttendance = async (day) => {
@@ -1193,7 +1301,7 @@ export default function WeekPage() {
             type="button"
             onMouseDown={(event) => {
               event.preventDefault();
-              updateDay(day, { cookUserId: null });
+              setDraftCookUserByDay((prev) => ({ ...prev, [dayKey]: null }));
               setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
             }}
           >
@@ -1202,15 +1310,15 @@ export default function WeekPage() {
           {users.map((person) => {
             return (
               <button
-                className="kitchen-suggestion is-assignee"
-                key={person.id}
-                type="button"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  updateDay(day, { cookUserId: person.id });
-                  setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
-                }}
-              >
+              className="kitchen-suggestion is-assignee"
+              key={person.id}
+              type="button"
+              onMouseDown={(event) => {
+                event.preventDefault();
+                setDraftCookUserByDay((prev) => ({ ...prev, [dayKey]: String(person.id) }));
+                setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+              }}
+            >
                 <span className="kitchen-assignee-name">{person.displayName}</span>
               </button>
             );
@@ -1220,12 +1328,24 @@ export default function WeekPage() {
     </div>
   );
 
-  const startEditingDay = (day) => {
+  const startEditingDay = async (day, options = {}) => {
     const dayKey = day.date.slice(0, 10);
+    const currentEditingDayKey = editingDayKeyRef.current;
+    if (currentEditingDayKey && currentEditingDayKey !== dayKey) {
+      const saved = await persistFinalCookAssignment(currentEditingDayKey, "day-change");
+      if (!saved) return false;
+    }
     const dishName = day.mainDishId ? dishMap.get(day.mainDishId)?.name : "";
     const sideDishName = day.sideDishId ? dishMap.get(day.sideDishId)?.name : "";
+    const initialCookUserId = normalizeCookUserId(
+      Object.prototype.hasOwnProperty.call(options, "initialCookUserId")
+        ? options.initialCookUserId
+        : day?.cookUserId
+    );
     setSelectedDay(dayKey);
     setEditingDays({ [dayKey]: true });
+    setDraftCookUserByDay((prev) => ({ ...prev, [dayKey]: initialCookUserId }));
+    setPersistedCookUserByDay((prev) => ({ ...prev, [dayKey]: normalizeCookUserId(day?.cookUserId) }));
     setSideDishEnabled((prev) => ({ ...prev, [dayKey]: Boolean(day.sideDishId) }));
     setAddIngredientsOpen((prev) => ({ ...prev, [dayKey]: Boolean(day.ingredientOverrides?.length) }));
     setMainDishQueries((prev) => ({ ...prev, [dayKey]: dishName || "" }));
@@ -1245,13 +1365,17 @@ export default function WeekPage() {
     if (isDinnerDay) {
       void loadLeftoverOptions(day);
     }
+    return true;
   };
 
-  const stopEditingDay = (dayKey) => {
+  const stopEditingDay = async (dayKey, reason = "explicit-save") => {
+    const saved = await persistFinalCookAssignment(dayKey, reason);
+    if (!saved) return false;
     setEditingDays({});
     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
     setSideDishOpen((prev) => ({ ...prev, [dayKey]: false }));
     setAddIngredientsOpen((prev) => ({ ...prev, [dayKey]: false }));
+    return true;
   };
 
   const focusMainDish = (dayKey) => {
@@ -1445,21 +1569,23 @@ export default function WeekPage() {
     const dayKey = day.date.slice(0, 10);
     if (canEdit) {
       if (!isAssigned && user) {
-        const updatedPlan = await onAssignSelf(day);
-        if (updatedPlan) {
-          startEditingDay(day);
+        const started = await startEditingDay(day, {
+          initialCookUserId: user?.id || user?._id || null
+        });
+        if (started) {
           focusMainDish(dayKey);
         }
         return;
       }
-      startEditingDay(day);
+      await startEditingDay(day);
       focusMainDish(dayKey);
       return;
     }
     if (!isAssigned && user) {
-      const updatedPlan = await onAssignSelf(day);
-      if (updatedPlan) {
-        startEditingDay(day);
+      const started = await startEditingDay(day, {
+        initialCookUserId: user?.id || user?._id || null
+      });
+      if (started) {
         focusMainDish(dayKey);
       }
     }
@@ -1498,10 +1624,10 @@ export default function WeekPage() {
 
     let targetDay = day;
     if (!isAssigned && userRef.current) {
-      const assignResult = await onAssignSelf(day, { weekStart: clickWeekStart, returnErrorObject: true });
-      if (!assignResult?.plan) return;
-      targetDay =
-        assignResult.plan.days?.find((entry) => entry?.date?.slice(0, 10) === dayKey) || day;
+      const started = await startEditingDay(day, {
+        initialCookUserId: userRef.current?.id || userRef.current?._id || null
+      });
+      if (!started) return;
     } else if (!canEdit) {
       return;
     }
@@ -1813,7 +1939,12 @@ export default function WeekPage() {
     );
   }
 
-  const handleSelectDay = (dayKey) => {
+  const handleSelectDay = async (dayKey) => {
+    const currentEditingDayKey = editingDayKeyRef.current;
+    if (currentEditingDayKey && currentEditingDayKey !== dayKey) {
+      const saved = await stopEditingDay(currentEditingDayKey, "day-change");
+      if (!saved) return;
+    }
     setSelectedDay(dayKey);
     const target = dayRefs.current.get(dayKey) || document.getElementById(`daycard-${dayKey}`);
     if (target) {
@@ -1974,7 +2105,12 @@ export default function WeekPage() {
                   );
                 }
                 const dayKey = day.date.slice(0, 10);
-                const cookUser = day.cookUserId ? userMap.get(day.cookUserId) : null;
+                const isEditing = Boolean(editingDays[dayKey]);
+                const draftCookUserId = isEditing && Object.prototype.hasOwnProperty.call(draftCookUserByDay, dayKey)
+                  ? normalizeCookUserId(draftCookUserByDay[dayKey])
+                  : normalizeCookUserId(day.cookUserId);
+                const effectiveCookUserId = draftCookUserId || null;
+                const cookUser = effectiveCookUserId ? userMap.get(effectiveCookUserId) : null;
                 const dayAttendeeIds = resolveDayAttendees(day, users, selectedMealType);
                 const attendeeCount = dayAttendeeIds.length;
                 const dayAttendeeNames = dayAttendeeIds
@@ -1982,13 +2118,12 @@ export default function WeekPage() {
                   .filter((name) => String(name || "").trim());
                 const currentUserId = String(user?.id || user?._id || "");
                 const isSelfAttending = Boolean(currentUserId) && dayAttendeeIds.includes(currentUserId);
-                const cookColors = getUserColorById(cookUser?.colorId, day.cookUserId);
-                const isAssigned = Boolean(day.cookUserId);
+                const cookColors = getUserColorById(cookUser?.colorId, effectiveCookUserId);
+                const isAssigned = Boolean(effectiveCookUserId);
                 const isPlanned = Boolean(day.mainDishId || day.isLeftovers);
-                const isAssignedToSelf = day.cookUserId
-                  && (day.cookUserId === user?.id || day.cookUserId === user?._id);
+                const isAssignedToSelf = effectiveCookUserId
+                  && (String(effectiveCookUserId) === String(user?.id || "") || String(effectiveCookUserId) === String(user?._id || ""));
                 const canEdit = isOwnerAdmin || isAssignedToSelf;
-                const isEditing = Boolean(editingDays[dayKey]);
                 const mainDish = day.mainDishId ? dishMap.get(day.mainDishId) : null;
                 const sideDish = day.sideDishId ? dishMap.get(day.sideDishId) : null;
                 const sideDishOn = Boolean(sideDishEnabled[dayKey]);
@@ -2742,7 +2877,7 @@ export default function WeekPage() {
                                 type="button"
                                 onMouseDown={(event) => {
                                   event.preventDefault();
-                                  updateDay(day, { cookUserId: null });
+                                  setDraftCookUserByDay((prev) => ({ ...prev, [dayKey]: null }));
                                   setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
                                 }}
                               >
@@ -2753,15 +2888,15 @@ export default function WeekPage() {
                                 const colors = getUserColorById(person.colorId, person.id);
                                 return (
                                   <button
-                                    className="kitchen-suggestion is-assignee"
-                                    key={person.id}
-                                    type="button"
-                                    onMouseDown={(event) => {
-                                      event.preventDefault();
-                                      updateDay(day, { cookUserId: person.id });
-                                      setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
-                                    }}
-                                  >
+                                  className="kitchen-suggestion is-assignee"
+                                  key={person.id}
+                                  type="button"
+                                  onMouseDown={(event) => {
+                                    event.preventDefault();
+                                    setDraftCookUserByDay((prev) => ({ ...prev, [dayKey]: String(person.id) }));
+                                    setAssigneeOpen((prev) => ({ ...prev, [dayKey]: false }));
+                                  }}
+                                >
                                     <span
                                       className="kitchen-assignee-avatar"
                                       style={{
