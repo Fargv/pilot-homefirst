@@ -1491,6 +1491,21 @@ body {
   background: #f8f9ff;
 }
 
+.kitchen-weekdays-item-action {
+  --weekday-bg: #f5f7ff;
+  --weekday-text: #4f46e5;
+  --weekday-border: rgba(79, 70, 229, 0.18);
+}
+
+.kitchen-weekdays-item-action.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.kitchen-weekdays-item-action.is-disabled .kitchen-weekdays-circle-action {
+  color: #98a2b3;
+}
+
 .kitchen-weekdays-circle {
   width: 52px;
   height: 52px;
@@ -1508,11 +1523,21 @@ body {
   box-sizing: border-box;
 }
 
+.kitchen-weekdays-circle-action {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+
 .kitchen-weekdays-label {
   font-size: 12px;
   font-weight: 600;
   color: #475467;
   text-transform: uppercase;
+}
+
+.kitchen-weekend-modal-actions {
+  flex-wrap: wrap;
 }
 
 .kitchen-day-card {

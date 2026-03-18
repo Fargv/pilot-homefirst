@@ -19,11 +19,15 @@ export function getWeekStart(date) {
 export function getWeekDates(weekStart) {
   const dates = [];
   for (let i = 0; i < 5; i += 1) {
-    const d = new Date(Date.UTC(weekStart.getUTCFullYear(), weekStart.getUTCMonth(), weekStart.getUTCDate()));
-    d.setUTCDate(d.getUTCDate() + i);
-    dates.push(d);
+    dates.push(getWeekDate(weekStart, i));
   }
   return dates;
+}
+
+export function getWeekDate(weekStart, offset = 0) {
+  const d = new Date(Date.UTC(weekStart.getUTCFullYear(), weekStart.getUTCMonth(), weekStart.getUTCDate()));
+  d.setUTCDate(d.getUTCDate() + offset);
+  return d;
 }
 
 export function isSameDay(a, b) {

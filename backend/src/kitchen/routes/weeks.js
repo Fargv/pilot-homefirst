@@ -6,7 +6,7 @@ import { KitchenUser } from "../models/KitchenUser.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { Household } from "../models/Household.js";
 import { requireAuth, requireRole } from "../middleware.js";
-import { formatDateISO, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
+import { formatDateISO, getWeekDate, getWeekStart, isSameDay, parseISODate } from "../utils/dates.js";
 import {
   buildScopedFilter,
   getEffectiveHouseholdId,
@@ -241,6 +241,18 @@ function findDayByDateAndMeal(plan, date, mealType = "lunch") {
   );
 }
 
+function sortPlanDays(plan) {
+  if (!Array.isArray(plan?.days)) return;
+  plan.days.sort((a, b) => {
+    const leftDate = new Date(a?.date || 0).getTime();
+    const rightDate = new Date(b?.date || 0).getTime();
+    if (leftDate !== rightDate) return leftDate - rightDate;
+    const leftMeal = dayMealType(a) === "dinner" ? 1 : 0;
+    const rightMeal = dayMealType(b) === "dinner" ? 1 : 0;
+    return leftMeal - rightMeal;
+  });
+}
+
 function pickRandomItem(items = []) {
   if (!items.length) return null;
   const index = Math.floor(Math.random() * items.length);
@@ -313,6 +325,76 @@ router.get("/:weekStart", requireAuth, async (req, res) => {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo cargar el plan semanal." });
+  }
+});
+
+router.post("/:weekStart/weekend", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) {
+      return res.status(400).json({ ok: false, error: "Fecha de semana invalida." });
+    }
+
+    const mealType = normalizeMealType(req.body?.mealType || req.query?.mealType || "lunch");
+    const requestedDays = Array.isArray(req.body?.days) ? req.body.days : [];
+    const normalizedDays = Array.from(new Set(
+      requestedDays
+        .map((value) => String(value || "").trim().toLowerCase())
+        .filter((value) => value === "saturday" || value === "sunday")
+    ));
+
+    if (!normalizedDays.length) {
+      return res.status(400).json({ ok: false, error: "Debes indicar sabado, domingo o ambos." });
+    }
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
+    const members = await loadHouseholdMembers(effectiveHouseholdId);
+    const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);
+    const isDinner = isDinnerMeal(mealType);
+    const createdDates = [];
+
+    for (const dayName of normalizedDays) {
+      const offset = dayName === "sunday" ? 6 : 5;
+      const targetDate = getWeekDate(monday, offset);
+      if (findDayByDateAndMeal(plan, targetDate, mealType)) {
+        continue;
+      }
+
+      plan.days.push({
+        date: targetDate,
+        mealType,
+        attendeeIds: [...defaultAttendeeIds],
+        attendeeCount: defaultAttendeeIds.length,
+        cookTiming: isDinner ? "same_day" : "previous_day",
+        servings: 4,
+        includeMainIngredients: !isDinner,
+        includeSideIngredients: !isDinner,
+        ingredientOverrides: []
+      });
+      createdDates.push(formatDateISO(targetDate));
+    }
+
+    if (createdDates.length) {
+      sortPlanDays(plan);
+      await plan.save();
+    }
+
+    await hydrateLeftoversDishNames(plan, effectiveHouseholdId);
+    return res.json({
+      ok: true,
+      plan,
+      createdDates
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    logKitchenError("add-weekend", error, {
+      weekStart: req.params.weekStart,
+      userId: String(req.kitchenUser?._id || "")
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo anadir el fin de semana." });
   }
 });
 

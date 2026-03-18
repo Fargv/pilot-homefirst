@@ -31,7 +31,14 @@ function ChevronIcon(props) {
   );
 }
 
-export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay, onCreateDish }) {
+export default function WeekDaysStrip({
+  days,
+  userMap,
+  selectedDay,
+  onSelectDay,
+  onCreateDish,
+  weekendAction = null
+}) {
   const scrollRef = useRef(null);
   const [isCarousel, setIsCarousel] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(days) ? days : []), [days]);
@@ -138,6 +145,23 @@ export default function WeekDaysStrip({ days, userMap, selectedDay, onSelectDay,
               </button>
             );
           })}
+          {weekendAction ? (
+            <button
+              type="button"
+              className={`kitchen-weekdays-item kitchen-weekdays-item-action ${weekendAction.disabled ? "is-disabled" : ""}`}
+              onClick={weekendAction.disabled ? undefined : weekendAction.onClick}
+              disabled={weekendAction.disabled}
+              aria-label={weekendAction.ariaLabel || "Anadir fin de semana"}
+              title={weekendAction.title || ""}
+            >
+              <span className="kitchen-weekdays-circle kitchen-weekdays-circle-action" aria-hidden="true">
+                +
+              </span>
+              <span className="kitchen-weekdays-label">
+                {weekendAction.label || "Fin"}
+              </span>
+            </button>
+          ) : null}
         </div>
         {isCarousel ? (
           <button

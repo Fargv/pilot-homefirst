@@ -145,6 +145,10 @@ function TodayIcon(props) {
 
 const MAX_DISH_RESULTS = 8;
 const WEEK_MEAL_TAB_KEY = "kitchen_week_meal_tab";
+const OPTIONAL_WEEKEND_DAY_OFFSETS = {
+  saturday: 5,
+  sunday: 6
+};
 
 function normalizeMealType(value) {
   return String(value || "").toLowerCase() === "dinner" ? "dinner" : "lunch";
@@ -192,6 +196,13 @@ function resolveDayAttendees(day, users = [], mealType = "lunch") {
 
 function normalizeExclusionKey(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function formatWeekendOptionLabel(dayKey) {
+  const offset = OPTIONAL_WEEKEND_DAY_OFFSETS[dayKey];
+  if (!Number.isInteger(offset)) return "";
+  const isoDate = addDaysToISO(getMondayISO(new Date("2000-01-03T00:00:00Z")), offset);
+  return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString("es-ES", { weekday: "long" });
 }
 
 export default function WeekPage() {
@@ -255,6 +266,8 @@ export default function WeekPage() {
   const [dinnerShoppingChoiceDialog, setDinnerShoppingChoiceDialog] = useState(null);
   const [weekRandomizeConfirmOpen, setWeekRandomizeConfirmOpen] = useState(false);
   const [weekRandomizing, setWeekRandomizing] = useState(false);
+  const [weekendDialogOpen, setWeekendDialogOpen] = useState(false);
+  const [weekendBusy, setWeekendBusy] = useState(false);
   const ingredientCache = useRef(new Map());
   const saveTimers = useRef({});
   const carouselRef = useRef(null);
@@ -280,6 +293,10 @@ export default function WeekPage() {
     () => safeDays.filter((day) => dayMealType(day) === selectedMealType),
     [safeDays, selectedMealType]
   );
+  const visibleDayKeySet = useMemo(
+    () => new Set(visibleDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean)),
+    [visibleDays]
+  );
   const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
   const canManageAttendees = isOwnerAdmin;
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
@@ -288,6 +305,22 @@ export default function WeekPage() {
   const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
   const currentHouseholdKey = currentHouseholdId ? String(currentHouseholdId) : "__no_household__";
   const dishesReadyForCurrentHousehold = !dishesLoading && dishesLoadedForHouseholdKey === currentHouseholdKey;
+  const weekendOptionState = useMemo(() => {
+    const saturdayDate = addDaysToISO(weekStart, OPTIONAL_WEEKEND_DAY_OFFSETS.saturday);
+    const sundayDate = addDaysToISO(weekStart, OPTIONAL_WEEKEND_DAY_OFFSETS.sunday);
+    const hasSaturday = visibleDayKeySet.has(saturdayDate);
+    const hasSunday = visibleDayKeySet.has(sundayDate);
+    return {
+      saturdayDate,
+      sundayDate,
+      hasSaturday,
+      hasSunday,
+      availableDays: [
+        !hasSaturday ? "saturday" : null,
+        !hasSunday ? "sunday" : null
+      ].filter(Boolean)
+    };
+  }, [visibleDayKeySet, weekStart]);
 
   const getCurrentHouseholdId = useCallback(() => {
     return userRef.current?.activeHouseholdId || userRef.current?.householdId || null;
@@ -1583,6 +1616,72 @@ export default function WeekPage() {
     setMissingWeekPromptOpen(false);
   };
 
+  const closeWeekendDialog = useCallback(() => {
+    if (weekendBusy) return;
+    setWeekendDialogOpen(false);
+  }, [weekendBusy]);
+
+  const focusWeekendDay = useCallback((targetDate, nextVisibleDays) => {
+    if (!targetDate) return;
+    const targetIndex = nextVisibleDays.findIndex((day) => day?.date?.slice(0, 10) === targetDate);
+    setSelectedDay(targetDate);
+    if (targetIndex >= 0) {
+      setActiveIndex(targetIndex);
+    }
+    window.requestAnimationFrame(() => {
+      const carouselElement = carouselRef.current;
+      if (carouselElement && targetIndex >= 0) {
+        carouselElement.scrollTo({
+          left: targetIndex * carouselElement.clientWidth,
+          behavior: "smooth"
+        });
+      }
+      const dayElement = dayRefs.current.get(targetDate) || document.getElementById(`daycard-${targetDate}`);
+      dayElement?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+      dayElement?.focus?.({ preventScroll: true });
+    });
+  }, []);
+
+  const handleAddWeekendDays = useCallback(async (requestedDays) => {
+    const normalizedDays = Array.isArray(requestedDays)
+      ? requestedDays.filter((value) => value === "saturday" || value === "sunday")
+      : [];
+    if (!normalizedDays.length || weekendBusy) return;
+    setWeekendBusy(true);
+    setLoadError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/weekend`, {
+        method: "POST",
+        body: JSON.stringify({
+          mealType: selectedMealType,
+          days: normalizedDays
+        })
+      });
+      const nextPlan = data?.plan || null;
+      setPlan(nextPlan);
+      setWeekendDialogOpen(false);
+      const nextVisibleDays = Array.isArray(nextPlan?.days)
+        ? nextPlan.days.filter((day) => dayMealType(day) === selectedMealType)
+        : [];
+      const createdDates = Array.isArray(data?.createdDates) ? data.createdDates : [];
+      const fallbackDate = normalizedDays
+        .map((dayName) => addDaysToISO(weekStart, OPTIONAL_WEEKEND_DAY_OFFSETS[dayName]))
+        .find(Boolean);
+      const targetDate = createdDates[0] || fallbackDate || "";
+      const targetDay = nextVisibleDays.find((day) => day?.date?.slice(0, 10) === targetDate);
+      focusWeekendDay(targetDate, nextVisibleDays);
+      if (targetDay) {
+        window.requestAnimationFrame(() => {
+          startEditingDay(targetDay);
+        });
+      }
+    } catch (err) {
+      setLoadError(err.message || "No se pudo anadir el fin de semana.");
+    } finally {
+      setWeekendBusy(false);
+    }
+  }, [focusWeekendDay, selectedMealType, weekStart, weekendBusy]);
+
   if (loading) {
     return (
       <KitchenLayout>
@@ -1630,6 +1729,17 @@ export default function WeekPage() {
           selectedDay={selectedDay}
           onSelectDay={handleSelectDay}
           onCreateDish={handleCreateDishFromStrip}
+          weekendAction={{
+            disabled: weekendOptionState.availableDays.length === 0,
+            label: "Fin",
+            title: weekendOptionState.availableDays.length
+              ? "Anadir sabado o domingo"
+              : "Sabado y domingo ya estan anadidos en esta semana",
+            ariaLabel: weekendOptionState.availableDays.length
+              ? "Anadir fin de semana a esta semana visible"
+              : "Fin de semana ya anadido para esta semana visible",
+            onClick: () => setWeekendDialogOpen(true)
+          }}
         />
         <div className="kitchen-week-mobile-frame">
           <section className="kitchen-week-header">
@@ -2725,6 +2835,70 @@ export default function WeekPage() {
                   {attendeeDialogBusy ? "Guardando..." : "Guardar"}
                 </button>
               ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {weekendDialogOpen ? (
+        <div
+          className="kitchen-modal-backdrop"
+          role="presentation"
+          onClick={closeWeekendDialog}
+        >
+          <div
+            className="kitchen-modal kitchen-weekend-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Anadir fin de semana"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <h3>Anadir fin de semana</h3>
+              <p className="kitchen-muted">
+                Estos dias se anadiran a la semana visible y usaran la misma logica de planificacion.
+              </p>
+            </div>
+            <div className="kitchen-modal-actions kitchen-weekend-modal-actions">
+              {!weekendOptionState.hasSaturday ? (
+                <button
+                  type="button"
+                  className="kitchen-button secondary"
+                  onClick={() => handleAddWeekendDays(["saturday"])}
+                  disabled={weekendBusy}
+                >
+                  {weekendBusy ? "Anadiendo..." : `Anadir ${formatWeekendOptionLabel("saturday")}`}
+                </button>
+              ) : null}
+              {!weekendOptionState.hasSunday ? (
+                <button
+                  type="button"
+                  className="kitchen-button secondary"
+                  onClick={() => handleAddWeekendDays(["sunday"])}
+                  disabled={weekendBusy}
+                >
+                  {weekendBusy ? "Anadiendo..." : `Anadir ${formatWeekendOptionLabel("sunday")}`}
+                </button>
+              ) : null}
+              {weekendOptionState.availableDays.length === 2 ? (
+                <button
+                  type="button"
+                  className="kitchen-button"
+                  onClick={() => handleAddWeekendDays(["saturday", "sunday"])}
+                  disabled={weekendBusy}
+                >
+                  {weekendBusy ? "Anadiendo..." : "Anadir ambos"}
+                </button>
+              ) : null}
+            </div>
+            <div className="kitchen-modal-actions">
+              <button
+                type="button"
+                className="kitchen-button kitchen-button-ghost"
+                onClick={closeWeekendDialog}
+                disabled={weekendBusy}
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
