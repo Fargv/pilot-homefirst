@@ -3954,13 +3954,17 @@ body {
 .shopping-header-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .shopping-header-title {
   min-width: 0;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -4016,6 +4020,7 @@ body {
 .shopping-header-tabs-row {
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .shopping-header-week-row {
@@ -4047,12 +4052,13 @@ body {
 
 .shopping-week-nav-row {
   width: min(100%, 520px);
+  max-width: 100%;
 }
 
 .shopping-week-header-navigator.kitchen-week-nav {
   grid-column: 2;
   width: auto;
-  max-width: none;
+  max-width: 100%;
   margin-inline: 0;
   grid-template-columns: var(--kitchen-week-nav-control-height) minmax(156px, 212px) var(--kitchen-week-nav-control-height);
 }
