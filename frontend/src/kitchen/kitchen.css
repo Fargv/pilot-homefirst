@@ -1568,15 +1568,11 @@ body {
 .kitchen-week-header-panel {
   width: min(560px, 100%);
   margin-inline: auto;
-  padding: 18px 20px;
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(248, 250, 252, 0.94) 100%);
-  border: 1px solid rgba(226, 232, 240, 0.96);
-  box-shadow: 0 12px 28px rgba(148, 163, 184, 0.12);
+  padding: 6px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
 }
 
 .kitchen-week-header-row {
@@ -1586,12 +1582,10 @@ body {
 }
 
 .kitchen-week-nav-row {
-  width: auto;
-  max-width: 100%;
-  display: inline-flex;
+  width: min(100%, 520px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -1614,6 +1608,7 @@ body {
 }
 
 .kitchen-week-header-navigator.kitchen-week-nav {
+  grid-column: 2;
   width: auto;
   max-width: none;
   margin-inline: 0;
@@ -1691,6 +1686,8 @@ body {
 }
 
 .kitchen-week-now-button {
+  grid-column: 3;
+  justify-self: start;
   min-height: var(--kitchen-week-nav-control-height);
   height: var(--kitchen-week-nav-control-height);
   border-radius: 14px;
@@ -1703,6 +1700,7 @@ body {
   justify-content: center;
   gap: 6px;
   padding: 0 12px;
+  line-height: 1;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -2685,7 +2683,7 @@ body {
 
   .kitchen-week-header-panel {
     width: min(100%, 460px);
-    padding: 16px 14px;
+    padding: 4px 0;
     gap: 16px;
   }
 
