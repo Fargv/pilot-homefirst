@@ -1999,54 +1999,61 @@ export default function WeekPage() {
         <div className="kitchen-week-mobile-frame">
           <section className="kitchen-week-header">
             <div className="kitchen-week-header-actions">
-              <div className="kitchen-week-nav-row">
-                <WeekNavigator
-                  value={weekStart}
-                  onChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
-                  onPrevious={() => handleWeekShift(-7)}
-                  onNext={() => handleWeekShift(7)}
-                />
-                <button
-                  type="button"
-                  className="kitchen-week-now-button"
-                  onClick={handleJumpToCurrentPeriod}
-                  aria-label="Volver a hoy"
-                  title="Volver a hoy"
-                >
-                  <TodayIcon className="kitchen-week-now-icon" />
-                  <span>Hoy</span>
-                </button>
-              </div>
-              {dinnersEnabled ? (
-                <div className="kitchen-meal-tabs kitchen-meal-tabs-with-link" role="group" aria-label="Navegación semanal">
-                  <button
-                    type="button"
-                    className={`kitchen-meal-tab ${selectedMealType === "lunch" ? "is-active" : ""}`}
-                    aria-pressed={selectedMealType === "lunch"}
-                    onClick={() => setMealTab("lunch")}
-                  >
-                    Comidas
-                  </button>
-                  <button
-                    type="button"
-                    className={`kitchen-meal-tab ${selectedMealType === "dinner" ? "is-active" : ""}`}
-                    aria-pressed={selectedMealType === "dinner"}
-                    onClick={() => setMealTab("dinner")}
-                  >
-                    Cenas
-                  </button>
-                  <button
-                    type="button"
-                    className="kitchen-meal-tab kitchen-meal-tab-link"
-                    onClick={handleOpenCurrentShoppingList}
-                  >
-                    Compra
-                  </button>
+              <div className="kitchen-week-header-panel">
+                <div className="kitchen-week-header-row kitchen-week-header-row-nav">
+                  <div className="kitchen-week-nav-row">
+                    <WeekNavigator
+                      className="kitchen-week-header-navigator"
+                      value={weekStart}
+                      onChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
+                      onPrevious={() => handleWeekShift(-7)}
+                      onNext={() => handleWeekShift(7)}
+                    />
+                    <button
+                      type="button"
+                      className="kitchen-week-now-button"
+                      onClick={handleJumpToCurrentPeriod}
+                      aria-label="Volver a hoy"
+                      title="Volver a hoy"
+                    >
+                      <TodayIcon className="kitchen-week-now-icon" />
+                      <span>Hoy</span>
+                    </button>
+                  </div>
                 </div>
-              ) : null}
-              {canShowWeekRandomize ? (
-                <div className="kitchen-week-header-utility-row">
-                  {canShowWeekRandomize ? (
+
+                {dinnersEnabled ? (
+                  <div className="kitchen-week-header-row kitchen-week-header-row-tabs">
+                    <div className="kitchen-meal-tabs kitchen-meal-tabs-with-link" role="group" aria-label="Navegación semanal">
+                      <button
+                        type="button"
+                        className={`kitchen-meal-tab ${selectedMealType === "lunch" ? "is-active" : ""}`}
+                        aria-pressed={selectedMealType === "lunch"}
+                        onClick={() => setMealTab("lunch")}
+                      >
+                        Comidas
+                      </button>
+                      <button
+                        type="button"
+                        className={`kitchen-meal-tab ${selectedMealType === "dinner" ? "is-active" : ""}`}
+                        aria-pressed={selectedMealType === "dinner"}
+                        onClick={() => setMealTab("dinner")}
+                      >
+                        Cenas
+                      </button>
+                      <button
+                        type="button"
+                        className="kitchen-meal-tab kitchen-meal-tab-link"
+                        onClick={handleOpenCurrentShoppingList}
+                      >
+                        Compra
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {canShowWeekRandomize ? (
+                  <div className="kitchen-week-header-row kitchen-week-header-row-randomize">
                     <button
                       type="button"
                       className="kitchen-button secondary is-small kitchen-week-randomize-button"
@@ -2056,9 +2063,9 @@ export default function WeekPage() {
                     >
                       <DiceIcon /> Randomizar libres
                     </button>
-                  ) : null}
-                </div>
-              ) : null}
+                  </div>
+                ) : null}
+              </div>
               {weekNotice ? (
                 <div className={`kitchen-alert ${weekNotice.type === "success" ? "success" : "error"}`}>
                   {weekNotice.message}
