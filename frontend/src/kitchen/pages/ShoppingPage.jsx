@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useBlocker, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
@@ -103,6 +103,7 @@ function EmptyHistoryIcon(props) {
 
 function addDaysToISO(iso, days) {
   const date = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return getCurrentWeekStart();
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }
@@ -110,6 +111,7 @@ function addDaysToISO(iso, days) {
 function normalizeWeekStartInput(value) {
   if (!value) return "";
   const d = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return "";
   const day = d.getUTCDay();
   const diff = (day === 0 ? -6 : 1) - day;
   d.setUTCDate(d.getUTCDate() + diff);
@@ -122,7 +124,9 @@ function getCurrentWeekStart() {
 
 function formatWeekTitle(iso) {
   if (!iso) return "";
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("es-ES", {
+  const date = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("es-ES", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric"
@@ -131,7 +135,9 @@ function formatWeekTitle(iso) {
 
 function formatTripDate(value) {
   if (!value || value === "sin-fecha") return "Sin fecha";
-  return new Date(`${value}T00:00:00Z`).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "Sin fecha";
+  return date.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function slugColor(slug = "") {
@@ -207,12 +213,8 @@ export default function ShoppingPage() {
   const quickCategoryFieldRef = useRef(null);
   const quickCategoryMenuRef = useRef(null);
   const dismissedPromptSessionsRef = useRef(new Set());
-  const navigationActionRef = useRef(null);
-  const allowBlockedNavigationRef = useRef(false);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
-  const shouldBlockNavigation = Boolean(currentPurchaseSession?.id && Number(currentPurchaseSession?.itemCount || 0) > 0 && !allowBlockedNavigationRef.current);
-  const blocker = useBlocker(shouldBlockNavigation);
   const selectedQuickCategory = useMemo(
     () => quickCategories.find((category) => category._id === quickCategoryId) || null,
     [quickCategories, quickCategoryId]
@@ -228,12 +230,27 @@ export default function ShoppingPage() {
   }, [setWeekStart]);
 
   const applyPayload = (data) => {
-    setStores(data.stores || []);
-    setBudget(data.budget || null);
-    setPendingByCategory(data.pendingByCategory || []);
-    setPurchasedByStoreDay(data.purchasedByStoreDay || []);
-    setPendingPurchaseSessions(data.pendingPurchaseSessions || []);
-    setCurrentPurchaseSession(data.currentPurchaseSession || null);
+    const nextStores = Array.isArray(data?.stores) ? data.stores : [];
+    const nextBudget = {
+      monthlyBudget: Number(data?.budget?.monthlyBudget) || 0,
+      cycleStartDay: Number(data?.budget?.cycleStartDay) || 1,
+      weeklyBudget: Number(data?.budget?.weeklyBudget) || 0,
+      spent: Number(data?.budget?.spent) || 0,
+      available: Number.isFinite(Number(data?.budget?.available)) ? Number(data.budget.available) : 0
+    };
+    const nextCurrentPurchaseSession = data?.currentPurchaseSession && typeof data.currentPurchaseSession === "object"
+      ? {
+          ...data.currentPurchaseSession,
+          itemCount: Number(data.currentPurchaseSession.itemCount) || 0
+        }
+      : null;
+
+    setStores(nextStores);
+    setBudget(nextBudget);
+    setPendingByCategory(Array.isArray(data?.pendingByCategory) ? data.pendingByCategory : []);
+    setPurchasedByStoreDay(Array.isArray(data?.purchasedByStoreDay) ? data.purchasedByStoreDay : []);
+    setPendingPurchaseSessions(Array.isArray(data?.pendingPurchaseSessions) ? data.pendingPurchaseSessions : []);
+    setCurrentPurchaseSession(nextCurrentPurchaseSession);
   };
 
   const logShoppingApiError = (context, endpoint, err) => {
@@ -286,15 +303,6 @@ export default function ShoppingPage() {
   }, [recentlyMovedItemKey]);
 
   useEffect(() => {
-    if (blocker.state !== "blocked" || !currentPurchaseSession?.id) return;
-    navigationActionRef.current = () => blocker.proceed();
-    setPurchaseConfirmTarget(currentPurchaseSession);
-    setPurchaseConfirmStoreId(currentPurchaseSession.storeId || selectedStoreRef.current || "");
-    setPurchaseConfirmAmount(currentPurchaseSession.amount ? String(currentPurchaseSession.amount) : "");
-    setPurchaseConfirmOpen(true);
-  }, [blocker, currentPurchaseSession]);
-
-  useEffect(() => {
     if (!currentPurchaseSession?.id || purchaseConfirmOpen) return;
     const pendingItemsCount = getPendingItemsCount(pendingByCategory);
     const shouldAutoPrompt = Number(currentPurchaseSession.itemCount || 0) >= 3 || (pendingItemsCount === 0 && Number(currentPurchaseSession.itemCount || 0) > 0);
@@ -307,14 +315,15 @@ export default function ShoppingPage() {
   }, [currentPurchaseSession, pendingByCategory, purchaseConfirmOpen]);
 
   useEffect(() => {
-    if (!shouldBlockNavigation) return undefined;
+    const shouldWarnBeforeUnload = Boolean(currentPurchaseSession?.id && Number(currentPurchaseSession?.itemCount || 0) > 0);
+    if (!shouldWarnBeforeUnload) return undefined;
     const handleBeforeUnload = (event) => {
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [shouldBlockNavigation]);
+  }, [currentPurchaseSession]);
 
   useEffect(() => {
     let active = true;
@@ -447,10 +456,6 @@ export default function ShoppingPage() {
     setPurchaseConfirmTarget(null);
     setPurchaseConfirmStoreId("");
     setPurchaseConfirmAmount("");
-    if (blocker.state === "blocked") {
-      blocker.reset();
-    }
-    navigationActionRef.current = null;
   };
 
   const addIngredientToList = async (ingredientId, categoryId) => {
@@ -646,18 +651,10 @@ export default function ShoppingPage() {
       });
       dismissedPromptSessionsRef.current.add(purchaseConfirmTarget.id);
       await loadList({ silent: true });
-      const pendingNavigation = navigationActionRef.current;
-      navigationActionRef.current = null;
       setPurchaseConfirmOpen(false);
       setPurchaseConfirmTarget(null);
       setPurchaseConfirmStoreId("");
       setPurchaseConfirmAmount("");
-      if (pendingNavigation) {
-        allowBlockedNavigationRef.current = true;
-        pendingNavigation();
-      } else if (blocker.state === "blocked") {
-        blocker.reset();
-      }
     } catch (err) {
       setError(err.message || "No se pudo posponer la confirmación.");
     } finally {
@@ -680,18 +677,10 @@ export default function ShoppingPage() {
       dismissedPromptSessionsRef.current.delete(purchaseConfirmTarget.id);
       await loadList({ silent: true });
       setPendingPurchasesOpen(false);
-      const pendingNavigation = navigationActionRef.current;
-      navigationActionRef.current = null;
       setPurchaseConfirmOpen(false);
       setPurchaseConfirmTarget(null);
       setPurchaseConfirmStoreId("");
       setPurchaseConfirmAmount("");
-      if (pendingNavigation) {
-        allowBlockedNavigationRef.current = true;
-        pendingNavigation();
-      } else if (blocker.state === "blocked") {
-        blocker.reset();
-      }
       setSuccess("Compra registrada.");
     } catch (err) {
       setError(err.message || "No se pudo guardar la compra.");
@@ -709,13 +698,7 @@ export default function ShoppingPage() {
     if (!Array.isArray(purchasedByStoreDay)) return null;
     return purchasedByStoreDay.reduce((acc, group) => acc + (group.items?.length || 0), 0);
   }, [purchasedByStoreDay]);
-
-  const hasExactSuggestion = quickSuggestions.some((item) => normalizeQuery(item.name) === normalizeQuery(quickQuery));
-
-  useEffect(() => {
-    if (!allowBlockedNavigationRef.current) return;
-    allowBlockedNavigationRef.current = false;
-  }, [weekStart, tab]);
+  const hasExactSuggestion = Array.isArray(quickSuggestions) && quickSuggestions.some((item) => normalizeQuery(item?.name) === normalizeQuery(quickQuery));
 
   if (isDiodGlobalMode) {
     return (
