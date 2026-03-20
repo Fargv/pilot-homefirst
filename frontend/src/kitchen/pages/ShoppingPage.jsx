@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
@@ -171,8 +172,10 @@ export default function ShoppingPage() {
   const [quickCreateName, setQuickCreateName] = useState("");
   const [quickCategorySearch, setQuickCategorySearch] = useState("");
   const [quickCategoryMenuOpen, setQuickCategoryMenuOpen] = useState(false);
+  const [quickCategoryMenuPosition, setQuickCategoryMenuPosition] = useState(null);
   const quickInputRef = useRef(null);
   const quickCategoryFieldRef = useRef(null);
+  const quickCategoryMenuRef = useRef(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
 
@@ -262,12 +265,46 @@ export default function ShoppingPage() {
 
     const handlePointerDown = (event) => {
       if (quickCategoryFieldRef.current?.contains(event.target)) return;
+      if (quickCategoryMenuRef.current?.contains(event.target)) return;
       setQuickCategoryMenuOpen(false);
     };
 
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [quickCreateOpen, quickCategoryMenuOpen]);
+
+  const updateQuickCategoryMenuPosition = useCallback(() => {
+    const field = quickCategoryFieldRef.current;
+    if (!field) return;
+    const rect = field.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const openUpward = spaceBelow < 240 && rect.top > spaceBelow;
+    const menuHeight = Math.min(240, Math.max(160, openUpward ? rect.top - 16 : viewportHeight - rect.bottom - 16));
+
+    setQuickCategoryMenuPosition({
+      left: rect.left,
+      width: rect.width,
+      top: openUpward ? "auto" : rect.bottom + 8,
+      bottom: openUpward ? viewportHeight - rect.top + 8 : "auto",
+      maxHeight: menuHeight,
+      placement: openUpward ? "top" : "bottom"
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!quickCreateOpen || !quickCategoryMenuOpen) return undefined;
+
+    updateQuickCategoryMenuPosition();
+    const handleReposition = () => updateQuickCategoryMenuPosition();
+    window.addEventListener("resize", handleReposition);
+    window.addEventListener("scroll", handleReposition, true);
+
+    return () => {
+      window.removeEventListener("resize", handleReposition);
+      window.removeEventListener("scroll", handleReposition, true);
+    };
+  }, [filteredQuickCategories.length, quickCategoryMenuOpen, quickCreateOpen, updateQuickCategoryMenuPosition]);
 
   useEffect(() => {
     if (!quickQuery.trim()) {
@@ -765,29 +802,6 @@ export default function ShoppingPage() {
                   aria-expanded={quickCategoryMenuOpen}
                   aria-haspopup="listbox"
                 />
-                {quickCategoryMenuOpen ? (
-                  <div className="shopping-modal-category-menu" role="listbox" aria-label="Categorías">
-                    {filteredQuickCategories.length ? filteredQuickCategories.map((category) => {
-                      const isSelected = category._id === quickCategoryId;
-                      return (
-                        <button
-                          key={category._id}
-                          type="button"
-                          className={`shopping-modal-category-option ${isSelected ? "is-selected" : ""}`}
-                          onClick={() => {
-                            setQuickCategoryId(category._id);
-                            setQuickCategorySearch(category.name);
-                            setQuickCategoryMenuOpen(false);
-                          }}
-                        >
-                          {category.name}
-                        </button>
-                      );
-                    }) : (
-                      <div className="shopping-modal-category-empty">No hay categorías que coincidan.</div>
-                    )}
-                  </div>
-                ) : null}
               </div>
             </label>
             <div className="kitchen-modal-actions">
@@ -810,6 +824,42 @@ export default function ShoppingPage() {
             </div>
           </div>
         </div>
+      ) : null}
+      {quickCreateOpen && quickCategoryMenuOpen && quickCategoryMenuPosition ? createPortal(
+        <div
+          ref={quickCategoryMenuRef}
+          className={`shopping-modal-category-menu is-floating ${quickCategoryMenuPosition.placement === "top" ? "is-above" : ""}`}
+          role="listbox"
+          aria-label="Categorías"
+          style={{
+            left: quickCategoryMenuPosition.left,
+            width: quickCategoryMenuPosition.width,
+            top: quickCategoryMenuPosition.top,
+            bottom: quickCategoryMenuPosition.bottom,
+            maxHeight: quickCategoryMenuPosition.maxHeight
+          }}
+        >
+          {filteredQuickCategories.length ? filteredQuickCategories.map((category) => {
+            const isSelected = category._id === quickCategoryId;
+            return (
+              <button
+                key={category._id}
+                type="button"
+                className={`shopping-modal-category-option ${isSelected ? "is-selected" : ""}`}
+                onClick={() => {
+                  setQuickCategoryId(category._id);
+                  setQuickCategorySearch(category.name);
+                  setQuickCategoryMenuOpen(false);
+                }}
+              >
+                {category.name}
+              </button>
+            );
+          }) : (
+            <div className="shopping-modal-category-empty">No hay categorías que coincidan.</div>
+          )}
+        </div>,
+        document.body
       ) : null}
     </KitchenLayout>
   );
