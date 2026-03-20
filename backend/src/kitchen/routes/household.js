@@ -1,4 +1,4 @@
-import crypto from "crypto";
+Ôªøimport crypto from "crypto";
 import express from "express";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
@@ -17,7 +17,11 @@ import { Household } from "../models/Household.js";
 import { ensureHouseholdInviteCode } from "../householdInviteCode.js";
 import { sendEmail } from "../../services/emailService.js";
 import { buildHouseholdInvitationEmail } from "../householdInvitationEmail.js";
-import { createHouseholdInvitation } from "../invitationService.js";
+import {
+  createHouseholdInvitation,
+  findInvitationByToken,
+  getInvitationStatus
+} from "../invitationService.js";
 
 const router = express.Router();
 
@@ -79,7 +83,7 @@ async function resolveShareHousehold(req, requestedHouseholdId) {
       return { error: { status: 400, message: "Debes seleccionar un household para enviar invitaciones." } };
     }
     if (!mongoose.isValidObjectId(householdId)) {
-      return { error: { status: 400, message: "El household seleccionado no es v·lido." } };
+      return { error: { status: 400, message: "El household seleccionado no es v√°lido." } };
     }
     const household = await Household.findById(householdId)
       .select("_id name inviteCode ownerUserId")
@@ -151,6 +155,12 @@ function normalizeInvitationEmails(emails) {
   }
 
   return { emails: validEmails, invalidEmails };
+}
+
+function invitationRoleLabel(role) {
+  const normalizedRole = String(role || "member").toLowerCase();
+  if (normalizedRole === "owner" || normalizedRole === "admin") return "Administrador";
+  return "Miembro";
 }
 
 router.get("/summary", requireAuth, async (req, res) => {
@@ -280,7 +290,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     if (error?.name === "ValidationError" || error?.name === "CastError") {
-      return res.status(400).json({ ok: false, error: "Preferencias del household no v·lidas." });
+      return res.status(400).json({ ok: false, error: "Preferencias del household no v√°lidas." });
     }
     console.error("[kitchen/household] update preferences failed", {
       userId: req.user?.id || null,
@@ -303,7 +313,7 @@ router.get("/invite-code", requireAuth, requireRole("owner"), async (req, res) =
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
-    return res.status(500).json({ ok: false, error: "No se pudo cargar el cÛdigo del hogar." });
+    return res.status(500).json({ ok: false, error: "No se pudo cargar el c√≥digo del hogar." });
   }
 });
 
@@ -319,7 +329,7 @@ router.post("/invite-code", requireAuth, requireRole("owner"), async (req, res) 
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
-    return res.status(500).json({ ok: false, error: "No se pudo generar el cÛdigo del hogar." });
+    return res.status(500).json({ ok: false, error: "No se pudo generar el c√≥digo del hogar." });
   }
 });
 
@@ -344,7 +354,7 @@ router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) 
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
-    return res.status(500).json({ ok: false, error: "No se pudo crear la invitaciÛn." });
+    return res.status(500).json({ ok: false, error: "No se pudo crear la invitaci√≥n." });
   }
 });
 
@@ -369,6 +379,7 @@ router.get("/invitations", requireAuth, requireRole("owner"), async (req, res) =
       invitations: invitations.map((invitation) => ({
         id: invitation._id,
         role: invitation.role,
+        status: invitation.status || "active",
         recipientEmail: invitation.recipientEmail || "",
         expiresAt: invitation.expiresAt,
         createdAt: invitation.createdAt
@@ -378,6 +389,123 @@ router.get("/invitations", requireAuth, requireRole("owner"), async (req, res) =
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudieron cargar las invitaciones." });
+  }
+});
+
+router.get("/invitations/:token/validate", requireAuth, async (req, res) => {
+  try {
+    const invitation = await findInvitationByToken(req.params.token);
+    const invitationStatus = getInvitationStatus(invitation);
+
+    if (!invitation || invitationStatus === "invalid") {
+      return res.status(404).json({ ok: false, error: "La invitacion no es valida." });
+    }
+    if (invitationStatus === "expired") {
+      return res.status(410).json({ ok: false, error: "La invitacion ha caducado." });
+    }
+    if (invitationStatus === "used") {
+      return res.status(409).json({ ok: false, error: "La invitacion ya fue utilizada." });
+    }
+    if (invitationStatus === "revoked") {
+      return res.status(410).json({ ok: false, error: "La invitacion ya no esta disponible." });
+    }
+
+    const household = await Household.findById(invitation.householdId).select("_id name").lean();
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar asociado a esta invitacion." });
+    }
+
+    const userHouseholdId = req.kitchenUser?.householdId ? String(req.kitchenUser.householdId) : "";
+    const targetHouseholdId = String(invitation.householdId);
+
+    if (userHouseholdId && userHouseholdId !== targetHouseholdId) {
+      return res.status(409).json({
+        ok: false,
+        error: "Tu cuenta ya pertenece a otro hogar. No puedes unirte con esta invitacion."
+      });
+    }
+
+    return res.json({
+      ok: true,
+      status: userHouseholdId === targetHouseholdId ? "already_member" : "valid",
+      householdName: household.name || "",
+      expiresAt: invitation.expiresAt,
+      role: invitation.role || "member",
+      roleLabel: invitationRoleLabel(invitation.role),
+      recipientEmail: invitation.recipientEmail || ""
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo validar la invitacion." });
+  }
+});
+
+router.post("/invitations/:token/accept", requireAuth, async (req, res) => {
+  try {
+    const invitation = await findInvitationByToken(req.params.token);
+    const invitationStatus = getInvitationStatus(invitation);
+
+    if (!invitation || invitationStatus === "invalid") {
+      return res.status(404).json({ ok: false, error: "La invitacion no es valida." });
+    }
+    if (invitationStatus === "expired") {
+      return res.status(410).json({ ok: false, error: "La invitacion ha caducado." });
+    }
+    if (invitationStatus === "used") {
+      return res.status(409).json({ ok: false, error: "La invitacion ya fue utilizada." });
+    }
+    if (invitationStatus === "revoked") {
+      return res.status(410).json({ ok: false, error: "La invitacion ya no esta disponible." });
+    }
+
+    if (
+      invitation.recipientEmail
+      && req.kitchenUser?.email
+      && invitation.recipientEmail !== String(req.kitchenUser.email).toLowerCase()
+    ) {
+      return res.status(403).json({
+        ok: false,
+        error: "Esta invitacion fue enviada a otro email. Inicia sesion con ese correo o pide una nueva invitacion."
+      });
+    }
+
+    const currentHouseholdId = req.kitchenUser?.householdId ? String(req.kitchenUser.householdId) : "";
+    const targetHouseholdId = String(invitation.householdId);
+
+    if (currentHouseholdId && currentHouseholdId !== targetHouseholdId) {
+      return res.status(409).json({
+        ok: false,
+        error: "Tu cuenta ya pertenece a otro hogar. No puedes unirte con esta invitacion."
+      });
+    }
+
+    if (currentHouseholdId === targetHouseholdId) {
+      return res.json({
+        ok: true,
+        status: "already_member",
+        user: req.kitchenUser.toSafeJSON()
+      });
+    }
+
+    req.kitchenUser.householdId = invitation.householdId;
+    req.kitchenUser.role = invitation.role || "member";
+    await req.kitchenUser.save();
+
+    invitation.status = "used";
+    invitation.usedAt = new Date();
+    invitation.usedByUserId = req.kitchenUser._id;
+    await invitation.save();
+
+    return res.json({
+      ok: true,
+      status: "joined",
+      user: req.kitchenUser.toSafeJSON()
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitacion." });
   }
 });
 
@@ -396,12 +524,12 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
 
     const { emails, invalidEmails } = normalizeInvitationEmails(req.body?.emails);
     if (!emails.length) {
-      return res.status(400).json({ ok: false, error: "Debes indicar al menos un email v·lido." });
+      return res.status(400).json({ ok: false, error: "Debes indicar al menos un email v√°lido." });
     }
     if (invalidEmails.length) {
       return res.status(400).json({
         ok: false,
-        error: "Hay emails no v·lidos en la lista.",
+        error: "Hay emails no v√°lidos en la lista.",
         invalidEmails
       });
     }
@@ -457,7 +585,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
           return {
             email,
             ok: false,
-            error: sendError?.message || "No se pudo enviar la invitaciÛn."
+            error: sendError?.message || "No se pudo enviar la invitaci√≥n."
           };
         }
       })
@@ -554,13 +682,13 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     if (error?.name === "ValidationError" || error?.name === "CastError") {
-      return res.status(400).json({ ok: false, error: "Datos de comensal no v·lidos." });
+      return res.status(400).json({ ok: false, error: "Datos de comensal no v√°lidos." });
     }
     if (error?.code === 11000) {
       if (error?.keyPattern?.email) {
         return res.status(409).json({ ok: false, error: "No se pudo crear el comensal: email duplicado." });
       }
-      return res.status(409).json({ ok: false, error: "No se pudo crear el comensal: conflicto de datos ˙nicos." });
+      return res.status(409).json({ ok: false, error: "No se pudo crear el comensal: conflicto de datos √∫nicos." });
     }
     return res.status(500).json({ ok: false, error: "No se pudo crear el comensal." });
   }
@@ -571,10 +699,10 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
     const { email, password } = req.body;
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
-      return res.status(400).json({ ok: false, error: "Debes indicar un email v·lido." });
+      return res.status(400).json({ ok: false, error: "Debes indicar un email v√°lido." });
     }
     if (password && String(password).length < 8) {
-      return res.status(400).json({ ok: false, error: "La contraseÒa debe tener al menos 8 caracteres." });
+      return res.status(400).json({ ok: false, error: "La contrase√±a debe tener al menos 8 caracteres." });
     }
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
@@ -588,7 +716,7 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
 
     const emailInUse = await KitchenUser.findOne({ email: normalizedEmail, _id: { $ne: placeholder._id } });
     if (emailInUse) {
-      return res.status(409).json({ ok: false, error: "Ese email ya est· en uso por otra cuenta." });
+      return res.status(409).json({ ok: false, error: "Ese email ya est√° en uso por otra cuenta." });
     }
 
     placeholder.email = normalizedEmail;
@@ -614,10 +742,10 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     if (error?.name === "ValidationError" || error?.name === "CastError") {
-      return res.status(400).json({ ok: false, error: "Datos de conversiÛn no v·lidos." });
+      return res.status(400).json({ ok: false, error: "Datos de conversi√≥n no v√°lidos." });
     }
     if (error?.code === 11000 && error?.keyPattern?.email) {
-      return res.status(409).json({ ok: false, error: "Ese email ya est· en uso por otra cuenta." });
+      return res.status(409).json({ ok: false, error: "Ese email ya est√° en uso por otra cuenta." });
     }
     console.error("[kitchen/household] convert placeholder failed", {
       userId: req.user?.id || null,
@@ -631,3 +759,4 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
 });
 
 export default router;
+

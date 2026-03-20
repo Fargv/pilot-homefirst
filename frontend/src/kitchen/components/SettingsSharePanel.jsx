@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../api.js";
+import { buildInviteShareUrl } from "../deepLinks.js";
+import ShareWhatsAppButton from "./ShareWhatsAppButton.jsx";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -31,6 +33,7 @@ export default function SettingsSharePanel({
   const [loadingCode, setLoadingCode] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [recentInvitations, setRecentInvitations] = useState([]);
+  const [shareInvite, setShareInvite] = useState(null);
 
   const shareHouseholdId = isDiod ? selectedHouseholdId : (user?.activeHouseholdId || user?.householdId || "");
   const selectedHousehold = useMemo(
@@ -193,6 +196,31 @@ export default function SettingsSharePanel({
     }
   };
 
+  const prepareInviteShare = async () => {
+    if (!shareHouseholdId) {
+      setSubmitError("Selecciona primero el household al que quieres invitar.");
+      return;
+    }
+    setSubmitError("");
+    try {
+      const data = await apiRequest("/api/kitchen/household/invitations", {
+        method: "POST",
+        body: JSON.stringify(isDiod ? { householdId: shareHouseholdId } : {})
+      });
+      const inviteUrl = data?.inviteLink || buildInviteShareUrl(data?.token || "");
+      setShareInvite({
+        id: "household-invite",
+        label: "Invitar al hogar",
+        description: "Comparte un acceso con token seguro. La otra persona tendra que iniciar sesion antes de unirse.",
+        url: inviteUrl,
+        message: `Join my household in HomeFirst: ${inviteUrl}`
+      });
+      await loadShareContext(shareHouseholdId);
+    } catch (error) {
+      setSubmitError(error.message || "No se pudo preparar la invitacion para compartir.");
+    }
+  };
+
   const sendInvitations = async () => {
     if (!canSend) return;
     setSending(true);
@@ -241,6 +269,17 @@ export default function SettingsSharePanel({
             El camino principal ahora es simple: escribe uno o varios emails y Lunchfy enviará una invitación bonita,
             clara y con acceso directo. El código del household sigue aquí como plan B.
           </p>
+        </div>
+        <div className="settings-share-hero-actions">
+          <button type="button" className="kitchen-button secondary" onClick={() => void prepareInviteShare()}>
+            Preparar link
+          </button>
+          <ShareWhatsAppButton
+            iconOnly
+            buttonLabel="Compartir invitacion"
+            title="Invitar al hogar"
+            items={shareInvite ? [shareInvite] : []}
+          />
         </div>
       </div>
 

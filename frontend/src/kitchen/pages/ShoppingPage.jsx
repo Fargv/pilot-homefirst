@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
+import ShareWhatsAppButton from "../components/ShareWhatsAppButton.jsx";
+import { buildShoppingShareUrl, normalizeWeekParam } from "../deepLinks.js";
 import { useActiveWeek } from "../weekContext.jsx";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 
@@ -150,6 +153,7 @@ function normalizeQuery(value = "") {
 
 export default function ShoppingPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [tab, setTab] = useState("pending");
   const [error, setError] = useState("");
@@ -231,6 +235,12 @@ export default function ShoppingPage() {
   useEffect(() => {
     void loadList();
   }, [weekStart, isDiodGlobalMode]);
+
+  useEffect(() => {
+    const requestedWeek = normalizeWeekParam(searchParams.get("week"), "");
+    if (!requestedWeek || requestedWeek === weekStart) return;
+    setWeekStart(requestedWeek);
+  }, [searchParams, setWeekStart, weekStart]);
 
   useEffect(() => {
     if (!recentlyMovedItemKey) return undefined;
@@ -577,6 +587,20 @@ export default function ShoppingPage() {
                   onChange={(nextValue) => setWeekStart(normalizeWeekStartInput(nextValue))}
                   onPrevious={() => setWeekStart((prev) => addDaysToISO(prev, -7))}
                   onNext={() => setWeekStart((prev) => addDaysToISO(prev, 7))}
+                />
+                <ShareWhatsAppButton
+                  iconOnly
+                  buttonLabel="Compartir lista"
+                  title="Compartir en HomeFirst"
+                  items={[
+                    {
+                      id: "shopping-list",
+                      label: "Compartir esta lista",
+                      description: "Comparte la lista de la compra de esta semana con acceso protegido.",
+                      url: buildShoppingShareUrl(weekStart),
+                      message: `Here is the shopping list in HomeFirst: ${buildShoppingShareUrl(weekStart)}`
+                    }
+                  ]}
                 />
                 {!isCurrentWeek ? (
                   <button

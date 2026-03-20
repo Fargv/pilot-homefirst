@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Card from "../components/ui/Card";
 import { apiRequest } from "../api.js";
+import { resolvePostAuthRedirect } from "../authRedirect.js";
 import { useAuth } from "../auth";
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { establishSession } = useAuth();
   const [mode, setMode] = useState("create");
   const [form, setForm] = useState({
@@ -23,6 +25,7 @@ export default function SignupPage() {
   const [resolvingCode, setResolvingCode] = useState(false);
   const [resolvedHousehold, setResolvedHousehold] = useState("");
   const [error, setError] = useState("");
+  const next = searchParams.get("next") || "";
 
   const normalizedCode = useMemo(() => String(form.inviteCode || "").replace(/\D/g, "").slice(0, 6), [form.inviteCode]);
 
@@ -67,7 +70,7 @@ export default function SignupPage() {
       });
 
       establishSession(data.token, data.user);
-      navigate("/kitchen/semana", { replace: true });
+      navigate(resolvePostAuthRedirect(searchParams), { replace: true });
     } catch (err) {
       setError(err.message || "No se pudo completar el registro.");
     } finally {
@@ -183,7 +186,7 @@ export default function SignupPage() {
             <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={loading}>
               {loading ? "Registrando..." : "Registrarme"}
             </button>
-            <p className="kitchen-login-footer">¿Ya tienes cuenta? <button type="button" className="kitchen-login-link" onClick={() => navigate("/login")}>Inicia sesión</button></p>
+            <p className="kitchen-login-footer">¿Ya tienes cuenta? <button type="button" className="kitchen-login-link" onClick={() => navigate(next ? `/login?next=${encodeURIComponent(next)}` : "/login")}>Inicia sesión</button></p>
           </form>
         </Card>
       </div>

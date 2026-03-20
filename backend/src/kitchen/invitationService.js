@@ -17,6 +17,14 @@ export function buildInvitationLink(token) {
   return `${frontendBaseUrl}/invite/${token}`;
 }
 
+export function getInvitationStatus(invitation) {
+  if (!invitation) return "invalid";
+  if (invitation.status === "revoked") return "revoked";
+  if (invitation.usedAt || invitation.status === "used") return "used";
+  if (invitation.expiresAt && new Date(invitation.expiresAt).getTime() <= Date.now()) return "expired";
+  return "active";
+}
+
 export async function createHouseholdInvitation({
   householdId,
   createdByUserId,
@@ -29,6 +37,7 @@ export async function createHouseholdInvitation({
     householdId,
     tokenHash: hashInvitationToken(rawToken),
     role,
+    status: "active",
     createdByUserId,
     recipientEmail: recipientEmail || null,
     expiresAt
@@ -44,7 +53,18 @@ export async function createHouseholdInvitation({
 export async function findActiveInvitationByToken(token) {
   return Invitation.findOne({
     tokenHash: hashInvitationToken(token),
+    $or: [
+      { status: "active" },
+      { status: { $exists: false } },
+      { status: null }
+    ],
     usedAt: null,
     expiresAt: { $gt: new Date() }
+  });
+}
+
+export async function findInvitationByToken(token) {
+  return Invitation.findOne({
+    tokenHash: hashInvitationToken(token)
   });
 }

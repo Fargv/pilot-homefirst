@@ -432,6 +432,7 @@ router.post("/accept-invite", async (req, res) => {
       });
     }
 
+    invitation.status = "used";
     invitation.usedAt = new Date();
     invitation.usedByUserId = user._id;
     await invitation.save();

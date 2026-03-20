@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { resolvePostAuthRedirect } from "../authRedirect.js";
 import { useAuth } from "../auth";
 import Card from "../components/ui/Card";
 import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const profileDeleted = searchParams.get("deleted") === "1";
+  const next = searchParams.get("next") || "";
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -20,7 +22,7 @@ export default function LoginPage() {
 
     try {
       await login(form.email, form.password);
-      navigate("/kitchen/semana", { replace: true });
+      navigate(resolvePostAuthRedirect(searchParams), { replace: true });
     } catch (err) {
       setError(err.message || "No se pudo iniciar sesion.");
     } finally {
@@ -124,7 +126,7 @@ export default function LoginPage() {
           </form>
           <p className="kitchen-login-footer">
             No tienes cuenta?{" "}
-            <button type="button" className="kitchen-login-link" onClick={() => navigate("/register")}>
+            <button type="button" className="kitchen-login-link" onClick={() => navigate(next ? `/register?next=${encodeURIComponent(next)}` : "/register")}>
               Registrate
             </button>
           </p>

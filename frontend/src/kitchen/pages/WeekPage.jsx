@@ -8,6 +8,8 @@ import DishModal from "../components/DishModal.jsx";
 import WeekPageSkeleton from "../components/WeekPageSkeleton.jsx";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import KitchenLayout from "../Layout.jsx";
+import ShareWhatsAppButton from "../components/ShareWhatsAppButton.jsx";
+import { buildWeekShareUrl, normalizeWeekParam } from "../deepLinks.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { getUserColorById } from "../utils/userColors";
 import { getUserInitialsFromProfile } from "../utils/userInitials.js";
@@ -491,6 +493,12 @@ export default function WeekPage() {
   useEffect(() => {
     loadData();
   }, [user, weekStart, isOwnerAdmin, isDiodGlobalMode, selectedMealType]);
+
+  useEffect(() => {
+    const requestedWeek = normalizeWeekParam(searchParams.get("week"), "");
+    if (!requestedWeek || requestedWeek === weekStart) return;
+    setWeekStart(requestedWeek);
+  }, [searchParams, setWeekStart, weekStart]);
 
   useEffect(() => {
     userRef.current = user;
@@ -2030,6 +2038,20 @@ export default function WeekPage() {
                       onChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
                       onPrevious={() => handleWeekShift(-7)}
                       onNext={() => handleWeekShift(7)}
+                    />
+                    <ShareWhatsAppButton
+                      iconOnly
+                      buttonLabel="Compartir semana"
+                      title="Compartir en HomeFirst"
+                      items={[
+                        {
+                          id: "week",
+                          label: "Compartir esta semana",
+                          description: "Envia un enlace directo a esta semana. La otra persona tendra que iniciar sesion para verla.",
+                          url: buildWeekShareUrl(weekStart),
+                          message: `Take a look at this week in HomeFirst: ${buildWeekShareUrl(weekStart)}`
+                        }
+                      ]}
                     />
                     {!isCurrentWeek ? (
                       <button

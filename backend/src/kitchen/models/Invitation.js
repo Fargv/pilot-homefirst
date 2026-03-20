@@ -11,6 +11,7 @@ const InvitationSchema = new mongoose.Schema(
     tokenHash: { type: String, required: true, unique: true, index: true },
     recipientEmail: { type: String, trim: true, lowercase: true, default: null, index: true },
     role: { type: String, enum: ["member", "owner", "admin", "user"], default: "member" },
+    status: { type: String, enum: ["active", "used", "revoked"], default: "active", index: true },
     createdByUserId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", required: true },
     expiresAt: { type: Date, required: true, index: true },
     usedAt: { type: Date, default: null },

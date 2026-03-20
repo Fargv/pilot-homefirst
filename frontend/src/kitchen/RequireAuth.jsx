@@ -1,10 +1,12 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
+import { buildReturnTo, storePostAuthRedirect } from "./authRedirect.js";
 import { AppLoadingScreen } from "./components/WeekPageSkeleton.jsx";
 import { isUserAuthenticated, useAuth } from "./auth";
 
 export default function RequireAuth({ children, roles }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   const isAuthenticated = isUserAuthenticated(user);
 
   if (loading) {
@@ -16,7 +18,11 @@ export default function RequireAuth({ children, roles }) {
     );
   }
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    const next = buildReturnTo(location);
+    storePostAuthRedirect(next);
+    return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />;
+  }
 
   if (roles && !roles.includes(user.role)) {
     return <Navigate to="/kitchen/semana" replace />;
