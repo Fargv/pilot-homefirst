@@ -1723,8 +1723,10 @@ body {
   width: 18px;
   height: 18px;
   stroke: currentColor;
-  stroke-width: 1.7;
+  stroke-width: 2;
   fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .kitchen-week-header-panel .kitchen-meal-tabs {
