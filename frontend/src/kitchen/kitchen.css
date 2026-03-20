@@ -781,6 +781,17 @@ body {
   justify-content: center;
 }
 
+.kitchen-tab-share-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  margin-inline: auto;
+  flex-wrap: nowrap;
+}
+
 .kitchen-meal-tab {
   border: none;
   background: transparent;
@@ -4031,6 +4042,10 @@ body {
   justify-content: center;
 }
 
+.shopping-tab-share-row {
+  width: min(100%, max-content);
+}
+
 .shopping-header-input-row {
   display: grid;
   grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
@@ -6264,8 +6279,8 @@ body {
 }
 
 .kitchen-share-trigger:hover {
-  border-color: #12b76a;
-  box-shadow: 0 10px 24px rgba(18, 183, 106, 0.12);
+  border-color: color-mix(in srgb, var(--hf-brand) 45%, white);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--hf-brand) 12%, transparent);
   transform: translateY(-1px);
 }
 
@@ -6279,6 +6294,55 @@ body {
 .kitchen-share-action-icon {
   width: 18px;
   height: 18px;
+}
+
+.kitchen-whatsapp-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 18%, var(--hf-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--hf-surface-soft) 78%, white);
+  color: var(--hf-brand);
+  cursor: pointer;
+  transition: transform 180ms ease, opacity 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  flex: 0 0 auto;
+}
+
+.kitchen-whatsapp-icon-button:hover {
+  opacity: 0.92;
+  transform: scale(1.03);
+  border-color: color-mix(in srgb, var(--hf-brand) 38%, var(--hf-border));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--hf-brand) 12%, transparent);
+}
+
+.kitchen-whatsapp-icon-button:active {
+  transform: scale(0.98);
+}
+
+.kitchen-whatsapp-icon-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--hf-brand) 28%, white);
+  outline-offset: 2px;
+}
+
+.kitchen-whatsapp-icon-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.kitchen-whatsapp-icon-button-svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.kitchen-tab-share-button {
+  align-self: center;
 }
 
 .kitchen-share-sheet {
@@ -6399,5 +6463,15 @@ body {
   .kitchen-share-action,
   .settings-share-hero-actions .kitchen-button {
     width: 100%;
+  }
+
+  .kitchen-tab-share-row {
+    gap: 6px;
+  }
+
+  .kitchen-whatsapp-icon-button {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 7px;
   }
 }

@@ -1,22 +1,6 @@
 import React, { useMemo, useState } from "react";
 import ModalSheet from "./ui/ModalSheet.jsx";
-
-function ShareIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M15 8.5a3.5 3.5 0 1 0-6.8 1.2L4.7 12.1a3.2 3.2 0 0 0 0-.1 3.5 3.5 0 1 0 1 2.4l3.5-2.4a3.5 3.5 0 0 0 5.6 0l3.5 2.3a3.5 3.5 0 1 0 .8-1.2l-3.4-2.3A3.5 3.5 0 0 0 15 8.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function WhatsAppIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M12 3.8a8.2 8.2 0 0 0-7 12.5L4 20l3.9-1A8.2 8.2 0 1 0 12 3.8Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9.4 8.9c-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.4-.2.3-.8.8-.8 1.9s.8 2.1.9 2.3c.1.1 1.5 2.3 3.7 3.1 1.8.7 2.2.6 2.6.6.4-.1 1.3-.5 1.5-1 .2-.6.2-1 .1-1.1-.1-.1-.4-.2-.9-.5s-1-.5-1.1-.5c-.2-.1-.3-.1-.5.1-.1.2-.6.7-.7.8-.1.1-.3.1-.5 0-.2-.1-1-.4-1.8-1.2-.7-.7-1.2-1.6-1.4-1.8-.1-.2 0-.3.1-.4.1-.1.2-.3.4-.4.1-.1.2-.3.3-.4.1-.2 0-.3 0-.5-.1-.1-.5-1.2-.7-1.7Z" fill="currentColor" />
-    </svg>
-  );
-}
+import WhatsAppIconButton, { WhatsAppIcon } from "./WhatsAppIconButton.jsx";
 
 function CopyIcon(props) {
   return (
@@ -45,7 +29,8 @@ export default function ShareWhatsAppButton({
   buttonLabel = "Compartir",
   title = "Compartir",
   className = "",
-  iconOnly = false
+  iconOnly = false,
+  size = 22
 }) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState("");
@@ -84,19 +69,32 @@ export default function ShareWhatsAppButton({
 
   return (
     <>
-      <button
-        type="button"
-        className={`kitchen-share-trigger ${iconOnly ? "is-icon-only" : ""} ${className}`.trim()}
-        aria-label={buttonLabel}
-        title={buttonLabel}
-        onClick={() => {
-          setStatus("");
-          setOpen(true);
-        }}
-      >
-        <ShareIcon className="kitchen-share-trigger-icon" />
-        {!iconOnly ? <span>{buttonLabel}</span> : null}
-      </button>
+      {iconOnly ? (
+        <WhatsAppIconButton
+          className={className}
+          ariaLabel={buttonLabel}
+          title={buttonLabel}
+          size={size}
+          onClick={() => {
+            setStatus("");
+            setOpen(true);
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          className={`kitchen-share-trigger ${className}`.trim()}
+          aria-label={buttonLabel}
+          title={buttonLabel}
+          onClick={() => {
+            setStatus("");
+            setOpen(true);
+          }}
+        >
+          <WhatsAppIcon className="kitchen-share-trigger-icon" size={size} />
+          <span>{buttonLabel}</span>
+        </button>
+      )}
       <ModalSheet
         open={open}
         title={title}

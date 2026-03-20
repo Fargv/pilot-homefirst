@@ -2039,20 +2039,6 @@ export default function WeekPage() {
                       onPrevious={() => handleWeekShift(-7)}
                       onNext={() => handleWeekShift(7)}
                     />
-                    <ShareWhatsAppButton
-                      iconOnly
-                      buttonLabel="Compartir semana"
-                      title="Compartir en HomeFirst"
-                      items={[
-                        {
-                          id: "week",
-                          label: "Compartir esta semana",
-                          description: "Envia un enlace directo a esta semana. La otra persona tendra que iniciar sesion para verla.",
-                          url: buildWeekShareUrl(weekStart),
-                          message: `Take a look at this week in HomeFirst: ${buildWeekShareUrl(weekStart)}`
-                        }
-                      ]}
-                    />
                     {!isCurrentWeek ? (
                       <button
                         type="button"
@@ -2070,7 +2056,8 @@ export default function WeekPage() {
 
                 {dinnersEnabled ? (
                   <div className="kitchen-week-header-row kitchen-week-header-row-tabs">
-                    <div className="kitchen-meal-tabs kitchen-meal-tabs-with-link" role="group" aria-label="Navegación semanal">
+                    <div className="kitchen-tab-share-row">
+                      <div className="kitchen-meal-tabs kitchen-meal-tabs-with-link" role="group" aria-label="Navegación semanal">
                       <button
                         type="button"
                         className={`kitchen-meal-tab ${selectedMealType === "lunch" ? "is-active" : ""}`}
@@ -2094,6 +2081,23 @@ export default function WeekPage() {
                       >
                         Compra
                       </button>
+                      </div>
+                      <ShareWhatsAppButton
+                        iconOnly
+                        size={22}
+                        className="kitchen-tab-share-button"
+                        buttonLabel="Compartir semana por WhatsApp"
+                        title="Compartir en HomeFirst"
+                        items={[
+                          {
+                            id: "week",
+                            label: "Compartir esta semana",
+                            description: "Envia un enlace directo a esta semana. La otra persona tendra que iniciar sesion para verla.",
+                            url: buildWeekShareUrl(weekStart),
+                            message: `Take a look at this week in HomeFirst: ${buildWeekShareUrl(weekStart)}`
+                          }
+                        ]}
+                      />
                     </div>
                   </div>
                 ) : null}

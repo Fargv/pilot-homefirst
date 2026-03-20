@@ -588,20 +588,6 @@ export default function ShoppingPage() {
                   onPrevious={() => setWeekStart((prev) => addDaysToISO(prev, -7))}
                   onNext={() => setWeekStart((prev) => addDaysToISO(prev, 7))}
                 />
-                <ShareWhatsAppButton
-                  iconOnly
-                  buttonLabel="Compartir lista"
-                  title="Compartir en HomeFirst"
-                  items={[
-                    {
-                      id: "shopping-list",
-                      label: "Compartir esta lista",
-                      description: "Comparte la lista de la compra de esta semana con acceso protegido.",
-                      url: buildShoppingShareUrl(weekStart),
-                      message: `Here is the shopping list in HomeFirst: ${buildShoppingShareUrl(weekStart)}`
-                    }
-                  ]}
-                />
                 {!isCurrentWeek ? (
                   <button
                     type="button"
@@ -618,9 +604,27 @@ export default function ShoppingPage() {
             </div>
 
             <div className="shopping-header-tabs-row">
-              <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
-                <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-                <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+              <div className="kitchen-tab-share-row shopping-tab-share-row">
+                <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
+                  <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
+                  <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+                </div>
+                <ShareWhatsAppButton
+                  iconOnly
+                  size={22}
+                  className="kitchen-tab-share-button"
+                  buttonLabel="Compartir lista por WhatsApp"
+                  title="Compartir en HomeFirst"
+                  items={[
+                    {
+                      id: "shopping-list",
+                      label: "Compartir esta lista",
+                      description: "Comparte la lista de la compra de esta semana con acceso protegido.",
+                      url: buildShoppingShareUrl(weekStart),
+                      message: `Here is the shopping list in HomeFirst: ${buildShoppingShareUrl(weekStart)}`
+                    }
+                  ]}
+                />
               </div>
             </div>
 
