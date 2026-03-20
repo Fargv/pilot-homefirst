@@ -768,6 +768,14 @@ export default function WeekPage() {
     };
   }, [dayKeys]);
 
+  useEffect(() => {
+    if (!dayKeys.length || !selectedDay) return;
+    const nextIndex = dayKeys.indexOf(selectedDay);
+    if (nextIndex >= 0 && nextIndex !== activeIndex) {
+      setActiveIndex(nextIndex);
+    }
+  }, [activeIndex, dayKeys, selectedDay]);
+
   function normalizeCookUserId(value) {
     if (value === undefined || value === null || value === "") return null;
     return String(value);
@@ -1946,7 +1954,11 @@ export default function WeekPage() {
       const saved = await stopEditingDay(currentEditingDayKey, "day-change");
       if (!saved) return;
     }
+    const targetIndex = dayKeys.indexOf(dayKey);
     setSelectedDay(dayKey);
+    if (targetIndex >= 0) {
+      setActiveIndex(targetIndex);
+    }
     const target = dayRefs.current.get(dayKey) || document.getElementById(`daycard-${dayKey}`);
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
@@ -2052,17 +2064,32 @@ export default function WeekPage() {
                   </div>
                 ) : null}
 
-                {canShowWeekRandomize ? (
-                  <div className="kitchen-week-header-row kitchen-week-header-row-randomize">
-                    <button
-                      type="button"
-                      className="kitchen-button secondary is-small kitchen-week-randomize-button"
-                      onClick={() => setWeekRandomizeConfirmOpen(true)}
-                      disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                      title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
-                    >
-                      <DiceIcon /> Randomizar libres
-                    </button>
+                {canShowWeekRandomize || isOwnerAdmin ? (
+                  <div className="kitchen-week-header-row kitchen-week-header-row-actions">
+                    <div className="kitchen-week-header-actions-inline">
+                      {canShowWeekRandomize ? (
+                        <button
+                          type="button"
+                          className="kitchen-button secondary is-small kitchen-week-randomize-button"
+                          onClick={() => setWeekRandomizeConfirmOpen(true)}
+                          disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+                          title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
+                        >
+                          <DiceIcon /> Randomizar libres
+                        </button>
+                      ) : null}
+                      {isOwnerAdmin ? (
+                        <button
+                          type="button"
+                          className="kitchen-button secondary is-small kitchen-week-delete-button"
+                          onClick={() => setWeekDeleteConfirmOpen(true)}
+                          disabled={weekDeleteBusy}
+                          title="Borrar la programacion visible de esta semana"
+                        >
+                          <TrashIcon /> Borrar semana
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
               </div>
@@ -3052,19 +3079,6 @@ export default function WeekPage() {
                   aria-current={activeIndex === index ? "true" : undefined}
                 />
               ))}
-            </div>
-          ) : null}
-          {isOwnerAdmin ? (
-            <div className="kitchen-week-delete-row">
-              <button
-                type="button"
-                className="kitchen-button secondary is-small kitchen-week-delete-button"
-                onClick={() => setWeekDeleteConfirmOpen(true)}
-                disabled={weekDeleteBusy}
-                title="Borrar la programacion visible de esta semana"
-              >
-                <TrashIcon /> Borrar semana
-              </button>
             </div>
           ) : null}
         </div>

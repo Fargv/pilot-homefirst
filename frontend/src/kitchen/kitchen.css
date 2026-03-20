@@ -1278,13 +1278,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 38px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 12px;
   border-color: rgba(176, 188, 229, 0.58);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(244, 247, 255, 0.9) 100%);
   color: #475467;
   box-shadow: 0 6px 14px rgba(88, 100, 167, 0.08);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -1304,6 +1304,15 @@ body {
   display: flex;
   justify-content: flex-end;
   margin-top: 18px;
+}
+
+.kitchen-week-header-actions-inline {
+  width: auto;
+  max-width: 100%;
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
 }
 
 .kitchen-week-randomize-button {
@@ -1612,7 +1621,7 @@ body {
   width: auto;
   max-width: none;
   margin-inline: 0;
-  grid-template-columns: var(--kitchen-week-nav-control-height) minmax(180px, 228px) var(--kitchen-week-nav-control-height);
+  grid-template-columns: var(--kitchen-week-nav-control-height) minmax(164px, 220px) var(--kitchen-week-nav-control-height);
 }
 
 .kitchen-week-picker {
@@ -1698,11 +1707,11 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 0 12px;
+  gap: 4px;
+  padding: 0 10px;
   line-height: 1;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
   flex: 0 0 auto;
   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
@@ -1743,6 +1752,16 @@ body {
   min-height: 38px;
   padding: 8px 14px;
   white-space: nowrap;
+}
+
+.kitchen-week-header-row-actions {
+  margin-top: -2px;
+}
+
+.kitchen-week-header-actions-inline .kitchen-week-delete-button,
+.kitchen-week-header-actions-inline .kitchen-week-randomize-button {
+  min-height: 34px;
+  border-radius: 999px;
 }
 
 .kitchen-title {
@@ -2684,7 +2703,7 @@ body {
   .kitchen-week-header-panel {
     width: min(100%, 460px);
     padding: 4px 0;
-    gap: 16px;
+    gap: 12px;
   }
 
   .kitchen-week-nav-row {
@@ -2706,13 +2725,31 @@ body {
   }
 
   .kitchen-week-now-button {
-    padding-inline: 10px;
-    font-size: 12px;
+    padding-inline: 8px;
+    gap: 0;
+    min-width: 48px;
+    font-size: 11px;
   }
 
   .kitchen-week-randomize-button {
     width: auto;
     max-width: 100%;
+  }
+
+  .kitchen-week-now-icon {
+    display: none;
+  }
+
+  .kitchen-week-header-actions-inline {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .kitchen-week-header-actions-inline .kitchen-week-delete-button,
+  .kitchen-week-header-actions-inline .kitchen-week-randomize-button {
+    min-height: 32px;
+    padding-inline: 10px;
+    font-size: 11px;
   }
 
   .kitchen-week-controls {
@@ -2738,6 +2775,10 @@ body {
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .kitchen-week-carousel-dots {
+    margin-top: 8px;
   }
 
   .kitchen-week-header-panel .kitchen-meal-tabs::-webkit-scrollbar {
@@ -6063,7 +6104,7 @@ body {
 }
 
 .kitchen-week-header-navigator .kitchen-week-picker .kitchen-input {
-  width: clamp(180px, 26vw, 228px);
+  width: min(100%, 228px);
   padding-inline: 12px;
 }
 
