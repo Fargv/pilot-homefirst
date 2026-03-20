@@ -1994,6 +1994,17 @@ export default function WeekPage() {
           selectedDay={selectedDay}
           onSelectDay={handleSelectDay}
           onCreateDish={handleCreateDishFromStrip}
+          utilityAction={canShowWeekRandomize ? (
+            <button
+              type="button"
+              className="kitchen-button secondary is-small kitchen-week-randomize-button"
+              onClick={() => setWeekRandomizeConfirmOpen(true)}
+              disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+              title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
+            >
+              <DiceIcon /> Randomizar libres
+            </button>
+          ) : null}
           weekendAction={{
             disabled: weekendOptionState.availableDays.length === 0,
             label: "FINDE",
@@ -2062,21 +2073,6 @@ export default function WeekPage() {
                   </div>
                 ) : null}
 
-                {canShowWeekRandomize ? (
-                  <div className="kitchen-week-header-row kitchen-week-header-row-actions">
-                    <div className="kitchen-week-header-actions-inline">
-                      <button
-                        type="button"
-                        className="kitchen-button secondary is-small kitchen-week-randomize-button"
-                        onClick={() => setWeekRandomizeConfirmOpen(true)}
-                        disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                        title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
-                      >
-                        <DiceIcon /> Randomizar libres
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
               </div>
               {weekNotice ? (
                 <div className={`kitchen-alert ${weekNotice.type === "success" ? "success" : "error"}`}>

@@ -1315,6 +1315,12 @@ body {
   gap: 8px;
 }
 
+.kitchen-weekdays-utility-row {
+  display: flex;
+  justify-content: center;
+  margin-top: -2px;
+}
+
 .kitchen-week-randomize-button {
   display: inline-flex;
   align-items: center;
@@ -1697,8 +1703,8 @@ body {
 .kitchen-week-now-button {
   grid-column: 3;
   justify-self: start;
-  min-height: var(--kitchen-week-nav-control-height);
-  height: var(--kitchen-week-nav-control-height);
+  min-height: calc(var(--kitchen-week-nav-control-height) + 4px);
+  height: calc(var(--kitchen-week-nav-control-height) + 4px);
   border-radius: 14px;
   border: 1px solid rgba(176, 188, 229, 0.72);
   background: linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
@@ -1758,8 +1764,10 @@ body {
   margin-top: -4px;
 }
 
-.kitchen-week-header-actions-inline .kitchen-week-randomize-button {
+.kitchen-week-header-actions-inline .kitchen-week-randomize-button,
+.kitchen-weekdays-utility-row .kitchen-week-randomize-button {
   min-height: 34px;
+  padding-inline: 12px;
   border-radius: 999px;
 }
 
@@ -2724,6 +2732,8 @@ body {
   }
 
   .kitchen-week-now-button {
+    min-height: 44px;
+    height: 44px;
     padding-inline: 8px;
     gap: 0;
     min-width: 48px;
@@ -2744,7 +2754,8 @@ body {
     gap: 6px;
   }
 
-  .kitchen-week-header-actions-inline .kitchen-week-randomize-button {
+  .kitchen-week-header-actions-inline .kitchen-week-randomize-button,
+  .kitchen-weekdays-utility-row .kitchen-week-randomize-button {
     min-height: 32px;
     padding-inline: 10px;
     font-size: 11px;

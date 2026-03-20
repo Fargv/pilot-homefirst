@@ -36,7 +36,8 @@ export default function WeekDaysStrip({
   selectedDay,
   onSelectDay,
   onCreateDish,
-  weekendAction = null
+  weekendAction = null,
+  utilityAction = null
 }) {
   const scrollRef = useRef(null);
   const [isCarousel, setIsCarousel] = useState(false);
@@ -191,6 +192,7 @@ export default function WeekDaysStrip({
           </button>
         ) : null}
       </div>
+      {utilityAction ? <div className="kitchen-weekdays-utility-row">{utilityAction}</div> : null}
     </section>
   );
 }
