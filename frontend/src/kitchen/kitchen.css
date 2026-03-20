@@ -3953,13 +3953,15 @@ body {
 
 .shopping-header-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 8px;
 }
 
 .shopping-header-title {
   min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .kitchen-category-select {
@@ -4017,11 +4019,11 @@ body {
 }
 
 .shopping-header-week-row {
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .shopping-header-tabs-row {
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .shopping-header-input-row {
@@ -4039,8 +4041,20 @@ body {
 .shopping-week-nav {
   --kitchen-week-nav-control-height: 40px;
   margin: 0;
-  width: 100%;
+  width: auto;
   max-width: none;
+}
+
+.shopping-week-nav-row {
+  width: min(100%, 520px);
+}
+
+.shopping-week-header-navigator.kitchen-week-nav {
+  grid-column: 2;
+  width: auto;
+  max-width: none;
+  margin-inline: 0;
+  grid-template-columns: var(--kitchen-week-nav-control-height) minmax(156px, 212px) var(--kitchen-week-nav-control-height);
 }
 
 .shopping-week-nav .kitchen-week-picker .kitchen-input {
@@ -4054,9 +4068,17 @@ body {
   border: 1px solid var(--hf-border);
   background: rgba(255, 255, 255, 0.8);
   border-radius: 14px;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+}
+
+.shopping-refresh-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .shopping-toolbar {

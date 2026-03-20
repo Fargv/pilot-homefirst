@@ -311,6 +311,7 @@ export default function WeekPage() {
     () => new Set(visibleDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean)),
     [visibleDays]
   );
+  const isCurrentWeek = weekStart === getMondayISO();
   const isOwnerAdmin = user?.role === "owner" || user?.role === "admin";
   const canManageAttendees = isOwnerAdmin;
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
@@ -2030,16 +2031,18 @@ export default function WeekPage() {
                       onPrevious={() => handleWeekShift(-7)}
                       onNext={() => handleWeekShift(7)}
                     />
-                    <button
-                      type="button"
-                      className="kitchen-week-now-button"
-                      onClick={handleJumpToCurrentPeriod}
-                      aria-label="Volver a hoy"
-                      title="Volver a hoy"
-                    >
-                      <TodayIcon className="kitchen-week-now-icon" />
-                      <span>Hoy</span>
-                    </button>
+                    {!isCurrentWeek ? (
+                      <button
+                        type="button"
+                        className="kitchen-week-now-button"
+                        onClick={handleJumpToCurrentPeriod}
+                        aria-label="Volver a hoy"
+                        title="Volver a hoy"
+                      >
+                        <TodayIcon className="kitchen-week-now-icon" />
+                        <span>Hoy</span>
+                      </button>
+                    ) : null}
                   </div>
                 </div>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
@@ -10,6 +10,16 @@ function RefreshIcon(props) {
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
       <path d="M20 12a8 8 0 1 1-2.343-5.657" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
       <path d="M20 4v4h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function TodayIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M8 3.5v2.2M16 3.5v2.2M4.5 9h15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <rect x="4.5" y="5.8" width="15" height="14.7" rx="2.4" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="14" r="2.1" fill="currentColor" />
     </svg>
   );
 }
@@ -85,6 +95,10 @@ function normalizeWeekStartInput(value) {
   return d.toISOString().slice(0, 10);
 }
 
+function getCurrentWeekStart() {
+  return normalizeWeekStartInput(new Date().toISOString().slice(0, 10));
+}
+
 function formatWeekTitle(iso) {
   if (!iso) return "";
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("es-ES", {
@@ -139,6 +153,11 @@ export default function ShoppingPage() {
   const [quickSearching, setQuickSearching] = useState(false);
   const quickInputRef = useRef(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
+  const isCurrentWeek = weekStart === getCurrentWeekStart();
+
+  const handleJumpToCurrentWeek = useCallback(() => {
+    setWeekStart(getCurrentWeekStart());
+  }, [setWeekStart]);
 
   const applyPayload = (data) => {
     setStores(data.stores || []);
@@ -443,8 +462,6 @@ export default function ShoppingPage() {
             <div className="shopping-header-row">
               <div className="shopping-header-title">
                 <h1>Lista de la compra</h1>
-              </div>
-              <div className="kitchen-actions">
                 <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
                   <RefreshIcon className="shopping-week-arrow-icon" />
                 </button>
@@ -452,13 +469,27 @@ export default function ShoppingPage() {
             </div>
 
             <div className="shopping-header-week-row">
-              <WeekNavigator
-                className="shopping-week-nav"
-                value={weekStart}
-                onChange={(nextValue) => setWeekStart(normalizeWeekStartInput(nextValue))}
-                onPrevious={() => setWeekStart((prev) => addDaysToISO(prev, -7))}
-                onNext={() => setWeekStart((prev) => addDaysToISO(prev, 7))}
-              />
+              <div className="kitchen-week-nav-row shopping-week-nav-row">
+                <WeekNavigator
+                  className="shopping-week-nav shopping-week-header-navigator"
+                  value={weekStart}
+                  onChange={(nextValue) => setWeekStart(normalizeWeekStartInput(nextValue))}
+                  onPrevious={() => setWeekStart((prev) => addDaysToISO(prev, -7))}
+                  onNext={() => setWeekStart((prev) => addDaysToISO(prev, 7))}
+                />
+                {!isCurrentWeek ? (
+                  <button
+                    type="button"
+                    className="kitchen-week-now-button shopping-week-now-button"
+                    onClick={handleJumpToCurrentWeek}
+                    aria-label="Volver a hoy"
+                    title="Volver a hoy"
+                  >
+                    <TodayIcon className="kitchen-week-now-icon" />
+                    <span>Hoy</span>
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div className="shopping-header-tabs-row">
