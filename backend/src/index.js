@@ -52,7 +52,11 @@ app.use("/api/internal/push", internalPushRouter);
 
 connectDb()
   .then(() => {
-    app.listen(config.port, () => console.log(`🚀 API escuchando en :${config.port}`));
+    const PORT = process.env.PORT || config.port || 3000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 API escuchando en :${PORT}`);
+});
   })
   .catch((e) => {
     console.error("❌ Error conectando DB", e);
