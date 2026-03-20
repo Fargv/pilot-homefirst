@@ -2042,13 +2042,12 @@ export default function WeekPage() {
                     {!isCurrentWeek ? (
                       <button
                         type="button"
-                        className="kitchen-week-now-button"
+                        className="kitchen-week-arrow kitchen-week-now-button"
                         onClick={handleJumpToCurrentPeriod}
-                        aria-label="Volver a hoy"
-                        title="Volver a hoy"
+                        aria-label="Ir a la semana actual"
+                        title="Ir a la semana actual"
                       >
                         <TodayIcon className="kitchen-week-now-icon" />
-                        <span>Hoy</span>
                       </button>
                     ) : null}
                   </div>
