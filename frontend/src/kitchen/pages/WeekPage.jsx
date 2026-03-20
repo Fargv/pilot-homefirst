@@ -2080,19 +2080,6 @@ export default function WeekPage() {
                 </div>
               ) : null}
               {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
-              {isOwnerAdmin ? (
-                <div className="kitchen-week-delete-row">
-                  <button
-                    type="button"
-                    className="kitchen-button secondary is-small kitchen-week-delete-button"
-                    onClick={() => setWeekDeleteConfirmOpen(true)}
-                    disabled={weekDeleteBusy}
-                    title="Borrar la programacion visible de esta semana"
-                  >
-                    <TrashIcon /> Borrar semana
-                  </button>
-                </div>
-              ) : null}
             </div>
           </section>
 
@@ -3073,6 +3060,19 @@ export default function WeekPage() {
                   aria-current={activeIndex === index ? "true" : undefined}
                 />
               ))}
+            </div>
+          ) : null}
+          {isOwnerAdmin ? (
+            <div className="kitchen-week-delete-row">
+              <button
+                type="button"
+                className="kitchen-button secondary is-small kitchen-week-delete-button"
+                onClick={() => setWeekDeleteConfirmOpen(true)}
+                disabled={weekDeleteBusy}
+                title="Borrar la programacion visible de esta semana"
+              >
+                <TrashIcon /> Borrar semana
+              </button>
             </div>
           ) : null}
         </div>

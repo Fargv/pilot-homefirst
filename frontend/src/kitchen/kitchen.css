@@ -1599,7 +1599,7 @@ body {
 .kitchen-week-nav-row {
   width: min(100%, 520px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 8px;
 }
@@ -1703,8 +1703,8 @@ body {
 .kitchen-week-now-button {
   grid-column: 3;
   justify-self: start;
-  min-height: calc(var(--kitchen-week-nav-control-height) + 4px);
-  height: calc(var(--kitchen-week-nav-control-height) + 4px);
+  min-height: var(--kitchen-week-nav-control-height);
+  height: var(--kitchen-week-nav-control-height);
   border-radius: 14px;
   border: 1px solid rgba(176, 188, 229, 0.72);
   background: linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
@@ -2732,8 +2732,8 @@ body {
   }
 
   .kitchen-week-now-button {
-    min-height: 44px;
-    height: 44px;
+    min-height: var(--kitchen-week-nav-control-height);
+    height: var(--kitchen-week-nav-control-height);
     padding-inline: 8px;
     gap: 0;
     min-width: 48px;
