@@ -610,6 +610,24 @@ export default function WeekPage() {
     [fetchIngredientMatch]
   );
 
+  const scrollCarouselToDay = useCallback((targetDayKey, behavior = "smooth") => {
+    if (!targetDayKey) return;
+    const element = carouselRef.current;
+    const targetNode = dayRefs.current.get(targetDayKey) || document.getElementById(`daycard-${targetDayKey}`);
+    if (!targetNode) return;
+    const canCarousel = element && element.scrollWidth > element.clientWidth + 1;
+
+    if (canCarousel) {
+      element.scrollTo({
+        left: targetNode.offsetLeft,
+        behavior
+      });
+      return;
+    }
+
+    targetNode.scrollIntoView({ behavior, block: "start", inline: "nearest" });
+  }, []);
+
   useEffect(() => {
     if (!visibleDays.length) {
       return;
@@ -684,23 +702,6 @@ export default function WeekPage() {
     () => visibleDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
     [visibleDays]
   );
-  const scrollCarouselToDay = useCallback((targetDayKey, behavior = "smooth") => {
-    if (!targetDayKey) return;
-    const element = carouselRef.current;
-    const targetNode = dayRefs.current.get(targetDayKey) || document.getElementById(`daycard-${targetDayKey}`);
-    if (!targetNode) return;
-    const canCarousel = element && element.scrollWidth > element.clientWidth + 1;
-
-    if (canCarousel) {
-      element.scrollTo({
-        left: targetNode.offsetLeft,
-        behavior
-      });
-      return;
-    }
-
-    targetNode.scrollIntoView({ behavior, block: "start", inline: "nearest" });
-  }, []);
   const dishMap = useMemo(() => {
     const map = new Map();
     [...dishes, ...sideDishes].forEach((dish) => {
