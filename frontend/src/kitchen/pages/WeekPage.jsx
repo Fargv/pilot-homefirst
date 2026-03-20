@@ -657,12 +657,7 @@ export default function WeekPage() {
       const targetIndex = containsToday && todayIndex >= 0 ? todayIndex : 0;
       setActiveIndex(targetIndex);
       requestAnimationFrame(() => {
-        const element = carouselRef.current;
-        if (!element) return;
-        element.scrollTo({
-          left: targetIndex * element.clientWidth,
-          behavior: pendingJumpToCurrentRef.current ? "smooth" : "auto"
-        });
+        scrollCarouselToDay(nextDay, pendingJumpToCurrentRef.current ? "smooth" : "auto");
       });
       pendingJumpToCurrentRef.current = false;
       hasInitializedRef.current = true;
@@ -675,7 +670,7 @@ export default function WeekPage() {
       }
       return fallbackDay;
     });
-  }, [visibleDays, weekStart]);
+  }, [scrollCarouselToDay, visibleDays, weekStart]);
 
   useEffect(() => {
     selectedDayRef.current = selectedDay;
@@ -689,6 +684,23 @@ export default function WeekPage() {
     () => visibleDays.map((day) => day?.date?.slice(0, 10)).filter(Boolean),
     [visibleDays]
   );
+  const scrollCarouselToDay = useCallback((targetDayKey, behavior = "smooth") => {
+    if (!targetDayKey) return;
+    const element = carouselRef.current;
+    const targetNode = dayRefs.current.get(targetDayKey) || document.getElementById(`daycard-${targetDayKey}`);
+    if (!targetNode) return;
+    const canCarousel = element && element.scrollWidth > element.clientWidth + 1;
+
+    if (canCarousel) {
+      element.scrollTo({
+        left: targetNode.offsetLeft,
+        behavior
+      });
+      return;
+    }
+
+    targetNode.scrollIntoView({ behavior, block: "start", inline: "nearest" });
+  }, []);
   const dishMap = useMemo(() => {
     const map = new Map();
     [...dishes, ...sideDishes].forEach((dish) => {
@@ -769,9 +781,15 @@ export default function WeekPage() {
   }, [dayKeys]);
 
   useEffect(() => {
-    if (!dayKeys.length || !selectedDay) return;
-    const nextIndex = dayKeys.indexOf(selectedDay);
-    if (nextIndex >= 0 && nextIndex !== activeIndex) {
+    if (!dayKeys.length) {
+      if (activeIndex !== 0) {
+        setActiveIndex(0);
+      }
+      return;
+    }
+    const selectedIndex = selectedDay ? dayKeys.indexOf(selectedDay) : -1;
+    const nextIndex = selectedIndex >= 0 ? selectedIndex : Math.min(activeIndex, dayKeys.length - 1);
+    if (nextIndex !== activeIndex) {
       setActiveIndex(nextIndex);
     }
   }, [activeIndex, dayKeys, selectedDay]);
@@ -1195,12 +1213,8 @@ export default function WeekPage() {
         setActiveIndex(targetIndex);
       }
       window.requestAnimationFrame(() => {
-        const carouselElement = carouselRef.current;
-        if (carouselElement && targetIndex >= 0) {
-          carouselElement.scrollTo({
-            left: targetIndex * carouselElement.clientWidth,
-            behavior: "smooth"
-          });
+        if (targetIndex >= 0) {
+          scrollCarouselToDay(targetDate, "smooth");
         }
       });
       const targetDay = data?.plan?.days?.find((entry) => {
@@ -1435,20 +1449,9 @@ export default function WeekPage() {
       }
 
       window.requestAnimationFrame(() => {
-        const carouselElement = carouselRef.current;
         const dayNode =
           dayRefs.current.get(targetDate) || document.getElementById(`daycard-${targetDate}`);
-        const canCarousel =
-          carouselElement && carouselElement.scrollWidth > carouselElement.clientWidth + 1;
-
-        if (canCarousel && targetIndex >= 0) {
-          carouselElement.scrollTo({
-            left: targetIndex * carouselElement.clientWidth,
-            behavior: "smooth"
-          });
-        } else if (dayNode) {
-          dayNode.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
+        scrollCarouselToDay(targetDate, "smooth");
         dayNode?.focus?.({ preventScroll: true });
       });
 
@@ -1460,6 +1463,7 @@ export default function WeekPage() {
       dishes,
       focusMainDish,
       focusSideDish,
+      scrollCarouselToDay,
       visibleDays,
       sideDishes,
       startEditingDay
@@ -1887,18 +1891,13 @@ export default function WeekPage() {
       setActiveIndex(targetIndex);
     }
     window.requestAnimationFrame(() => {
-      const carouselElement = carouselRef.current;
-      if (carouselElement && targetIndex >= 0) {
-        carouselElement.scrollTo({
-          left: targetIndex * carouselElement.clientWidth,
-          behavior: "smooth"
-        });
-      }
       const dayElement = dayRefs.current.get(targetDate) || document.getElementById(`daycard-${targetDate}`);
-      dayElement?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+      if (targetIndex >= 0) {
+        scrollCarouselToDay(targetDate, "smooth");
+      }
       dayElement?.focus?.({ preventScroll: true });
     });
-  }, []);
+  }, [scrollCarouselToDay]);
 
   const handleAddWeekendDays = useCallback(async (requestedDays) => {
     const normalizedDays = Array.isArray(requestedDays)
@@ -1960,10 +1959,8 @@ export default function WeekPage() {
       setActiveIndex(targetIndex);
     }
     const target = dayRefs.current.get(dayKey) || document.getElementById(`daycard-${dayKey}`);
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
-      target.focus?.({ preventScroll: true });
-    }
+    scrollCarouselToDay(dayKey, "smooth");
+    target?.focus?.({ preventScroll: true });
   };
 
   const handleCreateDishFromStrip = (dayKey) => {
@@ -2064,31 +2061,18 @@ export default function WeekPage() {
                   </div>
                 ) : null}
 
-                {canShowWeekRandomize || isOwnerAdmin ? (
+                {canShowWeekRandomize ? (
                   <div className="kitchen-week-header-row kitchen-week-header-row-actions">
                     <div className="kitchen-week-header-actions-inline">
-                      {canShowWeekRandomize ? (
-                        <button
-                          type="button"
-                          className="kitchen-button secondary is-small kitchen-week-randomize-button"
-                          onClick={() => setWeekRandomizeConfirmOpen(true)}
-                          disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                          title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
-                        >
-                          <DiceIcon /> Randomizar libres
-                        </button>
-                      ) : null}
-                      {isOwnerAdmin ? (
-                        <button
-                          type="button"
-                          className="kitchen-button secondary is-small kitchen-week-delete-button"
-                          onClick={() => setWeekDeleteConfirmOpen(true)}
-                          disabled={weekDeleteBusy}
-                          title="Borrar la programacion visible de esta semana"
-                        >
-                          <TrashIcon /> Borrar semana
-                        </button>
-                      ) : null}
+                      <button
+                        type="button"
+                        className="kitchen-button secondary is-small kitchen-week-randomize-button"
+                        onClick={() => setWeekRandomizeConfirmOpen(true)}
+                        disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+                        title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
+                      >
+                        <DiceIcon /> Randomizar libres
+                      </button>
                     </div>
                   </div>
                 ) : null}
@@ -2099,6 +2083,19 @@ export default function WeekPage() {
                 </div>
               ) : null}
               {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
+              {isOwnerAdmin ? (
+                <div className="kitchen-week-delete-row">
+                  <button
+                    type="button"
+                    className="kitchen-button secondary is-small kitchen-week-delete-button"
+                    onClick={() => setWeekDeleteConfirmOpen(true)}
+                    disabled={weekDeleteBusy}
+                    title="Borrar la programacion visible de esta semana"
+                  >
+                    <TrashIcon /> Borrar semana
+                  </button>
+                </div>
+              ) : null}
             </div>
           </section>
 

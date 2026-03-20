@@ -1302,8 +1302,8 @@ body {
 
 .kitchen-week-delete-row {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 18px;
+  justify-content: center;
+  margin-top: 4px;
 }
 
 .kitchen-week-header-actions-inline {
@@ -1593,9 +1593,9 @@ body {
 .kitchen-week-nav-row {
   width: min(100%, 520px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto auto minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .kitchen-week-mobile-frame {
@@ -1621,7 +1621,7 @@ body {
   width: auto;
   max-width: none;
   margin-inline: 0;
-  grid-template-columns: var(--kitchen-week-nav-control-height) minmax(164px, 220px) var(--kitchen-week-nav-control-height);
+  grid-template-columns: var(--kitchen-week-nav-control-height) minmax(156px, 212px) var(--kitchen-week-nav-control-height);
 }
 
 .kitchen-week-picker {
@@ -1755,10 +1755,9 @@ body {
 }
 
 .kitchen-week-header-row-actions {
-  margin-top: -2px;
+  margin-top: -4px;
 }
 
-.kitchen-week-header-actions-inline .kitchen-week-delete-button,
 .kitchen-week-header-actions-inline .kitchen-week-randomize-button {
   min-height: 34px;
   border-radius: 999px;
@@ -2708,14 +2707,14 @@ body {
 
   .kitchen-week-nav-row {
     width: 100%;
-    gap: 8px;
+    gap: 6px;
   }
 
   .kitchen-week-header-navigator.kitchen-week-nav {
     --kitchen-week-nav-control-height: 42px;
     width: auto;
     max-width: 100%;
-    grid-template-columns: var(--kitchen-week-nav-control-height) minmax(0, 1fr) var(--kitchen-week-nav-control-height);
+    grid-template-columns: var(--kitchen-week-nav-control-height) minmax(132px, 1fr) var(--kitchen-week-nav-control-height);
   }
 
   .kitchen-week-nav {
@@ -2745,8 +2744,17 @@ body {
     gap: 6px;
   }
 
-  .kitchen-week-header-actions-inline .kitchen-week-delete-button,
   .kitchen-week-header-actions-inline .kitchen-week-randomize-button {
+    min-height: 32px;
+    padding-inline: 10px;
+    font-size: 11px;
+  }
+
+  .kitchen-week-delete-row {
+    margin-top: 2px;
+  }
+
+  .kitchen-week-delete-button {
     min-height: 32px;
     padding-inline: 10px;
     font-size: 11px;
