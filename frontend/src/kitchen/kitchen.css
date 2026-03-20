@@ -3919,6 +3919,8 @@ body {
   max-width: 920px;
   padding: 18px;
   border-radius: 0;
+  border: none;
+  outline: none;
   box-shadow: none;
   background: transparent;
 }
