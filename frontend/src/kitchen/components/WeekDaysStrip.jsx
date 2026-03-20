@@ -40,6 +40,7 @@ export default function WeekDaysStrip({
   utilityAction = null
 }) {
   const scrollRef = useRef(null);
+  const previousSelectedDayRef = useRef("");
   const [isCarousel, setIsCarousel] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(days) ? days : []), [days]);
 
@@ -88,11 +89,15 @@ export default function WeekDaysStrip({
     const target = element.querySelector(`[data-day-key="${selectedDay}"]`);
     if (!target) return;
 
-    target.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center"
+    const maxScrollLeft = Math.max(0, element.scrollWidth - element.clientWidth);
+    const centeredLeft = target.offsetLeft - (element.clientWidth - target.offsetWidth) / 2;
+    const nextLeft = Math.min(maxScrollLeft, Math.max(0, centeredLeft));
+    const behavior = previousSelectedDayRef.current ? "smooth" : "auto";
+    element.scrollTo({
+      left: nextLeft,
+      behavior
     });
+    previousSelectedDayRef.current = selectedDay;
   }, [selectedDay, entries]);
 
   const handleSelect = (entry) => {
