@@ -178,6 +178,15 @@ export default function ShoppingPage() {
   const quickCategoryMenuRef = useRef(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
+  const selectedQuickCategory = useMemo(
+    () => quickCategories.find((category) => category._id === quickCategoryId) || null,
+    [quickCategories, quickCategoryId]
+  );
+  const filteredQuickCategories = useMemo(() => {
+    const normalizedSearch = normalizeQuery(quickCategorySearch);
+    if (!normalizedSearch) return quickCategories;
+    return quickCategories.filter((category) => normalizeQuery(category.name).includes(normalizedSearch));
+  }, [quickCategories, quickCategorySearch]);
 
   const handleJumpToCurrentWeek = useCallback(() => {
     setWeekStart(getCurrentWeekStart());
@@ -537,15 +546,6 @@ export default function ShoppingPage() {
   }, [purchasedByStoreDay]);
 
   const hasExactSuggestion = quickSuggestions.some((item) => normalizeQuery(item.name) === normalizeQuery(quickQuery));
-  const selectedQuickCategory = useMemo(
-    () => quickCategories.find((category) => category._id === quickCategoryId) || null,
-    [quickCategories, quickCategoryId]
-  );
-  const filteredQuickCategories = useMemo(() => {
-    const normalizedSearch = normalizeQuery(quickCategorySearch);
-    if (!normalizedSearch) return quickCategories;
-    return quickCategories.filter((category) => normalizeQuery(category.name).includes(normalizedSearch));
-  }, [quickCategories, quickCategorySearch]);
 
   if (isDiodGlobalMode) {
     return (
