@@ -3942,8 +3942,8 @@ body {
 
 
 .shopping-page-shell {
-  background: linear-gradient(180deg, #f4f6ff 0%, #eef0ff 100%);
-  border-radius: 28px;
+  background: transparent;
+  border-radius: 0;
   padding: 14px;
 }
 
@@ -4341,9 +4341,9 @@ body {
 .shopping-category-card {
   border-radius: 18px;
   padding: 14px;
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.08);
-  background: color-mix(in srgb, var(--category-bg, #f8fafc) 65%, #fff);
-  border: 1px solid color-mix(in srgb, var(--category-text, #64748b) 16%, #fff);
+  box-shadow: none;
+  background: transparent;
+  border: none;
 }
 
 .shopping-category-head {
@@ -4604,7 +4604,7 @@ body {
 
 @media (max-width: 900px) {
   .shopping-page-shell {
-    border-radius: 22px;
+    border-radius: 0;
     padding: 10px;
   }
 
