@@ -4078,6 +4078,15 @@ body {
   grid-template-columns: var(--kitchen-week-nav-control-height) minmax(156px, 212px) var(--kitchen-week-nav-control-height);
 }
 
+.shopping-week-header-navigator .kitchen-week-picker {
+  width: auto;
+}
+
+.shopping-week-header-navigator .kitchen-week-picker .kitchen-input {
+  width: min(100%, 212px);
+  padding-inline: 12px;
+}
+
 .shopping-week-nav .kitchen-week-picker .kitchen-input {
   background: linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
   border-radius: 14px;
@@ -4611,6 +4620,19 @@ body {
   .shopping-header-input-row {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .shopping-week-nav-row {
+    width: min(100%, 460px);
+  }
+
+  .shopping-week-header-navigator.kitchen-week-nav {
+    grid-template-columns: var(--kitchen-week-nav-control-height) minmax(132px, 168px) var(--kitchen-week-nav-control-height);
+  }
+
+  .shopping-week-header-navigator .kitchen-week-picker .kitchen-input {
+    width: min(100%, 168px);
+    padding-inline: 10px;
   }
 
   .shopping-store-select {
