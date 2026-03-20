@@ -169,7 +169,10 @@ export default function ShoppingPage() {
   const [quickSearching, setQuickSearching] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [quickCreateName, setQuickCreateName] = useState("");
+  const [quickCategorySearch, setQuickCategorySearch] = useState("");
+  const [quickCategoryMenuOpen, setQuickCategoryMenuOpen] = useState(false);
   const quickInputRef = useRef(null);
+  const quickCategoryFieldRef = useRef(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
 
@@ -255,6 +258,18 @@ export default function ShoppingPage() {
   }, []);
 
   useEffect(() => {
+    if (!quickCreateOpen || !quickCategoryMenuOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (quickCategoryFieldRef.current?.contains(event.target)) return;
+      setQuickCategoryMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [quickCreateOpen, quickCategoryMenuOpen]);
+
+  useEffect(() => {
     if (!quickQuery.trim()) {
       setQuickSuggestions([]);
       return;
@@ -337,6 +352,8 @@ export default function ShoppingPage() {
     if (!trimmedName || quickBusy) return;
     setQuickCreateName(trimmedName);
     setQuickCategoryId("");
+    setQuickCategorySearch("");
+    setQuickCategoryMenuOpen(false);
     setQuickCreateOpen(true);
   };
 
@@ -344,6 +361,8 @@ export default function ShoppingPage() {
     if (quickBusy) return;
     setQuickCreateOpen(false);
     setQuickCategoryId("");
+    setQuickCategorySearch("");
+    setQuickCategoryMenuOpen(false);
   };
 
   const handleQuickCreate = async () => {
@@ -358,6 +377,8 @@ export default function ShoppingPage() {
       setQuickSuggestions([]);
       setQuickCreateName("");
       setQuickCategoryId("");
+      setQuickCategorySearch("");
+      setQuickCategoryMenuOpen(false);
       setQuickCreateOpen(false);
       quickInputRef.current?.focus();
       setSuccess(`Creado y añadido: ${ingredient.name}`);
@@ -479,6 +500,15 @@ export default function ShoppingPage() {
   }, [purchasedByStoreDay]);
 
   const hasExactSuggestion = quickSuggestions.some((item) => normalizeQuery(item.name) === normalizeQuery(quickQuery));
+  const selectedQuickCategory = useMemo(
+    () => quickCategories.find((category) => category._id === quickCategoryId) || null,
+    [quickCategories, quickCategoryId]
+  );
+  const filteredQuickCategories = useMemo(() => {
+    const normalizedSearch = normalizeQuery(quickCategorySearch);
+    if (!normalizedSearch) return quickCategories;
+    return quickCategories.filter((category) => normalizeQuery(category.name).includes(normalizedSearch));
+  }, [quickCategories, quickCategorySearch]);
 
   if (isDiodGlobalMode) {
     return (
@@ -721,17 +751,44 @@ export default function ShoppingPage() {
             </label>
             <label className="kitchen-field">
               <span className="kitchen-label">Categoría</span>
-              <select
-                className="kitchen-select"
-                value={quickCategoryId}
-                onChange={(event) => setQuickCategoryId(event.target.value)}
-                disabled={quickBusy}
-              >
-                <option value="">Seleccionar categoría</option>
-                {quickCategories.map((category) => (
-                  <option key={category._id} value={category._id}>{category.name}</option>
-                ))}
-              </select>
+              <div className="shopping-modal-category-field" ref={quickCategoryFieldRef}>
+                <input
+                  className="kitchen-input shopping-modal-category-input"
+                  value={quickCategorySearch}
+                  onChange={(event) => {
+                    setQuickCategorySearch(event.target.value);
+                    setQuickCategoryMenuOpen(true);
+                  }}
+                  onFocus={() => setQuickCategoryMenuOpen(true)}
+                  placeholder={selectedQuickCategory ? selectedQuickCategory.name : "Buscar o seleccionar categoría"}
+                  disabled={quickBusy}
+                  aria-expanded={quickCategoryMenuOpen}
+                  aria-haspopup="listbox"
+                />
+                {quickCategoryMenuOpen ? (
+                  <div className="shopping-modal-category-menu" role="listbox" aria-label="Categorías">
+                    {filteredQuickCategories.length ? filteredQuickCategories.map((category) => {
+                      const isSelected = category._id === quickCategoryId;
+                      return (
+                        <button
+                          key={category._id}
+                          type="button"
+                          className={`shopping-modal-category-option ${isSelected ? "is-selected" : ""}`}
+                          onClick={() => {
+                            setQuickCategoryId(category._id);
+                            setQuickCategorySearch(category.name);
+                            setQuickCategoryMenuOpen(false);
+                          }}
+                        >
+                          {category.name}
+                        </button>
+                      );
+                    }) : (
+                      <div className="shopping-modal-category-empty">No hay categorías que coincidan.</div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
             </label>
             <div className="kitchen-modal-actions">
               <button

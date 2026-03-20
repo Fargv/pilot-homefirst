@@ -4229,6 +4229,68 @@ body {
   width: min(440px, 92vw);
 }
 
+.shopping-modal-category-field {
+  position: relative;
+}
+
+.shopping-modal-category-input {
+  width: 100%;
+}
+
+.shopping-modal-category-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(190, 201, 234, 0.92);
+  background: #ffffff;
+  box-shadow: 0 16px 30px rgba(79, 94, 170, 0.16);
+  z-index: 16;
+  display: grid;
+  gap: 6px;
+}
+
+.shopping-modal-category-option {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 12px;
+  min-height: 40px;
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--hf-text);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.shopping-modal-category-option:hover,
+.shopping-modal-category-option:focus-visible {
+  background: #f5f7ff;
+  border-color: rgba(167, 179, 232, 0.8);
+  color: #27336a;
+  outline: none;
+}
+
+.shopping-modal-category-option.is-selected {
+  background: #eef2ff;
+  border-color: rgba(129, 140, 248, 0.5);
+  color: #312e81;
+  font-weight: 700;
+}
+
+.shopping-modal-category-empty {
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: var(--hf-muted);
+  background: #f8fafc;
+  font-size: 13px;
+}
+
 .shopping-ingredient-create-modal .kitchen-modal-actions .kitchen-button {
   display: inline-flex;
   align-items: center;
