@@ -24,6 +24,22 @@ function TodayIcon(props) {
   );
 }
 
+function ConfirmIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M5 12.5l4.2 4.2L19 6.9" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CloseIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function MinusIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
@@ -151,6 +167,8 @@ export default function ShoppingPage() {
   const [quickCategoryId, setQuickCategoryId] = useState("");
   const [quickBusy, setQuickBusy] = useState(false);
   const [quickSearching, setQuickSearching] = useState(false);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [quickCreateName, setQuickCreateName] = useState("");
   const quickInputRef = useRef(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
@@ -314,17 +332,33 @@ export default function ShoppingPage() {
     }
   };
 
+  const openQuickCreateModal = () => {
+    const trimmedName = quickQuery.trim();
+    if (!trimmedName || quickBusy) return;
+    setQuickCreateName(trimmedName);
+    setQuickCategoryId("");
+    setQuickCreateOpen(true);
+  };
+
+  const closeQuickCreateModal = () => {
+    if (quickBusy) return;
+    setQuickCreateOpen(false);
+    setQuickCategoryId("");
+  };
+
   const handleQuickCreate = async () => {
-    if (!quickQuery.trim() || !quickCategoryId || quickBusy) return;
+    if (!quickCreateName.trim() || !quickCategoryId || quickBusy) return;
     setQuickBusy(true);
     setError("");
     try {
-      const ingredient = await createHouseholdIngredient(quickQuery, quickCategoryId);
+      const ingredient = await createHouseholdIngredient(quickCreateName, quickCategoryId);
       if (!ingredient?._id) throw new Error("No se pudo crear el ingrediente.");
       await addIngredientToList(ingredient._id, quickCategoryId);
       setQuickQuery("");
       setQuickSuggestions([]);
+      setQuickCreateName("");
       setQuickCategoryId("");
+      setQuickCreateOpen(false);
       quickInputRef.current?.focus();
       setSuccess(`Creado y añadido: ${ingredient.name}`);
     } catch (err) {
@@ -534,16 +568,6 @@ export default function ShoppingPage() {
                         placeholder="Añadir ingrediente a la lista..."
                       />
                     </div>
-                    {!hasExactSuggestion && quickQuery.trim() ? (
-                      <div className="shopping-quick-category-row">
-                        <select className="kitchen-select shopping-quick-category" value={quickCategoryId} onChange={(event) => setQuickCategoryId(event.target.value)}>
-                          <option value="">Categoría</option>
-                          {quickCategories.map((category) => (
-                            <option key={category._id} value={category._id}>{category.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : null}
                     {quickQuery ? (
                       <div className="shopping-quick-suggestions">
                         {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
@@ -553,8 +577,8 @@ export default function ShoppingPage() {
                           </button>
                         )) : null}
                         {!quickSearching && !hasExactSuggestion && quickQuery.trim() ? (
-                          <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={handleQuickCreate} disabled={!quickCategoryId || quickBusy}>
-                            Crear “{quickQuery.trim()}”
+                          <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={openQuickCreateModal} disabled={quickBusy}>
+                            Crear "{quickQuery.trim()}"
                           </button>
                         ) : null}
                       </div>
@@ -673,6 +697,63 @@ export default function ShoppingPage() {
           )}
         </div>
       </div>
+      {quickCreateOpen ? (
+        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeQuickCreateModal}>
+          <div
+            className="kitchen-modal shopping-ingredient-create-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Crear ingrediente"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <h3>Crear ingrediente</h3>
+              <p className="kitchen-muted">Elige la categoría antes de añadirlo a la lista.</p>
+            </div>
+            <label className="kitchen-field">
+              <span className="kitchen-label">Ingrediente</span>
+              <input
+                className="kitchen-input"
+                value={quickCreateName}
+                onChange={(event) => setQuickCreateName(event.target.value)}
+                disabled={quickBusy}
+              />
+            </label>
+            <label className="kitchen-field">
+              <span className="kitchen-label">Categoría</span>
+              <select
+                className="kitchen-select"
+                value={quickCategoryId}
+                onChange={(event) => setQuickCategoryId(event.target.value)}
+                disabled={quickBusy}
+              >
+                <option value="">Seleccionar categoría</option>
+                {quickCategories.map((category) => (
+                  <option key={category._id} value={category._id}>{category.name}</option>
+                ))}
+              </select>
+            </label>
+            <div className="kitchen-modal-actions">
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                onClick={closeQuickCreateModal}
+                disabled={quickBusy}
+              >
+                <CloseIcon /> Cancelar
+              </button>
+              <button
+                type="button"
+                className="kitchen-button"
+                onClick={handleQuickCreate}
+                disabled={quickBusy || !quickCreateName.trim() || !quickCategoryId}
+              >
+                <ConfirmIcon /> {quickBusy ? "Guardando..." : "Crear"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </KitchenLayout>
   );
 }

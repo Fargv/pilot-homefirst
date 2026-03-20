@@ -4193,6 +4193,8 @@ body {
   border: none;
   background: transparent;
   box-shadow: none;
+  position: relative;
+  overflow: visible;
 }
 
 .shopping-quick-add-header .shopping-quick-add-row {
@@ -4203,26 +4205,39 @@ body {
   width: 100%;
 }
 
-.shopping-quick-category-row {
-  margin-top: 8px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.shopping-quick-category {
-  width: min(180px, 36vw);
-  min-height: 38px;
-  border-radius: 12px;
-}
-
 .shopping-quick-suggestions {
-  margin-top: 8px;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  margin-top: 0;
   display: grid;
   gap: 6px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(190, 201, 234, 0.92);
+  background: #ffffff;
+  box-shadow: 0 16px 30px rgba(79, 94, 170, 0.16);
+  z-index: 12;
 }
 
 .shopping-quick-create {
   justify-self: flex-start;
+}
+
+.shopping-ingredient-create-modal {
+  width: min(440px, 92vw);
+}
+
+.shopping-ingredient-create-modal .kitchen-modal-actions .kitchen-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shopping-ingredient-create-modal .kitchen-modal-actions svg {
+  width: 16px;
+  height: 16px;
 }
 
 .shopping-category-card {
