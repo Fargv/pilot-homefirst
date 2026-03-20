@@ -31,6 +31,12 @@ function normalizeAvoidRepeatsWeeks(value) {
   return Math.min(12, Math.max(1, Math.round(parsed)));
 }
 
+function normalizeCycleStartDay(value) {
+  const parsed = Number.parseInt(String(value ?? 1), 10);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(28, Math.max(1, parsed));
+}
+
 function parseBooleanInput(value) {
   if (typeof value === "boolean") return { ok: true, value };
   if (typeof value === "string") {
@@ -50,6 +56,42 @@ function parseWeeksInput(value) {
   const weeks = Math.round(parsed);
   if (weeks < 1 || weeks > 12) return { ok: false, value: null };
   return { ok: true, value: weeks };
+}
+
+function parseBudgetInput(value) {
+  if (value === undefined || value === null || value === "") {
+    return { ok: true, value: null };
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return { ok: false, value: null };
+  }
+  return { ok: true, value: Number(parsed.toFixed(2)) };
+}
+
+function parseCycleStartDayInput(value) {
+  if (value === undefined || value === null || value === "") {
+    return { ok: true, value: 1 };
+  }
+  const parsed = Number.parseInt(String(value), 10);
+  if (!Number.isFinite(parsed) || parsed < 1 || parsed > 28) {
+    return { ok: false, value: null };
+  }
+  return { ok: true, value: parsed };
+}
+
+function buildHouseholdResponse(household) {
+  return {
+    id: household._id,
+    name: household.name || "Mi household",
+    inviteCode: household.inviteCode || null,
+    ownerUserId: household.ownerUserId || null,
+    dinnersEnabled: Boolean(household.dinnersEnabled),
+    avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
+    avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks),
+    monthlyBudget: Number.isFinite(Number(household.monthlyBudget)) ? Number(household.monthlyBudget) : null,
+    cycleStartDay: normalizeCycleStartDay(household.cycleStartDay)
+  };
 }
 
 function parseBooleanWithDefault(value, fallback) {
@@ -167,23 +209,12 @@ router.get("/summary", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks")
+      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay")
       .lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-    return res.json({
-      ok: true,
-      household: {
-        id: household._id,
-        name: household.name || "Mi household",
-        inviteCode: household.inviteCode || null,
-        ownerUserId: household.ownerUserId || null,
-        dinnersEnabled: Boolean(household.dinnersEnabled),
-        avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
-        avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks)
-      }
-    });
+    return res.json({ ok: true, household: buildHouseholdResponse(household) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
@@ -207,18 +238,7 @@ router.patch("/name", requireAuth, requireRole("owner"), async (req, res) => {
     household.name = nextName;
     await household.save();
 
-    return res.json({
-      ok: true,
-      household: {
-        id: household._id,
-        name: household.name,
-        inviteCode: household.inviteCode || null,
-        ownerUserId: household.ownerUserId || null,
-        dinnersEnabled: Boolean(household.dinnersEnabled),
-        avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
-        avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks)
-      }
-    });
+    return res.json({ ok: true, household: buildHouseholdResponse(household) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
@@ -252,6 +272,14 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     const parsedWeeks = parseWeeksInput(req.body?.avoidRepeatsWeeks);
     const currentWeeks = normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks);
     const nextWeeks = parsedWeeks.ok ? parsedWeeks.value : currentWeeks;
+    const parsedBudget = parseBudgetInput(req.body?.monthlyBudget);
+    if (!parsedBudget.ok) {
+      return res.status(400).json({ ok: false, error: "monthlyBudget debe ser un número mayor o igual que 0." });
+    }
+    const parsedCycleStartDay = parseCycleStartDayInput(req.body?.cycleStartDay);
+    if (!parsedCycleStartDay.ok) {
+      return res.status(400).json({ ok: false, error: "cycleStartDay debe estar entre 1 y 28." });
+    }
     if (parsedEnabled.value && !Number.isInteger(nextWeeks)) {
       return res.status(400).json({ ok: false, error: "avoidRepeatsWeeks debe estar entre 1 y 12." });
     }
@@ -265,7 +293,9 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
         $set: {
           avoidRepeatsEnabled: parsedEnabled.value,
           dinnersEnabled: parsedDinnersEnabled.value,
-          avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(nextWeeks)
+          avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(nextWeeks),
+          monthlyBudget: parsedBudget.value,
+          cycleStartDay: parsedCycleStartDay.value
         }
       },
       { new: true, runValidators: true }
@@ -274,18 +304,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
 
-    return res.json({
-      ok: true,
-      household: {
-        id: updated._id,
-        name: updated.name,
-        inviteCode: updated.inviteCode || null,
-        ownerUserId: updated.ownerUserId || null,
-        dinnersEnabled: Boolean(updated.dinnersEnabled),
-        avoidRepeatsEnabled: Boolean(updated.avoidRepeatsEnabled),
-        avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(updated.avoidRepeatsWeeks)
-      }
-    });
+    return res.json({ ok: true, household: buildHouseholdResponse(updated) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;

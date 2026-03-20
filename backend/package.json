@@ -14,7 +14,8 @@
     "repair:shoppingItems": "node scripts/repair-shopping-list-items.js",
     "migrate:removeShoppingTripAmount": "node scripts/migrate-remove-shopping-trip-amount.js",
     "migrate:userEmailPartialIndex": "node scripts/migrate-user-email-partial-index.js",
-    "migrate:userFlags": "node scripts/migrate-user-flags.js"
+    "migrate:userFlags": "node scripts/migrate-user-flags.js",
+    "migrate:purchaseSessions": "node scripts/migrate-purchase-sessions.js"
   },
   "dependencies": {
     "@getbrevo/brevo": "^4.0.1",

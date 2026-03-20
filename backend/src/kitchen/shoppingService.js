@@ -290,7 +290,8 @@ export async function rebuildShoppingList(weekStartDate, effectiveHouseholdId) {
       status: nextStatus,
       purchasedBy: nextStatus === "purchased" ? previous?.purchasedBy || null : null,
       purchasedAt: nextStatus === "purchased" ? previous?.purchasedAt || null : null,
-      storeId: nextStatus === "purchased" ? previous?.storeId || null : null
+      storeId: nextStatus === "purchased" ? previous?.storeId || null : null,
+      purchaseSessionId: nextStatus === "purchased" ? previous?.purchaseSessionId || null : null
     };
   });
 

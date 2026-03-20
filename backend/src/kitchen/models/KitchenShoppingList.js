@@ -14,7 +14,8 @@ const ShoppingItemSchema = new mongoose.Schema(
     status: { type: String, enum: ["pending", "purchased"], default: "pending" },
     purchasedBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },
     purchasedAt: { type: Date, default: null },
-    storeId: { type: mongoose.Schema.Types.ObjectId, ref: "Store", default: null }
+    storeId: { type: mongoose.Schema.Types.ObjectId, ref: "Store", default: null },
+    purchaseSessionId: { type: mongoose.Schema.Types.ObjectId, ref: "PurchaseSession", default: null }
   },
   { _id: false }
 );

@@ -7,7 +7,9 @@ const HouseholdSchema = new mongoose.Schema(
     inviteCode: { type: String, trim: true, minlength: 6, maxlength: 6, default: null },
     dinnersEnabled: { type: Boolean, default: false },
     avoidRepeatsEnabled: { type: Boolean, default: false },
-    avoidRepeatsWeeks: { type: Number, min: 1, max: 12, default: 1 }
+    avoidRepeatsWeeks: { type: Number, min: 1, max: 12, default: 1 },
+    monthlyBudget: { type: Number, min: 0, default: null },
+    cycleStartDay: { type: Number, min: 1, max: 28, default: 1 }
   },
   { timestamps: true }
 );

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useSearchParams } from "react-router-dom";
+import { useBlocker, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
@@ -8,6 +8,7 @@ import ShareWhatsAppButton from "../components/ShareWhatsAppButton.jsx";
 import { buildShoppingShareUrl, normalizeWeekParam } from "../deepLinks.js";
 import { useActiveWeek } from "../weekContext.jsx";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
+import ModalSheet from "../components/ui/ModalSheet.jsx";
 
 function RefreshIcon(props) {
   return (
@@ -151,6 +152,22 @@ function normalizeQuery(value = "") {
   return String(value).trim().toLowerCase();
 }
 
+function formatCurrency(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "--";
+  return amount.toLocaleString("es-ES", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function getPendingItemsCount(groups) {
+  if (!Array.isArray(groups)) return 0;
+  return groups.reduce((acc, group) => acc + (group.items?.length || 0), 0);
+}
+
 export default function ShoppingPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -162,10 +179,19 @@ export default function ShoppingPage() {
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const selectedStoreRef = useRef("");
+  const [budget, setBudget] = useState(null);
   const [pendingByCategory, setPendingByCategory] = useState(null);
   const [purchasedByStoreDay, setPurchasedByStoreDay] = useState(null);
+  const [pendingPurchaseSessions, setPendingPurchaseSessions] = useState([]);
+  const [currentPurchaseSession, setCurrentPurchaseSession] = useState(null);
   const [transitioningItemKey, setTransitioningItemKey] = useState(null);
   const [recentlyMovedItemKey, setRecentlyMovedItemKey] = useState(null);
+  const [pendingPurchasesOpen, setPendingPurchasesOpen] = useState(false);
+  const [purchaseConfirmOpen, setPurchaseConfirmOpen] = useState(false);
+  const [purchaseConfirmBusy, setPurchaseConfirmBusy] = useState(false);
+  const [purchaseConfirmTarget, setPurchaseConfirmTarget] = useState(null);
+  const [purchaseConfirmStoreId, setPurchaseConfirmStoreId] = useState("");
+  const [purchaseConfirmAmount, setPurchaseConfirmAmount] = useState("");
   const [quickQuery, setQuickQuery] = useState("");
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [quickCategories, setQuickCategories] = useState([]);
@@ -180,8 +206,13 @@ export default function ShoppingPage() {
   const quickInputRef = useRef(null);
   const quickCategoryFieldRef = useRef(null);
   const quickCategoryMenuRef = useRef(null);
+  const dismissedPromptSessionsRef = useRef(new Set());
+  const navigationActionRef = useRef(null);
+  const allowBlockedNavigationRef = useRef(false);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
+  const shouldBlockNavigation = Boolean(currentPurchaseSession?.id && Number(currentPurchaseSession?.itemCount || 0) > 0 && !allowBlockedNavigationRef.current);
+  const blocker = useBlocker(shouldBlockNavigation);
   const selectedQuickCategory = useMemo(
     () => quickCategories.find((category) => category._id === quickCategoryId) || null,
     [quickCategories, quickCategoryId]
@@ -198,8 +229,11 @@ export default function ShoppingPage() {
 
   const applyPayload = (data) => {
     setStores(data.stores || []);
+    setBudget(data.budget || null);
     setPendingByCategory(data.pendingByCategory || []);
     setPurchasedByStoreDay(data.purchasedByStoreDay || []);
+    setPendingPurchaseSessions(data.pendingPurchaseSessions || []);
+    setCurrentPurchaseSession(data.currentPurchaseSession || null);
   };
 
   const logShoppingApiError = (context, endpoint, err) => {
@@ -224,8 +258,11 @@ export default function ShoppingPage() {
       applyPayload(data);
     } catch (err) {
       logShoppingApiError("loadList", `/api/kitchen/shopping/${weekStart}`, err);
+      setBudget(null);
       setPendingByCategory(null);
       setPurchasedByStoreDay(null);
+      setPendingPurchaseSessions([]);
+      setCurrentPurchaseSession(null);
       setError(err.message || "No se pudo cargar la lista.");
     } finally {
       if (!silent) setIsRefreshing(false);
@@ -247,6 +284,37 @@ export default function ShoppingPage() {
     const timer = setTimeout(() => setRecentlyMovedItemKey(null), 650);
     return () => clearTimeout(timer);
   }, [recentlyMovedItemKey]);
+
+  useEffect(() => {
+    if (blocker.state !== "blocked" || !currentPurchaseSession?.id) return;
+    navigationActionRef.current = () => blocker.proceed();
+    setPurchaseConfirmTarget(currentPurchaseSession);
+    setPurchaseConfirmStoreId(currentPurchaseSession.storeId || selectedStoreRef.current || "");
+    setPurchaseConfirmAmount(currentPurchaseSession.amount ? String(currentPurchaseSession.amount) : "");
+    setPurchaseConfirmOpen(true);
+  }, [blocker, currentPurchaseSession]);
+
+  useEffect(() => {
+    if (!currentPurchaseSession?.id || purchaseConfirmOpen) return;
+    const pendingItemsCount = getPendingItemsCount(pendingByCategory);
+    const shouldAutoPrompt = Number(currentPurchaseSession.itemCount || 0) >= 3 || (pendingItemsCount === 0 && Number(currentPurchaseSession.itemCount || 0) > 0);
+    if (!shouldAutoPrompt) return;
+    if (dismissedPromptSessionsRef.current.has(currentPurchaseSession.id)) return;
+    setPurchaseConfirmTarget(currentPurchaseSession);
+    setPurchaseConfirmStoreId(currentPurchaseSession.storeId || selectedStoreRef.current || "");
+    setPurchaseConfirmAmount(currentPurchaseSession.amount ? String(currentPurchaseSession.amount) : "");
+    setPurchaseConfirmOpen(true);
+  }, [currentPurchaseSession, pendingByCategory, purchaseConfirmOpen]);
+
+  useEffect(() => {
+    if (!shouldBlockNavigation) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [shouldBlockNavigation]);
 
   useEffect(() => {
     let active = true;
@@ -363,6 +431,26 @@ export default function ShoppingPage() {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const openPurchaseConfirmModal = (session) => {
+    if (!session?.id) return;
+    setPurchaseConfirmTarget(session);
+    setPurchaseConfirmStoreId(session.storeId || selectedStoreRef.current || "");
+    setPurchaseConfirmAmount(session.amount ? String(session.amount) : "");
+    setPurchaseConfirmOpen(true);
+  };
+
+  const closePurchaseConfirmModal = () => {
+    if (purchaseConfirmBusy) return;
+    setPurchaseConfirmOpen(false);
+    setPurchaseConfirmTarget(null);
+    setPurchaseConfirmStoreId("");
+    setPurchaseConfirmAmount("");
+    if (blocker.state === "blocked") {
+      blocker.reset();
+    }
+    navigationActionRef.current = null;
   };
 
   const addIngredientToList = async (ingredientId, categoryId) => {
@@ -520,6 +608,9 @@ export default function ShoppingPage() {
       applyPayload(data);
       if (status === "purchased") {
         setSuccess(data.updated ? "Todo marcado como comprado" : "No había elementos pendientes.");
+        if (data.currentPurchaseSession?.id) {
+          openPurchaseConfirmModal(data.currentPurchaseSession);
+        }
       } else {
         setSuccess(data.updated ? "Todo volvió a pendiente" : "No había elementos comprados.");
       }
@@ -545,9 +636,73 @@ export default function ShoppingPage() {
     }
   };
 
+  const postponePurchaseConfirmation = async () => {
+    if (!purchaseConfirmTarget?.id || purchaseConfirmBusy) return;
+    setPurchaseConfirmBusy(true);
+    setError("");
+    try {
+      await apiRequest(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/postpone`, {
+        method: "POST"
+      });
+      dismissedPromptSessionsRef.current.add(purchaseConfirmTarget.id);
+      await loadList({ silent: true });
+      const pendingNavigation = navigationActionRef.current;
+      navigationActionRef.current = null;
+      setPurchaseConfirmOpen(false);
+      setPurchaseConfirmTarget(null);
+      setPurchaseConfirmStoreId("");
+      setPurchaseConfirmAmount("");
+      if (pendingNavigation) {
+        allowBlockedNavigationRef.current = true;
+        pendingNavigation();
+      } else if (blocker.state === "blocked") {
+        blocker.reset();
+      }
+    } catch (err) {
+      setError(err.message || "No se pudo posponer la confirmación.");
+    } finally {
+      setPurchaseConfirmBusy(false);
+    }
+  };
+
+  const completePendingPurchase = async () => {
+    if (!purchaseConfirmTarget?.id || purchaseConfirmBusy) return;
+    setPurchaseConfirmBusy(true);
+    setError("");
+    try {
+      await apiRequest(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/complete`, {
+        method: "POST",
+        body: JSON.stringify({
+          storeId: purchaseConfirmStoreId || null,
+          amount: purchaseConfirmAmount
+        })
+      });
+      dismissedPromptSessionsRef.current.delete(purchaseConfirmTarget.id);
+      await loadList({ silent: true });
+      setPendingPurchasesOpen(false);
+      const pendingNavigation = navigationActionRef.current;
+      navigationActionRef.current = null;
+      setPurchaseConfirmOpen(false);
+      setPurchaseConfirmTarget(null);
+      setPurchaseConfirmStoreId("");
+      setPurchaseConfirmAmount("");
+      if (pendingNavigation) {
+        allowBlockedNavigationRef.current = true;
+        pendingNavigation();
+      } else if (blocker.state === "blocked") {
+        blocker.reset();
+      }
+      setSuccess("Compra registrada.");
+    } catch (err) {
+      setError(err.message || "No se pudo guardar la compra.");
+    } finally {
+      setPurchaseConfirmBusy(false);
+    }
+  };
+
   const pendingCount = useMemo(() => {
     if (!Array.isArray(pendingByCategory)) return null;
-    return pendingByCategory.reduce((acc, group) => acc + (group.items?.length || 0), 0);
+    return getPendingItemsCount(pendingByCategory);
   }, [pendingByCategory]);
 
   const purchasedCount = useMemo(() => {
@@ -556,6 +711,11 @@ export default function ShoppingPage() {
   }, [purchasedByStoreDay]);
 
   const hasExactSuggestion = quickSuggestions.some((item) => normalizeQuery(item.name) === normalizeQuery(quickQuery));
+
+  useEffect(() => {
+    if (!allowBlockedNavigationRef.current) return;
+    allowBlockedNavigationRef.current = false;
+  }, [weekStart, tab]);
 
   if (isDiodGlobalMode) {
     return (
@@ -602,12 +762,36 @@ export default function ShoppingPage() {
               </div>
             </div>
 
+            <div className="shopping-budget-row">
+              <div className="shopping-budget-card">
+                <span className="shopping-budget-label">Budget semanal</span>
+                <strong>{formatCurrency(budget?.weeklyBudget)}</strong>
+              </div>
+              <div className="shopping-budget-card">
+                <span className="shopping-budget-label">Gastado esta semana</span>
+                <strong>{formatCurrency(budget?.spent)}</strong>
+              </div>
+              <div className="shopping-budget-card">
+                <span className="shopping-budget-label">Disponible esta semana</span>
+                <strong>{formatCurrency(budget?.available)}</strong>
+              </div>
+            </div>
+
             <div className="shopping-header-tabs-row">
               <div className="kitchen-tab-share-row shopping-tab-share-row">
                 <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
                   <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
                   <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
                 </div>
+                {pendingPurchaseSessions.length ? (
+                  <button
+                    type="button"
+                    className="kitchen-button secondary shopping-pending-purchases-button"
+                    onClick={() => setPendingPurchasesOpen(true)}
+                  >
+                    Compras pendientes ({pendingPurchaseSessions.length})
+                  </button>
+                ) : null}
                 <ShareWhatsAppButton
                   iconOnly
                   size={22}
@@ -791,6 +975,90 @@ export default function ShoppingPage() {
           )}
         </div>
       </div>
+      <ModalSheet
+        open={pendingPurchasesOpen}
+        title="Compras pendientes"
+        onClose={() => setPendingPurchasesOpen(false)}
+        actions={(
+          <button type="button" className="kitchen-button secondary" onClick={() => setPendingPurchasesOpen(false)}>
+            Cerrar
+          </button>
+        )}
+      >
+        <div className="shopping-pending-sessions-list">
+          {pendingPurchaseSessions.length ? pendingPurchaseSessions.map((session) => (
+            <button
+              key={session.id}
+              type="button"
+              className="shopping-pending-session-card"
+              onClick={() => openPurchaseConfirmModal(session)}
+            >
+              <strong>{session.storeName || "Compra pendiente"}</strong>
+              <span>{session.itemCount} productos</span>
+              <span>Semana {formatWeekTitle(session.weekStart)}</span>
+            </button>
+          )) : (
+            <p className="kitchen-muted">No hay compras pendientes.</p>
+          )}
+        </div>
+      </ModalSheet>
+      <ModalSheet
+        open={purchaseConfirmOpen}
+        title="Confirmar compra"
+        onClose={closePurchaseConfirmModal}
+        actions={(
+          <>
+            <button type="button" className="kitchen-button secondary" onClick={postponePurchaseConfirmation} disabled={purchaseConfirmBusy}>
+              Ahora no
+            </button>
+            <button type="button" className="kitchen-button" onClick={completePendingPurchase} disabled={purchaseConfirmBusy || !purchaseConfirmAmount.trim()}>
+              {purchaseConfirmBusy ? "Guardando..." : "Guardar compra"}
+            </button>
+          </>
+        )}
+      >
+        <div className="shopping-confirm-sheet">
+          <p className="kitchen-muted">
+            {purchaseConfirmTarget?.itemCount || 0} productos marcados como comprados.
+          </p>
+          <label className="kitchen-field">
+            <span className="kitchen-label">Supermercado</span>
+            <select
+              className="kitchen-select"
+              value={purchaseConfirmStoreId}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (value === "__add__") {
+                  void createStoreFromDropdown();
+                  return;
+                }
+                setPurchaseConfirmStoreId(value);
+              }}
+              disabled={purchaseConfirmBusy}
+            >
+              <option value="">Seleccionar supermercado</option>
+              {stores.map((store) => (
+                <option key={store._id} value={store._id}>{store.name}</option>
+              ))}
+              <option value="__add__">Añadir supermercado…</option>
+            </select>
+          </label>
+          <label className="kitchen-field">
+            <span className="kitchen-label">Importe</span>
+            <input
+              className="kitchen-input"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={purchaseConfirmAmount}
+              onChange={(event) => setPurchaseConfirmAmount(event.target.value)}
+              placeholder="0,00"
+              disabled={purchaseConfirmBusy}
+            />
+          </label>
+        </div>
+      </ModalSheet>
       {quickCreateOpen ? (
         <div className="kitchen-modal-backdrop" role="presentation" onClick={closeQuickCreateModal}>
           <div

@@ -124,6 +124,8 @@ export default function SettingsPage() {
   const [dinnersEnabled, setDinnersEnabled] = useState(false);
   const [avoidRepeatsEnabled, setAvoidRepeatsEnabled] = useState(false);
   const [avoidRepeatsWeeks, setAvoidRepeatsWeeks] = useState(1);
+  const [monthlyBudget, setMonthlyBudget] = useState("");
+  const [cycleStartDay, setCycleStartDay] = useState(1);
   const [avoidRepeatsInfoOpen, setAvoidRepeatsInfoOpen] = useState(false);
   const [householdPrefsSaving, setHouseholdPrefsSaving] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -349,6 +351,8 @@ export default function SettingsPage() {
       setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
       setAvoidRepeatsEnabled(Boolean(householdData?.household?.avoidRepeatsEnabled));
       setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(householdData?.household?.avoidRepeatsWeeks));
+      setMonthlyBudget(householdData?.household?.monthlyBudget === null || householdData?.household?.monthlyBudget === undefined ? "" : String(householdData.household.monthlyBudget));
+      setCycleStartDay(Number(householdData?.household?.cycleStartDay) || 1);
       setMembers(memberData.users || []);
       setInvitations(invitationData.invitations || []);
       setHouseholdCode(codeData.inviteCode || householdData?.household?.inviteCode || "");
@@ -502,6 +506,20 @@ export default function SettingsPage() {
         ? nextValues.avoidRepeatsWeeks
         : avoidRepeatsWeeks
     );
+    const nextMonthlyBudget = Object.prototype.hasOwnProperty.call(nextValues, "monthlyBudget")
+      ? nextValues.monthlyBudget
+      : monthlyBudget;
+    const nextCycleStartDay = Math.min(
+      28,
+      Math.max(
+        1,
+        Number.parseInt(String(
+          Object.prototype.hasOwnProperty.call(nextValues, "cycleStartDay")
+            ? nextValues.cycleStartDay
+            : cycleStartDay
+        ), 10) || 1
+      )
+    );
 
     setHouseholdPrefsSaving(true);
     try {
@@ -510,12 +528,16 @@ export default function SettingsPage() {
         body: JSON.stringify({
           avoidRepeatsEnabled: nextEnabled,
           dinnersEnabled: nextDinnersEnabled,
-          avoidRepeatsWeeks: Number(nextWeeks)
+          avoidRepeatsWeeks: Number(nextWeeks),
+          monthlyBudget: nextMonthlyBudget === "" ? null : Number(nextMonthlyBudget),
+          cycleStartDay: nextCycleStartDay
         })
       });
       setDinnersEnabled(Boolean(data?.household?.dinnersEnabled));
       setAvoidRepeatsEnabled(Boolean(data?.household?.avoidRepeatsEnabled));
       setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(data?.household?.avoidRepeatsWeeks));
+      setMonthlyBudget(data?.household?.monthlyBudget === null || data?.household?.monthlyBudget === undefined ? "" : String(data.household.monthlyBudget));
+      setCycleStartDay(Number(data?.household?.cycleStartDay) || 1);
       updateSuccess("Preferencia del household actualizada.");
     } catch (err) {
       setError(err.message || "No se pudieron guardar las preferencias del household.");
@@ -1052,6 +1074,36 @@ export default function SettingsPage() {
               }}
             />
             <span className="kitchen-toggle-track" />
+          </label>
+        </div>
+        <div className="settings-household-pref-input-row">
+          <label className="kitchen-field">
+            <span className="kitchen-label">Budget mensual</span>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              className="kitchen-input"
+              value={monthlyBudget}
+              disabled={householdPrefsSaving}
+              onChange={(event) => setMonthlyBudget(event.target.value)}
+              onBlur={() => void saveHouseholdPreferences()}
+              placeholder="0.00"
+            />
+          </label>
+          <label className="kitchen-field">
+            <span className="kitchen-label">Día de inicio del ciclo</span>
+            <input
+              type="number"
+              min={1}
+              max={28}
+              step={1}
+              className="kitchen-input"
+              value={cycleStartDay}
+              disabled={householdPrefsSaving}
+              onChange={(event) => setCycleStartDay(Math.min(28, Math.max(1, Number.parseInt(event.target.value || "1", 10) || 1)))}
+              onBlur={() => void saveHouseholdPreferences()}
+            />
           </label>
         </div>
         <div className="settings-household-pref-row">

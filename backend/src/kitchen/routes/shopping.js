@@ -3,6 +3,7 @@ import { Category } from "../models/Category.js";
 import { Store } from "../models/Store.js";
 import { KitchenIngredient } from "../models/KitchenIngredient.js";
 import { KitchenUser } from "../models/KitchenUser.js";
+import { Household } from "../models/Household.js";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { formatDateISO, getWeekStart, parseISODate } from "../utils/dates.js";
 import {
@@ -13,6 +14,7 @@ import {
 import { ensureShoppingList, rebuildShoppingList, repairShoppingListItems } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
+import { calculateWeeklyBudget, getWeekDateRange } from "../utils/budget.js";
 import {
   DEFAULT_CATEGORY_COLOR_BG,
   DEFAULT_CATEGORY_COLOR_TEXT,
@@ -20,6 +22,16 @@ import {
   DEFAULT_CATEGORY_SLUG,
   ensureDefaultCategory
 } from "../utils/categoryMatching.js";
+import {
+  attachItemsToPurchaseSession,
+  completePurchaseSession,
+  detachItemsFromPurchaseSession,
+  getLatestOpenPurchaseSession,
+  getPendingPurchaseSessions,
+  markPurchaseSessionPendingConfirmation,
+  updatePurchaseSessionStore
+} from "../purchaseSessionService.js";
+import { PurchaseSession } from "../models/PurchaseSession.js";
 
 const router = express.Router();
 
@@ -75,6 +87,12 @@ function isValidObjectId(value) {
   return Boolean(value) && /^[a-f\d]{24}$/i.test(String(value));
 }
 
+function parseAmount(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return Number(parsed.toFixed(2));
+}
+
 function compareCategoryGroups(a, b) {
   const orderA = Number.isFinite(a?.categoryInfo?.order) ? a.categoryInfo.order : Number.POSITIVE_INFINITY;
   const orderB = Number.isFinite(b?.categoryInfo?.order) ? b.categoryInfo.order : Number.POSITIVE_INFINITY;
@@ -89,11 +107,68 @@ function normalizeShoppingItemForResponse(item, purchaserById) {
     itemId: normalized.itemId || normalized._id || null,
     categoryId: normalized.categoryId || null,
     storeId: normalized.storeId || null,
+    purchaseSessionId: normalized.purchaseSessionId || null,
     purchasedBy: normalized.purchasedBy || null,
     purchasedAt: normalized.purchasedAt || null,
     purchasedByName: normalized.purchasedBy && isValidObjectId(normalized.purchasedBy)
       ? purchaserById.get(String(normalized.purchasedBy)) || "Usuario"
       : null
+  };
+}
+
+function normalizeBudgetNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Number(parsed.toFixed(2)) : null;
+}
+
+async function buildBudgetSummary(weekStartDate, effectiveHouseholdId) {
+  const household = await Household.findById(effectiveHouseholdId)
+    .select("_id monthlyBudget cycleStartDay")
+    .lean();
+
+  const monthlyBudget = normalizeBudgetNumber(household?.monthlyBudget);
+  const cycleStartDay = Number.isFinite(Number(household?.cycleStartDay)) ? Number(household.cycleStartDay) : 1;
+  const weeklyBudget = calculateWeeklyBudget({
+    weekStart: weekStartDate,
+    monthlyBudget,
+    cycleStartDay
+  });
+
+  const weekRange = getWeekDateRange(weekStartDate);
+  const completedSessions = await PurchaseSession.find({
+    householdId: effectiveHouseholdId,
+    status: "completed",
+    completedAt: { $gte: weekRange.start, $lt: weekRange.end }
+  })
+    .select("amount")
+    .lean();
+
+  const spent = Number(completedSessions.reduce((acc, session) => acc + (Number(session.amount) || 0), 0).toFixed(2));
+  const available = weeklyBudget === null ? null : Number((weeklyBudget - spent).toFixed(2));
+
+  return {
+    monthlyBudget,
+    cycleStartDay,
+    weeklyBudget,
+    spent,
+    available
+  };
+}
+
+async function buildPurchaseSessionSummary(session, storeNameById = new Map()) {
+  if (!session) return null;
+  return {
+    id: session._id,
+    weekStart: session.weekStart ? formatDateISO(session.weekStart) : null,
+    status: session.status,
+    itemCount: Array.isArray(session.itemIds) ? session.itemIds.length : 0,
+    storeId: session.storeId || null,
+    storeName: session.storeId ? storeNameById.get(String(session.storeId)) || "Supermercado no definido" : null,
+    amount: normalizeBudgetNumber(session.amount),
+    promptedAt: session.promptedAt || null,
+    completedAt: session.completedAt || null,
+    createdAt: session.createdAt || null,
+    updatedAt: session.updatedAt || null
   };
 }
 
@@ -179,16 +254,23 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
       return acc;
     }, new Map());
 
+  const pendingPurchaseSessions = await getPendingPurchaseSessions(effectiveHouseholdId);
+  const latestOpenPurchaseSession = await getLatestOpenPurchaseSession(effectiveHouseholdId);
+  const budget = await buildBudgetSummary(weekStartDate, effectiveHouseholdId);
+
   return {
     list,
     stores,
+    budget,
     pendingByCategory: Array.from(pendingByCategory.values())
       .sort(compareCategoryGroups),
     purchasedByStoreDay: Array.from(purchasedByStoreDay.values()).sort(
       (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
     ).map((group) => ({
       ...group
-    }))
+    })),
+    pendingPurchaseSessions: await Promise.all(pendingPurchaseSessions.map((session) => buildPurchaseSessionSummary(session, storeById))),
+    currentPurchaseSession: await buildPurchaseSessionSummary(latestOpenPurchaseSession, storeById)
   };
 }
 
@@ -332,6 +414,13 @@ router.delete("/:weekStart/items/:itemId", requireAuth, async (req, res) => {
     const list = await ensureShoppingList(monday, effectiveHouseholdId);
 
     const previousLength = list.items.length;
+    const itemToRemove = list.items.find((item) => String(item.itemId || item._id || "") === String(req.params.itemId));
+    if (itemToRemove?.purchaseSessionId) {
+      await detachItemsFromPurchaseSession({
+        userId: req.kitchenUser._id,
+        items: [itemToRemove]
+      });
+    }
     list.items = list.items.filter((item) => String(item.itemId || item._id || "") !== String(req.params.itemId));
 
     if (list.items.length === previousLength) {
@@ -419,7 +508,18 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
       item.purchasedBy = req.kitchenUser._id;
       item.purchasedAt = new Date();
       item.storeId = validatedStoreId;
+      await attachItemsToPurchaseSession({
+        householdId: effectiveHouseholdId,
+        weekStart: monday,
+        userId: req.kitchenUser._id,
+        items: [item],
+        storeId: validatedStoreId
+      });
     } else {
+      await detachItemsFromPurchaseSession({
+        userId: req.kitchenUser._id,
+        items: [item]
+      });
       item.purchasedBy = null;
       item.purchasedAt = null;
       item.storeId = null;
@@ -461,7 +561,16 @@ router.put("/:weekStart/item/store", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Ingrediente comprado no encontrado." });
     }
 
-    item.storeId = await validateStoreSelection(storeId, effectiveHouseholdId);
+    const validatedStoreId = await validateStoreSelection(storeId, effectiveHouseholdId);
+    item.storeId = validatedStoreId;
+    if (item.purchaseSessionId) {
+      await updatePurchaseSessionStore({
+        householdId: effectiveHouseholdId,
+        sessionId: item.purchaseSessionId,
+        userId: req.kitchenUser._id,
+        storeId: validatedStoreId
+      });
+    }
     await list.save();
 
     const payload = await getShoppingPayload(monday, effectiveHouseholdId);
@@ -494,22 +603,41 @@ router.put("/:weekStart/items/status", requireAuth, async (req, res) => {
     if (normalizedStatus === "purchased") {
       const validatedStoreId = await validateStoreSelection(req.body?.storeId, effectiveHouseholdId);
       const now = new Date();
+      const changedItems = [];
       for (const item of list.items) {
         if (item.status !== "pending") continue;
         item.status = "purchased";
         item.purchasedBy = req.kitchenUser._id;
         item.purchasedAt = now;
         item.storeId = validatedStoreId;
+        changedItems.push(item);
         changed = true;
       }
+      if (changedItems.length) {
+        await attachItemsToPurchaseSession({
+          householdId: effectiveHouseholdId,
+          weekStart: monday,
+          userId: req.kitchenUser._id,
+          items: changedItems,
+          storeId: validatedStoreId
+        });
+      }
     } else {
+      const changedItems = [];
       for (const item of list.items) {
         if (item.status !== "purchased") continue;
+        changedItems.push(item);
         item.status = "pending";
         item.purchasedBy = null;
         item.purchasedAt = null;
         item.storeId = null;
         changed = true;
+      }
+      if (changedItems.length) {
+        await detachItemsFromPurchaseSession({
+          userId: req.kitchenUser._id,
+          items: changedItems
+        });
       }
     }
 
@@ -523,6 +651,72 @@ router.put("/:weekStart/items/status", requireAuth, async (req, res) => {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el estado en bloque." });
+  }
+});
+
+router.get("/purchase-sessions/pending", requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const stores = sortStores(
+      await Store.find(buildStoreVisibilityFilter(effectiveHouseholdId, { active: true }))
+        .select("_id name")
+        .lean()
+    );
+    const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
+    const sessions = await getPendingPurchaseSessions(effectiveHouseholdId);
+    return res.json({
+      ok: true,
+      sessions: await Promise.all(sessions.map((session) => buildPurchaseSessionSummary(session, storeById)))
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudieron cargar las compras pendientes." });
+  }
+});
+
+router.post("/purchase-sessions/:sessionId/postpone", requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const session = await markPurchaseSessionPendingConfirmation({
+      householdId: effectiveHouseholdId,
+      sessionId: req.params.sessionId,
+      userId: req.kitchenUser._id
+    });
+    if (!session) {
+      return res.status(404).json({ ok: false, error: "Compra pendiente no encontrada." });
+    }
+    return res.json({ ok: true, sessionId: session._id, status: session.status });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo posponer la confirmación." });
+  }
+});
+
+router.post("/purchase-sessions/:sessionId/complete", requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const amount = parseAmount(req.body?.amount);
+    if (amount === null) {
+      return res.status(400).json({ ok: false, error: "Debes indicar un importe válido." });
+    }
+    const validatedStoreId = await validateStoreSelection(req.body?.storeId, effectiveHouseholdId);
+    const session = await completePurchaseSession({
+      householdId: effectiveHouseholdId,
+      sessionId: req.params.sessionId,
+      userId: req.kitchenUser._id,
+      storeId: validatedStoreId,
+      amount
+    });
+    if (!session) {
+      return res.status(404).json({ ok: false, error: "Compra pendiente no encontrada." });
+    }
+    return res.json({ ok: true, sessionId: session._id, status: session.status });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo completar la compra." });
   }
 });
 
