@@ -4312,9 +4312,9 @@ body {
 .shopping-category-card {
   border-radius: 18px;
   padding: 14px;
-  box-shadow: none;
-  background: transparent;
-  border: none;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.08);
+  background: color-mix(in srgb, var(--category-bg, #f8fafc) 65%, #fff);
+  border: 1px solid color-mix(in srgb, var(--category-text, #64748b) 16%, #fff);
 }
 
 .shopping-category-head {
