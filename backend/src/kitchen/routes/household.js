@@ -22,7 +22,11 @@ import {
   findInvitationByToken,
   getInvitationStatus
 } from "../invitationService.js";
-import { buildHouseholdSubscriptionResponse } from "../subscriptionService.js";
+import {
+  buildHouseholdFeatureAvailability,
+  buildHouseholdSubscriptionResponse,
+  canUseBudgetFeature
+} from "../subscriptionService.js";
 
 const router = express.Router();
 
@@ -82,6 +86,7 @@ function parseCycleStartDayInput(value) {
 }
 
 function buildHouseholdResponse(household) {
+  const budgetFeatureEnabled = canUseBudgetFeature(household?.subscriptionPlan);
   return {
     id: household._id,
     name: household.name || "Mi household",
@@ -90,9 +95,12 @@ function buildHouseholdResponse(household) {
     dinnersEnabled: Boolean(household.dinnersEnabled),
     avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
     avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks),
-    monthlyBudget: Number.isFinite(Number(household.monthlyBudget)) ? Number(household.monthlyBudget) : null,
-    cycleStartDay: normalizeCycleStartDay(household.cycleStartDay),
-    ...buildHouseholdSubscriptionResponse(household)
+    monthlyBudget: budgetFeatureEnabled && Number.isFinite(Number(household.monthlyBudget))
+      ? Number(household.monthlyBudget)
+      : null,
+    cycleStartDay: budgetFeatureEnabled ? normalizeCycleStartDay(household.cycleStartDay) : null,
+    ...buildHouseholdSubscriptionResponse(household),
+    featureAvailability: buildHouseholdFeatureAvailability(household)
   };
 }
 
@@ -254,6 +262,15 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     const household = await Household.findById(effectiveHouseholdId).lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
+    const budgetFeatureEnabled = canUseBudgetFeature(household?.subscriptionPlan);
+    const isBudgetMutation = req.body?.monthlyBudget !== undefined || req.body?.cycleStartDay !== undefined;
+    if (!budgetFeatureEnabled && isBudgetMutation) {
+      return res.status(403).json({
+        ok: false,
+        code: "BUDGET_FEATURE_NOT_AVAILABLE",
+        message: "Budget feature is available only for Pro and Premium households."
+      });
     }
 
     const incomingEnabled = req.body?.avoidRepeatsEnabled;

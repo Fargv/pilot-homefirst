@@ -6,6 +6,7 @@ import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
 import ShareWhatsAppButton from "../components/ShareWhatsAppButton.jsx";
 import { buildShoppingShareUrl, normalizeWeekParam } from "../deepLinks.js";
+import { isBudgetFeatureUnavailableError } from "../subscription.js";
 import { useActiveWeek } from "../weekContext.jsx";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
@@ -206,6 +207,7 @@ export default function ShoppingPage() {
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const selectedStoreRef = useRef("");
   const [budget, setBudget] = useState(null);
+  const [budgetFeatureEnabled, setBudgetFeatureEnabled] = useState(null);
   const [pendingByCategory, setPendingByCategory] = useState(null);
   const [purchasedByStoreDay, setPurchasedByStoreDay] = useState(null);
   const [pendingPurchaseSessions, setPendingPurchaseSessions] = useState([]);
@@ -265,26 +267,31 @@ export default function ShoppingPage() {
   }, [updateVisibleWeek]);
 
   const openWeeklyBudgetPanel = useCallback(() => {
+    if (!budgetFeatureEnabled) {
+      navigate("/kitchen/upgrade");
+      return;
+    }
     const encodedWeek = encodeURIComponent(weekStart || getCurrentWeekStart());
     navigate(`/kitchen/compra/presupuesto?week=${encodedWeek}&origin=shopping&returnWeek=${encodedWeek}`);
-  }, [navigate, weekStart]);
+  }, [budgetFeatureEnabled, navigate, weekStart]);
 
   const applyPayload = (data) => {
     const nextStores = Array.isArray(data?.stores) ? data.stores : [];
-    const nextBudget = {
+    const nextBudgetFeatureEnabled = data?.featureAvailability?.budget !== false;
+    const nextBudget = nextBudgetFeatureEnabled ? {
       monthlyBudget: Number(data?.budget?.monthlyBudget) || 0,
       cycleStartDay: Number(data?.budget?.cycleStartDay) || 1,
       weeklyBudget: Number(data?.budget?.weeklyBudget) || 0,
       spent: Number(data?.budget?.spent) || 0,
       available: Number.isFinite(Number(data?.budget?.available)) ? Number(data.budget.available) : 0
-    };
+    } : null;
     const normalizedPendingPurchaseSessions = Array.isArray(data?.pendingPurchaseSessions)
       ? data.pendingPurchaseSessions.map((session) => ({
           ...session,
           itemCount: Number(session?.itemCount) || 0
         }))
       : [];
-    const nextCurrentPurchaseSession = data?.currentPurchaseSession && typeof data.currentPurchaseSession === "object"
+    const nextCurrentPurchaseSession = nextBudgetFeatureEnabled && data?.currentPurchaseSession && typeof data.currentPurchaseSession === "object"
       ? {
           ...data.currentPurchaseSession,
           itemCount: Number(data.currentPurchaseSession.itemCount) || 0
@@ -293,12 +300,27 @@ export default function ShoppingPage() {
     const nextOpenPurchaseSession = nextCurrentPurchaseSession || normalizedPendingPurchaseSessions[0] || null;
 
     setStores(nextStores);
+    setBudgetFeatureEnabled(nextBudgetFeatureEnabled);
     setBudget(nextBudget);
     setPendingByCategory(Array.isArray(data?.pendingByCategory) ? data.pendingByCategory : []);
     setPurchasedByStoreDay(Array.isArray(data?.purchasedByStoreDay) ? data.purchasedByStoreDay : []);
-    setPendingPurchaseSessions(normalizedPendingPurchaseSessions);
+    setPendingPurchaseSessions(nextBudgetFeatureEnabled ? normalizedPendingPurchaseSessions : []);
     setCurrentPurchaseSession(nextCurrentPurchaseSession);
     setHasRestorableOpenPurchase(Boolean(nextOpenPurchaseSession?.id && Number(nextOpenPurchaseSession?.itemCount || 0) > 0));
+  };
+
+  const handleBudgetFeatureUnavailable = (message = "Upgrade your license to enable budgets.") => {
+    setBudgetFeatureEnabled(false);
+    setBudget(null);
+    setPendingPurchaseSessions([]);
+    setCurrentPurchaseSession(null);
+    setHasRestorableOpenPurchase(false);
+    setPurchaseConfirmOpen(false);
+    setPurchaseConfirmTarget(null);
+    setPurchaseConfirmStoreId("");
+    setPurchaseConfirmAmount("");
+    setLeavePromptOpen(false);
+    setError(message);
   };
 
   const logShoppingApiError = (context, endpoint, err) => {
@@ -322,7 +344,12 @@ export default function ShoppingPage() {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
       applyPayload(data);
     } catch (err) {
+      if (isBudgetFeatureUnavailableError(err)) {
+        handleBudgetFeatureUnavailable();
+        return;
+      }
       logShoppingApiError("loadList", `/api/kitchen/shopping/${weekStart}`, err);
+      setBudgetFeatureEnabled(true);
       setBudget(null);
       setPendingByCategory(null);
       setPurchasedByStoreDay(null);
@@ -772,6 +799,10 @@ export default function ShoppingPage() {
         proceedPendingNavigation();
       }
     } catch (err) {
+      if (isBudgetFeatureUnavailableError(err)) {
+        handleBudgetFeatureUnavailable();
+        return;
+      }
       setError(err.message || "No se pudo posponer la confirmación.");
     } finally {
       setPurchaseConfirmBusy(false);
@@ -800,6 +831,10 @@ export default function ShoppingPage() {
       }
       setSuccess("Compra registrada.");
     } catch (err) {
+      if (isBudgetFeatureUnavailableError(err)) {
+        handleBudgetFeatureUnavailable();
+        return;
+      }
       setError(err.message || "No se pudo guardar la compra.");
     } finally {
       setPurchaseConfirmBusy(false);
@@ -862,20 +897,22 @@ export default function ShoppingPage() {
               </div>
             </div>
 
-            <div className="shopping-budget-row">
-              <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
-                <span className="shopping-budget-label">Budget semanal</span>
-                <strong>{formatCurrency(budget?.weeklyBudget)}</strong>
-              </button>
-              <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
-                <span className="shopping-budget-label">Gastado esta semana</span>
-                <strong>{formatCurrency(budget?.spent)}</strong>
-              </button>
-              <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
-                <span className="shopping-budget-label">Disponible esta semana</span>
-                <strong>{formatCurrency(budget?.available)}</strong>
-              </button>
-            </div>
+            {budgetFeatureEnabled === true ? (
+              <div className="shopping-budget-row">
+                <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
+                  <span className="shopping-budget-label">Budget semanal</span>
+                  <strong>{formatCurrency(budget?.weeklyBudget)}</strong>
+                </button>
+                <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
+                  <span className="shopping-budget-label">Gastado esta semana</span>
+                  <strong>{formatCurrency(budget?.spent)}</strong>
+                </button>
+                <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
+                  <span className="shopping-budget-label">Disponible esta semana</span>
+                  <strong>{formatCurrency(budget?.available)}</strong>
+                </button>
+              </div>
+            ) : null}
 
             <div className="shopping-header-tabs-row">
               <div className="kitchen-tab-share-row shopping-tab-share-row">

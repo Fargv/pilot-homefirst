@@ -32,6 +32,7 @@ import {
   updatePurchaseSessionStore
 } from "../purchaseSessionService.js";
 import { PurchaseSession } from "../models/PurchaseSession.js";
+import { canUseBudgetFeature } from "../subscriptionService.js";
 
 const router = express.Router();
 
@@ -121,11 +122,26 @@ function normalizeBudgetNumber(value) {
   return Number.isFinite(parsed) ? Number(parsed.toFixed(2)) : null;
 }
 
-async function buildBudgetSummary(weekStartDate, effectiveHouseholdId) {
+function buildBudgetFeatureUnavailablePayload() {
+  return {
+    ok: false,
+    code: "BUDGET_FEATURE_NOT_AVAILABLE",
+    message: "Budget feature is available only for Pro and Premium households."
+  };
+}
+
+async function resolveHouseholdBudgetAccess(effectiveHouseholdId) {
   const household = await Household.findById(effectiveHouseholdId)
-    .select("_id monthlyBudget cycleStartDay")
+    .select("_id subscriptionPlan monthlyBudget cycleStartDay")
     .lean();
 
+  return {
+    household,
+    budgetFeatureEnabled: canUseBudgetFeature(household?.subscriptionPlan)
+  };
+}
+
+async function buildBudgetSummary(weekStartDate, household) {
   const monthlyBudget = normalizeBudgetNumber(household?.monthlyBudget);
   const cycleStartDay = Number.isFinite(Number(household?.cycleStartDay)) ? Number(household.cycleStartDay) : 1;
   const weeklyBudget = calculateWeeklyBudget({
@@ -171,14 +187,14 @@ async function buildPurchaseSessionSummary(session, storeNameById = new Map()) {
   };
 }
 
-async function buildWeeklyBudgetDetails(weekStartDate, effectiveHouseholdId) {
+async function buildWeeklyBudgetDetails(weekStartDate, effectiveHouseholdId, household) {
   const stores = sortStores(
     await Store.find(buildStoreVisibilityFilter(effectiveHouseholdId, { active: true }))
       .select("_id name")
       .lean()
   );
   const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
-  const budget = await buildBudgetSummary(weekStartDate, effectiveHouseholdId);
+  const budget = await buildBudgetSummary(weekStartDate, household);
   const completedSessions = await PurchaseSession.find({
     householdId: effectiveHouseholdId,
     status: "completed",
@@ -284,14 +300,18 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
       return acc;
     }, new Map());
 
-  const pendingPurchaseSessions = await getPendingPurchaseSessions(effectiveHouseholdId);
-  const latestOpenPurchaseSession = await getLatestOpenPurchaseSession(effectiveHouseholdId, weekStartDate);
-  const budget = await buildBudgetSummary(weekStartDate, effectiveHouseholdId);
+  const { household, budgetFeatureEnabled } = await resolveHouseholdBudgetAccess(effectiveHouseholdId);
+  const pendingPurchaseSessions = budgetFeatureEnabled ? await getPendingPurchaseSessions(effectiveHouseholdId) : [];
+  const latestOpenPurchaseSession = budgetFeatureEnabled ? await getLatestOpenPurchaseSession(effectiveHouseholdId, weekStartDate) : null;
+  const budget = budgetFeatureEnabled ? await buildBudgetSummary(weekStartDate, household) : null;
 
   return {
     list,
     stores,
     budget,
+    featureAvailability: {
+      budget: budgetFeatureEnabled
+    },
     pendingByCategory: Array.from(pendingByCategory.values())
       .sort(compareCategoryGroups),
     purchasedByStoreDay: Array.from(purchasedByStoreDay.values()).sort(
@@ -514,8 +534,12 @@ router.get("/:weekStart/budget", requireAuth, async (req, res) => {
     if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const { household, budgetFeatureEnabled } = await resolveHouseholdBudgetAccess(effectiveHouseholdId);
+    if (!budgetFeatureEnabled) {
+      return res.status(403).json(buildBudgetFeatureUnavailablePayload());
+    }
     const monday = getWeekStart(weekStart);
-    const payload = await buildWeeklyBudgetDetails(monday, effectiveHouseholdId);
+    const payload = await buildWeeklyBudgetDetails(monday, effectiveHouseholdId, household);
 
     return res.json({ ok: true, ...payload });
   } catch (error) {
@@ -559,13 +583,17 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
       item.purchasedBy = req.kitchenUser._id;
       item.purchasedAt = new Date();
       item.storeId = validatedStoreId;
-      await attachItemsToPurchaseSession({
-        householdId: effectiveHouseholdId,
-        weekStart: monday,
-        userId: req.kitchenUser._id,
-        items: [item],
-        storeId: validatedStoreId
-      });
+      if (budgetFeatureEnabled) {
+        await attachItemsToPurchaseSession({
+          householdId: effectiveHouseholdId,
+          weekStart: monday,
+          userId: req.kitchenUser._id,
+          items: [item],
+          storeId: validatedStoreId
+        });
+      } else {
+        item.purchaseSessionId = null;
+      }
     } else {
       await detachItemsFromPurchaseSession({
         userId: req.kitchenUser._id,
@@ -665,13 +693,19 @@ router.put("/:weekStart/items/status", requireAuth, async (req, res) => {
         changed = true;
       }
       if (changedItems.length) {
-        await attachItemsToPurchaseSession({
-          householdId: effectiveHouseholdId,
-          weekStart: monday,
-          userId: req.kitchenUser._id,
-          items: changedItems,
-          storeId: validatedStoreId
-        });
+        if (budgetFeatureEnabled) {
+          await attachItemsToPurchaseSession({
+            householdId: effectiveHouseholdId,
+            weekStart: monday,
+            userId: req.kitchenUser._id,
+            items: changedItems,
+            storeId: validatedStoreId
+          });
+        } else {
+          changedItems.forEach((item) => {
+            item.purchaseSessionId = null;
+          });
+        }
       }
     } else {
       const changedItems = [];
@@ -708,6 +742,10 @@ router.put("/:weekStart/items/status", requireAuth, async (req, res) => {
 router.get("/purchase-sessions/pending", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const { budgetFeatureEnabled } = await resolveHouseholdBudgetAccess(effectiveHouseholdId);
+    if (!budgetFeatureEnabled) {
+      return res.status(403).json(buildBudgetFeatureUnavailablePayload());
+    }
     const stores = sortStores(
       await Store.find(buildStoreVisibilityFilter(effectiveHouseholdId, { active: true }))
         .select("_id name")
@@ -729,6 +767,10 @@ router.get("/purchase-sessions/pending", requireAuth, async (req, res) => {
 router.post("/purchase-sessions/:sessionId/postpone", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const { budgetFeatureEnabled } = await resolveHouseholdBudgetAccess(effectiveHouseholdId);
+    if (!budgetFeatureEnabled) {
+      return res.status(403).json(buildBudgetFeatureUnavailablePayload());
+    }
     const session = await markPurchaseSessionPendingConfirmation({
       householdId: effectiveHouseholdId,
       sessionId: req.params.sessionId,
@@ -748,6 +790,10 @@ router.post("/purchase-sessions/:sessionId/postpone", requireAuth, async (req, r
 router.post("/purchase-sessions/:sessionId/complete", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const { budgetFeatureEnabled } = await resolveHouseholdBudgetAccess(effectiveHouseholdId);
+    if (!budgetFeatureEnabled) {
+      return res.status(403).json(buildBudgetFeatureUnavailablePayload());
+    }
     const amount = parseAmount(req.body?.amount);
     if (amount === null) {
       return res.status(400).json({ ok: false, error: "Debes indicar un importe válido." });

@@ -1,4 +1,5 @@
 const ACTIVE_PLANS = new Set(["pro", "premium"]);
+const BUDGET_ENABLED_PLANS = new Set(["pro", "premium"]);
 
 export const SUBSCRIPTION_PLANS = ["free", "basic", "pro", "premium"];
 export const REQUESTABLE_SUBSCRIPTION_PLANS = ["basic", "pro", "premium"];
@@ -12,14 +13,27 @@ function addDays(baseDate, days) {
   return nextDate;
 }
 
+export function normalizeSubscriptionPlan(plan) {
+  const normalizedPlan = String(plan || "").toLowerCase();
+  return SUBSCRIPTION_PLANS.includes(normalizedPlan) ? normalizedPlan : "basic";
+}
+
 export function isRequestableSubscriptionPlan(plan) {
   return REQUESTABLE_SUBSCRIPTION_PLANS.includes(String(plan || "").toLowerCase());
 }
 
+export function canUseBudgetFeature(plan) {
+  return BUDGET_ENABLED_PLANS.has(normalizeSubscriptionPlan(plan));
+}
+
+export function buildHouseholdFeatureAvailability(household) {
+  return {
+    budget: canUseBudgetFeature(household?.subscriptionPlan)
+  };
+}
+
 export function buildHouseholdSubscriptionResponse(household) {
-  const subscriptionPlan = SUBSCRIPTION_PLANS.includes(household?.subscriptionPlan)
-    ? household.subscriptionPlan
-    : "basic";
+  const subscriptionPlan = normalizeSubscriptionPlan(household?.subscriptionPlan);
   const subscriptionStatus = SUBSCRIPTION_STATUSES.includes(household?.subscriptionStatus)
     ? household.subscriptionStatus
     : "inactive";
@@ -85,6 +99,6 @@ export function applyAdminSubscriptionDeactivation(household) {
 }
 
 export function isHouseholdOnPaidSubscription(household) {
-  return ACTIVE_PLANS.has(String(household?.subscriptionPlan || "").toLowerCase())
+  return ACTIVE_PLANS.has(normalizeSubscriptionPlan(household?.subscriptionPlan))
     && String(household?.subscriptionStatus || "").toLowerCase() === "active";
 }

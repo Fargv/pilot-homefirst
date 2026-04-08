@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { apiRequest } from "../api.js";
+import { isBudgetFeatureUnavailableError } from "../subscription.js";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import { useActiveWeek } from "../weekContext.jsx";
 import { normalizeWeekParam } from "../deepLinks.js";
@@ -45,6 +46,7 @@ export default function ShoppingBudgetPage() {
   const returnWeek = normalizeWeekParam(searchParams.get("returnWeek"), selectedWeek);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [budgetLocked, setBudgetLocked] = useState(false);
   const [budget, setBudget] = useState({
     monthlyBudget: 0,
     cycleStartDay: 1,
@@ -66,6 +68,7 @@ export default function ShoppingBudgetPage() {
     const loadBudgetWeek = async () => {
       setLoading(true);
       setError("");
+      setBudgetLocked(false);
       try {
         const data = await apiRequest(`/api/kitchen/shopping/${selectedWeek}/budget`);
         if (!active) return;
@@ -79,6 +82,19 @@ export default function ShoppingBudgetPage() {
         setPurchases(Array.isArray(data?.purchases) ? data.purchases : []);
       } catch (err) {
         if (!active) return;
+        if (isBudgetFeatureUnavailableError(err)) {
+          setBudgetLocked(true);
+          setError("");
+          setBudget({
+            monthlyBudget: 0,
+            cycleStartDay: 1,
+            weeklyBudget: 0,
+            spent: 0,
+            available: 0
+          });
+          setPurchases([]);
+          return;
+        }
         setBudget({
           monthlyBudget: 0,
           cycleStartDay: 1,
@@ -126,20 +142,22 @@ export default function ShoppingBudgetPage() {
             />
           </div>
 
-          <div className="shopping-budget-summary-grid">
-            <div className="shopping-budget-summary-card">
-              <span className="shopping-budget-label">Budget semanal</span>
-              <strong>{loading ? "--" : formatCurrency(budget.weeklyBudget)}</strong>
+          {!budgetLocked ? (
+            <div className="shopping-budget-summary-grid">
+              <div className="shopping-budget-summary-card">
+                <span className="shopping-budget-label">Budget semanal</span>
+                <strong>{loading ? "--" : formatCurrency(budget.weeklyBudget)}</strong>
+              </div>
+              <div className="shopping-budget-summary-card">
+                <span className="shopping-budget-label">Gastado</span>
+                <strong>{loading ? "--" : formatCurrency(budget.spent)}</strong>
+              </div>
+              <div className="shopping-budget-summary-card">
+                <span className="shopping-budget-label">Disponible</span>
+                <strong>{loading ? "--" : formatCurrency(budget.available)}</strong>
+              </div>
             </div>
-            <div className="shopping-budget-summary-card">
-              <span className="shopping-budget-label">Gastado</span>
-              <strong>{loading ? "--" : formatCurrency(budget.spent)}</strong>
-            </div>
-            <div className="shopping-budget-summary-card">
-              <span className="shopping-budget-label">Disponible</span>
-              <strong>{loading ? "--" : formatCurrency(budget.available)}</strong>
-            </div>
-          </div>
+          ) : null}
         </div>
 
         <div className="kitchen-card shopping-budget-history-card">
@@ -154,10 +172,19 @@ export default function ShoppingBudgetPage() {
           </div>
 
           {error ? <div className="kitchen-alert error">{error}</div> : null}
+          {budgetLocked ? (
+            <div className="shopping-budget-empty">
+              <h4>Budget locked</h4>
+              <p className="kitchen-muted">Upgrade your license to enable budgets.</p>
+              <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>
+                Upgrade your license
+              </button>
+            </div>
+          ) : null}
 
           {loading ? (
             <p className="kitchen-muted">Cargando presupuesto semanal...</p>
-          ) : purchases.length === 0 ? (
+          ) : budgetLocked ? null : purchases.length === 0 ? (
             <div className="shopping-budget-empty">
               <h4>Sin compras registradas</h4>
               <p className="kitchen-muted">Cuando confirmes una compra aparecerá aquí con su supermercado e importe.</p>

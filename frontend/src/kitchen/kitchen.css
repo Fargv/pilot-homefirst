@@ -5160,6 +5160,17 @@ body {
   color: #b54708;
 }
 
+.settings-budget-locked-card {
+  width: 100%;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  padding: 16px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .settings-row-card {
   border: 1px solid #e7eaf8;
   border-radius: 14px;

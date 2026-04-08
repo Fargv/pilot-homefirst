@@ -7,6 +7,7 @@ import ModalSheet from "../components/ui/ModalSheet.jsx";
 import SettingsSharePanel from "../components/SettingsSharePanel.jsx";
 import PushNotificationsPanel from "../components/PushNotificationsPanel.jsx";
 import { useActiveWeek } from "../weekContext.jsx";
+import { canUseBudgetFeature } from "../subscription.js";
 import { getColorPalette, getUserColorById, getUserColorPreference, setUserColorPreference } from "../utils/userColors.js";
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 
@@ -228,6 +229,7 @@ export default function SettingsPage() {
     () => palette.find((item) => item.id === selectedColorId) || palette[0],
     [palette, selectedColorId]
   );
+  const budgetFeatureEnabled = canUseBudgetFeature(subscriptionPlan);
   const licenseActionLabel = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
 
   const formatSubscriptionPlanLabel = (plan) => {
@@ -262,6 +264,10 @@ export default function SettingsPage() {
   };
 
   const openBudgetPanel = () => {
+    if (!budgetFeatureEnabled) {
+      navigate("/kitchen/upgrade");
+      return;
+    }
     navigate(`/kitchen/compra/presupuesto?week=${encodeURIComponent(activeWeek || new Date().toISOString().slice(0, 10))}&origin=settings`);
   };
 
@@ -564,8 +570,12 @@ export default function SettingsPage() {
           avoidRepeatsEnabled: nextEnabled,
           dinnersEnabled: nextDinnersEnabled,
           avoidRepeatsWeeks: Number(nextWeeks),
-          monthlyBudget: nextMonthlyBudget === "" ? null : Number(nextMonthlyBudget),
-          cycleStartDay: nextCycleStartDay
+          ...(budgetFeatureEnabled
+            ? {
+                monthlyBudget: nextMonthlyBudget === "" ? null : Number(nextMonthlyBudget),
+                cycleStartDay: nextCycleStartDay
+              }
+            : {})
         })
       });
       setDinnersEnabled(Boolean(data?.household?.dinnersEnabled));
@@ -1059,8 +1069,17 @@ export default function SettingsPage() {
         <div className="settings-inline-heading">
           <h3 className="settings-subtitle">Presupuesto semanal</h3>
         </div>
-        <p className="kitchen-muted">Consulta el presupuesto, el gasto y el histórico de compras por semana.</p>
-        <button type="button" className="kitchen-button secondary" onClick={openBudgetPanel}>Abrir panel de presupuesto</button>
+        {budgetFeatureEnabled ? (
+          <>
+            <p className="kitchen-muted">Consulta el presupuesto, el gasto y el histórico de compras por semana.</p>
+            <button type="button" className="kitchen-button secondary" onClick={openBudgetPanel}>Abrir panel de presupuesto</button>
+          </>
+        ) : (
+          <>
+            <p className="kitchen-muted">Upgrade your license to enable budgets.</p>
+            <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Upgrade your license</button>
+          </>
+        )}
       </div>
       <PushNotificationsPanel refreshKey={user?.id || ""} />
     </div>
@@ -1139,34 +1158,44 @@ export default function SettingsPage() {
           </label>
         </div>
         <div className="settings-household-pref-input-row">
-          <label className="kitchen-field">
-            <span className="kitchen-label">Budget mensual</span>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              className="kitchen-input"
-              value={monthlyBudget}
-              disabled={householdPrefsSaving}
-              onChange={(event) => setMonthlyBudget(event.target.value)}
-              onBlur={() => void saveHouseholdPreferences()}
-              placeholder="0.00"
-            />
-          </label>
-          <label className="kitchen-field">
-            <span className="kitchen-label">Día de inicio del ciclo</span>
-            <input
-              type="number"
-              min={1}
-              max={28}
-              step={1}
-              className="kitchen-input"
-              value={cycleStartDay}
-              disabled={householdPrefsSaving}
-              onChange={(event) => setCycleStartDay(Math.min(28, Math.max(1, Number.parseInt(event.target.value || "1", 10) || 1)))}
-              onBlur={() => void saveHouseholdPreferences()}
-            />
-          </label>
+          {budgetFeatureEnabled ? (
+            <>
+              <label className="kitchen-field">
+                <span className="kitchen-label">Budget mensual</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="kitchen-input"
+                  value={monthlyBudget}
+                  disabled={householdPrefsSaving}
+                  onChange={(event) => setMonthlyBudget(event.target.value)}
+                  onBlur={() => void saveHouseholdPreferences()}
+                  placeholder="0.00"
+                />
+              </label>
+              <label className="kitchen-field">
+                <span className="kitchen-label">Día de inicio del ciclo</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={28}
+                  step={1}
+                  className="kitchen-input"
+                  value={cycleStartDay}
+                  disabled={householdPrefsSaving}
+                  onChange={(event) => setCycleStartDay(Math.min(28, Math.max(1, Number.parseInt(event.target.value || "1", 10) || 1)))}
+                  onBlur={() => void saveHouseholdPreferences()}
+                />
+              </label>
+            </>
+          ) : (
+            <div className="settings-budget-locked-card">
+              <strong>Budget</strong>
+              <p className="kitchen-muted">Upgrade your license to enable budgets.</p>
+              <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Upgrade your license</button>
+            </div>
+          )}
         </div>
         <div className="settings-household-pref-row">
           <div className="settings-household-pref-main">
@@ -1400,7 +1429,11 @@ export default function SettingsPage() {
           <div className="settings-hub-grid">
             <CardButton title="Perfil" subtitle="Informacion personal, password y color." onClick={() => setPanel("perfil")} />
             <CardButton title="Preferencias" subtitle="Idioma, dark mode y notificaciones." onClick={() => setPanel("preferencias")} />
-            <CardButton title="Presupuesto" subtitle="Resumen e historico semanal de compras." onClick={openBudgetPanel} />
+            <CardButton
+              title="Presupuesto"
+              subtitle={budgetFeatureEnabled ? "Resumen e historico semanal de compras." : "Bloqueado en Basic. Upgrade your license."}
+              onClick={budgetFeatureEnabled ? openBudgetPanel : () => setPanel("preferencias")}
+            />
             {canViewHousehold ? <CardButton title="Household" subtitle="Miembros y ajustes del hogar." onClick={() => setPanel("household-members")} /> : null}
             {canAccessShare ? <CardButton title="Compartir" subtitle="Invitaciones por email y código de acceso." onClick={() => setPanel("share")} /> : null}
             {canManageCategories ? <CardButton title="Categorias" subtitle="Gestion de categorias." onClick={() => setPanel("categorias")} /> : null}
