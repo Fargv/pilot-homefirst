@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { apiRequest } from "../api.js";
@@ -7,12 +7,12 @@ const PLANS = [
   {
     id: "basic",
     name: "Basic",
-    price: "€1.99/month",
-    tagline: "Para hogares que quieren empezar a probar funciones extra.",
+    price: "Free",
+    tagline: "El plan base del household durante la beta, sin pagos.",
     features: [
-      "Preferencias avanzadas del hogar",
-      "Nuevas automatizaciones beta",
-      "Soporte prioritario durante pruebas"
+      "Licencia base del household",
+      "Sin integración de pago",
+      "Preparado para upgrades futuros"
     ]
   },
   {
@@ -42,15 +42,41 @@ const PLANS = [
 
 export default function UpgradeToProPage() {
   const navigate = useNavigate();
+  const [summaryLoading, setSummaryLoading] = useState(true);
   const [loadingPlanId, setLoadingPlanId] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [requestedPlan, setRequestedPlan] = useState("");
+  const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
 
   const selectedPlan = useMemo(
     () => PLANS.find((plan) => plan.id === requestedPlan) || null,
     [requestedPlan]
   );
+  const heading = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
+
+  useEffect(() => {
+    let active = true;
+    const loadSummary = async () => {
+      setSummaryLoading(true);
+      try {
+        const data = await apiRequest("/api/kitchen/household/summary");
+        if (!active) return;
+        setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
+        setRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
+      } catch (loadError) {
+        if (!active) return;
+        setError(loadError.message || "No se pudo cargar la suscripción actual.");
+      } finally {
+        if (active) setSummaryLoading(false);
+      }
+    };
+
+    void loadSummary();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const requestPlan = async (planId) => {
     setLoadingPlanId(planId);
@@ -79,15 +105,16 @@ export default function UpgradeToProPage() {
           </button>
           <div className="upgrade-hero-copy">
             <span className="upgrade-eyebrow">Household subscription</span>
-            <h1>Upgrade to Pro</h1>
+            <h1>{heading}</h1>
             <p className="kitchen-muted">
-              Elige un plan para tu hogar. Durante la beta, la activación la realizará un administrador manualmente.
+              Elige un plan para tu hogar. Durante la beta no hay pagos integrados y la activación la realiza un administrador manualmente.
             </p>
           </div>
         </div>
 
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}
+        {summaryLoading ? <p className="kitchen-muted">Cargando suscripción actual...</p> : null}
 
         <div className="upgrade-plan-grid">
           {PLANS.map((plan) => {
@@ -124,7 +151,7 @@ export default function UpgradeToProPage() {
           <div className="upgrade-footnote">
             <strong>{selectedPlan.name}</strong>
             <span className="kitchen-muted">
-              Tu hogar ha solicitado este plan y queda listo para una futura activación automática con Stripe.
+              Tu hogar ha solicitado este plan y queda listo para una futura activación administrativa.
             </span>
           </div>
         ) : null}

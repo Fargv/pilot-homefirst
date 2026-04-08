@@ -13,7 +13,7 @@ const HouseholdSchema = new mongoose.Schema(
     subscriptionPlan: {
       type: String,
       enum: ["free", "basic", "pro", "premium"],
-      default: "free"
+      default: "basic"
     },
     subscriptionStatus: {
       type: String,

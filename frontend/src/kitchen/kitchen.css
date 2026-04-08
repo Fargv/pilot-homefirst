@@ -5126,6 +5126,40 @@ body {
   font-size: 16px;
 }
 
+.settings-subscription-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-subscription-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-subscription-badge.basic {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.settings-subscription-badge.pro {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.settings-subscription-badge.premium {
+  background: #fff4e5;
+  color: #b54708;
+}
+
 .settings-row-card {
   border: 1px solid #e7eaf8;
   border-radius: 14px;

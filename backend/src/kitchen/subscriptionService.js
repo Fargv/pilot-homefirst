@@ -1,4 +1,4 @@
-const ACTIVE_PLANS = new Set(["basic", "pro", "premium"]);
+const ACTIVE_PLANS = new Set(["pro", "premium"]);
 
 export const SUBSCRIPTION_PLANS = ["free", "basic", "pro", "premium"];
 export const REQUESTABLE_SUBSCRIPTION_PLANS = ["basic", "pro", "premium"];
@@ -19,7 +19,7 @@ export function isRequestableSubscriptionPlan(plan) {
 export function buildHouseholdSubscriptionResponse(household) {
   const subscriptionPlan = SUBSCRIPTION_PLANS.includes(household?.subscriptionPlan)
     ? household.subscriptionPlan
-    : "free";
+    : "basic";
   const subscriptionStatus = SUBSCRIPTION_STATUSES.includes(household?.subscriptionStatus)
     ? household.subscriptionStatus
     : "inactive";
@@ -49,6 +49,9 @@ export function applySubscriptionRequest(household, plan, now = new Date()) {
   household.subscriptionRequestedPlan = normalizedPlan;
   household.subscriptionStatus = "pending";
   household.trialEndsAt = addDays(now, SUBSCRIPTION_TRIAL_DAYS);
+  if (!SUBSCRIPTION_PLANS.includes(household.subscriptionPlan)) {
+    household.subscriptionPlan = "basic";
+  }
   return household;
 }
 
@@ -71,7 +74,7 @@ export function applyAdminSubscriptionActivation(household, plan, now = new Date
 }
 
 export function applyAdminSubscriptionDeactivation(household) {
-  household.subscriptionPlan = "free";
+  household.subscriptionPlan = "basic";
   household.subscriptionStatus = "inactive";
   household.subscriptionRequestedPlan = null;
   household.trialEndsAt = null;

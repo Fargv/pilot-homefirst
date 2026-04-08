@@ -128,6 +128,9 @@ export default function SettingsPage() {
   const [avoidRepeatsWeeks, setAvoidRepeatsWeeks] = useState(1);
   const [monthlyBudget, setMonthlyBudget] = useState("");
   const [cycleStartDay, setCycleStartDay] = useState(1);
+  const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
+  const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
+  const [subscriptionRequestedPlan, setSubscriptionRequestedPlan] = useState("");
   const [avoidRepeatsInfoOpen, setAvoidRepeatsInfoOpen] = useState(false);
   const [householdPrefsSaving, setHouseholdPrefsSaving] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -225,6 +228,29 @@ export default function SettingsPage() {
     () => palette.find((item) => item.id === selectedColorId) || palette[0],
     [palette, selectedColorId]
   );
+  const licenseActionLabel = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
+
+  const formatSubscriptionPlanLabel = (plan) => {
+    const normalizedPlan = String(plan || "basic").toLowerCase();
+    if (normalizedPlan === "premium") return "PREMIUM";
+    if (normalizedPlan === "pro") return "PRO";
+    return "BASIC";
+  };
+
+  const formatSubscriptionStatusLabel = (status) => {
+    const normalizedStatus = String(status || "inactive").toLowerCase();
+    if (normalizedStatus === "active") return "ACTIVE";
+    if (normalizedStatus === "trial") return "TRIAL";
+    if (normalizedStatus === "pending") return "PENDING";
+    return "INACTIVE";
+  };
+
+  const subscriptionBadgeClassName = (plan) => {
+    const normalizedPlan = String(plan || "basic").toLowerCase();
+    if (normalizedPlan === "premium") return "settings-subscription-badge premium";
+    if (normalizedPlan === "pro") return "settings-subscription-badge pro";
+    return "settings-subscription-badge basic";
+  };
 
   const setPanel = (panel) => {
     if (!panel) {
@@ -359,6 +385,9 @@ export default function SettingsPage() {
       setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(householdData?.household?.avoidRepeatsWeeks));
       setMonthlyBudget(householdData?.household?.monthlyBudget === null || householdData?.household?.monthlyBudget === undefined ? "" : String(householdData.household.monthlyBudget));
       setCycleStartDay(Number(householdData?.household?.cycleStartDay) || 1);
+      setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
+      setSubscriptionStatus(String(householdData?.household?.subscriptionStatus || "inactive").toLowerCase());
+      setSubscriptionRequestedPlan(String(householdData?.household?.subscriptionRequestedPlan || "").toLowerCase());
       setMembers(memberData.users || []);
       setInvitations(invitationData.invitations || []);
       setHouseholdCode(codeData.inviteCode || householdData?.household?.inviteCode || "");
@@ -544,6 +573,9 @@ export default function SettingsPage() {
       setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(data?.household?.avoidRepeatsWeeks));
       setMonthlyBudget(data?.household?.monthlyBudget === null || data?.household?.monthlyBudget === undefined ? "" : String(data.household.monthlyBudget));
       setCycleStartDay(Number(data?.household?.cycleStartDay) || 1);
+      setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
+      setSubscriptionStatus(String(data?.household?.subscriptionStatus || "inactive").toLowerCase());
+      setSubscriptionRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
       updateSuccess("Preferencia del household actualizada.");
     } catch (err) {
       setError(err.message || "No se pudieron guardar las preferencias del household.");
@@ -1008,6 +1040,23 @@ export default function SettingsPage() {
       </div>
       <div className="settings-block">
         <div className="settings-inline-heading">
+          <h3 className="settings-subtitle">Subscription</h3>
+          <span className={subscriptionBadgeClassName(subscriptionPlan)}>{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+        </div>
+        <div className="settings-subscription-row">
+          <span className="kitchen-muted">Current Plan</span>
+          <strong>{formatSubscriptionPlanLabel(subscriptionPlan)}</strong>
+        </div>
+        <div className="settings-subscription-row">
+          <span className="kitchen-muted">Status</span>
+          <strong>{formatSubscriptionStatusLabel(subscriptionStatus)}</strong>
+        </div>
+        {subscriptionRequestedPlan && subscriptionStatus === "pending" ? (
+          <p className="kitchen-muted">Pending request: {formatSubscriptionPlanLabel(subscriptionRequestedPlan)}</p>
+        ) : null}
+      </div>
+      <div className="settings-block">
+        <div className="settings-inline-heading">
           <h3 className="settings-subtitle">Presupuesto semanal</h3>
         </div>
         <p className="kitchen-muted">Consulta el presupuesto, el gasto y el histórico de compras por semana.</p>
@@ -1357,10 +1406,10 @@ export default function SettingsPage() {
             {canManageCategories ? <CardButton title="Categorias" subtitle="Gestion de categorias." onClick={() => setPanel("categorias")} /> : null}
             {canManageDeleted ? <CardButton title="Eliminados" subtitle="Recupera platos, guarniciones e ingredientes." onClick={() => setPanel("eliminados")} /> : null}
             <div className="settings-upgrade-card">
-              <h3>Upgrade to Pro</h3>
+              <h3>{licenseActionLabel}</h3>
               <p className="kitchen-muted">Solicita un plan para tu hogar y deja la activación lista para la beta.</p>
               <ul className="kitchen-list">
-                <li>Basic desde €1.99/mes</li>
+                <li>Basic gratis como licencia base</li>
                 <li>Pro recomendado para hogares activos</li>
                 <li>Premium preparado para futuras integraciones</li>
               </ul>

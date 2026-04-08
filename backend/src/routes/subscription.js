@@ -22,7 +22,7 @@ router.post("/request", requireAuth, async (req, res) => {
 
     return res.status(201).json({
       ok: true,
-      message: "Solicitud de suscripción registrada.",
+      message: "Your subscription will be activated by the administrator during beta testing.",
       subscription: buildHouseholdSubscriptionResponse(household)
     });
   } catch (error) {
