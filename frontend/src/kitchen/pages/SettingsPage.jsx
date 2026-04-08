@@ -7,7 +7,14 @@ import ModalSheet from "../components/ui/ModalSheet.jsx";
 import SettingsSharePanel from "../components/SettingsSharePanel.jsx";
 import PushNotificationsPanel from "../components/PushNotificationsPanel.jsx";
 import { useActiveWeek } from "../weekContext.jsx";
-import { canUseBudgetFeature } from "../subscription.js";
+import {
+  buildLicenseState,
+  canUseBudgetFeature,
+  countLicenseUsage,
+  isNonUserDinerLimitReachedError,
+  isUnlimitedLicenseLimit,
+  isUserLimitReachedError
+} from "../subscription.js";
 import { getColorPalette, getUserColorById, getUserColorPreference, setUserColorPreference } from "../utils/userColors.js";
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 
@@ -108,6 +115,14 @@ function clampAvoidRepeatWeeks(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 1;
   return Math.min(12, Math.max(1, Math.round(parsed)));
+}
+
+function formatLicenseLimit(limit, singularLabel, pluralLabel) {
+  if (isUnlimitedLicenseLimit(limit)) {
+    return `Unlimited ${pluralLabel}`;
+  }
+  const safeLimit = Number(limit || 0);
+  return `Up to ${safeLimit} ${safeLimit === 1 ? singularLabel : pluralLabel}`;
 }
 
 export default function SettingsPage() {
@@ -231,6 +246,15 @@ export default function SettingsPage() {
   );
   const budgetFeatureEnabled = canUseBudgetFeature(subscriptionPlan);
   const licenseActionLabel = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
+  const memberUsage = useMemo(() => countLicenseUsage(members), [members]);
+  const licenseState = useMemo(
+    () => buildLicenseState(subscriptionPlan, memberUsage),
+    [memberUsage, subscriptionPlan]
+  );
+  const canAddMoreUsers = licenseState.capabilities.canAddUser;
+  const canAddMoreNonUserDiners = licenseState.capabilities.canAddNonUserDiner;
+  const userLimitMessage = "You have reached the user limit for your current license.";
+  const nonUserDinerLimitMessage = "You have reached the non-user diner limit for your current license.";
 
   const formatSubscriptionPlanLabel = (plan) => {
     const normalizedPlan = String(plan || "basic").toLowerCase();
@@ -658,6 +682,11 @@ export default function SettingsPage() {
   };
 
   const openInvitesPanel = async () => {
+    if (!canAddMoreUsers) {
+      setError(userLimitMessage);
+      navigate("/kitchen/upgrade");
+      return;
+    }
     setPanel("share");
   };
 
@@ -743,6 +772,11 @@ export default function SettingsPage() {
   };
 
   const createDiner = async () => {
+    if (!canAddMoreNonUserDiners) {
+      setError(nonUserDinerLimitMessage);
+      navigate("/kitchen/upgrade");
+      return;
+    }
     const safeName = dinerModal.form.displayName.trim();
     if (!safeName) {
       setError("El nombre del comensal es obligatorio.");
@@ -776,12 +810,21 @@ export default function SettingsPage() {
       updateSuccess("Comensal creado.");
       await loadData();
     } catch (err) {
+      if (isNonUserDinerLimitReachedError(err)) {
+        setError(nonUserDinerLimitMessage);
+        return;
+      }
       setError(err.message || "No se pudo crear el comensal.");
     }
   };
 
   const convertPlaceholder = async () => {
     if (!convertModal.memberId) return;
+    if (!canAddMoreUsers) {
+      setError(userLimitMessage);
+      navigate("/kitchen/upgrade");
+      return;
+    }
     const email = convertModal.email.trim().toLowerCase();
     const password = convertModal.password.trim();
     if (!EMAIL_RE.test(email) || password.length < 8) {
@@ -801,6 +844,10 @@ export default function SettingsPage() {
       closeMemberModal();
       await loadData();
     } catch (err) {
+      if (isUserLimitReachedError(err)) {
+        setError(userLimitMessage);
+        return;
+      }
       setError(err.message || "No se pudo convertir el comensal.");
     }
   };
@@ -1064,6 +1111,16 @@ export default function SettingsPage() {
         {subscriptionRequestedPlan && subscriptionStatus === "pending" ? (
           <p className="kitchen-muted">Pending request: {formatSubscriptionPlanLabel(subscriptionRequestedPlan)}</p>
         ) : null}
+        <div className="settings-subscription-row">
+          <span className="kitchen-muted">Users</span>
+          <strong>{licenseState.usage.users} / {isUnlimitedLicenseLimit(licenseState.limits.maxUsers) ? "Unlimited" : licenseState.limits.maxUsers}</strong>
+        </div>
+        <div className="settings-subscription-row">
+          <span className="kitchen-muted">Non-user diners</span>
+          <strong>{licenseState.usage.nonUserDiners} / {isUnlimitedLicenseLimit(licenseState.limits.maxNonUserDiners) ? "Unlimited" : licenseState.limits.maxNonUserDiners}</strong>
+        </div>
+        <p className="kitchen-muted">{formatLicenseLimit(licenseState.limits.maxUsers, "user", "users")}</p>
+        <p className="kitchen-muted">{formatLicenseLimit(licenseState.limits.maxNonUserDiners, "non-user diner", "non-user diners")}</p>
       </div>
       <div className="settings-block">
         <div className="settings-inline-heading">
@@ -1107,8 +1164,20 @@ export default function SettingsPage() {
         <p className="settings-counter">Miembros ({members.length})</p>
         {canManageHousehold ? (
           <div className="settings-members-actions">
-            <button type="button" className="kitchen-button" onClick={openInvitesPanel}>Invitar</button>
-            <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })}>Crear comensal</button>
+            <button type="button" className="kitchen-button" onClick={openInvitesPanel} disabled={!canAddMoreUsers}>Invitar</button>
+            <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })} disabled={!canAddMoreNonUserDiners}>Crear comensal</button>
+          </div>
+        ) : null}
+        {canManageHousehold && !canAddMoreUsers ? (
+          <div className="settings-budget-locked-card">
+            <p className="kitchen-muted">{userLimitMessage}</p>
+            <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Upgrade your license</button>
+          </div>
+        ) : null}
+        {canManageHousehold && !canAddMoreNonUserDiners ? (
+          <div className="settings-budget-locked-card">
+            <p className="kitchen-muted">{nonUserDinerLimitMessage}</p>
+            <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Upgrade your license</button>
           </div>
         ) : null}
       </div>
@@ -1272,6 +1341,8 @@ export default function SettingsPage() {
       user={user}
       householdName={householdName}
       initialHouseholdCode={householdCode}
+      canAddUsers={canAddMoreUsers}
+      userLimitMessage={userLimitMessage}
       onBack={() => setPanel("")}
     />
   );
@@ -1545,16 +1616,24 @@ export default function SettingsPage() {
                 type="button"
                 className="kitchen-button secondary"
                 onClick={() => setConvertModal({ open: true, memberId: memberModal.member.id, email: "", password: "" })}
+                disabled={!canAddMoreUsers}
               >
                 Convertir en usuario
               </button>
+              {!canAddMoreUsers ? <p className="kitchen-muted">{userLimitMessage}</p> : null}
             </div>
           ) : null}
         </div>
       </ModalSheet>
 
-      <ModalSheet open={dinerModal.open} title="Crear comensal" onClose={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })}>Cancelar</button><button type="button" className="kitchen-button" onClick={createDiner}>Guardar</button></>}>
+      <ModalSheet open={dinerModal.open} title="Crear comensal" onClose={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: false, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })}>Cancelar</button><button type="button" className="kitchen-button" onClick={createDiner} disabled={!canAddMoreNonUserDiners}>Guardar</button></>}>
         <div className="kitchen-actions">
+          {!canAddMoreNonUserDiners ? (
+            <div className="settings-budget-locked-card">
+              <p className="kitchen-muted">{nonUserDinerLimitMessage}</p>
+              <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Upgrade your license</button>
+            </div>
+          ) : null}
           <label className="kitchen-field"><span className="kitchen-label">Nombre</span><input className="kitchen-input" value={dinerModal.form.displayName} onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, displayName: event.target.value } }))} /></label>
           <label className="kitchen-field"><span className="kitchen-label">Iniciales</span><input className="kitchen-input" maxLength={3} value={dinerModal.form.initials} onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, initials: event.target.value.toUpperCase() } }))} /></label>
           <div className="settings-color-grid">{palette.map((color) => <button key={color.id} type="button" className={`settings-color-swatch ${dinerModal.form.colorId === color.id ? "is-selected" : ""}`} style={{ background: color.background, color: color.text }} onClick={() => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, colorId: color.id } }))}>{color.label}</button>)}</div>
@@ -1662,9 +1741,15 @@ export default function SettingsPage() {
         open={convertModal.open}
         title="Convertir en usuario"
         onClose={() => setConvertModal({ open: false, memberId: "", email: "", password: "" })}
-        actions={<><button type="button" className="kitchen-button secondary" onClick={() => setConvertModal({ open: false, memberId: "", email: "", password: "" })}>Cancelar</button><button type="button" className="kitchen-button" onClick={convertPlaceholder} disabled={!convertFormIsValid}>Confirmar</button></>}
+        actions={<><button type="button" className="kitchen-button secondary" onClick={() => setConvertModal({ open: false, memberId: "", email: "", password: "" })}>Cancelar</button><button type="button" className="kitchen-button" onClick={convertPlaceholder} disabled={!convertFormIsValid || !canAddMoreUsers}>Confirmar</button></>}
       >
         <div className="kitchen-actions">
+          {!canAddMoreUsers ? (
+            <div className="settings-budget-locked-card">
+              <p className="kitchen-muted">{userLimitMessage}</p>
+              <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Upgrade your license</button>
+            </div>
+          ) : null}
           <label className="kitchen-field"><span className="kitchen-label">Email</span><input className="kitchen-input" type="email" value={convertModal.email} onChange={(event) => setConvertModal((prev) => ({ ...prev, email: event.target.value }))} /></label>
           <label className="kitchen-field"><span className="kitchen-label">Contrasena</span><input className="kitchen-input" type="password" value={convertModal.password} onChange={(event) => setConvertModal((prev) => ({ ...prev, password: event.target.value }))} /></label>
         </div>

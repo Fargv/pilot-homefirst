@@ -12,6 +12,7 @@ import { ensureWeekPlan } from "../weekPlanService.js";
 import { sendEmail } from "../../services/emailService.js";
 import { config } from "../../config.js";
 import { findActiveInvitationByToken } from "../invitationService.js";
+import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
 
 const DIOD_EMAIL = "admin@admin.com";
 
@@ -167,6 +168,7 @@ router.get("/invite/:token", async (req, res) => {
       recipientEmail: invitation.recipientEmail || ""
     });
   } catch (error) {
+    if (sendHouseholdLicenseError(res, error)) return;
     return res.status(500).json({ ok: false, error: "No se pudo validar la invitación." });
   }
 });
@@ -270,6 +272,7 @@ router.post("/register", async (req, res) => {
       if (!household) {
         return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
       }
+      await assertCanAddUserToHousehold(household);
       role = "member";
     }
 
@@ -322,6 +325,7 @@ router.post("/register", async (req, res) => {
       }
     });
   } catch (error) {
+    if (sendHouseholdLicenseError(res, error)) return;
     if (error?.code === 11000) {
       return res.status(409).json({ ok: false, error: "No se pudo completar el registro. Intenta nuevamente." });
     }
@@ -358,6 +362,13 @@ router.post("/accept-invite", async (req, res) => {
       });
     }
 
+    const household = await Household.findById(invitation.householdId)
+      .select("_id subscriptionPlan")
+      .lean();
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar asociado a esta invitaciÃ³n." });
+    }
+
     let user = await KitchenUser.findOne({ email: normalizedEmail });
 
     if (user) {
@@ -369,10 +380,14 @@ router.post("/accept-invite", async (req, res) => {
       }
 
       if (!user.householdId) {
+        await assertCanAddUserToHousehold(household);
         user.householdId = invitation.householdId;
       }
 
       if (!user.passwordHash || user.isPlaceholder || user.type === "placeholder" || user.hasLogin === false) {
+        if (user.isPlaceholder || user.type === "placeholder" || user.hasLogin === false) {
+          await assertCanAddUserToHousehold(household);
+        }
         if (!displayName || !String(displayName).trim()) {
           return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para activar la cuenta." });
         }
@@ -410,6 +425,7 @@ router.post("/accept-invite", async (req, res) => {
       user.role = invitation.role || "member";
       await user.save();
     } else {
+      await assertCanAddUserToHousehold(household);
       if (!displayName || !String(displayName).trim()) {
         return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio para crear la cuenta." });
       }
@@ -440,6 +456,7 @@ router.post("/accept-invite", async (req, res) => {
     const jwt = createToken(user);
     return res.json({ ok: true, token: jwt, user: user.toSafeJSON() });
   } catch (error) {
+    if (sendHouseholdLicenseError(res, error)) return;
     return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitación." });
   }
 });

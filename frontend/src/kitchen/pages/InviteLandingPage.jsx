@@ -4,6 +4,7 @@ import { apiRequest } from "../api.js";
 import { buildReturnTo, storePostAuthRedirect } from "../authRedirect.js";
 import { isUserAuthenticated, useAuth } from "../auth.jsx";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
+import { isUserLimitReachedError } from "../subscription.js";
 
 export default function InviteLandingPage() {
   const { token } = useParams();
@@ -99,6 +100,10 @@ export default function InviteLandingPage() {
       await refreshUser();
       setInviteStatus(data?.status || "joined");
     } catch (err) {
+      if (isUserLimitReachedError(err)) {
+        setError("You have reached the user limit for your current license.");
+        return;
+      }
       setError(err.message || "No se pudo aceptar la invitacion.");
     } finally {
       setSubmitting(false);

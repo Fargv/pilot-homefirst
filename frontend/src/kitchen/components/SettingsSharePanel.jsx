@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../api.js";
 import { buildInviteShareUrl } from "../deepLinks.js";
 import ShareWhatsAppButton from "./ShareWhatsAppButton.jsx";
+import { isUserLimitReachedError } from "../subscription.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -17,6 +18,8 @@ export default function SettingsSharePanel({
   user,
   householdName,
   initialHouseholdCode,
+  canAddUsers = true,
+  userLimitMessage = "",
   onBack
 }) {
   const [emails, setEmails] = useState([]);
@@ -41,7 +44,7 @@ export default function SettingsSharePanel({
     [households, selectedHouseholdId]
   );
   const shareHouseholdName = isDiod ? selectedHousehold?.name || "household" : (householdName || "household");
-  const canSend = emails.length > 0 && (!isDiod || Boolean(selectedHouseholdId)) && !sending;
+  const canSend = emails.length > 0 && (!isDiod || Boolean(selectedHouseholdId)) && !sending && canAddUsers;
 
   const addEmails = (rawValue) => {
     const candidates = parseEmails(rawValue);
@@ -201,6 +204,10 @@ export default function SettingsSharePanel({
       setSubmitError("Selecciona primero el household al que quieres invitar.");
       return;
     }
+    if (!canAddUsers) {
+      setSubmitError(userLimitMessage || "You have reached the user limit for your current license.");
+      return;
+    }
     setSubmitError("");
     try {
       const data = await apiRequest("/api/kitchen/household/invitations", {
@@ -217,6 +224,10 @@ export default function SettingsSharePanel({
       });
       await loadShareContext(shareHouseholdId);
     } catch (error) {
+      if (isUserLimitReachedError(error)) {
+        setSubmitError(userLimitMessage || "You have reached the user limit for your current license.");
+        return;
+      }
       setSubmitError(error.message || "No se pudo preparar la invitacion para compartir.");
     }
   };
@@ -248,6 +259,10 @@ export default function SettingsSharePanel({
       setHouseholdCode(data?.household?.inviteCode || householdCode);
       await loadShareContext(shareHouseholdId);
     } catch (error) {
+      if (isUserLimitReachedError(error)) {
+        setSubmitError(userLimitMessage || "You have reached the user limit for your current license.");
+        return;
+      }
       setSubmitError(error.message || "No se pudieron enviar las invitaciones.");
     } finally {
       setSending(false);
@@ -271,7 +286,7 @@ export default function SettingsSharePanel({
           </p>
         </div>
         <div className="settings-share-hero-actions">
-          <button type="button" className="kitchen-button secondary" onClick={() => void prepareInviteShare()}>
+          <button type="button" className="kitchen-button secondary" onClick={() => void prepareInviteShare()} disabled={!canAddUsers}>
             Preparar link
           </button>
           <ShareWhatsAppButton
@@ -284,6 +299,12 @@ export default function SettingsSharePanel({
       </div>
 
       <div className="settings-block">
+        {!canAddUsers ? (
+          <div className="settings-budget-locked-card">
+            <p className="kitchen-muted">{userLimitMessage || "You have reached the user limit for your current license."}</p>
+            <button type="button" className="kitchen-button secondary" onClick={() => window.location.assign("/kitchen/upgrade")}>Upgrade your license</button>
+          </div>
+        ) : null}
         {isDiod ? (
           <label className="kitchen-field">
             <span className="kitchen-label">Household de destino</span>
@@ -321,12 +342,13 @@ export default function SettingsSharePanel({
                 className="settings-email-input"
                 type="email"
                 value={inputValue}
+                disabled={!canAddUsers}
                 onChange={(event) => setInputValue(event.target.value)}
                 onKeyDown={onInputKeyDown}
                 placeholder="ana@email.com, luis@email.com"
               />
             </div>
-            <button type="button" className="kitchen-button secondary" onClick={() => addEmails(inputValue)}>
+            <button type="button" className="kitchen-button secondary" onClick={() => addEmails(inputValue)} disabled={!canAddUsers}>
               Añadir
             </button>
           </div>

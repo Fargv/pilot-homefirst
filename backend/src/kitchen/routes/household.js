@@ -27,6 +27,13 @@ import {
   buildHouseholdSubscriptionResponse,
   canUseBudgetFeature
 } from "../subscriptionService.js";
+import {
+  assertCanAddNonUserDinerToHousehold,
+  assertCanAddUserToHousehold,
+  buildHouseholdLicenseSummary,
+  countHouseholdLicenseUsage,
+  sendHouseholdLicenseError
+} from "../householdLicenseService.js";
 
 const router = express.Router();
 
@@ -85,7 +92,7 @@ function parseCycleStartDayInput(value) {
   return { ok: true, value: parsed };
 }
 
-function buildHouseholdResponse(household) {
+function buildHouseholdResponse(household, license = null) {
   const budgetFeatureEnabled = canUseBudgetFeature(household?.subscriptionPlan);
   return {
     id: household._id,
@@ -100,7 +107,8 @@ function buildHouseholdResponse(household) {
       : null,
     cycleStartDay: budgetFeatureEnabled ? normalizeCycleStartDay(household.cycleStartDay) : null,
     ...buildHouseholdSubscriptionResponse(household),
-    featureAvailability: buildHouseholdFeatureAvailability(household)
+    featureAvailability: buildHouseholdFeatureAvailability(household),
+    license: license || buildHouseholdLicenseSummary(household)
   };
 }
 
@@ -138,7 +146,7 @@ async function resolveShareHousehold(req, requestedHouseholdId) {
       return { error: { status: 400, message: "El household seleccionado no es válido." } };
     }
     const household = await Household.findById(householdId)
-      .select("_id name inviteCode ownerUserId")
+      .select("_id name inviteCode ownerUserId subscriptionPlan")
       .lean();
     if (!household) {
       console.warn("[kitchen/household] share household not found", {
@@ -169,7 +177,7 @@ async function resolveShareHousehold(req, requestedHouseholdId) {
   }
 
   const household = await Household.findById(effectiveHouseholdId)
-    .select("_id name inviteCode ownerUserId")
+    .select("_id name inviteCode ownerUserId subscriptionPlan")
     .lean();
   if (!household) {
     console.warn("[kitchen/household] share household not found", {
@@ -224,7 +232,11 @@ router.get("/summary", requireAuth, async (req, res) => {
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-    return res.json({ ok: true, household: buildHouseholdResponse(household) });
+    const license = buildHouseholdLicenseSummary(
+      household,
+      await countHouseholdLicenseUsage(household._id)
+    );
+    return res.json({ ok: true, household: buildHouseholdResponse(household, license) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
@@ -377,6 +389,7 @@ router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) 
     if (error) {
       return res.status(error.status).json({ ok: false, error: error.message });
     }
+    await assertCanAddUserToHousehold(household);
 
     const { rawToken, inviteLink, invitation } = await createHouseholdInvitation({
       householdId: household._id,
@@ -390,6 +403,7 @@ router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) 
       expiresAt: invitation.expiresAt
     });
   } catch (error) {
+    if (sendHouseholdLicenseError(res, error)) return;
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo crear la invitación." });
@@ -526,6 +540,14 @@ router.post("/invitations/:token/accept", requireAuth, async (req, res) => {
       });
     }
 
+    const targetHousehold = await Household.findById(invitation.householdId)
+      .select("_id subscriptionPlan")
+      .lean();
+    if (!targetHousehold) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar asociado a esta invitacion." });
+    }
+    await assertCanAddUserToHousehold(targetHousehold);
+
     req.kitchenUser.householdId = invitation.householdId;
     req.kitchenUser.role = invitation.role || "member";
     await req.kitchenUser.save();
@@ -541,6 +563,7 @@ router.post("/invitations/:token/accept", requireAuth, async (req, res) => {
       user: req.kitchenUser.toSafeJSON()
     });
   } catch (error) {
+    if (sendHouseholdLicenseError(res, error)) return;
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo aceptar la invitacion." });
@@ -559,6 +582,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
     if (error) {
       return res.status(error.status).json({ ok: false, error: error.message });
     }
+    await assertCanAddUserToHousehold(household);
 
     const { emails, invalidEmails } = normalizeInvitationEmails(req.body?.emails);
     if (!emails.length) {
@@ -651,6 +675,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
       failedCount
     });
   } catch (error) {
+    if (sendHouseholdLicenseError(res, error)) return;
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     console.error("[kitchen/household] send invitation emails failed", {
@@ -672,10 +697,13 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
     }
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const householdExists = await Household.exists({ _id: effectiveHouseholdId });
-    if (!householdExists) {
+    const household = await Household.findById(effectiveHouseholdId)
+      .select("_id subscriptionPlan")
+      .lean();
+    if (!household) {
       return res.status(404).json({ ok: false, error: "El household activo no existe." });
     }
+    await assertCanAddNonUserDinerToHousehold(household);
 
     const suffix = crypto.randomBytes(6).toString("hex");
     const placeholder = await KitchenUser.create({
@@ -699,6 +727,7 @@ router.post("/placeholders", requireAuth, requireRole("owner"), async (req, res)
 
     return res.status(201).json({ ok: true, user: placeholder.toSafeJSON() });
   } catch (error) {
+    if (sendHouseholdLicenseError(res, error)) return;
     console.error("[kitchen/household] create placeholder failed", {
       user: {
         id: req.user?.id || null,
@@ -744,6 +773,13 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
     }
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const household = await Household.findById(effectiveHouseholdId)
+      .select("_id subscriptionPlan")
+      .lean();
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "El household activo no existe." });
+    }
+    await assertCanAddUserToHousehold(household);
     const placeholder = await KitchenUser.findOne(
       buildScopedFilter(effectiveHouseholdId, { _id: req.params.id, isPlaceholder: true })
     );
@@ -777,6 +813,7 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
 
     return res.json({ ok: true, user: placeholder.toSafeJSON() });
   } catch (error) {
+    if (sendHouseholdLicenseError(res, error)) return;
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     if (error?.name === "ValidationError" || error?.name === "CastError") {

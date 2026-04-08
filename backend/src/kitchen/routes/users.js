@@ -23,6 +23,7 @@ import {
   normalizeColorId
 } from "../../users/utils.js";
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
+import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
 
 const router = express.Router();
 
@@ -196,6 +197,13 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
     }
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const household = await Household.findById(effectiveHouseholdId)
+      .select("_id subscriptionPlan")
+      .lean();
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
+    await assertCanAddUserToHousehold(household);
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await KitchenUser.create({
       username: normalizedEmail,
@@ -218,6 +226,7 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
 
     return res.status(201).json({ ok: true, user: user.toSafeJSON() });
   } catch (error) {
+    if (sendHouseholdLicenseError(res, error)) return;
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo crear el usuario." });

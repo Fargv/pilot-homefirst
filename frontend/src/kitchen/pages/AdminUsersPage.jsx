@@ -4,6 +4,7 @@ import KitchenLayout from "../Layout.jsx";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
 import Input from "../components/ui/Input.jsx";
+import { buildLicenseState, countLicenseUsage, isUserLimitReachedError, isUnlimitedLicenseLimit } from "../subscription.js";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -21,13 +22,18 @@ export default function AdminUsersPage() {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
 
   const loadUsers = async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await apiRequest("/api/users");
+      const [data, householdData] = await Promise.all([
+        apiRequest("/api/users"),
+        apiRequest("/api/kitchen/household/summary")
+      ]);
       setUsers(data.users || []);
+      setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
     } catch (err) {
       setError(err.message || "No se pudieron cargar los usuarios.");
     } finally {
@@ -48,6 +54,10 @@ export default function AdminUsersPage() {
       return name.includes(needle) || email.includes(needle);
     });
   }, [users, query]);
+  const licenseState = useMemo(
+    () => buildLicenseState(subscriptionPlan, countLicenseUsage(users)),
+    [subscriptionPlan, users]
+  );
 
   const resetForm = () => {
     setForm({
@@ -78,6 +88,10 @@ export default function AdminUsersPage() {
     }
 
     try {
+      if (!licenseState.capabilities.canAddUser) {
+        setError("You have reached the user limit for your current license.");
+        return;
+      }
       await apiRequest("/api/users", {
         method: "POST",
         body: JSON.stringify({
@@ -93,6 +107,10 @@ export default function AdminUsersPage() {
       setFormOpen(false);
       await loadUsers();
     } catch (err) {
+      if (isUserLimitReachedError(err)) {
+        setError("You have reached the user limit for your current license.");
+        return;
+      }
       setError(err.message || "No se pudo crear el usuario.");
     }
   };
@@ -102,6 +120,9 @@ export default function AdminUsersPage() {
       <Card className="kitchen-block-gap">
         <h2 className="kitchen-title-no-margin">Gestión de usuarios</h2>
         <p className="kitchen-muted">Crea y administra los accesos del equipo.</p>
+        <p className="kitchen-muted">
+          Users: {licenseState.usage.users} / {isUnlimitedLicenseLimit(licenseState.limits.maxUsers) ? "Unlimited" : licenseState.limits.maxUsers}
+        </p>
         <div className="kitchen-toolbar">
           <Input
             id="search-users"
@@ -110,12 +131,15 @@ export default function AdminUsersPage() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <Button onClick={() => setFormOpen((open) => !open)}>
+          <Button onClick={() => setFormOpen((open) => !open)} disabled={!licenseState.capabilities.canAddUser}>
             {formOpen ? "Cerrar formulario" : "Crear usuario"}
           </Button>
         </div>
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}
+        {!licenseState.capabilities.canAddUser ? (
+          <div className="kitchen-alert error">You have reached the user limit for your current license.</div>
+        ) : null}
       </Card>
 
       {formOpen ? (
@@ -165,7 +189,7 @@ export default function AdminUsersPage() {
               </select>
             </label>
             <div className="kitchen-actions">
-              <Button type="submit">Crear usuario</Button>
+              <Button type="submit" disabled={!licenseState.capabilities.canAddUser}>Crear usuario</Button>
               <Button
                 variant="secondary"
                 type="button"

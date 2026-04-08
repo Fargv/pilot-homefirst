@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { apiRequest } from "../api.js";
+import { getPlanLimits, isUnlimitedLicenseLimit } from "../subscription.js";
 
 const PLANS = [
   {
@@ -48,6 +49,7 @@ export default function UpgradeToProPage() {
   const [success, setSuccess] = useState("");
   const [requestedPlan, setRequestedPlan] = useState("");
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
+  const [householdLicense, setHouseholdLicense] = useState(null);
 
   const selectedPlan = useMemo(
     () => PLANS.find((plan) => plan.id === requestedPlan) || null,
@@ -64,6 +66,7 @@ export default function UpgradeToProPage() {
         if (!active) return;
         setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
         setRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
+        setHouseholdLicense(data?.household?.license || null);
       } catch (loadError) {
         if (!active) return;
         setError(loadError.message || "No se pudo cargar la suscripción actual.");
@@ -109,6 +112,13 @@ export default function UpgradeToProPage() {
             <p className="kitchen-muted">
               Elige un plan para tu hogar. Durante la beta no hay pagos integrados y la activación la realiza un administrador manualmente.
             </p>
+            {householdLicense ? (
+              <span className="kitchen-muted">
+                Users: {householdLicense?.usage?.users || 0} / {isUnlimitedLicenseLimit(householdLicense?.limits?.maxUsers) ? "Unlimited" : householdLicense?.limits?.maxUsers}
+                {" · "}
+                Non-user diners: {householdLicense?.usage?.nonUserDiners || 0} / {isUnlimitedLicenseLimit(householdLicense?.limits?.maxNonUserDiners) ? "Unlimited" : householdLicense?.limits?.maxNonUserDiners}
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -120,6 +130,7 @@ export default function UpgradeToProPage() {
           {PLANS.map((plan) => {
             const isLoading = loadingPlanId === plan.id;
             const isRequested = requestedPlan === plan.id;
+            const limits = getPlanLimits(plan.id);
             return (
               <article
                 key={plan.id}
@@ -133,6 +144,8 @@ export default function UpgradeToProPage() {
                 <p className="upgrade-plan-tagline">{plan.tagline}</p>
                 <ul className="kitchen-list">
                   {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
+                  <li>{isUnlimitedLicenseLimit(limits.maxUsers) ? "Unlimited users" : `Up to ${limits.maxUsers} users`}</li>
+                  <li>{isUnlimitedLicenseLimit(limits.maxNonUserDiners) ? "Unlimited non-user diners" : `Up to ${limits.maxNonUserDiners} non-user diners`}</li>
                 </ul>
                 <button
                   type="button"
