@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useSearchParams } from "react-router-dom";
+import { UNSAFE_NavigationContext as NavigationContext, useLocation, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
@@ -174,9 +174,28 @@ function getPendingItemsCount(groups) {
   return groups.reduce((acc, group) => acc + (group.items?.length || 0), 0);
 }
 
+function isShoppingRoutePath(pathname = "") {
+  return String(pathname || "").startsWith("/kitchen/compra");
+}
+
+function resolvePathnameFromTo(to, currentPathname = "") {
+  if (typeof to === "string") {
+    if (!to) return currentPathname;
+    if (to.startsWith("?") || to.startsWith("#")) return currentPathname;
+    const [pathPart] = to.split(/[?#]/);
+    return pathPart || currentPathname;
+  }
+  if (to && typeof to === "object") {
+    return to.pathname || currentPathname;
+  }
+  return currentPathname;
+}
+
 export default function ShoppingPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigationContext = React.useContext(NavigationContext);
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [tab, setTab] = useState("pending");
   const [error, setError] = useState("");
@@ -192,7 +211,7 @@ export default function ShoppingPage() {
   const [currentPurchaseSession, setCurrentPurchaseSession] = useState(null);
   const [transitioningItemKey, setTransitioningItemKey] = useState(null);
   const [recentlyMovedItemKey, setRecentlyMovedItemKey] = useState(null);
-  const [pendingPurchasesOpen, setPendingPurchasesOpen] = useState(false);
+  const [leavePromptOpen, setLeavePromptOpen] = useState(false);
   const [purchaseConfirmOpen, setPurchaseConfirmOpen] = useState(false);
   const [purchaseConfirmBusy, setPurchaseConfirmBusy] = useState(false);
   const [purchaseConfirmTarget, setPurchaseConfirmTarget] = useState(null);
@@ -212,9 +231,11 @@ export default function ShoppingPage() {
   const quickInputRef = useRef(null);
   const quickCategoryFieldRef = useRef(null);
   const quickCategoryMenuRef = useRef(null);
-  const dismissedPromptSessionsRef = useRef(new Set());
+  const pendingNavigationRef = useRef(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
+  const openPurchaseSession = currentPurchaseSession || pendingPurchaseSessions[0] || null;
+  const hasOpenPurchase = Boolean(openPurchaseSession?.id && Number(openPurchaseSession?.itemCount || 0) > 0);
   const selectedQuickCategory = useMemo(
     () => quickCategories.find((category) => category._id === quickCategoryId) || null,
     [quickCategories, quickCategoryId]
@@ -238,6 +259,12 @@ export default function ShoppingPage() {
       spent: Number(data?.budget?.spent) || 0,
       available: Number.isFinite(Number(data?.budget?.available)) ? Number(data.budget.available) : 0
     };
+    const normalizedPendingPurchaseSessions = Array.isArray(data?.pendingPurchaseSessions)
+      ? data.pendingPurchaseSessions.map((session) => ({
+          ...session,
+          itemCount: Number(session?.itemCount) || 0
+        }))
+      : [];
     const nextCurrentPurchaseSession = data?.currentPurchaseSession && typeof data.currentPurchaseSession === "object"
       ? {
           ...data.currentPurchaseSession,
@@ -249,7 +276,7 @@ export default function ShoppingPage() {
     setBudget(nextBudget);
     setPendingByCategory(Array.isArray(data?.pendingByCategory) ? data.pendingByCategory : []);
     setPurchasedByStoreDay(Array.isArray(data?.purchasedByStoreDay) ? data.purchasedByStoreDay : []);
-    setPendingPurchaseSessions(Array.isArray(data?.pendingPurchaseSessions) ? data.pendingPurchaseSessions : []);
+    setPendingPurchaseSessions(normalizedPendingPurchaseSessions);
     setCurrentPurchaseSession(nextCurrentPurchaseSession);
   };
 
@@ -303,19 +330,7 @@ export default function ShoppingPage() {
   }, [recentlyMovedItemKey]);
 
   useEffect(() => {
-    if (!currentPurchaseSession?.id || purchaseConfirmOpen) return;
-    const pendingItemsCount = getPendingItemsCount(pendingByCategory);
-    const shouldAutoPrompt = Number(currentPurchaseSession.itemCount || 0) >= 3 || (pendingItemsCount === 0 && Number(currentPurchaseSession.itemCount || 0) > 0);
-    if (!shouldAutoPrompt) return;
-    if (dismissedPromptSessionsRef.current.has(currentPurchaseSession.id)) return;
-    setPurchaseConfirmTarget(currentPurchaseSession);
-    setPurchaseConfirmStoreId(currentPurchaseSession.storeId || selectedStoreRef.current || "");
-    setPurchaseConfirmAmount(currentPurchaseSession.amount ? String(currentPurchaseSession.amount) : "");
-    setPurchaseConfirmOpen(true);
-  }, [currentPurchaseSession, pendingByCategory, purchaseConfirmOpen]);
-
-  useEffect(() => {
-    const shouldWarnBeforeUnload = Boolean(currentPurchaseSession?.id && Number(currentPurchaseSession?.itemCount || 0) > 0);
+    const shouldWarnBeforeUnload = hasOpenPurchase;
     if (!shouldWarnBeforeUnload) return undefined;
     const handleBeforeUnload = (event) => {
       event.preventDefault();
@@ -323,7 +338,54 @@ export default function ShoppingPage() {
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [currentPurchaseSession]);
+  }, [hasOpenPurchase]);
+
+  useEffect(() => {
+    const navigator = navigationContext?.navigator;
+    if (!navigator || !hasOpenPurchase || !isShoppingRoutePath(location.pathname)) return undefined;
+
+    const originalPush = navigator.push?.bind(navigator);
+    const originalReplace = navigator.replace?.bind(navigator);
+    const originalGo = navigator.go?.bind(navigator);
+
+    const shouldInterceptPath = (nextPathname) => !isShoppingRoutePath(nextPathname);
+
+    if (originalPush) {
+      navigator.push = (to, state, options) => {
+        const nextPathname = resolvePathnameFromTo(to, location.pathname);
+        if (!shouldInterceptPath(nextPathname)) {
+          return originalPush(to, state, options);
+        }
+        pendingNavigationRef.current = () => originalPush(to, state, options);
+        setLeavePromptOpen(true);
+      };
+    }
+
+    if (originalReplace) {
+      navigator.replace = (to, state, options) => {
+        const nextPathname = resolvePathnameFromTo(to, location.pathname);
+        if (!shouldInterceptPath(nextPathname)) {
+          return originalReplace(to, state, options);
+        }
+        pendingNavigationRef.current = () => originalReplace(to, state, options);
+        setLeavePromptOpen(true);
+      };
+    }
+
+    if (originalGo) {
+      navigator.go = (delta) => {
+        if (!delta) return originalGo(delta);
+        pendingNavigationRef.current = () => originalGo(delta);
+        setLeavePromptOpen(true);
+      };
+    }
+
+    return () => {
+      if (originalPush) navigator.push = originalPush;
+      if (originalReplace) navigator.replace = originalReplace;
+      if (originalGo) navigator.go = originalGo;
+    };
+  }, [hasOpenPurchase, location.pathname, navigationContext]);
 
   useEffect(() => {
     let active = true;
@@ -448,6 +510,33 @@ export default function ShoppingPage() {
     setPurchaseConfirmStoreId(session.storeId || selectedStoreRef.current || "");
     setPurchaseConfirmAmount(session.amount ? String(session.amount) : "");
     setPurchaseConfirmOpen(true);
+  };
+
+  const proceedPendingNavigation = () => {
+    const pendingNavigation = pendingNavigationRef.current;
+    pendingNavigationRef.current = null;
+    if (typeof pendingNavigation === "function") {
+      pendingNavigation();
+    }
+  };
+
+  const closeLeavePrompt = () => {
+    setLeavePromptOpen(false);
+    pendingNavigationRef.current = null;
+  };
+
+  const confirmPurchaseBeforeLeaving = () => {
+    if (!openPurchaseSession?.id) {
+      proceedPendingNavigation();
+      return;
+    }
+    setLeavePromptOpen(false);
+    openPurchaseConfirmModal(openPurchaseSession);
+  };
+
+  const leavePurchasePending = () => {
+    setLeavePromptOpen(false);
+    proceedPendingNavigation();
   };
 
   const closePurchaseConfirmModal = () => {
@@ -649,12 +738,14 @@ export default function ShoppingPage() {
       await apiRequest(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/postpone`, {
         method: "POST"
       });
-      dismissedPromptSessionsRef.current.add(purchaseConfirmTarget.id);
       await loadList({ silent: true });
       setPurchaseConfirmOpen(false);
       setPurchaseConfirmTarget(null);
       setPurchaseConfirmStoreId("");
       setPurchaseConfirmAmount("");
+      if (pendingNavigationRef.current) {
+        proceedPendingNavigation();
+      }
     } catch (err) {
       setError(err.message || "No se pudo posponer la confirmación.");
     } finally {
@@ -674,13 +765,14 @@ export default function ShoppingPage() {
           amount: purchaseConfirmAmount
         })
       });
-      dismissedPromptSessionsRef.current.delete(purchaseConfirmTarget.id);
       await loadList({ silent: true });
-      setPendingPurchasesOpen(false);
       setPurchaseConfirmOpen(false);
       setPurchaseConfirmTarget(null);
       setPurchaseConfirmStoreId("");
       setPurchaseConfirmAmount("");
+      if (pendingNavigationRef.current) {
+        proceedPendingNavigation();
+      }
       setSuccess("Compra registrada.");
     } catch (err) {
       setError(err.message || "No se pudo guardar la compra.");
@@ -766,15 +858,14 @@ export default function ShoppingPage() {
                   <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
                   <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
                 </div>
-                {pendingPurchaseSessions.length ? (
-                  <button
-                    type="button"
-                    className="kitchen-button secondary shopping-pending-purchases-button"
-                    onClick={() => setPendingPurchasesOpen(true)}
-                  >
-                    Compras pendientes ({pendingPurchaseSessions.length})
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  className="kitchen-button secondary shopping-pending-purchases-button"
+                  onClick={() => openPurchaseConfirmModal(openPurchaseSession)}
+                  disabled={!hasOpenPurchase}
+                >
+                  Confirmar compra
+                </button>
                 <ShareWhatsAppButton
                   iconOnly
                   size={22}
@@ -959,30 +1050,30 @@ export default function ShoppingPage() {
         </div>
       </div>
       <ModalSheet
-        open={pendingPurchasesOpen}
-        title="Compras pendientes"
-        onClose={() => setPendingPurchasesOpen(false)}
+        open={leavePromptOpen}
+        title="Compra pendiente"
+        onClose={closeLeavePrompt}
         actions={(
-          <button type="button" className="kitchen-button secondary" onClick={() => setPendingPurchasesOpen(false)}>
-            Cerrar
-          </button>
+          <>
+            <button type="button" className="kitchen-button secondary" onClick={closeLeavePrompt}>
+              Cancelar
+            </button>
+            <button type="button" className="kitchen-button secondary" onClick={leavePurchasePending}>
+              Dejar pendiente
+            </button>
+            <button type="button" className="kitchen-button" onClick={confirmPurchaseBeforeLeaving}>
+              Confirmar
+            </button>
+          </>
         )}
       >
-        <div className="shopping-pending-sessions-list">
-          {pendingPurchaseSessions.length ? pendingPurchaseSessions.map((session) => (
-            <button
-              key={session.id}
-              type="button"
-              className="shopping-pending-session-card"
-              onClick={() => openPurchaseConfirmModal(session)}
-            >
-              <strong>{session.storeName || "Compra pendiente"}</strong>
-              <span>{session.itemCount} productos</span>
-              <span>Semana {formatWeekTitle(session.weekStart)}</span>
-            </button>
-          )) : (
-            <p className="kitchen-muted">No hay compras pendientes.</p>
-          )}
+        <div className="shopping-confirm-sheet">
+          <p className="kitchen-muted">
+            ¿Quieres confirmar esta compra ahora?
+          </p>
+          <p className="kitchen-muted">
+            Si sales ahora, la compra quedará pendiente y los productos seguirán como comprados.
+          </p>
         </div>
       </ModalSheet>
       <ModalSheet
