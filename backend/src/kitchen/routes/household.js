@@ -22,6 +22,7 @@ import {
   findInvitationByToken,
   getInvitationStatus
 } from "../invitationService.js";
+import { buildHouseholdSubscriptionResponse } from "../subscriptionService.js";
 
 const router = express.Router();
 
@@ -90,7 +91,8 @@ function buildHouseholdResponse(household) {
     avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
     avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks),
     monthlyBudget: Number.isFinite(Number(household.monthlyBudget)) ? Number(household.monthlyBudget) : null,
-    cycleStartDay: normalizeCycleStartDay(household.cycleStartDay)
+    cycleStartDay: normalizeCycleStartDay(household.cycleStartDay),
+    ...buildHouseholdSubscriptionResponse(household)
   };
 }
 
@@ -209,7 +211,7 @@ router.get("/summary", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay")
+      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin")
       .lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });

@@ -1358,13 +1358,13 @@ export default function SettingsPage() {
             {canManageDeleted ? <CardButton title="Eliminados" subtitle="Recupera platos, guarniciones e ingredientes." onClick={() => setPanel("eliminados")} /> : null}
             <div className="settings-upgrade-card">
               <h3>Upgrade to Pro</h3>
-              <p className="kitchen-muted">Funciones premium proximamente:</p>
+              <p className="kitchen-muted">Solicita un plan para tu hogar y deja la activación lista para la beta.</p>
               <ul className="kitchen-list">
-                <li>Sugerencias automaticas</li>
-                <li>Estadisticas de cocina</li>
-                <li>Planificacion inteligente</li>
+                <li>Basic desde €1.99/mes</li>
+                <li>Pro recomendado para hogares activos</li>
+                <li>Premium preparado para futuras integraciones</li>
               </ul>
-              <button type="button" className="kitchen-button secondary" disabled>Upgrade (coming soon)</button>
+              <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Ver planes</button>
             </div>
           </div>
         ) : null}

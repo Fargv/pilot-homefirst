@@ -13,6 +13,11 @@ import { KitchenSwap } from "../models/KitchenSwap.js";
 import { ShoppingTrip } from "../models/ShoppingTrip.js";
 import { Store } from "../models/Store.js";
 import { HiddenMaster } from "../models/HiddenMaster.js";
+import {
+  applyAdminSubscriptionActivation,
+  applyAdminSubscriptionDeactivation,
+  buildHouseholdSubscriptionResponse
+} from "../subscriptionService.js";
 
 const router = express.Router();
 
@@ -96,6 +101,77 @@ router.put("/households/:id/owner", requireAuth, requireDiod, async (req, res) =
     return res.json({ ok: true, household: { id: household._id, ownerUserId: household.ownerUserId } });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo asignar el owner." });
+  }
+});
+
+router.post("/subscription/activate", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const householdId = String(req.body?.householdId || "");
+    if (!mongoose.isValidObjectId(householdId)) {
+      return res.status(400).json({ ok: false, error: "El householdId no es válido." });
+    }
+
+    const household = await Household.findById(householdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
+
+    applyAdminSubscriptionActivation(household, req.body?.plan);
+    await household.save();
+
+    return res.json({
+      ok: true,
+      household: {
+        id: household._id,
+        name: household.name,
+        ...buildHouseholdSubscriptionResponse(household)
+      }
+    });
+  } catch (error) {
+    if (error?.code === "SUBSCRIPTION_PLAN_INVALID") {
+      return res.status(400).json({ ok: false, error: error.message });
+    }
+    console.error("[kitchen/admin] activate subscription failed", {
+      userId: req.user?.id || null,
+      body: req.body,
+      error: error?.message,
+      stack: error?.stack
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo activar la suscripción." });
+  }
+});
+
+router.post("/subscription/deactivate", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const householdId = String(req.body?.householdId || "");
+    if (!mongoose.isValidObjectId(householdId)) {
+      return res.status(400).json({ ok: false, error: "El householdId no es válido." });
+    }
+
+    const household = await Household.findById(householdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
+
+    applyAdminSubscriptionDeactivation(household);
+    await household.save();
+
+    return res.json({
+      ok: true,
+      household: {
+        id: household._id,
+        name: household.name,
+        ...buildHouseholdSubscriptionResponse(household)
+      }
+    });
+  } catch (error) {
+    console.error("[kitchen/admin] deactivate subscription failed", {
+      userId: req.user?.id || null,
+      body: req.body,
+      error: error?.message,
+      stack: error?.stack
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo desactivar la suscripción." });
   }
 });
 

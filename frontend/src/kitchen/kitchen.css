@@ -4728,6 +4728,120 @@ body {
   margin: 0;
 }
 
+.upgrade-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.upgrade-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid #dce6ff;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #f8fbff 0%, #fff7ed 52%, #fffdf8 100%);
+  box-shadow: 0 16px 36px rgba(67, 56, 202, 0.08);
+}
+
+.upgrade-hero-copy h1 {
+  margin: 4px 0 10px;
+  font-size: clamp(32px, 6vw, 44px);
+  line-height: 1.05;
+}
+
+.upgrade-eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(67, 56, 202, 0.12);
+  color: #3730a3;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.upgrade-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.upgrade-plan-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid #e4e7ec;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
+}
+
+.upgrade-plan-card.is-recommended {
+  border-color: #4338ca;
+  background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
+  box-shadow: 0 18px 36px rgba(67, 56, 202, 0.16);
+}
+
+.upgrade-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #4338ca;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.upgrade-plan-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upgrade-plan-head h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.upgrade-plan-head strong {
+  font-size: 28px;
+  color: #101828;
+}
+
+.upgrade-plan-tagline {
+  margin: 0;
+  color: var(--hf-muted);
+  min-height: 42px;
+}
+
+.upgrade-footnote {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid #d9defe;
+  border-radius: 20px;
+  background: #fbfcff;
+}
+
+@media (min-width: 768px) {
+  .upgrade-hero {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+}
+
 .settings-panel {
   display: flex;
   flex-direction: column;

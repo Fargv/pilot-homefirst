@@ -16,6 +16,7 @@ import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
 import ShoppingBudgetPage from "./kitchen/pages/ShoppingBudgetPage.jsx";
 import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
 import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
+import UpgradeToProPage from "./kitchen/pages/UpgradeToProPage.jsx";
 import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
 import DevEnvironmentBanner from "./components/DevEnvironmentBanner.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
@@ -140,6 +141,14 @@ export default function App() {
               element={(
                 <RequireAuth>
                   <SettingsPage />
+                </RequireAuth>
+              )}
+            />
+            <Route
+              path="/kitchen/upgrade"
+              element={(
+                <RequireAuth>
+                  <UpgradeToProPage />
                 </RequireAuth>
               )}
             />
