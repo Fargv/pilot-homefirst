@@ -1,12 +1,27 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { ClerkProvider } from "@clerk/react";
 import App from "./App.jsx";
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+const app = (
   <React.StrictMode>
-    <App />
+    {clerkPublishableKey ? (
+      <ClerkProvider publishableKey={clerkPublishableKey}>
+        {/*
+          TODO: Configure Clerk application URLs and allowed redirect origins in the
+          Clerk dashboard before enabling Clerk sign-in in production.
+        */}
+        <App />
+      </ClerkProvider>
+    ) : (
+      <App />
+    )}
   </React.StrictMode>
 );
+
+ReactDOM.createRoot(document.getElementById("root")).render(app);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

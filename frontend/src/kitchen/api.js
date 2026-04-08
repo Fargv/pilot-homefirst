@@ -1,5 +1,7 @@
 const API = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
+let clerkTokenGetter = null;
+
 export class ApiRequestError extends Error {
   constructor(message, details = {}) {
     super(message);
@@ -21,6 +23,10 @@ export function getToken() {
   return localStorage.getItem("kitchen_token") || sessionStorage.getItem("kitchen_token");
 }
 
+export function hasLegacyToken() {
+  return Boolean(getToken());
+}
+
 export function setToken(token) {
   if (token) {
     localStorage.setItem("kitchen_token", token);
@@ -31,14 +37,34 @@ export function setToken(token) {
   sessionStorage.removeItem("kitchen_token");
 }
 
+export function registerClerkTokenGetter(getter) {
+  clerkTokenGetter = typeof getter === "function" ? getter : null;
+}
+
+async function getAuthorizationHeader() {
+  const legacyToken = getToken();
+  if (legacyToken) return `Bearer ${legacyToken}`;
+
+  if (!clerkTokenGetter) return null;
+
+  try {
+    const clerkToken = await clerkTokenGetter();
+    return clerkToken ? `Bearer ${clerkToken}` : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function apiRequest(path, options = {}) {
-  const token = getToken();
   const headers = {
     "Content-Type": "application/json",
     ...(options.headers || {})
   };
 
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const authorizationHeader = await getAuthorizationHeader();
+  if (authorizationHeader && !headers.Authorization) {
+    headers.Authorization = authorizationHeader;
+  }
 
   const url = buildApiUrl(path);
   const response = await fetch(url, {

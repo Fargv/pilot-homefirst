@@ -18,6 +18,7 @@
     "migrate:purchaseSessions": "node scripts/migrate-purchase-sessions.js"
   },
   "dependencies": {
+    "@clerk/backend": "^3.2.8",
     "@getbrevo/brevo": "^4.0.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

@@ -18,6 +18,7 @@ const KitchenUserSchema = new mongoose.Schema(
     dinnerCanCook: { type: Boolean, default: true },
     claimedAt: { type: Date, default: null },
     passwordHash: { type: String, default: null },
+    clerkId: { type: String, trim: true, default: null },
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
     role: { type: String, enum: ["owner", "member", "admin", "user"], default: "member" },
@@ -32,6 +33,11 @@ const KitchenUserSchema = new mongoose.Schema(
 KitchenUserSchema.index(
   { email: 1 },
   { unique: true, partialFilterExpression: { email: { $exists: true } } }
+);
+
+KitchenUserSchema.index(
+  { clerkId: 1 },
+  { unique: true, partialFilterExpression: { clerkId: { $type: "string" } } }
 );
 
 KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
@@ -57,6 +63,7 @@ KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
     dinnerActive,
     dinnerCanCook,
     claimedAt: this.claimedAt ?? null,
+    clerkId: this.clerkId ?? null,
     role: this.role,
     householdId: this.householdId ?? null,
     createdByUserId: this.createdByUserId ?? null,
