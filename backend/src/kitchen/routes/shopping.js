@@ -14,7 +14,7 @@ import {
 import { ensureShoppingList, rebuildShoppingList, repairShoppingListItems } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
-import { calculateWeeklyBudget, getWeekDateRange } from "../utils/budget.js";
+import { calculateWeeklyBudget } from "../utils/budget.js";
 import {
   DEFAULT_CATEGORY_COLOR_BG,
   DEFAULT_CATEGORY_COLOR_TEXT,
@@ -134,11 +134,10 @@ async function buildBudgetSummary(weekStartDate, effectiveHouseholdId) {
     cycleStartDay
   });
 
-  const weekRange = getWeekDateRange(weekStartDate);
   const completedSessions = await PurchaseSession.find({
     householdId: effectiveHouseholdId,
     status: "completed",
-    completedAt: { $gte: weekRange.start, $lt: weekRange.end }
+    weekStart: weekStartDate
   })
     .select("amount")
     .lean();
@@ -180,15 +179,13 @@ async function buildWeeklyBudgetDetails(weekStartDate, effectiveHouseholdId) {
   );
   const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
   const budget = await buildBudgetSummary(weekStartDate, effectiveHouseholdId);
-  const weekRange = getWeekDateRange(weekStartDate);
-
   const completedSessions = await PurchaseSession.find({
     householdId: effectiveHouseholdId,
     status: "completed",
-    completedAt: { $gte: weekRange.start, $lt: weekRange.end }
+    weekStart: weekStartDate
   })
     .sort({ completedAt: -1, updatedAt: -1 })
-    .select("_id status itemIds storeId amount completedAt createdAt updatedAt")
+    .select("_id status itemIds storeId amount completedAt createdAt updatedAt weekStart")
     .lean();
 
   return {
@@ -288,7 +285,7 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
     }, new Map());
 
   const pendingPurchaseSessions = await getPendingPurchaseSessions(effectiveHouseholdId);
-  const latestOpenPurchaseSession = await getLatestOpenPurchaseSession(effectiveHouseholdId);
+  const latestOpenPurchaseSession = await getLatestOpenPurchaseSession(effectiveHouseholdId, weekStartDate);
   const budget = await buildBudgetSummary(weekStartDate, effectiveHouseholdId);
 
   return {

@@ -32,16 +32,32 @@ async function syncSessionStoreToShoppingItems(sessionId, householdId, storeId) 
   }));
 }
 
-export async function getLatestOpenPurchaseSession(householdId) {
+function normalizeWeekStartKey(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().slice(0, 10);
+}
+
+export async function getLatestOpenPurchaseSession(householdId, weekStart = null) {
   if (!householdId) return null;
-  return PurchaseSession.findOne({
+  const filter = {
     householdId,
     status: { $in: OPEN_PURCHASE_SESSION_STATUSES }
-  }).sort({ updatedAt: -1, createdAt: -1 });
+  };
+
+  const normalizedWeekStart = normalizeWeekStartKey(weekStart);
+  if (normalizedWeekStart) {
+    const start = new Date(`${normalizedWeekStart}T00:00:00.000Z`);
+    const end = new Date(start.getTime() + (24 * 60 * 60 * 1000));
+    filter.weekStart = { $gte: start, $lt: end };
+  }
+
+  return PurchaseSession.findOne(filter).sort({ updatedAt: -1, createdAt: -1 });
 }
 
 export async function ensureOpenPurchaseSession({ householdId, weekStart, userId, storeId = null }) {
-  let session = await getLatestOpenPurchaseSession(householdId);
+  let session = await getLatestOpenPurchaseSession(householdId, weekStart);
   if (!session) {
     session = await PurchaseSession.create({
       householdId,
