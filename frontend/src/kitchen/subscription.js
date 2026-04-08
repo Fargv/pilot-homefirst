@@ -33,6 +33,16 @@ export function canUseBudgetFeature(plan) {
   return normalizedPlan === "pro" || normalizedPlan === "premium";
 }
 
+export function canRandomizeFullWeek(plan) {
+  const normalizedPlan = normalizeSubscriptionPlan(plan);
+  return normalizedPlan === "pro" || normalizedPlan === "premium";
+}
+
+export function canRandomizeSingleDay(plan) {
+  const normalizedPlan = normalizeSubscriptionPlan(plan);
+  return normalizedPlan === "basic" || normalizedPlan === "pro" || normalizedPlan === "premium";
+}
+
 export function canAddUser(plan, currentUsersCount) {
   const { maxUsers } = getPlanLimits(plan);
   return maxUsers === LICENSE_LIMIT_UNLIMITED || Number(currentUsersCount || 0) < maxUsers;
@@ -89,4 +99,8 @@ export function isUserLimitReachedError(error) {
 
 export function isNonUserDinerLimitReachedError(error) {
   return error instanceof ApiRequestError && error?.body?.code === "NON_USER_DINER_LIMIT_REACHED";
+}
+
+export function isWeekRandomizationUnavailableError(error) {
+  return error instanceof ApiRequestError && error?.body?.code === "WEEK_RANDOMIZATION_NOT_AVAILABLE";
 }

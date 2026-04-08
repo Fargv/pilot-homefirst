@@ -144,6 +144,7 @@ export default function UpgradeToProPage() {
                 <p className="upgrade-plan-tagline">{plan.tagline}</p>
                 <ul className="kitchen-list">
                   {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
+                  <li>{plan.id === "basic" ? "Day-by-day randomization" : "Full week randomization"}</li>
                   <li>{isUnlimitedLicenseLimit(limits.maxUsers) ? "Unlimited users" : `Up to ${limits.maxUsers} users`}</li>
                   <li>{isUnlimitedLicenseLimit(limits.maxNonUserDiners) ? "Unlimited non-user diners" : `Up to ${limits.maxNonUserDiners} non-user diners`}</li>
                 </ul>

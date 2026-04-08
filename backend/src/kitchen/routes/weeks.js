@@ -17,6 +17,7 @@ import { rebuildShoppingList } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import { resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 import { notifyCookAssignments } from "../assignmentPushService.js";
+import { canRandomizeFullWeek } from "../subscriptionService.js";
 
 const router = express.Router();
 
@@ -943,6 +944,19 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
+    const householdForAccess = await Household.findById(effectiveHouseholdId)
+      .select("_id subscriptionPlan")
+      .lean();
+    if (!householdForAccess) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    }
+    if (!canRandomizeFullWeek(householdForAccess.subscriptionPlan)) {
+      return res.status(403).json({
+        ok: false,
+        code: "WEEK_RANDOMIZATION_NOT_AVAILABLE",
+        message: "Full week randomization is available only for Pro and Premium households."
+      });
+    }
     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
     const overwriteAll = Boolean(req.body?.overwriteAll);
     const mealType = normalizeMealType(req.query?.mealType || req.body?.mealType || "lunch");

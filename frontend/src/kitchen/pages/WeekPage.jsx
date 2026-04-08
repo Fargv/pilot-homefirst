@@ -14,6 +14,7 @@ import { normalizeIngredientName } from "../utils/normalize.js";
 import { getUserColorById } from "../utils/userColors";
 import { getUserInitialsFromProfile } from "../utils/userInitials.js";
 import { useActiveWeek } from "../weekContext.jsx";
+import { canRandomizeFullWeek, isWeekRandomizationUnavailableError } from "../subscription.js";
 
 const DAY_CARD_STYLES = [
   { background: "#eef2ff", color: "#1f2a60" },
@@ -226,6 +227,7 @@ export default function WeekPage() {
   const [categories, setCategories] = useState([]);
   const [dishCategories, setDishCategories] = useState([]);
   const [dinnersEnabled, setDinnersEnabled] = useState(false);
+  const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
   const [mealTab, setMealTab] = useState(() => {
     if (typeof window === "undefined") return "lunch";
     return normalizeMealType(window.localStorage.getItem(WEEK_MEAL_TAB_KEY) || "lunch");
@@ -319,6 +321,7 @@ export default function WeekPage() {
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const hasIncompleteVisibleDays = visibleDays.some((day) => !day?.mainDishId && !day?.isLeftovers);
   const canShowWeekRandomize = Boolean(plan && visibleDays.length && hasIncompleteVisibleDays);
+  const canUseFullWeekRandomization = canRandomizeFullWeek(subscriptionPlan);
   const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
   const currentHouseholdKey = currentHouseholdId ? String(currentHouseholdId) : "__no_household__";
   const dishesReadyForCurrentHousehold = !dishesLoading && dishesLoadedForHouseholdKey === currentHouseholdKey;
@@ -366,6 +369,14 @@ export default function WeekPage() {
   }, [getCurrentHouseholdId, selectedMealType]);
 
   const handleConfirmWeekRandomize = useCallback(async () => {
+    if (!canUseFullWeekRandomization) {
+      setWeekNotice({
+        type: "error",
+        message: "Full week randomization is included in Pro and Premium plans."
+      });
+      setWeekRandomizeConfirmOpen(false);
+      return;
+    }
     setWeekRandomizing(true);
     setWeekNotice(null);
     try {
@@ -396,6 +407,14 @@ export default function WeekPage() {
       }
       setWeekRandomizeConfirmOpen(false);
     } catch (err) {
+      if (isWeekRandomizationUnavailableError(err)) {
+        setWeekNotice({
+          type: "error",
+          message: "Full week randomization is included in Pro and Premium plans."
+        });
+        setWeekRandomizeConfirmOpen(false);
+        return;
+      }
       setWeekNotice({
         type: "error",
         message: err.message || "No se pudo randomizar la semana."
@@ -404,7 +423,7 @@ export default function WeekPage() {
     } finally {
       setWeekRandomizing(false);
     }
-  }, [selectedMealType]);
+  }, [canUseFullWeekRandomization, selectedMealType]);
 
   const handleConfirmWeekDelete = useCallback(async () => {
     if (weekDeleteBusy) return;
@@ -442,6 +461,7 @@ export default function WeekPage() {
       setLoading(false);
       setDishesLoading(false);
       setWeekNotice(null);
+      setSubscriptionPlan("basic");
       setPlan(null);
       setDishes([]);
       setSideDishes([]);
@@ -480,6 +500,7 @@ export default function WeekPage() {
       if (requestSeq !== loadRequestSeqRef.current) return;
       setUsers(usersData.users || []);
       setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
+      setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
     } catch (err) {
       if (requestSeq !== loadRequestSeqRef.current) return;
       setLoadError(err.message || "No se pudo cargar la semana.");
@@ -2004,15 +2025,26 @@ export default function WeekPage() {
           onSelectDay={handleSelectDay}
           onCreateDish={handleCreateDishFromStrip}
           utilityAction={canShowWeekRandomize ? (
-            <button
-              type="button"
-              className="kitchen-button secondary is-small kitchen-week-randomize-button"
-              onClick={() => setWeekRandomizeConfirmOpen(true)}
-              disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-              title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
-            >
-              <DiceIcon /> Randomizar libres
-            </button>
+            canUseFullWeekRandomization ? (
+              <button
+                type="button"
+                className="kitchen-button secondary is-small kitchen-week-randomize-button"
+                onClick={() => setWeekRandomizeConfirmOpen(true)}
+                disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+                title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
+              >
+                <DiceIcon /> Randomizar libres
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="kitchen-button secondary is-small kitchen-week-randomize-button"
+                onClick={() => navigate("/kitchen/upgrade")}
+                title="Upgrade your license to unlock full week randomization"
+              >
+                <DiceIcon /> Upgrade your license
+              </button>
+            )
           ) : null}
           weekendAction={{
             disabled: weekendOptionState.availableDays.length === 0,
