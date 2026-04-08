@@ -172,6 +172,39 @@ async function buildPurchaseSessionSummary(session, storeNameById = new Map()) {
   };
 }
 
+async function buildWeeklyBudgetDetails(weekStartDate, effectiveHouseholdId) {
+  const stores = sortStores(
+    await Store.find(buildStoreVisibilityFilter(effectiveHouseholdId, { active: true }))
+      .select("_id name")
+      .lean()
+  );
+  const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
+  const budget = await buildBudgetSummary(weekStartDate, effectiveHouseholdId);
+  const weekRange = getWeekDateRange(weekStartDate);
+
+  const completedSessions = await PurchaseSession.find({
+    householdId: effectiveHouseholdId,
+    status: "completed",
+    completedAt: { $gte: weekRange.start, $lt: weekRange.end }
+  })
+    .sort({ completedAt: -1, updatedAt: -1 })
+    .select("_id status itemIds storeId amount completedAt createdAt updatedAt")
+    .lean();
+
+  return {
+    weekStart: formatDateISO(weekStartDate),
+    budget,
+    purchases: completedSessions.map((session) => ({
+      id: session._id,
+      completedAt: session.completedAt || session.updatedAt || session.createdAt || null,
+      storeId: session.storeId || null,
+      storeName: session.storeId ? storeById.get(String(session.storeId)) || "Supermercado no definido" : "Supermercado no definido",
+      amount: normalizeBudgetNumber(session.amount) ?? 0,
+      itemCount: Array.isArray(session.itemIds) ? session.itemIds.length : 0
+    }))
+  };
+}
+
 async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
 
@@ -475,6 +508,27 @@ router.put("/:weekStart/items/:itemId/occurrences", requireAuth, async (req, res
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo actualizar la cantidad del item." });
+  }
+});
+
+router.get("/:weekStart/budget", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const payload = await buildWeeklyBudgetDetails(monday, effectiveHouseholdId);
+
+    return res.json({ ok: true, ...payload });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    logShoppingError("get-budget-details", error, {
+      weekStart: req.params.weekStart,
+      userId: String(req.kitchenUser?._id || "")
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo cargar el presupuesto semanal." });
   }
 });
 router.put("/:weekStart/item", requireAuth, async (req, res) => {

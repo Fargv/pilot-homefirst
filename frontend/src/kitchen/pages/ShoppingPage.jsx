@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { UNSAFE_NavigationContext as NavigationContext, useLocation, useSearchParams } from "react-router-dom";
+import { UNSAFE_NavigationContext as NavigationContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
@@ -195,6 +195,7 @@ export default function ShoppingPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const navigationContext = React.useContext(NavigationContext);
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [tab, setTab] = useState("pending");
@@ -217,6 +218,8 @@ export default function ShoppingPage() {
   const [purchaseConfirmTarget, setPurchaseConfirmTarget] = useState(null);
   const [purchaseConfirmStoreId, setPurchaseConfirmStoreId] = useState("");
   const [purchaseConfirmAmount, setPurchaseConfirmAmount] = useState("");
+  const [hasMarkedPurchaseInViewSession, setHasMarkedPurchaseInViewSession] = useState(false);
+  const [hasRestorableOpenPurchase, setHasRestorableOpenPurchase] = useState(false);
   const [quickQuery, setQuickQuery] = useState("");
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [quickCategories, setQuickCategories] = useState([]);
@@ -236,6 +239,7 @@ export default function ShoppingPage() {
   const isCurrentWeek = weekStart === getCurrentWeekStart();
   const openPurchaseSession = currentPurchaseSession || pendingPurchaseSessions[0] || null;
   const hasOpenPurchase = Boolean(openPurchaseSession?.id && Number(openPurchaseSession?.itemCount || 0) > 0);
+  const shouldShowConfirmPurchaseButton = hasOpenPurchase && (hasMarkedPurchaseInViewSession || hasRestorableOpenPurchase);
   const selectedQuickCategory = useMemo(
     () => quickCategories.find((category) => category._id === quickCategoryId) || null,
     [quickCategories, quickCategoryId]
@@ -249,6 +253,11 @@ export default function ShoppingPage() {
   const handleJumpToCurrentWeek = useCallback(() => {
     setWeekStart(getCurrentWeekStart());
   }, [setWeekStart]);
+
+  const openWeeklyBudgetPanel = useCallback(() => {
+    const encodedWeek = encodeURIComponent(weekStart || getCurrentWeekStart());
+    navigate(`/kitchen/compra/presupuesto?week=${encodedWeek}&origin=shopping&returnWeek=${encodedWeek}`);
+  }, [navigate, weekStart]);
 
   const applyPayload = (data) => {
     const nextStores = Array.isArray(data?.stores) ? data.stores : [];
@@ -271,6 +280,7 @@ export default function ShoppingPage() {
           itemCount: Number(data.currentPurchaseSession.itemCount) || 0
         }
       : null;
+    const nextOpenPurchaseSession = nextCurrentPurchaseSession || normalizedPendingPurchaseSessions[0] || null;
 
     setStores(nextStores);
     setBudget(nextBudget);
@@ -278,6 +288,7 @@ export default function ShoppingPage() {
     setPurchasedByStoreDay(Array.isArray(data?.purchasedByStoreDay) ? data.purchasedByStoreDay : []);
     setPendingPurchaseSessions(normalizedPendingPurchaseSessions);
     setCurrentPurchaseSession(nextCurrentPurchaseSession);
+    setHasRestorableOpenPurchase(Boolean(nextOpenPurchaseSession?.id && Number(nextOpenPurchaseSession?.itemCount || 0) > 0));
   };
 
   const logShoppingApiError = (context, endpoint, err) => {
@@ -307,6 +318,7 @@ export default function ShoppingPage() {
       setPurchasedByStoreDay(null);
       setPendingPurchaseSessions([]);
       setCurrentPurchaseSession(null);
+      setHasRestorableOpenPurchase(false);
       setError(err.message || "No se pudo cargar la lista.");
     } finally {
       if (!silent) setIsRefreshing(false);
@@ -668,6 +680,9 @@ export default function ShoppingPage() {
         })
       });
       applyPayload(data);
+      if (status === "purchased" && (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id)) {
+        setHasMarkedPurchaseInViewSession(true);
+      }
       setRecentlyMovedItemKey(key);
     } catch (err) {
       logShoppingApiError("setItemStatus", `/api/kitchen/shopping/${weekStart}/item`, err);
@@ -702,8 +717,8 @@ export default function ShoppingPage() {
       applyPayload(data);
       if (status === "purchased") {
         setSuccess(data.updated ? "Todo marcado como comprado" : "No había elementos pendientes.");
-        if (data.currentPurchaseSession?.id) {
-          openPurchaseConfirmModal(data.currentPurchaseSession);
+        if (data.updated && (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id)) {
+          setHasMarkedPurchaseInViewSession(true);
         }
       } else {
         setSuccess(data.updated ? "Todo volvió a pendiente" : "No había elementos comprados.");
@@ -838,18 +853,18 @@ export default function ShoppingPage() {
             </div>
 
             <div className="shopping-budget-row">
-              <div className="shopping-budget-card">
+              <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
                 <span className="shopping-budget-label">Budget semanal</span>
                 <strong>{formatCurrency(budget?.weeklyBudget)}</strong>
-              </div>
-              <div className="shopping-budget-card">
+              </button>
+              <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
                 <span className="shopping-budget-label">Gastado esta semana</span>
                 <strong>{formatCurrency(budget?.spent)}</strong>
-              </div>
-              <div className="shopping-budget-card">
+              </button>
+              <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
                 <span className="shopping-budget-label">Disponible esta semana</span>
                 <strong>{formatCurrency(budget?.available)}</strong>
-              </div>
+              </button>
             </div>
 
             <div className="shopping-header-tabs-row">
@@ -858,14 +873,16 @@ export default function ShoppingPage() {
                   <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
                   <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
                 </div>
-                <button
-                  type="button"
-                  className="kitchen-button secondary shopping-pending-purchases-button"
-                  onClick={() => openPurchaseConfirmModal(openPurchaseSession)}
-                  disabled={!hasOpenPurchase}
-                >
-                  Confirmar compra
-                </button>
+                {shouldShowConfirmPurchaseButton ? (
+                  <button
+                    type="button"
+                    className="kitchen-button secondary shopping-pending-purchases-button"
+                    onClick={() => openPurchaseConfirmModal(openPurchaseSession)}
+                    disabled={!hasOpenPurchase}
+                  >
+                    Confirmar compra
+                  </button>
+                ) : null}
                 <ShareWhatsAppButton
                   iconOnly
                   size={22}

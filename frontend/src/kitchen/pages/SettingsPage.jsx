@@ -6,6 +6,7 @@ import { apiRequest } from "../api.js";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import SettingsSharePanel from "../components/SettingsSharePanel.jsx";
 import PushNotificationsPanel from "../components/PushNotificationsPanel.jsx";
+import { useActiveWeek } from "../weekContext.jsx";
 import { getColorPalette, getUserColorById, getUserColorPreference, setUserColorPreference } from "../utils/userColors.js";
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 
@@ -110,6 +111,7 @@ function clampAvoidRepeatWeeks(value) {
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { activeWeek } = useActiveWeek();
   const { user, setUser, refreshUser, logout } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -231,6 +233,10 @@ export default function SettingsPage() {
       return;
     }
     navigate(`/kitchen/configuracion?section=${panel}`);
+  };
+
+  const openBudgetPanel = () => {
+    navigate(`/kitchen/compra/presupuesto?week=${encodeURIComponent(activeWeek || new Date().toISOString().slice(0, 10))}&origin=settings`);
   };
 
   const updateSuccess = (message) => {
@@ -1000,6 +1006,13 @@ export default function SettingsPage() {
         <div className="settings-coming-row"><span>Idioma</span><span className="kitchen-pill">Coming soon</span></div>
         <div className="settings-coming-row"><span>Dark mode</span><span className="kitchen-pill">Coming soon</span></div>
       </div>
+      <div className="settings-block">
+        <div className="settings-inline-heading">
+          <h3 className="settings-subtitle">Presupuesto semanal</h3>
+        </div>
+        <p className="kitchen-muted">Consulta el presupuesto, el gasto y el histórico de compras por semana.</p>
+        <button type="button" className="kitchen-button secondary" onClick={openBudgetPanel}>Abrir panel de presupuesto</button>
+      </div>
       <PushNotificationsPanel refreshKey={user?.id || ""} />
     </div>
   );
@@ -1338,6 +1351,7 @@ export default function SettingsPage() {
           <div className="settings-hub-grid">
             <CardButton title="Perfil" subtitle="Informacion personal, password y color." onClick={() => setPanel("perfil")} />
             <CardButton title="Preferencias" subtitle="Idioma, dark mode y notificaciones." onClick={() => setPanel("preferencias")} />
+            <CardButton title="Presupuesto" subtitle="Resumen e historico semanal de compras." onClick={openBudgetPanel} />
             {canViewHousehold ? <CardButton title="Household" subtitle="Miembros y ajustes del hogar." onClick={() => setPanel("household-members")} /> : null}
             {canAccessShare ? <CardButton title="Compartir" subtitle="Invitaciones por email y código de acceso." onClick={() => setPanel("share")} /> : null}
             {canManageCategories ? <CardButton title="Categorias" subtitle="Gestion de categorias." onClick={() => setPanel("categorias")} /> : null}

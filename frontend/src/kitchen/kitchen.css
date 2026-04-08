@@ -6489,6 +6489,26 @@ body {
   background: rgba(255, 255, 255, 0.85);
 }
 
+.shopping-budget-card-button {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.shopping-budget-card-button:hover {
+  border-color: color-mix(in srgb, var(--hf-brand) 28%, var(--hf-border));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--hf-brand) 10%, transparent);
+  transform: translateY(-1px);
+}
+
+.shopping-budget-card-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--hf-brand) 24%, white);
+  outline-offset: 2px;
+}
+
 .shopping-budget-label {
   font-size: 12px;
   line-height: 1.15;
@@ -6533,6 +6553,114 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.shopping-budget-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.shopping-budget-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shopping-budget-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shopping-budget-week-nav {
+  margin-left: auto;
+}
+
+.shopping-budget-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.shopping-budget-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--hf-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.shopping-budget-summary-card strong {
+  font-size: 1.08rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.shopping-budget-history-card {
+  gap: 16px;
+}
+
+.shopping-budget-history-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shopping-budget-history-head h3 {
+  margin: 0;
+}
+
+.shopping-budget-history-head .kitchen-muted {
+  margin: 4px 0 0;
+}
+
+.shopping-budget-history-total {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.shopping-budget-purchase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shopping-budget-purchase-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--hf-border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.shopping-budget-purchase-main,
+.shopping-budget-purchase-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.shopping-budget-purchase-meta {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.shopping-budget-empty {
+  padding: 10px 0 2px;
+}
+
+.shopping-budget-empty h4 {
+  margin: 0 0 6px;
 }
 
 .app-error-fallback {
@@ -6584,5 +6712,35 @@ body {
 
   .shopping-pending-purchases-button {
     width: 100%;
+  }
+
+  .shopping-budget-hero-top {
+    align-items: stretch;
+  }
+
+  .shopping-budget-week-nav {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .shopping-budget-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .shopping-budget-summary-card {
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+
+  .shopping-budget-history-head,
+  .shopping-budget-purchase-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .shopping-budget-purchase-meta {
+    align-items: flex-start;
+    text-align: left;
   }
 }

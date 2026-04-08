@@ -13,6 +13,7 @@ import ResetPasswordPage from "./kitchen/pages/ResetPasswordPage.jsx";
 import WeekPage from "./kitchen/pages/WeekPage.jsx";
 import DishesPage from "./kitchen/pages/DishesPage.jsx";
 import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
+import ShoppingBudgetPage from "./kitchen/pages/ShoppingBudgetPage.jsx";
 import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
 import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
 import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
@@ -115,6 +116,14 @@ export default function App() {
               element={(
                 <RequireAuth>
                   <ShoppingPage />
+                </RequireAuth>
+              )}
+            />
+            <Route
+              path="/kitchen/compra/presupuesto"
+              element={(
+                <RequireAuth>
+                  <ShoppingBudgetPage />
                 </RequireAuth>
               )}
             />
