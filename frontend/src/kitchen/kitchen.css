@@ -6472,14 +6472,18 @@ body {
 .shopping-budget-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
+  margin-bottom: 2px;
 }
 
 .shopping-budget-card {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 14px 16px;
+  min-width: 0;
+  min-height: 72px;
+  justify-content: center;
+  padding: 10px 12px;
   border: 1px solid var(--hf-border);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.85);
@@ -6487,9 +6491,18 @@ body {
 
 .shopping-budget-label {
   font-size: 12px;
+  line-height: 1.15;
   color: var(--hf-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.shopping-budget-card strong {
+  display: block;
+  min-width: 0;
+  font-size: 1.02rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .shopping-pending-purchases-button {
@@ -6545,7 +6558,28 @@ body {
 
 @media (max-width: 720px) {
   .shopping-budget-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 0;
+  }
+
+  .shopping-budget-card {
+    min-height: 58px;
+    gap: 3px;
+    padding: 7px 8px;
+    border-radius: 12px;
+  }
+
+  .shopping-budget-label {
+    font-size: 10px;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    overflow-wrap: anywhere;
+  }
+
+  .shopping-budget-card strong {
+    font-size: 0.9rem;
+    line-height: 1.05;
   }
 
   .shopping-pending-purchases-button {
