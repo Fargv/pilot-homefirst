@@ -193,7 +193,7 @@ function resolvePathnameFromTo(to, currentPathname = "") {
 
 export default function ShoppingPage() {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const navigationContext = React.useContext(NavigationContext);
@@ -334,6 +334,14 @@ export default function ShoppingPage() {
     if (!requestedWeek || requestedWeek === weekStart) return;
     setWeekStart(requestedWeek);
   }, [searchParams, setWeekStart, weekStart]);
+
+  useEffect(() => {
+    const currentQueryWeek = normalizeWeekParam(searchParams.get("week"), "");
+    if (!weekStart || currentQueryWeek === weekStart) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("week", weekStart);
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams, weekStart]);
 
   useEffect(() => {
     if (!recentlyMovedItemKey) return undefined;
