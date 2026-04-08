@@ -250,9 +250,19 @@ export default function ShoppingPage() {
     return quickCategories.filter((category) => normalizeQuery(category.name).includes(normalizedSearch));
   }, [quickCategories, quickCategorySearch]);
 
+  const updateVisibleWeek = useCallback((valueOrUpdater) => {
+    const nextWeekValue = typeof valueOrUpdater === "function" ? valueOrUpdater(weekStart) : valueOrUpdater;
+    const normalizedWeek = normalizeWeekParam(nextWeekValue, weekStart || getCurrentWeekStart());
+    if (!normalizedWeek) return;
+    setWeekStart(normalizedWeek);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("week", normalizedWeek);
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams, setWeekStart, weekStart]);
+
   const handleJumpToCurrentWeek = useCallback(() => {
-    setWeekStart(getCurrentWeekStart());
-  }, [setWeekStart]);
+    updateVisibleWeek(getCurrentWeekStart());
+  }, [updateVisibleWeek]);
 
   const openWeeklyBudgetPanel = useCallback(() => {
     const encodedWeek = encodeURIComponent(weekStart || getCurrentWeekStart());
@@ -334,14 +344,6 @@ export default function ShoppingPage() {
     if (!requestedWeek || requestedWeek === weekStart) return;
     setWeekStart(requestedWeek);
   }, [searchParams, setWeekStart, weekStart]);
-
-  useEffect(() => {
-    const currentQueryWeek = normalizeWeekParam(searchParams.get("week"), "");
-    if (!weekStart || currentQueryWeek === weekStart) return;
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("week", weekStart);
-    setSearchParams(nextParams, { replace: true });
-  }, [searchParams, setSearchParams, weekStart]);
 
   useEffect(() => {
     if (!recentlyMovedItemKey) return undefined;
@@ -842,9 +844,9 @@ export default function ShoppingPage() {
                 <WeekNavigator
                   className="shopping-week-nav shopping-week-header-navigator"
                   value={weekStart}
-                  onChange={(nextValue) => setWeekStart(normalizeWeekStartInput(nextValue))}
-                  onPrevious={() => setWeekStart((prev) => addDaysToISO(prev, -7))}
-                  onNext={() => setWeekStart((prev) => addDaysToISO(prev, 7))}
+                  onChange={(nextValue) => updateVisibleWeek(normalizeWeekStartInput(nextValue))}
+                  onPrevious={() => updateVisibleWeek((prev) => addDaysToISO(prev, -7))}
+                  onNext={() => updateVisibleWeek((prev) => addDaysToISO(prev, 7))}
                 />
                 {!isCurrentWeek ? (
                   <button
