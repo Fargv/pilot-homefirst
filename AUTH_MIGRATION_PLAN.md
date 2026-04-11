@@ -62,6 +62,7 @@
 - `/login` and `/register` remain the legacy Mongo/JWT screens.
 - The reason legacy Register does not create Clerk users is that it still posts to `/api/kitchen/auth/register`, hashes the password locally with bcrypt, creates a Mongo `KitchenUser`, and receives a legacy JWT. It does not call Clerk's sign-up APIs or render Clerk's `<SignUp />`.
 - The `/dev/clerk-auth` page is now the only UI path in this repo that creates Clerk users.
+- After a successful Clerk sign-in, `/dev/clerk-auth` may stop showing the sign-in form because the Clerk session is already active; testers should sign out from that DEV page to test another Clerk login.
 - Later migration of existing Mongo users should happen via Clerk import using their existing bcrypt password digests, followed by email-based first sign-in mapping and persisted `clerkId` linking.
 
 ## Required Environment Variables

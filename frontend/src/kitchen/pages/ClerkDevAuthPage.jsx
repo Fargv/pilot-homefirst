@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { SignIn, SignUp, UserButton, useAuth as useClerkAuth } from "@clerk/react";
+import { SignIn, SignUp, UserButton, useAuth as useClerkAuth, useClerk, useUser } from "@clerk/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
 import Card from "../components/ui/Card";
@@ -47,8 +47,17 @@ export default function ClerkDevAuthPage() {
 
 function ClerkDevAuthContent() {
   const navigate = useNavigate();
-  const { user, loading, refreshUser } = useAuth();
+  const { user, loading, clearSession, refreshUser } = useAuth();
   const { isSignedIn } = useClerkAuth();
+  const clerk = useClerk();
+  const { user: clerkUser } = useUser();
+  const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
+  const clerkIdentity = clerkEmail || clerkUser?.username || clerkUser?.id || "Unknown Clerk user";
+
+  const signOutForTesting = async () => {
+    clearSession();
+    await clerk.signOut({ redirectUrl: "/dev/clerk-auth" });
+  };
 
   useEffect(() => {
     void refreshUser();
@@ -64,7 +73,7 @@ function ClerkDevAuthContent() {
             This path creates real Clerk users. The legacy login and register pages still use the Mongo/JWT flow.
           </p>
           <div className="kitchen-alert info">
-            Use this page only for development migration testing. After auth succeeds, the backend resolves the Clerk identity back to Mongo by email.
+            `/dev/clerk-auth` is the Clerk testing path. `/login` and `/register` remain the legacy Mongo/JWT pages.
           </div>
           <div className="kitchen-actions" style={{ marginBottom: 16 }}>
             <button type="button" className="kitchen-button secondary" onClick={() => navigate("/login")}>
@@ -79,36 +88,58 @@ function ClerkDevAuthContent() {
           </div>
 
           {isSignedIn ? (
-            <div className="kitchen-alert success">
-              Signed in with Clerk. {loading ? "Resolving Mongo user..." : `Mongo user: ${user?.email || "not resolved yet"}`}
-            </div>
-          ) : null}
-          {isSignedIn ? (
-            <div className="kitchen-actions" style={{ alignItems: "center" }}>
-              <UserButton afterSignOutUrl="/dev/clerk-auth" />
-              <button type="button" className="kitchen-button" onClick={() => refreshUser()}>
-                Refresh Mongo mapping
-              </button>
+            <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
+              <p className="kitchen-auth-kicker">Signed-in section</p>
+              <h3 className="kitchen-login-title" style={{ fontSize: 24 }}>Clerk session is active</h3>
+              <p className="kitchen-login-subtitle">
+                The Clerk sign-in form is hidden because you are already signed in. Sign out here to test another Clerk login.
+              </p>
+              <div className="kitchen-alert success">
+                <strong>Clerk identity:</strong> {clerkIdentity}
+              </div>
+              <div className="kitchen-alert info">
+                <strong>Mongo mapping:</strong>{" "}
+                {loading ? "Resolving Mongo user..." : user?.email ? `${user.email} (${user.role || "role unknown"})` : "not resolved yet"}
+              </div>
+              <div className="kitchen-actions" style={{ alignItems: "center" }}>
+                <UserButton afterSignOutUrl="/dev/clerk-auth" />
+                <button type="button" className="kitchen-button secondary" onClick={() => refreshUser()}>
+                  Refresh Mongo mapping
+                </button>
+                <button type="button" className="kitchen-button secondary" onClick={signOutForTesting}>
+                  Sign out to test another Clerk account
+                </button>
+                <button type="button" className="kitchen-button" onClick={() => navigate("/kitchen/semana")}>
+                  Open app after Clerk auth
+                </button>
+              </div>
             </div>
           ) : null}
 
           {!isSignedIn ? (
-            <div className="kitchen-login-socials" style={{ alignItems: "flex-start", gap: 24 }}>
-              <div>
-                <h3 className="kitchen-auth-kicker">Create real Clerk user</h3>
-                <SignUp
-                  routing="hash"
-                  signInUrl="/dev/clerk-auth"
-                  forceRedirectUrl="/dev/clerk-auth"
-                />
-              </div>
-              <div>
-                <h3 className="kitchen-auth-kicker">Sign in with Clerk</h3>
-                <SignIn
-                  routing="hash"
-                  signUpUrl="/dev/clerk-auth"
-                  forceRedirectUrl="/dev/clerk-auth"
-                />
+            <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
+              <p className="kitchen-auth-kicker">Signed-out section</p>
+              <h3 className="kitchen-login-title" style={{ fontSize: 24 }}>Create or sign in with Clerk</h3>
+              <p className="kitchen-login-subtitle">
+                Use these Clerk components to create real Clerk users. The backend will then resolve the Clerk session back to Mongo by email.
+              </p>
+              <div className="kitchen-login-socials" style={{ alignItems: "flex-start", gap: 24 }}>
+                <div>
+                  <h3 className="kitchen-auth-kicker">Create real Clerk user</h3>
+                  <SignUp
+                    routing="hash"
+                    signInUrl="/dev/clerk-auth"
+                    forceRedirectUrl="/dev/clerk-auth"
+                  />
+                </div>
+                <div>
+                  <h3 className="kitchen-auth-kicker">Sign in with Clerk</h3>
+                  <SignIn
+                    routing="hash"
+                    signUpUrl="/dev/clerk-auth"
+                    forceRedirectUrl="/dev/clerk-auth"
+                  />
+                </div>
               </div>
             </div>
           ) : null}
