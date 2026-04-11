@@ -8,7 +8,11 @@ const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const app = (
   <React.StrictMode>
     {clerkPublishableKey ? (
-      <ClerkProvider publishableKey={clerkPublishableKey}>
+      <ClerkProvider
+        publishableKey={clerkPublishableKey}
+        signInUrl="/auth/clerk"
+        signUpUrl="/auth/clerk"
+      >
         {/*
           TODO: Configure Clerk application URLs and allowed redirect origins in the
           Clerk dashboard before enabling Clerk sign-in in production.

@@ -5,7 +5,7 @@ import { useAuth } from "../auth";
 import Card from "../components/ui/Card";
 import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
 
-const showClerkDevAuthLink = import.meta.env.VITE_APP_ENV === "development" || import.meta.env.DEV;
+const showClerkAuthLink = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -44,11 +44,11 @@ export default function LoginPage() {
           </div>
           <h2 className="kitchen-login-title">Bienvenido de nuevo</h2>
           <p className="kitchen-login-subtitle">Hay planes deliciosos esperandote.</p>
-          {showClerkDevAuthLink ? (
+          {showClerkAuthLink ? (
             <div className="kitchen-alert info">
-              Esta pantalla usa el login legacy de Mongo/JWT. Para crear o probar usuarios reales de Clerk, usa{" "}
-              <button type="button" className="kitchen-login-link" onClick={() => navigate("/dev/clerk-auth")}>
-                DEV Clerk auth
+              Tambien puedes continuar con el nuevo acceso seguro.{" "}
+              <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk")}>
+                Usar Clerk
               </button>
               .
             </div>

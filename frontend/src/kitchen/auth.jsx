@@ -11,17 +11,25 @@ export function isUserAuthenticated(user) {
 export function AuthProvider({ children, clerk = null }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [onboardingRequired, setOnboardingRequired] = useState(false);
 
   const fetchMe = useCallback(async ({ authMode = "auto" } = {}) => {
     try {
       const data = await apiRequest("/api/kitchen/auth/me", { authMode });
-      if (authMode === "clerk" && import.meta.env.DEV) {
+      if (authMode === "clerk") {
         setToken(null);
       }
       setUser(data.user);
+      setOnboardingRequired(Boolean(data.user?.onboardingRequired));
       return data.user;
     } catch (error) {
-      if (authMode === "clerk") {
+      if (authMode === "clerk" && error?.status === 428) {
+        setUser(null);
+        setOnboardingRequired(true);
+        setLoading(false);
+        return { onboardingRequired: true, authProvider: "clerk" };
+      }
+      if (authMode === "clerk" && import.meta.env.DEV) {
         console.warn("[clerk][dev] No se pudo resolver /me con token de Clerk", {
           message: error?.message,
           status: error?.status,
@@ -29,6 +37,7 @@ export function AuthProvider({ children, clerk = null }) {
         });
       }
       setUser(null);
+      setOnboardingRequired(false);
       if (authMode !== "clerk") {
         setToken(null);
       }
@@ -77,6 +86,7 @@ export function AuthProvider({ children, clerk = null }) {
     }
 
     setUser(null);
+    setOnboardingRequired(false);
     setLoading(false);
   }, [clerk, fetchMe]);
 
@@ -87,18 +97,21 @@ export function AuthProvider({ children, clerk = null }) {
     });
     setToken(data.token);
     setUser(data.user);
+    setOnboardingRequired(false);
     return data.user;
   };
 
   const establishSession = useCallback((token, nextUser) => {
     setToken(token ?? null);
     setUser(nextUser ?? null);
+    setOnboardingRequired(Boolean(nextUser?.onboardingRequired));
     setLoading(false);
   }, []);
 
   const clearSession = useCallback(() => {
     setToken(null);
     setUser(null);
+    setOnboardingRequired(false);
     setLoading(false);
   }, []);
 
@@ -123,8 +136,8 @@ export function AuthProvider({ children, clerk = null }) {
   }, [clearSession, clerk]);
 
   const value = useMemo(
-    () => ({ user, loading, login, logout, establishSession, clearSession, refreshUser: fetchMe, setUser }),
-    [user, loading, logout, establishSession, clearSession, fetchMe]
+    () => ({ user, loading, onboardingRequired, login, logout, establishSession, clearSession, refreshUser: fetchMe, setUser, setOnboardingRequired }),
+    [user, loading, onboardingRequired, logout, establishSession, clearSession, fetchMe]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -6,7 +6,9 @@ import KitchenLayout from "./kitchen/Layout.jsx";
 import RequireAuth from "./kitchen/RequireAuth.jsx";
 import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
 import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
+import ClerkAuthPage from "./kitchen/pages/ClerkAuthPage.jsx";
 import ClerkDevAuthPage from "./kitchen/pages/ClerkDevAuthPage.jsx";
+import ClerkOnboardingPage from "./kitchen/pages/ClerkOnboardingPage.jsx";
 import LoginPage from "./kitchen/pages/LoginPage.jsx";
 import SignupPage from "./kitchen/pages/SignupPage.jsx";
 import ForgotPasswordPage from "./kitchen/pages/ForgotPasswordPage.jsx";
@@ -30,14 +32,14 @@ const isClerkDevAuthRouteEnabled = isDevelopmentEnvironment || import.meta.env.D
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 function HomeRedirect() {
-  const { user, loading } = useAuth();
+  const { user, loading, onboardingRequired } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (loading) return;
-    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
+    const destination = onboardingRequired ? "/onboarding/clerk" : isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
     navigate(destination, { replace: true });
-  }, [loading, navigate, user]);
+  }, [loading, navigate, onboardingRequired, user]);
 
   return (
     <AppLoadingScreen
@@ -86,6 +88,8 @@ function AppRoutes() {
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
         <Route path="/login" element={<LoginPage />} />
+        {clerkPublishableKey ? <Route path="/auth/clerk" element={<ClerkAuthPage />} /> : null}
+        {clerkPublishableKey ? <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} /> : null}
         {isClerkDevAuthRouteEnabled ? <Route path="/dev/clerk-auth" element={<ClerkDevAuthPage />} /> : null}
         <Route path="/kitchen/login" element={<LoginPage />} />
         <Route path="/register" element={<SignupPage />} />

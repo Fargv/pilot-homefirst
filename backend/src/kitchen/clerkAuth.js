@@ -1,11 +1,7 @@
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { config } from "../config.js";
-import { buildDisplayName, normalizeEmail, normalizeInitials } from "../users/utils.js";
-import { generateUniqueHouseholdInviteCode } from "./householdInviteCode.js";
-import { Household } from "./models/Household.js";
+import { buildDisplayName, normalizeEmail } from "../users/utils.js";
 import { KitchenUser } from "./models/KitchenUser.js";
-import { getWeekStart } from "./utils/dates.js";
-import { ensureWeekPlan } from "./weekPlanService.js";
 
 const clerkClient = config.clerkSecretKey
   ? createClerkClient({ secretKey: config.clerkSecretKey })
@@ -23,7 +19,7 @@ function buildAuthError(code, message, status = 401) {
   return error;
 }
 
-function getPrimaryEmailAddress(clerkUser) {
+export function getPrimaryEmailAddress(clerkUser) {
   if (!clerkUser) return "";
 
   const primaryEmail =
@@ -33,7 +29,7 @@ function getPrimaryEmailAddress(clerkUser) {
   return normalizeEmail(primaryEmail?.emailAddress);
 }
 
-function buildClerkDisplayName(clerkUser, normalizedEmail) {
+export function buildClerkDisplayName(clerkUser, normalizedEmail) {
   const displayName = buildDisplayName({
     firstName: clerkUser?.firstName,
     lastName: clerkUser?.lastName,
@@ -45,71 +41,11 @@ function buildClerkDisplayName(clerkUser, normalizedEmail) {
   return normalizedEmail.split("@")[0] || "Nuevo usuario";
 }
 
-async function createDevelopmentMongoUserFromClerk(clerkUser, normalizedEmail) {
-  if (config.nodeEnv !== "development") {
-    logClerkDev("Skipping auto-provision outside development", {
-      clerkUserId: clerkUser?.id || null,
-      email: normalizedEmail
-    });
-    return null;
-  }
-
-  const displayName = buildClerkDisplayName(clerkUser, normalizedEmail);
-  logClerkDev("Auto-provisioning Mongo user and household", {
-    clerkUserId: clerkUser.id,
-    email: normalizedEmail,
-    displayName
-  });
-
-  const user = await KitchenUser.create({
-    username: normalizedEmail,
-    email: normalizedEmail,
-    firstName: clerkUser?.firstName || undefined,
-    lastName: clerkUser?.lastName || undefined,
-    displayName,
-    initials: normalizeInitials("", displayName),
-    clerkId: clerkUser.id,
-    passwordHash: null,
-    type: "user",
-    hasLogin: true,
-    active: true,
-    canCook: true,
-    dinnerActive: true,
-    dinnerCanCook: true,
-    role: "owner",
-    householdId: null,
-    isPlaceholder: false
-  });
-
-  const household = await Household.create({
-    name: `Casa de ${displayName}`,
-    ownerUserId: user._id,
-    inviteCode: await generateUniqueHouseholdInviteCode()
-  });
-
-  user.householdId = household._id;
-  await user.save();
-
-  logClerkDev("Auto-provisioned Mongo user and household", {
-    clerkUserId: clerkUser.id,
-    userId: user._id.toString(),
-    householdId: household._id.toString()
-  });
-
-  try {
-    await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
-  } catch (error) {
-    console.error("[clerk] No se pudo crear el plan semanal durante el alta dev:", error?.message || error);
-  }
-
-  return user;
-}
-
 export function isClerkAuthEnabled() {
   return Boolean(config.clerkSecretKey);
 }
 
-export async function authenticateClerkToken(token) {
+export async function resolveClerkIdentityFromToken(token) {
   if (!isClerkAuthEnabled() || !token) {
     logClerkDev("Clerk auth skipped", {
       hasSecretKey: Boolean(config.clerkSecretKey),
@@ -151,7 +87,7 @@ export async function authenticateClerkToken(token) {
     throw buildAuthError("CLERK_EMAIL_MISSING", "La cuenta de Clerk no tiene un email utilizable.");
   }
 
-  let mongoUser = await KitchenUser.findOne({ email: normalizedEmail });
+  const mongoUser = await KitchenUser.findOne({ email: normalizedEmail });
   logClerkDev("Mongo user lookup by email completed", {
     email: normalizedEmail,
     found: Boolean(mongoUser),
@@ -159,15 +95,26 @@ export async function authenticateClerkToken(token) {
     existingClerkId: mongoUser?.clerkId || null
   });
 
-  if (!mongoUser) {
-    // TODO: Remove this development-only bootstrap path before production Clerk cutover.
-    mongoUser = await createDevelopmentMongoUserFromClerk(clerkUser, normalizedEmail);
-  }
+  return {
+    authType: "clerk",
+    clerkClaims: verified.data,
+    clerkUser,
+    email: normalizedEmail,
+    kitchenUser: mongoUser
+  };
+}
+
+export async function authenticateClerkToken(token) {
+  const identity = await resolveClerkIdentityFromToken(token);
+  if (!identity) return null;
+
+  const { clerkUser, kitchenUser: mongoUser } = identity;
 
   if (!mongoUser) {
     throw buildAuthError(
       "CLERK_USER_NOT_MAPPED",
-      "La identidad de Clerk no esta vinculada a ningun usuario interno."
+      "La identidad de Clerk requiere completar el perfil interno.",
+      428
     );
   }
 
@@ -192,7 +139,7 @@ export async function authenticateClerkToken(token) {
 
   return {
     authType: "clerk",
-    clerkClaims: verified.data,
+    clerkClaims: identity.clerkClaims,
     clerkUser,
     kitchenUser: mongoUser
   };

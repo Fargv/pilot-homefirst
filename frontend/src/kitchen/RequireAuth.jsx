@@ -5,7 +5,7 @@ import { AppLoadingScreen } from "./components/WeekPageSkeleton.jsx";
 import { isUserAuthenticated, useAuth } from "./auth";
 
 export default function RequireAuth({ children, roles }) {
-  const { user, loading } = useAuth();
+  const { user, loading, onboardingRequired } = useAuth();
   const location = useLocation();
   const isAuthenticated = isUserAuthenticated(user);
 
@@ -16,6 +16,10 @@ export default function RequireAuth({ children, roles }) {
         subtitle="Estamos restaurando tu acceso y preparando la vista principal."
       />
     );
+  }
+
+  if (onboardingRequired) {
+    return <Navigate to="/onboarding/clerk" replace />;
   }
 
   if (!isAuthenticated) {

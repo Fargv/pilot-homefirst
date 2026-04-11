@@ -81,7 +81,7 @@ export async function requireAuth(req, res, next) {
   } catch (error) {
     const status = Number(error?.status || 401);
     const message = error?.message || "No se pudo validar la sesion.";
-    return res.status(status).json({ ok: false, error: message });
+    return res.status(status).json({ ok: false, code: error?.code || "AUTH_INVALID", error: message });
   }
 }
 

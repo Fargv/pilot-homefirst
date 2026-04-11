@@ -44,6 +44,8 @@
   - The app is wrapped with `ClerkProvider` in [frontend/src/main.jsx](/C:/APPS/pilot-homefirst/frontend/src/main.jsx) when `VITE_CLERK_PUBLISHABLE_KEY` is configured.
   - The existing auth provider remains active and can still use the legacy JWT flow.
   - If a Clerk session exists, frontend API calls can now send the Clerk bearer token instead of the legacy JWT.
+  - `/auth/clerk` is the product-facing Clerk sign-in/sign-up entry point.
+  - `/onboarding/clerk` collects app-specific profile and household data after Clerk identity is established.
   - A temporary development-only route exists at `/dev/clerk-auth` in [frontend/src/kitchen/pages/ClerkDevAuthPage.jsx](/C:/APPS/pilot-homefirst/frontend/src/kitchen/pages/ClerkDevAuthPage.jsx). This is the path that uses Clerk's prebuilt `<SignUp />` and `<SignIn />` components and creates real Clerk users.
   - The existing `/register` page still posts only to the legacy Mongo endpoint and does not create Clerk users.
 - Backend:
@@ -52,8 +54,19 @@
   - Clerk-authenticated requests are mapped back to a Mongo `KitchenUser` by normalized email.
   - If the Mongo user exists and `clerkId` is empty, the backend stores the Clerk user ID.
   - If the Mongo user exists and `clerkId` is already set, the backend verifies it matches.
-  - If there is no mapped Mongo user, the request is rejected outside development.
-  - In development only, a new Clerk-authenticated user can be given a safe Mongo counterpart that mirrors the current public "new household" register business rule: a normal `KitchenUser`, a new household, `role: "owner"` for that household, no `globalRole`, and no admin/diod privilege.
+  - If there is no mapped Mongo user, `/api/kitchen/auth/me` reports that app onboarding is required.
+  - `POST /api/kitchen/auth/clerk/onboarding` requires a valid Clerk bearer token and creates or completes the Mongo `KitchenUser` plus `Household` with safe household-scoped defaults.
+  - Clerk onboarding never assigns `globalRole`, `admin`, or `diod` privileges.
+
+## Product Clerk Auth Flow
+
+- Users can enter through `/auth/clerk`.
+- Clerk handles identity and session creation.
+- After Clerk returns to the app, the frontend calls Clerk-backed `/api/kitchen/auth/me`.
+- If a Mongo app profile and household already exist, the user enters `/kitchen/semana`.
+- If Mongo app onboarding is missing, the user is sent to `/onboarding/clerk`.
+- `/onboarding/clerk` collects first name, last name, initials, household name, diner/cook defaults, and initial household preferences.
+- Submitting onboarding calls `POST /api/kitchen/auth/clerk/onboarding`, which creates or completes the safe Mongo business records.
 
 ## Temporary DEV Clerk Auth Entry Point
 
@@ -157,8 +170,8 @@
 
 - Risk: a valid Clerk identity maps to the wrong internal user by email.
   - Mitigation: normalized email lookup plus persisted `clerkId` consistency checks.
-- Risk: auto-creating users could bypass household, role, or plan rules.
-  - Mitigation: auto-creation is limited to `NODE_ENV=development`, creates only a normal household-scoped user following the current public register shape, and never assigns `globalRole`, `admin`, or `diod`.
+- Risk: onboarding-created users could bypass household, role, or plan rules.
+  - Mitigation: onboarding requires a valid Clerk session, ignores client-provided role/plan/household IDs, creates only a normal household-scoped user, and never assigns `globalRole`, `admin`, or `diod`.
 - Risk: frontend authorization drift.
   - Mitigation: backend still loads the Mongo user and enforces authorization from Mongo data only.
 - Risk: tenant leakage.

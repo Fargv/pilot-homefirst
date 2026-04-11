@@ -5,7 +5,7 @@ import { apiRequest } from "../api.js";
 import { resolvePostAuthRedirect } from "../authRedirect.js";
 import { useAuth } from "../auth";
 
-const showClerkDevAuthLink = import.meta.env.VITE_APP_ENV === "development" || import.meta.env.DEV;
+const showClerkAuthLink = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -85,11 +85,11 @@ export default function SignupPage() {
       <div className="kitchen-container kitchen-login-wrap">
         <Card className="kitchen-login-card">
           <h2 className="kitchen-login-title">Crear cuenta</h2>
-          {showClerkDevAuthLink ? (
+          {showClerkAuthLink ? (
             <div className="kitchen-alert info">
-              Esta pantalla registra usuarios solo en el flujo legacy de Mongo/JWT. Para crear usuarios reales de Clerk, usa{" "}
-              <button type="button" className="kitchen-login-link" onClick={() => navigate("/dev/clerk-auth")}>
-                DEV Clerk auth
+              Tambien puedes crear la cuenta con el nuevo acceso seguro.{" "}
+              <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk")}>
+                Usar Clerk
               </button>
               .
             </div>

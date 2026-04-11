@@ -13,6 +13,7 @@ import { sendEmail } from "../../services/emailService.js";
 import { config } from "../../config.js";
 import { findActiveInvitationByToken } from "../invitationService.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
+import { resolveClerkIdentityFromToken } from "../clerkAuth.js";
 
 const DIOD_EMAIL = "admin@admin.com";
 
@@ -26,6 +27,26 @@ function parseBooleanWithDefault(value, fallback) {
     if (normalized === "false") return false;
   }
   return fallback;
+}
+
+function normalizeAvoidRepeatsWeeks(value) {
+  const parsed = Number.parseInt(String(value ?? 1), 10);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(12, Math.max(1, Math.round(parsed)));
+}
+
+function getBearerToken(req) {
+  const authHeader = req.headers.authorization || "";
+  return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+}
+
+function buildSafeUserResponse(user, householdName = null) {
+  return {
+    ...user.toSafeJSON(),
+    migrationPending: !user.householdId,
+    onboardingRequired: !user.householdId,
+    householdName
+  };
 }
 
 
@@ -465,6 +486,135 @@ router.post("/logout", (req, res) => {
   res.json({ ok: true });
 });
 
+router.post("/clerk/onboarding", async (req, res) => {
+  try {
+    const token = getBearerToken(req);
+    const identity = await resolveClerkIdentityFromToken(token);
+    if (!identity) {
+      return res.status(401).json({ ok: false, code: "CLERK_AUTH_REQUIRED", error: "Debes iniciar sesion con Clerk." });
+    }
+
+    const {
+      firstName,
+      lastName,
+      initials,
+      displayName,
+      householdName,
+      active,
+      canCook,
+      dinnerActive,
+      dinnerCanCook,
+      dinnersEnabled,
+      avoidRepeatsEnabled,
+      avoidRepeatsWeeks
+    } = req.body || {};
+
+    const safeFirstName = String(firstName || identity.clerkUser?.firstName || "").trim();
+    const safeLastName = String(lastName || identity.clerkUser?.lastName || "").trim();
+    const safeDisplayName = buildDisplayName({
+      firstName: safeFirstName,
+      lastName: safeLastName,
+      displayName,
+      name: displayName
+    });
+    const finalDisplayName = safeDisplayName || String(identity.email || "").split("@")[0] || "Nuevo usuario";
+
+    if (!safeFirstName || !safeLastName) {
+      return res.status(400).json({ ok: false, code: "PROFILE_REQUIRED", error: "Nombre y apellidos son obligatorios." });
+    }
+
+    let user = identity.kitchenUser;
+    if (user?.clerkId && user.clerkId !== identity.clerkUser.id) {
+      return res.status(409).json({ ok: false, code: "CLERK_USER_MISMATCH", error: "Esta cuenta interna ya esta vinculada a otra identidad de Clerk." });
+    }
+
+    if (!user) {
+      user = await KitchenUser.create({
+        username: identity.email,
+        email: identity.email,
+        firstName: safeFirstName,
+        lastName: safeLastName,
+        displayName: finalDisplayName,
+        initials: normalizeInitials(initials, finalDisplayName),
+        clerkId: identity.clerkUser.id,
+        passwordHash: null,
+        type: "user",
+        hasLogin: true,
+        active: parseBooleanWithDefault(active, true),
+        canCook: parseBooleanWithDefault(canCook, true),
+        dinnerActive: parseBooleanWithDefault(dinnerActive, true),
+        dinnerCanCook: parseBooleanWithDefault(dinnerCanCook, true),
+        role: "owner",
+        householdId: null,
+        isPlaceholder: false,
+        globalRole: null
+      });
+    } else {
+      user.clerkId = user.clerkId || identity.clerkUser.id;
+      user.email = user.email || identity.email;
+      user.username = user.username || identity.email;
+      user.firstName = safeFirstName;
+      user.lastName = safeLastName;
+      user.displayName = finalDisplayName;
+      user.initials = normalizeInitials(initials || user.initials, finalDisplayName);
+      user.type = "user";
+      user.hasLogin = true;
+      user.isPlaceholder = false;
+      user.active = parseBooleanWithDefault(active, user.active ?? true);
+      user.canCook = parseBooleanWithDefault(canCook, user.canCook ?? true);
+      user.dinnerActive = parseBooleanWithDefault(dinnerActive, user.dinnerActive ?? true);
+      user.dinnerCanCook = parseBooleanWithDefault(dinnerCanCook, user.dinnerCanCook ?? true);
+    }
+
+    let household = user.householdId ? await Household.findById(user.householdId) : null;
+    if (!household) {
+      user.role = "owner";
+      const finalHouseholdName = String(householdName || "").trim() || `${finalDisplayName} - Hogar`;
+      household = await Household.create({
+        name: finalHouseholdName,
+        ownerUserId: user._id,
+        inviteCode: await generateUniqueHouseholdInviteCode(),
+        dinnersEnabled: parseBooleanWithDefault(dinnersEnabled, false),
+        avoidRepeatsEnabled: parseBooleanWithDefault(avoidRepeatsEnabled, false),
+        avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(avoidRepeatsWeeks)
+      });
+      user.householdId = household._id;
+
+      try {
+        await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
+      } catch (error) {
+        console.error("[clerk/onboarding] No se pudo crear el plan semanal:", error?.message || error);
+      }
+    }
+
+    await user.save();
+
+    return res.status(identity.kitchenUser ? 200 : 201).json({
+      ok: true,
+      user: buildSafeUserResponse(user, household?.name || null),
+      household: household ? {
+        id: household._id,
+        name: household.name,
+        inviteCode: household.inviteCode || null
+      } : null
+    });
+  } catch (error) {
+    console.error("[clerk/onboarding] failed", {
+      code: error?.code || null,
+      message: error?.message,
+      stack: error?.stack
+    });
+    if (error?.code === 11000) {
+      return res.status(409).json({ ok: false, code: "DUPLICATE_USER", error: "Ya existe un usuario con esos datos." });
+    }
+    return res.status(error?.status || 500).json({
+      ok: false,
+      code: error?.code || "CLERK_ONBOARDING_FAILED",
+      error: error?.message || "No se pudo completar el onboarding."
+    });
+  }
+});
+
 router.get("/me", requireAuth, async (req, res) => {
   try {
     let householdName = null;
@@ -476,11 +626,7 @@ router.get("/me", requireAuth, async (req, res) => {
 
     res.json({
       ok: true,
-      user: {
-        ...req.kitchenUser.toSafeJSON(),
-        migrationPending: !req.kitchenUser.householdId,
-        householdName
-      },
+      user: buildSafeUserResponse(req.kitchenUser, householdName),
       auth: req.user
     });
   } catch {
