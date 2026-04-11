@@ -10,8 +10,8 @@ const app = (
     {clerkPublishableKey ? (
       <ClerkProvider
         publishableKey={clerkPublishableKey}
-        signInUrl="/auth/clerk"
-        signUpUrl="/auth/clerk"
+        signInUrl="/auth/clerk/sign-in"
+        signUpUrl="/auth/clerk/sign-up"
       >
         {/*
           TODO: Configure Clerk application URLs and allowed redirect origins in the

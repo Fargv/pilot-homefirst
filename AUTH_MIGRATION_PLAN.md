@@ -44,9 +44,11 @@
   - The app is wrapped with `ClerkProvider` in [frontend/src/main.jsx](/C:/APPS/pilot-homefirst/frontend/src/main.jsx) when `VITE_CLERK_PUBLISHABLE_KEY` is configured.
   - The existing auth provider remains active and can still use the legacy JWT flow.
   - If a Clerk session exists, frontend API calls can now send the Clerk bearer token instead of the legacy JWT.
-  - `/auth/clerk` is the product-facing Clerk sign-in/sign-up entry point.
+  - `/auth/clerk` is the product-facing Clerk choice screen.
+  - `/auth/clerk/sign-up` and `/auth/clerk/sign-in` are dedicated path-routed Clerk component routes.
+  - `/auth/clerk/complete` is the post-Clerk return route that bootstraps the Mongo app profile or sends the user to onboarding.
   - `/onboarding/clerk` collects app-specific profile and household data after Clerk identity is established.
-  - A temporary development-only route exists at `/dev/clerk-auth` in [frontend/src/kitchen/pages/ClerkDevAuthPage.jsx](/C:/APPS/pilot-homefirst/frontend/src/kitchen/pages/ClerkDevAuthPage.jsx). This is the path that uses Clerk's prebuilt `<SignUp />` and `<SignIn />` components and creates real Clerk users.
+  - A temporary development-only route exists at `/dev/clerk-auth` in [frontend/src/kitchen/pages/ClerkDevAuthPage.jsx](/C:/APPS/pilot-homefirst/frontend/src/kitchen/pages/ClerkDevAuthPage.jsx). This is now a diagnostics and launcher page; it does not mount competing Clerk sign-up and sign-in widgets.
   - The existing `/register` page still posts only to the legacy Mongo endpoint and does not create Clerk users.
 - Backend:
   - `requireAuth` first tries the legacy JWT.
@@ -60,9 +62,9 @@
 
 ## Product Clerk Auth Flow
 
-- Users can enter through `/auth/clerk`.
+- Users can enter through `/auth/clerk`, then choose `/auth/clerk/sign-up` or `/auth/clerk/sign-in`.
 - Clerk handles identity and session creation.
-- After Clerk returns to the app, the frontend calls Clerk-backed `/api/kitchen/auth/me`.
+- After Clerk returns to `/auth/clerk/complete`, the frontend calls Clerk-backed `/api/kitchen/auth/me`.
 - If a Mongo app profile and household already exist, the user enters `/kitchen/semana`.
 - If Mongo app onboarding is missing, the user is sent to `/onboarding/clerk`.
 - `/onboarding/clerk` collects first name, last name, initials, household name, diner/cook defaults, and initial household preferences.
@@ -70,12 +72,14 @@
 
 ## Temporary DEV Clerk Auth Entry Point
 
-- Visit `/dev/clerk-auth` to create or sign in as a real Clerk user during development.
+- Visit `/dev/clerk-auth` for development diagnostics and links to the real Clerk routes.
+- Visit `/auth/clerk/sign-up` to create a real Clerk user.
+- Visit `/auth/clerk/sign-in` to sign in as an existing Clerk user.
 - This page is intentionally separate from `/login` and `/register`.
 - `/login` and `/register` remain the legacy Mongo/JWT screens.
 - The reason legacy Register does not create Clerk users is that it still posts to `/api/kitchen/auth/register`, hashes the password locally with bcrypt, creates a Mongo `KitchenUser`, and receives a legacy JWT. It does not call Clerk's sign-up APIs or render Clerk's `<SignUp />`.
-- The `/dev/clerk-auth` page is now the only UI path in this repo that creates Clerk users.
-- After a successful Clerk sign-in, `/dev/clerk-auth` may stop showing the sign-in form because the Clerk session is already active; testers should sign out from that DEV page to test another Clerk login.
+- The `/auth/clerk/sign-up` page is now the UI path in this repo that creates Clerk users.
+- After a successful Clerk sign-in, `/dev/clerk-auth` may not show any sign-in form because the Clerk session is already active; testers should sign out from that DEV page to test another Clerk login.
 - Later migration of existing Mongo users should happen via Clerk import using their existing bcrypt password digests, followed by email-based first sign-in mapping and persisted `clerkId` linking.
 
 ## Required Environment Variables

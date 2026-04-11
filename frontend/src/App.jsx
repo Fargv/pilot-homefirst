@@ -88,7 +88,10 @@ function AppRoutes() {
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
         <Route path="/login" element={<LoginPage />} />
-        {clerkPublishableKey ? <Route path="/auth/clerk" element={<ClerkAuthPage />} /> : null}
+        {clerkPublishableKey ? <Route path="/auth/clerk" element={<ClerkAuthPage mode="choice" />} /> : null}
+        {clerkPublishableKey ? <Route path="/auth/clerk/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} /> : null}
+        {clerkPublishableKey ? <Route path="/auth/clerk/sign-up/*" element={<ClerkAuthPage mode="sign-up" />} /> : null}
+        {clerkPublishableKey ? <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} /> : null}
         {clerkPublishableKey ? <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} /> : null}
         {isClerkDevAuthRouteEnabled ? <Route path="/dev/clerk-auth" element={<ClerkDevAuthPage />} /> : null}
         <Route path="/kitchen/login" element={<LoginPage />} />

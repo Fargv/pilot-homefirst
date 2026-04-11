@@ -47,7 +47,7 @@ export default function LoginPage() {
           {showClerkAuthLink ? (
             <div className="kitchen-alert info">
               Tambien puedes continuar con el nuevo acceso seguro.{" "}
-              <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk")}>
+              <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk/sign-in")}>
                 Usar Clerk
               </button>
               .

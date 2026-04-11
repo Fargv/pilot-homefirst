@@ -88,7 +88,7 @@ export default function SignupPage() {
           {showClerkAuthLink ? (
             <div className="kitchen-alert info">
               Tambien puedes crear la cuenta con el nuevo acceso seguro.{" "}
-              <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk")}>
+              <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk/sign-up")}>
                 Usar Clerk
               </button>
               .
