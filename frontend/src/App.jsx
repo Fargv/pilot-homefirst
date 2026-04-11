@@ -91,6 +91,7 @@ function AppRoutes() {
         {clerkPublishableKey ? <Route path="/auth/clerk" element={<ClerkAuthPage mode="choice" />} /> : null}
         {clerkPublishableKey ? <Route path="/auth/clerk/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} /> : null}
         {clerkPublishableKey ? <Route path="/auth/clerk/sign-up/*" element={<ClerkAuthPage mode="sign-up" />} /> : null}
+        {clerkPublishableKey ? <Route path="/auth/clerk/reset-password/*" element={<ClerkAuthPage mode="reset-password" />} /> : null}
         {clerkPublishableKey ? <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} /> : null}
         {clerkPublishableKey ? <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} /> : null}
         {isClerkDevAuthRouteEnabled ? <Route path="/dev/clerk-auth" element={<ClerkDevAuthPage />} /> : null}

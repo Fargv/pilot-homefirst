@@ -24,6 +24,7 @@ import {
 } from "../../users/utils.js";
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
+import { deleteClerkUserById } from "../clerkAuth.js";
 
 const router = express.Router();
 
@@ -61,6 +62,9 @@ async function unassignFutureCookSlots({ householdId, userId }) {
 }
 
 async function deleteHouseholdScopedData(householdId) {
+  const usersForClerkCleanup = await KitchenUser.find({ householdId })
+    .select("_id clerkId email")
+    .lean();
   const operations = await Promise.all([
     Invitation.deleteMany({ householdId }),
     KitchenShoppingList.deleteMany({ householdId }),
@@ -76,6 +80,18 @@ async function deleteHouseholdScopedData(householdId) {
     KitchenUser.deleteMany({ householdId }),
     Household.deleteOne({ _id: householdId })
   ]);
+  const clerkDeletionResults = await Promise.all(
+    usersForClerkCleanup
+      .filter((user) => user.clerkId)
+      .map((user) => deleteClerkUserById(user.clerkId, {
+        mongoUserId: user._id?.toString?.() || null,
+        email: user.email || null,
+        action: "delete_household_scoped_data"
+      }))
+  );
+
+  const clerkDeletionFailures = clerkDeletionResults.filter((result) => !result.ok);
+
   return {
     invitationsDeleted: Number(operations[0].deletedCount || 0),
     shoppingListsDeleted: Number(operations[1].deletedCount || 0),
@@ -89,7 +105,9 @@ async function deleteHouseholdScopedData(householdId) {
     shoppingTripsDeleted: Number(operations[9].deletedCount || 0),
     auditLogsDeleted: Number(operations[10].deletedCount || 0),
     usersDeleted: Number(operations[11].deletedCount || 0),
-    householdDeleted: Number(operations[12].deletedCount || 0)
+    householdDeleted: Number(operations[12].deletedCount || 0),
+    clerkUsersDeleted: clerkDeletionResults.filter((result) => result.ok && !result.skipped).length,
+    clerkDeletionFailures
   };
 }
 
@@ -340,6 +358,9 @@ router.delete("/me", requireAuth, async (req, res) => {
       return res.json({
         ok: true,
         deleted: "household",
+        clerkDeletionWarning: stats.clerkDeletionFailures?.length
+          ? "El household se elimino en Mongo, pero uno o mas usuarios no se pudieron eliminar en Clerk. Revisa los logs del backend."
+          : null,
         stats
       });
     }
@@ -366,12 +387,24 @@ router.delete("/me", requireAuth, async (req, res) => {
       }
     }
 
+    const deletedClerkId = req.kitchenUser.clerkId || null;
     await KitchenUser.deleteOne({ _id: req.kitchenUser._id });
+    const clerkDeletion = deletedClerkId
+      ? await deleteClerkUserById(deletedClerkId, {
+        mongoUserId: req.kitchenUser._id?.toString?.() || null,
+        email: req.kitchenUser.email || null,
+        action: "delete_own_profile"
+      })
+      : { ok: true, skipped: true };
 
     return res.json({
       ok: true,
       deleted: "user",
-      unassignedFutureCookSlots: unassignResult
+      unassignedFutureCookSlots: unassignResult,
+      clerkDeletion,
+      clerkDeletionWarning: clerkDeletion.ok
+        ? null
+        : "Tu perfil se elimino en Mongo, pero no se pudo eliminar la identidad en Clerk. Revisa los logs del backend."
     });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
@@ -481,8 +514,23 @@ router.delete("/members/:id", requireAuth, requireRole("owner"), async (req, res
       return res.status(400).json({ ok: false, error: "No puedes eliminar tu propia cuenta del hogar." });
     }
 
+    const deletedClerkId = member.clerkId || null;
     await KitchenUser.deleteOne({ _id: member._id });
-    return res.json({ ok: true });
+    const clerkDeletion = deletedClerkId
+      ? await deleteClerkUserById(deletedClerkId, {
+        mongoUserId: member._id?.toString?.() || null,
+        email: member.email || null,
+        deletedByUserId: req.kitchenUser._id?.toString?.() || null,
+        action: "delete_household_member"
+      })
+      : { ok: true, skipped: true };
+    return res.json({
+      ok: true,
+      clerkDeletion,
+      clerkDeletionWarning: clerkDeletion.ok
+        ? null
+        : "El usuario se elimino en Mongo, pero no se pudo eliminar la identidad en Clerk. Revisa los logs del backend."
+    });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;

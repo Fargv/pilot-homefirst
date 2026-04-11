@@ -51,6 +51,42 @@ export function isClerkAuthEnabled() {
   return Boolean(config.clerkSecretKey);
 }
 
+export async function deleteClerkUserById(clerkId, context = {}) {
+  const safeClerkId = String(clerkId || "").trim();
+  if (!safeClerkId) {
+    return { ok: true, skipped: true, reason: "missing_clerk_id" };
+  }
+
+  if (!clerkClient) {
+    logClerkDev("Clerk user deletion skipped because Clerk is not configured", {
+      clerkUserId: safeClerkId,
+      ...context
+    });
+    return { ok: false, skipped: true, clerkId: safeClerkId, error: "Clerk is not configured." };
+  }
+
+  try {
+    await clerkClient.users.deleteUser(safeClerkId);
+    logClerkDev("Deleted Clerk user after Mongo user deletion", {
+      clerkUserId: safeClerkId,
+      ...context
+    });
+    return { ok: true, clerkId: safeClerkId };
+  } catch (error) {
+    console.error("[clerk] Failed to delete Clerk user after Mongo user deletion", {
+      clerkUserId: safeClerkId,
+      ...context,
+      error: error?.message,
+      stack: error?.stack
+    });
+    return {
+      ok: false,
+      clerkId: safeClerkId,
+      error: error?.message || "No se pudo eliminar el usuario en Clerk."
+    };
+  }
+}
+
 export async function resolveClerkIdentityFromToken(token) {
   if (!isClerkAuthEnabled() || !token) {
     logClerkDev("Clerk auth skipped", {

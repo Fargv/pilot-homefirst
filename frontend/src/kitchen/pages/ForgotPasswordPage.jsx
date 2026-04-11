@@ -5,6 +5,7 @@ import { requestForgotPassword } from "../api.js";
 import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
 
 const GENERIC_SUCCESS_MESSAGE = "If an account exists for that email, a password reset link has been sent.";
+const showClerkAuthLink = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -76,6 +77,11 @@ export default function ForgotPasswordPage() {
           </form>
 
           <div className="kitchen-auth-footer-actions">
+            {showClerkAuthLink ? (
+              <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk/reset-password")}>
+                Si usas Clerk, recupera tu contrasena desde el acceso seguro
+              </button>
+            ) : null}
             <button type="button" className="kitchen-login-link" onClick={() => navigate("/login")}>
               Volver a iniciar sesion
             </button>

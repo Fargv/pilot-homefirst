@@ -153,6 +153,8 @@ export function AuthProvider({ children, clerk = null }) {
       loading,
       onboardingRequired,
       lastAuthError,
+      clerkLoaded: clerk?.isLoaded ?? false,
+      clerkSignedIn: clerk?.isSignedIn ?? false,
       login,
       logout,
       establishSession,
@@ -161,7 +163,7 @@ export function AuthProvider({ children, clerk = null }) {
       setUser,
       setOnboardingRequired
     }),
-    [user, loading, onboardingRequired, lastAuthError, logout, establishSession, clearSession, fetchMe]
+    [user, loading, onboardingRequired, lastAuthError, clerk, logout, establishSession, clearSession, fetchMe]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

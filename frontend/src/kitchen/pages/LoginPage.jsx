@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { resolvePostAuthRedirect } from "../authRedirect.js";
 import { useAuth } from "../auth";
@@ -8,14 +8,45 @@ import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
 const showClerkAuthLink = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, user, onboardingRequired, refreshUser, clerkLoaded, clerkSignedIn } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const profileDeleted = searchParams.get("deleted") === "1";
+  const profileDeletedWarning = searchParams.get("warning") || "";
   const next = searchParams.get("next") || "";
+
+  useEffect(() => {
+    let active = true;
+    const handoffClerkSession = async () => {
+      if (!clerkLoaded || !clerkSignedIn) return;
+      if (onboardingRequired) {
+        navigate("/onboarding/clerk", { replace: true });
+        return;
+      }
+      if (user?.id) {
+        navigate(resolvePostAuthRedirect(searchParams), { replace: true });
+        return;
+      }
+
+      const nextUser = await refreshUser({ authMode: "clerk" });
+      if (!active) return;
+      if (nextUser?.onboardingRequired) {
+        navigate("/onboarding/clerk", { replace: true });
+        return;
+      }
+      if (nextUser?.id) {
+        navigate(resolvePostAuthRedirect(searchParams), { replace: true });
+      }
+    };
+
+    void handoffClerkSession();
+    return () => {
+      active = false;
+    };
+  }, [clerkLoaded, clerkSignedIn, navigate, onboardingRequired, refreshUser, searchParams, user]);
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -54,6 +85,7 @@ export default function LoginPage() {
             </div>
           ) : null}
           {profileDeleted ? <div className="kitchen-alert success">Perfil eliminado correctamente. Puedes iniciar sesion o registrarte de nuevo.</div> : null}
+          {profileDeletedWarning ? <div className="kitchen-alert error">{profileDeletedWarning}</div> : null}
           <form onSubmit={onSubmit} className="kitchen-login-form">
             <div className="kitchen-login-fields">
               <label className="kitchen-ui-input-group" htmlFor="login-email">
@@ -106,6 +138,15 @@ export default function LoginPage() {
                 >
                   Olvidaste tu contrasena?
                 </button>
+                {showClerkAuthLink ? (
+                  <button
+                    type="button"
+                    className="kitchen-login-link"
+                    onClick={() => navigate("/auth/clerk/reset-password")}
+                  >
+                    Recuperar acceso con Clerk
+                  </button>
+                ) : null}
               </div>
             </div>
             {error ? <div className="kitchen-login-error">{error}</div> : null}

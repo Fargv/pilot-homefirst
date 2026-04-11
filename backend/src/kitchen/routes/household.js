@@ -391,7 +391,7 @@ router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) 
     }
     await assertCanAddUserToHousehold(household);
 
-    const { rawToken, inviteLink, invitation } = await createHouseholdInvitation({
+    const { rawToken, inviteLink, clerkInviteLink, invitation } = await createHouseholdInvitation({
       householdId: household._id,
       createdByUserId: req.kitchenUser._id
     });
@@ -399,6 +399,7 @@ router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) 
     return res.status(201).json({
       ok: true,
       inviteLink,
+      clerkInviteLink,
       token: rawToken,
       expiresAt: invitation.expiresAt
     });
@@ -615,7 +616,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
             email
           });
 
-          const { invitation, inviteLink } = await createHouseholdInvitation({
+          const { invitation, inviteLink, clerkInviteLink } = await createHouseholdInvitation({
             householdId: household._id,
             createdByUserId: req.kitchenUser._id,
             recipientEmail: email
@@ -628,6 +629,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
             html: buildHouseholdInvitationEmail({
               householdName: household.name,
               inviteLink,
+              clerkInviteLink,
               inviteCode,
               inviterName,
               recipientEmail: email
@@ -638,6 +640,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
             email,
             ok: true,
             inviteLink,
+            clerkInviteLink,
             expiresAt: invitation.expiresAt
           };
         } catch (sendError) {

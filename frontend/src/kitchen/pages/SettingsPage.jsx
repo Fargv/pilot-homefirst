@@ -649,12 +649,15 @@ export default function SettingsPage() {
       if (deleteProfileModal.preview.willDeleteHousehold) {
         body.confirmDeleteHousehold = deleteProfileModal.confirmDeleteHousehold;
       }
-      await apiRequest("/api/kitchen/users/me", {
+      const data = await apiRequest("/api/kitchen/users/me", {
         method: "DELETE",
         body: JSON.stringify(body)
       });
+      if (data?.clerkDeletionWarning) {
+        console.warn("[clerk] Profile deleted in Mongo but Clerk cleanup needs attention", data);
+      }
       logout();
-      navigate("/login?deleted=1", { replace: true });
+      navigate(data?.clerkDeletionWarning ? `/login?deleted=1&warning=${encodeURIComponent(data.clerkDeletionWarning)}` : "/login?deleted=1", { replace: true });
     } catch (err) {
       setError(err.message || "No se pudo eliminar el perfil.");
     }
@@ -763,9 +766,9 @@ export default function SettingsPage() {
       message: `Seguro que quieres eliminar a ${member.displayName} del household?`,
       dangerLabel: "Eliminar",
       onConfirm: async () => {
-        await apiRequest(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
+        const data = await apiRequest(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
         closeMemberModal();
-        updateSuccess("Usuario eliminado.");
+        updateSuccess(data?.clerkDeletionWarning || "Usuario eliminado.");
         await loadData();
       }
     });

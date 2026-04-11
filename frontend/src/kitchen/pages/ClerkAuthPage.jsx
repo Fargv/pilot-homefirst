@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   SignIn,
   SignUp,
@@ -9,13 +9,15 @@ import {
   useSignUp,
   useUser
 } from "@clerk/react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth";
 import Card from "../components/ui/Card";
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development" || import.meta.env.DEV;
 const clerkCompletePath = "/auth/clerk/complete";
+const pendingInviteTokenKey = "clerk_onboarding_invite_token";
+const pendingInviteCodeKey = "clerk_onboarding_invite_code";
 
 function findFirstFieldError(fields = {}) {
   for (const value of Object.values(fields || {})) {
@@ -88,6 +90,7 @@ export default function ClerkAuthPage({ mode = "choice" }) {
 
 function ClerkAuthContent({ mode }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, loading, onboardingRequired, lastAuthError, refreshUser, clearSession } = useAuth();
   const { isLoaded, isSignedIn } = useClerkAuth();
   const signInState = useSignIn();
@@ -97,6 +100,7 @@ function ClerkAuthContent({ mode }) {
   const [mappingError, setMappingError] = useState("");
   const [lastClerkError, setLastClerkError] = useState(null);
   const [lastBootstrapStatus, setLastBootstrapStatus] = useState("waiting");
+  const lastClerkFormSubmitAtRef = useRef(0);
   const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
   const clerkIdentity = clerkEmail || clerkUser?.username || clerkUser?.id || "Unknown Clerk user";
   const pageCopy = useMemo(() => {
@@ -114,6 +118,13 @@ function ClerkAuthContent({ mode }) {
         subtitle: "Accede con tu identidad segura y continuaremos con tu perfil interno."
       };
     }
+    if (mode === "reset-password") {
+      return {
+        kicker: "Cuenta segura",
+        title: "Recupera tu acceso seguro",
+        subtitle: "Usa el flujo de Clerk para restablecer la contrasena de tu cuenta segura."
+      };
+    }
     if (mode === "complete") {
       return {
         kicker: "Preparando tu cocina",
@@ -127,6 +138,39 @@ function ClerkAuthContent({ mode }) {
       subtitle: "Puedes usar el acceso seguro o continuar con email y contrasena mientras migramos las cuentas."
     };
   }, [mode]);
+
+  useEffect(() => {
+    const inviteToken = String(searchParams.get("inviteToken") || searchParams.get("token") || "").trim();
+    const inviteCode = String(searchParams.get("inviteCode") || searchParams.get("code") || "").replace(/\D/g, "").slice(0, 6);
+    if (inviteToken) {
+      window.sessionStorage.setItem(pendingInviteTokenKey, inviteToken);
+      if (isDevelopmentEnvironment) {
+        console.info("[clerk][dev] Stored pending invite token for Clerk onboarding");
+      }
+    }
+    if (inviteCode) {
+      window.sessionStorage.setItem(pendingInviteCodeKey, inviteCode);
+      if (isDevelopmentEnvironment) {
+        console.info("[clerk][dev] Stored pending invite code for Clerk onboarding", { inviteCode });
+      }
+    }
+  }, [searchParams]);
+
+  const guardClerkSubmit = (event, source) => {
+    const now = Date.now();
+    if (now - lastClerkFormSubmitAtRef.current < 750) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (isDevelopmentEnvironment) {
+        console.warn("[clerk][dev] Suppressed duplicate Clerk form submit", { source });
+      }
+      return;
+    }
+    lastClerkFormSubmitAtRef.current = now;
+    if (isDevelopmentEnvironment) {
+      console.info("[clerk][dev] Clerk form submit", { source });
+    }
+  };
 
   const bootstrapClerkUser = async ({ source = "manual" } = {}) => {
     if (!isSignedIn) return null;
@@ -307,25 +351,29 @@ function ClerkAuthContent({ mode }) {
           ) : null}
 
           {!isSignedIn && mode === "sign-up" ? (
-            <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
+            <div className="kitchen-auth-card" style={{ marginTop: 16 }} onSubmitCapture={(event) => guardClerkSubmit(event, "sign-up")}>
               <SignUp
                 routing="path"
                 path="/auth/clerk/sign-up"
                 signInUrl="/auth/clerk/sign-in"
                 forceRedirectUrl={clerkCompletePath}
                 fallbackRedirectUrl={clerkCompletePath}
+                signInForceRedirectUrl={clerkCompletePath}
+                signInFallbackRedirectUrl={clerkCompletePath}
               />
             </div>
           ) : null}
 
-          {!isSignedIn && mode === "sign-in" ? (
-            <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
+          {!isSignedIn && (mode === "sign-in" || mode === "reset-password") ? (
+            <div className="kitchen-auth-card" style={{ marginTop: 16 }} onSubmitCapture={(event) => guardClerkSubmit(event, "sign-in")}>
               <SignIn
                 routing="path"
-                path="/auth/clerk/sign-in"
+                path={mode === "reset-password" ? "/auth/clerk/reset-password" : "/auth/clerk/sign-in"}
                 signUpUrl="/auth/clerk/sign-up"
                 forceRedirectUrl={clerkCompletePath}
                 fallbackRedirectUrl={clerkCompletePath}
+                signUpForceRedirectUrl={clerkCompletePath}
+                signUpFallbackRedirectUrl={clerkCompletePath}
               />
             </div>
           ) : null}

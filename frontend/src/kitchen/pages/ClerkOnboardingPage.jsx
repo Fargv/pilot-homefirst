@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import { useAuth } from "../auth";
 import Card from "../components/ui/Card";
 
+const pendingInviteTokenKey = "clerk_onboarding_invite_token";
+const pendingInviteCodeKey = "clerk_onboarding_invite_code";
+
 export default function ClerkOnboardingPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user: clerkUser } = useUser();
   const { setUser, setOnboardingRequired, refreshUser } = useAuth();
   const [form, setForm] = useState({
@@ -14,6 +18,8 @@ export default function ClerkOnboardingPage() {
     lastName: "",
     initials: "",
     householdName: "",
+    inviteCode: "",
+    inviteToken: "",
     active: true,
     canCook: true,
     dinnerActive: true,
@@ -23,6 +29,8 @@ export default function ClerkOnboardingPage() {
     avoidRepeatsWeeks: 1
   });
   const [loading, setLoading] = useState(false);
+  const [resolvingCode, setResolvingCode] = useState(false);
+  const [resolvedHousehold, setResolvedHousehold] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -34,8 +42,49 @@ export default function ClerkOnboardingPage() {
     }));
   }, [clerkUser]);
 
+  useEffect(() => {
+    const inviteToken = String(
+      searchParams.get("inviteToken")
+      || searchParams.get("token")
+      || window.sessionStorage.getItem(pendingInviteTokenKey)
+      || ""
+    ).trim();
+    const inviteCode = String(
+      searchParams.get("inviteCode")
+      || searchParams.get("code")
+      || window.sessionStorage.getItem(pendingInviteCodeKey)
+      || ""
+    ).replace(/\D/g, "").slice(0, 6);
+
+    setForm((prev) => ({
+      ...prev,
+      inviteToken: prev.inviteToken || inviteToken,
+      inviteCode: prev.inviteCode || inviteCode
+    }));
+  }, [searchParams]);
+
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const normalizedInviteCode = String(form.inviteCode || "").replace(/\D/g, "").slice(0, 6);
+
+  const resolveCode = async () => {
+    if (normalizedInviteCode.length !== 6) {
+      setError("Introduce un codigo numerico de 6 digitos.");
+      return;
+    }
+    setError("");
+    setResolvedHousehold("");
+    setResolvingCode(true);
+    try {
+      const data = await apiRequest(`/api/kitchen/auth/resolve-household/${normalizedInviteCode}`);
+      setResolvedHousehold(data?.household?.name || "");
+    } catch (err) {
+      setError(err.message || "El codigo no es valido.");
+    } finally {
+      setResolvingCode(false);
+    }
   };
 
   const onSubmit = async (event) => {
@@ -47,9 +96,15 @@ export default function ClerkOnboardingPage() {
       const data = await apiRequest("/api/kitchen/auth/clerk/onboarding", {
         method: "POST",
         authMode: "clerk",
-        body: JSON.stringify(form)
+        body: JSON.stringify({
+          ...form,
+          inviteCode: normalizedInviteCode || undefined,
+          inviteToken: form.inviteToken || undefined
+        })
       });
 
+      window.sessionStorage.removeItem(pendingInviteTokenKey);
+      window.sessionStorage.removeItem(pendingInviteCodeKey);
       setUser(data.user);
       setOnboardingRequired(false);
       await refreshUser({ authMode: "clerk" });
@@ -110,9 +165,35 @@ export default function ClerkOnboardingPage() {
                 className="kitchen-ui-input"
                 value={form.householdName}
                 onChange={(event) => updateField("householdName", event.target.value)}
-                required
+                required={!form.inviteToken && !normalizedInviteCode}
               />
             </label>
+            {form.inviteToken ? (
+              <div className="kitchen-alert info">
+                Tienes una invitacion segura pendiente. Al completar el perfil, te uniremos al hogar invitado si la invitacion sigue vigente.
+              </div>
+            ) : (
+              <>
+                <label className="kitchen-ui-input-group" htmlFor="clerk-invite-code">
+                  <span className="kitchen-login-label">CODIGO DE HOGAR (OPCIONAL)</span>
+                  <input
+                    id="clerk-invite-code"
+                    className="kitchen-ui-input"
+                    inputMode="numeric"
+                    value={normalizedInviteCode}
+                    onChange={(event) => updateField("inviteCode", event.target.value)}
+                    placeholder="123456"
+                    maxLength={6}
+                  />
+                </label>
+                <div className="kitchen-actions">
+                  <button type="button" className="kitchen-button secondary" onClick={resolveCode} disabled={resolvingCode || normalizedInviteCode.length !== 6}>
+                    {resolvingCode ? "Validando..." : "Validar codigo"}
+                  </button>
+                  {resolvedHousehold ? <span className="kitchen-muted">Hogar: <strong>{resolvedHousehold}</strong></span> : null}
+                </div>
+              </>
+            )}
 
             <label className="kitchen-field kitchen-toggle-field">
               <div className="kitchen-toggle-row">

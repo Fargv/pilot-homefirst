@@ -60,6 +60,80 @@ function buildSafeUserResponse(user, householdName = null) {
   };
 }
 
+async function resolveClerkOnboardingHousehold({ inviteCode, inviteToken, identity }) {
+  const normalizedInviteCode = String(inviteCode || "").replace(/\D/g, "").slice(0, 6);
+  const normalizedInviteToken = String(inviteToken || "").trim();
+
+  if (normalizedInviteToken) {
+    const invitation = await findActiveInvitationByToken(normalizedInviteToken);
+    if (!invitation) {
+      const error = new Error("La invitacion no es valida o expiro.");
+      error.status = 400;
+      error.code = "INVITATION_INVALID";
+      throw error;
+    }
+
+    if (invitation.recipientEmail && invitation.recipientEmail !== identity.email) {
+      const error = new Error("Esta invitacion fue enviada a otro email. Usa ese correo o pide una nueva invitacion.");
+      error.status = 403;
+      error.code = "INVITATION_EMAIL_MISMATCH";
+      throw error;
+    }
+
+    const household = await Household.findById(invitation.householdId)
+      .select("_id name subscriptionPlan inviteCode")
+      .lean();
+    if (!household) {
+      const error = new Error("No encontramos el hogar asociado a esta invitacion.");
+      error.status = 404;
+      error.code = "INVITATION_HOUSEHOLD_MISSING";
+      throw error;
+    }
+
+    await assertCanAddUserToHousehold(household);
+    return {
+      mode: "token",
+      household,
+      role: invitation.role || "member",
+      invitation
+    };
+  }
+
+  if (normalizedInviteCode) {
+    if (!isValidInviteCodeFormat(normalizedInviteCode)) {
+      const error = new Error("El codigo debe tener 6 digitos numericos.");
+      error.status = 400;
+      error.code = "INVITE_CODE_INVALID";
+      throw error;
+    }
+
+    const household = await Household.findOne({ inviteCode: normalizedInviteCode })
+      .select("_id name subscriptionPlan inviteCode")
+      .lean();
+    if (!household) {
+      const error = new Error("El codigo del hogar no es valido.");
+      error.status = 404;
+      error.code = "INVITE_CODE_NOT_FOUND";
+      throw error;
+    }
+
+    await assertCanAddUserToHousehold(household);
+    return {
+      mode: "code",
+      household,
+      role: "member",
+      invitation: null
+    };
+  }
+
+  return {
+    mode: "create",
+    household: null,
+    role: "owner",
+    invitation: null
+  };
+}
+
 
 function hashResetPasswordToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -528,7 +602,9 @@ router.post("/clerk/onboarding", async (req, res) => {
       dinnerCanCook,
       dinnersEnabled,
       avoidRepeatsEnabled,
-      avoidRepeatsWeeks
+      avoidRepeatsWeeks,
+      inviteCode,
+      inviteToken
     } = req.body || {};
 
     const safeFirstName = String(firstName || identity.clerkUser?.firstName || "").trim();
@@ -549,6 +625,18 @@ router.post("/clerk/onboarding", async (req, res) => {
       return res.status(400).json({ ok: false, code: "PROFILE_REQUIRED", error: "Nombre y apellidos son obligatorios." });
     }
 
+    const onboardingTarget = await resolveClerkOnboardingHousehold({
+      inviteCode,
+      inviteToken,
+      identity
+    });
+    logClerkOnboardingDev("Clerk onboarding household target resolved", {
+      mode: onboardingTarget.mode,
+      targetHouseholdId: onboardingTarget.household?._id?.toString?.() || null,
+      role: onboardingTarget.role,
+      hasInvitation: Boolean(onboardingTarget.invitation)
+    });
+
     let user = identity.kitchenUser;
     if (user?.clerkId && user.clerkId !== identity.clerkUser.id) {
       logClerkOnboardingDev("Onboarding rejected: Clerk ID mismatch", {
@@ -557,6 +645,18 @@ router.post("/clerk/onboarding", async (req, res) => {
         incomingClerkId: identity.clerkUser.id
       });
       return res.status(409).json({ ok: false, code: "CLERK_USER_MISMATCH", error: "Esta cuenta interna ya esta vinculada a otra identidad de Clerk." });
+    }
+
+    if (
+      user?.householdId
+      && onboardingTarget.household
+      && String(user.householdId) !== String(onboardingTarget.household._id)
+    ) {
+      return res.status(409).json({
+        ok: false,
+        code: "USER_ALREADY_IN_OTHER_HOUSEHOLD",
+        error: "Tu cuenta ya pertenece a otro hogar. No puedes unirte con esta invitacion."
+      });
     }
 
     if (!user) {
@@ -578,7 +678,7 @@ router.post("/clerk/onboarding", async (req, res) => {
         canCook: parseBooleanWithDefault(canCook, true),
         dinnerActive: parseBooleanWithDefault(dinnerActive, true),
         dinnerCanCook: parseBooleanWithDefault(dinnerCanCook, true),
-        role: "owner",
+        role: onboardingTarget.role,
         householdId: null,
         isPlaceholder: false,
         globalRole: null
@@ -605,6 +705,12 @@ router.post("/clerk/onboarding", async (req, res) => {
     }
 
     let household = user.householdId ? await Household.findById(user.householdId) : null;
+    if (!household && onboardingTarget.household) {
+      household = onboardingTarget.household;
+      user.role = onboardingTarget.role;
+      user.householdId = onboardingTarget.household._id;
+    }
+
     if (!household) {
       user.role = "owner";
       const finalHouseholdName = String(householdName || "").trim() || `${finalDisplayName} - Hogar`;
@@ -629,6 +735,13 @@ router.post("/clerk/onboarding", async (req, res) => {
       }
     }
 
+    if (onboardingTarget.invitation) {
+      onboardingTarget.invitation.status = "used";
+      onboardingTarget.invitation.usedAt = new Date();
+      onboardingTarget.invitation.usedByUserId = user._id;
+      await onboardingTarget.invitation.save();
+    }
+
     await user.save();
 
     logClerkOnboardingDev("Clerk onboarding completed", {
@@ -645,7 +758,8 @@ router.post("/clerk/onboarding", async (req, res) => {
         id: household._id,
         name: household.name,
         inviteCode: household.inviteCode || null
-      } : null
+      } : null,
+      joinMode: onboardingTarget.mode
     });
   } catch (error) {
     console.error("[clerk/onboarding] failed", {

@@ -47,7 +47,8 @@
   - `/auth/clerk` is the product-facing Clerk choice screen.
   - `/auth/clerk/sign-up` and `/auth/clerk/sign-in` are dedicated path-routed Clerk component routes.
   - `/auth/clerk/complete` is the post-Clerk return route that bootstraps the Mongo app profile or sends the user to onboarding.
-  - `/onboarding/clerk` collects app-specific profile and household data after Clerk identity is established.
+  - `/onboarding/clerk` collects app-specific profile and household data after Clerk identity is established. It supports fallback new-household creation, optional six-digit household invite code joins, and Clerk deep links with `inviteToken`.
+  - `/auth/clerk/reset-password` exposes Clerk's reset-password path via the Clerk sign-in flow. `/forgot-password` remains the legacy Mongo password-reset page.
   - A temporary development-only route exists at `/dev/clerk-auth` in [frontend/src/kitchen/pages/ClerkDevAuthPage.jsx](/C:/APPS/pilot-homefirst/frontend/src/kitchen/pages/ClerkDevAuthPage.jsx). This is now a diagnostics and launcher page; it does not mount competing Clerk sign-up and sign-in widgets.
   - The existing `/register` page still posts only to the legacy Mongo endpoint and does not create Clerk users.
 - Backend:
@@ -58,29 +59,42 @@
   - If the Mongo user exists and `clerkId` is already set, the backend verifies it matches.
   - If there is no mapped Mongo user, `/api/kitchen/auth/me` reports that app onboarding is required.
   - `POST /api/kitchen/auth/clerk/onboarding` requires a valid Clerk bearer token and creates or completes the Mongo `KitchenUser` plus `Household` with safe household-scoped defaults.
+  - Clerk onboarding joins households only through validated invite codes or invitation tokens. It never trusts client-provided household IDs.
+  - When a Mongo user with `clerkId` is deleted through the app delete flows, the backend also attempts to delete the Clerk identity and returns/logs a clear warning if Clerk cleanup fails after Mongo deletion.
   - Clerk onboarding never assigns `globalRole`, `admin`, or `diod` privileges.
 
 ## Product Clerk Auth Flow
 
 - Users can enter through `/auth/clerk`, then choose `/auth/clerk/sign-up` or `/auth/clerk/sign-in`.
 - Clerk handles identity and session creation.
+- Clerk redirects are configured to return directly to `/auth/clerk/complete`; the legacy `/login` page also auto-hands off an active Clerk session if a stale redirect lands there.
 - After Clerk returns to `/auth/clerk/complete`, the frontend calls Clerk-backed `/api/kitchen/auth/me`.
 - If a Mongo app profile and household already exist, the user enters `/kitchen/semana`.
 - If Mongo app onboarding is missing, the user is sent to `/onboarding/clerk`.
-- `/onboarding/clerk` collects first name, last name, initials, household name, diner/cook defaults, and initial household preferences.
+- `/onboarding/clerk` collects first name, last name, initials, household name, diner/cook defaults, optional invite code, optional invite token from a Clerk deep link, and initial household preferences.
 - Submitting onboarding calls `POST /api/kitchen/auth/clerk/onboarding`, which creates or completes the safe Mongo business records.
+- The Clerk sign-up/sign-in pages add a short duplicate-submit guard around the prebuilt Clerk components to avoid accidental double verification requests from rapid duplicate form submits.
 
 ## Temporary DEV Clerk Auth Entry Point
 
 - Visit `/dev/clerk-auth` for development diagnostics and links to the real Clerk routes.
 - Visit `/auth/clerk/sign-up` to create a real Clerk user.
 - Visit `/auth/clerk/sign-in` to sign in as an existing Clerk user.
+- Visit `/auth/clerk/reset-password` for the Clerk password-reset flow.
 - This page is intentionally separate from `/login` and `/register`.
 - `/login` and `/register` remain the legacy Mongo/JWT screens.
 - The reason legacy Register does not create Clerk users is that it still posts to `/api/kitchen/auth/register`, hashes the password locally with bcrypt, creates a Mongo `KitchenUser`, and receives a legacy JWT. It does not call Clerk's sign-up APIs or render Clerk's `<SignUp />`.
 - The `/auth/clerk/sign-up` page is now the UI path in this repo that creates Clerk users.
 - After a successful Clerk sign-in, `/dev/clerk-auth` may not show any sign-in form because the Clerk session is already active; testers should sign out from that DEV page to test another Clerk login.
 - Later migration of existing Mongo users should happen via Clerk import using their existing bcrypt password digests, followed by email-based first sign-in mapping and persisted `clerkId` linking.
+
+## Clerk Household Invites
+
+- Owners can still share the existing six-digit household invite code.
+- Owners can also share a Clerk-friendly link in the form `/auth/clerk/sign-up?inviteToken=...` or `/auth/clerk/sign-up?inviteCode=...`.
+- The frontend stores pending Clerk invite context only long enough to complete `/onboarding/clerk`.
+- The backend resolves invite tokens through the existing `Invitation` model and invite-code joins through `Household.inviteCode`.
+- Recipient-email restrictions, invite expiration, license/user-limit checks, and household scoping remain enforced on the backend.
 
 ## Required Environment Variables
 
