@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { SignIn, SignUp, UserButton, useAuth as useClerkAuth, useClerk, useUser } from "@clerk/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
@@ -51,6 +51,7 @@ function ClerkDevAuthContent() {
   const { isSignedIn } = useClerkAuth();
   const clerk = useClerk();
   const { user: clerkUser } = useUser();
+  const [mappingError, setMappingError] = useState("");
   const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
   const clerkIdentity = clerkEmail || clerkUser?.username || clerkUser?.id || "Unknown Clerk user";
 
@@ -59,9 +60,21 @@ function ClerkDevAuthContent() {
     await clerk.signOut({ redirectUrl: "/dev/clerk-auth" });
   };
 
+  const openAppAfterClerkAuth = async () => {
+    setMappingError("");
+    const nextUser = await refreshUser({ authMode: "clerk" });
+    if (nextUser) {
+      navigate("/kitchen/semana");
+      return;
+    }
+
+    setMappingError("No se pudo resolver o crear el usuario interno de Mongo. Revisa la consola del backend.");
+  };
+
   useEffect(() => {
-    void refreshUser();
-  }, [refreshUser]);
+    if (!isSignedIn) return;
+    void refreshUser({ authMode: "clerk" });
+  }, [isSignedIn, refreshUser]);
 
   return (
     <div className="kitchen-app">
@@ -82,10 +95,11 @@ function ClerkDevAuthContent() {
             <button type="button" className="kitchen-button secondary" onClick={() => navigate("/register")}>
               Legacy register
             </button>
-            <button type="button" className="kitchen-button" onClick={() => navigate("/kitchen/semana")}>
+            <button type="button" className="kitchen-button" onClick={openAppAfterClerkAuth} disabled={!isSignedIn}>
               Open app after Clerk auth
             </button>
           </div>
+          {mappingError ? <div className="kitchen-alert error">{mappingError}</div> : null}
 
           {isSignedIn ? (
             <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
@@ -103,13 +117,13 @@ function ClerkDevAuthContent() {
               </div>
               <div className="kitchen-actions" style={{ alignItems: "center" }}>
                 <UserButton afterSignOutUrl="/dev/clerk-auth" />
-                <button type="button" className="kitchen-button secondary" onClick={() => refreshUser()}>
+                <button type="button" className="kitchen-button secondary" onClick={() => refreshUser({ authMode: "clerk" })}>
                   Refresh Mongo mapping
                 </button>
                 <button type="button" className="kitchen-button secondary" onClick={signOutForTesting}>
                   Sign out to test another Clerk account
                 </button>
-                <button type="button" className="kitchen-button" onClick={() => navigate("/kitchen/semana")}>
+                <button type="button" className="kitchen-button" onClick={openAppAfterClerkAuth}>
                   Open app after Clerk auth
                 </button>
               </div>

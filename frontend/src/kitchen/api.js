@@ -41,7 +41,18 @@ export function registerClerkTokenGetter(getter) {
   clerkTokenGetter = typeof getter === "function" ? getter : null;
 }
 
-async function getAuthorizationHeader() {
+async function getAuthorizationHeader(authMode = "auto") {
+  if (authMode === "clerk") {
+    if (!clerkTokenGetter) return null;
+
+    try {
+      const clerkToken = await clerkTokenGetter();
+      return clerkToken ? `Bearer ${clerkToken}` : null;
+    } catch {
+      return null;
+    }
+  }
+
   const legacyToken = getToken();
   if (legacyToken) return `Bearer ${legacyToken}`;
 
@@ -56,19 +67,20 @@ async function getAuthorizationHeader() {
 }
 
 export async function apiRequest(path, options = {}) {
+  const { authMode = "auto", ...fetchOptions } = options;
   const headers = {
     "Content-Type": "application/json",
-    ...(options.headers || {})
+    ...(fetchOptions.headers || {})
   };
 
-  const authorizationHeader = await getAuthorizationHeader();
+  const authorizationHeader = await getAuthorizationHeader(authMode);
   if (authorizationHeader && !headers.Authorization) {
     headers.Authorization = authorizationHeader;
   }
 
   const url = buildApiUrl(path);
   const response = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     headers
   });
 

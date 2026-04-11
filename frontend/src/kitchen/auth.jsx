@@ -12,38 +12,31 @@ export function AuthProvider({ children, clerk = null }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchMe = useCallback(async () => {
+  const fetchMe = useCallback(async ({ authMode = "auto" } = {}) => {
     try {
-      const data = await apiRequest("/api/kitchen/auth/me");
+      const data = await apiRequest("/api/kitchen/auth/me", { authMode });
+      if (authMode === "clerk" && import.meta.env.DEV) {
+        setToken(null);
+      }
       setUser(data.user);
-    } catch {
+      return data.user;
+    } catch (error) {
+      if (authMode === "clerk") {
+        console.warn("[clerk][dev] No se pudo resolver /me con token de Clerk", {
+          message: error?.message,
+          status: error?.status,
+          body: error?.body
+        });
+      }
       setUser(null);
-      setToken(null);
+      if (authMode !== "clerk") {
+        setToken(null);
+      }
+      return null;
     } finally {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (hasLegacyToken()) {
-      fetchMe();
-      return;
-    }
-
-    if (!clerk) {
-      setLoading(false);
-      return;
-    }
-
-    if (!clerk.isLoaded) return;
-
-    if (clerk.isSignedIn) {
-      fetchMe();
-      return;
-    }
-
-    setLoading(false);
-  }, [clerk, fetchMe]);
 
   useEffect(() => {
     if (!clerk) {
@@ -62,16 +55,30 @@ export function AuthProvider({ children, clerk = null }) {
   }, [clerk]);
 
   useEffect(() => {
-    if (!clerk?.isLoaded || hasLegacyToken()) return;
+    if (!clerk) {
+      if (hasLegacyToken()) {
+        fetchMe();
+      } else {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (!clerk.isLoaded) return;
 
     if (clerk.isSignedIn) {
+      fetchMe({ authMode: "clerk" });
+      return;
+    }
+
+    if (hasLegacyToken()) {
       fetchMe();
       return;
     }
 
     setUser(null);
     setLoading(false);
-  }, [clerk?.isLoaded, clerk?.isSignedIn, fetchMe]);
+  }, [clerk, fetchMe]);
 
   const login = async (email, password) => {
     const data = await apiRequest("/api/kitchen/auth/login", {
@@ -132,16 +139,18 @@ export function useAuth() {
 export function ClerkEnabledAuthProvider({ children }) {
   const { getToken, isLoaded, isSignedIn } = useClerkAuth();
   const clerk = useClerk();
+  const clerkAuth = useMemo(
+    () => ({
+      getToken,
+      isLoaded,
+      isSignedIn,
+      signOut: (...args) => clerk.signOut(...args)
+    }),
+    [clerk, getToken, isLoaded, isSignedIn]
+  );
 
   return (
-    <AuthProvider
-      clerk={{
-        getToken,
-        isLoaded,
-        isSignedIn,
-        signOut: (...args) => clerk.signOut(...args)
-      }}
-    >
+    <AuthProvider clerk={clerkAuth}>
       {children}
     </AuthProvider>
   );
