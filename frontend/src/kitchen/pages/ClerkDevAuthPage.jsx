@@ -1,11 +1,58 @@
 import React, { useEffect, useState } from "react";
-import { SignIn, SignUp, UserButton, useAuth as useClerkAuth, useClerk, useUser } from "@clerk/react";
+import { SignIn, SignUp, UserButton, useAuth as useClerkAuth, useClerk, useSignIn, useSignUp, useUser } from "@clerk/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
 import Card from "../components/ui/Card";
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development" || import.meta.env.DEV;
+
+function findFirstFieldError(fields = {}) {
+  for (const value of Object.values(fields || {})) {
+    if (value) return value;
+  }
+  return null;
+}
+
+function normalizeClerkErrors(source, errors) {
+  const rawError = errors?.global?.[0] || findFirstFieldError(errors?.fields) || errors?.raw?.[0] || null;
+  if (!rawError) return null;
+
+  const firstApiError = rawError?.errors?.[0] || rawError;
+  const code = firstApiError?.code || rawError?.code || "CLERK_ERROR";
+  const longMessage =
+    firstApiError?.longMessage
+    || firstApiError?.long_message
+    || rawError?.longMessage
+    || rawError?.long_message
+    || firstApiError?.message
+    || rawError?.message
+    || "Clerk sign-in/sign-up failed.";
+
+  return {
+    source,
+    code,
+    longMessage,
+    raw: rawError,
+    rawErrors: errors?.raw || null
+  };
+}
+
+function stringifyDebugValue(value) {
+  const seen = new WeakSet();
+  return JSON.stringify(
+    value,
+    (key, nextValue) => {
+      if (typeof nextValue === "object" && nextValue !== null) {
+        if (seen.has(nextValue)) return "[Circular]";
+        seen.add(nextValue);
+      }
+      if (typeof nextValue === "function") return `[Function ${nextValue.name || "anonymous"}]`;
+      return nextValue;
+    },
+    2
+  );
+}
 
 export default function ClerkDevAuthPage() {
   const navigate = useNavigate();
@@ -49,9 +96,12 @@ function ClerkDevAuthContent() {
   const navigate = useNavigate();
   const { user, loading, clearSession, refreshUser } = useAuth();
   const { isSignedIn } = useClerkAuth();
+  const signInState = useSignIn();
+  const signUpState = useSignUp();
   const clerk = useClerk();
   const { user: clerkUser } = useUser();
   const [mappingError, setMappingError] = useState("");
+  const [lastClerkError, setLastClerkError] = useState(null);
   const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
   const clerkIdentity = clerkEmail || clerkUser?.username || clerkUser?.id || "Unknown Clerk user";
 
@@ -75,6 +125,22 @@ function ClerkDevAuthContent() {
     if (!isSignedIn) return;
     void refreshUser({ authMode: "clerk" });
   }, [isSignedIn, refreshUser]);
+
+  useEffect(() => {
+    if (!signInState.isLoaded) return;
+    const normalized = normalizeClerkErrors("sign-in", signInState.errors);
+    if (!normalized) return;
+    setLastClerkError(normalized);
+    console.warn("[clerk][dev] Sign-in failed", normalized);
+  }, [signInState.isLoaded, signInState.errors]);
+
+  useEffect(() => {
+    if (!signUpState.isLoaded) return;
+    const normalized = normalizeClerkErrors("sign-up", signUpState.errors);
+    if (!normalized) return;
+    setLastClerkError(normalized);
+    console.warn("[clerk][dev] Sign-up failed", normalized);
+  }, [signUpState.isLoaded, signUpState.errors]);
 
   return (
     <div className="kitchen-app">
@@ -100,6 +166,13 @@ function ClerkDevAuthContent() {
             </button>
           </div>
           {mappingError ? <div className="kitchen-alert error">{mappingError}</div> : null}
+          {lastClerkError ? (
+            <div className="kitchen-alert error">
+              <strong>Clerk {lastClerkError.source} error:</strong> {lastClerkError.code}
+              <br />
+              {lastClerkError.longMessage}
+            </div>
+          ) : null}
 
           {isSignedIn ? (
             <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
@@ -157,6 +230,26 @@ function ClerkDevAuthContent() {
               </div>
             </div>
           ) : null}
+
+          <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
+            <p className="kitchen-auth-kicker">DEV debug</p>
+            <div className="kitchen-alert info">
+              <strong>Clerk auth state:</strong> {isSignedIn ? "signed in" : "signed out"}
+              <br />
+              <strong>Clerk identity:</strong> {isSignedIn ? clerkIdentity : "none"}
+              <br />
+              <strong>Mongo mapping state:</strong>{" "}
+              {loading ? "resolving" : user?.email ? `mapped to ${user.email}` : mappingError ? "mapping failed" : "not resolved"}
+              <br />
+              <strong>Last Clerk error:</strong>{" "}
+              {lastClerkError ? `${lastClerkError.source} / ${lastClerkError.code}: ${lastClerkError.longMessage}` : "none"}
+            </div>
+            {lastClerkError ? (
+              <pre className="kitchen-alert error" style={{ whiteSpace: "pre-wrap", overflowX: "auto" }}>
+                {stringifyDebugValue(lastClerkError.rawErrors || lastClerkError.raw)}
+              </pre>
+            ) : null}
+          </div>
         </Card>
       </div>
     </div>
