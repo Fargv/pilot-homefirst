@@ -40,6 +40,17 @@ function getBearerToken(req) {
   return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 }
 
+function logClerkOnboardingDev(message, details = {}) {
+  if (
+    config.nodeEnv !== "development"
+    && process.env.APP_ENV !== "development"
+    && process.env.CLERK_DEBUG !== "true"
+  ) {
+    return;
+  }
+  console.log(`[clerk/onboarding][dev] ${message}`, details);
+}
+
 function buildSafeUserResponse(user, householdName = null) {
   return {
     ...user.toSafeJSON(),
@@ -489,10 +500,21 @@ router.post("/logout", (req, res) => {
 router.post("/clerk/onboarding", async (req, res) => {
   try {
     const token = getBearerToken(req);
+    logClerkOnboardingDev("Onboarding request received", {
+      hasBearerToken: Boolean(token)
+    });
     const identity = await resolveClerkIdentityFromToken(token);
     if (!identity) {
+      logClerkOnboardingDev("Onboarding rejected: missing Clerk identity");
       return res.status(401).json({ ok: false, code: "CLERK_AUTH_REQUIRED", error: "Debes iniciar sesion con Clerk." });
     }
+
+    logClerkOnboardingDev("Clerk identity resolved for onboarding", {
+      clerkUserId: identity.clerkUser?.id || null,
+      email: identity.email,
+      existingMongoUserId: identity.kitchenUser?._id?.toString?.() || null,
+      existingHouseholdId: identity.kitchenUser?.householdId?.toString?.() || null
+    });
 
     const {
       firstName,
@@ -520,15 +542,27 @@ router.post("/clerk/onboarding", async (req, res) => {
     const finalDisplayName = safeDisplayName || String(identity.email || "").split("@")[0] || "Nuevo usuario";
 
     if (!safeFirstName || !safeLastName) {
+      logClerkOnboardingDev("Onboarding rejected: profile fields missing", {
+        hasFirstName: Boolean(safeFirstName),
+        hasLastName: Boolean(safeLastName)
+      });
       return res.status(400).json({ ok: false, code: "PROFILE_REQUIRED", error: "Nombre y apellidos son obligatorios." });
     }
 
     let user = identity.kitchenUser;
     if (user?.clerkId && user.clerkId !== identity.clerkUser.id) {
+      logClerkOnboardingDev("Onboarding rejected: Clerk ID mismatch", {
+        userId: user._id?.toString?.() || null,
+        existingClerkId: user.clerkId,
+        incomingClerkId: identity.clerkUser.id
+      });
       return res.status(409).json({ ok: false, code: "CLERK_USER_MISMATCH", error: "Esta cuenta interna ya esta vinculada a otra identidad de Clerk." });
     }
 
     if (!user) {
+      logClerkOnboardingDev("Creating safe Mongo user from Clerk onboarding", {
+        email: identity.email
+      });
       user = await KitchenUser.create({
         username: identity.email,
         email: identity.email,
@@ -550,6 +584,10 @@ router.post("/clerk/onboarding", async (req, res) => {
         globalRole: null
       });
     } else {
+      logClerkOnboardingDev("Completing existing Mongo user from Clerk onboarding", {
+        userId: user._id?.toString?.() || null,
+        email: identity.email
+      });
       user.clerkId = user.clerkId || identity.clerkUser.id;
       user.email = user.email || identity.email;
       user.username = user.username || identity.email;
@@ -570,6 +608,10 @@ router.post("/clerk/onboarding", async (req, res) => {
     if (!household) {
       user.role = "owner";
       const finalHouseholdName = String(householdName || "").trim() || `${finalDisplayName} - Hogar`;
+      logClerkOnboardingDev("Creating safe Household from Clerk onboarding", {
+        userId: user._id?.toString?.() || null,
+        householdName: finalHouseholdName
+      });
       household = await Household.create({
         name: finalHouseholdName,
         ownerUserId: user._id,
@@ -588,6 +630,13 @@ router.post("/clerk/onboarding", async (req, res) => {
     }
 
     await user.save();
+
+    logClerkOnboardingDev("Clerk onboarding completed", {
+      userId: user._id?.toString?.() || null,
+      householdId: user.householdId?.toString?.() || null,
+      role: user.role,
+      globalRole: user.globalRole || null
+    });
 
     return res.status(identity.kitchenUser ? 200 : 201).json({
       ok: true,

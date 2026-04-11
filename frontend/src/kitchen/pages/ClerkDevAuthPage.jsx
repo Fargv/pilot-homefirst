@@ -47,7 +47,7 @@ export default function ClerkDevAuthPage() {
 
 function ClerkDevAuthContent() {
   const navigate = useNavigate();
-  const { user, loading, onboardingRequired, clearSession, refreshUser } = useAuth();
+  const { user, loading, onboardingRequired, lastAuthError, clearSession, refreshUser } = useAuth();
   const { isLoaded, isSignedIn } = useClerkAuth();
   const clerk = useClerk();
   const { user: clerkUser } = useUser();
@@ -87,7 +87,11 @@ function ClerkDevAuthContent() {
     }
 
     setLastAction("mapping-failed");
-    setMappingError("No se pudo resolver el usuario interno de Mongo. Revisa la consola del backend.");
+    setMappingError(
+      nextUser?.error
+        ? `${nextUser.error.code || "AUTH_ERROR"} (${nextUser.error.status || "sin status"}): ${nextUser.error.message}`
+        : "No se pudo resolver el usuario interno de Mongo. Revisa la consola del backend."
+    );
   };
 
   useEffect(() => {
@@ -194,6 +198,9 @@ function ClerkDevAuthContent() {
               {loading ? "resolving" : user?.email ? `mapped to ${user.email}` : mappingError ? "mapping failed" : "not resolved"}
               <br />
               <strong>Onboarding state:</strong> {onboardingRequired ? "required" : user?.id ? "complete" : "unknown"}
+              <br />
+              <strong>Last backend auth error:</strong>{" "}
+              {lastAuthError ? `${lastAuthError.code} / ${lastAuthError.status}: ${lastAuthError.message}` : "none"}
               <br />
               <strong>Last action:</strong> {lastAction}
             </div>

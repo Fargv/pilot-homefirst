@@ -8,7 +8,13 @@ const clerkClient = config.clerkSecretKey
   : null;
 
 function logClerkDev(message, details = {}) {
-  if (config.nodeEnv !== "development") return;
+  if (
+    config.nodeEnv !== "development"
+    && process.env.APP_ENV !== "development"
+    && process.env.CLERK_DEBUG !== "true"
+  ) {
+    return;
+  }
   console.log(`[clerk][dev] ${message}`, details);
 }
 
@@ -54,26 +60,51 @@ export async function resolveClerkIdentityFromToken(token) {
     return null;
   }
 
-  logClerkDev("Verifying Clerk token");
-  const verified = await verifyToken(token, {
-    secretKey: config.clerkSecretKey,
-    ...(config.clerkJwtKey ? { jwtKey: config.clerkJwtKey } : {}),
-    ...(config.clerkAuthorizedParties.length
-      ? { authorizedParties: config.clerkAuthorizedParties }
-      : {})
+  logClerkDev("Verifying Clerk token", {
+    hasJwtKey: Boolean(config.clerkJwtKey),
+    authorizedParties: config.clerkAuthorizedParties,
+    tokenLength: token.length
   });
 
-  if (!verified.data?.sub) {
+  let verified = null;
+  try {
+    verified = await verifyToken(token, {
+      secretKey: config.clerkSecretKey,
+      ...(config.clerkJwtKey ? { jwtKey: config.clerkJwtKey } : {}),
+      ...(config.clerkAuthorizedParties.length
+        ? { authorizedParties: config.clerkAuthorizedParties }
+        : {})
+    });
+  } catch (error) {
+    logClerkDev("Clerk token verification failed", {
+      name: error?.name || null,
+      reason: error?.reason || null,
+      message: error?.message || null
+    });
+    throw buildAuthError(
+      "CLERK_TOKEN_INVALID",
+      error?.message || "No se pudo validar la sesion de Clerk."
+    );
+  }
+
+  const clerkClaims = verified?.data || verified;
+  const verificationErrors = verified?.errors || [];
+
+  if (!clerkClaims?.sub) {
     logClerkDev("Clerk token verification returned no subject", {
-      errors: verified.errors?.map((error) => error.message) || []
+      hasPayload: Boolean(clerkClaims),
+      payloadKeys: clerkClaims ? Object.keys(clerkClaims) : [],
+      errors: verificationErrors.map((error) => error.message)
     });
     throw buildAuthError("CLERK_TOKEN_INVALID", "No se pudo validar la sesion de Clerk.");
   }
 
   logClerkDev("Clerk token verified", {
-    clerkUserId: verified.data.sub
+    clerkUserId: clerkClaims.sub,
+    azp: clerkClaims.azp || null,
+    iss: clerkClaims.iss || null
   });
-  const clerkUser = await clerkClient.users.getUser(verified.data.sub);
+  const clerkUser = await clerkClient.users.getUser(clerkClaims.sub);
   const normalizedEmail = getPrimaryEmailAddress(clerkUser);
 
   logClerkDev("Fetched Clerk user", {
@@ -97,7 +128,7 @@ export async function resolveClerkIdentityFromToken(token) {
 
   return {
     authType: "clerk",
-    clerkClaims: verified.data,
+    clerkClaims,
     clerkUser,
     email: normalizedEmail,
     kitchenUser: mongoUser

@@ -12,6 +12,7 @@ export function AuthProvider({ children, clerk = null }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
+  const [lastAuthError, setLastAuthError] = useState(null);
 
   const fetchMe = useCallback(async ({ authMode = "auto" } = {}) => {
     try {
@@ -21,13 +22,21 @@ export function AuthProvider({ children, clerk = null }) {
       }
       setUser(data.user);
       setOnboardingRequired(Boolean(data.user?.onboardingRequired));
+      setLastAuthError(null);
       return data.user;
     } catch (error) {
-      if (authMode === "clerk" && error?.status === 428) {
+      const nextAuthError = {
+        message: error?.message || "No se pudo validar la sesion.",
+        status: error?.status || 0,
+        code: error?.body?.code || "AUTH_ERROR",
+        body: error?.body || {}
+      };
+      if (authMode === "clerk" && (error?.status === 428 || error?.body?.onboardingRequired)) {
         setUser(null);
         setOnboardingRequired(true);
+        setLastAuthError(nextAuthError);
         setLoading(false);
-        return { onboardingRequired: true, authProvider: "clerk" };
+        return { onboardingRequired: true, authProvider: "clerk", error: nextAuthError };
       }
       if (authMode === "clerk" && import.meta.env.DEV) {
         console.warn("[clerk][dev] No se pudo resolver /me con token de Clerk", {
@@ -38,10 +47,11 @@ export function AuthProvider({ children, clerk = null }) {
       }
       setUser(null);
       setOnboardingRequired(false);
+      setLastAuthError(nextAuthError);
       if (authMode !== "clerk") {
         setToken(null);
       }
-      return null;
+      return authMode === "clerk" ? { authProvider: "clerk", error: nextAuthError } : null;
     } finally {
       setLoading(false);
     }
@@ -105,6 +115,7 @@ export function AuthProvider({ children, clerk = null }) {
     setToken(token ?? null);
     setUser(nextUser ?? null);
     setOnboardingRequired(Boolean(nextUser?.onboardingRequired));
+    setLastAuthError(null);
     setLoading(false);
   }, []);
 
@@ -112,6 +123,7 @@ export function AuthProvider({ children, clerk = null }) {
     setToken(null);
     setUser(null);
     setOnboardingRequired(false);
+    setLastAuthError(null);
     setLoading(false);
   }, []);
 
@@ -136,8 +148,20 @@ export function AuthProvider({ children, clerk = null }) {
   }, [clearSession, clerk]);
 
   const value = useMemo(
-    () => ({ user, loading, onboardingRequired, login, logout, establishSession, clearSession, refreshUser: fetchMe, setUser, setOnboardingRequired }),
-    [user, loading, onboardingRequired, logout, establishSession, clearSession, fetchMe]
+    () => ({
+      user,
+      loading,
+      onboardingRequired,
+      lastAuthError,
+      login,
+      logout,
+      establishSession,
+      clearSession,
+      refreshUser: fetchMe,
+      setUser,
+      setOnboardingRequired
+    }),
+    [user, loading, onboardingRequired, lastAuthError, logout, establishSession, clearSession, fetchMe]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -43,12 +43,25 @@ export function registerClerkTokenGetter(getter) {
 
 async function getAuthorizationHeader(authMode = "auto") {
   if (authMode === "clerk") {
-    if (!clerkTokenGetter) return null;
+    if (!clerkTokenGetter) {
+      if (import.meta.env.DEV) {
+        console.warn("[clerk][dev] Clerk authMode requested before token getter was registered");
+      }
+      return null;
+    }
 
     try {
       const clerkToken = await clerkTokenGetter();
+      if (!clerkToken && import.meta.env.DEV) {
+        console.warn("[clerk][dev] Clerk authMode requested but getToken returned no token");
+      }
       return clerkToken ? `Bearer ${clerkToken}` : null;
-    } catch {
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn("[clerk][dev] Clerk token getter failed", {
+          message: error?.message || String(error)
+        });
+      }
       return null;
     }
   }

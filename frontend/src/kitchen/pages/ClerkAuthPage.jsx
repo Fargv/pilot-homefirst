@@ -88,7 +88,7 @@ export default function ClerkAuthPage({ mode = "choice" }) {
 
 function ClerkAuthContent({ mode }) {
   const navigate = useNavigate();
-  const { user, loading, onboardingRequired, refreshUser, clearSession } = useAuth();
+  const { user, loading, onboardingRequired, lastAuthError, refreshUser, clearSession } = useAuth();
   const { isLoaded, isSignedIn } = useClerkAuth();
   const signInState = useSignIn();
   const signUpState = useSignUp();
@@ -165,11 +165,16 @@ function ClerkAuthContent({ mode }) {
     }
 
     setLastBootstrapStatus("mapping-failed");
-    setMappingError("No pudimos preparar tu perfil interno. Intentalo de nuevo o revisa el panel de diagnostico.");
+    const bootstrapError = nextUser?.error || lastAuthError;
+    const diagnosticMessage = bootstrapError
+      ? `${bootstrapError.code || "AUTH_ERROR"} (${bootstrapError.status || "sin status"}): ${bootstrapError.message}`
+      : "No pudimos preparar tu perfil interno. Intentalo de nuevo o revisa el panel de diagnostico.";
+    setMappingError(diagnosticMessage);
     if (isDevelopmentEnvironment) {
       console.warn("[clerk][dev] Clerk session exists but Mongo mapping did not return a usable user", {
         source,
-        email: clerkEmail
+        email: clerkEmail,
+        lastAuthError: bootstrapError
       });
     }
     return null;
@@ -198,6 +203,36 @@ function ClerkAuthContent({ mode }) {
       active = false;
     };
   }, [isLoaded, isSignedIn]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+
+    if (onboardingRequired) {
+      setLastBootstrapStatus("onboarding-required");
+      if (isDevelopmentEnvironment) {
+        console.info("[clerk][dev] Auth context marked Clerk user as needing onboarding", {
+          mode,
+          email: clerkEmail,
+          lastAuthError
+        });
+      }
+      navigate("/onboarding/clerk", { replace: mode === "complete" });
+      return;
+    }
+
+    if (user?.id) {
+      setLastBootstrapStatus("mapped");
+      if (isDevelopmentEnvironment) {
+        console.info("[clerk][dev] Auth context resolved Mongo user after Clerk auth", {
+          mode,
+          userId: user.id,
+          email: user.email,
+          householdId: user.householdId
+        });
+      }
+      navigate("/kitchen/semana", { replace: mode === "complete" });
+    }
+  }, [clerkEmail, isLoaded, isSignedIn, lastAuthError, mode, navigate, onboardingRequired, user]);
 
   useEffect(() => {
     if (!signInState.isLoaded) return;
@@ -323,6 +358,9 @@ function ClerkAuthContent({ mode }) {
                 {loading ? "resolving" : user?.email ? `mapped to ${user.email}` : mappingError ? "mapping failed" : "not resolved"}
                 <br />
                 <strong>Onboarding state:</strong> {onboardingRequired ? "required" : user?.id ? "complete" : "unknown"}
+                <br />
+                <strong>Last backend auth error:</strong>{" "}
+                {lastAuthError ? `${lastAuthError.code} / ${lastAuthError.status}: ${lastAuthError.message}` : "none"}
                 <br />
                 <strong>Last bootstrap status:</strong> {lastBootstrapStatus}
                 <br />
