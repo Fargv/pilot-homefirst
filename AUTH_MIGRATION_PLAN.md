@@ -44,13 +44,25 @@
   - The app is wrapped with `ClerkProvider` in [frontend/src/main.jsx](/C:/APPS/pilot-homefirst/frontend/src/main.jsx) when `VITE_CLERK_PUBLISHABLE_KEY` is configured.
   - The existing auth provider remains active and can still use the legacy JWT flow.
   - If a Clerk session exists, frontend API calls can now send the Clerk bearer token instead of the legacy JWT.
+  - A temporary development-only route exists at `/dev/clerk-auth` in [frontend/src/kitchen/pages/ClerkDevAuthPage.jsx](/C:/APPS/pilot-homefirst/frontend/src/kitchen/pages/ClerkDevAuthPage.jsx). This is the path that uses Clerk's prebuilt `<SignUp />` and `<SignIn />` components and creates real Clerk users.
+  - The existing `/register` page still posts only to the legacy Mongo endpoint and does not create Clerk users.
 - Backend:
   - `requireAuth` first tries the legacy JWT.
   - If legacy JWT auth fails, it verifies the Clerk token using `CLERK_SECRET_KEY`.
   - Clerk-authenticated requests are mapped back to a Mongo `KitchenUser` by normalized email.
   - If the Mongo user exists and `clerkId` is empty, the backend stores the Clerk user ID.
   - If the Mongo user exists and `clerkId` is already set, the backend verifies it matches.
-  - If there is no mapped Mongo user, the request is rejected. No privileged Mongo user is auto-created.
+  - If there is no mapped Mongo user, the request is rejected outside development.
+  - In development only, a new Clerk-authenticated user can be given a safe Mongo counterpart that mirrors the current public "new household" register business rule: a normal `KitchenUser`, a new household, `role: "owner"` for that household, no `globalRole`, and no admin/diod privilege.
+
+## Temporary DEV Clerk Auth Entry Point
+
+- Visit `/dev/clerk-auth` to create or sign in as a real Clerk user during development.
+- This page is intentionally separate from `/login` and `/register`.
+- `/login` and `/register` remain the legacy Mongo/JWT screens.
+- The reason legacy Register does not create Clerk users is that it still posts to `/api/kitchen/auth/register`, hashes the password locally with bcrypt, creates a Mongo `KitchenUser`, and receives a legacy JWT. It does not call Clerk's sign-up APIs or render Clerk's `<SignUp />`.
+- The `/dev/clerk-auth` page is now the only UI path in this repo that creates Clerk users.
+- Later migration of existing Mongo users should happen via Clerk import using their existing bcrypt password digests, followed by email-based first sign-in mapping and persisted `clerkId` linking.
 
 ## Required Environment Variables
 
@@ -145,7 +157,7 @@
 - Risk: a valid Clerk identity maps to the wrong internal user by email.
   - Mitigation: normalized email lookup plus persisted `clerkId` consistency checks.
 - Risk: auto-creating users could bypass household, role, or plan rules.
-  - Mitigation: current implementation does not auto-create Mongo users for Clerk-authenticated requests.
+  - Mitigation: auto-creation is limited to `NODE_ENV=development`, creates only a normal household-scoped user following the current public register shape, and never assigns `globalRole`, `admin`, or `diod`.
 - Risk: frontend authorization drift.
   - Mitigation: backend still loads the Mongo user and enforces authorization from Mongo data only.
 - Risk: tenant leakage.

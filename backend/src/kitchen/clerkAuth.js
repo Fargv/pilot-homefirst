@@ -1,7 +1,11 @@
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { config } from "../config.js";
-import { normalizeEmail } from "../users/utils.js";
+import { buildDisplayName, normalizeEmail, normalizeInitials } from "../users/utils.js";
+import { generateUniqueHouseholdInviteCode } from "./householdInviteCode.js";
+import { Household } from "./models/Household.js";
 import { KitchenUser } from "./models/KitchenUser.js";
+import { getWeekStart } from "./utils/dates.js";
+import { ensureWeekPlan } from "./weekPlanService.js";
 
 const clerkClient = config.clerkSecretKey
   ? createClerkClient({ secretKey: config.clerkSecretKey })
@@ -22,6 +26,60 @@ function getPrimaryEmailAddress(clerkUser) {
     || clerkUser.emailAddresses[0];
 
   return normalizeEmail(primaryEmail?.emailAddress);
+}
+
+function buildClerkDisplayName(clerkUser, normalizedEmail) {
+  const displayName = buildDisplayName({
+    firstName: clerkUser?.firstName,
+    lastName: clerkUser?.lastName,
+    name: clerkUser?.username,
+    displayName: ""
+  });
+
+  if (displayName) return displayName;
+  return normalizedEmail.split("@")[0] || "Nuevo usuario";
+}
+
+async function createDevelopmentMongoUserFromClerk(clerkUser, normalizedEmail) {
+  if (config.nodeEnv !== "development") return null;
+
+  const displayName = buildClerkDisplayName(clerkUser, normalizedEmail);
+  const user = await KitchenUser.create({
+    username: normalizedEmail,
+    email: normalizedEmail,
+    firstName: clerkUser?.firstName || undefined,
+    lastName: clerkUser?.lastName || undefined,
+    displayName,
+    initials: normalizeInitials("", displayName),
+    clerkId: clerkUser.id,
+    passwordHash: null,
+    type: "user",
+    hasLogin: true,
+    active: true,
+    canCook: true,
+    dinnerActive: true,
+    dinnerCanCook: true,
+    role: "owner",
+    householdId: null,
+    isPlaceholder: false
+  });
+
+  const household = await Household.create({
+    name: `Casa de ${displayName}`,
+    ownerUserId: user._id,
+    inviteCode: await generateUniqueHouseholdInviteCode()
+  });
+
+  user.householdId = household._id;
+  await user.save();
+
+  try {
+    await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
+  } catch (error) {
+    console.error("[clerk] No se pudo crear el plan semanal durante el alta dev:", error?.message || error);
+  }
+
+  return user;
 }
 
 export function isClerkAuthEnabled() {
@@ -52,7 +110,12 @@ export async function authenticateClerkToken(token) {
     throw buildAuthError("CLERK_EMAIL_MISSING", "La cuenta de Clerk no tiene un email utilizable.");
   }
 
-  const mongoUser = await KitchenUser.findOne({ email: normalizedEmail });
+  let mongoUser = await KitchenUser.findOne({ email: normalizedEmail });
+  if (!mongoUser) {
+    // TODO: Remove this development-only bootstrap path before production Clerk cutover.
+    mongoUser = await createDevelopmentMongoUserFromClerk(clerkUser, normalizedEmail);
+  }
+
   if (!mongoUser) {
     throw buildAuthError(
       "CLERK_USER_NOT_MAPPED",
