@@ -207,10 +207,86 @@
 
 - Direct migration of existing users into Clerk is technically possible based on the current codebase.
 - Reason:
-  - the application stores bcrypt password hashes using `bcryptjs.hash(password, 10)`
+  - the application stores bcrypt password hashes in `KitchenUser.passwordHash` using `bcryptjs.hash(password, 10)`
   - Clerk supports imported password digests with the `bcrypt` hasher
 - This means a forced password reset is not inherently required for every user.
 - Operationally, a gradual migration is still recommended before a broad production import.
+
+## DEV-Only Mongo To Clerk Import
+
+- Scope:
+  - This import path is only for the Clerk Development instance.
+  - Do not run this against Clerk Production.
+  - Legacy Mongo/JWT auth remains available before, during, and after this DEV import.
+  - Mongo remains authoritative for role, household/tenant linkage, plan, app profile data, and feature access.
+- Source collection:
+  - The kitchen app uses `KitchenUser` in Mongo.
+  - The legacy password hash field is `passwordHash`, not `password`.
+  - Login verifies `KitchenUser.passwordHash` with `bcrypt.compare(...)` from `bcryptjs`.
+- Export script:
+  - [backend/scripts/export-clerk-dev-users.js](/C:/APPS/pilot-homefirst/backend/scripts/export-clerk-dev-users.js)
+  - Dry-run command from the repo root: `npm --workspace backend run clerk:dev-export:dry-run`
+  - Export command from the repo root: `npm --workspace backend run clerk:dev-export`
+  - Default output: [backend/exports/users.dev.json](/C:/APPS/pilot-homefirst/backend/exports/users.dev.json)
+  - The script reads `backend/.env` and accepts `MONGODB_URI`; it also accepts the local legacy env name `MONGODB_URL`.
+- Eligibility rules:
+  - Exclude users without email.
+  - Exclude malformed emails.
+  - Exclude users without `passwordHash`.
+  - Exclude duplicate emails case-insensitively.
+  - Exclude malformed bcrypt hashes.
+  - Exclude inactive users unless `--include-inactive` is passed.
+  - Exclude placeholders or users without login unless `--include-placeholders` is passed.
+- Clerk migration-tool JSON mapping:
+  - `userId`: Mongo `_id` as a string
+  - `externalId`: Mongo `_id` as a string
+  - `email`: normalized lowercase Mongo email
+  - `firstName`: `firstName` if present, otherwise derived from the first token of `displayName`
+  - `lastName`: `lastName` if present, otherwise derived from remaining `displayName` tokens when available
+  - `passwordDigest`: Mongo `passwordHash`
+  - `passwordHasher`: `bcrypt`
+  - Role, plan, household, tenant, and premium flags are intentionally not exported into Clerk as authority.
+- Example output item:
+
+```json
+{
+  "userId": "665f0f000000000000000001",
+  "externalId": "665f0f000000000000000001",
+  "email": "person@example.com",
+  "firstName": "Person",
+  "lastName": "Example",
+  "passwordDigest": "$2a$10$exampleexampleexampleexampleexampleexampleexampleexampleex",
+  "passwordHasher": "bcrypt"
+}
+```
+
+- Clerk Development import process:
+  - Clone Clerk's migration tool: `git clone https://github.com/clerk/migration-tool`
+  - Install the migration tool dependencies as instructed by that repository.
+  - Copy `backend/exports/users.dev.json` into the migration tool workspace.
+  - Create the migration tool `.env` with the Clerk Development secret key only:
+  - `CLERK_SECRET_KEY=sk_test_...`
+  - `IMPORT_TO_DEV_INSTANCE=true`
+  - Run the migration tool against `users.dev.json`.
+  - If the migration tool version expects a slightly different transformer/schema, adapt the migration tool transformer to read this repo's `passwordDigest` and `passwordHasher` fields rather than changing Mongo source fields.
+- Post-import validation:
+  - [backend/scripts/validate-clerk-dev-import.js](/C:/APPS/pilot-homefirst/backend/scripts/validate-clerk-dev-import.js)
+  - Command from the repo root: `IMPORT_TO_DEV_INSTANCE=true npm --workspace backend run clerk:dev-validate`
+  - The validator reads `backend/exports/users.dev.json`, fetches users from the configured Clerk instance, and compares expected count, primary email, and `externalId`.
+- Runtime mapping after import:
+  - Mongo `_id` remains unchanged.
+  - Clerk `externalId` preserves the Mongo `_id` for traceability.
+  - `KitchenUser.clerkId` remains the persistent local link field.
+  - The existing runtime mapping still links by normalized email on first Clerk sign-in and persists `clerkId`.
+  - The import scripts do not mutate Mongo users.
+- Duplicate email handling:
+  - Any case-insensitive duplicate email excludes every user in that duplicate group.
+  - Resolve duplicates manually in Mongo before export, or leave those users on legacy auth until a safe account merge decision is made.
+- Rollback / fallback:
+  - If the DEV import is bad, delete the imported users from the Clerk Development dashboard or recreate the Development instance.
+  - Leave Mongo untouched.
+  - Unset `VITE_CLERK_PUBLISHABLE_KEY` and/or `CLERK_SECRET_KEY` to fall back to legacy Mongo/JWT auth.
+  - Do not copy Development Clerk users into Production; Clerk documentation states Development users cannot be migrated to Production.
 
 ## Manual Setup Still Required
 
