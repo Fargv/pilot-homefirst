@@ -17,6 +17,7 @@ import Card from "../components/ui/Card";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development" || import.meta.env.DEV;
 const clerkCompletePath = "/auth/clerk/complete";
+const clerkPostAuthPath = "/kitchen/semana";
 const pendingInviteTokenKey = "clerk_onboarding_invite_token";
 const pendingInviteCodeKey = "clerk_onboarding_invite_code";
 
@@ -67,6 +68,22 @@ function stringifyDebugValue(value) {
   );
 }
 
+function buildClerkSubmitSignature(event, source) {
+  const form = event.currentTarget?.querySelector?.("form") || event.target?.closest?.("form") || event.target;
+  const fields = Array.from(form?.elements || [])
+    .filter((element) => element?.tagName === "INPUT" || element?.tagName === "BUTTON")
+    .map((element) => [
+      element.tagName,
+      element.type || "",
+      element.name || "",
+      element.id || "",
+      element.getAttribute?.("autocomplete") || "",
+      element.getAttribute?.("data-localization-key") || ""
+    ].join(":"))
+    .join("|");
+  return `${source}:${fields || "unknown-form"}`;
+}
+
 export default function ClerkAuthPage({ mode = "choice" }) {
   const navigate = useNavigate();
 
@@ -102,9 +119,8 @@ function ClerkAuthContent({ mode }) {
   const [lastClerkError, setLastClerkError] = useState(null);
   const [lastBootstrapStatus, setLastBootstrapStatus] = useState("waiting");
   const [showDebug, setShowDebug] = useState(false);
-  const bootstrapFallbackStartedRef = useRef(false);
   const finalBootstrapErrorTimerRef = useRef(null);
-  const lastClerkFormSubmitRef = useRef({ at: 0, source: "" });
+  const clerkSubmitLocksRef = useRef(new Map());
   const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
   const clerkIdentity = clerkEmail || clerkUser?.username || clerkUser?.id || "Unknown Clerk user";
   const pageCopy = useMemo(() => {
@@ -179,19 +195,21 @@ function ClerkAuthContent({ mode }) {
 
   const guardClerkSubmit = (event, source) => {
     const now = Date.now();
-    const previousSubmit = lastClerkFormSubmitRef.current;
-    if (previousSubmit.source === source && now - previousSubmit.at < 2500) {
+    const signature = buildClerkSubmitSignature(event, source);
+    const lockedUntil = clerkSubmitLocksRef.current.get(signature) || 0;
+    if (now < lockedUntil) {
       event.preventDefault();
       event.stopPropagation();
       if (isDevelopmentEnvironment) {
         console.warn("[clerk][dev] Suppressed duplicate Clerk form submit", {
           source,
-          millisecondsSinceLastSubmit: now - previousSubmit.at
+          signature,
+          lockedForMs: lockedUntil - now
         });
       }
       return;
     }
-    lastClerkFormSubmitRef.current = { at: now, source };
+    clerkSubmitLocksRef.current.set(signature, now + 15000);
     const submitter = event.nativeEvent?.submitter;
     if (submitter && "disabled" in submitter) {
       submitter.disabled = true;
@@ -200,7 +218,7 @@ function ClerkAuthContent({ mode }) {
       }, 2500);
     }
     if (isDevelopmentEnvironment) {
-      console.info("[clerk][dev] Clerk form submit accepted", { source });
+      console.info("[clerk][dev] Clerk form submit accepted", { source, signature });
     }
   };
 
@@ -213,7 +231,7 @@ function ClerkAuthContent({ mode }) {
         source,
         mode,
         email: clerkEmail,
-        redirectTarget: clerkCompletePath
+        redirectTarget: clerkPostAuthPath
       });
     }
 
@@ -270,18 +288,6 @@ function ClerkAuthContent({ mode }) {
   }, [isLoaded, isSignedIn, mode]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || user?.id || onboardingRequired || loading || bootstrapFallbackStartedRef.current) return undefined;
-
-    const fallbackTimer = window.setTimeout(() => {
-      if (bootstrapFallbackStartedRef.current) return;
-      bootstrapFallbackStartedRef.current = true;
-      void bootstrapClerkUser({ source: "fallback" });
-    }, 350);
-
-    return () => window.clearTimeout(fallbackTimer);
-  }, [isLoaded, isSignedIn, loading, onboardingRequired, user?.id]);
-
-  useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
 
     if (onboardingRequired) {
@@ -314,6 +320,13 @@ function ClerkAuthContent({ mode }) {
   }, [clerkEmail, isLoaded, isSignedIn, lastAuthError, mode, navigate, onboardingRequired, user]);
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn || loading || user?.id || onboardingRequired || !lastAuthError) return;
+    const diagnosticMessage = `${lastAuthError.code || "AUTH_ERROR"} (${lastAuthError.status || "sin status"}): ${lastAuthError.message}`;
+    setLastBootstrapStatus("mapping-failed");
+    scheduleFinalBootstrapError(diagnosticMessage);
+  }, [isLoaded, isSignedIn, lastAuthError, loading, onboardingRequired, user?.id]);
+
+  useEffect(() => {
     return () => {
       if (finalBootstrapErrorTimerRef.current) {
         window.clearTimeout(finalBootstrapErrorTimerRef.current);
@@ -326,6 +339,7 @@ function ClerkAuthContent({ mode }) {
     const normalized = normalizeClerkErrors("sign-in", signInState.errors);
     if (!normalized) return;
     setLastClerkError(normalized);
+    clerkSubmitLocksRef.current.clear();
     if (isDevelopmentEnvironment) {
       console.warn("[clerk][dev] Sign-in failed", normalized);
     }
@@ -336,6 +350,7 @@ function ClerkAuthContent({ mode }) {
     const normalized = normalizeClerkErrors("sign-up", signUpState.errors);
     if (!normalized) return;
     setLastClerkError(normalized);
+    clerkSubmitLocksRef.current.clear();
     if (isDevelopmentEnvironment) {
       console.warn("[clerk][dev] Sign-up failed", normalized);
     }
@@ -409,10 +424,10 @@ function ClerkAuthContent({ mode }) {
                 routing="path"
                 path="/auth/clerk/sign-up"
                 signInUrl="/auth/clerk/sign-in"
-                forceRedirectUrl={clerkCompletePath}
-                fallbackRedirectUrl={clerkCompletePath}
-                signInForceRedirectUrl={clerkCompletePath}
-                signInFallbackRedirectUrl={clerkCompletePath}
+                forceRedirectUrl={clerkPostAuthPath}
+                fallbackRedirectUrl={clerkPostAuthPath}
+                signInForceRedirectUrl={clerkPostAuthPath}
+                signInFallbackRedirectUrl={clerkPostAuthPath}
               />
             </div>
           ) : null}
@@ -423,10 +438,10 @@ function ClerkAuthContent({ mode }) {
                 routing="path"
                 path={mode === "reset-password" ? "/auth/clerk/reset-password" : "/auth/clerk/sign-in"}
                 signUpUrl="/auth/clerk/sign-up"
-                forceRedirectUrl={clerkCompletePath}
-                fallbackRedirectUrl={clerkCompletePath}
-                signUpForceRedirectUrl={clerkCompletePath}
-                signUpFallbackRedirectUrl={clerkCompletePath}
+                forceRedirectUrl={clerkPostAuthPath}
+                fallbackRedirectUrl={clerkPostAuthPath}
+                signUpForceRedirectUrl={clerkPostAuthPath}
+                signUpFallbackRedirectUrl={clerkPostAuthPath}
               />
             </div>
           ) : null}

@@ -67,15 +67,17 @@
 
 - Users can enter through `/auth/clerk`, then choose `/auth/clerk/sign-up` or `/auth/clerk/sign-in`.
 - Clerk handles identity and session creation.
-- Clerk redirects are configured to return directly to `/auth/clerk/complete`; the legacy `/login` page also auto-hands off an active Clerk session if a stale redirect lands there.
-- After Clerk returns to `/auth/clerk/complete`, the shared frontend auth provider resolves Clerk-backed `/api/kitchen/auth/me`.
-- The completion route is intentionally quiet: it shows only the branded loading state during normal bootstrap, routes directly to `/kitchen/semana` or `/onboarding/clerk`, and delays any user-facing error until the failure is final instead of flashing transient mapping states.
+- Clerk redirects are configured to return directly to `/kitchen/semana`; the protected route waits on the shared auth provider instead of bouncing through the legacy login page.
+- `/auth/clerk/complete` remains as a quiet fallback/resume route, but it is no longer the normal happy-path redirect target.
+- After Clerk returns to the app, the shared frontend auth provider resolves Clerk-backed `/api/kitchen/auth/me`.
+- The shared auth provider dedupes Clerk `/me` bootstrap requests locally and across immediate remounts, so route effects and provider effects do not create overlapping Mongo mapping attempts.
+- Any fallback completion route is intentionally quiet: it shows only the branded loading state during normal bootstrap, routes directly to `/kitchen/semana` or `/onboarding/clerk`, and delays any user-facing error until the failure is final instead of flashing transient mapping states.
 - If a Mongo app profile and household already exist, the user enters `/kitchen/semana`.
 - If Mongo app onboarding is missing, the user is sent to `/onboarding/clerk`.
 - `/onboarding/clerk` collects first name, last name, initials, household name, diner/cook defaults, optional invite code, optional invite token from a Clerk deep link, and initial household preferences.
 - Submitting onboarding calls `POST /api/kitchen/auth/clerk/onboarding`, which creates or completes the safe Mongo business records.
-- The Clerk sign-up/sign-in pages keep a single mounted Clerk component per route and add a hard duplicate-submit guard around the prebuilt Clerk components. The guard suppresses rapid duplicate submits, briefly disables the clicked submit button, and logs accepted/suppressed submissions in development so one user action maps to one Clerk sign-up or verification request.
-- Protected app routes also recognize an active Clerk session as a bootstrap-in-progress state. They route unresolved Clerk users to `/auth/clerk/complete` instead of falling through to the legacy login screen.
+- The Clerk sign-up/sign-in pages keep a single mounted Clerk component per route and add a hard per-form-stage duplicate-submit guard around the prebuilt Clerk components. The guard suppresses repeated submits of the same Clerk form stage, briefly disables the clicked submit button, and logs accepted/suppressed submissions in development so one user action maps to one Clerk sign-up or verification request.
+- Protected app routes recognize an active Clerk session as a bootstrap-in-progress state. They show the branded loading state while `/me` resolves, send incomplete profiles to `/onboarding/clerk`, and only use `/auth/clerk/complete` as a fallback for confirmed bootstrap errors.
 
 ## Temporary DEV Clerk Auth Entry Point
 

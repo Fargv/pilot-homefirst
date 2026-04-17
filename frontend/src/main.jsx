@@ -12,10 +12,10 @@ const app = (
         publishableKey={clerkPublishableKey}
         signInUrl="/auth/clerk/sign-in"
         signUpUrl="/auth/clerk/sign-up"
-        signInForceRedirectUrl="/auth/clerk/complete"
-        signInFallbackRedirectUrl="/auth/clerk/complete"
-        signUpForceRedirectUrl="/auth/clerk/complete"
-        signUpFallbackRedirectUrl="/auth/clerk/complete"
+        signInForceRedirectUrl="/kitchen/semana"
+        signInFallbackRedirectUrl="/kitchen/semana"
+        signUpForceRedirectUrl="/kitchen/semana"
+        signUpFallbackRedirectUrl="/kitchen/semana"
       >
         {/*
           TODO: Configure Clerk application URLs and allowed redirect origins in the

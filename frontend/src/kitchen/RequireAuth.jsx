@@ -5,7 +5,7 @@ import { AppLoadingScreen } from "./components/WeekPageSkeleton.jsx";
 import { isUserAuthenticated, useAuth } from "./auth";
 
 export default function RequireAuth({ children, roles }) {
-  const { user, loading, onboardingRequired, clerkSignedIn } = useAuth();
+  const { user, loading, onboardingRequired, clerkSignedIn, lastAuthError } = useAuth();
   const location = useLocation();
   const isAuthenticated = isUserAuthenticated(user);
 
@@ -18,7 +18,16 @@ export default function RequireAuth({ children, roles }) {
     );
   }
 
-  if (clerkSignedIn && !isAuthenticated && !onboardingRequired) {
+  if (clerkSignedIn && !isAuthenticated && !onboardingRequired && !lastAuthError) {
+    return (
+      <AppLoadingScreen
+        title="Preparando Lunchfy"
+        subtitle="Estamos abriendo tu cocina con tu sesion segura."
+      />
+    );
+  }
+
+  if (clerkSignedIn && !isAuthenticated && !onboardingRequired && lastAuthError) {
     return <Navigate to="/auth/clerk/complete" replace />;
   }
 
