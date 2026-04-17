@@ -11,6 +11,7 @@ import {
 } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth";
+import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 import Card from "../components/ui/Card";
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -97,10 +98,13 @@ function ClerkAuthContent({ mode }) {
   const signUpState = useSignUp();
   const clerk = useClerk();
   const { user: clerkUser } = useUser();
-  const [mappingError, setMappingError] = useState("");
+  const [finalBootstrapError, setFinalBootstrapError] = useState("");
   const [lastClerkError, setLastClerkError] = useState(null);
   const [lastBootstrapStatus, setLastBootstrapStatus] = useState("waiting");
-  const lastClerkFormSubmitAtRef = useRef(0);
+  const [showDebug, setShowDebug] = useState(false);
+  const bootstrapFallbackStartedRef = useRef(false);
+  const finalBootstrapErrorTimerRef = useRef(null);
+  const lastClerkFormSubmitRef = useRef({ at: 0, source: "" });
   const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
   const clerkIdentity = clerkEmail || clerkUser?.username || clerkUser?.id || "Unknown Clerk user";
   const pageCopy = useMemo(() => {
@@ -156,25 +160,53 @@ function ClerkAuthContent({ mode }) {
     }
   }, [searchParams]);
 
+  const clearFinalBootstrapError = () => {
+    if (finalBootstrapErrorTimerRef.current) {
+      window.clearTimeout(finalBootstrapErrorTimerRef.current);
+      finalBootstrapErrorTimerRef.current = null;
+    }
+    setFinalBootstrapError("");
+  };
+
+  const scheduleFinalBootstrapError = (message) => {
+    if (finalBootstrapErrorTimerRef.current) {
+      window.clearTimeout(finalBootstrapErrorTimerRef.current);
+    }
+    finalBootstrapErrorTimerRef.current = window.setTimeout(() => {
+      setFinalBootstrapError(message);
+    }, 1200);
+  };
+
   const guardClerkSubmit = (event, source) => {
     const now = Date.now();
-    if (now - lastClerkFormSubmitAtRef.current < 750) {
+    const previousSubmit = lastClerkFormSubmitRef.current;
+    if (previousSubmit.source === source && now - previousSubmit.at < 2500) {
       event.preventDefault();
       event.stopPropagation();
       if (isDevelopmentEnvironment) {
-        console.warn("[clerk][dev] Suppressed duplicate Clerk form submit", { source });
+        console.warn("[clerk][dev] Suppressed duplicate Clerk form submit", {
+          source,
+          millisecondsSinceLastSubmit: now - previousSubmit.at
+        });
       }
       return;
     }
-    lastClerkFormSubmitAtRef.current = now;
+    lastClerkFormSubmitRef.current = { at: now, source };
+    const submitter = event.nativeEvent?.submitter;
+    if (submitter && "disabled" in submitter) {
+      submitter.disabled = true;
+      window.setTimeout(() => {
+        submitter.disabled = false;
+      }, 2500);
+    }
     if (isDevelopmentEnvironment) {
-      console.info("[clerk][dev] Clerk form submit", { source });
+      console.info("[clerk][dev] Clerk form submit accepted", { source });
     }
   };
 
   const bootstrapClerkUser = async ({ source = "manual" } = {}) => {
     if (!isSignedIn) return null;
-    setMappingError("");
+    clearFinalBootstrapError();
     setLastBootstrapStatus(`starting:${source}`);
     if (isDevelopmentEnvironment) {
       console.info("[clerk][dev] Bootstrapping Mongo session from Clerk", {
@@ -188,6 +220,7 @@ function ClerkAuthContent({ mode }) {
     const nextUser = await refreshUser({ authMode: "clerk" });
     if (nextUser?.onboardingRequired || onboardingRequired) {
       setLastBootstrapStatus("onboarding-required");
+      clearFinalBootstrapError();
       if (isDevelopmentEnvironment) {
         console.info("[clerk][dev] Mongo onboarding required after Clerk auth", { source, email: clerkEmail });
       }
@@ -196,6 +229,7 @@ function ClerkAuthContent({ mode }) {
     }
     if (nextUser?.id) {
       setLastBootstrapStatus("mapped");
+      clearFinalBootstrapError();
       if (isDevelopmentEnvironment) {
         console.info("[clerk][dev] Mongo user resolved after Clerk auth", {
           source,
@@ -213,7 +247,7 @@ function ClerkAuthContent({ mode }) {
     const diagnosticMessage = bootstrapError
       ? `${bootstrapError.code || "AUTH_ERROR"} (${bootstrapError.status || "sin status"}): ${bootstrapError.message}`
       : "No pudimos preparar tu perfil interno. Intentalo de nuevo o revisa el panel de diagnostico.";
-    setMappingError(diagnosticMessage);
+    scheduleFinalBootstrapError(diagnosticMessage);
     if (isDevelopmentEnvironment) {
       console.warn("[clerk][dev] Clerk session exists but Mongo mapping did not return a usable user", {
         source,
@@ -236,23 +270,23 @@ function ClerkAuthContent({ mode }) {
   }, [isLoaded, isSignedIn, mode]);
 
   useEffect(() => {
-    let active = true;
-    const runBootstrap = async () => {
-      if (!isLoaded || !isSignedIn) return;
-      const nextUser = await bootstrapClerkUser({ source: "auto" });
-      if (!active || !nextUser) return;
-    };
-    void runBootstrap();
-    return () => {
-      active = false;
-    };
-  }, [isLoaded, isSignedIn]);
+    if (!isLoaded || !isSignedIn || user?.id || onboardingRequired || loading || bootstrapFallbackStartedRef.current) return undefined;
+
+    const fallbackTimer = window.setTimeout(() => {
+      if (bootstrapFallbackStartedRef.current) return;
+      bootstrapFallbackStartedRef.current = true;
+      void bootstrapClerkUser({ source: "fallback" });
+    }, 350);
+
+    return () => window.clearTimeout(fallbackTimer);
+  }, [isLoaded, isSignedIn, loading, onboardingRequired, user?.id]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
 
     if (onboardingRequired) {
       setLastBootstrapStatus("onboarding-required");
+      clearFinalBootstrapError();
       if (isDevelopmentEnvironment) {
         console.info("[clerk][dev] Auth context marked Clerk user as needing onboarding", {
           mode,
@@ -266,6 +300,7 @@ function ClerkAuthContent({ mode }) {
 
     if (user?.id) {
       setLastBootstrapStatus("mapped");
+      clearFinalBootstrapError();
       if (isDevelopmentEnvironment) {
         console.info("[clerk][dev] Auth context resolved Mongo user after Clerk auth", {
           mode,
@@ -277,6 +312,14 @@ function ClerkAuthContent({ mode }) {
       navigate("/kitchen/semana", { replace: mode === "complete" });
     }
   }, [clerkEmail, isLoaded, isSignedIn, lastAuthError, mode, navigate, onboardingRequired, user]);
+
+  useEffect(() => {
+    return () => {
+      if (finalBootstrapErrorTimerRef.current) {
+        window.clearTimeout(finalBootstrapErrorTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!signInState.isLoaded) return;
@@ -303,6 +346,16 @@ function ClerkAuthContent({ mode }) {
     await clerk.signOut({ redirectUrl: "/auth/clerk" });
   };
 
+  const isResolvingClerkHandoff = isSignedIn && !user?.id && !onboardingRequired && !finalBootstrapError;
+  if (isLoaded && (mode === "complete" || isResolvingClerkHandoff) && isResolvingClerkHandoff) {
+    return (
+      <AppLoadingScreen
+        title="Preparando Lunchfy"
+        subtitle="Estamos abriendo tu cocina con tu sesion segura."
+      />
+    );
+  }
+
   return (
     <div className="kitchen-app">
       <div className="kitchen-container kitchen-login-wrap">
@@ -311,7 +364,7 @@ function ClerkAuthContent({ mode }) {
           <h2 className="kitchen-login-title">{pageCopy.title}</h2>
           <p className="kitchen-login-subtitle">{pageCopy.subtitle}</p>
 
-          {mappingError ? <div className="kitchen-alert error">{mappingError}</div> : null}
+          {finalBootstrapError ? <div className="kitchen-alert error">{finalBootstrapError}</div> : null}
           {lastClerkError ? (
             <div className="kitchen-alert error">
               <strong>Clerk {lastClerkError.source} error:</strong> {lastClerkError.code}
@@ -393,6 +446,12 @@ function ClerkAuthContent({ mode }) {
           ) : null}
 
           {isDevelopmentEnvironment ? (
+            <button type="button" className="kitchen-login-link" onClick={() => setShowDebug((next) => !next)}>
+              {showDebug ? "Ocultar diagnostico DEV" : "Mostrar diagnostico DEV"}
+            </button>
+          ) : null}
+
+          {isDevelopmentEnvironment && showDebug ? (
             <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
               <p className="kitchen-auth-kicker">DEV debug</p>
               <div className="kitchen-alert info">
@@ -403,7 +462,7 @@ function ClerkAuthContent({ mode }) {
                 <strong>Clerk identity:</strong> {isSignedIn ? clerkIdentity : "none"}
                 <br />
                 <strong>Mongo mapping state:</strong>{" "}
-                {loading ? "resolving" : user?.email ? `mapped to ${user.email}` : mappingError ? "mapping failed" : "not resolved"}
+                {loading ? "resolving" : user?.email ? `mapped to ${user.email}` : finalBootstrapError ? "mapping failed" : "not resolved"}
                 <br />
                 <strong>Onboarding state:</strong> {onboardingRequired ? "required" : user?.id ? "complete" : "unknown"}
                 <br />

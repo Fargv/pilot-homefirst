@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { resolvePostAuthRedirect } from "../authRedirect.js";
 import { useAuth } from "../auth";
+import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 import Card from "../components/ui/Card";
 import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
 
@@ -39,7 +40,9 @@ export default function LoginPage() {
       }
       if (nextUser?.id) {
         navigate(resolvePostAuthRedirect(searchParams), { replace: true });
+        return;
       }
+      navigate("/auth/clerk/complete", { replace: true });
     };
 
     void handoffClerkSession();
@@ -62,6 +65,15 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (clerkLoaded && clerkSignedIn) {
+    return (
+      <AppLoadingScreen
+        title="Preparando Lunchfy"
+        subtitle="Estamos abriendo tu cocina con tu sesion segura."
+      />
+    );
+  }
 
   return (
     <div className="kitchen-app">
