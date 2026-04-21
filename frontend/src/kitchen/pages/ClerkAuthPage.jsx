@@ -81,10 +81,6 @@ function AuthField({ id, label, type = "text", value, onChange, placeholder, aut
   );
 }
 
-function AuthFieldOptional(props) {
-  return <AuthField {...props} required={false} />;
-}
-
 export default function ClerkAuthPage({ mode = "choice" }) {
   const navigate = useNavigate();
 
@@ -313,26 +309,26 @@ function ClerkAuthContent({ mode }) {
 
       try {
         actionCountersRef.current.signInPasswordSent += 1;
+        const safeIdentifier = signInForm.email.trim();
+        const safePassword = String(signInForm.password || "");
         logDevAction("Password sign-in request sent", {
           signInPasswordSent: actionCountersRef.current.signInPasswordSent,
           identifier: signInForm.email
         });
-
-        const result = await signIn.create({
+        logDevAction("Password sign-in payload", {
           strategy: "password",
-          identifier: signInForm.email.trim()
+          emailPresent: Boolean(safeIdentifier),
+          passwordPresent: Boolean(safePassword),
+          passwordLengthGreaterThanZero: safePassword.length > 0
+        });
+
+        const result = await signIn.password({
+          identifier: safeIdentifier,
+          password: safePassword
         });
 
         if (result.error) {
           throw result.error;
-        }
-
-        const passwordResult = await signIn.password({
-          password: signInForm.password
-        });
-
-        if (passwordResult.error) {
-          throw passwordResult.error;
         }
 
         if (signIn.status === "complete") {
