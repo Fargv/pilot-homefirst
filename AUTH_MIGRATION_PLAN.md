@@ -88,7 +88,7 @@
 - If Mongo app onboarding is missing, the user is sent to `/onboarding/clerk`.
 - `/onboarding/clerk` collects first name, last name, initials, household name, diner/cook defaults, optional invite code, optional invite token from a Clerk deep link, and initial household preferences.
 - Submitting onboarding calls `POST /api/kitchen/auth/clerk/onboarding`, which creates or completes the safe Mongo business records.
-- The Clerk sign-up page is now a custom email/password flow that calls `signUp.create()` once and `prepareEmailAddressVerification({ strategy: "email_code" })` once per sign-up attempt, with an in-flight lock to stop duplicate sends.
+- The Clerk sign-up page is now a custom email/password flow that calls `signUp.create()` once and `signUp.verifications.sendEmailCode()` once per sign-up attempt, then completes verification with `signUp.verifications.verifyEmailCode(...)`, with an in-flight lock to stop duplicate sends.
 - The Clerk sign-in page is now a custom password-first flow built on Clerk's current `SignInFuture` API, using the password strategy plus `finalize()`, so normal login does not intentionally use email verification codes.
 - The Clerk forgot-password page is now a custom reset flow built on `reset_password_email_code`, `resetPasswordEmailCode.sendCode()`, `resetPasswordEmailCode.verifyCode()`, and `resetPasswordEmailCode.submitPassword()`.
 - The prior duplicate verification issue came from relying on prebuilt Clerk auth components plus route/component remount behavior and repeated submit opportunities, which made the UX feel like verification was being initiated twice. The custom flow removes that ambiguity by giving the app one owner for sign-up creation and one owner for verification preparation.

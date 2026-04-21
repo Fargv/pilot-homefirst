@@ -390,7 +390,7 @@ function ClerkAuthContent({ mode }) {
           email: signUpForm.email
         });
 
-        const verificationResult = await signUp.verifications.emailAddress.sendEmailCode();
+        const verificationResult = await signUp.verifications.sendEmailCode();
         if (verificationResult.error) {
           throw verificationResult.error;
         }
@@ -414,7 +414,7 @@ function ClerkAuthContent({ mode }) {
           email: signUpForm.email
         });
 
-        const result = await signUp.verifications.emailAddress.verifyEmailCode({
+        const result = await signUp.verifications.verifyEmailCode({
           code: verificationCode.trim()
         });
 
@@ -451,7 +451,7 @@ function ClerkAuthContent({ mode }) {
           signUpVerificationResent: actionCountersRef.current.signUpVerificationResent,
           email: signUpForm.email
         });
-        const resendResult = await signUp.verifications.emailAddress.sendEmailCode();
+        const resendResult = await signUp.verifications.sendEmailCode();
         if (resendResult.error) {
           throw resendResult.error;
         }
