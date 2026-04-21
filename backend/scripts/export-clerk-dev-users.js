@@ -12,6 +12,7 @@ dotenv.config();
 
 const DEFAULT_OUTPUT_PATH = path.resolve(__dirname, "../exports/users.dev.json");
 const BCRYPT_HASH_PATTERN = /^\$2[aby]\$(0[4-9]|[12]\d|3[01])\$[./A-Za-z0-9]{53}$/;
+const KITCHEN_USERS_COLLECTION = "kitchenusers";
 
 function parseArgs(argv) {
   const args = {
@@ -38,6 +39,48 @@ function parseArgs(argv) {
 
 function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
+}
+
+function getMongoDbName(mongodbUri) {
+  try {
+    const parsed = new URL(mongodbUri);
+    const pathname = String(parsed.pathname || "").replace(/^\/+/, "");
+    return pathname.split("/")[0] || "unknown";
+  } catch {
+    const match = String(mongodbUri || "").match(/\/([^/?]+)(\?|$)/);
+    return match?.[1] || "unknown";
+  }
+}
+
+function hasExplicitMongoDbName(mongodbUri) {
+  return getMongoDbName(mongodbUri) !== "unknown" && getMongoDbName(mongodbUri) !== "test";
+}
+
+function resolveMongoConnection() {
+  const mongodbUri = String(process.env.MONGODB_URI || "").trim();
+  const mongodbUrl = String(process.env.MONGODB_URL || "").trim();
+
+  if (mongodbUri && hasExplicitMongoDbName(mongodbUri)) {
+    return { envSource: "MONGODB_URI", mongodbUri };
+  }
+
+  if (mongodbUrl && hasExplicitMongoDbName(mongodbUrl)) {
+    return {
+      envSource: "MONGODB_URL",
+      mongodbUri: mongodbUrl,
+      fallbackReason: mongodbUri ? "MONGODB_URI defaulted to implicit test database" : "MONGODB_URI missing"
+    };
+  }
+
+  if (mongodbUri) {
+    return { envSource: "MONGODB_URI", mongodbUri };
+  }
+
+  if (mongodbUrl) {
+    return { envSource: "MONGODB_URL", mongodbUri: mongodbUrl };
+  }
+
+  return { envSource: "", mongodbUri: "" };
 }
 
 function isValidEmail(email) {
@@ -90,8 +133,16 @@ function buildClerkUser(user, normalizedEmail) {
   };
 }
 
+function getKitchenUserExportModel() {
+  return mongoose.models.KitchenUserDevExport
+    || mongoose.model("KitchenUserDevExport", KitchenUser.schema, KITCHEN_USERS_COLLECTION);
+}
+
 async function buildAudit({ includeInactive, includePlaceholders }) {
-  const users = await KitchenUser.find({})
+  const KitchenUserExport = getKitchenUserExportModel();
+  const rawCollection = mongoose.connection.collection(KITCHEN_USERS_COLLECTION);
+  const rawDocumentCount = await rawCollection.countDocuments({});
+  const users = await KitchenUserExport.find({})
     .select("_id username email firstName lastName displayName passwordHash active hasLogin isPlaceholder type clerkId")
     .lean();
   const emailBuckets = new Map();
@@ -165,6 +216,12 @@ async function buildAudit({ includeInactive, includePlaceholders }) {
   }, {});
 
   return {
+    debug: {
+      databaseName: mongoose.connection.name || "unknown",
+      modelName: KitchenUserExport.modelName,
+      collectionName: KitchenUserExport.collection.collectionName,
+      rawKitchenUsersCount: rawDocumentCount
+    },
     summary: {
       totalUsersScanned: users.length,
       eligibleUsers: eligible.length,
@@ -185,6 +242,7 @@ async function buildAudit({ includeInactive, includePlaceholders }) {
 
 function printAudit(audit) {
   console.log(JSON.stringify({
+    debug: audit.debug,
     summary: audit.summary,
     exclusionCounts: audit.exclusionCounts,
     duplicateEmailConflicts: audit.duplicateEmailConflicts,
@@ -194,13 +252,24 @@ function printAudit(audit) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const mongodbUri = process.env.MONGODB_URI || process.env.MONGODB_URL;
+  const { envSource, mongodbUri, fallbackReason = "" } = resolveMongoConnection();
 
   if (!mongodbUri) {
     throw new Error("MONGODB_URI is required. This script also accepts legacy MONGODB_URL and reads backend/.env by default.");
   }
 
   await mongoose.connect(mongodbUri, { serverSelectionTimeoutMS: 10000 });
+  console.log(JSON.stringify({
+    debug: {
+      envSource,
+      fallbackReason: fallbackReason || null,
+      configuredDbName: getMongoDbName(mongodbUri),
+      connectedDatabaseName: mongoose.connection.name || "unknown",
+      modelName: KitchenUser.modelName,
+      inferredCollectionName: KitchenUser.collection.collectionName,
+      forcedCollectionName: KITCHEN_USERS_COLLECTION
+    }
+  }, null, 2));
   const audit = await buildAudit(args);
   printAudit(audit);
 
