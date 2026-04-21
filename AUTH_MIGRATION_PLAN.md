@@ -130,6 +130,7 @@
   - matched Mongo user + same `clerkId`: continue
   - matched Mongo user + different `clerkId`: reject
   - no matched Mongo user: reject unless an existing business flow explicitly creates a safe Mongo user
+  - DEV-only exception: if a Mongo user is matched by normalized email and its `clerkId` still points to an older DEV test/import identity, the backend may reconcile `clerkId` to the currently authenticated Clerk user. Production still rejects mismatches.
 
 ## Phased Rollout Plan
 
@@ -278,7 +279,16 @@
   - Clerk `externalId` preserves the Mongo `_id` for traceability.
   - `KitchenUser.clerkId` remains the persistent local link field.
   - The existing runtime mapping still links by normalized email on first Clerk sign-in and persists `clerkId`.
+  - Imported DEV users can conflict with earlier DEV Clerk test accounts that already wrote a stale `KitchenUser.clerkId`. The backend now reconciles those stale DEV `clerkId` values on successful email-matched Clerk sign-in only in development.
   - The import scripts do not mutate Mongo users.
+- DEV reconciliation utility:
+  - [backend/scripts/reconcile-dev-clerk-id.js](/C:/APPS/pilot-homefirst/backend/scripts/reconcile-dev-clerk-id.js)
+  - Preview a manual reconciliation without changing Mongo:
+  - `npm --workspace backend run clerk:dev-reconcile-id -- --email user@example.com --clerk-id user_xxx --dry-run`
+  - Force-set a DEV `clerkId` manually if needed:
+  - `npm --workspace backend run clerk:dev-reconcile-id -- --email user@example.com --clerk-id user_xxx`
+  - Clear a stale DEV `clerkId` manually if needed:
+  - `npm --workspace backend run clerk:dev-reconcile-id -- --email user@example.com --clear`
 - Duplicate email handling:
   - Any case-insensitive duplicate email excludes every user in that duplicate group.
   - Resolve duplicates manually in Mongo before export, or leave those users on legacy auth until a safe account merge decision is made.

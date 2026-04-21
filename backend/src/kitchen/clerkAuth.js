@@ -7,6 +7,10 @@ const clerkClient = config.clerkSecretKey
   ? createClerkClient({ secretKey: config.clerkSecretKey })
   : null;
 
+function isDevelopmentClerkReconciliationEnabled() {
+  return config.nodeEnv === "development" || process.env.APP_ENV === "development";
+}
+
 function logClerkDev(message, details = {}) {
   if (
     config.nodeEnv !== "development"
@@ -175,7 +179,7 @@ export async function authenticateClerkToken(token) {
   const identity = await resolveClerkIdentityFromToken(token);
   if (!identity) return null;
 
-  const { clerkUser, kitchenUser: mongoUser } = identity;
+  const { clerkUser, kitchenUser: mongoUser, email: normalizedEmail } = identity;
 
   if (!mongoUser) {
     throw buildAuthError(
@@ -193,6 +197,31 @@ export async function authenticateClerkToken(token) {
       clerkUserId: clerkUser.id
     });
   } else if (mongoUser.clerkId !== clerkUser.id) {
+    if (isDevelopmentClerkReconciliationEnabled()) {
+      const previousClerkId = String(mongoUser.clerkId || "").trim();
+      mongoUser.clerkId = clerkUser.id;
+      await mongoUser.save();
+      logClerkDev("Reconciled stale DEV Clerk ID on Mongo user", {
+        userId: mongoUser._id.toString(),
+        email: normalizedEmail,
+        previousClerkId,
+        nextClerkId: clerkUser.id,
+        reason: "email-matched dev import/test reconciliation"
+      });
+    } else {
+      logClerkDev("Clerk ID mismatch", {
+        userId: mongoUser._id.toString(),
+        expectedClerkId: mongoUser.clerkId,
+        actualClerkId: clerkUser.id
+      });
+      throw buildAuthError(
+        "CLERK_USER_MISMATCH",
+        "La identidad de Clerk no coincide con el usuario interno vinculado."
+      );
+    }
+  }
+
+  if (mongoUser.clerkId !== clerkUser.id) {
     logClerkDev("Clerk ID mismatch", {
       userId: mongoUser._id.toString(),
       expectedClerkId: mongoUser.clerkId,

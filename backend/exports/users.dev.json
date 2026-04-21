@@ -1,0 +1,91 @@
+[
+  {
+    "userId": "697153d9caf410af214ae3ed",
+    "externalId": "697153d9caf410af214ae3ed",
+    "email": "f.acedorico@gmail.com",
+    "firstName": "Pilo",
+    "lastName": "Acedo-Rico",
+    "passwordDigest": "$2a$10$R6cUdei7.3PWeBeIglKg..5Hgf9bscC/qfRMKn/7fXC6/b6lMgI9.",
+    "passwordHasher": "bcrypt"
+  },
+  {
+    "userId": "6971562bcaf410af214ae491",
+    "externalId": "6971562bcaf410af214ae491",
+    "email": "rgrociogomez@gmail.com",
+    "firstName": "Rocío",
+    "passwordDigest": "$2a$10$et2tpTMdk/gJafIO3BHAIex0H.Ze7rhK6u2y/CFjrk6jy/p8ZXW4i",
+    "passwordHasher": "bcrypt"
+  },
+  {
+    "userId": "69933834c5684f112a1740d1",
+    "externalId": "69933834c5684f112a1740d1",
+    "email": "admin@admin.com",
+    "passwordDigest": "$2a$10$7lMrzvZiEFgeuKDqUn0hJOv9O7mZdi7/m8oBzbzhSdwyr5tYCaEcW",
+    "passwordHasher": "bcrypt"
+  },
+  {
+    "userId": "699796547235b4707c9133e1",
+    "externalId": "699796547235b4707c9133e1",
+    "email": "rafa@rafa.com",
+    "firstName": "Rafa",
+    "passwordDigest": "$2a$10$EyVejLRj6PeR4e81E3etG.scUXuCvne9Tm8bYi/JRgnTAk.QOBPN6",
+    "passwordHasher": "bcrypt"
+  },
+  {
+    "userId": "699798337235b4707c913433",
+    "externalId": "699798337235b4707c913433",
+    "email": "javi@javi.com",
+    "firstName": "Javi",
+    "passwordDigest": "$2a$10$LhhGAOPoHPoZiiD3.9SFS.7vxqE/dJpyZIvryob8R8HWR2Lym7aNW",
+    "passwordHasher": "bcrypt"
+  },
+  {
+    "userId": "69979f6a9ded0fa65bdd1983",
+    "externalId": "69979f6a9ded0fa65bdd1983",
+    "email": "fernando@fernando.com",
+    "firstName": "Fernando",
+    "passwordDigest": "$2a$10$hchuJitRoSn8U06cCLAsl.dp35IOMtNMe3I70Ex10fvYYUnFY84KG",
+    "passwordHasher": "bcrypt"
+  },
+  {
+    "userId": "6997a175774211eb4733e84c",
+    "externalId": "6997a175774211eb4733e84c",
+    "email": "julia@julia.com",
+    "firstName": "Julia",
+    "passwordDigest": "$2a$10$KAF1/BtU/o7whnTPQnKMI./v5fYqNF5Fe/OdfL.q8PeM1A7KnNzse",
+    "passwordHasher": "bcrypt"
+  },
+  {
+    "userId": "69aff7dcb8d85219adc40ba8",
+    "externalId": "69aff7dcb8d85219adc40ba8",
+    "email": "lunchfyapp@gmail.com",
+    "firstName": "Pepe",
+    "passwordDigest": "$2a$10$iPWRxLCZM3WRvV29SFLCKOLmtrfotVR8kY6MH02mOwnpyxb/RcFe.",
+    "passwordHasher": "bcrypt"
+  },
+  {
+    "userId": "69b410a0177385c862e65de9",
+    "externalId": "69b410a0177385c862e65de9",
+    "email": "ricardo@ricardo.com",
+    "firstName": "Ricardo",
+    "passwordDigest": "$2a$10$XPsXMZbX6H9AkcOFBoBz0OWAbkP77a52IItPr8vxUff2/5Bk3QRdG",
+    "passwordHasher": "bcrypt"
+  },
+  {
+    "userId": "69b45a1ee714718700b0f581",
+    "externalId": "69b45a1ee714718700b0f581",
+    "email": "fercho@cho.com",
+    "firstName": "fercho",
+    "passwordDigest": "$2a$10$MSbmq.4At0Z2YwNNJRSp1u8kNWqPkb4OAJmSE8WrOEMw1RWTcaTau",
+    "passwordHasher": "bcrypt"
+  },
+  {
+    "userId": "69b4ee16dbd870723789cd8f",
+    "externalId": "69b4ee16dbd870723789cd8f",
+    "email": "marta.urech@gmail.com",
+    "firstName": "Marta",
+    "lastName": "UGV",
+    "passwordDigest": "$2a$10$xaOYXH4gjXLuSGWYaaSVoO8/YHZSXEMimHbnvu5tX0cHQseWkyR4i",
+    "passwordHasher": "bcrypt"
+  }
+]
