@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { SignIn, UserButton, useAuth as useClerkAuth, useClerk, useSignIn, useSignUp, useUser } from "@clerk/react";
+import { UserButton, useAuth as useClerkAuth, useClerk, useSignIn, useSignUp, useUser } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
@@ -81,6 +81,10 @@ function AuthField({ id, label, type = "text", value, onChange, placeholder, aut
   );
 }
 
+function AuthFieldOptional(props) {
+  return <AuthField {...props} required={false} />;
+}
+
 export default function ClerkAuthPage({ mode = "choice" }) {
   const navigate = useNavigate();
 
@@ -115,15 +119,15 @@ function ClerkAuthContent({ mode }) {
 
   const signIn = signInState?.signIn;
   const signUp = signUpState?.signUp;
-  const setActiveSignIn = signInState?.setActive;
-  const setActiveSignUp = signUpState?.setActive;
-  const signInLoaded = Boolean(signIn && setActiveSignIn);
-  const signUpLoaded = Boolean(signUp && setActiveSignUp);
+  const signInLoaded = Boolean(signIn);
+  const signUpLoaded = Boolean(signUp);
 
   const [signInForm, setSignInForm] = useState({ email: "", password: "" });
   const [signUpForm, setSignUpForm] = useState({ email: "", password: "" });
   const [verificationCode, setVerificationCode] = useState("");
   const [isAwaitingSignUpVerification, setIsAwaitingSignUpVerification] = useState(false);
+  const [resetPasswordForm, setResetPasswordForm] = useState({ email: "", code: "", password: "" });
+  const [resetPasswordStep, setResetPasswordStep] = useState("request");
   const [finalBootstrapError, setFinalBootstrapError] = useState("");
   const [lastClerkError, setLastClerkError] = useState(null);
   const [lastBootstrapStatus, setLastBootstrapStatus] = useState("waiting");
@@ -138,6 +142,10 @@ function ClerkAuthContent({ mode }) {
     signUpVerificationSubmitted: 0,
     signInStarted: 0,
     signInPasswordSent: 0,
+    resetPasswordStarted: 0,
+    resetPasswordCodeSent: 0,
+    resetPasswordCodeVerified: 0,
+    resetPasswordPasswordSubmitted: 0,
     bootstrapStarted: 0
   });
 
@@ -312,31 +320,42 @@ function ClerkAuthContent({ mode }) {
 
         const result = await signIn.create({
           strategy: "password",
-          identifier: signInForm.email.trim(),
+          identifier: signInForm.email.trim()
+        });
+
+        if (result.error) {
+          throw result.error;
+        }
+
+        const passwordResult = await signIn.password({
           password: signInForm.password
         });
 
-        if (result.status === "complete" && result.createdSessionId) {
-          await setActiveSignIn({ session: result.createdSessionId });
+        if (passwordResult.error) {
+          throw passwordResult.error;
+        }
+
+        if (signIn.status === "complete") {
+          await signIn.finalize();
           return;
         }
 
-        if (isUnexpectedSecondFactorStatus(result.status)) {
+        if (isUnexpectedSecondFactorStatus(signIn.status)) {
           throw {
             errors: [{
-              code: result.status,
-              longMessage: buildSecondFactorMessage(result.status)
+              code: signIn.status,
+              longMessage: buildSecondFactorMessage(signIn.status)
             }],
-            raw: result
+            raw: signIn
           };
         }
 
         throw {
           errors: [{
-            code: result.status || "UNSUPPORTED_SIGN_IN_STATUS",
+            code: signIn.status || "UNSUPPORTED_SIGN_IN_STATUS",
             longMessage: "Clerk devolvio un estado de login no esperado para el flujo de contrasena."
           }],
-          raw: result
+          raw: signIn
         };
       } catch (error) {
         setNormalizedClerkError("sign-in", error);
@@ -375,7 +394,10 @@ function ClerkAuthContent({ mode }) {
           email: signUpForm.email
         });
 
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        const verificationResult = await signUp.verifications.emailAddress.sendEmailCode();
+        if (verificationResult.error) {
+          throw verificationResult.error;
+        }
         setIsAwaitingSignUpVerification(true);
       } catch (error) {
         setNormalizedClerkError("sign-up", error);
@@ -396,21 +418,25 @@ function ClerkAuthContent({ mode }) {
           email: signUpForm.email
         });
 
-        const result = await signUp.attemptEmailAddressVerification({
+        const result = await signUp.verifications.emailAddress.verifyEmailCode({
           code: verificationCode.trim()
         });
 
-        if (result.status === "complete" && result.createdSessionId) {
-          await setActiveSignUp({ session: result.createdSessionId });
+        if (result.error) {
+          throw result.error;
+        }
+
+        if (signUp.status === "complete") {
+          await signUp.finalize();
           return;
         }
 
         throw {
           errors: [{
-            code: result.status || "SIGN_UP_VERIFICATION_INCOMPLETE",
+            code: signUp.status || "SIGN_UP_VERIFICATION_INCOMPLETE",
             longMessage: "Clerk no pudo completar la verificacion del registro."
           }],
-          raw: result
+          raw: signUp
         };
       } catch (error) {
         setNormalizedClerkError("sign-up", error);
@@ -429,9 +455,118 @@ function ClerkAuthContent({ mode }) {
           signUpVerificationResent: actionCountersRef.current.signUpVerificationResent,
           email: signUpForm.email
         });
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        const resendResult = await signUp.verifications.emailAddress.sendEmailCode();
+        if (resendResult.error) {
+          throw resendResult.error;
+        }
       } catch (error) {
         setNormalizedClerkError("sign-up", error);
+      }
+    });
+  };
+
+  const handleResetPasswordStart = async (event) => {
+    event.preventDefault();
+    setLastClerkError(null);
+    clearFinalBootstrapError();
+
+    await runLockedAction("reset-password-start", async () => {
+      if (!signInLoaded) return;
+      try {
+        actionCountersRef.current.resetPasswordStarted += 1;
+        logDevAction("Forgot-password flow entered", {
+          resetPasswordStarted: actionCountersRef.current.resetPasswordStarted,
+          identifier: resetPasswordForm.email
+        });
+
+        const createResult = await signIn.create({
+          strategy: "reset_password_email_code",
+          identifier: resetPasswordForm.email.trim()
+        });
+        if (createResult.error) {
+          throw createResult.error;
+        }
+
+        actionCountersRef.current.resetPasswordCodeSent += 1;
+        logDevAction("Reset-password code sent", {
+          resetPasswordCodeSent: actionCountersRef.current.resetPasswordCodeSent,
+          identifier: resetPasswordForm.email
+        });
+
+        const sendCodeResult = await signIn.resetPasswordEmailCode.sendCode();
+        if (sendCodeResult.error) {
+          throw sendCodeResult.error;
+        }
+
+        setResetPasswordStep("verify");
+      } catch (error) {
+        setNormalizedClerkError("reset-password", error);
+      }
+    });
+  };
+
+  const handleResetPasswordVerifyCode = async (event) => {
+    event.preventDefault();
+    setLastClerkError(null);
+
+    await runLockedAction("reset-password-verify", async () => {
+      if (!signInLoaded) return;
+      try {
+        const verifyResult = await signIn.resetPasswordEmailCode.verifyCode({
+          code: resetPasswordForm.code.trim()
+        });
+        if (verifyResult.error) {
+          throw verifyResult.error;
+        }
+
+        actionCountersRef.current.resetPasswordCodeVerified += 1;
+        logDevAction("Reset-password code verified", {
+          resetPasswordCodeVerified: actionCountersRef.current.resetPasswordCodeVerified,
+          identifier: resetPasswordForm.email
+        });
+
+        setResetPasswordStep("new-password");
+      } catch (error) {
+        setNormalizedClerkError("reset-password", error);
+      }
+    });
+  };
+
+  const handleResetPasswordSubmitNewPassword = async (event) => {
+    event.preventDefault();
+    setLastClerkError(null);
+
+    await runLockedAction("reset-password-submit", async () => {
+      if (!signInLoaded) return;
+      try {
+        const submitPasswordResult = await signIn.resetPasswordEmailCode.submitPassword({
+          password: resetPasswordForm.password
+        });
+        if (submitPasswordResult.error) {
+          throw submitPasswordResult.error;
+        }
+
+        actionCountersRef.current.resetPasswordPasswordSubmitted += 1;
+        logDevAction("Reset-password submit succeeded", {
+          resetPasswordPasswordSubmitted: actionCountersRef.current.resetPasswordPasswordSubmitted,
+          identifier: resetPasswordForm.email
+        });
+
+        if (signIn.status === "complete") {
+          await signIn.finalize();
+          return;
+        }
+
+        throw {
+          errors: [{
+            code: signIn.status || "RESET_PASSWORD_INCOMPLETE",
+            longMessage: "Clerk no pudo completar el cambio de contrasena."
+          }],
+          raw: signIn
+        };
+      } catch (error) {
+        logDevAction("Reset-password submit failed", { identifier: resetPasswordForm.email });
+        setNormalizedClerkError("reset-password", error);
       }
     });
   };
@@ -444,6 +579,13 @@ function ClerkAuthContent({ mode }) {
       returnRoute: clerkCompletePath
     });
   }, [isLoaded, isSignedIn, mode]);
+
+  useEffect(() => {
+    if (mode !== "reset-password") return;
+    logDevAction("Forgot-password route entered", {
+      resetPasswordStep
+    });
+  }, [mode, resetPasswordStep]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -636,7 +778,7 @@ function ClerkAuthContent({ mode }) {
                   onChange={(event) => setSignInForm((current) => ({ ...current, email: event.target.value }))}
                   placeholder="tunombre@email.com"
                   autoComplete="email"
-                  disabled={!signInLoaded || isBusy}
+                  disabled={!isLoaded || !signInLoaded || isBusy}
                 />
                 <AuthField
                   id="clerk-signin-password"
@@ -646,10 +788,10 @@ function ClerkAuthContent({ mode }) {
                   onChange={(event) => setSignInForm((current) => ({ ...current, password: event.target.value }))}
                   placeholder="Tu contrasena"
                   autoComplete="current-password"
-                  disabled={!signInLoaded || isBusy}
+                  disabled={!isLoaded || !signInLoaded || isBusy}
                 />
               </div>
-              <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={!signInLoaded || isBusy}>
+              <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={!isLoaded || !signInLoaded || isBusy}>
                 {isBusy ? "Entrando..." : "Iniciar sesion ->"}
               </button>
               <div className="kitchen-login-forgot-row">
@@ -664,17 +806,95 @@ function ClerkAuthContent({ mode }) {
           ) : null}
 
           {!isSignedIn && mode === "reset-password" ? (
-            <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
-              <SignIn
-                routing="path"
-                path="/auth/clerk/reset-password"
-                signUpUrl="/auth/clerk/sign-up"
-                forceRedirectUrl={clerkPostAuthPath}
-                fallbackRedirectUrl={clerkPostAuthPath}
-                signUpForceRedirectUrl={clerkPostAuthPath}
-                signUpFallbackRedirectUrl={clerkPostAuthPath}
-              />
-            </div>
+            <form
+              className="kitchen-login-form"
+              onSubmit={
+                resetPasswordStep === "request"
+                  ? handleResetPasswordStart
+                  : resetPasswordStep === "verify"
+                    ? handleResetPasswordVerifyCode
+                    : handleResetPasswordSubmitNewPassword
+              }
+            >
+              {resetPasswordStep === "request" ? (
+                <>
+                  <div className="kitchen-alert info">
+                    Introduce tu email y te enviaremos un codigo de recuperacion para restablecer tu contrasena.
+                  </div>
+                  <div className="kitchen-login-fields">
+                    <AuthField
+                      id="clerk-reset-email"
+                      label="CORREO ELECTRONICO"
+                      type="email"
+                      value={resetPasswordForm.email}
+                      onChange={(event) => setResetPasswordForm((current) => ({ ...current, email: event.target.value }))}
+                      placeholder="tunombre@email.com"
+                      autoComplete="email"
+                      disabled={!isLoaded || !signInLoaded || isBusy}
+                    />
+                  </div>
+                  <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={!isLoaded || !signInLoaded || isBusy}>
+                    {isBusy ? "Enviando codigo..." : "Enviar codigo de recuperacion ->"}
+                  </button>
+                </>
+              ) : null}
+
+              {resetPasswordStep === "verify" ? (
+                <>
+                  <div className="kitchen-alert info">
+                    Hemos enviado un codigo de recuperacion a <strong>{resetPasswordForm.email}</strong>. Introducelo para continuar.
+                  </div>
+                  <div className="kitchen-login-fields">
+                    <AuthField
+                      id="clerk-reset-code"
+                      label="CODIGO DE RECUPERACION"
+                      value={resetPasswordForm.code}
+                      onChange={(event) => setResetPasswordForm((current) => ({ ...current, code: event.target.value }))}
+                      placeholder="123456"
+                      autoComplete="one-time-code"
+                      disabled={!isLoaded || !signInLoaded || isBusy}
+                    />
+                  </div>
+                  <div className="kitchen-actions">
+                    <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={!isLoaded || !signInLoaded || isBusy}>
+                      {isBusy ? "Verificando..." : "Verificar codigo ->"}
+                    </button>
+                    <button type="button" className="kitchen-button secondary" onClick={handleResetPasswordStart} disabled={!isLoaded || !signInLoaded || isBusy}>
+                      Reenviar codigo
+                    </button>
+                  </div>
+                </>
+              ) : null}
+
+              {resetPasswordStep === "new-password" ? (
+                <>
+                  <div className="kitchen-alert info">
+                    Codigo validado. Ahora define tu nueva contrasena.
+                  </div>
+                  <div className="kitchen-login-fields">
+                    <AuthField
+                      id="clerk-reset-password"
+                      label="NUEVA CONTRASENA"
+                      type="password"
+                      value={resetPasswordForm.password}
+                      onChange={(event) => setResetPasswordForm((current) => ({ ...current, password: event.target.value }))}
+                      placeholder="Nueva contrasena"
+                      autoComplete="new-password"
+                      disabled={!isLoaded || !signInLoaded || isBusy}
+                    />
+                  </div>
+                  <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={!isLoaded || !signInLoaded || isBusy}>
+                    {isBusy ? "Guardando..." : "Guardar nueva contrasena ->"}
+                  </button>
+                </>
+              ) : null}
+
+              <div className="kitchen-login-forgot-row">
+                <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk/sign-in")}>
+                  Volver al login
+                </button>
+              </div>
+            </form>
           ) : null}
 
           {!isSignedIn && mode === "complete" ? (
