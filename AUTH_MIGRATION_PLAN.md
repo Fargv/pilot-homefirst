@@ -67,6 +67,15 @@
 
 - Users can enter through `/auth/clerk`, then choose `/auth/clerk/sign-up` or `/auth/clerk/sign-in`.
 - Clerk handles identity and session creation.
+- Dashboard settings expected for the intended UX:
+  - `User & authentication` -> `Email`: enable `Sign-up with email`.
+  - `User & authentication` -> `Email`: keep `Require email address` enabled.
+  - `User & authentication` -> `Email`: keep `Verify at sign-up` enabled with `Email verification code`.
+  - `User & authentication` -> `Email`: enable `Sign in with email`.
+  - `User & authentication` -> `Password`: enable password authentication for sign-in.
+  - If you want login to stay password-only, do not enable email-code or email-link sign-in as the intended normal login path.
+  - If you want login to avoid unexpected verification codes on new devices, disable `Client Trust` in the Clerk Dashboard `Updates` page.
+  - MFA should stay disabled unless the app is intentionally updated to handle it.
 - Clerk redirects are configured to return directly to `/kitchen/semana`; the protected route waits on the shared auth provider instead of bouncing through the legacy login page.
 - `/auth/clerk/complete` remains as a quiet fallback/resume route, but it is no longer the normal happy-path redirect target.
 - After Clerk returns to the app, the shared frontend auth provider resolves Clerk-backed `/api/kitchen/auth/me`.
@@ -76,7 +85,10 @@
 - If Mongo app onboarding is missing, the user is sent to `/onboarding/clerk`.
 - `/onboarding/clerk` collects first name, last name, initials, household name, diner/cook defaults, optional invite code, optional invite token from a Clerk deep link, and initial household preferences.
 - Submitting onboarding calls `POST /api/kitchen/auth/clerk/onboarding`, which creates or completes the safe Mongo business records.
-- The Clerk sign-up/sign-in pages keep a single mounted Clerk component per route and add a hard per-form-stage duplicate-submit guard around the prebuilt Clerk components. The guard suppresses repeated submits of the same Clerk form stage, briefly disables the clicked submit button, and logs accepted/suppressed submissions in development so one user action maps to one Clerk sign-up or verification request.
+- The Clerk sign-up page is now a custom email/password flow that calls `signUp.create()` once and `prepareEmailAddressVerification({ strategy: "email_code" })` once per sign-up attempt, with an in-flight lock to stop duplicate sends.
+- The Clerk sign-in page is now a custom password-first flow that calls `signIn.create({ strategy: "password" ... })`, so normal login does not intentionally use email verification codes.
+- The prior duplicate verification issue came from relying on prebuilt Clerk auth components plus route/component remount behavior and repeated submit opportunities, which made the UX feel like verification was being initiated twice. The custom flow removes that ambiguity by giving the app one owner for sign-up creation and one owner for verification preparation.
+- If login still asks for a verification code after this change, the remaining cause is Clerk instance configuration, most notably `Client Trust` or an intentionally enabled second-factor setting in the Clerk Dashboard rather than the app choosing an email-code login path.
 - Protected app routes recognize an active Clerk session as a bootstrap-in-progress state. They show the branded loading state while `/me` resolves, send incomplete profiles to `/onboarding/clerk`, and only use `/auth/clerk/complete` as a fallback for confirmed bootstrap errors.
 
 ## Temporary DEV Clerk Auth Entry Point

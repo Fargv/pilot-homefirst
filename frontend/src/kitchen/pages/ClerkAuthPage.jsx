@@ -1,14 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  SignIn,
-  SignUp,
-  UserButton,
-  useAuth as useClerkAuth,
-  useClerk,
-  useSignIn,
-  useSignUp,
-  useUser
-} from "@clerk/react";
+import { SignIn, UserButton, useAuth as useClerkAuth, useClerk, useSignIn, useSignUp, useUser } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
@@ -21,34 +12,21 @@ const clerkPostAuthPath = "/kitchen/semana";
 const pendingInviteTokenKey = "clerk_onboarding_invite_token";
 const pendingInviteCodeKey = "clerk_onboarding_invite_code";
 
-function findFirstFieldError(fields = {}) {
-  for (const value of Object.values(fields || {})) {
-    if (value) return value;
-  }
-  return null;
-}
-
-function normalizeClerkErrors(source, errors) {
-  const rawError = errors?.global?.[0] || findFirstFieldError(errors?.fields) || errors?.raw?.[0] || null;
-  if (!rawError) return null;
-
-  const firstApiError = rawError?.errors?.[0] || rawError;
-  const code = firstApiError?.code || rawError?.code || "CLERK_ERROR";
+function normalizeClerkError(source, error) {
+  const rawError = error?.errors?.[0] || error?.raw?.[0] || error;
+  const code = rawError?.code || error?.code || "CLERK_ERROR";
   const longMessage =
-    firstApiError?.longMessage
-    || firstApiError?.long_message
-    || rawError?.longMessage
+    rawError?.longMessage
     || rawError?.long_message
-    || firstApiError?.message
     || rawError?.message
+    || error?.message
     || "Clerk sign-in/sign-up failed.";
 
   return {
     source,
     code,
     longMessage,
-    raw: rawError,
-    rawErrors: errors?.raw || null
+    raw: error
   };
 }
 
@@ -68,20 +46,39 @@ function stringifyDebugValue(value) {
   );
 }
 
-function buildClerkSubmitSignature(event, source) {
-  const form = event.currentTarget?.querySelector?.("form") || event.target?.closest?.("form") || event.target;
-  const fields = Array.from(form?.elements || [])
-    .filter((element) => element?.tagName === "INPUT" || element?.tagName === "BUTTON")
-    .map((element) => [
-      element.tagName,
-      element.type || "",
-      element.name || "",
-      element.id || "",
-      element.getAttribute?.("autocomplete") || "",
-      element.getAttribute?.("data-localization-key") || ""
-    ].join(":"))
-    .join("|");
-  return `${source}:${fields || "unknown-form"}`;
+function isUnexpectedSecondFactorStatus(status) {
+  return status === "needs_second_factor" || status === "needs_client_trust";
+}
+
+function buildSecondFactorMessage(status) {
+  if (status === "needs_client_trust") {
+    return "Clerk esta solicitando Client Trust para este inicio de sesion. Si quieres login solo con contrasena, desactiva Client Trust en Clerk Dashboard.";
+  }
+  if (status === "needs_second_factor") {
+    return "Clerk esta solicitando un segundo factor para este inicio de sesion. Si no quieres codigos en login normal, revisa MFA y estrategias de sign-in en Clerk Dashboard.";
+  }
+  return "Clerk esta solicitando un segundo factor no esperado para este login.";
+}
+
+function AuthField({ id, label, type = "text", value, onChange, placeholder, autoComplete, disabled = false }) {
+  return (
+    <label className="kitchen-ui-input-group" htmlFor={id}>
+      <span className="kitchen-login-label">{label}</span>
+      <div className="kitchen-login-input-wrap">
+        <input
+          id={id}
+          className="kitchen-ui-input kitchen-login-input"
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          disabled={disabled}
+          required
+        />
+      </div>
+    </label>
+  );
 }
 
 export default function ClerkAuthPage({ mode = "choice" }) {
@@ -115,27 +112,52 @@ function ClerkAuthContent({ mode }) {
   const signUpState = useSignUp();
   const clerk = useClerk();
   const { user: clerkUser } = useUser();
+
+  const signIn = signInState?.signIn;
+  const signUp = signUpState?.signUp;
+  const setActiveSignIn = signInState?.setActive;
+  const setActiveSignUp = signUpState?.setActive;
+  const signInLoaded = Boolean(signIn && setActiveSignIn);
+  const signUpLoaded = Boolean(signUp && setActiveSignUp);
+
+  const [signInForm, setSignInForm] = useState({ email: "", password: "" });
+  const [signUpForm, setSignUpForm] = useState({ email: "", password: "" });
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isAwaitingSignUpVerification, setIsAwaitingSignUpVerification] = useState(false);
   const [finalBootstrapError, setFinalBootstrapError] = useState("");
   const [lastClerkError, setLastClerkError] = useState(null);
   const [lastBootstrapStatus, setLastBootstrapStatus] = useState("waiting");
   const [showDebug, setShowDebug] = useState(false);
   const finalBootstrapErrorTimerRef = useRef(null);
-  const clerkSubmitLocksRef = useRef(new Map());
+  const actionLocksRef = useRef(new Set());
+  const actionCountersRef = useRef({
+    signUpStarted: 0,
+    signUpCreateSent: 0,
+    signUpVerificationPrepared: 0,
+    signUpVerificationResent: 0,
+    signUpVerificationSubmitted: 0,
+    signInStarted: 0,
+    signInPasswordSent: 0,
+    bootstrapStarted: 0
+  });
+
   const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
   const clerkIdentity = clerkEmail || clerkUser?.username || clerkUser?.id || "Unknown Clerk user";
+  const isBusy = actionLocksRef.current.size > 0;
+
   const pageCopy = useMemo(() => {
     if (mode === "sign-up") {
       return {
         kicker: "Cuenta segura",
         title: "Crea tu cuenta",
-        subtitle: "Usa el acceso seguro para crear tu identidad. Despues completaremos tu perfil de cocina."
+        subtitle: "Crea tu acceso con email y contrasena. Solo el registro nuevo pide verificar el email."
       };
     }
     if (mode === "sign-in") {
       return {
         kicker: "Cuenta segura",
         title: "Entra a tu cocina",
-        subtitle: "Accede con tu identidad segura y continuaremos con tu perfil interno."
+        subtitle: "Inicia sesion con email y contrasena. El login normal no deberia pedir codigo de verificacion."
       };
     }
     if (mode === "reset-password") {
@@ -193,70 +215,64 @@ function ClerkAuthContent({ mode }) {
     }, 1200);
   };
 
-  const guardClerkSubmit = (event, source) => {
-    const now = Date.now();
-    const signature = buildClerkSubmitSignature(event, source);
-    const lockedUntil = clerkSubmitLocksRef.current.get(signature) || 0;
-    if (now < lockedUntil) {
-      event.preventDefault();
-      event.stopPropagation();
-      if (isDevelopmentEnvironment) {
-        console.warn("[clerk][dev] Suppressed duplicate Clerk form submit", {
-          source,
-          signature,
-          lockedForMs: lockedUntil - now
-        });
-      }
-      return;
+  const logDevAction = (label, details = {}) => {
+    if (!isDevelopmentEnvironment) return;
+    console.info(`[clerk][dev] ${label}`, details);
+  };
+
+  const runLockedAction = async (key, action) => {
+    if (actionLocksRef.current.has(key)) {
+      logDevAction("Suppressed duplicate action", { key });
+      return null;
     }
-    clerkSubmitLocksRef.current.set(signature, now + 15000);
-    const submitter = event.nativeEvent?.submitter;
-    if (submitter && "disabled" in submitter) {
-      submitter.disabled = true;
-      window.setTimeout(() => {
-        submitter.disabled = false;
-      }, 2500);
+
+    actionLocksRef.current.add(key);
+    try {
+      return await action();
+    } finally {
+      actionLocksRef.current.delete(key);
     }
+  };
+
+  const setNormalizedClerkError = (source, error) => {
+    const normalized = normalizeClerkError(source, error);
+    setLastClerkError(normalized);
     if (isDevelopmentEnvironment) {
-      console.info("[clerk][dev] Clerk form submit accepted", { source, signature });
+      console.warn(`[clerk][dev] ${source} failed`, normalized);
     }
+    return normalized;
   };
 
   const bootstrapClerkUser = async ({ source = "manual" } = {}) => {
     if (!isSignedIn) return null;
     clearFinalBootstrapError();
     setLastBootstrapStatus(`starting:${source}`);
-    if (isDevelopmentEnvironment) {
-      console.info("[clerk][dev] Bootstrapping Mongo session from Clerk", {
-        source,
-        mode,
-        email: clerkEmail,
-        redirectTarget: clerkPostAuthPath
-      });
-    }
+    actionCountersRef.current.bootstrapStarted += 1;
+    logDevAction("Bootstrap started", {
+      source,
+      bootstrapCount: actionCountersRef.current.bootstrapStarted,
+      email: clerkEmail,
+      redirectTarget: clerkPostAuthPath
+    });
 
     const nextUser = await refreshUser({ authMode: "clerk" });
     if (nextUser?.onboardingRequired || onboardingRequired) {
       setLastBootstrapStatus("onboarding-required");
       clearFinalBootstrapError();
-      if (isDevelopmentEnvironment) {
-        console.info("[clerk][dev] Mongo onboarding required after Clerk auth", { source, email: clerkEmail });
-      }
+      logDevAction("Bootstrap resolved to onboarding", { source, email: clerkEmail });
       navigate("/onboarding/clerk", { replace: source === "auto" });
       return nextUser;
     }
     if (nextUser?.id) {
       setLastBootstrapStatus("mapped");
       clearFinalBootstrapError();
-      if (isDevelopmentEnvironment) {
-        console.info("[clerk][dev] Mongo user resolved after Clerk auth", {
-          source,
-          userId: nextUser.id,
-          email: nextUser.email,
-          householdId: nextUser.householdId
-        });
-      }
-      navigate("/kitchen/semana", { replace: source === "auto" });
+      logDevAction("Bootstrap resolved to app user", {
+        source,
+        userId: nextUser.id,
+        email: nextUser.email,
+        householdId: nextUser.householdId
+      });
+      navigate(clerkPostAuthPath, { replace: source === "auto" });
       return nextUser;
     }
 
@@ -266,25 +282,167 @@ function ClerkAuthContent({ mode }) {
       ? `${bootstrapError.code || "AUTH_ERROR"} (${bootstrapError.status || "sin status"}): ${bootstrapError.message}`
       : "No pudimos preparar tu perfil interno. Intentalo de nuevo o revisa el panel de diagnostico.";
     scheduleFinalBootstrapError(diagnosticMessage);
-    if (isDevelopmentEnvironment) {
-      console.warn("[clerk][dev] Clerk session exists but Mongo mapping did not return a usable user", {
-        source,
-        email: clerkEmail,
-        lastAuthError: bootstrapError
-      });
-    }
+    logDevAction("Bootstrap failed", {
+      source,
+      email: clerkEmail,
+      error: bootstrapError || null
+    });
     return null;
+  };
+
+  const handlePasswordSignIn = async (event) => {
+    event.preventDefault();
+    clearFinalBootstrapError();
+    setLastClerkError(null);
+
+    await runLockedAction("sign-in-password", async () => {
+      if (!signInLoaded) return;
+      actionCountersRef.current.signInStarted += 1;
+      logDevAction("Sign-in started", {
+        signInStarted: actionCountersRef.current.signInStarted,
+        identifier: signInForm.email
+      });
+
+      try {
+        actionCountersRef.current.signInPasswordSent += 1;
+        logDevAction("Password sign-in request sent", {
+          signInPasswordSent: actionCountersRef.current.signInPasswordSent,
+          identifier: signInForm.email
+        });
+
+        const result = await signIn.create({
+          strategy: "password",
+          identifier: signInForm.email.trim(),
+          password: signInForm.password
+        });
+
+        if (result.status === "complete" && result.createdSessionId) {
+          await setActiveSignIn({ session: result.createdSessionId });
+          return;
+        }
+
+        if (isUnexpectedSecondFactorStatus(result.status)) {
+          throw {
+            errors: [{
+              code: result.status,
+              longMessage: buildSecondFactorMessage(result.status)
+            }],
+            raw: result
+          };
+        }
+
+        throw {
+          errors: [{
+            code: result.status || "UNSUPPORTED_SIGN_IN_STATUS",
+            longMessage: "Clerk devolvio un estado de login no esperado para el flujo de contrasena."
+          }],
+          raw: result
+        };
+      } catch (error) {
+        setNormalizedClerkError("sign-in", error);
+      }
+    });
+  };
+
+  const handleSignUpStart = async (event) => {
+    event.preventDefault();
+    clearFinalBootstrapError();
+    setLastClerkError(null);
+
+    await runLockedAction("sign-up-start", async () => {
+      if (!signUpLoaded) return;
+      actionCountersRef.current.signUpStarted += 1;
+      logDevAction("Sign-up started", {
+        signUpStarted: actionCountersRef.current.signUpStarted,
+        email: signUpForm.email
+      });
+
+      try {
+        actionCountersRef.current.signUpCreateSent += 1;
+        logDevAction("Sign-up request sent", {
+          signUpCreateSent: actionCountersRef.current.signUpCreateSent,
+          email: signUpForm.email
+        });
+
+        await signUp.create({
+          emailAddress: signUpForm.email.trim(),
+          password: signUpForm.password
+        });
+
+        actionCountersRef.current.signUpVerificationPrepared += 1;
+        logDevAction("Sign-up verification preparation sent", {
+          signUpVerificationPrepared: actionCountersRef.current.signUpVerificationPrepared,
+          email: signUpForm.email
+        });
+
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        setIsAwaitingSignUpVerification(true);
+      } catch (error) {
+        setNormalizedClerkError("sign-up", error);
+      }
+    });
+  };
+
+  const handleSignUpVerification = async (event) => {
+    event.preventDefault();
+    setLastClerkError(null);
+
+    await runLockedAction("sign-up-verify", async () => {
+      if (!signUpLoaded) return;
+      try {
+        actionCountersRef.current.signUpVerificationSubmitted += 1;
+        logDevAction("Sign-up verification submitted", {
+          signUpVerificationSubmitted: actionCountersRef.current.signUpVerificationSubmitted,
+          email: signUpForm.email
+        });
+
+        const result = await signUp.attemptEmailAddressVerification({
+          code: verificationCode.trim()
+        });
+
+        if (result.status === "complete" && result.createdSessionId) {
+          await setActiveSignUp({ session: result.createdSessionId });
+          return;
+        }
+
+        throw {
+          errors: [{
+            code: result.status || "SIGN_UP_VERIFICATION_INCOMPLETE",
+            longMessage: "Clerk no pudo completar la verificacion del registro."
+          }],
+          raw: result
+        };
+      } catch (error) {
+        setNormalizedClerkError("sign-up", error);
+      }
+    });
+  };
+
+  const handleResendVerification = async () => {
+    setLastClerkError(null);
+
+    await runLockedAction("sign-up-resend", async () => {
+      if (!signUpLoaded) return;
+      try {
+        actionCountersRef.current.signUpVerificationResent += 1;
+        logDevAction("Sign-up verification resend sent", {
+          signUpVerificationResent: actionCountersRef.current.signUpVerificationResent,
+          email: signUpForm.email
+        });
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      } catch (error) {
+        setNormalizedClerkError("sign-up", error);
+      }
+    });
   };
 
   useEffect(() => {
     if (!isLoaded) return;
-    if (isDevelopmentEnvironment) {
-      console.info("[clerk][dev] Clerk auth route mounted", {
-        mode,
-        isSignedIn,
-        returnRoute: clerkCompletePath
-      });
-    }
+    logDevAction("Clerk auth route mounted", {
+      mode,
+      isSignedIn,
+      returnRoute: clerkCompletePath
+    });
   }, [isLoaded, isSignedIn, mode]);
 
   useEffect(() => {
@@ -293,13 +451,11 @@ function ClerkAuthContent({ mode }) {
     if (onboardingRequired) {
       setLastBootstrapStatus("onboarding-required");
       clearFinalBootstrapError();
-      if (isDevelopmentEnvironment) {
-        console.info("[clerk][dev] Auth context marked Clerk user as needing onboarding", {
-          mode,
-          email: clerkEmail,
-          lastAuthError
-        });
-      }
+      logDevAction("Auth context resolved to onboarding", {
+        mode,
+        email: clerkEmail,
+        lastAuthError
+      });
       navigate("/onboarding/clerk", { replace: mode === "complete" });
       return;
     }
@@ -307,15 +463,13 @@ function ClerkAuthContent({ mode }) {
     if (user?.id) {
       setLastBootstrapStatus("mapped");
       clearFinalBootstrapError();
-      if (isDevelopmentEnvironment) {
-        console.info("[clerk][dev] Auth context resolved Mongo user after Clerk auth", {
-          mode,
-          userId: user.id,
-          email: user.email,
-          householdId: user.householdId
-        });
-      }
-      navigate("/kitchen/semana", { replace: mode === "complete" });
+      logDevAction("Auth context resolved to app user", {
+        mode,
+        userId: user.id,
+        email: user.email,
+        householdId: user.householdId
+      });
+      navigate(clerkPostAuthPath, { replace: mode === "complete" });
     }
   }, [clerkEmail, isLoaded, isSignedIn, lastAuthError, mode, navigate, onboardingRequired, user]);
 
@@ -333,28 +487,6 @@ function ClerkAuthContent({ mode }) {
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (!signInState.isLoaded) return;
-    const normalized = normalizeClerkErrors("sign-in", signInState.errors);
-    if (!normalized) return;
-    setLastClerkError(normalized);
-    clerkSubmitLocksRef.current.clear();
-    if (isDevelopmentEnvironment) {
-      console.warn("[clerk][dev] Sign-in failed", normalized);
-    }
-  }, [signInState.isLoaded, signInState.errors]);
-
-  useEffect(() => {
-    if (!signUpState.isLoaded) return;
-    const normalized = normalizeClerkErrors("sign-up", signUpState.errors);
-    if (!normalized) return;
-    setLastClerkError(normalized);
-    clerkSubmitLocksRef.current.clear();
-    if (isDevelopmentEnvironment) {
-      console.warn("[clerk][dev] Sign-up failed", normalized);
-    }
-  }, [signUpState.isLoaded, signUpState.errors]);
 
   const signOut = async () => {
     clearSession();
@@ -418,25 +550,124 @@ function ClerkAuthContent({ mode }) {
             </div>
           ) : null}
 
-          {!isSignedIn && mode === "sign-up" ? (
-            <div className="kitchen-auth-card" style={{ marginTop: 16 }} onSubmitCapture={(event) => guardClerkSubmit(event, "sign-up")}>
-              <SignUp
-                routing="path"
-                path="/auth/clerk/sign-up"
-                signInUrl="/auth/clerk/sign-in"
-                forceRedirectUrl={clerkPostAuthPath}
-                fallbackRedirectUrl={clerkPostAuthPath}
-                signInForceRedirectUrl={clerkPostAuthPath}
-                signInFallbackRedirectUrl={clerkPostAuthPath}
-              />
-            </div>
+          {!isSignedIn && mode === "sign-up" && !isAwaitingSignUpVerification ? (
+            <form className="kitchen-login-form" onSubmit={handleSignUpStart}>
+              <div className="kitchen-login-fields">
+                <AuthField
+                  id="clerk-signup-email"
+                  label="CORREO ELECTRONICO"
+                  type="email"
+                  value={signUpForm.email}
+                  onChange={(event) => setSignUpForm((current) => ({ ...current, email: event.target.value }))}
+                  placeholder="tunombre@email.com"
+                  autoComplete="email"
+                  disabled={!signUpLoaded || isBusy}
+                />
+                <AuthField
+                  id="clerk-signup-password"
+                  label="CONTRASENA"
+                  type="password"
+                  value={signUpForm.password}
+                  onChange={(event) => setSignUpForm((current) => ({ ...current, password: event.target.value }))}
+                  placeholder="Minimo 8 caracteres"
+                  autoComplete="new-password"
+                  disabled={!signUpLoaded || isBusy}
+                />
+              </div>
+              <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={!signUpLoaded || isBusy}>
+                {isBusy ? "Preparando verificacion..." : "Crear cuenta ->"}
+              </button>
+              <p className="kitchen-login-footer">
+                Ya tienes cuenta?{" "}
+                <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk/sign-in")}>
+                  Inicia sesion
+                </button>
+              </p>
+            </form>
           ) : null}
 
-          {!isSignedIn && (mode === "sign-in" || mode === "reset-password") ? (
-            <div className="kitchen-auth-card" style={{ marginTop: 16 }} onSubmitCapture={(event) => guardClerkSubmit(event, "sign-in")}>
+          {!isSignedIn && mode === "sign-up" && isAwaitingSignUpVerification ? (
+            <form className="kitchen-login-form" onSubmit={handleSignUpVerification}>
+              <div className="kitchen-alert info">
+                Hemos enviado un unico codigo de verificacion a <strong>{signUpForm.email}</strong>. Introducelo para completar el registro.
+              </div>
+              <div className="kitchen-login-fields">
+                <AuthField
+                  id="clerk-signup-code"
+                  label="CODIGO DE VERIFICACION"
+                  value={verificationCode}
+                  onChange={(event) => setVerificationCode(event.target.value)}
+                  placeholder="123456"
+                  autoComplete="one-time-code"
+                  disabled={!signUpLoaded || isBusy}
+                />
+              </div>
+              <div className="kitchen-actions">
+                <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={!signUpLoaded || isBusy}>
+                  {isBusy ? "Verificando..." : "Verificar email ->"}
+                </button>
+                <button type="button" className="kitchen-button secondary" onClick={handleResendVerification} disabled={!signUpLoaded || isBusy}>
+                  Reenviar codigo
+                </button>
+                <button
+                  type="button"
+                  className="kitchen-button secondary"
+                  onClick={() => {
+                    setIsAwaitingSignUpVerification(false);
+                    setVerificationCode("");
+                    setLastClerkError(null);
+                  }}
+                  disabled={isBusy}
+                >
+                  Volver
+                </button>
+              </div>
+            </form>
+          ) : null}
+
+          {!isSignedIn && mode === "sign-in" ? (
+            <form className="kitchen-login-form" onSubmit={handlePasswordSignIn}>
+              <div className="kitchen-login-fields">
+                <AuthField
+                  id="clerk-signin-email"
+                  label="CORREO ELECTRONICO"
+                  type="email"
+                  value={signInForm.email}
+                  onChange={(event) => setSignInForm((current) => ({ ...current, email: event.target.value }))}
+                  placeholder="tunombre@email.com"
+                  autoComplete="email"
+                  disabled={!signInLoaded || isBusy}
+                />
+                <AuthField
+                  id="clerk-signin-password"
+                  label="CONTRASENA"
+                  type="password"
+                  value={signInForm.password}
+                  onChange={(event) => setSignInForm((current) => ({ ...current, password: event.target.value }))}
+                  placeholder="Tu contrasena"
+                  autoComplete="current-password"
+                  disabled={!signInLoaded || isBusy}
+                />
+              </div>
+              <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={!signInLoaded || isBusy}>
+                {isBusy ? "Entrando..." : "Iniciar sesion ->"}
+              </button>
+              <div className="kitchen-login-forgot-row">
+                <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk/reset-password")}>
+                  Olvidaste tu contrasena?
+                </button>
+                <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk/sign-up")}>
+                  Crear cuenta
+                </button>
+              </div>
+            </form>
+          ) : null}
+
+          {!isSignedIn && mode === "reset-password" ? (
+            <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
               <SignIn
                 routing="path"
-                path={mode === "reset-password" ? "/auth/clerk/reset-password" : "/auth/clerk/sign-in"}
+                path="/auth/clerk/reset-password"
                 signUpUrl="/auth/clerk/sign-up"
                 forceRedirectUrl={clerkPostAuthPath}
                 fallbackRedirectUrl={clerkPostAuthPath}
@@ -488,10 +719,13 @@ function ClerkAuthContent({ mode }) {
                 <br />
                 <strong>Last Clerk error:</strong>{" "}
                 {lastClerkError ? `${lastClerkError.source} / ${lastClerkError.code}: ${lastClerkError.longMessage}` : "none"}
+                <br />
+                <strong>Action counters:</strong>{" "}
+                {JSON.stringify(actionCountersRef.current)}
               </div>
               {lastClerkError ? (
                 <pre className="kitchen-alert error" style={{ whiteSpace: "pre-wrap", overflowX: "auto" }}>
-                  {stringifyDebugValue(lastClerkError.rawErrors || lastClerkError.raw)}
+                  {stringifyDebugValue(lastClerkError.raw)}
                 </pre>
               ) : null}
             </div>
