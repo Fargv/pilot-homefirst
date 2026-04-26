@@ -46,6 +46,10 @@ function normalizeClerkError(error, fallbackMessage) {
   return clerkMessage || error?.message || fallbackMessage;
 }
 
+function isValidEmailAddress(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
 function buildDefaultHouseholdName(name) {
   const safeName = String(name || "").trim();
   return safeName ? `${safeName} - Hogar` : "Mi hogar";
@@ -95,9 +99,29 @@ export default function ClerkOnboardingPage() {
   const normalizedInviteCode = useMemo(() => normalizeInviteCode(form.inviteCode), [form.inviteCode]);
   const passwordsMatch = form.password && form.confirmPassword && form.password === form.confirmPassword;
   const passwordHasMinimumLength = String(form.password || "").length >= 8;
+  const emailIsValid = isValidEmailAddress(form.email);
   const isInviteFlow = Boolean(form.inviteToken);
   const isJoinMode = form.householdMode === "join";
   const isCreateMode = form.householdMode === "create";
+  const step1Errors = useMemo(() => {
+    const errors = {};
+    if (form.email && !emailIsValid) {
+      errors.email = "Introduce un email válido.";
+    }
+    if (form.password && !passwordHasMinimumLength) {
+      errors.password = "La contraseña debe tener al menos 8 caracteres.";
+    }
+    if (form.confirmPassword && form.password !== form.confirmPassword) {
+      errors.confirmPassword = "Las contraseñas no coinciden.";
+    }
+    return errors;
+  }, [emailIsValid, form.confirmPassword, form.email, form.password, passwordHasMinimumLength]);
+  const canSubmitStep1 = emailIsValid
+    && passwordHasMinimumLength
+    && Boolean(form.password)
+    && Boolean(form.confirmPassword)
+    && passwordsMatch
+    && !authLoading;
 
   useEffect(() => {
     if (user?.id && !user?.onboardingRequired) {
@@ -244,6 +268,7 @@ export default function ClerkOnboardingPage() {
   }, [canContinueStep3, form.avoidRepeatsEnabled, form.avoidRepeatsWeeks, form.householdName, isCreateMode]);
 
   const updateField = (field, value) => {
+    setError("");
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -261,7 +286,17 @@ export default function ClerkOnboardingPage() {
 
   const submitCredentials = async (event) => {
     event.preventDefault();
-    if (authLoading || !signUpLoaded) return;
+    if (authLoading) return;
+
+    if (!signUpLoaded || !signUp) {
+      setError("Estamos preparando el registro seguro. Inténtalo de nuevo en un momento.");
+      return;
+    }
+
+    if (!emailIsValid) {
+      setError("Introduce un email válido.");
+      return;
+    }
 
     if (!passwordsMatch) {
       setError("Las contraseñas deben coincidir.");
@@ -501,7 +536,9 @@ export default function ClerkOnboardingPage() {
             required
           />
         </label>
-        {form.confirmPassword && !passwordsMatch ? <div className="kitchen-alert error">Las contraseñas no coinciden.</div> : null}
+        {step1Errors.email ? <div className="kitchen-alert error">{step1Errors.email}</div> : null}
+        {step1Errors.password ? <div className="kitchen-alert error">{step1Errors.password}</div> : null}
+        {step1Errors.confirmPassword ? <div className="kitchen-alert error">{step1Errors.confirmPassword}</div> : null}
         <p className="kitchen-auth-hint">
           Usa una contraseña segura de al menos 8 caracteres. Después te enviaremos un código para confirmar el email.
         </p>
@@ -512,7 +549,7 @@ export default function ClerkOnboardingPage() {
           <button
             type="submit"
             className="kitchen-ui-button kitchen-login-submit"
-            disabled={authLoading || !passwordsMatch || !passwordHasMinimumLength || !signUpLoaded}
+            disabled={!canSubmitStep1}
           >
             {authLoading ? "Preparando..." : "Continuar"}
           </button>

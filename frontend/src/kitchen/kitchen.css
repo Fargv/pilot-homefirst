@@ -3363,11 +3363,14 @@ body {
   display: grid;
   gap: 8px;
   justify-items: center;
+  align-content: start;
+  min-width: 0;
   padding: 12px 10px;
   border-radius: 20px;
   border: 1px solid rgba(228, 231, 236, 0.96);
   background: rgba(255, 255, 255, 0.78);
   color: #667085;
+  overflow: hidden;
 }
 
 .kitchen-onboarding-step.is-current {
@@ -3408,8 +3411,15 @@ body {
 }
 
 .kitchen-onboarding-step-label {
-  font-size: 0.88rem;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 0.8rem;
   font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .kitchen-onboarding-choice-grid,
@@ -3518,6 +3528,15 @@ body {
 @media (max-width: 640px) {
   .kitchen-onboarding-stepper {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kitchen-onboarding-step {
+    min-height: 88px;
+    padding-inline: 8px;
+  }
+
+  .kitchen-onboarding-step-label {
+    font-size: 0.76rem;
   }
 
   .kitchen-onboarding-footer,
