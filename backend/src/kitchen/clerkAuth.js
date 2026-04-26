@@ -55,6 +55,26 @@ export function isClerkAuthEnabled() {
   return Boolean(config.clerkSecretKey);
 }
 
+export async function isEmailRegisteredInClerk(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || !clerkClient) return false;
+
+  try {
+    const response = await clerkClient.users.getUserList({
+      emailAddress: [normalizedEmail],
+      limit: 1
+    });
+    const users = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
+    return users.some((user) => getPrimaryEmailAddress(user) === normalizedEmail);
+  } catch (error) {
+    logClerkDev("Clerk email lookup failed", {
+      email: normalizedEmail,
+      message: error?.message || null
+    });
+    return false;
+  }
+}
+
 export async function deleteClerkUserById(clerkId, context = {}) {
   const safeClerkId = String(clerkId || "").trim();
   if (!safeClerkId) {

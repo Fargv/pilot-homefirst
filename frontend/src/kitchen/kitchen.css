@@ -3418,8 +3418,12 @@ body {
   line-height: 1.2;
   text-align: center;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
   word-break: normal;
+}
+
+.kitchen-onboarding-step-label-short {
+  display: none;
 }
 
 .kitchen-onboarding-choice-grid,
@@ -3537,6 +3541,14 @@ body {
 
   .kitchen-onboarding-step-label {
     font-size: 0.76rem;
+  }
+
+  .kitchen-onboarding-step-label-full {
+    display: none;
+  }
+
+  .kitchen-onboarding-step-label-short {
+    display: inline;
   }
 
   .kitchen-onboarding-footer,

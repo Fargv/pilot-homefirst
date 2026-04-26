@@ -10,10 +10,10 @@ const pendingInviteTokenKey = "clerk_onboarding_invite_token";
 const pendingInviteCodeKey = "clerk_onboarding_invite_code";
 const BASIC_PLAN = "basic";
 const STEP_LABELS = [
-  { number: 1, label: "Cuenta" },
-  { number: 2, label: "Hogar" },
-  { number: 3, label: "Perfil" },
-  { number: 4, label: "Preferencias" }
+  { number: 1, label: "Cuenta", shortLabel: "Cuenta" },
+  { number: 2, label: "Hogar", shortLabel: "Hogar" },
+  { number: 3, label: "Perfil", shortLabel: "Perfil" },
+  { number: 4, label: "Preferencias", shortLabel: "Prefs." }
 ];
 
 const PLAN_OPTIONS = [
@@ -94,12 +94,19 @@ export default function ClerkOnboardingPage() {
   const [validatedInviteCode, setValidatedInviteCode] = useState("");
   const [inviteDetails, setInviteDetails] = useState(null);
   const [inviteDetailsLoaded, setInviteDetailsLoaded] = useState(false);
+  const [emailCheck, setEmailCheck] = useState({
+    state: "idle",
+    email: "",
+    message: ""
+  });
   const finalSubmitStartedRef = useRef(false);
+  const emailCheckAbortRef = useRef(null);
 
   const normalizedInviteCode = useMemo(() => normalizeInviteCode(form.inviteCode), [form.inviteCode]);
   const passwordsMatch = form.password && form.confirmPassword && form.password === form.confirmPassword;
   const passwordHasMinimumLength = String(form.password || "").length >= 8;
-  const emailIsValid = isValidEmailAddress(form.email);
+  const normalizedEmail = String(form.email || "").trim().toLowerCase();
+  const emailIsValid = isValidEmailAddress(normalizedEmail);
   const isInviteFlow = Boolean(form.inviteToken);
   const isJoinMode = form.householdMode === "join";
   const isCreateMode = form.householdMode === "create";
@@ -107,6 +114,8 @@ export default function ClerkOnboardingPage() {
     const errors = {};
     if (form.email && !emailIsValid) {
       errors.email = "Introduce un email válido.";
+    } else if (emailCheck.state === "exists" && emailCheck.email === normalizedEmail) {
+      errors.email = "Este email ya está registrado. Inicia sesión o usa otro email.";
     }
     if (form.password && !passwordHasMinimumLength) {
       errors.password = "La contraseña debe tener al menos 8 caracteres.";
@@ -115,8 +124,10 @@ export default function ClerkOnboardingPage() {
       errors.confirmPassword = "Las contraseñas no coinciden.";
     }
     return errors;
-  }, [emailIsValid, form.confirmPassword, form.email, form.password, passwordHasMinimumLength]);
+  }, [emailCheck.email, emailCheck.state, emailIsValid, form.confirmPassword, form.email, form.password, normalizedEmail, passwordHasMinimumLength]);
   const canSubmitStep1 = emailIsValid
+    && emailCheck.state === "available"
+    && emailCheck.email === normalizedEmail
     && passwordHasMinimumLength
     && Boolean(form.password)
     && Boolean(form.confirmPassword)
@@ -229,6 +240,58 @@ export default function ClerkOnboardingPage() {
     }
   }, [normalizedInviteCode, validatedInviteCode]);
 
+  useEffect(() => {
+    if (authStage !== "credentials") return undefined;
+
+    if (!normalizedEmail) {
+      setEmailCheck({ state: "idle", email: "", message: "" });
+      return undefined;
+    }
+
+    if (!emailIsValid) {
+      setEmailCheck({ state: "idle", email: normalizedEmail, message: "" });
+      return undefined;
+    }
+
+    if (emailCheck.state === "available" && emailCheck.email === normalizedEmail) {
+      return undefined;
+    }
+
+    if (emailCheckAbortRef.current) {
+      window.clearTimeout(emailCheckAbortRef.current);
+    }
+
+    setEmailCheck((prev) => {
+      if (prev.state === "checking" && prev.email === normalizedEmail) {
+        return prev;
+      }
+      return { state: "checking", email: normalizedEmail, message: "" };
+    });
+
+    emailCheckAbortRef.current = window.setTimeout(async () => {
+      try {
+        const data = await apiRequest(`/api/kitchen/auth/check-email?email=${encodeURIComponent(normalizedEmail)}`);
+        setEmailCheck({
+          state: data?.exists ? "exists" : "available",
+          email: normalizedEmail,
+          message: data?.exists ? "Este email ya está registrado. Inicia sesión o usa otro email." : ""
+        });
+      } catch {
+        setEmailCheck({
+          state: "error",
+          email: normalizedEmail,
+          message: ""
+        });
+      }
+    }, 350);
+
+    return () => {
+      if (emailCheckAbortRef.current) {
+        window.clearTimeout(emailCheckAbortRef.current);
+      }
+    };
+  }, [authStage, emailCheck.email, emailCheck.state, emailIsValid, normalizedEmail]);
+
   const stepTitle = useMemo(() => {
     if (currentStep === 1) return "Crea tu cuenta";
     if (currentStep === 2) return "Elige cómo quieres entrar";
@@ -269,7 +332,42 @@ export default function ClerkOnboardingPage() {
 
   const updateField = (field, value) => {
     setError("");
+    if (field === "email") {
+      setEmailCheck({
+        state: value ? "idle" : "idle",
+        email: "",
+        message: ""
+      });
+    }
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const validateEmailAvailability = async () => {
+    if (!normalizedEmail || !emailIsValid) return;
+    if (emailCheck.state === "checking" && emailCheck.email === normalizedEmail) return;
+
+    if (emailCheckAbortRef.current) {
+      window.clearTimeout(emailCheckAbortRef.current);
+    }
+
+    setEmailCheck({ state: "checking", email: normalizedEmail, message: "" });
+    try {
+      const data = await apiRequest(`/api/kitchen/auth/check-email?email=${encodeURIComponent(normalizedEmail)}`);
+      const nextState = data?.exists ? "exists" : "available";
+      setEmailCheck({
+        state: nextState,
+        email: normalizedEmail,
+        message: data?.exists ? "Este email ya está registrado. Inicia sesión o usa otro email." : ""
+      });
+      return nextState;
+    } catch {
+      setEmailCheck({
+        state: "error",
+        email: normalizedEmail,
+        message: ""
+      });
+      return "error";
+    }
   };
 
   const goToPreviousStep = () => {
@@ -288,13 +386,13 @@ export default function ClerkOnboardingPage() {
     event.preventDefault();
     if (authLoading) return;
 
-    if (!signUpLoaded || !signUp) {
-      setError("Estamos preparando el registro seguro. Inténtalo de nuevo en un momento.");
+    if (!emailIsValid) {
+      setError("Introduce un email válido.");
       return;
     }
 
-    if (!emailIsValid) {
-      setError("Introduce un email válido.");
+    if (!signUpLoaded || !signUp) {
+      setError("El registro seguro aún no está listo. Inténtalo de nuevo en unos segundos.");
       return;
     }
 
@@ -308,11 +406,23 @@ export default function ClerkOnboardingPage() {
       return;
     }
 
+    if (emailCheck.state !== "available" || emailCheck.email !== normalizedEmail) {
+      const availabilityState = await validateEmailAvailability();
+      if (availabilityState === "exists") {
+        setError("Este email ya está registrado. Inicia sesión o usa otro email.");
+        return;
+      }
+      if (availabilityState === "error") {
+        setError("No pudimos validar este email todavía. Inténtalo de nuevo.");
+        return;
+      }
+    }
+
     setError("");
     setAuthLoading(true);
     try {
       const signUpResource = await signUp.create({
-        emailAddress: String(form.email || "").trim(),
+        emailAddress: normalizedEmail,
         password: String(form.password || "")
       });
       await signUpResource.prepareEmailAddressVerification({ strategy: "email_code" });
@@ -506,6 +616,7 @@ export default function ClerkOnboardingPage() {
             autoComplete="email"
             value={form.email}
             onChange={(event) => updateField("email", event.target.value)}
+            onBlur={() => void validateEmailAvailability()}
             placeholder="tuemail@ejemplo.com"
             required
           />
@@ -537,6 +648,7 @@ export default function ClerkOnboardingPage() {
           />
         </label>
         {step1Errors.email ? <div className="kitchen-alert error">{step1Errors.email}</div> : null}
+        {emailCheck.state === "checking" && normalizedEmail ? <p className="kitchen-auth-hint">Comprobando si este email está disponible...</p> : null}
         {step1Errors.password ? <div className="kitchen-alert error">{step1Errors.password}</div> : null}
         {step1Errors.confirmPassword ? <div className="kitchen-alert error">{step1Errors.confirmPassword}</div> : null}
         <p className="kitchen-auth-hint">
@@ -798,9 +910,14 @@ export default function ClerkOnboardingPage() {
               <div
                 key={step.number}
                 className={`kitchen-onboarding-step ${currentStep === step.number ? "is-current" : ""} ${currentStep > step.number ? "is-complete" : ""}`}
+                title={step.label}
+                aria-label={step.label}
               >
                 <span className="kitchen-onboarding-step-index">{step.number}</span>
-                <span className="kitchen-onboarding-step-label">{step.label}</span>
+                <span className="kitchen-onboarding-step-label">
+                  <span className="kitchen-onboarding-step-label-full">{step.label}</span>
+                  <span className="kitchen-onboarding-step-label-short">{step.shortLabel}</span>
+                </span>
               </div>
             ))}
           </div>

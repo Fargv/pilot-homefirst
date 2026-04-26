@@ -13,7 +13,7 @@ import { sendEmail } from "../../services/emailService.js";
 import { config } from "../../config.js";
 import { findActiveInvitationByToken } from "../invitationService.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
-import { resolveClerkIdentityFromToken } from "../clerkAuth.js";
+import { isEmailRegisteredInClerk, resolveClerkIdentityFromToken } from "../clerkAuth.js";
 import { normalizeSubscriptionPlan } from "../subscriptionService.js";
 
 const DIOD_EMAIL = "admin@admin.com";
@@ -345,6 +345,25 @@ router.get("/resolve-household/:inviteCode", async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo validar el código del hogar." });
+  }
+});
+
+router.get("/check-email", async (req, res) => {
+  try {
+    const normalizedEmail = normalizeEmail(req.query?.email);
+    if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ ok: false, error: "El email no es válido." });
+    }
+
+    const existingUser = await KitchenUser.findOne({ email: normalizedEmail }).select("_id").lean();
+    const existsInClerk = existingUser ? false : await isEmailRegisteredInClerk(normalizedEmail);
+
+    return res.json({
+      ok: true,
+      exists: Boolean(existingUser) || Boolean(existsInClerk)
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudo validar el email." });
   }
 });
 
