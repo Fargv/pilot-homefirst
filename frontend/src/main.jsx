@@ -6,27 +6,25 @@ import App from "./App.jsx";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 const app = (
-  <React.StrictMode>
-    {clerkPublishableKey ? (
-      <ClerkProvider
-        publishableKey={clerkPublishableKey}
-        signInUrl="/auth/clerk/sign-in"
-        signUpUrl="/auth/clerk/sign-up"
-        signInForceRedirectUrl="/auth/clerk/complete"
-        signInFallbackRedirectUrl="/auth/clerk/complete"
-        signUpForceRedirectUrl="/auth/clerk/complete"
-        signUpFallbackRedirectUrl="/auth/clerk/complete"
-      >
-        {/*
-          TODO: Configure Clerk application URLs and allowed redirect origins in the
-          Clerk dashboard before enabling Clerk sign-in in production.
-        */}
-        <App />
-      </ClerkProvider>
-    ) : (
+  clerkPublishableKey ? (
+    <ClerkProvider
+      publishableKey={clerkPublishableKey}
+      signInUrl="/auth/clerk/sign-in"
+      signUpUrl="/auth/clerk/sign-up"
+      signInForceRedirectUrl="/auth/clerk/complete"
+      signInFallbackRedirectUrl="/auth/clerk/complete"
+      signUpForceRedirectUrl="/auth/clerk/complete"
+      signUpFallbackRedirectUrl="/auth/clerk/complete"
+    >
+      {/*
+        TODO: Configure Clerk application URLs and allowed redirect origins in the
+        Clerk dashboard before enabling Clerk sign-in in production.
+      */}
       <App />
-    )}
-  </React.StrictMode>
+    </ClerkProvider>
+  ) : (
+    <App />
+  )
 );
 
 ReactDOM.createRoot(document.getElementById("root")).render(app);

@@ -102,7 +102,16 @@ function ClerkAuthContent({ mode }) {
   const [finalBootstrapError, setFinalBootstrapError] = useState("");
   const [lastBootstrapStatus, setLastBootstrapStatus] = useState("waiting");
   const [inviteDetails, setInviteDetails] = useState(null);
+  const [inviteDetailsLoaded, setInviteDetailsLoaded] = useState(false);
   const finalBootstrapErrorTimerRef = useRef(null);
+  const devCountersRef = useRef({
+    routeMountCount: 0,
+    widgetMountCount: 0,
+    signUpCreateCalls: 0,
+    verificationPrepareCalls: 0,
+    verificationAttemptCalls: 0,
+    verificationResendCalls: 0
+  });
 
   const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
   const clerkIdentity = clerkEmail || clerkUser?.username || clerkUser?.id || "Unknown Clerk user";
@@ -129,6 +138,9 @@ function ClerkAuthContent({ mode }) {
   const signUpRoute = useMemo(() => buildRouteWithSearch(clerkSignUpPath, inviteSearch), [inviteSearch]);
   const completeRoute = useMemo(() => buildRouteWithSearch(clerkCompletePath, inviteSearch), [inviteSearch]);
   const onboardingRoute = useMemo(() => buildRouteWithSearch("/onboarding/clerk", inviteSearch), [inviteSearch]);
+  const initialEmailAddress = inviteDetails?.recipientEmail || undefined;
+  const signUpInitialValues = useMemo(() => ({ emailAddress: initialEmailAddress }), [initialEmailAddress]);
+  const signInInitialValues = useMemo(() => ({ emailAddress: initialEmailAddress }), [initialEmailAddress]);
 
   const pageCopy = useMemo(() => {
     if (mode === "sign-up") {
@@ -179,6 +191,7 @@ function ClerkAuthContent({ mode }) {
     let active = true;
     if (!inviteToken) {
       setInviteDetails(null);
+      setInviteDetailsLoaded(true);
       return undefined;
     }
 
@@ -196,9 +209,14 @@ function ClerkAuthContent({ mode }) {
       } catch {
         if (!active) return;
         setInviteDetails(null);
+      } finally {
+        if (active) {
+          setInviteDetailsLoaded(true);
+        }
       }
     };
 
+    setInviteDetailsLoaded(false);
     void loadInvite();
     return () => {
       active = false;
@@ -206,13 +224,37 @@ function ClerkAuthContent({ mode }) {
   }, [inviteToken]);
 
   useEffect(() => {
+    devCountersRef.current.routeMountCount += 1;
     if (!isDevelopmentEnvironment) return;
     console.info("[clerk][dev] Clerk auth route mounted", {
       mode,
       isSignedIn,
-      returnRoute: clerkCompletePath
+      returnRoute: clerkCompletePath,
+      routeMountCount: devCountersRef.current.routeMountCount
+    });
+    console.info("[clerk][dev] Manual sign-up verification calls in app shell", {
+      signUpCreateCalls: devCountersRef.current.signUpCreateCalls,
+      verificationPrepareCalls: devCountersRef.current.verificationPrepareCalls,
+      verificationAttemptCalls: devCountersRef.current.verificationAttemptCalls,
+      verificationResendCalls: devCountersRef.current.verificationResendCalls
     });
   }, [isSignedIn, mode]);
+
+  useEffect(() => {
+    if (!isDevelopmentEnvironment) return;
+    if (mode !== "sign-in" && mode !== "sign-up") return;
+    if (!inviteDetailsLoaded) return;
+    if (mode === "sign-up" && inviteToken && !inviteDetails) return;
+
+    devCountersRef.current.widgetMountCount += 1;
+    console.info("[clerk][dev] Clerk widget ready to mount", {
+      mode,
+      widgetMountCount: devCountersRef.current.widgetMountCount,
+      inviteTokenPresent: Boolean(inviteToken),
+      inviteCodePresent: Boolean(inviteCode),
+      prefilledEmailPresent: Boolean(initialEmailAddress)
+    });
+  }, [initialEmailAddress, inviteCode, inviteDetails, inviteDetailsLoaded, inviteToken, mode]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -265,6 +307,7 @@ function ClerkAuthContent({ mode }) {
   };
 
   const isResolvingClerkHandoff = isLoaded && isSignedIn && (loading || (!user?.id && !onboardingRequired && !finalBootstrapError));
+  const shouldWaitForInviteContext = (mode === "sign-in" || mode === "sign-up") && inviteToken && !inviteDetailsLoaded;
   if ((mode === "choice" || mode === "reset-password") && !isSignedIn) {
     return (
       <AppLoadingScreen
@@ -288,6 +331,15 @@ function ClerkAuthContent({ mode }) {
       <AppLoadingScreen
         title="Preparando Lunchfy"
         subtitle="Estamos terminando tu acceso seguro y recuperando tu perfil."
+      />
+    );
+  }
+
+  if (shouldWaitForInviteContext) {
+    return (
+      <AppLoadingScreen
+        title="Preparando acceso"
+        subtitle="Estamos preparando tu invitacion para abrir el registro seguro."
       />
     );
   }
@@ -334,6 +386,18 @@ function ClerkAuthContent({ mode }) {
               {lastAuthError ? `${lastAuthError.code} / ${lastAuthError.status}: ${lastAuthError.message}` : "none"}
               <br />
               <strong>Last bootstrap status:</strong> {lastBootstrapStatus}
+              <br />
+              <strong>Route mount count:</strong> {devCountersRef.current.routeMountCount}
+              <br />
+              <strong>Widget mount count:</strong> {devCountersRef.current.widgetMountCount}
+              <br />
+              <strong>Manual sign-up create calls:</strong> {devCountersRef.current.signUpCreateCalls}
+              <br />
+              <strong>Manual verification prepare calls:</strong> {devCountersRef.current.verificationPrepareCalls}
+              <br />
+              <strong>Manual verification attempt calls:</strong> {devCountersRef.current.verificationAttemptCalls}
+              <br />
+              <strong>Manual verification resend calls:</strong> {devCountersRef.current.verificationResendCalls}
             </div>
             {lastAuthError ? (
               <pre className="kitchen-alert error" style={{ whiteSpace: "pre-wrap", overflowX: "auto" }}>
@@ -376,15 +440,15 @@ function ClerkAuthContent({ mode }) {
     >
       {mode === "sign-up" ? (
         <div className="kitchen-alert info">
-          Despues de crear tu cuenta, Clerk te pedira verificar el email. Usa el enlace o el paso de verificacion que te muestre la propia pantalla antes de continuar a Lunchfy.
+          Te enviaremos un codigo para confirmar tu email y preparar tu perfil.
         </div>
       ) : null}
       {inviteToken || inviteCode ? (
         <div className="kitchen-alert info">
           {inviteDetails?.householdName
-            ? `Esta alta esta vinculada al hogar ${inviteDetails.householdName}.`
+            ? `Te han invitado a unirte a ${inviteDetails.householdName}.`
             : "Esta alta esta vinculada a una invitacion de hogar."}{" "}
-          {inviteDetails?.recipientEmail ? `Usa el email invitado: ${inviteDetails.recipientEmail}.` : null}
+          {inviteDetails?.recipientEmail ? `Usa el email ${inviteDetails.recipientEmail} para continuar.` : "Confirma tu cuenta para entrar en esta cocina compartida."}
         </div>
       ) : null}
 
@@ -397,9 +461,7 @@ function ClerkAuthContent({ mode }) {
             forceRedirectUrl={completeRoute}
             fallbackRedirectUrl={completeRoute}
             afterSignOutUrl={signInRoute}
-            initialValues={{
-              emailAddress: inviteDetails?.recipientEmail || undefined
-            }}
+            initialValues={signUpInitialValues}
           />
         ) : (
           <SignIn
@@ -409,9 +471,7 @@ function ClerkAuthContent({ mode }) {
             forceRedirectUrl={completeRoute}
             fallbackRedirectUrl={completeRoute}
             afterSignOutUrl={signInRoute}
-            initialValues={{
-              emailAddress: inviteDetails?.recipientEmail || undefined
-            }}
+            initialValues={signInInitialValues}
           />
         )}
       </ClerkWidgetMount>
@@ -455,6 +515,18 @@ function ClerkAuthContent({ mode }) {
             {lastAuthError ? `${lastAuthError.code} / ${lastAuthError.status}: ${lastAuthError.message}` : "none"}
             <br />
             <strong>Last bootstrap status:</strong> {lastBootstrapStatus}
+            <br />
+            <strong>Route mount count:</strong> {devCountersRef.current.routeMountCount}
+            <br />
+            <strong>Widget mount count:</strong> {devCountersRef.current.widgetMountCount}
+            <br />
+            <strong>Manual sign-up create calls:</strong> {devCountersRef.current.signUpCreateCalls}
+            <br />
+            <strong>Manual verification prepare calls:</strong> {devCountersRef.current.verificationPrepareCalls}
+            <br />
+            <strong>Manual verification attempt calls:</strong> {devCountersRef.current.verificationAttemptCalls}
+            <br />
+            <strong>Manual verification resend calls:</strong> {devCountersRef.current.verificationResendCalls}
           </div>
           {lastAuthError ? (
             <pre className="kitchen-alert error" style={{ whiteSpace: "pre-wrap", overflowX: "auto" }}>

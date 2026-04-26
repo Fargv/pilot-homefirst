@@ -95,7 +95,11 @@
 - The Clerk sign-in and sign-up pages now rely on Clerk's embedded prebuilt components instead of custom low-level `useSignIn()` / `useSignUp()` submit handlers.
 - Normal sign-in stays email + password only, as determined by the Clerk widget and Dashboard configuration.
 - Sign-up still requires email verification, and the verification step is now owned by Clerk's `<SignUp />` flow instead of app-managed verification requests.
-- The prior duplicate verification issue came from the app manually orchestrating low-level sign-up and verification calls. Using the prebuilt `<SignUp />` widget removes those duplicate frontend verification triggers.
+- The chosen verification mode is `email_code` during sign-up. Normal sign-in stays on email + password and does not intentionally request a verification code.
+- The prior duplicate verification issue had two frontend causes:
+  - the app previously orchestrated low-level sign-up and verification calls in parallel with Clerk-managed UI
+  - the sign-up widget could mount more than once in development and could be reinitialized when invite-prefill data arrived late
+- The current fix removes manual verification calls from the app shell, delays the Clerk widget until invite context is ready, and removes the React `StrictMode` double-mount around the app entry so one sign-up action maps to one Clerk verification flow.
 - If login still asks for a verification code after this change, the remaining cause is Clerk instance configuration, most notably `Client Trust` or an intentionally enabled second-factor setting in the Clerk Dashboard rather than the app choosing an email-code login path.
 - The earlier broken Clerk login UX had two code-level causes:
   - the app was checking for a legacy-style `setActive` from `useSignIn()` / `useSignUp()`, which no longer exists in Clerk's current signal-based hooks, so the login form could appear disabled or never become ready
