@@ -64,6 +64,8 @@ body {
   --hf-muted: #667085;
   --hf-brand: #4338ca;
   --hf-brand-strong: #4338ca;
+  --hf-primary: #4338ca;
+  --hf-primary-strong: #4338ca;
   --hf-border: #e4e7ec;
   --hf-danger: #b42318;
   --hf-radius-md: 24px;
@@ -3306,6 +3308,7 @@ body {
   min-height: 54px;
   border-radius: 999px;
   background: var(--hf-primary);
+  color: #ffffff !important;
   font-size: 1rem;
 }
 
@@ -3333,6 +3336,202 @@ body {
 .kitchen-login-submit {
   min-height: 54px;
   font-size: 1.08rem;
+}
+
+.kitchen-onboarding-card {
+  max-width: 720px;
+}
+
+.kitchen-onboarding-stage {
+  display: grid;
+  gap: 18px;
+}
+
+.kitchen-onboarding-panel,
+.kitchen-onboarding-form {
+  display: grid;
+  gap: 18px;
+}
+
+.kitchen-onboarding-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kitchen-onboarding-step {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 12px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(228, 231, 236, 0.96);
+  background: rgba(255, 255, 255, 0.78);
+  color: #667085;
+}
+
+.kitchen-onboarding-step.is-current {
+  border-color: rgba(67, 56, 202, 0.28);
+  background: linear-gradient(180deg, rgba(238, 242, 255, 0.98) 0%, rgba(255, 255, 255, 0.98) 100%);
+  color: #312e81;
+  box-shadow: 0 14px 30px rgba(67, 56, 202, 0.1);
+}
+
+.kitchen-onboarding-step.is-complete {
+  color: #166534;
+  border-color: rgba(34, 197, 94, 0.2);
+  background: linear-gradient(180deg, rgba(240, 253, 244, 0.96) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+.kitchen-onboarding-step-index {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(208, 213, 221, 0.9);
+  font-weight: 800;
+}
+
+.kitchen-onboarding-step.is-current .kitchen-onboarding-step-index {
+  background: var(--hf-brand);
+  border-color: var(--hf-brand);
+  color: #fff;
+}
+
+.kitchen-onboarding-step.is-complete .kitchen-onboarding-step-index {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
+.kitchen-onboarding-step-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.kitchen-onboarding-choice-grid,
+.kitchen-onboarding-plan-list {
+  display: grid;
+  gap: 12px;
+}
+
+.kitchen-onboarding-choice-card,
+.kitchen-onboarding-plan-card,
+.kitchen-onboarding-resolved-card {
+  width: 100%;
+  text-align: left;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(228, 231, 236, 0.94);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: var(--hf-text);
+}
+
+.kitchen-onboarding-choice-card,
+.kitchen-onboarding-plan-card {
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.kitchen-onboarding-choice-card:hover,
+.kitchen-onboarding-plan-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.kitchen-onboarding-choice-card.is-selected,
+.kitchen-onboarding-plan-card.is-selected {
+  border-color: rgba(67, 56, 202, 0.36);
+  box-shadow: 0 16px 34px rgba(67, 56, 202, 0.12);
+  background: linear-gradient(180deg, rgba(238, 242, 255, 0.98) 0%, rgba(255, 255, 255, 1) 100%);
+}
+
+.kitchen-onboarding-choice-card.is-disabled,
+.kitchen-onboarding-plan-card.is-disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.kitchen-onboarding-choice-card strong,
+.kitchen-onboarding-plan-card strong,
+.kitchen-onboarding-resolved-card strong,
+.kitchen-onboarding-section-title {
+  display: block;
+  margin: 0 0 6px;
+  color: #101828;
+}
+
+.kitchen-onboarding-choice-card p,
+.kitchen-onboarding-plan-card p,
+.kitchen-onboarding-resolved-card p {
+  margin: 0;
+  color: var(--hf-muted);
+  line-height: 1.5;
+}
+
+.kitchen-onboarding-choice-kicker,
+.kitchen-onboarding-note {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(67, 56, 202, 0.08);
+  color: #4338ca;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.kitchen-onboarding-note.is-active {
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
+}
+
+.kitchen-onboarding-section {
+  display: grid;
+  gap: 14px;
+}
+
+.kitchen-onboarding-substep {
+  display: grid;
+  gap: 14px;
+}
+
+.kitchen-onboarding-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.kitchen-onboarding-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .kitchen-onboarding-stepper {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kitchen-onboarding-footer,
+  .kitchen-onboarding-inline-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .kitchen-onboarding-footer .kitchen-button,
+  .kitchen-onboarding-footer .kitchen-ui-button,
+  .kitchen-onboarding-inline-actions .kitchen-button,
+  .kitchen-onboarding-inline-actions .kitchen-ui-button {
+    width: 100%;
+  }
 }
 
 .kitchen-login-divider {

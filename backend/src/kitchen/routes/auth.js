@@ -14,6 +14,7 @@ import { config } from "../../config.js";
 import { findActiveInvitationByToken } from "../invitationService.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
 import { resolveClerkIdentityFromToken } from "../clerkAuth.js";
+import { normalizeSubscriptionPlan } from "../subscriptionService.js";
 
 const DIOD_EMAIL = "admin@admin.com";
 
@@ -33,6 +34,11 @@ function normalizeAvoidRepeatsWeeks(value) {
   const parsed = Number.parseInt(String(value ?? 1), 10);
   if (!Number.isFinite(parsed)) return 1;
   return Math.min(12, Math.max(1, Math.round(parsed)));
+}
+
+function normalizeRequestedOnboardingPlan(value) {
+  const normalizedPlan = normalizeSubscriptionPlan(value);
+  return normalizedPlan === "basic" ? "basic" : null;
 }
 
 function getBearerToken(req) {
@@ -324,10 +330,11 @@ router.get("/resolve-household/:inviteCode", async (req, res) => {
       return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
     }
 
-    const household = await Household.findOne({ inviteCode }).select("_id name");
+    const household = await Household.findOne({ inviteCode }).select("_id name subscriptionPlan");
     if (!household) {
       return res.status(404).json({ ok: false, error: "El código del hogar no es válido." });
     }
+    await assertCanAddUserToHousehold(household);
 
     return res.json({
       ok: true,
@@ -603,6 +610,7 @@ router.post("/clerk/onboarding", async (req, res) => {
       dinnersEnabled,
       avoidRepeatsEnabled,
       avoidRepeatsWeeks,
+      selectedPlan,
       inviteCode,
       inviteToken
     } = req.body || {};
@@ -616,13 +624,10 @@ router.post("/clerk/onboarding", async (req, res) => {
       name: displayName
     });
     const finalDisplayName = safeDisplayName || String(identity.email || "").split("@")[0] || "Nuevo usuario";
+    const requestedPlan = normalizeRequestedOnboardingPlan(selectedPlan);
 
-    if (!safeFirstName || !safeLastName) {
-      logClerkOnboardingDev("Onboarding rejected: profile fields missing", {
-        hasFirstName: Boolean(safeFirstName),
-        hasLastName: Boolean(safeLastName)
-      });
-      return res.status(400).json({ ok: false, code: "PROFILE_REQUIRED", error: "Nombre y apellidos son obligatorios." });
+    if (!finalDisplayName) {
+      return res.status(400).json({ ok: false, code: "PROFILE_REQUIRED", error: "El nombre visible es obligatorio." });
     }
 
     const onboardingTarget = await resolveClerkOnboardingHousehold({
@@ -659,6 +664,14 @@ router.post("/clerk/onboarding", async (req, res) => {
       });
     }
 
+    if (onboardingTarget.mode === "create" && !requestedPlan) {
+      return res.status(400).json({
+        ok: false,
+        code: "SUBSCRIPTION_PLAN_INVALID",
+        error: "Ahora mismo solo puedes empezar con el plan Basic."
+      });
+    }
+
     if (!user) {
       logClerkOnboardingDev("Creating safe Mongo user from Clerk onboarding", {
         email: identity.email
@@ -666,8 +679,8 @@ router.post("/clerk/onboarding", async (req, res) => {
       user = await KitchenUser.create({
         username: identity.email,
         email: identity.email,
-        firstName: safeFirstName,
-        lastName: safeLastName,
+        firstName: safeFirstName || finalDisplayName,
+        lastName: safeLastName || "",
         displayName: finalDisplayName,
         initials: normalizeInitials(initials, finalDisplayName),
         clerkId: identity.clerkUser.id,
@@ -691,8 +704,8 @@ router.post("/clerk/onboarding", async (req, res) => {
       user.clerkId = user.clerkId || identity.clerkUser.id;
       user.email = user.email || identity.email;
       user.username = user.username || identity.email;
-      user.firstName = safeFirstName;
-      user.lastName = safeLastName;
+      user.firstName = safeFirstName || user.firstName || finalDisplayName;
+      user.lastName = safeLastName || user.lastName || "";
       user.displayName = finalDisplayName;
       user.initials = normalizeInitials(initials || user.initials, finalDisplayName);
       user.type = "user";
@@ -722,6 +735,7 @@ router.post("/clerk/onboarding", async (req, res) => {
         name: finalHouseholdName,
         ownerUserId: user._id,
         inviteCode: await generateUniqueHouseholdInviteCode(),
+        subscriptionPlan: requestedPlan || "basic",
         dinnersEnabled: parseBooleanWithDefault(dinnersEnabled, false),
         avoidRepeatsEnabled: parseBooleanWithDefault(avoidRepeatsEnabled, false),
         avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(avoidRepeatsWeeks)
