@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { SignIn, SignUp, useAuth as useClerkAuth, useClerk, useUser } from "@clerk/react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { buildApiUrl } from "../api.js";
 import { useAuth } from "../auth";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
@@ -79,6 +79,7 @@ export default function ClerkAuthPage({ mode = "sign-in" }) {
 
 function ClerkAuthContent({ mode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user, loading, onboardingRequired, lastAuthError, refreshUser, clearSession } = useAuth();
   const { isLoaded, isSignedIn } = useClerkAuth();
@@ -114,6 +115,14 @@ function ClerkAuthContent({ mode }) {
   const signUpRoute = useMemo(() => buildRouteWithSearch(clerkSignUpPath, inviteSearch), [inviteSearch]);
   const completeRoute = useMemo(() => buildRouteWithSearch(clerkCompletePath, inviteSearch), [inviteSearch]);
   const onboardingRoute = useMemo(() => buildRouteWithSearch("/onboarding/clerk", inviteSearch), [inviteSearch]);
+  const widgetPath = useMemo(() => {
+    if (mode === "sign-up") {
+      if (location.pathname === "/signup") return "/signup";
+      return clerkSignUpPath;
+    }
+    if (location.pathname === "/login") return "/login";
+    return clerkSignInPath;
+  }, [location.pathname, mode]);
   const initialEmailAddress = inviteDetails?.recipientEmail || undefined;
   const signUpInitialValues = useMemo(() => ({ emailAddress: initialEmailAddress }), [initialEmailAddress]);
   const signInInitialValues = useMemo(() => ({ emailAddress: initialEmailAddress }), [initialEmailAddress]);
@@ -357,21 +366,21 @@ function ClerkAuthContent({ mode }) {
         {mode === "sign-up" ? (
           <SignUp
             routing="path"
-            path={clerkSignUpPath}
-            signInUrl={signInRoute}
+            path={widgetPath}
+            signInUrl="/login"
             forceRedirectUrl={completeRoute}
             fallbackRedirectUrl={completeRoute}
-            afterSignOutUrl={signInRoute}
+            afterSignOutUrl="/login"
             initialValues={signUpInitialValues}
           />
         ) : (
           <SignIn
             routing="path"
-            path={clerkSignInPath}
-            signUpUrl={signUpRoute}
+            path={widgetPath}
+            signUpUrl="/signup"
             forceRedirectUrl={completeRoute}
             fallbackRedirectUrl={completeRoute}
-            afterSignOutUrl={signInRoute}
+            afterSignOutUrl="/login"
             initialValues={signInInitialValues}
           />
         )}
