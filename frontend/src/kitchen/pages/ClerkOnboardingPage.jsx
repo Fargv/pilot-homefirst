@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useClerk, useSignUp, useUser } from "@clerk/react";
+import { useSignUp, useUser } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Card from "../components/ui/Card";
 import { apiRequest, buildApiUrl } from "../api.js";
@@ -63,10 +63,9 @@ function buildDefaultHouseholdName(name) {
 export default function ClerkOnboardingPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const clerk = useClerk();
-  const { isLoaded: signUpLoaded, signUp } = useSignUp();
+  const { isLoaded: signUpLoaded, signUp, setActive } = useSignUp();
   const { user: clerkUser } = useUser();
-  const { clerkLoaded, clerkSignedIn, user, setUser, setOnboardingRequired, refreshUser } = useAuth();
+  const { clerkSignedIn, user, setUser, setOnboardingRequired, refreshUser } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [authStage, setAuthStage] = useState("credentials");
@@ -99,6 +98,7 @@ export default function ClerkOnboardingPage() {
   const [validatedInviteCode, setValidatedInviteCode] = useState("");
   const [inviteDetails, setInviteDetails] = useState(null);
   const [inviteDetailsLoaded, setInviteDetailsLoaded] = useState(false);
+  const [devSlowClerkLoad, setDevSlowClerkLoad] = useState(false);
   const [emailCheck, setEmailCheck] = useState({
     state: "idle",
     email: "",
@@ -117,6 +117,36 @@ export default function ClerkOnboardingPage() {
   const isInviteFlow = Boolean(form.inviteToken);
   const isJoinMode = form.householdMode === "join";
   const isCreateMode = form.householdMode === "create";
+  const disabledReason = useMemo(() => {
+    if (!signUpLoaded) return "Clerk is still loading";
+    if (!clerkPublishableKeyPresent) return "Clerk publishable key is missing";
+    if (!signUp) return "Clerk signUp object is unavailable";
+    if (!normalizedEmail) return "Email is empty";
+    if (!emailIsValid) return "Invalid email";
+    if (emailCheck.state === "checking") return "Checking email";
+    if (emailCheck.state === "exists" && emailCheck.email === normalizedEmail) return "Email already exists";
+    if (emailCheck.state === "error" && emailCheck.email === normalizedEmail) return "Email check failed";
+    if (emailCheck.state !== "available" || emailCheck.email !== normalizedEmail) return "Email not validated yet";
+    if (!form.password) return "Password is empty";
+    if (!passwordHasMinimumLength) return "Invalid password";
+    if (!form.confirmPassword) return "Repeat password is empty";
+    if (!passwordsMatch) return "Passwords do not match";
+    if (authLoading) return "Submitting";
+    return null;
+  }, [
+    authLoading,
+    clerkPublishableKeyPresent,
+    emailCheck.email,
+    emailCheck.state,
+    emailIsValid,
+    form.confirmPassword,
+    form.password,
+    normalizedEmail,
+    passwordHasMinimumLength,
+    passwordsMatch,
+    signUp,
+    signUpLoaded
+  ]);
   const step1Errors = useMemo(() => {
     const errors = {};
     if (form.email && !emailIsValid) {
@@ -134,37 +164,7 @@ export default function ClerkOnboardingPage() {
     }
     return errors;
   }, [emailCheck.email, emailCheck.state, emailIsValid, form.confirmPassword, form.email, form.password, normalizedEmail, passwordHasMinimumLength]);
-  const step1DisabledReason = useMemo(() => {
-    if (!clerkPublishableKeyPresent) return "missing_publishable_key";
-    if (!clerkLoaded || !signUpLoaded) return "clerk_loading";
-    if (!signUp) return "signup_resource_missing";
-    if (!normalizedEmail) return "email_empty";
-    if (!emailIsValid) return "email_invalid";
-    if (emailCheck.state === "checking") return "email_checking";
-    if (emailCheck.state === "exists" && emailCheck.email === normalizedEmail) return "email_exists";
-    if (emailCheck.state !== "available" || emailCheck.email !== normalizedEmail) return "email_not_validated";
-    if (!form.password) return "password_empty";
-    if (!passwordHasMinimumLength) return "password_too_short";
-    if (!form.confirmPassword) return "confirm_password_empty";
-    if (!passwordsMatch) return "password_mismatch";
-    if (authLoading) return "submitting";
-    return null;
-  }, [
-    authLoading,
-    clerkLoaded,
-    clerkPublishableKeyPresent,
-    emailCheck.email,
-    emailCheck.state,
-    emailIsValid,
-    form.confirmPassword,
-    form.password,
-    normalizedEmail,
-    passwordHasMinimumLength,
-    passwordsMatch,
-    signUp,
-    signUpLoaded
-  ]);
-  const canSubmitStep1 = step1DisabledReason === null;
+  const canSubmitStep1 = disabledReason === null;
 
   useEffect(() => {
     if (user?.id && !user?.onboardingRequired) {
@@ -258,12 +258,12 @@ export default function ClerkOnboardingPage() {
   }, [clerkUser, inviteDetails, user?.displayName]);
 
   useEffect(() => {
-    if (!clerkLoaded) return;
+    if (!signUpLoaded) return;
     if (!clerkSignedIn) return;
 
     setAuthStage("complete");
     setCurrentStep((prev) => (prev < 2 ? 2 : prev));
-  }, [clerkLoaded, clerkSignedIn]);
+  }, [clerkSignedIn, signUpLoaded]);
 
   useEffect(() => {
     if (validatedInviteCode && validatedInviteCode !== normalizedInviteCode) {
@@ -275,21 +275,37 @@ export default function ClerkOnboardingPage() {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     console.info("[clerk/signup][dev] readiness", {
-      clerkLoaded,
       signUpLoaded,
       signUpExists: Boolean(signUp),
       publishableKeyPresent: clerkPublishableKeyPresent,
       authStage,
-      continueDisabledReason: step1DisabledReason
+      continueDisabledReason: disabledReason
     });
   }, [
     authStage,
-    clerkLoaded,
     clerkPublishableKeyPresent,
+    disabledReason,
     signUp,
-    signUpLoaded,
-    step1DisabledReason
+    signUpLoaded
   ]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return undefined;
+    if (signUpLoaded) {
+      setDevSlowClerkLoad(false);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setDevSlowClerkLoad(true);
+      console.warn("[clerk/signup][dev] Clerk no termina de cargar", {
+        publishableKeyPresent: clerkPublishableKeyPresent,
+        insideClerkProviderLikely: typeof signUpLoaded === "boolean"
+      });
+    }, 5000);
+
+    return () => window.clearTimeout(timer);
+  }, [clerkPublishableKeyPresent, signUpLoaded]);
 
   useEffect(() => {
     if (authStage !== "credentials") return undefined;
@@ -449,7 +465,7 @@ export default function ClerkOnboardingPage() {
       return;
     }
 
-    if (!clerkLoaded || !signUpLoaded || !signUp) {
+    if (!signUpLoaded || !signUp) {
       setError(import.meta.env.DEV
         ? "Clerk todavía no expone el recurso de sign up. Revisa el estado de carga en consola."
         : "Preparando registro seguro...");
@@ -521,7 +537,7 @@ export default function ClerkOnboardingPage() {
         setError("No pudimos verificar el código. Revisa el email e inténtalo de nuevo.");
         return;
       }
-      await clerk.setActive({ session: verificationResult.createdSessionId });
+      await setActive({ session: verificationResult.createdSessionId });
       setAuthStage("complete");
       setCurrentStep(2);
     } catch (err) {
@@ -720,10 +736,10 @@ export default function ClerkOnboardingPage() {
         {!step1Errors.email && !clerkPublishableKeyPresent && import.meta.env.DEV ? (
           <div className="kitchen-alert error">Clerk no está configurado correctamente. Revisa la publishable key del entorno.</div>
         ) : null}
-        {!step1Errors.email && clerkPublishableKeyPresent && (!clerkLoaded || !signUpLoaded) ? (
+        {!step1Errors.email && !signUpLoaded ? (
           <p className="kitchen-auth-hint">Preparando registro seguro...</p>
         ) : null}
-        {!step1Errors.email && clerkPublishableKeyPresent && clerkLoaded && signUpLoaded && !signUp && import.meta.env.DEV ? (
+        {!step1Errors.email && signUpLoaded && !signUp && import.meta.env.DEV ? (
           <div className="kitchen-alert error">Clerk cargó, pero el recurso de sign up no está disponible. Revisa la consola DEV.</div>
         ) : null}
         {emailCheck.state === "checking" && normalizedEmail ? <p className="kitchen-auth-hint">Comprobando si este email está disponible...</p> : null}
@@ -745,6 +761,10 @@ export default function ClerkOnboardingPage() {
             {authLoading ? "Preparando..." : "Continuar"}
           </button>
         </div>
+        {import.meta.env.DEV ? <p className="kitchen-auth-hint">DEV: {disabledReason || "ready"}</p> : null}
+        {import.meta.env.DEV && devSlowClerkLoad ? (
+          <div className="kitchen-alert error">Clerk no termina de cargar. Revisa VITE_CLERK_PUBLISHABLE_KEY y ClerkProvider.</div>
+        ) : null}
       </form>
     );
   };
