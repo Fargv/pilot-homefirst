@@ -46,6 +46,11 @@ function normalizeClerkError(error, fallbackMessage) {
   return clerkMessage || error?.message || fallbackMessage;
 }
 
+function isCaptchaInitializationError(error) {
+  const message = String(error?.errors?.[0]?.longMessage || error?.errors?.[0]?.message || error?.message || "").toLowerCase();
+  return message.includes("captcha");
+}
+
 function isValidEmailAddress(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 }
@@ -101,6 +106,7 @@ export default function ClerkOnboardingPage() {
   });
   const finalSubmitStartedRef = useRef(false);
   const emailCheckAbortRef = useRef(null);
+  const submitLockRef = useRef(false);
   const clerkPublishableKeyPresent = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
   const normalizedInviteCode = useMemo(() => normalizeInviteCode(form.inviteCode), [form.inviteCode]);
@@ -111,8 +117,6 @@ export default function ClerkOnboardingPage() {
   const isInviteFlow = Boolean(form.inviteToken);
   const isJoinMode = form.householdMode === "join";
   const isCreateMode = form.householdMode === "create";
-  const clerkSignUpResource = signUp || clerk?.client?.signUp || null;
-  const isClerkSignUpReady = Boolean(clerkPublishableKeyPresent && clerkLoaded && clerkSignUpResource);
   const step1Errors = useMemo(() => {
     const errors = {};
     if (form.email && !emailIsValid) {
@@ -132,8 +136,8 @@ export default function ClerkOnboardingPage() {
   }, [emailCheck.email, emailCheck.state, emailIsValid, form.confirmPassword, form.email, form.password, normalizedEmail, passwordHasMinimumLength]);
   const step1DisabledReason = useMemo(() => {
     if (!clerkPublishableKeyPresent) return "missing_publishable_key";
-    if (!clerkLoaded) return "clerk_loading";
-    if (!clerkSignUpResource) return "signup_resource_missing";
+    if (!clerkLoaded || !signUpLoaded) return "clerk_loading";
+    if (!signUp) return "signup_resource_missing";
     if (!normalizedEmail) return "email_empty";
     if (!emailIsValid) return "email_invalid";
     if (emailCheck.state === "checking") return "email_checking";
@@ -149,7 +153,6 @@ export default function ClerkOnboardingPage() {
     authLoading,
     clerkLoaded,
     clerkPublishableKeyPresent,
-    clerkSignUpResource,
     emailCheck.email,
     emailCheck.state,
     emailIsValid,
@@ -157,7 +160,9 @@ export default function ClerkOnboardingPage() {
     form.password,
     normalizedEmail,
     passwordHasMinimumLength,
-    passwordsMatch
+    passwordsMatch,
+    signUp,
+    signUpLoaded
   ]);
   const canSubmitStep1 = step1DisabledReason === null;
 
@@ -273,14 +278,12 @@ export default function ClerkOnboardingPage() {
       clerkLoaded,
       signUpLoaded,
       signUpExists: Boolean(signUp),
-      fallbackSignUpExists: Boolean(clerk?.client?.signUp),
       publishableKeyPresent: clerkPublishableKeyPresent,
       authStage,
       continueDisabledReason: step1DisabledReason
     });
   }, [
     authStage,
-    clerk,
     clerkLoaded,
     clerkPublishableKeyPresent,
     signUp,
@@ -432,7 +435,7 @@ export default function ClerkOnboardingPage() {
 
   const submitCredentials = async (event) => {
     event.preventDefault();
-    if (authLoading) return;
+    if (authLoading || submitLockRef.current) return;
 
     if (!emailIsValid) {
       setError("Introduce un email válido.");
@@ -446,7 +449,7 @@ export default function ClerkOnboardingPage() {
       return;
     }
 
-    if (!clerkLoaded || !clerkSignUpResource) {
+    if (!clerkLoaded || !signUpLoaded || !signUp) {
       setError(import.meta.env.DEV
         ? "Clerk todavía no expone el recurso de sign up. Revisa el estado de carga en consola."
         : "Preparando registro seguro...");
@@ -476,24 +479,33 @@ export default function ClerkOnboardingPage() {
     }
 
     setError("");
+    submitLockRef.current = true;
     setAuthLoading(true);
     try {
-      const signUpAttempt = await clerkSignUpResource.create({
+      await signUp.create({
         emailAddress: normalizedEmail,
         password: String(form.password || "")
       });
-      await signUpAttempt.prepareEmailAddressVerification({ strategy: "email_code" });
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setAuthStage("verification");
     } catch (err) {
-      setError(normalizeClerkError(err, "No pudimos crear tu cuenta segura."));
+      if (import.meta.env.DEV) {
+        console.error("[clerk/signup][dev] create account failed", err);
+      }
+      if (isCaptchaInitializationError(err)) {
+        setError("No se pudo cargar la verificación de seguridad. Recarga la página e inténtalo de nuevo.");
+      } else {
+        setError(normalizeClerkError(err, "No pudimos crear tu cuenta segura."));
+      }
     } finally {
+      submitLockRef.current = false;
       setAuthLoading(false);
     }
   };
 
   const verifyEmailCode = async (event) => {
     event.preventDefault();
-    if (verificationLoading || !clerkSignUpResource) return;
+    if (verificationLoading || !signUp) return;
 
     const verificationCode = String(form.verificationCode || "").trim();
     if (!verificationCode) {
@@ -504,7 +516,7 @@ export default function ClerkOnboardingPage() {
     setError("");
     setVerificationLoading(true);
     try {
-      const verificationResult = await clerkSignUpResource.attemptEmailAddressVerification({ code: verificationCode });
+      const verificationResult = await signUp.attemptEmailAddressVerification({ code: verificationCode });
       if (verificationResult.status !== "complete" || !verificationResult.createdSessionId) {
         setError("No pudimos verificar el código. Revisa el email e inténtalo de nuevo.");
         return;
@@ -520,11 +532,11 @@ export default function ClerkOnboardingPage() {
   };
 
   const resendVerificationCode = async () => {
-    if (resendLoading || !clerkSignUpResource) return;
+    if (resendLoading || !signUp) return;
     setError("");
     setResendLoading(true);
     try {
-      await clerkSignUpResource.prepareEmailAddressVerification({ strategy: "email_code" });
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
     } catch (err) {
       setError(normalizeClerkError(err, "No pudimos reenviar el código ahora mismo."));
     } finally {
@@ -708,10 +720,10 @@ export default function ClerkOnboardingPage() {
         {!step1Errors.email && !clerkPublishableKeyPresent && import.meta.env.DEV ? (
           <div className="kitchen-alert error">Clerk no está configurado correctamente. Revisa la publishable key del entorno.</div>
         ) : null}
-        {!step1Errors.email && clerkPublishableKeyPresent && !clerkLoaded ? (
+        {!step1Errors.email && clerkPublishableKeyPresent && (!clerkLoaded || !signUpLoaded) ? (
           <p className="kitchen-auth-hint">Preparando registro seguro...</p>
         ) : null}
-        {!step1Errors.email && clerkPublishableKeyPresent && clerkLoaded && !clerkSignUpResource && import.meta.env.DEV ? (
+        {!step1Errors.email && clerkPublishableKeyPresent && clerkLoaded && signUpLoaded && !signUp && import.meta.env.DEV ? (
           <div className="kitchen-alert error">Clerk cargó, pero el recurso de sign up no está disponible. Revisa la consola DEV.</div>
         ) : null}
         {emailCheck.state === "checking" && normalizedEmail ? <p className="kitchen-auth-hint">Comprobando si este email está disponible...</p> : null}
@@ -720,6 +732,7 @@ export default function ClerkOnboardingPage() {
         <p className="kitchen-auth-hint">
           Usa una contraseña segura de al menos 8 caracteres. Después te enviaremos un código para confirmar el email.
         </p>
+        <div id="clerk-captcha" className="clerk-captcha" aria-live="polite" />
         <div className="kitchen-onboarding-footer">
           <button type="button" className="kitchen-button secondary" onClick={() => navigate("/auth/clerk/sign-in")}>
             Ya tengo cuenta

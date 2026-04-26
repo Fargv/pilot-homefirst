@@ -3426,6 +3426,10 @@ body {
   display: none;
 }
 
+.clerk-captcha {
+  min-height: 1px;
+}
+
 .kitchen-onboarding-choice-grid,
 .kitchen-onboarding-plan-list {
   display: grid;
