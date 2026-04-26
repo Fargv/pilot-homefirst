@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { apiRequest } from "../api.js";
+import { apiRequest, buildApiUrl } from "../api.js";
 import { useAuth } from "../auth";
 import Card from "../components/ui/Card";
 
@@ -31,6 +31,7 @@ export default function ClerkOnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [resolvingCode, setResolvingCode] = useState(false);
   const [resolvedHousehold, setResolvedHousehold] = useState("");
+  const [inviteDetails, setInviteDetails] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -46,12 +47,14 @@ export default function ClerkOnboardingPage() {
     const inviteToken = String(
       searchParams.get("inviteToken")
       || searchParams.get("token")
+      || searchParams.get("invite")
       || window.sessionStorage.getItem(pendingInviteTokenKey)
       || ""
     ).trim();
     const inviteCode = String(
       searchParams.get("inviteCode")
       || searchParams.get("code")
+      || searchParams.get("invite")
       || window.sessionStorage.getItem(pendingInviteCodeKey)
       || ""
     ).replace(/\D/g, "").slice(0, 6);
@@ -63,11 +66,42 @@ export default function ClerkOnboardingPage() {
     }));
   }, [searchParams]);
 
+  useEffect(() => {
+    let active = true;
+    if (!form.inviteToken) {
+      setInviteDetails(null);
+      return undefined;
+    }
+
+    const loadInvite = async () => {
+      try {
+        const response = await fetch(buildApiUrl(`/api/kitchen/auth/invite/${encodeURIComponent(form.inviteToken)}`));
+        const data = await response.json().catch(() => ({}));
+        if (!active || !response.ok) return;
+        setInviteDetails({
+          householdName: data.householdName || "",
+          recipientEmail: data.recipientEmail || "",
+          role: data.role || "",
+          expiresAt: data.expiresAt || ""
+        });
+      } catch {
+        if (!active) return;
+        setInviteDetails(null);
+      }
+    };
+
+    void loadInvite();
+    return () => {
+      active = false;
+    };
+  }, [form.inviteToken]);
+
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const normalizedInviteCode = String(form.inviteCode || "").replace(/\D/g, "").slice(0, 6);
+  const isJoiningExistingHousehold = Boolean(form.inviteToken || normalizedInviteCode);
 
   const resolveCode = async () => {
     if (normalizedInviteCode.length !== 6) {
@@ -127,6 +161,22 @@ export default function ClerkOnboardingPage() {
           </p>
 
           <form className="kitchen-login-form" onSubmit={onSubmit}>
+            {inviteDetails?.householdName ? (
+              <div className="kitchen-alert info">
+                Te uniras al hogar <strong>{inviteDetails.householdName}</strong>.
+                {inviteDetails.recipientEmail ? ` Esta invitacion esta pensada para ${inviteDetails.recipientEmail}.` : ""}
+              </div>
+            ) : null}
+            <label className="kitchen-ui-input-group" htmlFor="clerk-display-name">
+              <span className="kitchen-login-label">NOMBRE MOSTRADO (OPCIONAL)</span>
+              <input
+                id="clerk-display-name"
+                className="kitchen-ui-input"
+                value={form.displayName || ""}
+                onChange={(event) => updateField("displayName", event.target.value)}
+                placeholder="Como quieres que te vea el hogar"
+              />
+            </label>
             <label className="kitchen-ui-input-group" htmlFor="clerk-first-name">
               <span className="kitchen-login-label">NOMBRE</span>
               <input
@@ -158,16 +208,18 @@ export default function ClerkOnboardingPage() {
                 maxLength={3}
               />
             </label>
-            <label className="kitchen-ui-input-group" htmlFor="clerk-household-name">
-              <span className="kitchen-login-label">NOMBRE DEL HOGAR</span>
-              <input
-                id="clerk-household-name"
-                className="kitchen-ui-input"
-                value={form.householdName}
-                onChange={(event) => updateField("householdName", event.target.value)}
-                required={!form.inviteToken && !normalizedInviteCode}
-              />
-            </label>
+            {!isJoiningExistingHousehold ? (
+              <label className="kitchen-ui-input-group" htmlFor="clerk-household-name">
+                <span className="kitchen-login-label">NOMBRE DEL HOGAR</span>
+                <input
+                  id="clerk-household-name"
+                  className="kitchen-ui-input"
+                  value={form.householdName}
+                  onChange={(event) => updateField("householdName", event.target.value)}
+                  required
+                />
+              </label>
+            ) : null}
             {form.inviteToken ? (
               <div className="kitchen-alert info">
                 Tienes una invitacion segura pendiente. Al completar el perfil, te uniremos al hogar invitado si la invitacion sigue vigente.

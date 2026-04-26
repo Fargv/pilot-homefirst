@@ -81,12 +81,16 @@
 - MFA should stay disabled unless the app is intentionally updated to handle it.
 - Clerk redirects are configured to return to `/auth/clerk/complete`, which stays visually quiet and then continues to `/kitchen/semana` or `/onboarding/clerk`.
 - `/auth/clerk/complete` is the normal post-auth handoff route for both sign-in and sign-up.
+- When sign-up starts from an invite-aware Clerk route, the app now preserves `inviteToken` and `inviteCode` through the redirect back to `/auth/clerk/complete`, so the handoff does not depend on same-tab `sessionStorage`.
 - After Clerk returns to the app, the shared frontend auth provider resolves Clerk-backed `/api/kitchen/auth/me`.
 - The shared auth provider dedupes Clerk `/me` bootstrap requests locally and across immediate remounts, so route effects and provider effects do not create overlapping Mongo mapping attempts.
 - Any fallback completion route is intentionally quiet: it shows only the branded loading state during normal bootstrap, routes directly to `/kitchen/semana` or `/onboarding/clerk`, and delays any user-facing error until the failure is final instead of flashing transient mapping states.
 - If a Mongo app profile and household already exist, the user enters `/kitchen/semana`.
 - If Mongo app onboarding is missing, the user is sent to `/onboarding/clerk`.
+- `/onboarding/clerk` receives any pending invite context from `/auth/clerk/complete` and uses it to decide whether the user is joining an existing household or creating a new one.
 - `/onboarding/clerk` collects first name, last name, initials, household name, diner/cook defaults, optional invite code, optional invite token from a Clerk deep link, and initial household preferences.
+- If an invite token is present, onboarding shows the target household and does not ask for a new household name.
+- If only an invite code is present, onboarding can validate that code and then joins the matching household on submit.
 - Submitting onboarding calls `POST /api/kitchen/auth/clerk/onboarding`, which creates or completes the safe Mongo business records.
 - The Clerk sign-in and sign-up pages now rely on Clerk's embedded prebuilt components instead of custom low-level `useSignIn()` / `useSignUp()` submit handlers.
 - Normal sign-in stays email + password only, as determined by the Clerk widget and Dashboard configuration.
@@ -115,7 +119,9 @@
 
 - Owners can still share the existing six-digit household invite code.
 - Owners can also share a Clerk-friendly link in the form `/auth/clerk/sign-up?inviteToken=...` or `/auth/clerk/sign-up?inviteCode=...`.
+- The app also accepts the generic alias `/auth/clerk/sign-up?invite=...`, which is interpreted as an invite token first and as a six-digit invite code when numeric.
 - The frontend stores pending Clerk invite context only long enough to complete `/onboarding/clerk`.
+- The Clerk sign-up and sign-in pages reuse the invite-aware query string when switching between each other, and the sign-up page prefills the invited email when the invitation is email-specific.
 - The backend resolves invite tokens through the existing `Invitation` model and invite-code joins through `Household.inviteCode`.
 - Recipient-email restrictions, invite expiration, license/user-limit checks, and household scoping remain enforced on the backend.
 

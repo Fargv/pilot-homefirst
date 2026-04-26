@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { SignIn, SignUp, UserButton, useAuth as useClerkAuth, useClerk, useUser } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { buildApiUrl } from "../api.js";
 import { useAuth } from "../auth";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 import Card from "../components/ui/Card";
@@ -13,6 +14,17 @@ const clerkSignUpPath = "/auth/clerk/sign-up";
 const clerkPostAuthPath = "/kitchen/semana";
 const pendingInviteTokenKey = "clerk_onboarding_invite_token";
 const pendingInviteCodeKey = "clerk_onboarding_invite_code";
+
+function buildRouteWithSearch(path, values = {}) {
+  const params = new URLSearchParams();
+  Object.entries(values).forEach(([key, value]) => {
+    const safeValue = String(value || "").trim();
+    if (!safeValue) return;
+    params.set(key, safeValue);
+  });
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+}
 
 function stringifyDebugValue(value) {
   const seen = new WeakSet();
@@ -89,10 +101,34 @@ function ClerkAuthContent({ mode }) {
   const [showDebug, setShowDebug] = useState(false);
   const [finalBootstrapError, setFinalBootstrapError] = useState("");
   const [lastBootstrapStatus, setLastBootstrapStatus] = useState("waiting");
+  const [inviteDetails, setInviteDetails] = useState(null);
   const finalBootstrapErrorTimerRef = useRef(null);
 
   const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
   const clerkIdentity = clerkEmail || clerkUser?.username || clerkUser?.id || "Unknown Clerk user";
+  const inviteToken = String(
+    searchParams.get("inviteToken")
+    || searchParams.get("token")
+    || searchParams.get("invite")
+    || ""
+  ).trim();
+  const inviteCode = String(
+    searchParams.get("inviteCode")
+    || searchParams.get("code")
+    || searchParams.get("invite")
+    || ""
+  ).replace(/\D/g, "").slice(0, 6);
+  const inviteSearch = useMemo(
+    () => ({
+      inviteToken: inviteToken || undefined,
+      inviteCode: inviteCode || undefined
+    }),
+    [inviteCode, inviteToken]
+  );
+  const signInRoute = useMemo(() => buildRouteWithSearch(clerkSignInPath, inviteSearch), [inviteSearch]);
+  const signUpRoute = useMemo(() => buildRouteWithSearch(clerkSignUpPath, inviteSearch), [inviteSearch]);
+  const completeRoute = useMemo(() => buildRouteWithSearch(clerkCompletePath, inviteSearch), [inviteSearch]);
+  const onboardingRoute = useMemo(() => buildRouteWithSearch("/onboarding/clerk", inviteSearch), [inviteSearch]);
 
   const pageCopy = useMemo(() => {
     if (mode === "sign-up") {
@@ -118,9 +154,9 @@ function ClerkAuthContent({ mode }) {
 
   useEffect(() => {
     if (mode === "choice" || mode === "reset-password") {
-      navigate(clerkSignInPath, { replace: true });
+      navigate(signInRoute, { replace: true });
     }
-  }, [mode, navigate]);
+  }, [mode, navigate, signInRoute]);
 
   useEffect(() => {
     const inviteToken = String(searchParams.get("inviteToken") || searchParams.get("token") || "").trim();
@@ -140,6 +176,36 @@ function ClerkAuthContent({ mode }) {
   }, [searchParams]);
 
   useEffect(() => {
+    let active = true;
+    if (!inviteToken) {
+      setInviteDetails(null);
+      return undefined;
+    }
+
+    const loadInvite = async () => {
+      try {
+        const response = await fetch(buildApiUrl(`/api/kitchen/auth/invite/${encodeURIComponent(inviteToken)}`));
+        const data = await response.json().catch(() => ({}));
+        if (!active || !response.ok) return;
+        setInviteDetails({
+          householdName: data.householdName || "",
+          recipientEmail: data.recipientEmail || "",
+          role: data.role || "",
+          expiresAt: data.expiresAt || ""
+        });
+      } catch {
+        if (!active) return;
+        setInviteDetails(null);
+      }
+    };
+
+    void loadInvite();
+    return () => {
+      active = false;
+    };
+  }, [inviteToken]);
+
+  useEffect(() => {
     if (!isDevelopmentEnvironment) return;
     console.info("[clerk][dev] Clerk auth route mounted", {
       mode,
@@ -154,7 +220,7 @@ function ClerkAuthContent({ mode }) {
     if (onboardingRequired) {
       setLastBootstrapStatus("onboarding-required");
       setFinalBootstrapError("");
-      navigate("/onboarding/clerk", { replace: true });
+      navigate(onboardingRoute, { replace: true });
       return;
     }
 
@@ -163,7 +229,7 @@ function ClerkAuthContent({ mode }) {
       setFinalBootstrapError("");
       navigate(clerkPostAuthPath, { replace: true });
     }
-  }, [isLoaded, isSignedIn, navigate, onboardingRequired, user]);
+  }, [isLoaded, isSignedIn, navigate, onboardingRequired, onboardingRoute, user]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || loading || user?.id || onboardingRequired || !lastAuthError) return;
@@ -189,7 +255,7 @@ function ClerkAuthContent({ mode }) {
 
   const signOut = async () => {
     clearSession();
-    await clerk.signOut({ redirectUrl: clerkSignInPath });
+    await clerk.signOut({ redirectUrl: signInRoute });
   };
 
   const retryBootstrap = async () => {
@@ -238,7 +304,7 @@ function ClerkAuthContent({ mode }) {
           Tu sesion de Clerk esta activa como <strong>{clerkIdentity}</strong>, pero Lunchfy todavia no pudo terminar el enlace con tu perfil interno.
         </div>
         <div className="kitchen-actions" style={{ alignItems: "center" }}>
-          <UserButton afterSignOutUrl={clerkSignInPath} />
+          <UserButton afterSignOutUrl={signInRoute} />
           <button type="button" className="kitchen-button" onClick={retryBootstrap}>
             Reintentar
           </button>
@@ -260,7 +326,7 @@ function ClerkAuthContent({ mode }) {
               <br />
               <strong>Clerk identity:</strong> {clerkIdentity}
               <br />
-              <strong>Mongo mapping state:</strong> mapping failed
+                <strong>Mongo mapping state:</strong> mapping failed
               <br />
               <strong>Onboarding state:</strong> {onboardingRequired ? "required" : user?.id ? "complete" : "unknown"}
               <br />
@@ -291,10 +357,10 @@ function ClerkAuthContent({ mode }) {
           Si acabas de crear la cuenta, revisa tu email y completa la verificacion desde el mensaje de Clerk. Cuando la sesion quede activa, Lunchfy continuara automaticamente.
         </div>
         <div className="kitchen-actions">
-          <button type="button" className="kitchen-button" onClick={() => navigate(clerkSignInPath)}>
+          <button type="button" className="kitchen-button" onClick={() => navigate(signInRoute)}>
             Iniciar sesion
           </button>
-          <button type="button" className="kitchen-button secondary" onClick={() => navigate(clerkSignUpPath)}>
+          <button type="button" className="kitchen-button secondary" onClick={() => navigate(signUpRoute)}>
             Crear cuenta
           </button>
         </div>
@@ -313,36 +379,50 @@ function ClerkAuthContent({ mode }) {
           Despues de crear tu cuenta, Clerk te pedira verificar el email. Usa el enlace o el paso de verificacion que te muestre la propia pantalla antes de continuar a Lunchfy.
         </div>
       ) : null}
+      {inviteToken || inviteCode ? (
+        <div className="kitchen-alert info">
+          {inviteDetails?.householdName
+            ? `Esta alta esta vinculada al hogar ${inviteDetails.householdName}.`
+            : "Esta alta esta vinculada a una invitacion de hogar."}{" "}
+          {inviteDetails?.recipientEmail ? `Usa el email invitado: ${inviteDetails.recipientEmail}.` : null}
+        </div>
+      ) : null}
 
       <ClerkWidgetMount>
         {mode === "sign-up" ? (
           <SignUp
             routing="path"
             path={clerkSignUpPath}
-            signInUrl={clerkSignInPath}
-            forceRedirectUrl={clerkCompletePath}
-            fallbackRedirectUrl={clerkCompletePath}
-            afterSignOutUrl={clerkSignInPath}
+            signInUrl={signInRoute}
+            forceRedirectUrl={completeRoute}
+            fallbackRedirectUrl={completeRoute}
+            afterSignOutUrl={signInRoute}
+            initialValues={{
+              emailAddress: inviteDetails?.recipientEmail || undefined
+            }}
           />
         ) : (
           <SignIn
             routing="path"
             path={clerkSignInPath}
-            signUpUrl={clerkSignUpPath}
-            forceRedirectUrl={clerkCompletePath}
-            fallbackRedirectUrl={clerkCompletePath}
-            afterSignOutUrl={clerkSignInPath}
+            signUpUrl={signUpRoute}
+            forceRedirectUrl={completeRoute}
+            fallbackRedirectUrl={completeRoute}
+            afterSignOutUrl={signInRoute}
+            initialValues={{
+              emailAddress: inviteDetails?.recipientEmail || undefined
+            }}
           />
         )}
       </ClerkWidgetMount>
 
       <div className="kitchen-auth-footer-actions">
         {mode === "sign-up" ? (
-          <button type="button" className="kitchen-login-link" onClick={() => navigate(clerkSignInPath)}>
+          <button type="button" className="kitchen-login-link" onClick={() => navigate(signInRoute)}>
             Ya tienes cuenta? Inicia sesion
           </button>
         ) : (
-          <button type="button" className="kitchen-login-link" onClick={() => navigate(clerkSignUpPath)}>
+          <button type="button" className="kitchen-login-link" onClick={() => navigate(signUpRoute)}>
             Crear cuenta
           </button>
         )}
