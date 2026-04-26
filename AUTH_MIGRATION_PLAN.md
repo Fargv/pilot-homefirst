@@ -44,11 +44,11 @@
   - The app is wrapped with `ClerkProvider` in [frontend/src/main.jsx](/C:/APPS/pilot-homefirst/frontend/src/main.jsx) when `VITE_CLERK_PUBLISHABLE_KEY` is configured.
   - The existing auth provider remains active and can still use the legacy JWT flow.
   - If a Clerk session exists, frontend API calls can now send the Clerk bearer token instead of the legacy JWT.
-- `/auth/clerk` is the product-facing Clerk choice screen.
+- `/auth/clerk` now redirects to the secure sign-in screen by default.
 - `/auth/clerk/sign-up` and `/auth/clerk/sign-in` are dedicated path-routed Clerk component routes.
-- `/auth/clerk/sign-in` is now a custom in-app Clerk password login form for migrated users.
-- `/auth/clerk/sign-up` is now a custom in-app Clerk email/password sign-up form that requests email verification only after account creation starts.
-- `/auth/clerk/reset-password` is now a custom in-app Clerk password recovery flow with explicit steps for email, reset code, and new password.
+- `/auth/clerk/sign-in` now renders the embedded Clerk `<SignIn />` component inside the Lunchfy auth shell.
+- `/auth/clerk/sign-up` now renders the embedded Clerk `<SignUp />` component inside the Lunchfy auth shell.
+- `/auth/clerk/reset-password` now forwards back into the embedded Clerk sign-in flow instead of mounting a separate custom reset form.
 - `/auth/clerk/complete` is the post-Clerk return route that bootstraps the Mongo app profile or sends the user to onboarding.
   - `/onboarding/clerk` collects app-specific profile and household data after Clerk identity is established. It supports fallback new-household creation, optional six-digit household invite code joins, and Clerk deep links with `inviteToken`.
   - `/auth/clerk/reset-password` exposes Clerk's reset-password path via the Clerk sign-in flow. `/forgot-password` remains the legacy Mongo password-reset page.
@@ -68,7 +68,7 @@
 
 ## Product Clerk Auth Flow
 
-- Users can enter through `/auth/clerk`, then choose `/auth/clerk/sign-up` or `/auth/clerk/sign-in`.
+- Users can enter through `/auth/clerk`, which opens the secure sign-in screen by default, and from there switch to `/auth/clerk/sign-up` when they need a new account.
 - Clerk handles identity and session creation.
 - Dashboard settings expected for the intended UX:
   - `User & authentication` -> `Email`: enable `Sign-up with email`.
@@ -79,8 +79,8 @@
 - If you want login to stay password-only, do not enable email-code or email-link sign-in as the intended normal login path.
 - If you want login to avoid unexpected verification codes on new devices, disable `Client Trust` in the Clerk Dashboard `Updates` page.
 - MFA should stay disabled unless the app is intentionally updated to handle it.
-- Clerk redirects are configured to return directly to `/kitchen/semana`; the protected route waits on the shared auth provider instead of bouncing through the legacy login page.
-- `/auth/clerk/complete` remains as a quiet fallback/resume route, but it is no longer the normal happy-path redirect target.
+- Clerk redirects are configured to return to `/auth/clerk/complete`, which stays visually quiet and then continues to `/kitchen/semana` or `/onboarding/clerk`.
+- `/auth/clerk/complete` is the normal post-auth handoff route for both sign-in and sign-up.
 - After Clerk returns to the app, the shared frontend auth provider resolves Clerk-backed `/api/kitchen/auth/me`.
 - The shared auth provider dedupes Clerk `/me` bootstrap requests locally and across immediate remounts, so route effects and provider effects do not create overlapping Mongo mapping attempts.
 - Any fallback completion route is intentionally quiet: it shows only the branded loading state during normal bootstrap, routes directly to `/kitchen/semana` or `/onboarding/clerk`, and delays any user-facing error until the failure is final instead of flashing transient mapping states.
@@ -88,10 +88,10 @@
 - If Mongo app onboarding is missing, the user is sent to `/onboarding/clerk`.
 - `/onboarding/clerk` collects first name, last name, initials, household name, diner/cook defaults, optional invite code, optional invite token from a Clerk deep link, and initial household preferences.
 - Submitting onboarding calls `POST /api/kitchen/auth/clerk/onboarding`, which creates or completes the safe Mongo business records.
-- The Clerk sign-up page now uses the custom-flow helpers exposed by `useSignUp()` from `@clerk/react`: `signUp.create()`, `signUp.prepareEmailAddressVerification({ strategy: "email_code" })`, and `signUp.attemptEmailAddressVerification(...)`, with an in-flight lock to stop duplicate sends.
-- The Clerk sign-in page is now a custom password-first flow built on Clerk's current `SignInFuture` API, using the password strategy plus `finalize()`, so normal login does not intentionally use email verification codes.
-- The Clerk forgot-password page is now a custom reset flow built on `reset_password_email_code`, `resetPasswordEmailCode.sendCode()`, `resetPasswordEmailCode.verifyCode()`, and `resetPasswordEmailCode.submitPassword()`.
-- The prior duplicate verification issue came from relying on prebuilt Clerk auth components plus route/component remount behavior and repeated submit opportunities, which made the UX feel like verification was being initiated twice. The custom flow removes that ambiguity by giving the app one owner for sign-up creation and one owner for verification preparation.
+- The Clerk sign-in and sign-up pages now rely on Clerk's embedded prebuilt components instead of custom low-level `useSignIn()` / `useSignUp()` submit handlers.
+- Normal sign-in stays email + password only, as determined by the Clerk widget and Dashboard configuration.
+- Sign-up still requires email verification, and the verification step is now owned by Clerk's `<SignUp />` flow instead of app-managed verification requests.
+- The prior duplicate verification issue came from the app manually orchestrating low-level sign-up and verification calls. Using the prebuilt `<SignUp />` widget removes those duplicate frontend verification triggers.
 - If login still asks for a verification code after this change, the remaining cause is Clerk instance configuration, most notably `Client Trust` or an intentionally enabled second-factor setting in the Clerk Dashboard rather than the app choosing an email-code login path.
 - The earlier broken Clerk login UX had two code-level causes:
   - the app was checking for a legacy-style `setActive` from `useSignIn()` / `useSignUp()`, which no longer exists in Clerk's current signal-based hooks, so the login form could appear disabled or never become ready

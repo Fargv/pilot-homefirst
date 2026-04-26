@@ -3254,6 +3254,71 @@ body {
   gap: 14px;
 }
 
+.kitchen-clerk-mount {
+  display: grid;
+  justify-items: center;
+}
+
+.kitchen-clerk-mount .cl-rootBox,
+.kitchen-clerk-mount .cl-cardBox,
+.kitchen-clerk-mount .cl-signIn-root,
+.kitchen-clerk-mount .cl-signUp-root {
+  width: 100%;
+}
+
+.kitchen-clerk-mount .cl-card {
+  width: 100%;
+  box-shadow: none;
+  border: 0;
+  background: rgba(255, 255, 255, 0.62);
+  padding: clamp(14px, 4vw, 20px);
+}
+
+.kitchen-clerk-mount .cl-headerTitle,
+.kitchen-clerk-mount .cl-headerSubtitle,
+.kitchen-clerk-mount .cl-socialButtonsBlockButtonText,
+.kitchen-clerk-mount .cl-formFieldLabel,
+.kitchen-clerk-mount .cl-formButtonPrimary,
+.kitchen-clerk-mount .cl-footer,
+.kitchen-clerk-mount .cl-footerActionText,
+.kitchen-clerk-mount .cl-footerActionLink,
+.kitchen-clerk-mount .cl-identityPreviewText,
+.kitchen-clerk-mount .cl-formResendCodeLink,
+.kitchen-clerk-mount .cl-formResendCodeText {
+  font-family: inherit;
+}
+
+.kitchen-clerk-mount .cl-header {
+  display: none;
+}
+
+.kitchen-clerk-mount .cl-footer {
+  margin-top: 8px;
+}
+
+.kitchen-clerk-mount .cl-formFieldInput {
+  border-radius: 999px;
+  background: #f8fafc;
+  min-height: 52px;
+}
+
+.kitchen-clerk-mount .cl-formButtonPrimary {
+  min-height: 54px;
+  border-radius: 999px;
+  background: var(--hf-primary);
+  font-size: 1rem;
+}
+
+.kitchen-clerk-mount .cl-formButtonPrimary:hover {
+  background: var(--hf-primary-strong);
+}
+
+.kitchen-clerk-mount .cl-footerActionLink,
+.kitchen-clerk-mount .cl-formResendCodeLink {
+  color: var(--hf-primary);
+  font-weight: 600;
+}
+
 @media (max-width: 520px) {
   .kitchen-auth-card {
     gap: 18px;
