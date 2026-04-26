@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { SignIn, SignUp, UserButton, useAuth as useClerkAuth, useClerk, useUser } from "@clerk/react";
+import { SignIn, SignUp, useAuth as useClerkAuth, useClerk, useUser } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { buildApiUrl } from "../api.js";
 import { useAuth } from "../auth";
@@ -12,6 +12,8 @@ const clerkCompletePath = "/auth/clerk/complete";
 const clerkSignInPath = "/auth/clerk/sign-in";
 const clerkSignUpPath = "/auth/clerk/sign-up";
 const clerkPostAuthPath = "/kitchen/semana";
+const legacyLoginPath = "/legacy-login";
+const legacySignupPath = "/legacy-signup";
 const pendingInviteTokenKey = "clerk_onboarding_invite_token";
 const pendingInviteCodeKey = "clerk_onboarding_invite_code";
 
@@ -24,22 +26,6 @@ function buildRouteWithSearch(path, values = {}) {
   });
   const query = params.toString();
   return query ? `${path}?${query}` : path;
-}
-
-function stringifyDebugValue(value) {
-  const seen = new WeakSet();
-  return JSON.stringify(
-    value,
-    (key, nextValue) => {
-      if (typeof nextValue === "object" && nextValue !== null) {
-        if (seen.has(nextValue)) return "[Circular]";
-        seen.add(nextValue);
-      }
-      if (typeof nextValue === "function") return `[Function ${nextValue.name || "anonymous"}]`;
-      return nextValue;
-    },
-    2
-  );
 }
 
 function normalizeBackendError(error) {
@@ -81,7 +67,7 @@ export default function ClerkAuthPage({ mode = "sign-in" }) {
         title="Acceso no configurado"
         subtitle="El acceso con Clerk aun no esta disponible en este entorno."
       >
-        <button type="button" className="kitchen-ui-button kitchen-login-submit" onClick={() => navigate("/login")}>
+        <button type="button" className="kitchen-ui-button kitchen-login-submit" onClick={() => navigate(legacyLoginPath)}>
           Usar acceso con email y contrasena
         </button>
       </AuthShell>
@@ -98,23 +84,13 @@ function ClerkAuthContent({ mode }) {
   const { isLoaded, isSignedIn } = useClerkAuth();
   const clerk = useClerk();
   const { user: clerkUser } = useUser();
-  const [showDebug, setShowDebug] = useState(false);
   const [finalBootstrapError, setFinalBootstrapError] = useState("");
   const [lastBootstrapStatus, setLastBootstrapStatus] = useState("waiting");
   const [inviteDetails, setInviteDetails] = useState(null);
   const [inviteDetailsLoaded, setInviteDetailsLoaded] = useState(false);
   const finalBootstrapErrorTimerRef = useRef(null);
-  const devCountersRef = useRef({
-    routeMountCount: 0,
-    widgetMountCount: 0,
-    signUpCreateCalls: 0,
-    verificationPrepareCalls: 0,
-    verificationAttemptCalls: 0,
-    verificationResendCalls: 0
-  });
 
   const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
-  const clerkIdentity = clerkEmail || clerkUser?.username || clerkUser?.id || "Unknown Clerk user";
   const inviteToken = String(
     searchParams.get("inviteToken")
     || searchParams.get("token")
@@ -224,39 +200,6 @@ function ClerkAuthContent({ mode }) {
   }, [inviteToken]);
 
   useEffect(() => {
-    devCountersRef.current.routeMountCount += 1;
-    if (!isDevelopmentEnvironment) return;
-    console.info("[clerk][dev] Clerk auth route mounted", {
-      mode,
-      isSignedIn,
-      returnRoute: clerkCompletePath,
-      routeMountCount: devCountersRef.current.routeMountCount
-    });
-    console.info("[clerk][dev] Manual sign-up verification calls in app shell", {
-      signUpCreateCalls: devCountersRef.current.signUpCreateCalls,
-      verificationPrepareCalls: devCountersRef.current.verificationPrepareCalls,
-      verificationAttemptCalls: devCountersRef.current.verificationAttemptCalls,
-      verificationResendCalls: devCountersRef.current.verificationResendCalls
-    });
-  }, [isSignedIn, mode]);
-
-  useEffect(() => {
-    if (!isDevelopmentEnvironment) return;
-    if (mode !== "sign-in" && mode !== "sign-up") return;
-    if (!inviteDetailsLoaded) return;
-    if (mode === "sign-up" && inviteToken && !inviteDetails) return;
-
-    devCountersRef.current.widgetMountCount += 1;
-    console.info("[clerk][dev] Clerk widget ready to mount", {
-      mode,
-      widgetMountCount: devCountersRef.current.widgetMountCount,
-      inviteTokenPresent: Boolean(inviteToken),
-      inviteCodePresent: Boolean(inviteCode),
-      prefilledEmailPresent: Boolean(initialEmailAddress)
-    });
-  }, [initialEmailAddress, inviteCode, inviteDetails, inviteDetailsLoaded, inviteToken, mode]);
-
-  useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
 
     if (onboardingRequired) {
@@ -276,14 +219,15 @@ function ClerkAuthContent({ mode }) {
   useEffect(() => {
     if (!isLoaded || !isSignedIn || loading || user?.id || onboardingRequired || !lastAuthError) return;
     const normalizedError = normalizeBackendError(lastAuthError);
+    if (isDevelopmentEnvironment) {
+      console.warn("[clerk][dev] No se pudo completar el enlace de la sesion", normalizedError);
+    }
     if (finalBootstrapErrorTimerRef.current) {
       window.clearTimeout(finalBootstrapErrorTimerRef.current);
     }
     finalBootstrapErrorTimerRef.current = window.setTimeout(() => {
       setLastBootstrapStatus("mapping-failed");
-      setFinalBootstrapError(
-        `${normalizedError.code || "AUTH_ERROR"} (${normalizedError.status || "sin status"}): ${normalizedError.message}`
-      );
+      setFinalBootstrapError("No se pudo completar el acceso. Intentalo de nuevo.");
     }, 1200);
   }, [finalBootstrapError, isLoaded, isSignedIn, lastAuthError, loading, onboardingRequired, user?.id]);
 
@@ -353,10 +297,9 @@ function ClerkAuthContent({ mode }) {
       >
         <div className="kitchen-alert error">{finalBootstrapError}</div>
         <div className="kitchen-alert info">
-          Tu sesion de Clerk esta activa como <strong>{clerkIdentity}</strong>, pero Lunchfy todavia no pudo terminar el enlace con tu perfil interno.
+          Tu sesion segura esta activa, pero Lunchfy todavia no pudo terminar el acceso.
         </div>
         <div className="kitchen-actions" style={{ alignItems: "center" }}>
-          <UserButton afterSignOutUrl={signInRoute} />
           <button type="button" className="kitchen-button" onClick={retryBootstrap}>
             Reintentar
           </button>
@@ -364,48 +307,6 @@ function ClerkAuthContent({ mode }) {
             Cambiar cuenta
           </button>
         </div>
-        {isDevelopmentEnvironment ? (
-          <button type="button" className="kitchen-login-link" onClick={() => setShowDebug((next) => !next)}>
-            {showDebug ? "Ocultar diagnostico DEV" : "Mostrar diagnostico DEV"}
-          </button>
-        ) : null}
-        {isDevelopmentEnvironment && showDebug ? (
-          <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
-            <div className="kitchen-alert info">
-              <strong>Clerk auth state:</strong> {isSignedIn ? "signed in" : "signed out"}
-              <br />
-              <strong>Clerk route:</strong> {mode}
-              <br />
-              <strong>Clerk identity:</strong> {clerkIdentity}
-              <br />
-                <strong>Mongo mapping state:</strong> mapping failed
-              <br />
-              <strong>Onboarding state:</strong> {onboardingRequired ? "required" : user?.id ? "complete" : "unknown"}
-              <br />
-              <strong>Last backend auth error:</strong>{" "}
-              {lastAuthError ? `${lastAuthError.code} / ${lastAuthError.status}: ${lastAuthError.message}` : "none"}
-              <br />
-              <strong>Last bootstrap status:</strong> {lastBootstrapStatus}
-              <br />
-              <strong>Route mount count:</strong> {devCountersRef.current.routeMountCount}
-              <br />
-              <strong>Widget mount count:</strong> {devCountersRef.current.widgetMountCount}
-              <br />
-              <strong>Manual sign-up create calls:</strong> {devCountersRef.current.signUpCreateCalls}
-              <br />
-              <strong>Manual verification prepare calls:</strong> {devCountersRef.current.verificationPrepareCalls}
-              <br />
-              <strong>Manual verification attempt calls:</strong> {devCountersRef.current.verificationAttemptCalls}
-              <br />
-              <strong>Manual verification resend calls:</strong> {devCountersRef.current.verificationResendCalls}
-            </div>
-            {lastAuthError ? (
-              <pre className="kitchen-alert error" style={{ whiteSpace: "pre-wrap", overflowX: "auto" }}>
-                {stringifyDebugValue(lastAuthError)}
-              </pre>
-            ) : null}
-          </div>
-        ) : null}
       </AuthShell>
     );
   }
@@ -418,13 +319,13 @@ function ClerkAuthContent({ mode }) {
         subtitle={pageCopy.subtitle}
       >
         <div className="kitchen-alert info">
-          Si acabas de crear la cuenta, revisa tu email y completa la verificacion desde el mensaje de Clerk. Cuando la sesion quede activa, Lunchfy continuara automaticamente.
+          Si acabas de crear la cuenta, revisa tu email y completa la verificacion. Cuando la sesion quede activa, Lunchfy continuara automaticamente.
         </div>
         <div className="kitchen-actions">
-          <button type="button" className="kitchen-button" onClick={() => navigate(signInRoute)}>
+          <button type="button" className="kitchen-button" onClick={() => navigate("/login")}>
             Iniciar sesion
           </button>
-          <button type="button" className="kitchen-button secondary" onClick={() => navigate(signUpRoute)}>
+          <button type="button" className="kitchen-button secondary" onClick={() => navigate("/signup")}>
             Crear cuenta
           </button>
         </div>
@@ -478,63 +379,22 @@ function ClerkAuthContent({ mode }) {
 
       <div className="kitchen-auth-footer-actions">
         {mode === "sign-up" ? (
-          <button type="button" className="kitchen-login-link" onClick={() => navigate(signInRoute)}>
+          <button type="button" className="kitchen-login-link" onClick={() => navigate("/login")}>
             Ya tienes cuenta? Inicia sesion
           </button>
         ) : (
-          <button type="button" className="kitchen-login-link" onClick={() => navigate(signUpRoute)}>
+          <button type="button" className="kitchen-login-link" onClick={() => navigate("/signup")}>
             Crear cuenta
           </button>
         )}
-        <button type="button" className="kitchen-login-link" onClick={() => navigate("/login")}>
+        <button
+          type="button"
+          className="kitchen-login-link"
+          onClick={() => navigate(mode === "sign-up" ? legacySignupPath : legacyLoginPath)}
+        >
           Usar acceso legacy
         </button>
       </div>
-
-      {isDevelopmentEnvironment ? (
-        <button type="button" className="kitchen-login-link" onClick={() => setShowDebug((next) => !next)}>
-          {showDebug ? "Ocultar diagnostico DEV" : "Mostrar diagnostico DEV"}
-        </button>
-      ) : null}
-
-      {isDevelopmentEnvironment && showDebug ? (
-        <div className="kitchen-auth-card" style={{ marginTop: 16 }}>
-          <div className="kitchen-alert info">
-            <strong>Clerk auth state:</strong> {isLoaded ? (isSignedIn ? "signed in" : "signed out") : "loading"}
-            <br />
-            <strong>Clerk route:</strong> {mode}
-            <br />
-            <strong>Clerk identity:</strong> {isSignedIn ? clerkIdentity : "none"}
-            <br />
-            <strong>Mongo mapping state:</strong>{" "}
-            {loading ? "resolving" : user?.email ? `mapped to ${user.email}` : finalBootstrapError ? "mapping failed" : "not resolved"}
-            <br />
-            <strong>Onboarding state:</strong> {onboardingRequired ? "required" : user?.id ? "complete" : "unknown"}
-            <br />
-            <strong>Last backend auth error:</strong>{" "}
-            {lastAuthError ? `${lastAuthError.code} / ${lastAuthError.status}: ${lastAuthError.message}` : "none"}
-            <br />
-            <strong>Last bootstrap status:</strong> {lastBootstrapStatus}
-            <br />
-            <strong>Route mount count:</strong> {devCountersRef.current.routeMountCount}
-            <br />
-            <strong>Widget mount count:</strong> {devCountersRef.current.widgetMountCount}
-            <br />
-            <strong>Manual sign-up create calls:</strong> {devCountersRef.current.signUpCreateCalls}
-            <br />
-            <strong>Manual verification prepare calls:</strong> {devCountersRef.current.verificationPrepareCalls}
-            <br />
-            <strong>Manual verification attempt calls:</strong> {devCountersRef.current.verificationAttemptCalls}
-            <br />
-            <strong>Manual verification resend calls:</strong> {devCountersRef.current.verificationResendCalls}
-          </div>
-          {lastAuthError ? (
-            <pre className="kitchen-alert error" style={{ whiteSpace: "pre-wrap", overflowX: "auto" }}>
-              {stringifyDebugValue(lastAuthError)}
-            </pre>
-          ) : null}
-        </div>
-      ) : null}
     </AuthShell>
   );
 }

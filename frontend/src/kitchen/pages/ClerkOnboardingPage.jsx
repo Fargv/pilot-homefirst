@@ -9,7 +9,8 @@ import { isUserLimitReachedError } from "../subscription.js";
 const pendingInviteTokenKey = "clerk_onboarding_invite_token";
 const pendingInviteCodeKey = "clerk_onboarding_invite_code";
 const BASIC_PLAN = "basic";
-const clerkSignInPath = "/auth/clerk/sign-in";
+const clerkSignInPath = "/login";
+const legacySignupPath = "/legacy-signup";
 
 const STEP_LABELS = [
   { number: 1, label: "Cuenta", shortLabel: "Cuenta" },
@@ -115,14 +116,11 @@ export default function ClerkOnboardingPage() {
   const [validatedInviteCode, setValidatedInviteCode] = useState("");
   const [inviteDetails, setInviteDetails] = useState(null);
   const [inviteDetailsLoaded, setInviteDetailsLoaded] = useState(false);
-  const [devSlowClerkLoad, setDevSlowClerkLoad] = useState(false);
-
   const emailCheckTimerRef = useRef(null);
   const createSubmitLockRef = useRef(false);
   const verifySubmitLockRef = useRef(false);
   const finalSubmitStartedRef = useRef(false);
 
-  const clerkPublishableKeyPresent = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
   const normalizedEmail = String(form.email || "").trim().toLowerCase();
   const normalizedInviteCode = useMemo(() => normalizeInviteCode(form.inviteCode), [form.inviteCode]);
   const emailIsValid = isValidEmailAddress(normalizedEmail);
@@ -334,51 +332,6 @@ export default function ClerkOnboardingPage() {
     };
   }, [authPhase, emailCheck.email, emailCheck.state, emailIsValid, normalizedEmail]);
 
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    console.info("[clerk/signup][dev] state", {
-      isLoaded,
-      signUpExists: Boolean(signUp),
-      disabledReason,
-      authPhase,
-      configStep,
-      submitting: authLoading || verificationLoading || finalLoading,
-      emailValid: emailIsValid,
-      passwordValid: passwordHasMinimumLength,
-      passwordsMatch,
-      publishableKeyPresent: clerkPublishableKeyPresent
-    });
-  }, [
-    authLoading,
-    authPhase,
-    clerkPublishableKeyPresent,
-    configStep,
-    disabledReason,
-    emailIsValid,
-    finalLoading,
-    isLoaded,
-    passwordHasMinimumLength,
-    passwordsMatch,
-    signUp,
-    verificationLoading
-  ]);
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return undefined;
-    if (isLoaded) {
-      setDevSlowClerkLoad(false);
-      return undefined;
-    }
-    const timer = window.setTimeout(() => {
-      setDevSlowClerkLoad(true);
-      console.warn("[clerk/signup][dev] Clerk no termina de cargar", {
-        publishableKeyPresent: clerkPublishableKeyPresent,
-        insideClerkProviderLikely: typeof isLoaded === "boolean"
-      });
-    }, 5000);
-    return () => window.clearTimeout(timer);
-  }, [clerkPublishableKeyPresent, isLoaded]);
-
   const stepTitle = useMemo(() => {
     if (authPhase === "verify") return "Verifica tu email";
     if (visualStep === 1) return "Crea tu cuenta";
@@ -472,13 +425,11 @@ export default function ClerkOnboardingPage() {
       return;
     }
     if (availability === "error") {
-      setError("No pudimos validar este email todavia. Intentalo de nuevo.");
+      setError("No se pudo completar el registro. Inténtalo de nuevo.");
       return;
     }
     if (!isLoaded || !signUp) {
-      setError(import.meta.env.DEV
-        ? "Clerk no esta listo en este formulario. Revisa la configuracion del provider."
-        : "No pudimos preparar el registro seguro.");
+      setError("No se pudo completar el registro. Inténtalo de nuevo.");
       return;
     }
 
@@ -499,9 +450,9 @@ export default function ClerkOnboardingPage() {
         console.error("[clerk/signup][dev] create/prepare failed", err);
       }
       if (isCaptchaInitializationError(err)) {
-        setError("No se pudo cargar la verificacion de seguridad. Recarga la pagina e intentalo de nuevo.");
+        setError("No se pudo cargar la verificación de seguridad. Recarga la página e inténtalo de nuevo.");
       } else {
-        setError(normalizeClerkError(err, "No pudimos crear tu cuenta segura."));
+        setError(normalizeClerkError(err, "No se pudo completar el registro. Inténtalo de nuevo."));
       }
     } finally {
       createSubmitLockRef.current = false;
@@ -538,7 +489,7 @@ export default function ClerkOnboardingPage() {
       if (import.meta.env.DEV) {
         console.error("[clerk/signup][dev] verification failed", err);
       }
-      setError(normalizeClerkError(err, "El codigo no es valido o ha caducado."));
+      setError(normalizeClerkError(err, "El código no es válido o ha caducado."));
     } finally {
       verifySubmitLockRef.current = false;
       setVerificationLoading(false);
@@ -666,17 +617,10 @@ export default function ClerkOnboardingPage() {
       {step1Errors.password ? <div className="kitchen-alert error">{step1Errors.password}</div> : null}
       {step1Errors.confirmPassword ? <div className="kitchen-alert error">{step1Errors.confirmPassword}</div> : null}
       {!step1Errors.email && emailCheck.state === "checking" && normalizedEmail ? (
-        <p className="kitchen-auth-hint">Comprobando si este email esta disponible...</p>
-      ) : null}
-      {!isLoaded ? <p className="kitchen-auth-hint">Preparando registro seguro...</p> : null}
-      {!clerkPublishableKeyPresent && import.meta.env.DEV ? (
-        <div className="kitchen-alert error">Clerk no esta configurado correctamente. Revisa la publishable key del entorno.</div>
-      ) : null}
-      {isLoaded && !signUp && import.meta.env.DEV ? (
-        <div className="kitchen-alert error">Clerk cargo, pero el objeto signUp no esta disponible. Revisa la consola DEV.</div>
+        <p className="kitchen-auth-hint">Comprobando si este email está disponible...</p>
       ) : null}
       <p className="kitchen-auth-hint">
-        Usa una contrasena segura de al menos 8 caracteres. Despues te enviaremos un codigo para confirmar el email.
+        Usa una contraseña segura de al menos 8 caracteres. Después te enviaremos un código para confirmar el email.
       </p>
       <div id="clerk-captcha" className="clerk-captcha" aria-live="polite" />
       <div className="kitchen-onboarding-footer">
@@ -684,17 +628,9 @@ export default function ClerkOnboardingPage() {
           Ya tengo cuenta
         </button>
         <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={Boolean(disabledReason)}>
-          {authLoading ? "Enviando codigo..." : "Continuar"}
+          {authLoading ? "Enviando código..." : "Continuar"}
         </button>
       </div>
-      {import.meta.env.DEV ? (
-        <p className="kitchen-auth-hint">
-          DEV: isLoaded={String(isLoaded)} signUp={String(Boolean(signUp))} disabledReason={disabledReason || "ready"} submitting={String(authLoading)} emailValid={String(emailIsValid)} passwordValid={String(passwordHasMinimumLength)} passwordsMatch={String(passwordsMatch)}
-        </p>
-      ) : null}
-      {import.meta.env.DEV && devSlowClerkLoad ? (
-        <div className="kitchen-alert error">Clerk no termina de cargar. Revisa VITE_CLERK_PUBLISHABLE_KEY y ClerkProvider.</div>
-      ) : null}
     </form>
   );
 
@@ -715,7 +651,7 @@ export default function ClerkOnboardingPage() {
         />
       </label>
       <p className="kitchen-auth-hint">
-        Enviamos el codigo a <strong>{normalizedEmail}</strong>. Escribelo aqui para continuar.
+        Enviamos el código a <strong>{normalizedEmail}</strong>. Escríbelo aquí para continuar.
       </p>
       <div className="kitchen-onboarding-footer">
         <button
@@ -733,11 +669,6 @@ export default function ClerkOnboardingPage() {
           {verificationLoading ? "Verificando..." : "Verificar y continuar"}
         </button>
       </div>
-      {import.meta.env.DEV ? (
-        <p className="kitchen-auth-hint">
-          DEV: phase=verify submitting={String(verificationLoading)} signUp={String(Boolean(signUp))}
-        </p>
-      ) : null}
     </form>
   );
 
@@ -996,8 +927,8 @@ export default function ClerkOnboardingPage() {
           {isInviteFlow ? (
             <div className="kitchen-alert info">
               {inviteDetails?.householdName
-                ? `Esta alta esta vinculada al hogar ${inviteDetails.householdName}.`
-                : "Esta alta esta vinculada a una invitacion de hogar."}
+                ? `Esta alta está vinculada al hogar ${inviteDetails.householdName}.`
+                : "Esta alta está vinculada a una invitación de hogar."}
             </div>
           ) : null}
 
@@ -1015,7 +946,7 @@ export default function ClerkOnboardingPage() {
             <button type="button" className="kitchen-login-link" onClick={() => navigate(signInRoute)}>
               Ya tengo cuenta
             </button>
-            <button type="button" className="kitchen-login-link" onClick={() => navigate("/login")}>
+            <button type="button" className="kitchen-login-link" onClick={() => navigate(legacySignupPath)}>
               Usar acceso legacy
             </button>
           </div>

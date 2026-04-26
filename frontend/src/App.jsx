@@ -80,6 +80,9 @@ function BootstrapRedirect() {
 }
 
 function AppRoutes() {
+  const defaultLoginElement = clerkPublishableKey ? <ClerkAuthPage mode="sign-in" /> : <LoginPage />;
+  const defaultSignupElement = clerkPublishableKey ? <ClerkOnboardingPage /> : <SignupPage />;
+
   return (
     <ActiveWeekProvider>
       <DevEnvironmentBanner />
@@ -87,7 +90,8 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={defaultLoginElement} />
+        <Route path="/signup" element={defaultSignupElement} />
         {clerkPublishableKey ? <Route path="/auth/clerk" element={<ClerkAuthPage mode="choice" />} /> : null}
         {clerkPublishableKey ? <Route path="/auth/clerk/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} /> : null}
         {clerkPublishableKey ? <Route path="/auth/clerk/sign-up/*" element={<ClerkOnboardingPage />} /> : null}
@@ -95,6 +99,8 @@ function AppRoutes() {
         {clerkPublishableKey ? <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} /> : null}
         {clerkPublishableKey ? <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} /> : null}
         {isClerkDevAuthRouteEnabled ? <Route path="/dev/clerk-auth" element={<ClerkDevAuthPage />} /> : null}
+        <Route path="/legacy-login" element={<LoginPage />} />
+        <Route path="/legacy-signup" element={<SignupPage />} />
         <Route path="/kitchen/login" element={<LoginPage />} />
         <Route path="/register" element={<SignupPage />} />
         <Route path="/kitchen/register" element={<SignupPage />} />

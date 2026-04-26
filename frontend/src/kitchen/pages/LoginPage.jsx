@@ -6,8 +6,6 @@ import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 import Card from "../components/ui/Card";
 import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
 
-const showClerkAuthLink = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
-
 export default function LoginPage() {
   const { login, user, onboardingRequired, refreshUser, clerkLoaded, clerkSignedIn } = useAuth();
   const navigate = useNavigate();
@@ -60,7 +58,7 @@ export default function LoginPage() {
       await login(form.email, form.password);
       navigate(resolvePostAuthRedirect(searchParams), { replace: true });
     } catch (err) {
-      setError(err.message || "No se pudo iniciar sesion.");
+      setError("No se pudo iniciar sesion. Revisa tus datos.");
     } finally {
       setLoading(false);
     }
@@ -85,17 +83,8 @@ export default function LoginPage() {
               <img className="kitchen-login-icon" src={lunchfyIcon} alt="" />
             </div>
           </div>
-          <h2 className="kitchen-login-title">Bienvenido de nuevo</h2>
-          <p className="kitchen-login-subtitle">Hay planes deliciosos esperandote.</p>
-          {showClerkAuthLink ? (
-            <div className="kitchen-alert info">
-              Tambien puedes continuar con el nuevo acceso seguro.{" "}
-              <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk/sign-in")}>
-                Usar Clerk
-              </button>
-              .
-            </div>
-          ) : null}
+          <h2 className="kitchen-login-title">Acceso legacy</h2>
+          <p className="kitchen-login-subtitle">Usa tu acceso anterior si todavia lo necesitas.</p>
           {profileDeleted ? <div className="kitchen-alert success">Perfil eliminado correctamente. Puedes iniciar sesion o registrarte de nuevo.</div> : null}
           {profileDeletedWarning ? <div className="kitchen-alert error">{profileDeletedWarning}</div> : null}
           <form onSubmit={onSubmit} className="kitchen-login-form">
@@ -150,47 +139,22 @@ export default function LoginPage() {
                 >
                   Olvidaste tu contrasena?
                 </button>
-                {showClerkAuthLink ? (
-                  <button
-                    type="button"
-                    className="kitchen-login-link"
-                    onClick={() => navigate("/auth/clerk/reset-password")}
-                  >
-                    Recuperar acceso con Clerk
-                  </button>
-                ) : null}
               </div>
             </div>
             {error ? <div className="kitchen-login-error">{error}</div> : null}
             <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={loading}>
-              {loading ? "Entrando..." : "Iniciar sesion ->"}
+              {loading ? "Entrando..." : "Iniciar sesion"}
             </button>
-            <div className="kitchen-login-divider">O CONTINUAR CON</div>
-            <div className="kitchen-login-socials">
-              <button type="button" className="kitchen-login-social-button">
-                <span className="kitchen-login-social-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-social-svg kitchen-login-social-svg-google">
-                    <path fill="#EA4335" d="M12.24 10.28v3.92h5.52c-.24 1.26-.96 2.33-2.04 3.04l3.3 2.56c1.92-1.77 3.03-4.37 3.03-7.44 0-.71-.06-1.4-.18-2.08h-9.63z" />
-                    <path fill="#34A853" d="M12 22c2.76 0 5.08-.91 6.78-2.46l-3.3-2.56c-.92.62-2.1.99-3.48.99-2.68 0-4.94-1.81-5.75-4.24H2.84v2.66A10 10 0 0 0 12 22z" />
-                    <path fill="#4A90E2" d="M6.25 13.73a5.96 5.96 0 0 1 0-3.8V7.27H2.84a10 10 0 0 0 0 9.12l3.41-2.66z" />
-                    <path fill="#FBBC05" d="M12 5.98c1.5 0 2.85.51 3.91 1.52l2.93-2.93C17.08 2.93 14.76 2 12 2a10 10 0 0 0-9.16 5.27l3.41 2.66c.8-2.43 3.07-4.24 5.75-4.24z" />
-                  </svg>
-                </span>
-                Google
-              </button>
-              <button type="button" className="kitchen-login-social-button">
-                <span className="kitchen-login-social-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" role="presentation" className="kitchen-login-social-svg kitchen-login-social-svg-apple">
-                    <path fill="currentColor" d="M16.74 12.48c.03 3.26 2.86 4.35 2.89 4.36-.02.08-.45 1.56-1.47 3.08-.89 1.32-1.81 2.64-3.27 2.67-1.44.03-1.9-.86-3.54-.86-1.65 0-2.16.83-3.51.89-1.41.05-2.49-1.41-3.39-2.73-1.84-2.67-3.25-7.56-1.36-10.86.94-1.64 2.62-2.68 4.43-2.7 1.38-.03 2.68.93 3.52.93.84 0 2.42-1.15 4.08-.98.69.03 2.63.28 3.88 2.1-.1.06-2.31 1.35-2.26 4.1ZM14.67 4.91c.75-.91 1.25-2.16 1.11-3.41-1.08.04-2.38.72-3.16 1.63-.69.8-1.3 2.09-1.13 3.31 1.21.09 2.43-.62 3.18-1.53Z" />
-                  </svg>
-                </span>
-                Apple
-              </button>
-            </div>
           </form>
           <p className="kitchen-login-footer">
-            No tienes cuenta?{" "}
-            <button type="button" className="kitchen-login-link" onClick={() => navigate(next ? `/register?next=${encodeURIComponent(next)}` : "/register")}>
+            Prefieres el acceso principal?{" "}
+            <button type="button" className="kitchen-login-link" onClick={() => navigate(next ? `/login?next=${encodeURIComponent(next)}` : "/login")}>
+              Usar Clerk
+            </button>
+          </p>
+          <p className="kitchen-login-footer">
+            No tienes cuenta legacy?{" "}
+            <button type="button" className="kitchen-login-link" onClick={() => navigate(next ? `/legacy-signup?next=${encodeURIComponent(next)}` : "/legacy-signup")}>
               Registrate
             </button>
           </p>

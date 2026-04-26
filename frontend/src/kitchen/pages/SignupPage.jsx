@@ -5,8 +5,6 @@ import { apiRequest } from "../api.js";
 import { resolvePostAuthRedirect } from "../authRedirect.js";
 import { useAuth } from "../auth";
 
-const showClerkAuthLink = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
-
 export default function SignupPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -33,7 +31,7 @@ export default function SignupPage() {
 
   const resolveCode = async () => {
     if (normalizedCode.length !== 6) {
-      setError("Introduce un código numérico de 6 dígitos.");
+      setError("Introduce un codigo numerico de 6 digitos.");
       return;
     }
     setError("");
@@ -43,7 +41,7 @@ export default function SignupPage() {
       setResolvedHousehold(data?.household?.name || "");
     } catch (err) {
       setResolvedHousehold("");
-      setError(err.message || "El código no es válido.");
+      setError(err.message || "El codigo no es valido.");
     } finally {
       setResolvingCode(false);
     }
@@ -73,8 +71,8 @@ export default function SignupPage() {
 
       establishSession(data.token, data.user);
       navigate(resolvePostAuthRedirect(searchParams), { replace: true });
-    } catch (err) {
-      setError(err.message || "No se pudo completar el registro.");
+    } catch {
+      setError("No se pudo completar el registro. Intentalo de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -84,48 +82,42 @@ export default function SignupPage() {
     <div className="kitchen-app">
       <div className="kitchen-container kitchen-login-wrap">
         <Card className="kitchen-login-card">
-          <h2 className="kitchen-login-title">Crear cuenta</h2>
-          {showClerkAuthLink ? (
-            <div className="kitchen-alert info">
-              Tambien puedes crear la cuenta con el nuevo acceso seguro.{" "}
-              <button type="button" className="kitchen-login-link" onClick={() => navigate("/auth/clerk/sign-up")}>
-                Usar Clerk
-              </button>
-              .
-            </div>
-          ) : null}
+          <h2 className="kitchen-login-title">Registro legacy</h2>
+          <p className="kitchen-login-subtitle">Usa este formulario solo si necesitas el acceso anterior.</p>
+
           <div className="kitchen-actions" style={{ marginBottom: 12 }}>
             <button type="button" className={`kitchen-button ${mode === "create" ? "" : "secondary"}`} onClick={() => setMode("create")}>Nuevo hogar</button>
-            <button type="button" className={`kitchen-button ${mode === "join" ? "" : "secondary"}`} onClick={() => setMode("join")}>Unirme con código</button>
+            <button type="button" className={`kitchen-button ${mode === "join" ? "" : "secondary"}`} onClick={() => setMode("join")}>Unirme con codigo</button>
           </div>
+
           <form className="kitchen-login-form" onSubmit={onSubmit}>
             <label className="kitchen-ui-input-group" htmlFor="signup-name">
               <span className="kitchen-login-label">NOMBRE</span>
-              <input id="signup-name" className="kitchen-ui-input" value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} required />
+              <input id="signup-name" className="kitchen-ui-input" value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} required />
             </label>
             <label className="kitchen-ui-input-group" htmlFor="signup-email">
               <span className="kitchen-login-label">EMAIL</span>
-              <input id="signup-email" className="kitchen-ui-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              <input id="signup-email" className="kitchen-ui-input" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
             </label>
             <label className="kitchen-ui-input-group" htmlFor="signup-password">
-              <span className="kitchen-login-label">CONTRASEÑA</span>
-              <input id="signup-password" className="kitchen-ui-input" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
+              <span className="kitchen-login-label">CONTRASENA</span>
+              <input id="signup-password" className="kitchen-ui-input" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required minLength={8} />
             </label>
 
             {mode === "create" ? (
               <label className="kitchen-ui-input-group" htmlFor="signup-household">
                 <span className="kitchen-login-label">NOMBRE DEL HOGAR (OPCIONAL)</span>
-                <input id="signup-household" className="kitchen-ui-input" value={form.householdName} onChange={(e) => setForm({ ...form, householdName: e.target.value })} placeholder="Mi hogar" />
+                <input id="signup-household" className="kitchen-ui-input" value={form.householdName} onChange={(event) => setForm({ ...form, householdName: event.target.value })} placeholder="Mi hogar" />
               </label>
             ) : (
               <>
                 <label className="kitchen-ui-input-group" htmlFor="signup-code">
-                  <span className="kitchen-login-label">CÓDIGO DE 6 DÍGITOS</span>
-                  <input id="signup-code" className="kitchen-ui-input" inputMode="numeric" value={normalizedCode} onChange={(e) => setForm({ ...form, inviteCode: e.target.value })} required maxLength={6} />
+                  <span className="kitchen-login-label">CODIGO DE 6 DIGITOS</span>
+                  <input id="signup-code" className="kitchen-ui-input" inputMode="numeric" value={normalizedCode} onChange={(event) => setForm({ ...form, inviteCode: event.target.value })} required maxLength={6} />
                 </label>
                 <div className="kitchen-actions">
                   <button type="button" className="kitchen-button secondary" onClick={resolveCode} disabled={resolvingCode || normalizedCode.length !== 6}>
-                    {resolvingCode ? "Validando..." : "Validar código"}
+                    {resolvingCode ? "Validando..." : "Validar codigo"}
                   </button>
                   {resolvedHousehold ? <span className="kitchen-muted">Hogar: <strong>{resolvedHousehold}</strong></span> : null}
                 </div>
@@ -145,8 +137,9 @@ export default function SignupPage() {
                   <span className="kitchen-toggle-track" />
                 </label>
               </div>
-              <p className="kitchen-muted">Si está activado, aparecerás automáticamente como comensal cuando se planifiquen comidas.</p>
+              <p className="kitchen-muted">Apareceras automaticamente como comensal cuando se planifiquen comidas.</p>
             </label>
+
             <label className="kitchen-field kitchen-toggle-field">
               <div className="kitchen-toggle-row">
                 <span className="kitchen-label">Puede cocinar</span>
@@ -160,12 +153,12 @@ export default function SignupPage() {
                   <span className="kitchen-toggle-track" />
                 </label>
               </div>
-              <p className="kitchen-muted">Si está activado, podrás ser asignado automáticamente para cocinar cuando se utilice la asignación aleatoria.</p>
+              <p className="kitchen-muted">Podras entrar en las asignaciones de cocina.</p>
             </label>
 
             <label className="kitchen-field kitchen-toggle-field">
               <div className="kitchen-toggle-row">
-                <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
+                <span className="kitchen-label">Incluirme tambien en cenas</span>
                 <label className="kitchen-toggle">
                   <input
                     type="checkbox"
@@ -176,8 +169,9 @@ export default function SignupPage() {
                   <span className="kitchen-toggle-track" />
                 </label>
               </div>
-              <p className="kitchen-muted">Si esta activado, apareceras automaticamente como comensal cuando se planifiquen cenas.</p>
+              <p className="kitchen-muted">Apareceras automaticamente como comensal cuando se planifiquen cenas.</p>
             </label>
+
             <label className="kitchen-field kitchen-toggle-field">
               <div className="kitchen-toggle-row">
                 <span className="kitchen-label">Puede cocinar cenas</span>
@@ -191,13 +185,27 @@ export default function SignupPage() {
                   <span className="kitchen-toggle-track" />
                 </label>
               </div>
-              <p className="kitchen-muted">Si esta activado, podras ser asignado automaticamente para cocinar en cenas.</p>
+              <p className="kitchen-muted">Tambien podras ser asignado para cocinar en cenas.</p>
             </label>
+
             {error ? <div className="kitchen-alert error">{error}</div> : null}
+
             <button type="submit" className="kitchen-ui-button kitchen-login-submit" disabled={loading}>
               {loading ? "Registrando..." : "Registrarme"}
             </button>
-            <p className="kitchen-login-footer">¿Ya tienes cuenta? <button type="button" className="kitchen-login-link" onClick={() => navigate(next ? `/login?next=${encodeURIComponent(next)}` : "/login")}>Inicia sesión</button></p>
+
+            <p className="kitchen-login-footer">
+              Prefieres el acceso principal?{" "}
+              <button type="button" className="kitchen-login-link" onClick={() => navigate(next ? `/signup?next=${encodeURIComponent(next)}` : "/signup")}>
+                Usar Clerk
+              </button>
+            </p>
+            <p className="kitchen-login-footer">
+              Ya tienes cuenta legacy?{" "}
+              <button type="button" className="kitchen-login-link" onClick={() => navigate(next ? `/legacy-login?next=${encodeURIComponent(next)}` : "/legacy-login")}>
+                Inicia sesion
+              </button>
+            </p>
           </form>
         </Card>
       </div>
