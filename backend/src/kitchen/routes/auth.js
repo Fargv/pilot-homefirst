@@ -11,7 +11,7 @@ import { getWeekStart } from "../utils/dates.js";
 import { ensureWeekPlan } from "../weekPlanService.js";
 import { sendEmail } from "../../services/emailService.js";
 import { config } from "../../config.js";
-import { findActiveInvitationByToken } from "../invitationService.js";
+import { findActiveInvitationByToken, atomicClaimInvitation } from "../invitationService.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
 import { isEmailRegisteredInClerk, resolveClerkIdentityFromToken } from "../clerkAuth.js";
 import { normalizeSubscriptionPlan } from "../subscriptionService.js";
@@ -19,6 +19,22 @@ import { normalizeSubscriptionPlan } from "../subscriptionService.js";
 const DIOD_EMAIL = "admin@admin.com";
 
 const router = express.Router();
+
+const _rateLimitStore = new Map();
+function _checkRateLimit(key, maxRequests, windowMs) {
+  const now = Date.now();
+  const entry = _rateLimitStore.get(key);
+  if (!entry || now > entry.resetAt) {
+    _rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (entry.count >= maxRequests) return false;
+  entry.count++;
+  return true;
+}
+function getClientIp(req) {
+  return String(req.ip || req.socket?.remoteAddress || "unknown");
+}
 
 function parseBooleanWithDefault(value, fallback) {
   if (typeof value === "boolean") return value;
@@ -324,6 +340,9 @@ router.post("/login", async (req, res) => {
 
 
 router.get("/resolve-household/:inviteCode", async (req, res) => {
+  if (!_checkRateLimit(`resolve-household:${getClientIp(req)}`, 10, 60_000)) {
+    return res.status(429).json({ ok: false, error: "Demasiadas peticiones. Inténtalo más tarde." });
+  }
   try {
     const inviteCode = String(req.params.inviteCode || "").trim();
     if (!isValidInviteCodeFormat(inviteCode)) {
@@ -349,6 +368,9 @@ router.get("/resolve-household/:inviteCode", async (req, res) => {
 });
 
 router.get("/check-email", async (req, res) => {
+  if (!_checkRateLimit(`check-email:${getClientIp(req)}`, 20, 60_000)) {
+    return res.status(429).json({ ok: false, error: "Demasiadas peticiones. Inténtalo más tarde." });
+  }
   try {
     const normalizedEmail = normalizeEmail(req.query?.email);
     if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
@@ -662,6 +684,7 @@ router.post("/clerk/onboarding", async (req, res) => {
     });
 
     let user = identity.kitchenUser;
+    let userCreatedNow = false;
     if (user?.clerkId && user.clerkId !== identity.clerkUser.id) {
       logClerkOnboardingDev("Onboarding rejected: Clerk ID mismatch", {
         userId: user._id?.toString?.() || null,
@@ -676,10 +699,13 @@ router.post("/clerk/onboarding", async (req, res) => {
       && onboardingTarget.household
       && String(user.householdId) !== String(onboardingTarget.household._id)
     ) {
+      const isPlaceholder = user.isPlaceholder || user.type === "placeholder" || user.hasLogin === false;
       return res.status(409).json({
         ok: false,
-        code: "USER_ALREADY_IN_OTHER_HOUSEHOLD",
-        error: "Tu cuenta ya pertenece a otro hogar. No puedes unirte con esta invitacion."
+        code: isPlaceholder ? "PLACEHOLDER_HOUSEHOLD_MISMATCH" : "USER_ALREADY_IN_OTHER_HOUSEHOLD",
+        error: isPlaceholder
+          ? "Este usuario ya existe en otro hogar y no puede ser reclamado con esta invitación."
+          : "Tu cuenta ya pertenece a otro hogar. No puedes unirte con esta invitacion."
       });
     }
 
@@ -715,6 +741,7 @@ router.post("/clerk/onboarding", async (req, res) => {
         isPlaceholder: false,
         globalRole: null
       });
+      userCreatedNow = true;
     } else {
       logClerkOnboardingDev("Completing existing Mongo user from Clerk onboarding", {
         userId: user._id?.toString?.() || null,
@@ -750,29 +777,43 @@ router.post("/clerk/onboarding", async (req, res) => {
         userId: user._id?.toString?.() || null,
         householdName: finalHouseholdName
       });
-      household = await Household.create({
-        name: finalHouseholdName,
-        ownerUserId: user._id,
-        inviteCode: await generateUniqueHouseholdInviteCode(),
-        subscriptionPlan: requestedPlan || "basic",
-        dinnersEnabled: parseBooleanWithDefault(dinnersEnabled, false),
-        avoidRepeatsEnabled: parseBooleanWithDefault(avoidRepeatsEnabled, false),
-        avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(avoidRepeatsWeeks)
-      });
-      user.householdId = household._id;
-
       try {
-        await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
-      } catch (error) {
-        console.error("[clerk/onboarding] No se pudo crear el plan semanal:", error?.message || error);
+        household = await Household.create({
+          name: finalHouseholdName,
+          ownerUserId: user._id,
+          inviteCode: await generateUniqueHouseholdInviteCode(),
+          subscriptionPlan: requestedPlan || "basic",
+          dinnersEnabled: parseBooleanWithDefault(dinnersEnabled, false),
+          avoidRepeatsEnabled: parseBooleanWithDefault(avoidRepeatsEnabled, false),
+          avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(avoidRepeatsWeeks)
+        });
+        user.householdId = household._id;
+
+        try {
+          await ensureWeekPlan(getWeekStart(new Date()), household._id.toString());
+        } catch (error) {
+          console.error("[clerk/onboarding] No se pudo crear el plan semanal:", error?.message || error);
+        }
+      } catch (householdError) {
+        if (userCreatedNow) {
+          await KitchenUser.findByIdAndDelete(user._id).catch(() => {});
+        }
+        throw householdError;
       }
     }
 
     if (onboardingTarget.invitation) {
-      onboardingTarget.invitation.status = "used";
-      onboardingTarget.invitation.usedAt = new Date();
-      onboardingTarget.invitation.usedByUserId = user._id;
-      await onboardingTarget.invitation.save();
+      const claimed = await atomicClaimInvitation(onboardingTarget.invitation._id, user._id);
+      if (!claimed) {
+        if (userCreatedNow) {
+          await KitchenUser.findByIdAndDelete(user._id).catch(() => {});
+        }
+        return res.status(409).json({
+          ok: false,
+          code: "INVITATION_ALREADY_USED",
+          error: "Esta invitación ya fue utilizada por otra cuenta."
+        });
+      }
     }
 
     await user.save();

@@ -74,3 +74,21 @@ export async function findInvitationByToken(token) {
     tokenHash: hashInvitationToken(token)
   });
 }
+
+export async function atomicClaimInvitation(invitationId, userId) {
+  const now = new Date();
+  return Invitation.findOneAndUpdate(
+    {
+      _id: invitationId,
+      $or: [
+        { status: "active" },
+        { status: { $exists: false } },
+        { status: null }
+      ],
+      usedAt: null,
+      expiresAt: { $gt: now }
+    },
+    { $set: { status: "used", usedAt: now, usedByUserId: userId } },
+    { new: true }
+  );
+}
