@@ -120,7 +120,6 @@ export default function ClerkOnboardingPage() {
   const createSubmitLockRef = useRef(false);
   const verifySubmitLockRef = useRef(false);
   const finalSubmitStartedRef = useRef(false);
-  const clerkRef = useRef({ isLoaded, signUp });
 
   const normalizedEmail = String(form.email || "").trim().toLowerCase();
   const normalizedInviteCode = useMemo(() => normalizeInviteCode(form.inviteCode), [form.inviteCode]);
@@ -167,10 +166,6 @@ export default function ClerkOnboardingPage() {
     }
     return nextErrors;
   }, [emailCheck.email, emailCheck.state, emailIsValid, form.confirmPassword, form.password, inviteHasLockedEmail, normalizedEmail, passwordHasMinimumLength]);
-
-  useEffect(() => {
-    clerkRef.current = { isLoaded, signUp };
-  }, [isLoaded, signUp]);
 
   useEffect(() => {
     if (user?.id && !user?.onboardingRequired) {
@@ -400,39 +395,21 @@ export default function ClerkOnboardingPage() {
           : "Este email ya esta registrado. Inicia sesion o usa otro email.");
         return;
       }
-      const readySignUp = await new Promise((resolve) => {
-        if (clerkRef.current.isLoaded && clerkRef.current.signUp) {
-          resolve(clerkRef.current.signUp);
-          return;
-        }
-        let attempts = 0;
-        const timer = setInterval(() => {
-          attempts++;
-          if (clerkRef.current.isLoaded && clerkRef.current.signUp) {
-            clearInterval(timer);
-            resolve(clerkRef.current.signUp);
-          } else if (attempts >= 20) {
-            clearInterval(timer);
-            resolve(null);
-          }
-        }, 150);
-      });
-
-      if (!readySignUp) {
-        setError("Clerk tardó demasiado en cargar. Recarga la página e inténtalo de nuevo.");
+      if (!isLoaded || !signUp) {
+        setError("La aplicación aún está cargando. Espera un momento e inténtalo de nuevo.");
         return;
       }
 
       setAuthLoading(true);
       setError("");
       try {
-        const createdSignUp = await readySignUp.create({
+        const createdSignUp = await signUp.create({
           emailAddress: normalizedEmail,
           password: String(form.password || "")
         });
         const emailAlreadyPrepared = createdSignUp?.verifications?.emailAddress?.status === "unverified";
         if (!emailAlreadyPrepared) {
-          await readySignUp.prepareEmailAddressVerification({ strategy: "email_code" });
+          await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
         }
         setAuthPhase("verify");
       } catch (err) {
