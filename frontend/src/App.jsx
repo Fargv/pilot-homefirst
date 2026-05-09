@@ -24,6 +24,9 @@ import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const secureSignupElement = clerkPublishableKey
+  ? <ClerkOnboardingPage />
+  : <ClerkAuthPage mode="sign-up" />;
 
 function HomeRedirect() {
   const { user, loading, onboardingRequired } = useAuth();
@@ -82,13 +85,13 @@ function AppRoutes() {
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
         <Route path="/login/*" element={<ClerkAuthPage mode="sign-in" />} />
-        <Route path="/signup" element={<ClerkOnboardingPage />} />
+        <Route path="/signup" element={secureSignupElement} />
         <Route path="/auth/clerk" element={<ClerkAuthPage mode="choice" />} />
         <Route path="/auth/clerk/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} />
-        <Route path="/auth/clerk/sign-up/*" element={<ClerkOnboardingPage />} />
+        <Route path="/auth/clerk/sign-up/*" element={secureSignupElement} />
         <Route path="/auth/clerk/reset-password/*" element={<ClerkAuthPage mode="reset-password" />} />
         <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} />
-        <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} />
+        <Route path="/onboarding/clerk" element={secureSignupElement} />
         <Route path="/invite/:token" element={<InviteLandingPage />} />
         <Route
           path="/kitchen/semana"
@@ -189,6 +192,9 @@ function AuthBoundary() {
 export default function App() {
   useEffect(() => {
     document.title = isDevelopmentEnvironment ? "Lunchfy DEV" : "Lunchfy";
+    if (import.meta.env.DEV && !clerkPublishableKey) {
+      console.error("[clerk][dev] VITE_CLERK_PUBLISHABLE_KEY is missing. Secure signup and login screens will stay in fallback mode.");
+    }
   }, []);
 
   return (

@@ -12,8 +12,6 @@ const STORAGE_INVITE_TOKEN_KEY = "clerk_onboarding_invite_token";
 const STORAGE_INVITE_CODE_KEY = "clerk_onboarding_invite_code";
 const BASIC_PLAN = "basic";
 const LOGIN_PATH = "/login";
-const SIGNUP_INIT_TIMEOUT_MS = 10000;
-
 const STEP_LABELS = [
   { step: 1, label: "Cuenta", short: "Cuenta" },
   { step: 2, label: "Hogar", short: "Hogar" },
@@ -69,19 +67,51 @@ function buildDefaultHouseholdName(name) {
   return safe ? `${safe} - Hogar` : "Mi hogar";
 }
 
-function getSignUpUnavailableMessage(timedOut = false) {
-  return timedOut
-    ? "No pudimos iniciar el registro seguro. Recarga la pagina y revisa la configuracion de acceso si el problema continua."
-    : "Preparando la verificacion del email...";
+function getClerkLoadingMessage() {
+  return "El acceso seguro todavia se esta preparando. Espera un momento y vuelve a intentarlo.";
 }
 
-function logVerificationRequestFailure(stage, err) {
+function getClerkErrorCode(err) {
+  return err?.errors?.[0]?.code || err?.code || null;
+}
+
+function logClerkOperationFailure(operation, err) {
   if (!import.meta.env.DEV) return;
-  console.warn("[clerk][dev] Signup verification request failed", {
-    stage,
-    message: err?.message || String(err),
-    code: err?.errors?.[0]?.code || err?.code || null
+  const primaryMessage = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message || String(err);
+  console.warn("[clerk][dev] Clerk signup operation failed", {
+    operation,
+    code: getClerkErrorCode(err),
+    message: primaryMessage,
+    error: err
   });
+}
+
+function getSignUpOperationMessage(operation, err) {
+  const code = String(getClerkErrorCode(err) || "").toLowerCase();
+  const clerkMessage = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message || "";
+  const normalizedMessage = String(clerkMessage || "").toLowerCase();
+
+  if (
+    code.includes("identifier") && code.includes("exists")
+    || code.includes("form_identifier_exists")
+    || normalizedMessage.includes("already exists")
+    || normalizedMessage.includes("already been taken")
+  ) {
+    return "Ya existe una cuenta con este email. Inicia sesión o usa otro correo.";
+  }
+
+  if (
+    code.includes("password")
+    || normalizedMessage.includes("password")
+  ) {
+    return clerkMessage || "La contraseña no cumple los requisitos de seguridad.";
+  }
+
+  if (operation === "prepareEmailAddressVerification") {
+    return "No se pudo enviar el código de verificación. Inténtalo de nuevo.";
+  }
+
+  return clerkMessage || "No pudimos iniciar el registro. Revisa los datos e inténtalo de nuevo.";
 }
 
 // ─── Stable sub-components ───────────────────────────────────────────────────
@@ -176,7 +206,6 @@ export default function ClerkOnboardingPage() {
   // ── Status ───────────────────────────────────────────────────────────
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [signUpInitTimedOut, setSignUpInitTimedOut] = useState(false);
 
   // ── Email availability ────────────────────────────────────────────────
   const [emailCheck, setEmailCheck] = useState({ state: "idle", email: "" });
@@ -198,6 +227,7 @@ export default function ClerkOnboardingPage() {
   // ── Submit locks (prevent double-submit) ──────────────────────────────
   const submitLockRef = useRef(false);
   const finalStartedRef = useRef(false);
+  const credentialsCreatedRef = useRef(false);
 
   // ─── Derived values ───────────────────────────────────────────────────────
 
@@ -213,7 +243,8 @@ export default function ClerkOnboardingPage() {
   const isJoinMode = form.householdMode === "join";
   const currentStep = PHASE_STEP[phase] ?? 1;
   const verificationCode = codeDigits.join("");
-  const isSignUpReady = Boolean(isLoaded && signUp);
+  const clerkSignUpReady = Boolean(isLoaded && signUp);
+  const isSignUpReady = phase === "credentials" ? true : clerkSignUpReady;
 
   // ─── Effects ──────────────────────────────────────────────────────────────
 
@@ -331,30 +362,17 @@ export default function ClerkOnboardingPage() {
     window.clearTimeout(resendTimerRef.current);
   }, []);
 
-  useEffect(() => {
-    if (isSignUpReady) {
-      setSignUpInitTimedOut(false);
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => {
-      setSignUpInitTimedOut(true);
-    }, SIGNUP_INIT_TIMEOUT_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [isSignUpReady]);
 
   // ─── Disabled reason (credentials phase only) ─────────────────────────────
 
   const disabledReason = useMemo(() => {
     if (phase !== "credentials") return null;
-    if (!isSignUpReady) return getSignUpUnavailableMessage(signUpInitTimedOut);
     if (!emailIsValid) return "Introduce un email válido";
     if (!passwordLongEnough) return "La contraseña debe tener al menos 8 caracteres";
     if (!passwordsMatch) return "Las contraseñas no coinciden";
     if (loading) return "Enviando...";
     return null;
-  }, [phase, isSignUpReady, signUpInitTimedOut, emailIsValid, passwordLongEnough, passwordsMatch, loading]);
+  }, [phase, emailIsValid, passwordLongEnough, passwordsMatch, loading]);
 
   // ─── Inline field validation feedback ────────────────────────────────────
 
@@ -378,6 +396,9 @@ export default function ClerkOnboardingPage() {
 
   const updateField = (field, value) => {
     setError("");
+    if (field === "email" || field === "password" || field === "confirmPassword") {
+      credentialsCreatedRef.current = false;
+    }
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -398,8 +419,20 @@ export default function ClerkOnboardingPage() {
   const submitCredentials = async (event) => {
     event.preventDefault();
     if (disabledReason || submitLockRef.current) return;
-    if (!isSignUpReady) {
-      setError(getSignUpUnavailableMessage(signUpInitTimedOut));
+    if (!clerkSignUpReady) {
+      if (import.meta.env.DEV) {
+        console.error("[clerk][dev] useSignUp is not ready when Continue was clicked", {
+          isLoaded,
+          hasSignUp: Boolean(signUp),
+          hasPublishableKey: Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY)
+        });
+      }
+      setError(getClerkLoadingMessage());
+      return;
+    }
+
+    if (emailCheck.state === "exists" && emailCheck.email === normalizedEmail) {
+      setError("Ya existe una cuenta con este email. Inicia sesión o usa otro correo.");
       return;
     }
 
@@ -408,23 +441,34 @@ export default function ClerkOnboardingPage() {
     setError("");
 
     try {
-      const created = await signUp.create({
-        emailAddress: normalizedEmail,
-        password: String(form.password),
-      });
-      const alreadyPrepared = created?.verifications?.emailAddress?.status === "unverified";
-      if (!alreadyPrepared) {
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      if (!credentialsCreatedRef.current) {
+        try {
+          await signUp.create({
+            emailAddress: normalizedEmail,
+            password: String(form.password),
+          });
+          credentialsCreatedRef.current = true;
+        } catch (err) {
+          logClerkOperationFailure("signup.create", err);
+          if (isCaptchaError(err)) {
+            setError("No se pudo cargar la verificación de seguridad. Recarga la página e inténtalo de nuevo.");
+          } else {
+            setError(getSignUpOperationMessage("signup.create", err));
+          }
+          return;
+        }
       }
+
+      try {
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      } catch (err) {
+        logClerkOperationFailure("prepareEmailAddressVerification", err);
+        setError(getSignUpOperationMessage("prepareEmailAddressVerification", err));
+        return;
+      }
+
       setPhase("verify");
       startResendCooldown();
-    } catch (err) {
-      logVerificationRequestFailure("initial_send", err);
-      if (isCaptchaError(err)) {
-        setError("No se pudo cargar la verificación de seguridad. Recarga la página e inténtalo de nuevo.");
-      } else {
-        setError(normalizeClerkError(err, "No se pudo crear la cuenta. Inténtalo de nuevo."));
-      }
     } finally {
       setLoading(false);
       submitLockRef.current = false;
@@ -435,8 +479,8 @@ export default function ClerkOnboardingPage() {
 
   const doVerification = async (code) => {
     if (code.length !== 6 || loading) return;
-    if (!isSignUpReady) {
-      setError(getSignUpUnavailableMessage(signUpInitTimedOut));
+    if (!clerkSignUpReady) {
+      setError(getClerkLoadingMessage());
       return;
     }
     setLoading(true);
@@ -448,9 +492,11 @@ export default function ClerkOnboardingPage() {
         setError("No pudimos verificar el código. Revisa el email e inténtalo de nuevo.");
         return;
       }
+      credentialsCreatedRef.current = false;
       await setActive({ session: result.createdSessionId });
       setPhase(isInviteFlow ? "profile" : "household");
     } catch (err) {
+      logClerkOperationFailure("attemptEmailAddressVerification", err);
       setError(normalizeClerkError(err, "El código no es válido o ha caducado."));
       // Clear digits so user can re-enter
       setCodeDigits(["", "", "", "", "", ""]);
@@ -467,8 +513,8 @@ export default function ClerkOnboardingPage() {
 
   const resendCode = async () => {
     if (resendCooldown > 0 || loading) return;
-    if (!isSignUpReady) {
-      setError(getSignUpUnavailableMessage(signUpInitTimedOut));
+    if (!clerkSignUpReady) {
+      setError(getClerkLoadingMessage());
       return;
     }
     setError("");
@@ -479,8 +525,8 @@ export default function ClerkOnboardingPage() {
       startResendCooldown();
       setTimeout(() => digitRefs.current[0]?.focus(), 50);
     } catch (err) {
-      logVerificationRequestFailure("resend", err);
-      setError(normalizeClerkError(err, "No pudimos reenviar el código. Inténtalo de nuevo."));
+      logClerkOperationFailure("prepareEmailAddressVerification", err);
+      setError("No se pudo enviar el código de verificación. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -663,12 +709,6 @@ export default function ClerkOnboardingPage() {
           {isInviteFlow && inviteDetails?.householdName ? (
             <div className="kitchen-alert info">
               Te estás uniendo a <strong>{inviteDetails.householdName}</strong>.
-            </div>
-          ) : null}
-
-          {phase === "credentials" && !isSignUpReady ? (
-            <div className={`kitchen-alert ${signUpInitTimedOut ? "error" : "info"}`}>
-              {getSignUpUnavailableMessage(signUpInitTimedOut)}
             </div>
           ) : null}
 
