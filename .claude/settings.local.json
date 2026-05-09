@@ -17,7 +17,8 @@
       "PowerShell(git push origin dev)",
       "PowerShell(gh pr list --head dev --repo Fargv/pilot-homefirst)",
       "PowerShell($env:GITHUB_TOKEN; git config --get credential.helper; Get-ChildItem \"$env:APPDATA\\\\GitHub CLI\" -ErrorAction SilentlyContinue)",
-      "Bash(git credential *)"
+      "Bash(git credential *)",
+      "Bash(git push *)"
     ]
   }
 }

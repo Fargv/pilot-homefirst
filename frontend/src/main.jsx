@@ -13,8 +13,8 @@ const app = (
       signUpUrl="/auth/clerk/sign-up"
       signInForceRedirectUrl="/auth/clerk/complete"
       signInFallbackRedirectUrl="/auth/clerk/complete"
-      signUpForceRedirectUrl="/auth/clerk/complete"
-      signUpFallbackRedirectUrl="/auth/clerk/complete"
+      signUpForceRedirectUrl="/onboarding/clerk"
+      signUpFallbackRedirectUrl="/onboarding/clerk"
     >
       {/*
         TODO: Configure Clerk application URLs and allowed redirect origins in the

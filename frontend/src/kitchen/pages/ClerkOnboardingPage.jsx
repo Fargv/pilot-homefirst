@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useSignUp, useUser } from "@clerk/react";
+import { useClerk, useUser } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Card from "../components/ui/Card";
 import { apiRequest, buildApiUrl } from "../api.js";
 import { useAuth } from "../auth";
 import { isUserLimitReachedError } from "../subscription.js";
+import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -12,32 +13,28 @@ const STORAGE_INVITE_TOKEN_KEY = "clerk_onboarding_invite_token";
 const STORAGE_INVITE_CODE_KEY = "clerk_onboarding_invite_code";
 const BASIC_PLAN = "basic";
 const LOGIN_PATH = "/login";
+
+// Steps 1 (Cuenta) and 2 (Verificación) are now handled externally by Clerk.
+// This page starts at step Hogar (household).
 const STEP_LABELS = [
-  { step: 1, label: "Cuenta", short: "Cuenta" },
-  { step: 2, label: "Hogar", short: "Hogar" },
-  { step: 3, label: "Perfil", short: "Perfil" },
-  { step: 4, label: "Preferencias", short: "Prefs." },
+  { step: 1, label: "Hogar", short: "Hogar" },
+  { step: 2, label: "Perfil", short: "Perfil" },
+  { step: 3, label: "Preferencias", short: "Prefs." },
 ];
 
 const PHASE_STEP = {
-  credentials: 1,
-  verify: 1,
-  household: 2,
-  profile: 3,
-  preferences: 4,
+  household: 1,
+  profile: 2,
+  preferences: 3,
 };
 
 const PHASE_TITLE = {
-  credentials: "Crea tu cuenta",
-  verify: "Verifica tu email",
   household: "Tu hogar",
   profile: "Tu perfil",
   preferences: "Tus preferencias",
 };
 
 const PHASE_SUBTITLE = {
-  credentials: "Empieza con tu acceso seguro en Lunchfy.",
-  verify: "Te enviamos un código de 6 dígitos. Introdúcelo para continuar.",
   household: "Elige si creas tu propio hogar o te unes a uno existente.",
   profile: "¿Cómo quieres que te vea tu hogar?",
   preferences: "Ajusta tus preferencias antes de entrar.",
@@ -45,73 +42,13 @@ const PHASE_SUBTITLE = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function isValidEmail(v) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || "").trim());
-}
-
 function normalizeDigitCode(v) {
   return String(v || "").replace(/\D/g, "").slice(0, 6);
-}
-
-function normalizeClerkError(err, fallback = "Ha ocurrido un error. Inténtalo de nuevo.") {
-  return err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message || fallback;
-}
-
-function isCaptchaError(err) {
-  const msg = String(err?.errors?.[0]?.message || err?.message || "").toLowerCase();
-  return msg.includes("captcha");
 }
 
 function buildDefaultHouseholdName(name) {
   const safe = String(name || "").trim();
   return safe ? `${safe} - Hogar` : "Mi hogar";
-}
-
-function getClerkLoadingMessage() {
-  return "El acceso seguro todavia se esta preparando. Espera un momento y vuelve a intentarlo.";
-}
-
-function getClerkErrorCode(err) {
-  return err?.errors?.[0]?.code || err?.code || null;
-}
-
-function logClerkOperationFailure(operation, err) {
-  if (!import.meta.env.DEV) return;
-  const primaryMessage = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message || String(err);
-  console.warn("[clerk][dev] Clerk signup operation failed", {
-    operation,
-    code: getClerkErrorCode(err),
-    message: primaryMessage,
-    error: err
-  });
-}
-
-function getSignUpOperationMessage(operation, err) {
-  const code = String(getClerkErrorCode(err) || "").toLowerCase();
-  const clerkMessage = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message || "";
-  const normalizedMessage = String(clerkMessage || "").toLowerCase();
-
-  if (
-    code.includes("identifier") && code.includes("exists")
-    || code.includes("form_identifier_exists")
-    || normalizedMessage.includes("already exists")
-    || normalizedMessage.includes("already been taken")
-  ) {
-    return "Ya existe una cuenta con este email. Inicia sesión o usa otro correo.";
-  }
-
-  if (
-    code.includes("password")
-    || normalizedMessage.includes("password")
-  ) {
-    return clerkMessage || "La contraseña no cumple los requisitos de seguridad.";
-  }
-
-  if (operation === "prepareEmailAddressVerification") {
-    return "No se pudo enviar el código de verificación. Inténtalo de nuevo.";
-  }
-
-  return clerkMessage || "No pudimos iniciar el registro. Revisa los datos e inténtalo de nuevo.";
 }
 
 // ─── Stable sub-components ───────────────────────────────────────────────────
@@ -129,7 +66,7 @@ function StepIndicator({ currentStep, skipHousehold }) {
               "kitchen-onboarding-step",
               isCurrent ? "is-current" : "",
               isDone ? "is-complete" : "",
-              skipHousehold && step === 2 ? "is-disabled" : "",
+              skipHousehold && step === 1 ? "is-disabled" : "",
             ].filter(Boolean).join(" ")}
             aria-label={label}
           >
@@ -173,18 +110,18 @@ function Toggle({ id, label, description, checked, onChange }) {
 export default function ClerkOnboardingPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isLoaded, signUp, setActive } = useSignUp();
-  const { user: clerkUser } = useUser();
+  const clerk = useClerk();
+  const { user: clerkUser, isLoaded: clerkIsLoaded, isSignedIn } = useUser();
   const { user, setUser, setOnboardingRequired, refreshUser } = useAuth();
 
   // ── Phase ────────────────────────────────────────────────────────────
-  const [phase, setPhase] = useState("credentials");
+  // Credentials and email verification are handled by Clerk externally.
+  // This page always starts at "household" (adjusted to "profile" for invite flow).
+  const [phase, setPhase] = useState("household");
+  const phaseInitializedRef = useRef(false);
 
   // ── Form ─────────────────────────────────────────────────────────────
   const [form, setForm] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
     inviteToken: "",
     inviteCode: "",
     householdMode: "",
@@ -199,17 +136,9 @@ export default function ClerkOnboardingPage() {
     dinnerCanCook: true,
   });
 
-  // ── Verification code (split digits for auto-advance UX) ─────────────
-  const [codeDigits, setCodeDigits] = useState(["", "", "", "", "", ""]);
-  const digitRefs = useRef([]);
-
   // ── Status ───────────────────────────────────────────────────────────
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // ── Email availability ────────────────────────────────────────────────
-  const [emailCheck, setEmailCheck] = useState({ state: "idle", email: "" });
-  const emailCheckTimerRef = useRef(null);
 
   // ── Invite details ────────────────────────────────────────────────────
   const [inviteDetails, setInviteDetails] = useState(null);
@@ -220,40 +149,47 @@ export default function ClerkOnboardingPage() {
   const [validatedCode, setValidatedCode] = useState("");
   const [validatedHousehold, setValidatedHousehold] = useState(null);
 
-  // ── Resend cooldown ───────────────────────────────────────────────────
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const resendTimerRef = useRef(null);
-
-  // ── Submit locks (prevent double-submit) ──────────────────────────────
-  const submitLockRef = useRef(false);
+  // ── Submit lock ───────────────────────────────────────────────────────
   const finalStartedRef = useRef(false);
-  const credentialsCreatedRef = useRef(false);
 
   // ─── Derived values ───────────────────────────────────────────────────────
 
-  const normalizedEmail = String(form.email || "").trim().toLowerCase();
   const normalizedInviteCode = normalizeDigitCode(form.inviteCode);
-  const emailIsValid = isValidEmail(normalizedEmail);
-  const passwordLongEnough = String(form.password).length >= 8;
-  const passwordsMatch = Boolean(form.password) && form.password === form.confirmPassword;
   const isInviteFlow = Boolean(form.inviteToken);
-  const hasLockedEmail = Boolean(inviteDetails?.recipientEmail);
   const inviteInvalid = isInviteFlow && inviteLoaded && !inviteDetails?.householdName;
   const isCreateMode = form.householdMode === "create";
   const isJoinMode = form.householdMode === "join";
   const currentStep = PHASE_STEP[phase] ?? 1;
-  const verificationCode = codeDigits.join("");
 
   // ─── Effects ──────────────────────────────────────────────────────────────
 
-  // Redirect when fully onboarded
+  // Redirect to app once fully onboarded
   useEffect(() => {
     if (user?.id && !user?.onboardingRequired) {
       navigate("/kitchen/semana", { replace: true });
     }
   }, [navigate, user]);
 
-  // Read invite token/code from URL or sessionStorage on mount
+  // If Clerk is loaded but no active session → send to sign-up
+  useEffect(() => {
+    if (!clerkIsLoaded) return;
+    if (!isSignedIn) {
+      clerk.redirectToSignUp({ redirectUrl: "/onboarding/clerk" });
+    }
+  }, [clerkIsLoaded, isSignedIn, clerk]);
+
+  // One-time phase initialization: stay at "household" or jump to "profile" for invite flow
+  useEffect(() => {
+    if (!clerkIsLoaded || !isSignedIn || phaseInitializedRef.current) return;
+    if (form.inviteToken && !inviteLoaded) return; // wait for invite details first
+    phaseInitializedRef.current = true;
+    if (form.inviteToken) {
+      setPhase("profile");
+    }
+    // No invite token → "household" is already the initial state
+  }, [clerkIsLoaded, isSignedIn, form.inviteToken, inviteLoaded]);
+
+  // Read invite token/code from URL params or sessionStorage on mount
   useEffect(() => {
     const token = String(
       searchParams.get("inviteToken")
@@ -271,7 +207,6 @@ export default function ClerkOnboardingPage() {
 
     setForm((prev) => ({
       ...prev,
-      email: inviteDetails?.recipientEmail || prev.email || "",
       inviteToken: prev.inviteToken || token,
       inviteCode: prev.inviteCode || code,
       householdMode: prev.householdMode || (token || code ? "join" : prev.householdMode),
@@ -279,9 +214,9 @@ export default function ClerkOnboardingPage() {
 
     if (token) window.sessionStorage.setItem(STORAGE_INVITE_TOKEN_KEY, token);
     if (code) window.sessionStorage.setItem(STORAGE_INVITE_CODE_KEY, code);
-  }, [inviteDetails?.recipientEmail, searchParams]);
+  }, [searchParams]);
 
-  // Fetch invite details from API when inviteToken is set
+  // Fetch invite details from API when inviteToken is known
   useEffect(() => {
     if (!form.inviteToken) {
       setInviteDetails(null);
@@ -313,30 +248,7 @@ export default function ClerkOnboardingPage() {
     return () => { active = false; };
   }, [form.inviteToken]);
 
-  // Debounced email availability check
-  useEffect(() => {
-    if (phase !== "credentials") return undefined;
-    window.clearTimeout(emailCheckTimerRef.current);
-
-    if (!normalizedEmail || !emailIsValid) {
-      setEmailCheck({ state: "idle", email: "" });
-      return undefined;
-    }
-
-    setEmailCheck({ state: "checking", email: normalizedEmail });
-    emailCheckTimerRef.current = window.setTimeout(async () => {
-      try {
-        const data = await apiRequest(`/api/kitchen/auth/check-email?email=${encodeURIComponent(normalizedEmail)}`);
-        setEmailCheck({ state: data?.exists ? "exists" : "available", email: normalizedEmail });
-      } catch {
-        setEmailCheck({ state: "error", email: normalizedEmail });
-      }
-    }, 400);
-
-    return () => window.clearTimeout(emailCheckTimerRef.current);
-  }, [phase, emailIsValid, normalizedEmail]);
-
-  // Auto-fill displayName from Clerk user after email verification
+  // Auto-fill displayName and householdName from Clerk user profile
   useEffect(() => {
     const suggested = clerkUser?.fullName || clerkUser?.firstName || "";
     setForm((prev) => ({
@@ -346,7 +258,7 @@ export default function ClerkOnboardingPage() {
     }));
   }, [clerkUser]);
 
-  // Reset household validation when code changes
+  // Reset household validation when the code input changes
   useEffect(() => {
     if (validatedCode && validatedCode !== normalizedInviteCode) {
       setValidatedCode("");
@@ -354,220 +266,14 @@ export default function ClerkOnboardingPage() {
     }
   }, [normalizedInviteCode, validatedCode]);
 
-  // Cleanup all timers on unmount
-  useEffect(() => () => {
-    window.clearTimeout(emailCheckTimerRef.current);
-    window.clearTimeout(resendTimerRef.current);
-  }, []);
-
-
-  // ─── Disabled reason (credentials phase only) ─────────────────────────────
-
-  const disabledReason = useMemo(() => {
-    if (phase !== "credentials") return null;
-    if (!emailIsValid) return "Introduce un email válido";
-    if (!passwordLongEnough) return "La contraseña debe tener al menos 8 caracteres";
-    if (!passwordsMatch) return "Las contraseñas no coinciden";
-    if (loading) return "Enviando...";
-    return null;
-  }, [phase, emailIsValid, passwordLongEnough, passwordsMatch, loading]);
-
-  // ─── Inline field validation feedback ────────────────────────────────────
-
-  const fieldErrors = useMemo(() => {
-    const e = {};
-    if (normalizedEmail && !emailIsValid) {
-      e.email = "Introduce un email válido.";
-    } else if (emailCheck.state === "exists" && emailCheck.email === normalizedEmail) {
-      e.email = "Este email ya tiene cuenta. ¿Quieres iniciar sesión?";
-    }
-    if (form.password && !passwordLongEnough) {
-      e.password = "Mínimo 8 caracteres.";
-    }
-    if (form.confirmPassword && form.password !== form.confirmPassword) {
-      e.confirmPassword = "Las contraseñas no coinciden.";
-    }
-    return e;
-  }, [emailCheck, emailIsValid, form.confirmPassword, form.password, normalizedEmail, passwordLongEnough]);
-
   // ─── Handlers ────────────────────────────────────────────────────────────
 
   const updateField = (field, value) => {
     setError("");
-    if (field === "email" || field === "password" || field === "confirmPassword") {
-      credentialsCreatedRef.current = false;
-    }
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const startResendCooldown = () => {
-    setResendCooldown(30);
-    const tick = () => {
-      setResendCooldown((n) => {
-        if (n <= 1) return 0;
-        resendTimerRef.current = window.setTimeout(tick, 1000);
-        return n - 1;
-      });
-    };
-    resendTimerRef.current = window.setTimeout(tick, 1000);
-  };
-
-  // ── Step 1a: Create Clerk account ────────────────────────────────────
-
-  const submitCredentials = async (event) => {
-    event.preventDefault();
-    if (disabledReason || submitLockRef.current) return;
-    if (!isLoaded) {
-      setError(getClerkLoadingMessage());
-      return;
-    }
-
-    if (emailCheck.state === "exists" && emailCheck.email === normalizedEmail) {
-      setError("Ya existe una cuenta con este email. Inicia sesión o usa otro correo.");
-      return;
-    }
-
-    submitLockRef.current = true;
-    setLoading(true);
-    setError("");
-
-    try {
-      if (!credentialsCreatedRef.current) {
-        try {
-          await signUp.create({
-            emailAddress: normalizedEmail,
-            password: String(form.password),
-          });
-          credentialsCreatedRef.current = true;
-        } catch (err) {
-          logClerkOperationFailure("signup.create", err);
-          if (isCaptchaError(err)) {
-            setError("No se pudo cargar la verificación de seguridad. Recarga la página e inténtalo de nuevo.");
-          } else {
-            setError(getSignUpOperationMessage("signup.create", err));
-          }
-          return;
-        }
-      }
-
-      try {
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      } catch (err) {
-        logClerkOperationFailure("prepareEmailAddressVerification", err);
-        setError(getSignUpOperationMessage("prepareEmailAddressVerification", err));
-        return;
-      }
-
-      setPhase("verify");
-      startResendCooldown();
-    } finally {
-      setLoading(false);
-      submitLockRef.current = false;
-    }
-  };
-
-  // ── Step 1b: Verify email code ────────────────────────────────────────
-
-  const doVerification = async (code) => {
-    if (code.length !== 6 || loading) return;
-    if (!isLoaded) {
-      setError(getClerkLoadingMessage());
-      return;
-    }
-    setLoading(true);
-    setError("");
-
-    try {
-      const result = await signUp.attemptEmailAddressVerification({ code });
-      if (result.status !== "complete" || !result.createdSessionId) {
-        setError("No pudimos verificar el código. Revisa el email e inténtalo de nuevo.");
-        return;
-      }
-      credentialsCreatedRef.current = false;
-      await setActive({ session: result.createdSessionId });
-      setPhase(isInviteFlow ? "profile" : "household");
-    } catch (err) {
-      logClerkOperationFailure("attemptEmailAddressVerification", err);
-      setError(normalizeClerkError(err, "El código no es válido o ha caducado."));
-      // Clear digits so user can re-enter
-      setCodeDigits(["", "", "", "", "", ""]);
-      setTimeout(() => digitRefs.current[0]?.focus(), 50);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const submitVerification = (event) => {
-    event?.preventDefault();
-    void doVerification(verificationCode);
-  };
-
-  const resendCode = async () => {
-    if (resendCooldown > 0 || loading) return;
-    if (!isLoaded) {
-      setError(getClerkLoadingMessage());
-      return;
-    }
-    setError("");
-    setLoading(true);
-    try {
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      setCodeDigits(["", "", "", "", "", ""]);
-      startResendCooldown();
-      setTimeout(() => digitRefs.current[0]?.focus(), 50);
-    } catch (err) {
-      logClerkOperationFailure("prepareEmailAddressVerification", err);
-      setError("No se pudo enviar el código de verificación. Inténtalo de nuevo.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ── Digit input handlers ──────────────────────────────────────────────
-
-  const handleDigitChange = (index, rawValue) => {
-    const digit = rawValue.replace(/\D/g, "").slice(-1);
-    let nextDigits;
-    setCodeDigits((prev) => {
-      nextDigits = [...prev];
-      nextDigits[index] = digit;
-      return nextDigits;
-    });
-    setError("");
-    if (digit && index < 5) {
-      setTimeout(() => digitRefs.current[index + 1]?.focus(), 0);
-    }
-    if (digit && index === 5) {
-      const full = (nextDigits || [...codeDigits.slice(0, 5), digit]).join("");
-      if (full.length === 6) {
-        setTimeout(() => void doVerification(full), 0);
-      }
-    }
-  };
-
-  const handleDigitKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !codeDigits[index] && index > 0) {
-      digitRefs.current[index - 1]?.focus();
-    }
-    if (e.key === "ArrowLeft" && index > 0) digitRefs.current[index - 1]?.focus();
-    if (e.key === "ArrowRight" && index < 5) digitRefs.current[index + 1]?.focus();
-  };
-
-  const handleDigitPaste = (e) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!pasted) return;
-    const next = ["", "", "", "", "", ""];
-    for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
-    setCodeDigits(next);
-    const focusIdx = Math.min(pasted.length, 5);
-    setTimeout(() => digitRefs.current[focusIdx]?.focus(), 0);
-    if (pasted.length === 6) {
-      setTimeout(() => void doVerification(pasted), 0);
-    }
-  };
-
-  // ── Step 2: Household ────────────────────────────────────────────────
+  // ── Step 1: Household ─────────────────────────────────────────────────────
 
   const validateHouseholdCode = async () => {
     if (codeValidating || normalizedInviteCode.length !== 6) return;
@@ -604,7 +310,7 @@ export default function ClerkOnboardingPage() {
     setPhase("profile");
   };
 
-  // ── Step 3: Profile ──────────────────────────────────────────────────
+  // ── Step 2: Profile ───────────────────────────────────────────────────────
 
   const canContinueProfile = Boolean(String(form.displayName || "").trim());
 
@@ -618,7 +324,7 @@ export default function ClerkOnboardingPage() {
     setPhase("preferences");
   };
 
-  // ── Step 4: Preferences + finalize ───────────────────────────────────
+  // ── Step 3: Preferences + finalize ───────────────────────────────────────
 
   const canSubmitFinal = useMemo(() => {
     if (!canContinueProfile) return false;
@@ -671,16 +377,26 @@ export default function ClerkOnboardingPage() {
     }
   };
 
-  // ── Navigation ────────────────────────────────────────────────────────
+  // ── Navigation ────────────────────────────────────────────────────────────
 
   const goBack = () => {
     setError("");
-    if (phase === "verify") { setPhase("credentials"); return; }
     if (phase === "profile" && !isInviteFlow) { setPhase("household"); return; }
     if (phase === "preferences") { setPhase("profile"); }
   };
 
-  const canGoBack = phase === "verify" || phase === "preferences" || (phase === "profile" && !isInviteFlow);
+  const canGoBack = phase === "preferences" || (phase === "profile" && !isInviteFlow);
+
+  // ─── Loading / redirecting states ─────────────────────────────────────────
+
+  if (!clerkIsLoaded || !isSignedIn) {
+    return (
+      <AppLoadingScreen
+        title="Preparando tu registro"
+        subtitle="Estamos verificando tu acceso seguro con Clerk."
+      />
+    );
+  }
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -704,156 +420,6 @@ export default function ClerkOnboardingPage() {
           ) : null}
 
           {error ? <div className="kitchen-alert error" role="alert">{error}</div> : null}
-
-          {/* ── CREDENTIALS ────────────────────────────────────────────── */}
-          {phase === "credentials" ? (
-            <form className="kitchen-onboarding-form" onSubmit={submitCredentials} noValidate>
-              {inviteInvalid ? (
-                <div className="kitchen-alert error">
-                  Esta invitación no es válida o ha caducado. Pide una nueva invitación.
-                </div>
-              ) : null}
-
-              <div className="kitchen-signup-fields">
-                <label className="kitchen-ui-input-group" htmlFor="su-email">
-                  <span className="kitchen-login-label">EMAIL</span>
-                  <input
-                    id="su-email"
-                    className={`kitchen-ui-input${
-                      fieldErrors.email ? " is-error"
-                        : emailCheck.state === "available" && emailCheck.email === normalizedEmail ? " is-valid"
-                        : ""
-                    }`}
-                    type="email"
-                    autoComplete="email"
-                    inputMode="email"
-                    placeholder="tu@email.com"
-                    value={form.email}
-                    readOnly={hasLockedEmail}
-                    onChange={(e) => updateField("email", e.target.value)}
-                  />
-                  {fieldErrors.email ? (
-                    <span className="kitchen-signup-field-error">{fieldErrors.email}</span>
-                  ) : emailCheck.state === "checking" && emailCheck.email === normalizedEmail ? (
-                    <span className="kitchen-signup-field-hint">Comprobando disponibilidad...</span>
-                  ) : null}
-                </label>
-
-                <label className="kitchen-ui-input-group" htmlFor="su-password">
-                  <span className="kitchen-login-label">CONTRASEÑA</span>
-                  <input
-                    id="su-password"
-                    className={`kitchen-ui-input${
-                      fieldErrors.password ? " is-error"
-                        : form.password && passwordLongEnough ? " is-valid"
-                        : ""
-                    }`}
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="Mínimo 8 caracteres"
-                    value={form.password}
-                    onChange={(e) => updateField("password", e.target.value)}
-                  />
-                  {fieldErrors.password ? (
-                    <span className="kitchen-signup-field-error">{fieldErrors.password}</span>
-                  ) : null}
-                </label>
-
-                <label className="kitchen-ui-input-group" htmlFor="su-confirm">
-                  <span className="kitchen-login-label">REPITE LA CONTRASEÑA</span>
-                  <input
-                    id="su-confirm"
-                    className={`kitchen-ui-input${
-                      fieldErrors.confirmPassword ? " is-error"
-                        : passwordsMatch ? " is-valid"
-                        : ""
-                    }`}
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="Repite la contraseña"
-                    value={form.confirmPassword}
-                    onChange={(e) => updateField("confirmPassword", e.target.value)}
-                  />
-                  {fieldErrors.confirmPassword ? (
-                    <span className="kitchen-signup-field-error">{fieldErrors.confirmPassword}</span>
-                  ) : null}
-                </label>
-              </div>
-
-              <div id="clerk-captcha" />
-
-              <div className="kitchen-onboarding-footer">
-                <button
-                  type="button"
-                  className="kitchen-button secondary"
-                  onClick={() => navigate(LOGIN_PATH)}
-                >
-                  Ya tengo cuenta
-                </button>
-                <button
-                  type="submit"
-                  className="kitchen-ui-button kitchen-login-submit"
-                  disabled={Boolean(disabledReason) || inviteInvalid || (isInviteFlow && !inviteLoaded)}
-                  title={disabledReason || undefined}
-                >
-                  {loading ? "Enviando código..." : "Continuar"}
-                </button>
-              </div>
-            </form>
-          ) : null}
-
-          {/* ── VERIFY ─────────────────────────────────────────────────── */}
-          {phase === "verify" ? (
-            <form className="kitchen-onboarding-form" onSubmit={submitVerification} noValidate>
-              <p className="kitchen-auth-hint" style={{ textAlign: "center" }}>
-                Enviamos el código a <strong>{normalizedEmail}</strong>.
-                Revisa también la carpeta de spam.
-              </p>
-
-              <div className="kitchen-signup-code-grid" role="group" aria-label="Código de verificación">
-                {codeDigits.map((digit, i) => (
-                  <input
-                    key={i}
-                    ref={(el) => { digitRefs.current[i] = el; }}
-                    className="kitchen-signup-code-digit"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete={i === 0 ? "one-time-code" : "off"}
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleDigitChange(i, e.target.value)}
-                    onKeyDown={(e) => handleDigitKeyDown(i, e)}
-                    onPaste={i === 0 ? handleDigitPaste : undefined}
-                    aria-label={`Dígito ${i + 1} del código`}
-                    disabled={loading}
-                  />
-                ))}
-              </div>
-
-              {loading ? (
-                <p className="kitchen-auth-hint" style={{ textAlign: "center" }}>Verificando...</p>
-              ) : null}
-
-              <div className="kitchen-onboarding-footer">
-                <button
-                  type="button"
-                  className="kitchen-button secondary"
-                  onClick={goBack}
-                  disabled={loading}
-                >
-                  Volver
-                </button>
-                <button
-                  type="button"
-                  className="kitchen-button ghost"
-                  onClick={resendCode}
-                  disabled={resendCooldown > 0 || loading}
-                >
-                  {resendCooldown > 0 ? `Reenviar (${resendCooldown}s)` : "Reenviar código"}
-                </button>
-              </div>
-            </form>
-          ) : null}
 
           {/* ── HOUSEHOLD ──────────────────────────────────────────────── */}
           {phase === "household" ? (
@@ -1076,17 +642,15 @@ export default function ClerkOnboardingPage() {
             </form>
           ) : null}
 
-          {phase !== "credentials" ? (
-            <div className="kitchen-auth-footer-actions">
-              <button
-                type="button"
-                className="kitchen-login-link"
-                onClick={() => navigate(LOGIN_PATH)}
-              >
-                Ya tengo cuenta
-              </button>
-            </div>
-          ) : null}
+          <div className="kitchen-auth-footer-actions">
+            <button
+              type="button"
+              className="kitchen-login-link"
+              onClick={() => navigate(LOGIN_PATH)}
+            >
+              Ya tengo cuenta
+            </button>
+          </div>
 
         </Card>
       </div>
