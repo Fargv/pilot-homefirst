@@ -120,6 +120,22 @@ export async function apiRequest(path, options = {}) {
   return data;
 }
 
+export async function fetchInviteDetails(inviteToken) {
+  try {
+    const response = await fetch(buildApiUrl(`/api/kitchen/auth/invite/${encodeURIComponent(inviteToken)}`));
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return null;
+    return {
+      householdName: data.householdName || "",
+      recipientEmail: data.recipientEmail || "",
+      role: data.role || "",
+      expiresAt: data.expiresAt || "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function requestForgotPassword(email) {
   return apiRequest("/api/auth/forgot-password", {
     method: "POST",

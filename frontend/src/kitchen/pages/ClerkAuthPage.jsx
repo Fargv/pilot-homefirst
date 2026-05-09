@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { SignIn, SignUp, useAuth as useClerkAuth, useClerk } from "@clerk/react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { buildApiUrl } from "../api.js";
+import { fetchInviteDetails } from "../api.js";
+import { CLERK_AFTER_SIGN_UP_PATH, CLERK_STORAGE_INVITE_CODE_KEY, CLERK_STORAGE_INVITE_TOKEN_KEY } from "../clerk-shared.js";
 import { useAuth } from "../auth";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 import Card from "../components/ui/Card";
@@ -11,11 +12,9 @@ const clerkCompletePath = "/auth/clerk/complete";
 const clerkLoginPath = "/login";
 const clerkSignUpPath = "/signup";
 const clerkPostAuthPath = "/kitchen/semana";
-const clerkAfterSignUpPath = import.meta.env.VITE_CLERK_AFTER_SIGN_UP_URL || "/onboarding/clerk";
+const clerkAfterSignUpPath = CLERK_AFTER_SIGN_UP_PATH;
 const fallbackHostedSignInUrl = import.meta.env.VITE_CLERK_HOSTED_SIGN_IN_URL || "";
 const fallbackHostedSignUpUrl = import.meta.env.VITE_CLERK_HOSTED_SIGN_UP_URL || "";
-const pendingInviteTokenKey = "clerk_onboarding_invite_token";
-const pendingInviteCodeKey = "clerk_onboarding_invite_code";
 
 function buildRouteWithSearch(path, values = {}) {
   const params = new URLSearchParams();
@@ -138,63 +137,38 @@ function ClerkAuthContent({ mode }) {
   }, [loginRoute, mode, navigate]);
 
   useEffect(() => {
-    if (location.pathname === "/sign-in") {
+    if (location.pathname === "/sign-in" || location.pathname.startsWith("/auth/clerk/sign-in")) {
       navigate(loginRoute, { replace: true });
-    }
-  }, [location.pathname, loginRoute, navigate]);
-
-  useEffect(() => {
-    if (location.pathname.startsWith("/auth/clerk/sign-in")) {
-      navigate(loginRoute, { replace: true });
-    }
-    if (location.pathname.startsWith("/auth/clerk/sign-up")) {
+    } else if (location.pathname.startsWith("/auth/clerk/sign-up")) {
       navigate(signUpRoute, { replace: true });
     }
   }, [location.pathname, loginRoute, navigate, signUpRoute]);
 
   useEffect(() => {
     if (inviteToken) {
-      window.sessionStorage.setItem(pendingInviteTokenKey, inviteToken);
+      window.sessionStorage.setItem(CLERK_STORAGE_INVITE_TOKEN_KEY, inviteToken);
     }
     if (inviteCode) {
-      window.sessionStorage.setItem(pendingInviteCodeKey, inviteCode);
+      window.sessionStorage.setItem(CLERK_STORAGE_INVITE_CODE_KEY, inviteCode);
     }
   }, [inviteCode, inviteToken]);
 
   useEffect(() => {
-    let active = true;
     if (!inviteToken) {
       setInviteDetails(null);
       setInviteDetailsLoaded(true);
       return undefined;
     }
 
-    const loadInvite = async () => {
-      try {
-        const response = await fetch(buildApiUrl(`/api/kitchen/auth/invite/${encodeURIComponent(inviteToken)}`));
-        const data = await response.json().catch(() => ({}));
-        if (!active || !response.ok) return;
-        setInviteDetails({
-          householdName: data.householdName || "",
-          recipientEmail: data.recipientEmail || "",
-          role: data.role || "",
-          expiresAt: data.expiresAt || ""
-        });
-      } catch {
-        if (!active) return;
-        setInviteDetails(null);
-      } finally {
-        if (active) {
-          setInviteDetailsLoaded(true);
-        }
-      }
-    };
-
+    let active = true;
     setInviteDetailsLoaded(false);
-    void loadInvite();
-    return () => {
-      active = false;
-    };
+    fetchInviteDetails(inviteToken).then((details) => {
+      if (active) setInviteDetails(details);
+    }).finally(() => {
+      if (active) setInviteDetailsLoaded(true);
+    });
+
+    return () => { active = false; };
   }, [inviteToken]);
 
   useEffect(() => {

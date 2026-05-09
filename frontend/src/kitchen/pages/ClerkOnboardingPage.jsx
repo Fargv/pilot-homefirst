@@ -2,18 +2,16 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Card from "../components/ui/Card";
-import { apiRequest, buildApiUrl } from "../api.js";
+import { apiRequest, fetchInviteDetails } from "../api.js";
+import { CLERK_AFTER_SIGN_UP_PATH, CLERK_STORAGE_INVITE_CODE_KEY, CLERK_STORAGE_INVITE_TOKEN_KEY } from "../clerk-shared.js";
 import { useAuth } from "../auth";
 import { isUserLimitReachedError } from "../subscription.js";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STORAGE_INVITE_TOKEN_KEY = "clerk_onboarding_invite_token";
-const STORAGE_INVITE_CODE_KEY = "clerk_onboarding_invite_code";
 const BASIC_PLAN = "basic";
 const LOGIN_PATH = "/login";
-const CLERK_AFTER_SIGN_UP_PATH = import.meta.env.VITE_CLERK_AFTER_SIGN_UP_URL || "/onboarding/clerk";
 
 // Steps 1 (Cuenta) and 2 (Verificación) are now handled externally by Clerk.
 // This page starts at step Hogar (household).
@@ -194,13 +192,13 @@ export default function ClerkOnboardingPage() {
       searchParams.get("inviteToken")
       || searchParams.get("token")
       || searchParams.get("invite")
-      || window.sessionStorage.getItem(STORAGE_INVITE_TOKEN_KEY)
+      || window.sessionStorage.getItem(CLERK_STORAGE_INVITE_TOKEN_KEY)
       || ""
     ).trim();
     const code = normalizeDigitCode(
       searchParams.get("inviteCode")
       || searchParams.get("code")
-      || window.sessionStorage.getItem(STORAGE_INVITE_CODE_KEY)
+      || window.sessionStorage.getItem(CLERK_STORAGE_INVITE_CODE_KEY)
       || ""
     );
 
@@ -211,8 +209,8 @@ export default function ClerkOnboardingPage() {
       householdMode: prev.householdMode || (token || code ? "join" : prev.householdMode),
     }));
 
-    if (token) window.sessionStorage.setItem(STORAGE_INVITE_TOKEN_KEY, token);
-    if (code) window.sessionStorage.setItem(STORAGE_INVITE_CODE_KEY, code);
+    if (token) window.sessionStorage.setItem(CLERK_STORAGE_INVITE_TOKEN_KEY, token);
+    if (code) window.sessionStorage.setItem(CLERK_STORAGE_INVITE_CODE_KEY, code);
   }, [searchParams]);
 
   // Fetch invite details from API when inviteToken is known
@@ -225,25 +223,12 @@ export default function ClerkOnboardingPage() {
 
     let active = true;
     setInviteLoaded(false);
+    fetchInviteDetails(form.inviteToken).then((details) => {
+      if (active) setInviteDetails(details);
+    }).finally(() => {
+      if (active) setInviteLoaded(true);
+    });
 
-    const load = async () => {
-      try {
-        const res = await fetch(buildApiUrl(`/api/kitchen/auth/invite/${encodeURIComponent(form.inviteToken)}`));
-        const data = await res.json().catch(() => ({}));
-        if (!active) return;
-        setInviteDetails(res.ok ? {
-          householdName: data.householdName || "",
-          recipientEmail: data.recipientEmail || "",
-          role: data.role || "",
-        } : null);
-      } catch {
-        if (active) setInviteDetails(null);
-      } finally {
-        if (active) setInviteLoaded(true);
-      }
-    };
-
-    void load();
     return () => { active = false; };
   }, [form.inviteToken]);
 
@@ -362,8 +347,8 @@ export default function ClerkOnboardingPage() {
           inviteToken: form.inviteToken || undefined,
         }),
       });
-      window.sessionStorage.removeItem(STORAGE_INVITE_TOKEN_KEY);
-      window.sessionStorage.removeItem(STORAGE_INVITE_CODE_KEY);
+      window.sessionStorage.removeItem(CLERK_STORAGE_INVITE_TOKEN_KEY);
+      window.sessionStorage.removeItem(CLERK_STORAGE_INVITE_CODE_KEY);
       setUser(data.user);
       setOnboardingRequired(false);
       await refreshUser({ authMode: "clerk" });
