@@ -61,13 +61,13 @@ export function buildInviteShareUrl(token) {
 }
 
 export function buildClerkInviteShareUrl(token) {
-  return buildAppShareUrl("/auth/clerk/sign-up", {
+  return buildAppShareUrl("/signup", {
     inviteToken: String(token || "").trim()
   });
 }
 
 export function buildClerkInviteCodeShareUrl(inviteCode) {
-  return buildAppShareUrl("/auth/clerk/sign-up", {
+  return buildAppShareUrl("/signup", {
     inviteCode: String(inviteCode || "").trim()
   });
 }

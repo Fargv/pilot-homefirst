@@ -24,9 +24,6 @@ import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-const secureSignupElement = clerkPublishableKey
-  ? <ClerkOnboardingPage />
-  : <ClerkAuthPage mode="sign-up" />;
 
 function HomeRedirect() {
   const { user, loading, onboardingRequired } = useAuth();
@@ -84,14 +81,15 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
+        <Route path="/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} />
         <Route path="/login/*" element={<ClerkAuthPage mode="sign-in" />} />
-        <Route path="/signup" element={secureSignupElement} />
+        <Route path="/signup/*" element={<ClerkAuthPage mode="sign-up" />} />
         <Route path="/auth/clerk" element={<ClerkAuthPage mode="choice" />} />
         <Route path="/auth/clerk/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} />
-        <Route path="/auth/clerk/sign-up/*" element={secureSignupElement} />
+        <Route path="/auth/clerk/sign-up/*" element={<ClerkAuthPage mode="sign-up" />} />
         <Route path="/auth/clerk/reset-password/*" element={<ClerkAuthPage mode="reset-password" />} />
         <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} />
-        <Route path="/onboarding/clerk" element={secureSignupElement} />
+        <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} />
         <Route path="/invite/:token" element={<InviteLandingPage />} />
         <Route
           path="/kitchen/semana"

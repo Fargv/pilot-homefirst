@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { SignIn, SignUp, useAuth as useClerkAuth, useClerk, useUser } from "@clerk/react";
+import { SignIn, useAuth as useClerkAuth, useClerk, useUser } from "@clerk/react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { buildApiUrl } from "../api.js";
 import { useAuth } from "../auth";
@@ -12,6 +12,7 @@ const clerkCompletePath = "/auth/clerk/complete";
 const clerkSignInPath = "/auth/clerk/sign-in";
 const clerkSignUpPath = "/auth/clerk/sign-up";
 const clerkPostAuthPath = "/kitchen/semana";
+const clerkAfterSignUpPath = import.meta.env.VITE_CLERK_AFTER_SIGN_UP_URL || "/onboarding/clerk";
 const pendingInviteTokenKey = "clerk_onboarding_invite_token";
 const pendingInviteCodeKey = "clerk_onboarding_invite_code";
 
@@ -110,9 +111,8 @@ function ClerkAuthContent({ mode }) {
     [inviteCode, inviteToken]
   );
   const signInRoute = useMemo(() => buildRouteWithSearch(clerkSignInPath, inviteSearch), [inviteSearch]);
-  const signUpRoute = useMemo(() => buildRouteWithSearch(clerkSignUpPath, inviteSearch), [inviteSearch]);
   const completeRoute = useMemo(() => buildRouteWithSearch(clerkCompletePath, inviteSearch), [inviteSearch]);
-  const onboardingRoute = useMemo(() => buildRouteWithSearch("/onboarding/clerk", inviteSearch), [inviteSearch]);
+  const onboardingRoute = useMemo(() => buildRouteWithSearch(clerkAfterSignUpPath, inviteSearch), [inviteSearch]);
   const widgetPath = useMemo(() => {
     if (mode === "sign-up") {
       if (location.pathname === "/signup" || location.pathname.startsWith("/signup/")) return "/signup";
@@ -122,7 +122,6 @@ function ClerkAuthContent({ mode }) {
     return clerkSignInPath;
   }, [location.pathname, mode]);
   const initialEmailAddress = inviteDetails?.recipientEmail || undefined;
-  const signUpInitialValues = useMemo(() => ({ emailAddress: initialEmailAddress }), [initialEmailAddress]);
   const signInInitialValues = useMemo(() => ({ emailAddress: initialEmailAddress }), [initialEmailAddress]);
 
   const pageCopy = useMemo(() => {
@@ -152,6 +151,11 @@ function ClerkAuthContent({ mode }) {
       navigate(signInRoute, { replace: true });
     }
   }, [mode, navigate, signInRoute]);
+
+  useEffect(() => {
+    if (mode !== "sign-up" || !isLoaded || isSignedIn) return;
+    void clerk.redirectToSignUp({ redirectUrl: onboardingRoute });
+  }, [clerk, isLoaded, isSignedIn, mode, onboardingRoute]);
 
   useEffect(() => {
     const inviteToken = String(searchParams.get("inviteToken") || searchParams.get("token") || "").trim();
@@ -295,6 +299,15 @@ function ClerkAuthContent({ mode }) {
     );
   }
 
+  if (mode === "sign-up" && !isSignedIn) {
+    return (
+      <AppLoadingScreen
+        title="Abriendo registro seguro"
+        subtitle="Te estamos llevando al sign-up nativo de Clerk para crear y verificar tu cuenta."
+      />
+    );
+  }
+
   if (isSignedIn && finalBootstrapError) {
     return (
       <AuthShell
@@ -346,11 +359,6 @@ function ClerkAuthContent({ mode }) {
       title={pageCopy.title}
       subtitle={pageCopy.subtitle}
     >
-      {mode === "sign-up" ? (
-        <div className="kitchen-alert info">
-          Te enviaremos un codigo para confirmar tu email y preparar tu perfil.
-        </div>
-      ) : null}
       {inviteToken || inviteCode ? (
         <div className="kitchen-alert info">
           {inviteDetails?.householdName
@@ -361,39 +369,21 @@ function ClerkAuthContent({ mode }) {
       ) : null}
 
       <ClerkWidgetMount>
-        {mode === "sign-up" ? (
-          <SignUp
-            routing="path"
-            path={widgetPath}
-            signInUrl="/login"
-            forceRedirectUrl={completeRoute}
-            fallbackRedirectUrl={completeRoute}
-            afterSignOutUrl="/login"
-            initialValues={signUpInitialValues}
-          />
-        ) : (
-          <SignIn
-            routing="path"
-            path={widgetPath}
-            signUpUrl="/signup"
-            forceRedirectUrl={completeRoute}
-            fallbackRedirectUrl={completeRoute}
-            afterSignOutUrl="/login"
-            initialValues={signInInitialValues}
-          />
-        )}
+        <SignIn
+          routing="path"
+          path={widgetPath}
+          signUpUrl="/signup"
+          forceRedirectUrl={completeRoute}
+          fallbackRedirectUrl={completeRoute}
+          afterSignOutUrl="/sign-in"
+          initialValues={signInInitialValues}
+        />
       </ClerkWidgetMount>
 
       <div className="kitchen-auth-footer-actions">
-        {mode === "sign-up" ? (
-          <button type="button" className="kitchen-login-link" onClick={() => navigate("/login")}>
-            Ya tienes cuenta? Inicia sesion
-          </button>
-        ) : (
-          <button type="button" className="kitchen-login-link" onClick={() => navigate("/signup")}>
-            Crear cuenta
-          </button>
-        )}
+        <button type="button" className="kitchen-login-link" onClick={() => navigate(mode === "sign-in" ? "/signup" : "/sign-in")}>
+          {mode === "sign-in" ? "Crear cuenta" : "Ya tienes cuenta? Inicia sesion"}
+        </button>
       </div>
     </AuthShell>
   );

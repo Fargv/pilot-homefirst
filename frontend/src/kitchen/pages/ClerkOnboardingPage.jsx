@@ -12,7 +12,8 @@ import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 const STORAGE_INVITE_TOKEN_KEY = "clerk_onboarding_invite_token";
 const STORAGE_INVITE_CODE_KEY = "clerk_onboarding_invite_code";
 const BASIC_PLAN = "basic";
-const LOGIN_PATH = "/login";
+const LOGIN_PATH = "/sign-in";
+const CLERK_AFTER_SIGN_UP_PATH = import.meta.env.VITE_CLERK_AFTER_SIGN_UP_URL || "/onboarding/clerk";
 
 // Steps 1 (Cuenta) and 2 (Verificación) are now handled externally by Clerk.
 // This page starts at step Hogar (household).
@@ -174,18 +175,16 @@ export default function ClerkOnboardingPage() {
   useEffect(() => {
     if (!clerkIsLoaded) return;
     if (!isSignedIn) {
-      clerk.redirectToSignUp({ redirectUrl: "/onboarding/clerk" });
+      clerk.redirectToSignUp({ redirectUrl: CLERK_AFTER_SIGN_UP_PATH });
     }
   }, [clerkIsLoaded, isSignedIn, clerk]);
 
-  // One-time phase initialization: stay at "household" or jump to "profile" for invite flow
+  // One-time phase initialization: this page always lands on "household".
   useEffect(() => {
     if (!clerkIsLoaded || !isSignedIn || phaseInitializedRef.current) return;
     if (form.inviteToken && !inviteLoaded) return; // wait for invite details first
     phaseInitializedRef.current = true;
-    if (form.inviteToken) {
-      setPhase("profile");
-    }
+    setPhase("household");
     // No invite token → "household" is already the initial state
   }, [clerkIsLoaded, isSignedIn, form.inviteToken, inviteLoaded]);
 
@@ -381,11 +380,11 @@ export default function ClerkOnboardingPage() {
 
   const goBack = () => {
     setError("");
-    if (phase === "profile" && !isInviteFlow) { setPhase("household"); return; }
+    if (phase === "profile") { setPhase("household"); return; }
     if (phase === "preferences") { setPhase("profile"); }
   };
 
-  const canGoBack = phase === "preferences" || (phase === "profile" && !isInviteFlow);
+  const canGoBack = phase === "preferences" || phase === "profile";
 
   // ─── Loading / redirecting states ─────────────────────────────────────────
 
@@ -411,7 +410,7 @@ export default function ClerkOnboardingPage() {
             <p className="kitchen-login-subtitle">{PHASE_SUBTITLE[phase]}</p>
           </header>
 
-          <StepIndicator currentStep={currentStep} skipHousehold={isInviteFlow} />
+          <StepIndicator currentStep={currentStep} skipHousehold={false} />
 
           {isInviteFlow && inviteDetails?.householdName ? (
             <div className="kitchen-alert info">

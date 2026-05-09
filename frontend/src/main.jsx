@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/react";
 import App from "./App.jsx";
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const clerkAfterSignUpUrl = import.meta.env.VITE_CLERK_AFTER_SIGN_UP_URL || "/onboarding/clerk";
 
 const app = (
   clerkPublishableKey ? (
@@ -13,8 +14,8 @@ const app = (
       signUpUrl="/auth/clerk/sign-up"
       signInForceRedirectUrl="/auth/clerk/complete"
       signInFallbackRedirectUrl="/auth/clerk/complete"
-      signUpForceRedirectUrl="/onboarding/clerk"
-      signUpFallbackRedirectUrl="/onboarding/clerk"
+      signUpForceRedirectUrl={clerkAfterSignUpUrl}
+      signUpFallbackRedirectUrl={clerkAfterSignUpUrl}
     >
       {/*
         TODO: Configure Clerk application URLs and allowed redirect origins in the
