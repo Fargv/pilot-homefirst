@@ -395,12 +395,8 @@ export default function ClerkOnboardingPage() {
           : "Este email ya esta registrado. Inicia sesion o usa otro email.");
         return;
       }
-      if (availability === "error") {
-        setError("No se pudo completar el registro. Inténtalo de nuevo.");
-        return;
-      }
       if (!isLoaded || !signUp) {
-        setError("No se pudo completar el registro. Inténtalo de nuevo.");
+        setError("Clerk no está listo. Recarga la página e inténtalo de nuevo.");
         return;
       }
 
