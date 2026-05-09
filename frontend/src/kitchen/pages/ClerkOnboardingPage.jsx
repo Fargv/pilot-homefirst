@@ -120,6 +120,7 @@ export default function ClerkOnboardingPage() {
   const createSubmitLockRef = useRef(false);
   const verifySubmitLockRef = useRef(false);
   const finalSubmitStartedRef = useRef(false);
+  const clerkRef = useRef({ isLoaded, signUp });
 
   const normalizedEmail = String(form.email || "").trim().toLowerCase();
   const normalizedInviteCode = useMemo(() => normalizeInviteCode(form.inviteCode), [form.inviteCode]);
@@ -166,6 +167,10 @@ export default function ClerkOnboardingPage() {
     }
     return nextErrors;
   }, [emailCheck.email, emailCheck.state, emailIsValid, form.confirmPassword, form.password, inviteHasLockedEmail, normalizedEmail, passwordHasMinimumLength]);
+
+  useEffect(() => {
+    clerkRef.current = { isLoaded, signUp };
+  }, [isLoaded, signUp]);
 
   useEffect(() => {
     if (user?.id && !user?.onboardingRequired) {
@@ -395,24 +400,39 @@ export default function ClerkOnboardingPage() {
           : "Este email ya esta registrado. Inicia sesion o usa otro email.");
         return;
       }
-      if (!isLoaded || !signUp) {
-        setError("Clerk no está listo. Recarga la página e inténtalo de nuevo.");
+      const readySignUp = await new Promise((resolve) => {
+        if (clerkRef.current.isLoaded && clerkRef.current.signUp) {
+          resolve(clerkRef.current.signUp);
+          return;
+        }
+        let attempts = 0;
+        const timer = setInterval(() => {
+          attempts++;
+          if (clerkRef.current.isLoaded && clerkRef.current.signUp) {
+            clearInterval(timer);
+            resolve(clerkRef.current.signUp);
+          } else if (attempts >= 20) {
+            clearInterval(timer);
+            resolve(null);
+          }
+        }, 150);
+      });
+
+      if (!readySignUp) {
+        setError("Clerk tardó demasiado en cargar. Recarga la página e inténtalo de nuevo.");
         return;
       }
 
       setAuthLoading(true);
       setError("");
       try {
-        const createdSignUp = await signUp.create({
+        const createdSignUp = await readySignUp.create({
           emailAddress: normalizedEmail,
           password: String(form.password || "")
         });
-        // Clerk may auto-send the verification email on create() depending on
-        // dashboard settings. Only call prepareEmailAddressVerification() if
-        // the email hasn't been sent yet, to avoid duplicate confirmation emails.
         const emailAlreadyPrepared = createdSignUp?.verifications?.emailAddress?.status === "unverified";
         if (!emailAlreadyPrepared) {
-          await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+          await readySignUp.prepareEmailAddressVerification({ strategy: "email_code" });
         }
         setAuthPhase("verify");
       } catch (err) {
