@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { SignIn, useAuth as useClerkAuth, useClerk } from "@clerk/react";
+import { useAuth as useClerkAuth, useClerk } from "@clerk/react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { buildApiUrl } from "../api.js";
 import { useAuth } from "../auth";
@@ -22,7 +22,10 @@ function decodeClerkFrontendApiFromPublishableKey(publishableKey) {
     const base64 = match[1].replace(/-/g, "+").replace(/_/g, "/");
     const padded = `${base64}${"===".slice((base64.length + 3) % 4)}`;
     const decoded = atob(padded);
-    return decoded.replace(/\$.*/, "").trim();
+    return decoded
+      .replace(/\$.*/, "")
+      .trim()
+      .replace(/\.clerk\.accounts\.dev$/i, ".accounts.dev");
   } catch {
     return "";
   }
@@ -130,6 +133,7 @@ function ClerkAuthContent({ mode }) {
   const [inviteDetails, setInviteDetails] = useState(null);
   const [inviteDetailsLoaded, setInviteDetailsLoaded] = useState(false);
   const finalBootstrapErrorTimerRef = useRef(null);
+  const signInRedirectStartedRef = useRef(false);
   const signUpRedirectStartedRef = useRef(false);
 
   const inviteToken = String(
@@ -154,8 +158,10 @@ function ClerkAuthContent({ mode }) {
   const signInRoute = useMemo(() => buildRouteWithSearch(clerkSignInPath, inviteSearch), [inviteSearch]);
   const completeRoute = useMemo(() => buildRouteWithSearch(clerkCompletePath, inviteSearch), [inviteSearch]);
   const onboardingRoute = useMemo(() => buildRouteWithSearch(clerkAfterSignUpPath, inviteSearch), [inviteSearch]);
-  const initialEmailAddress = inviteDetails?.recipientEmail || undefined;
-  const signInInitialValues = useMemo(() => ({ emailAddress: initialEmailAddress }), [initialEmailAddress]);
+  const hostedSignInUrl = useMemo(
+    () => buildHostedRedirectUrl(buildHostedClerkUrl("/sign-in"), location.search),
+    [location.search]
+  );
   const hostedSignUpUrl = useMemo(
     () => buildHostedRedirectUrl(buildHostedClerkUrl("/sign-up"), location.search),
     [location.search]
@@ -183,10 +189,15 @@ function ClerkAuthContent({ mode }) {
   }, [mode, navigate, signInRoute]);
 
   useEffect(() => {
-    if (mode !== "sign-in") return;
-    if (!location.pathname.startsWith("/auth/clerk/sign-in")) return;
-    navigate(signInRoute, { replace: true });
-  }, [location.pathname, mode, navigate, signInRoute]);
+    if (mode !== "sign-in" || signInRedirectStartedRef.current) return;
+    signInRedirectStartedRef.current = true;
+
+    if (!hostedSignInUrl || isAlreadyOnHostedClerkDomain(hostedSignInUrl)) {
+      return;
+    }
+
+    window.location.replace(hostedSignInUrl);
+  }, [hostedSignInUrl, mode]);
 
   useEffect(() => {
     if (inviteToken) {
@@ -292,7 +303,7 @@ function ClerkAuthContent({ mode }) {
   };
 
   const isResolvingClerkHandoff = isLoaded && isSignedIn && (loading || (!user?.id && !onboardingRequired && !finalBootstrapError));
-  const shouldWaitForInviteContext = mode === "sign-in" && inviteToken && !inviteDetailsLoaded;
+  const shouldWaitForInviteContext = false;
   if ((mode === "choice" || mode === "reset-password") && !isSignedIn) {
     return (
       <AppLoadingScreen
@@ -344,6 +355,21 @@ function ClerkAuthContent({ mode }) {
     );
   }
 
+  if (mode === "sign-in") {
+    if (hostedSignInUrl) return null;
+    return (
+      <AuthShell
+        kicker="Acceso"
+        title="Inicio de sesion no configurado"
+        subtitle="No pudimos abrir el acceso seguro en este entorno."
+      >
+        <div className="kitchen-alert error">
+          Falta configurar la URL hospedada de Clerk para iniciar sesion.
+        </div>
+      </AuthShell>
+    );
+  }
+
   if (isSignedIn && finalBootstrapError) {
     return (
       <AuthShell
@@ -389,38 +415,5 @@ function ClerkAuthContent({ mode }) {
     );
   }
 
-  return (
-    <AuthShell
-      kicker={pageCopy.kicker}
-      title={pageCopy.title}
-      subtitle={pageCopy.subtitle}
-    >
-      {inviteToken || inviteCode ? (
-        <div className="kitchen-alert info">
-          {inviteDetails?.householdName
-            ? `Te han invitado a unirte a ${inviteDetails.householdName}.`
-            : "Esta alta esta vinculada a una invitacion de hogar."}{" "}
-          {inviteDetails?.recipientEmail ? `Usa el email ${inviteDetails.recipientEmail} para continuar.` : "Confirma tu cuenta para entrar en esta cocina compartida."}
-        </div>
-      ) : null}
-
-      <ClerkWidgetMount>
-        <SignIn
-          routing="path"
-          path={clerkSignInPath}
-          signUpUrl="/signup"
-          forceRedirectUrl={completeRoute}
-          fallbackRedirectUrl={completeRoute}
-          afterSignOutUrl="/sign-in"
-          initialValues={signInInitialValues}
-        />
-      </ClerkWidgetMount>
-
-      <div className="kitchen-auth-footer-actions">
-        <button type="button" className="kitchen-login-link" onClick={() => navigate(mode === "sign-in" ? "/signup" : "/sign-in")}>
-          {mode === "sign-in" ? "Crear cuenta" : "Ya tienes cuenta? Inicia sesion"}
-        </button>
-      </div>
-    </AuthShell>
-  );
+  return null;
 }
