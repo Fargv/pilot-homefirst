@@ -395,7 +395,7 @@ export default function ClerkOnboardingPage() {
           : "Este email ya esta registrado. Inicia sesion o usa otro email.");
         return;
       }
-      if (!isLoaded || !signUp) {
+      if (!isLoaded) {
         setError("La aplicación aún está cargando. Espera un momento e inténtalo de nuevo.");
         return;
       }
