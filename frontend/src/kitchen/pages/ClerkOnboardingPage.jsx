@@ -243,8 +243,6 @@ export default function ClerkOnboardingPage() {
   const isJoinMode = form.householdMode === "join";
   const currentStep = PHASE_STEP[phase] ?? 1;
   const verificationCode = codeDigits.join("");
-  const clerkSignUpReady = Boolean(isLoaded && signUp);
-  const isSignUpReady = phase === "credentials" ? true : clerkSignUpReady;
 
   // ─── Effects ──────────────────────────────────────────────────────────────
 
@@ -419,14 +417,7 @@ export default function ClerkOnboardingPage() {
   const submitCredentials = async (event) => {
     event.preventDefault();
     if (disabledReason || submitLockRef.current) return;
-    if (!clerkSignUpReady) {
-      if (import.meta.env.DEV) {
-        console.error("[clerk][dev] useSignUp is not ready when Continue was clicked", {
-          isLoaded,
-          hasSignUp: Boolean(signUp),
-          hasPublishableKey: Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY)
-        });
-      }
+    if (!isLoaded) {
       setError(getClerkLoadingMessage());
       return;
     }
@@ -479,7 +470,7 @@ export default function ClerkOnboardingPage() {
 
   const doVerification = async (code) => {
     if (code.length !== 6 || loading) return;
-    if (!clerkSignUpReady) {
+    if (!isLoaded) {
       setError(getClerkLoadingMessage());
       return;
     }
@@ -513,7 +504,7 @@ export default function ClerkOnboardingPage() {
 
   const resendCode = async () => {
     if (resendCooldown > 0 || loading) return;
-    if (!clerkSignUpReady) {
+    if (!isLoaded) {
       setError(getClerkLoadingMessage());
       return;
     }
