@@ -2,13 +2,22 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+function parseOriginList(...values) {
+  return Array.from(
+    new Set(
+      values
+        .flatMap((value) => String(value || "").split(","))
+        .map((value) => value.trim().replace(/\/$/, ""))
+        .filter(Boolean)
+    )
+  );
+}
+
 export const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT || 3000),
 
   mongodbUri: process.env.MONGODB_URI,
-
-  corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
   frontendUrl:
     process.env.APP_URL ||
     process.env.FRONTEND_URL ||
@@ -43,6 +52,14 @@ export const config = {
     contactEmail: process.env.WEB_PUSH_CONTACT_EMAIL || ""
   }
 };
+
+config.corsOrigins = parseOriginList(
+  process.env.CORS_ORIGIN,
+  process.env.APP_URL,
+  process.env.FRONTEND_URL,
+  "http://localhost:5173"
+);
+config.corsOrigin = config.corsOrigins[0] || "http://localhost:5173";
 
 if (!config.mongodbUri) {
   console.warn("Warning: MONGODB_URI is missing.");

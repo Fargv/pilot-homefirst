@@ -12,6 +12,7 @@ const STORAGE_INVITE_TOKEN_KEY = "clerk_onboarding_invite_token";
 const STORAGE_INVITE_CODE_KEY = "clerk_onboarding_invite_code";
 const BASIC_PLAN = "basic";
 const LOGIN_PATH = "/login";
+const SIGNUP_INIT_TIMEOUT_MS = 10000;
 
 const STEP_LABELS = [
   { step: 1, label: "Cuenta", short: "Cuenta" },
@@ -66,6 +67,21 @@ function isCaptchaError(err) {
 function buildDefaultHouseholdName(name) {
   const safe = String(name || "").trim();
   return safe ? `${safe} - Hogar` : "Mi hogar";
+}
+
+function getSignUpUnavailableMessage(timedOut = false) {
+  return timedOut
+    ? "No pudimos iniciar el registro seguro. Recarga la pagina y revisa la configuracion de acceso si el problema continua."
+    : "Preparando la verificacion del email...";
+}
+
+function logVerificationRequestFailure(stage, err) {
+  if (!import.meta.env.DEV) return;
+  console.warn("[clerk][dev] Signup verification request failed", {
+    stage,
+    message: err?.message || String(err),
+    code: err?.errors?.[0]?.code || err?.code || null
+  });
 }
 
 // ─── Stable sub-components ───────────────────────────────────────────────────
@@ -160,6 +176,7 @@ export default function ClerkOnboardingPage() {
   // ── Status ───────────────────────────────────────────────────────────
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signUpInitTimedOut, setSignUpInitTimedOut] = useState(false);
 
   // ── Email availability ────────────────────────────────────────────────
   const [emailCheck, setEmailCheck] = useState({ state: "idle", email: "" });
@@ -196,6 +213,7 @@ export default function ClerkOnboardingPage() {
   const isJoinMode = form.householdMode === "join";
   const currentStep = PHASE_STEP[phase] ?? 1;
   const verificationCode = codeDigits.join("");
+  const isSignUpReady = Boolean(isLoaded && signUp);
 
   // ─── Effects ──────────────────────────────────────────────────────────────
 
@@ -313,16 +331,30 @@ export default function ClerkOnboardingPage() {
     window.clearTimeout(resendTimerRef.current);
   }, []);
 
+  useEffect(() => {
+    if (isSignUpReady) {
+      setSignUpInitTimedOut(false);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSignUpInitTimedOut(true);
+    }, SIGNUP_INIT_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [isSignUpReady]);
+
   // ─── Disabled reason (credentials phase only) ─────────────────────────────
 
   const disabledReason = useMemo(() => {
     if (phase !== "credentials") return null;
+    if (!isSignUpReady) return getSignUpUnavailableMessage(signUpInitTimedOut);
     if (!emailIsValid) return "Introduce un email válido";
     if (!passwordLongEnough) return "La contraseña debe tener al menos 8 caracteres";
     if (!passwordsMatch) return "Las contraseñas no coinciden";
     if (loading) return "Enviando...";
     return null;
-  }, [phase, emailIsValid, passwordLongEnough, passwordsMatch, loading]);
+  }, [phase, isSignUpReady, signUpInitTimedOut, emailIsValid, passwordLongEnough, passwordsMatch, loading]);
 
   // ─── Inline field validation feedback ────────────────────────────────────
 
@@ -366,8 +398,8 @@ export default function ClerkOnboardingPage() {
   const submitCredentials = async (event) => {
     event.preventDefault();
     if (disabledReason || submitLockRef.current) return;
-    if (!isLoaded) {
-      setError("La aplicación aún está cargando. Espera un momento e inténtalo de nuevo.");
+    if (!isSignUpReady) {
+      setError(getSignUpUnavailableMessage(signUpInitTimedOut));
       return;
     }
 
@@ -387,6 +419,7 @@ export default function ClerkOnboardingPage() {
       setPhase("verify");
       startResendCooldown();
     } catch (err) {
+      logVerificationRequestFailure("initial_send", err);
       if (isCaptchaError(err)) {
         setError("No se pudo cargar la verificación de seguridad. Recarga la página e inténtalo de nuevo.");
       } else {
@@ -402,6 +435,10 @@ export default function ClerkOnboardingPage() {
 
   const doVerification = async (code) => {
     if (code.length !== 6 || loading) return;
+    if (!isSignUpReady) {
+      setError(getSignUpUnavailableMessage(signUpInitTimedOut));
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -430,6 +467,10 @@ export default function ClerkOnboardingPage() {
 
   const resendCode = async () => {
     if (resendCooldown > 0 || loading) return;
+    if (!isSignUpReady) {
+      setError(getSignUpUnavailableMessage(signUpInitTimedOut));
+      return;
+    }
     setError("");
     setLoading(true);
     try {
@@ -438,6 +479,7 @@ export default function ClerkOnboardingPage() {
       startResendCooldown();
       setTimeout(() => digitRefs.current[0]?.focus(), 50);
     } catch (err) {
+      logVerificationRequestFailure("resend", err);
       setError(normalizeClerkError(err, "No pudimos reenviar el código. Inténtalo de nuevo."));
     } finally {
       setLoading(false);
@@ -621,6 +663,12 @@ export default function ClerkOnboardingPage() {
           {isInviteFlow && inviteDetails?.householdName ? (
             <div className="kitchen-alert info">
               Te estás uniendo a <strong>{inviteDetails.householdName}</strong>.
+            </div>
+          ) : null}
+
+          {phase === "credentials" && !isSignUpReady ? (
+            <div className={`kitchen-alert ${signUpInitTimedOut ? "error" : "info"}`}>
+              {getSignUpUnavailableMessage(signUpInitTimedOut)}
             </div>
           ) : null}
 

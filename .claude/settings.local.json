@@ -9,7 +9,15 @@
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k,v\\) for k,v in {**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}.items\\(\\)]\")",
       "Bash(findstr /S /R \"Clerk\" src\\\\*.jsx src\\\\*.tsx src\\\\**\\\\*.jsx src\\\\**\\\\*.tsx)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\frontend\\\\src\\\\kitchen\\\\pages\" -File)",
+      "Bash(Select-Object Name)",
+      "Bash(git rm *)",
+      "Bash(gh pr *)",
+      "PowerShell(git push origin dev)",
+      "PowerShell(gh pr list --head dev --repo Fargv/pilot-homefirst)",
+      "PowerShell($env:GITHUB_TOKEN; git config --get credential.helper; Get-ChildItem \"$env:APPDATA\\\\GitHub CLI\" -ErrorAction SilentlyContinue)",
+      "Bash(git credential *)"
     ]
   }
 }
