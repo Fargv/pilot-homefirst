@@ -140,30 +140,12 @@ export default function ClerkOnboardingPage() {
 
   const disabledReason = useMemo(() => {
     if (authPhase !== "credentials") return null;
-    if (!isLoaded) return "Clerk is still loading";
-    if (!signUp) return "Clerk signUp object is unavailable";
-    if (!emailIsValid) return normalizedEmail ? "Invalid email" : "Email is empty";
-    if (emailCheck.state === "exists" && emailCheck.email === normalizedEmail) return "Email already exists";
-    if (!form.password) return "Password is empty";
+    if (!emailIsValid) return "Invalid email";
     if (!passwordHasMinimumLength) return "Invalid password";
-    if (!form.confirmPassword) return "Repeat password is empty";
     if (!passwordsMatch) return "Passwords do not match";
     if (authLoading) return "Submitting";
     return null;
-  }, [
-    authLoading,
-    authPhase,
-    emailCheck.email,
-    emailCheck.state,
-    emailIsValid,
-    form.confirmPassword,
-    form.password,
-    isLoaded,
-    normalizedEmail,
-    passwordHasMinimumLength,
-    passwordsMatch,
-    signUp
-  ]);
+  }, [authLoading, authPhase, emailIsValid, passwordHasMinimumLength, passwordsMatch]);
 
   const step1Errors = useMemo(() => {
     const nextErrors = {};
