@@ -1,2 +1,13 @@
 node_modules
 .env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# Backend env
+backend/.env
+
+# Frontend env  
+frontend/.env
+frontend/.env.local
