@@ -117,10 +117,10 @@ function ClerkAuthContent({ mode }) {
   const onboardingRoute = useMemo(() => buildRouteWithSearch("/onboarding/clerk", inviteSearch), [inviteSearch]);
   const widgetPath = useMemo(() => {
     if (mode === "sign-up") {
-      if (location.pathname === "/signup") return "/signup";
+      if (location.pathname === "/signup" || location.pathname.startsWith("/signup/")) return "/signup";
       return clerkSignUpPath;
     }
-    if (location.pathname === "/login") return "/login";
+    if (location.pathname === "/login" || location.pathname.startsWith("/login/")) return "/login";
     return clerkSignInPath;
   }, [location.pathname, mode]);
   const initialEmailAddress = inviteDetails?.recipientEmail || undefined;

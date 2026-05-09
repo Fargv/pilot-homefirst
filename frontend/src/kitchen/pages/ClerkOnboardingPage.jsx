@@ -429,46 +429,53 @@ export default function ClerkOnboardingPage() {
     event.preventDefault();
     if (disabledReason || createSubmitLockRef.current) return;
 
-    const availability = await validateEmailAvailability();
-    if (availability === "exists") {
-      setError(inviteHasLockedEmail
-        ? "Este email ya esta registrado. Inicia sesion para aceptar la invitacion."
-        : "Este email ya esta registrado. Inicia sesion o usa otro email.");
-      return;
-    }
-    if (availability === "error") {
-      setError("No se pudo completar el registro. Inténtalo de nuevo.");
-      return;
-    }
-    if (!isLoaded || !signUp) {
-      setError("No se pudo completar el registro. Inténtalo de nuevo.");
-      return;
-    }
-
     createSubmitLockRef.current = true;
-    setAuthLoading(true);
-    setError("");
     try {
-      await signUp.create({
-        emailAddress: normalizedEmail,
-        password: String(form.password || "")
-      });
-      await signUp.prepareEmailAddressVerification({
-        strategy: "email_code"
-      });
-      setAuthPhase("verify");
-    } catch (err) {
-      if (import.meta.env.DEV) {
-        console.error("[clerk/signup][dev] create/prepare failed", err);
+      const availability = await validateEmailAvailability();
+      if (availability === "exists") {
+        setError(inviteHasLockedEmail
+          ? "Este email ya esta registrado. Inicia sesion para aceptar la invitacion."
+          : "Este email ya esta registrado. Inicia sesion o usa otro email.");
+        return;
       }
-      if (isCaptchaInitializationError(err)) {
-        setError("No se pudo cargar la verificación de seguridad. Recarga la página e inténtalo de nuevo.");
-      } else {
-        setError(normalizeClerkError(err, "No se pudo completar el registro. Inténtalo de nuevo."));
+      if (availability === "error") {
+        setError("No se pudo completar el registro. Inténtalo de nuevo.");
+        return;
+      }
+      if (!isLoaded || !signUp) {
+        setError("No se pudo completar el registro. Inténtalo de nuevo.");
+        return;
+      }
+
+      setAuthLoading(true);
+      setError("");
+      try {
+        const createdSignUp = await signUp.create({
+          emailAddress: normalizedEmail,
+          password: String(form.password || "")
+        });
+        // Clerk may auto-send the verification email on create() depending on
+        // dashboard settings. Only call prepareEmailAddressVerification() if
+        // the email hasn't been sent yet, to avoid duplicate confirmation emails.
+        const emailAlreadyPrepared = createdSignUp?.verifications?.emailAddress?.status === "unverified";
+        if (!emailAlreadyPrepared) {
+          await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        }
+        setAuthPhase("verify");
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.error("[clerk/signup][dev] create/prepare failed", err);
+        }
+        if (isCaptchaInitializationError(err)) {
+          setError("No se pudo cargar la verificación de seguridad. Recarga la página e inténtalo de nuevo.");
+        } else {
+          setError(normalizeClerkError(err, "No se pudo completar el registro. Inténtalo de nuevo."));
+        }
+      } finally {
+        setAuthLoading(false);
       }
     } finally {
       createSubmitLockRef.current = false;
-      setAuthLoading(false);
     }
   };
 

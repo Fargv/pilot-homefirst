@@ -90,7 +90,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
-        <Route path="/login" element={defaultLoginElement} />
+        <Route path="/login/*" element={defaultLoginElement} />
         <Route path="/signup" element={defaultSignupElement} />
         {clerkPublishableKey ? <Route path="/auth/clerk" element={<ClerkAuthPage mode="choice" />} /> : null}
         {clerkPublishableKey ? <Route path="/auth/clerk/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} /> : null}

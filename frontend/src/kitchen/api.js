@@ -74,7 +74,12 @@ async function getAuthorizationHeader(authMode = "auto") {
   try {
     const clerkToken = await clerkTokenGetter();
     return clerkToken ? `Bearer ${clerkToken}` : null;
-  } catch {
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn("[clerk][dev] Auto Clerk token getter failed", {
+        message: error?.message || String(error)
+      });
+    }
     return null;
   }
 }

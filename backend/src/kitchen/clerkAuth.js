@@ -241,18 +241,6 @@ export async function authenticateClerkToken(token) {
     }
   }
 
-  if (mongoUser.clerkId !== clerkUser.id) {
-    logClerkDev("Clerk ID mismatch", {
-      userId: mongoUser._id.toString(),
-      expectedClerkId: mongoUser.clerkId,
-      actualClerkId: clerkUser.id
-    });
-    throw buildAuthError(
-      "CLERK_USER_MISMATCH",
-      "La identidad de Clerk no coincide con el usuario interno vinculado."
-    );
-  }
-
   return {
     authType: "clerk",
     clerkClaims: identity.clerkClaims,

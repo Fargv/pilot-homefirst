@@ -498,7 +498,7 @@ router.post("/accept-invite", async (req, res) => {
       .select("_id subscriptionPlan")
       .lean();
     if (!household) {
-      return res.status(404).json({ ok: false, error: "No encontramos el hogar asociado a esta invitaciÃ³n." });
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar asociado a esta invitación." });
     }
 
     let user = await KitchenUser.findOne({ email: normalizedEmail });
@@ -703,7 +703,7 @@ router.post("/clerk/onboarding", async (req, res) => {
         displayName: finalDisplayName,
         initials: normalizeInitials(initials, finalDisplayName),
         clerkId: identity.clerkUser.id,
-        passwordHash: null,
+        passwordHash: null, // Clerk users authenticate via Clerk; no local password is stored or needed.
         type: "user",
         hasLogin: true,
         active: parseBooleanWithDefault(active, true),

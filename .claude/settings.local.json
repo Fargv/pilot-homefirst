@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep -l \"any\\\\|unknown\\\\|never\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\frontend\" -Recurse -Directory)",
+      "Bash(Select-Object -First 20)",
+      "Bash(ConvertTo-Json -Depth 1)",
+      "PowerShell(head *)"
+    ]
+  }
+}

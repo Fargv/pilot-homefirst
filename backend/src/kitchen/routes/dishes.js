@@ -18,6 +18,7 @@ import {
 import { getDishHiddenMasterType, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 
 const router = express.Router();
+// Fallback ObjectId for the "Guarniciones" dish category when it cannot be found by its code.
 const GUARNICIONES_FALLBACK_ID = "69ac7016c0755cd97c6a9b63";
 
 function parseBooleanField(value, fallback = false) {
