@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { SignIn, useAuth as useClerkAuth, useClerk, useUser } from "@clerk/react";
+import { SignIn, useAuth as useClerkAuth, useClerk } from "@clerk/react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { buildApiUrl } from "../api.js";
 import { useAuth } from "../auth";
@@ -7,14 +7,66 @@ import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 import Card from "../components/ui/Card";
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development" || import.meta.env.DEV;
 const clerkCompletePath = "/auth/clerk/complete";
-const clerkSignInPath = "/auth/clerk/sign-in";
-const clerkSignUpPath = "/auth/clerk/sign-up";
+const clerkSignInPath = "/sign-in";
 const clerkPostAuthPath = "/kitchen/semana";
 const clerkAfterSignUpPath = import.meta.env.VITE_CLERK_AFTER_SIGN_UP_URL || "/onboarding/clerk";
 const pendingInviteTokenKey = "clerk_onboarding_invite_token";
 const pendingInviteCodeKey = "clerk_onboarding_invite_code";
+
+function decodeClerkFrontendApiFromPublishableKey(publishableKey) {
+  const match = String(publishableKey || "").match(/^pk_(?:test|live)_(.+)$/);
+  if (!match) return "";
+
+  try {
+    const base64 = match[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = `${base64}${"===".slice((base64.length + 3) % 4)}`;
+    const decoded = atob(padded);
+    return decoded.replace(/\$.*/, "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function buildHostedClerkUrl(path) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const envUrl = normalizedPath === "/sign-up"
+    ? import.meta.env.VITE_CLERK_HOSTED_SIGN_UP_URL
+    : import.meta.env.VITE_CLERK_HOSTED_SIGN_IN_URL;
+
+  if (envUrl) return String(envUrl).trim();
+
+  const frontendApi = decodeClerkFrontendApiFromPublishableKey(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+  if (!frontendApi) return "";
+  return `https://${frontendApi}${normalizedPath}`;
+}
+
+function buildHostedRedirectUrl(baseUrl, search = "") {
+  if (!baseUrl) return "";
+
+  try {
+    const url = new URL(baseUrl);
+    const params = new URLSearchParams(search);
+    params.forEach((value, key) => {
+      url.searchParams.set(key, value);
+    });
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
+function isAlreadyOnHostedClerkDomain(targetUrl) {
+  if (typeof window === "undefined" || !targetUrl) return false;
+
+  try {
+    const current = window.location.host;
+    const target = new URL(targetUrl).host;
+    return Boolean(current && target && current === target);
+  } catch {
+    return false;
+  }
+}
 
 function buildRouteWithSearch(path, values = {}) {
   const params = new URLSearchParams();
@@ -25,16 +77,6 @@ function buildRouteWithSearch(path, values = {}) {
   });
   const query = params.toString();
   return query ? `${path}?${query}` : path;
-}
-
-function normalizeBackendError(error) {
-  if (!error) return null;
-  return {
-    message: error?.message || "No se pudo validar la sesion.",
-    status: error?.status || 0,
-    code: error?.code || "AUTH_ERROR",
-    body: error?.body || {}
-  };
 }
 
 function AuthShell({ kicker, title, subtitle, children }) {
@@ -83,14 +125,13 @@ function ClerkAuthContent({ mode }) {
   const { user, loading, onboardingRequired, lastAuthError, refreshUser, clearSession } = useAuth();
   const { isLoaded, isSignedIn } = useClerkAuth();
   const clerk = useClerk();
-  const { user: clerkUser } = useUser();
   const [finalBootstrapError, setFinalBootstrapError] = useState("");
   const [lastBootstrapStatus, setLastBootstrapStatus] = useState("waiting");
   const [inviteDetails, setInviteDetails] = useState(null);
   const [inviteDetailsLoaded, setInviteDetailsLoaded] = useState(false);
   const finalBootstrapErrorTimerRef = useRef(null);
+  const signUpRedirectStartedRef = useRef(false);
 
-  const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || "";
   const inviteToken = String(
     searchParams.get("inviteToken")
     || searchParams.get("token")
@@ -113,25 +154,14 @@ function ClerkAuthContent({ mode }) {
   const signInRoute = useMemo(() => buildRouteWithSearch(clerkSignInPath, inviteSearch), [inviteSearch]);
   const completeRoute = useMemo(() => buildRouteWithSearch(clerkCompletePath, inviteSearch), [inviteSearch]);
   const onboardingRoute = useMemo(() => buildRouteWithSearch(clerkAfterSignUpPath, inviteSearch), [inviteSearch]);
-  const widgetPath = useMemo(() => {
-    if (mode === "sign-up") {
-      if (location.pathname === "/signup" || location.pathname.startsWith("/signup/")) return "/signup";
-      return clerkSignUpPath;
-    }
-    if (location.pathname === "/login" || location.pathname.startsWith("/login/")) return "/login";
-    return clerkSignInPath;
-  }, [location.pathname, mode]);
   const initialEmailAddress = inviteDetails?.recipientEmail || undefined;
   const signInInitialValues = useMemo(() => ({ emailAddress: initialEmailAddress }), [initialEmailAddress]);
+  const hostedSignUpUrl = useMemo(
+    () => buildHostedRedirectUrl(buildHostedClerkUrl("/sign-up"), location.search),
+    [location.search]
+  );
 
   const pageCopy = useMemo(() => {
-    if (mode === "sign-up") {
-      return {
-        kicker: "Cuenta segura",
-        title: "Crea tu cuenta",
-        subtitle: "Crea tu acceso seguro. Clerk te guiara con la verificacion del email y luego continuaremos con tu perfil interno."
-      };
-    }
     if (mode === "complete") {
       return {
         kicker: "Preparando tu cocina",
@@ -153,30 +183,34 @@ function ClerkAuthContent({ mode }) {
   }, [mode, navigate, signInRoute]);
 
   useEffect(() => {
-    if (mode !== "sign-up" || !isLoaded || isSignedIn) return;
-    void clerk.redirectToSignUp({ redirectUrl: onboardingRoute });
-  }, [clerk, isLoaded, isSignedIn, mode, onboardingRoute]);
+    if (mode !== "sign-in") return;
+    if (!location.pathname.startsWith("/auth/clerk/sign-in")) return;
+    navigate(signInRoute, { replace: true });
+  }, [location.pathname, mode, navigate, signInRoute]);
 
   useEffect(() => {
-    const inviteToken = String(searchParams.get("inviteToken") || searchParams.get("token") || "").trim();
-    const inviteCode = String(searchParams.get("inviteCode") || searchParams.get("code") || "").replace(/\D/g, "").slice(0, 6);
     if (inviteToken) {
       window.sessionStorage.setItem(pendingInviteTokenKey, inviteToken);
-      if (isDevelopmentEnvironment) {
-        console.info("[clerk][dev] Stored pending invite token for Clerk onboarding");
-      }
     }
     if (inviteCode) {
       window.sessionStorage.setItem(pendingInviteCodeKey, inviteCode);
-      if (isDevelopmentEnvironment) {
-        console.info("[clerk][dev] Stored pending invite code for Clerk onboarding", { inviteCode });
-      }
     }
-  }, [searchParams]);
+  }, [inviteCode, inviteToken]);
+
+  useEffect(() => {
+    if (mode !== "sign-up" || signUpRedirectStartedRef.current) return;
+    signUpRedirectStartedRef.current = true;
+
+    if (!hostedSignUpUrl || isAlreadyOnHostedClerkDomain(hostedSignUpUrl)) {
+      return;
+    }
+
+    window.location.replace(hostedSignUpUrl);
+  }, [hostedSignUpUrl, mode]);
 
   useEffect(() => {
     let active = true;
-    if (!inviteToken) {
+    if (mode === "sign-up" || !inviteToken) {
       setInviteDetails(null);
       setInviteDetailsLoaded(true);
       return undefined;
@@ -208,7 +242,7 @@ function ClerkAuthContent({ mode }) {
     return () => {
       active = false;
     };
-  }, [inviteToken]);
+  }, [inviteToken, mode]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -229,10 +263,6 @@ function ClerkAuthContent({ mode }) {
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || loading || user?.id || onboardingRequired || !lastAuthError) return;
-    const normalizedError = normalizeBackendError(lastAuthError);
-    if (isDevelopmentEnvironment) {
-      console.warn("[clerk][dev] No se pudo completar el enlace de la sesion", normalizedError);
-    }
     if (finalBootstrapErrorTimerRef.current) {
       window.clearTimeout(finalBootstrapErrorTimerRef.current);
     }
@@ -262,7 +292,7 @@ function ClerkAuthContent({ mode }) {
   };
 
   const isResolvingClerkHandoff = isLoaded && isSignedIn && (loading || (!user?.id && !onboardingRequired && !finalBootstrapError));
-  const shouldWaitForInviteContext = (mode === "sign-in" || mode === "sign-up") && inviteToken && !inviteDetailsLoaded;
+  const shouldWaitForInviteContext = mode === "sign-in" && inviteToken && !inviteDetailsLoaded;
   if ((mode === "choice" || mode === "reset-password") && !isSignedIn) {
     return (
       <AppLoadingScreen
@@ -299,12 +329,18 @@ function ClerkAuthContent({ mode }) {
     );
   }
 
-  if (mode === "sign-up" && !isSignedIn) {
+  if (mode === "sign-up") {
+    if (hostedSignUpUrl) return null;
     return (
-      <AppLoadingScreen
-        title="Abriendo registro seguro"
-        subtitle="Te estamos llevando al sign-up nativo de Clerk para crear y verificar tu cuenta."
-      />
+      <AuthShell
+        kicker="Cuenta segura"
+        title="Registro no configurado"
+        subtitle="No pudimos abrir el sign-up seguro en este entorno."
+      >
+        <div className="kitchen-alert error">
+          Falta configurar la URL hospedada de Clerk para el registro.
+        </div>
+      </AuthShell>
     );
   }
 
@@ -371,7 +407,7 @@ function ClerkAuthContent({ mode }) {
       <ClerkWidgetMount>
         <SignIn
           routing="path"
-          path={widgetPath}
+          path={clerkSignInPath}
           signUpUrl="/signup"
           forceRedirectUrl={completeRoute}
           fallbackRedirectUrl={completeRoute}

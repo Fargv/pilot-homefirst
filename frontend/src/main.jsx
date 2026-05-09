@@ -10,8 +10,8 @@ const app = (
   clerkPublishableKey ? (
     <ClerkProvider
       publishableKey={clerkPublishableKey}
-      signInUrl="/auth/clerk/sign-in"
-      signUpUrl="/auth/clerk/sign-up"
+      signInUrl="/sign-in"
+      signUpUrl="/signup"
       signInForceRedirectUrl="/auth/clerk/complete"
       signInFallbackRedirectUrl="/auth/clerk/complete"
       signUpForceRedirectUrl={clerkAfterSignUpUrl}

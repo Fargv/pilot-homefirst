@@ -171,11 +171,11 @@ export default function ClerkOnboardingPage() {
     }
   }, [navigate, user]);
 
-  // If Clerk is loaded but no active session → send to sign-up
+  // If Clerk is loaded but no active session, send the user back to sign-in.
   useEffect(() => {
     if (!clerkIsLoaded) return;
     if (!isSignedIn) {
-      clerk.redirectToSignUp({ redirectUrl: CLERK_AFTER_SIGN_UP_PATH });
+      clerk.redirectToSignIn({ redirectUrl: CLERK_AFTER_SIGN_UP_PATH });
     }
   }, [clerkIsLoaded, isSignedIn, clerk]);
 

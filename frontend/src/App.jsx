@@ -190,9 +190,6 @@ function AuthBoundary() {
 export default function App() {
   useEffect(() => {
     document.title = isDevelopmentEnvironment ? "Lunchfy DEV" : "Lunchfy";
-    if (import.meta.env.DEV && !clerkPublishableKey) {
-      console.error("[clerk][dev] VITE_CLERK_PUBLISHABLE_KEY is missing. Secure signup and login screens will stay in fallback mode.");
-    }
   }, []);
 
   return (
