@@ -12,7 +12,7 @@ import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 const STORAGE_INVITE_TOKEN_KEY = "clerk_onboarding_invite_token";
 const STORAGE_INVITE_CODE_KEY = "clerk_onboarding_invite_code";
 const BASIC_PLAN = "basic";
-const LOGIN_PATH = "/sign-in";
+const LOGIN_PATH = "/login";
 const CLERK_AFTER_SIGN_UP_PATH = import.meta.env.VITE_CLERK_AFTER_SIGN_UP_URL || "/onboarding/clerk";
 
 // Steps 1 (Cuenta) and 2 (Verificación) are now handled externally by Clerk.
