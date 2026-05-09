@@ -12,8 +12,6 @@ const clerkCompletePath = "/auth/clerk/complete";
 const clerkSignInPath = "/auth/clerk/sign-in";
 const clerkSignUpPath = "/auth/clerk/sign-up";
 const clerkPostAuthPath = "/kitchen/semana";
-const legacyLoginPath = "/legacy-login";
-const legacySignupPath = "/legacy-signup";
 const pendingInviteTokenKey = "clerk_onboarding_invite_token";
 const pendingInviteCodeKey = "clerk_onboarding_invite_code";
 
@@ -65,11 +63,11 @@ export default function ClerkAuthPage({ mode = "sign-in" }) {
       <AuthShell
         kicker="Cuenta segura"
         title="Acceso no configurado"
-        subtitle="El acceso con Clerk aun no esta disponible en este entorno."
+        subtitle="El acceso seguro aun no esta disponible en este entorno. Contacta con el administrador."
       >
-        <button type="button" className="kitchen-ui-button kitchen-login-submit" onClick={() => navigate(legacyLoginPath)}>
-          Usar acceso con email y contrasena
-        </button>
+        <p className="kitchen-auth-hint" style={{ textAlign: "center" }}>
+          VITE_CLERK_PUBLISHABLE_KEY no esta configurado.
+        </p>
       </AuthShell>
     );
   }
@@ -396,13 +394,6 @@ function ClerkAuthContent({ mode }) {
             Crear cuenta
           </button>
         )}
-        <button
-          type="button"
-          className="kitchen-login-link"
-          onClick={() => navigate(mode === "sign-up" ? legacySignupPath : legacyLoginPath)}
-        >
-          Usar acceso legacy
-        </button>
       </div>
     </AuthShell>
   );

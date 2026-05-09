@@ -7,12 +7,7 @@ import RequireAuth from "./kitchen/RequireAuth.jsx";
 import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
 import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
 import ClerkAuthPage from "./kitchen/pages/ClerkAuthPage.jsx";
-import ClerkDevAuthPage from "./kitchen/pages/ClerkDevAuthPage.jsx";
 import ClerkOnboardingPage from "./kitchen/pages/ClerkOnboardingPage.jsx";
-import LoginPage from "./kitchen/pages/LoginPage.jsx";
-import SignupPage from "./kitchen/pages/SignupPage.jsx";
-import ForgotPasswordPage from "./kitchen/pages/ForgotPasswordPage.jsx";
-import ResetPasswordPage from "./kitchen/pages/ResetPasswordPage.jsx";
 import WeekPage from "./kitchen/pages/WeekPage.jsx";
 import DishesPage from "./kitchen/pages/DishesPage.jsx";
 import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
@@ -28,7 +23,6 @@ import "./kitchen/kitchen.css";
 import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
-const isClerkDevAuthRouteEnabled = isDevelopmentEnvironment || import.meta.env.DEV;
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 function HomeRedirect() {
@@ -80,9 +74,6 @@ function BootstrapRedirect() {
 }
 
 function AppRoutes() {
-  const defaultLoginElement = clerkPublishableKey ? <ClerkAuthPage mode="sign-in" /> : <LoginPage />;
-  const defaultSignupElement = clerkPublishableKey ? <ClerkOnboardingPage /> : <SignupPage />;
-
   return (
     <ActiveWeekProvider>
       <DevEnvironmentBanner />
@@ -90,22 +81,14 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
-        <Route path="/login/*" element={defaultLoginElement} />
-        <Route path="/signup" element={defaultSignupElement} />
-        {clerkPublishableKey ? <Route path="/auth/clerk" element={<ClerkAuthPage mode="choice" />} /> : null}
-        {clerkPublishableKey ? <Route path="/auth/clerk/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} /> : null}
-        {clerkPublishableKey ? <Route path="/auth/clerk/sign-up/*" element={<ClerkOnboardingPage />} /> : null}
-        {clerkPublishableKey ? <Route path="/auth/clerk/reset-password/*" element={<ClerkAuthPage mode="reset-password" />} /> : null}
-        {clerkPublishableKey ? <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} /> : null}
-        {clerkPublishableKey ? <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} /> : null}
-        {isClerkDevAuthRouteEnabled ? <Route path="/dev/clerk-auth" element={<ClerkDevAuthPage />} /> : null}
-        <Route path="/legacy-login" element={<LoginPage />} />
-        <Route path="/legacy-signup" element={<SignupPage />} />
-        <Route path="/kitchen/login" element={<LoginPage />} />
-        <Route path="/register" element={<SignupPage />} />
-        <Route path="/kitchen/register" element={<SignupPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/login/*" element={<ClerkAuthPage mode="sign-in" />} />
+        <Route path="/signup" element={<ClerkOnboardingPage />} />
+        <Route path="/auth/clerk" element={<ClerkAuthPage mode="choice" />} />
+        <Route path="/auth/clerk/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} />
+        <Route path="/auth/clerk/sign-up/*" element={<ClerkOnboardingPage />} />
+        <Route path="/auth/clerk/reset-password/*" element={<ClerkAuthPage mode="reset-password" />} />
+        <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} />
+        <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} />
         <Route path="/invite/:token" element={<InviteLandingPage />} />
         <Route
           path="/kitchen/semana"

@@ -7202,3 +7202,91 @@ body {
     text-align: left;
   }
 }
+
+/* ── Signup redesign ───────────────────────────────────────────────────────── */
+
+.kitchen-signup-fields {
+  display: grid;
+  gap: 14px;
+  padding: clamp(16px, 5vw, 22px);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(228, 231, 236, 0.72);
+}
+
+.kitchen-ui-input.is-error {
+  border-color: var(--hf-danger);
+  background: #fff8f8;
+}
+
+.kitchen-ui-input.is-error:focus-visible {
+  outline-color: color-mix(in srgb, var(--hf-danger) 30%, white);
+}
+
+.kitchen-ui-input.is-valid {
+  border-color: #16a34a;
+}
+
+.kitchen-ui-input.is-valid:focus-visible {
+  outline-color: rgba(22, 163, 74, 0.25);
+}
+
+.kitchen-signup-field-error {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--hf-danger);
+  line-height: 1.4;
+}
+
+.kitchen-signup-field-hint {
+  font-size: 0.8rem;
+  color: var(--hf-muted);
+  line-height: 1.4;
+}
+
+/* 6-digit verification code grid */
+.kitchen-signup-code-grid {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.kitchen-signup-code-digit {
+  width: 46px;
+  height: 58px;
+  border-radius: 14px;
+  border: 1.5px solid var(--hf-border);
+  background: #f8fafc;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--hf-text);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  -moz-appearance: textfield;
+}
+
+.kitchen-signup-code-digit:focus {
+  border-color: var(--hf-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hf-primary) 18%, white);
+  background: #fff;
+}
+
+.kitchen-signup-code-digit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 380px) {
+  .kitchen-signup-code-grid {
+    gap: 5px;
+  }
+
+  .kitchen-signup-code-digit {
+    width: 40px;
+    height: 52px;
+    font-size: 1.4rem;
+  }
+}
