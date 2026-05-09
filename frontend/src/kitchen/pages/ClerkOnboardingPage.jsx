@@ -143,7 +143,6 @@ export default function ClerkOnboardingPage() {
     if (!isLoaded) return "Clerk is still loading";
     if (!signUp) return "Clerk signUp object is unavailable";
     if (!emailIsValid) return normalizedEmail ? "Invalid email" : "Email is empty";
-    if (emailCheck.state === "checking" && emailCheck.email === normalizedEmail) return "Checking email";
     if (emailCheck.state === "exists" && emailCheck.email === normalizedEmail) return "Email already exists";
     if (!form.password) return "Password is empty";
     if (!passwordHasMinimumLength) return "Invalid password";
@@ -210,7 +209,7 @@ export default function ClerkOnboardingPage() {
 
     setForm((prev) => ({
       ...prev,
-      email: prev.email || inviteDetails?.recipientEmail || "",
+      email: inviteDetails?.recipientEmail || prev.email || "",
       inviteToken: prev.inviteToken || inviteToken,
       inviteCode: prev.inviteCode || inviteCode,
       householdMode: prev.householdMode || (inviteToken || inviteCode ? "join" : prev.householdMode)
@@ -289,28 +288,12 @@ export default function ClerkOnboardingPage() {
 
   useEffect(() => {
     if (authPhase !== "credentials") return undefined;
-    if (!normalizedEmail) {
+    if (!normalizedEmail || !emailIsValid) {
       setEmailCheck({ state: "idle", email: "", message: "" });
       return undefined;
     }
-    if (!emailIsValid) {
-      setEmailCheck({ state: "idle", email: normalizedEmail, message: "" });
-      return undefined;
-    }
-    if (emailCheck.state === "available" && emailCheck.email === normalizedEmail) {
-      return undefined;
-    }
 
-    if (emailCheckTimerRef.current) {
-      window.clearTimeout(emailCheckTimerRef.current);
-    }
-
-    setEmailCheck((prev) => {
-      if (prev.state === "checking" && prev.email === normalizedEmail) {
-        return prev;
-      }
-      return { state: "checking", email: normalizedEmail, message: "" };
-    });
+    setEmailCheck({ state: "checking", email: normalizedEmail, message: "" });
 
     emailCheckTimerRef.current = window.setTimeout(async () => {
       try {
@@ -321,20 +304,12 @@ export default function ClerkOnboardingPage() {
           message: data?.exists ? "Este email ya esta registrado. Inicia sesion o usa otro email." : ""
         });
       } catch {
-        setEmailCheck({
-          state: "error",
-          email: normalizedEmail,
-          message: ""
-        });
+        setEmailCheck({ state: "error", email: normalizedEmail, message: "" });
       }
     }, 350);
 
-    return () => {
-      if (emailCheckTimerRef.current) {
-        window.clearTimeout(emailCheckTimerRef.current);
-      }
-    };
-  }, [authPhase, emailCheck.email, emailCheck.state, emailIsValid, normalizedEmail]);
+    return () => window.clearTimeout(emailCheckTimerRef.current);
+  }, [authPhase, emailIsValid, normalizedEmail]);
 
   const stepTitle = useMemo(() => {
     if (authPhase === "verify") return "Verifica tu email";
