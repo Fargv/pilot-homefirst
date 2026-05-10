@@ -237,6 +237,8 @@ export default function ShoppingPage() {
   const quickCategoryFieldRef = useRef(null);
   const quickCategoryMenuRef = useRef(null);
   const pendingNavigationRef = useRef(null);
+  const prevPendingCountRef = useRef(null);
+  const openPurchaseSessionRef = useRef(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
   const openPurchaseSession = currentPurchaseSession || pendingPurchaseSessions[0] || null;
@@ -537,6 +539,27 @@ export default function ShoppingPage() {
       clearTimeout(timer);
     };
   }, [quickQuery]);
+
+  useEffect(() => {
+    openPurchaseSessionRef.current = openPurchaseSession;
+  }, [openPurchaseSession]);
+
+  useEffect(() => {
+    if (!budgetFeatureEnabled || pendingCount === null) {
+      prevPendingCountRef.current = pendingCount;
+      return;
+    }
+    const prev = prevPendingCountRef.current;
+    prevPendingCountRef.current = pendingCount;
+    if (prev === null || prev === 0 || pendingCount > 0) return;
+    const timer = setTimeout(() => {
+      const session = openPurchaseSessionRef.current;
+      if (session?.id && Number(session.itemCount || 0) > 0) {
+        openPurchaseConfirmModal(session);
+      }
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [pendingCount, budgetFeatureEnabled]);
 
   const refreshList = async () => {
     if (isDiodGlobalMode) return;
@@ -920,16 +943,6 @@ export default function ShoppingPage() {
                   <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
                   <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
                 </div>
-                {shouldShowConfirmPurchaseButton ? (
-                  <button
-                    type="button"
-                    className="kitchen-button secondary shopping-pending-purchases-button"
-                    onClick={() => openPurchaseConfirmModal(openPurchaseSession)}
-                    disabled={!hasOpenPurchase}
-                  >
-                    Confirmar compra
-                  </button>
-                ) : null}
                 <ShareWhatsAppButton
                   iconOnly
                   size={22}
@@ -1008,6 +1021,24 @@ export default function ShoppingPage() {
             <div className="shopping-toolbar-alerts" aria-live="polite">
               {success ? <div className="kitchen-alert success shopping-toolbar-alert">{success}</div> : null}
               {error ? <div className="kitchen-alert error shopping-toolbar-alert">{error}</div> : null}
+            </div>
+          ) : null}
+
+          {budgetFeatureEnabled && hasOpenPurchase && !purchaseConfirmOpen ? (
+            <div className="shopping-confirm-banner" role="status">
+              <div className="shopping-confirm-banner-info">
+                <strong className="shopping-confirm-banner-title">¿Cuánto has gastado?</strong>
+                <span className="shopping-confirm-banner-sub">
+                  {openPurchaseSession.itemCount} producto{openPurchaseSession.itemCount !== 1 ? "s" : ""} marcado{openPurchaseSession.itemCount !== 1 ? "s" : ""} como comprado{openPurchaseSession.itemCount !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="kitchen-button is-small shopping-confirm-banner-btn"
+                onClick={() => openPurchaseConfirmModal(openPurchaseSession)}
+              >
+                Registrar gasto
+              </button>
             </div>
           ) : null}
 
