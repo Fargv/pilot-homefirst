@@ -82,7 +82,7 @@ export function applySubscriptionRequest(household, plan, now = new Date()) {
 
 export function applyAdminSubscriptionActivation(household, plan, now = new Date()) {
   const normalizedPlan = String(plan || "").toLowerCase();
-  if (!isRequestableSubscriptionPlan(normalizedPlan)) {
+  if (!SUBSCRIPTION_PLANS.includes(normalizedPlan)) {
     const error = new Error("El plan indicado no es válido.");
     error.code = "SUBSCRIPTION_PLAN_INVALID";
     throw error;
@@ -93,7 +93,7 @@ export function applyAdminSubscriptionActivation(household, plan, now = new Date
   household.subscriptionRequestedPlan = null;
   household.trialEndsAt = null;
   household.subscriptionEndsAt = addDays(now, SUBSCRIPTION_MOCK_BILLING_DAYS);
-  household.isPro = true;
+  household.isPro = ACTIVE_PLANS.has(normalizedPlan);
   household.assignedByAdmin = true;
   return household;
 }

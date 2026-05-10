@@ -299,20 +299,30 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
             {userMenuOpen ? (
               <div className="kitchen-user-menu" role="menu" onPointerDown={(event) => event.stopPropagation()}>
                 {isDiod ? (
-                  <label className="kitchen-user-menu-household">
-                    <span>Hogar activo</span>
-                    <select
-                      className="kitchen-input"
-                      value={user?.activeHouseholdId || ""}
-                      onChange={onChangeActiveHousehold}
-                      disabled={switchingHousehold}
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => { navigate("/admin"); onNavigate(); }}
+                      style={{ fontWeight: 700, color: "#4338ca" }}
                     >
-                      <option value="">Sin hogar (modo global)</option>
-                      {households.map((household) => (
-                        <option key={household.id} value={household.id}>{household.name}</option>
-                      ))}
-                    </select>
-                  </label>
+                      🛠 Panel de administrador
+                    </button>
+                    <label className="kitchen-user-menu-household">
+                      <span>Hogar activo</span>
+                      <select
+                        className="kitchen-input"
+                        value={user?.activeHouseholdId || ""}
+                        onChange={onChangeActiveHousehold}
+                        disabled={switchingHousehold}
+                      >
+                        <option value="">Sin hogar (modo global)</option>
+                        {households.map((household) => (
+                          <option key={household.id} value={household.id}>{household.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
                 ) : null}
                 {householdError ? <div className="kitchen-alert error">{householdError}</div> : null}
                 <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion?section=perfil")}>

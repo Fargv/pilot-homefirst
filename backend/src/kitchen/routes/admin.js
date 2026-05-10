@@ -35,12 +35,29 @@ function normalizeActiveHouseholdIdInput(body = {}) {
 
 router.get("/households", requireAuth, requireDiod, async (req, res) => {
   try {
-    const households = await Household.find({}, { name: 1 }).sort({ createdAt: 1 }).lean();
+    const households = await Household.find(
+      {},
+      { name: 1, subscriptionPlan: 1, subscriptionStatus: 1, isPro: 1, ownerUserId: 1, createdAt: 1, inviteCode: 1 }
+    ).sort({ createdAt: 1 }).lean();
+
+    const householdIds = households.map((h) => h._id);
+    const memberCounts = await KitchenUser.aggregate([
+      { $match: { householdId: { $in: householdIds }, type: { $ne: "placeholder" } } },
+      { $group: { _id: "$householdId", count: { $sum: 1 } } }
+    ]);
+    const memberCountMap = Object.fromEntries(memberCounts.map((m) => [String(m._id), m.count]));
+
     return res.json({
       ok: true,
       households: households.map((household) => ({
         id: household._id,
         name: household.name,
+        subscriptionPlan: household.subscriptionPlan || "basic",
+        subscriptionStatus: household.subscriptionStatus || "inactive",
+        isPro: Boolean(household.isPro),
+        memberCount: memberCountMap[String(household._id)] || 0,
+        inviteCode: household.inviteCode || null,
+        createdAt: household.createdAt || null,
         isActive: String(household._id) === String(req.kitchenUser.activeHouseholdId || "")
       })),
       activeHouseholdId: req.kitchenUser.activeHouseholdId || null

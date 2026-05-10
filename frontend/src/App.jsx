@@ -5,6 +5,8 @@ import { buildApiUrl } from "./kitchen/api.js";
 import KitchenLayout from "./kitchen/Layout.jsx";
 import RequireAuth from "./kitchen/RequireAuth.jsx";
 import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
+import AdminLoginPage from "./kitchen/pages/AdminLoginPage.jsx";
+import AdminPanelPage from "./kitchen/pages/AdminPanelPage.jsx";
 import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
 import ClerkAuthPage from "./kitchen/pages/ClerkAuthPage.jsx";
 import ClerkOnboardingPage from "./kitchen/pages/ClerkOnboardingPage.jsx";
@@ -155,6 +157,8 @@ function AppRoutes() {
             </RequireAuth>
           )}
         />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin" element={<AdminPanelPage />} />
         <Route
           path="/kitchen"
           element={(
