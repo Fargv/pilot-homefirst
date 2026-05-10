@@ -18,7 +18,12 @@
       "PowerShell(gh pr list --head dev --repo Fargv/pilot-homefirst)",
       "PowerShell($env:GITHUB_TOKEN; git config --get credential.helper; Get-ChildItem \"$env:APPDATA\\\\GitHub CLI\" -ErrorAction SilentlyContinue)",
       "Bash(git credential *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(xargs grep -l \"shopping\\\\|compra\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\frontend\" -Filter \"*shopping*\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\frontend\\\\src\\\\kitchen\" -Recurse -Include \"*.jsx\")",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }
