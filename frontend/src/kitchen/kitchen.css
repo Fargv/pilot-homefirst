@@ -4831,6 +4831,23 @@ body {
   font-style: normal;
 }
 
+.shopping-trip-date {
+  color: #334155;
+  font-weight: 600;
+}
+
+.shopping-trip-amount {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 1px 9px;
+  border-radius: 20px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 .shopping-items-list-purchased .shopping-item {
   align-items: center;
 }

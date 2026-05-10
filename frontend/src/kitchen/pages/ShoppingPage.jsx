@@ -1024,21 +1024,28 @@ export default function ShoppingPage() {
             </div>
           ) : null}
 
-          {budgetFeatureEnabled && hasOpenPurchase && !purchaseConfirmOpen ? (
-            <div className="shopping-confirm-banner" role="status">
-              <div className="shopping-confirm-banner-info">
-                <strong className="shopping-confirm-banner-title">¿Cuánto has gastado?</strong>
-                <span className="shopping-confirm-banner-sub">
-                  {openPurchaseSession.itemCount} producto{openPurchaseSession.itemCount !== 1 ? "s" : ""} marcado{openPurchaseSession.itemCount !== 1 ? "s" : ""} como comprado{openPurchaseSession.itemCount !== 1 ? "s" : ""}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="kitchen-button is-small shopping-confirm-banner-btn"
-                onClick={() => openPurchaseConfirmModal(openPurchaseSession)}
-              >
-                Registrar gasto
-              </button>
+          {budgetFeatureEnabled && pendingPurchaseSessions.length > 0 && !purchaseConfirmOpen ? (
+            <div className="shopping-confirm-banners">
+              {pendingPurchaseSessions.map((session) => (
+                <div className="shopping-confirm-banner" key={session.id} role="status">
+                  <div className="shopping-confirm-banner-info">
+                    <strong className="shopping-confirm-banner-title">¿Cuánto has gastado?</strong>
+                    <span className="shopping-confirm-banner-sub">
+                      {session.weekStart ? `Semana del ${formatTripDate(session.weekStart)}` : "Esta semana"}
+                      {" · "}
+                      {session.itemCount} producto{session.itemCount !== 1 ? "s" : ""}
+                      {session.storeName ? ` · ${session.storeName}` : ""}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="kitchen-button is-small shopping-confirm-banner-btn"
+                    onClick={() => openPurchaseConfirmModal(session)}
+                  >
+                    Registrar gasto
+                  </button>
+                </div>
+              ))}
             </div>
           ) : null}
 
@@ -1116,7 +1123,16 @@ export default function ShoppingPage() {
                 <div className="shopping-empty-state"><EmptyHistoryIcon /><h4>No hay nada comprado esta semana.</h4></div>
               ) : purchasedByStoreDay.map((group) => (
                 <div className="shopping-category-card shopping-purchased-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
-                  <h4>Comprado por <span>{group.purchasedByName || "Usuario"}</span> · <em>{group.storeName || "Sin supermercado"}</em> · {formatTripDate(group.purchasedDate)}</h4>
+                  <h4>
+                    <span className="shopping-trip-date">{formatTripDate(group.purchasedDate)}</span>
+                    {" · "}
+                    <em>{group.storeName || "Sin supermercado"}</em>
+                    {" · "}
+                    <span>por {group.purchasedByName || "Usuario"}</span>
+                    {group.sessionAmount != null ? (
+                      <span className="shopping-trip-amount">{formatCurrency(group.sessionAmount)}</span>
+                    ) : null}
+                  </h4>
                   <div className="shopping-items-list shopping-items-list-purchased">
                     {group.items.map((item) => {
                       const key = itemKey(item);
