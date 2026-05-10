@@ -1222,9 +1222,8 @@ export default function DishesPage() {
       <DishModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        onSaved={async () => {
-          await loadDishes();
-        }}
+        onSaved={async () => { await loadDishes(); }}
+        onRecipeSaved={async () => { await loadDishes(); }}
         categories={categories}
         dishCategories={dishCategories}
         onCategoryCreated={onCategoryCreated}

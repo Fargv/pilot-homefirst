@@ -3677,6 +3677,7 @@ export default function WeekPage() {
         isOpen={dishModalOpen}
         onClose={closeDishModal}
         onSaved={handleDishSaved}
+        onRecipeSaved={refreshCurrentDishes}
         categories={categories}
         dishCategories={dishCategories}
         onCategoryCreated={handleCategoryCreated}

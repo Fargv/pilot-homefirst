@@ -25,6 +25,7 @@ export default function DishModal({
   isOpen,
   onClose,
   onSaved,
+  onRecipeSaved,
   categories = [],
   dishCategories = [],
   onCategoryCreated,
@@ -276,6 +277,7 @@ export default function DishModal({
       }
       setRecipeSaved(true);
       setTimeout(() => setRecipeSaved(false), 2500);
+      await onRecipeSaved?.();
     } catch (err) {
       setRecipeError(err.message || "No se pudo guardar la receta.");
     } finally {
