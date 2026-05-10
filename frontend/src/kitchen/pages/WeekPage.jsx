@@ -297,7 +297,8 @@ export default function WeekPage() {
   const editingDayKeyRef = useRef("");
   const weekDirRef = useRef(null);
   const [contentSlideClass, setContentSlideClass] = useState("");
-  const prevLoadingRef = useRef(true);
+  const [isNavLoading, setIsNavLoading] = useState(false);
+  const hasEverLoadedRef = useRef(false);
   const hasInitializedRef = useRef(false);
   const pendingJumpToCurrentRef = useRef(false);
   const assignIntentRef = useRef(null);
@@ -460,10 +461,15 @@ export default function WeekPage() {
     loadRequestSeqRef.current = requestSeq;
     const householdIdAtRequest = user?.activeHouseholdId || user?.householdId || null;
     const householdKeyAtRequest = householdIdAtRequest ? String(householdIdAtRequest) : "__no_household__";
+    // Capture navigation direction before async work; navigation sets this in handleWeekShift
+    const navDir = weekDirRef.current;
+    weekDirRef.current = null;
+    const isFirstLoad = !hasEverLoadedRef.current;
 
     if (!user || isDiodGlobalMode) {
       setLoading(false);
       setDishesLoading(false);
+      setIsNavLoading(false);
       setWeekNotice(null);
       setSubscriptionPlan("basic");
       setPlan(null);
@@ -473,15 +479,24 @@ export default function WeekPage() {
       setDishesLoadedForHouseholdKey("");
       return;
     }
-    setLoading(true);
-    setDishesLoading(true);
+
     setLoadError("");
     setWeekNotice(null);
     setMissingWeekPromptOpen(false);
-    setPlan(null);
-    setDishes([]);
-    setSideDishes([]);
-    setDishesLoadedForHouseholdKey("");
+
+    if (isFirstLoad) {
+      // Initial app load: show skeleton, clear everything
+      setLoading(true);
+      setDishesLoading(true);
+      setPlan(null);
+      setDishes([]);
+      setSideDishes([]);
+      setDishesLoadedForHouseholdKey("");
+    } else {
+      // Week navigation: keep old content visible, show progress bar
+      setIsNavLoading(true);
+    }
+
     try {
       const dinnerQuery = selectedMealType === "dinner" ? "true" : "false";
       const [planData, dishesData, sideDishesData] = await Promise.all([
@@ -505,28 +520,31 @@ export default function WeekPage() {
       setUsers(usersData.users || []);
       setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
       setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
+      hasEverLoadedRef.current = true;
+      // Trigger slide-in animation for week navigation (not on initial load)
+      if (!isFirstLoad && navDir) {
+        setIsNavLoading(false);
+        setContentSlideClass(navDir === "next" ? "slide-from-right" : "slide-from-left");
+      } else if (!isFirstLoad) {
+        setIsNavLoading(false);
+      }
     } catch (err) {
       if (requestSeq !== loadRequestSeqRef.current) return;
       setLoadError(err.message || "No se pudo cargar la semana.");
+      setIsNavLoading(false);
+      setContentSlideClass("");
     } finally {
       if (requestSeq !== loadRequestSeqRef.current) return;
-      setLoading(false);
-      setDishesLoading(false);
+      if (isFirstLoad) {
+        setLoading(false);
+        setDishesLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     loadData();
   }, [user, weekStart, isOwnerAdmin, isDiodGlobalMode, selectedMealType]);
-
-  useEffect(() => {
-    if (prevLoadingRef.current && !loading && weekDirRef.current) {
-      const cls = weekDirRef.current === "next" ? "slide-from-right" : "slide-from-left";
-      weekDirRef.current = null;
-      setContentSlideClass(cls);
-    }
-    prevLoadingRef.current = loading;
-  }, [loading]);
 
   useEffect(() => {
     const requestedWeek = normalizeWeekParam(searchParams.get("week"), "");
@@ -1902,7 +1920,9 @@ export default function WeekPage() {
   }, []);
 
   const handleWeekShift = (days) => {
-    weekDirRef.current = days > 0 ? "next" : "prev";
+    if (hasEverLoadedRef.current) {
+      weekDirRef.current = days > 0 ? "next" : "prev";
+    }
     setWeekStart((prev) => addDaysToISO(prev, days));
   };
 
@@ -2031,7 +2051,7 @@ export default function WeekPage() {
 
   return (
     <KitchenLayout containerClassName={`kitchen-week-canvas ${selectedMealType === "dinner" ? "kitchen-dinner-canvas" : ""}`}>
-      <div className="kitchen-week-controls">
+      <div className={["kitchen-week-controls", contentSlideClass, isNavLoading ? "is-nav-loading" : ""].filter(Boolean).join(" ")}>
         <WeekDaysStrip
           days={visibleDays}
           userMap={userMap}
@@ -2073,6 +2093,7 @@ export default function WeekPage() {
           }}
         />
         <div className="kitchen-week-mobile-frame">
+          {isNavLoading ? <div className="kitchen-week-nav-progress" aria-hidden="true" /> : null}
           <section className="kitchen-week-header">
             <div className="kitchen-week-header-actions">
               <div className="kitchen-week-header-panel">
@@ -2169,7 +2190,7 @@ export default function WeekPage() {
               </button>
             ) : null}
             <div
-              className={`kitchen-grid kitchen-week-days ${contentSlideClass}`}
+              className={["kitchen-grid kitchen-week-days", contentSlideClass, isNavLoading ? "is-nav-loading" : ""].filter(Boolean).join(" ")}
               id="week-grid"
               ref={carouselRef}
               onAnimationEnd={() => setContentSlideClass("")}
