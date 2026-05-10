@@ -169,6 +169,13 @@ function normalizeQuery(value = "") {
   return String(value).trim().toLowerCase();
 }
 
+function formatWeekLabel(iso) {
+  if (!iso) return "";
+  const date = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "";
+  return `Semana del ${date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}`;
+}
+
 function formatCurrency(value) {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return "--";
@@ -1297,7 +1304,8 @@ export default function ShoppingPage() {
                             itemCount: group.items.length,
                             storeId: group.storeId || null,
                             storeName: group.storeName || null,
-                            weekStart: group.purchasedDate
+                            weekStart: group.purchasedDate,
+                            items: group.items.map((item) => ({ name: item.name || item.displayName || item.canonicalName || "—", occurrences: Number(item.occurrences) || 1 }))
                           })}
                         >
                           Confirmar gasto
@@ -1416,9 +1424,24 @@ export default function ShoppingPage() {
         )}
       >
         <div className="shopping-confirm-sheet">
-          <p className="kitchen-muted">
-            {purchaseConfirmTarget?.itemCount || 0} productos marcados como comprados.
-          </p>
+          {purchaseConfirmTarget?.weekStart ? (
+            <p className="shopping-confirm-week-label">
+              {formatWeekLabel(purchaseConfirmTarget.weekStart)}
+            </p>
+          ) : null}
+          {Array.isArray(purchaseConfirmTarget?.items) && purchaseConfirmTarget.items.length > 0 ? (
+            <div className="shopping-confirm-items">
+              {purchaseConfirmTarget.items.map((item, idx) => (
+                <span key={idx} className="shopping-session-item-chip">
+                  {item.name}{item.occurrences > 1 ? <span className="shopping-session-chip-count"> ×{item.occurrences}</span> : null}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="kitchen-muted shopping-confirm-item-count">
+              {purchaseConfirmTarget?.itemCount || 0} productos marcados como comprados.
+            </p>
+          )}
           <label className="kitchen-field">
             <span className="kitchen-label">Supermercado</span>
             <select

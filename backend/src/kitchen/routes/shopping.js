@@ -342,7 +342,18 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
       };
     }),
     pendingPurchaseSessions: await Promise.all(pendingPurchaseSessions.map((session) => buildPurchaseSessionSummary(session, storeById))),
-    currentPurchaseSession: await buildPurchaseSessionSummary(latestOpenPurchaseSession, storeById)
+    currentPurchaseSession: await (async () => {
+      const summary = await buildPurchaseSessionSummary(latestOpenPurchaseSession, storeById);
+      if (!summary) return null;
+      const sessionId = String(latestOpenPurchaseSession._id);
+      const items = list.items
+        .filter((item) => item.purchaseSessionId && String(item.purchaseSessionId) === sessionId)
+        .map((item) => ({
+          name: item.displayName || item.canonicalName || item.name || "—",
+          occurrences: Number(item.occurrences) || 1
+        }));
+      return { ...summary, items };
+    })()
   };
 }
 

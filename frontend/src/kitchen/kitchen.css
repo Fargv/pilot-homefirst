@@ -7368,6 +7368,33 @@ body {
   gap: 14px;
 }
 
+.shopping-confirm-week-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hf-muted);
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+.shopping-confirm-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e9edf3;
+  border-radius: 10px;
+}
+
+.shopping-confirm-item-count {
+  margin: 0;
+}
+
+.shopping-session-chip-count {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
 .shopping-budget-page {
   display: flex;
   flex-direction: column;
