@@ -23,7 +23,11 @@
       "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\frontend\" -Filter \"*shopping*\" -Recurse -ErrorAction SilentlyContinue)",
       "Bash(Select-Object FullName)",
       "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\frontend\\\\src\\\\kitchen\" -Recurse -Include \"*.jsx\")",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(xargs wc -l)",
+      "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Depth 2)",
+      "Bash(npm install *)",
+      "Bash(npm run *)"
     ]
   }
 }
