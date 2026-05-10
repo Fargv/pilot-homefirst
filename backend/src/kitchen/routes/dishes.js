@@ -1,6 +1,8 @@
 import express from "express";
 import mongoose from "mongoose";
 import { KitchenDish } from "../models/KitchenDish.js";
+import { Household } from "../models/Household.js";
+import { canRandomizeFullWeek } from "../subscriptionService.js";
 import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { normalizeIngredientList } from "../utils/normalize.js";
 import { combineDayIngredients } from "../utils/ingredients.js";
@@ -552,6 +554,61 @@ router.post("/:id/restore", requireAuth, async (req, res) => {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo recuperar el plato." });
+  }
+});
+
+router.put("/:id/recipe", requireAuth, async (req, res) => {
+  try {
+    const isDiod = isDiodUser(req.kitchenUser);
+    const dish = await KitchenDish.findById(req.params.id);
+    if (!dish || dish.isArchived) {
+      return res.status(404).json({ ok: false, error: "Plato no encontrado." });
+    }
+
+    if (dish.scope === CATALOG_SCOPES.MASTER) {
+      if (!isDiod) {
+        return res.status(403).json({ ok: false, error: "Solo DIOD puede editar la receta de platos master." });
+      }
+    } else {
+      const requiredHouseholdId = getEffectiveHouseholdId(req.user);
+      if (!dish.householdId || String(dish.householdId) !== String(requiredHouseholdId)) {
+        return res.status(403).json({ ok: false, error: "No tienes permisos para editar la receta de este plato." });
+      }
+      if (!isDiod) {
+        const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan").lean();
+        if (!household || !canRandomizeFullWeek(household.subscriptionPlan)) {
+          return res.status(403).json({ ok: false, error: "Esta funcionalidad requiere un plan PRO o superior.", code: "PRO_REQUIRED" });
+        }
+      }
+    }
+
+    const { ingredients, steps } = req.body || {};
+    const normalizedIngredients = Array.isArray(ingredients)
+      ? ingredients
+          .filter((item) => item && String(item.name || "").trim())
+          .map((item) => ({
+            name: String(item.name || "").trim(),
+            quantity: String(item.quantity || "").trim()
+          }))
+      : [];
+
+    dish.recipe = {
+      ingredients: normalizedIngredients,
+      steps: steps ?? null
+    };
+    await dish.save();
+
+    return res.json({
+      ok: true,
+      dish: {
+        id: String(dish._id),
+        recipe: dish.recipe
+      }
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo guardar la receta." });
   }
 });
 

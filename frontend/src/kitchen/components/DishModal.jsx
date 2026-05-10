@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../api.js";
 import IngredientPicker from "./IngredientPicker.jsx";
+import RecipeEditor from "./RecipeEditor.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
+import { useAuth } from "../auth.jsx";
+import { canRandomizeFullWeek } from "../subscription.js";
 
 const EMPTY_FORM = {
   name: "",
@@ -29,12 +32,21 @@ export default function DishModal({
   initialIsDinner = false,
   scope = undefined
 }) {
+  const { user } = useAuth();
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [isCreatingIngredient, setIsCreatingIngredient] = useState(false);
+  const [activeTab, setActiveTab] = useState("datos");
+  const [recipe, setRecipe] = useState({ ingredients: [], steps: null });
+  const [recipeSaving, setRecipeSaving] = useState(false);
+  const [recipeError, setRecipeError] = useState("");
+  const [recipeSaved, setRecipeSaved] = useState(false);
   const ingredientCache = useRef(new Map());
+
+  const isDiod = user?.globalRole === "diod";
+  const isPro = isDiod || canRandomizeFullWeek(user?.subscriptionPlan);
 
   const fetchIngredientMatch = useCallback(async (canonicalName) => {
     if (!canonicalName) return null;
@@ -83,6 +95,9 @@ export default function DishModal({
     if (!isOpen) return;
     let active = true;
     setError("");
+    setRecipeError("");
+    setRecipeSaved(false);
+    setActiveTab("datos");
     const setup = async () => {
       if (initialDish?._id) {
         const ingredients = await resolveIngredients(initialDish.ingredients || []);
@@ -101,6 +116,10 @@ export default function DishModal({
           isArchived: Boolean(initialDish.isArchived)
         });
         setEditingId(initialDish._id);
+        setRecipe({
+          ingredients: initialDish.recipe?.ingredients || [],
+          steps: initialDish.recipe?.steps || null
+        });
       } else {
         setForm({
           name: initialName || "",
@@ -114,6 +133,7 @@ export default function DishModal({
           isArchived: false
         });
         setEditingId(null);
+        setRecipe({ ingredients: [], steps: null });
       }
     };
     setup();
@@ -135,6 +155,10 @@ export default function DishModal({
     setForm(EMPTY_FORM);
     setEditingId(null);
     setError("");
+    setRecipeError("");
+    setRecipeSaved(false);
+    setActiveTab("datos");
+    setRecipe({ ingredients: [], steps: null });
     setIsCreatingIngredient(false);
     onClose?.();
   };
@@ -185,6 +209,28 @@ export default function DishModal({
     }
   };
 
+  const saveRecipe = async () => {
+    if (!editingId) return;
+    setRecipeError("");
+    setRecipeSaved(false);
+    setRecipeSaving(true);
+    try {
+      await apiRequest(`/api/kitchen/dishes/${editingId}/recipe`, {
+        method: "PUT",
+        body: JSON.stringify({
+          ingredients: recipe.ingredients || [],
+          steps: recipe.steps || null
+        })
+      });
+      setRecipeSaved(true);
+      setTimeout(() => setRecipeSaved(false), 2500);
+    } catch (err) {
+      setRecipeError(err.message || "No se pudo guardar la receta.");
+    } finally {
+      setRecipeSaving(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -213,7 +259,64 @@ export default function DishModal({
             </svg>
           </button>
         </div>
-        <form onSubmit={onSave} className="kitchen-form">
+        <div className="recipe-tabs">
+          <button
+            type="button"
+            className={activeTab === "datos" ? "is-active" : ""}
+            onClick={() => setActiveTab("datos")}
+          >
+            Datos
+          </button>
+          <button
+            type="button"
+            className={activeTab === "receta" ? "is-active" : ""}
+            onClick={() => setActiveTab("receta")}
+          >
+            Receta
+          </button>
+        </div>
+        {activeTab === "receta" ? (
+          <div style={{ padding: "0 2px" }}>
+            {isPro || editingId ? (
+              <>
+                {!isPro && editingId ? (
+                  <p className="kitchen-muted" style={{ marginBottom: 12 }}>
+                    Esta funcionalidad requiere un plan PRO.
+                  </p>
+                ) : null}
+                {isPro ? (
+                  <>
+                    <RecipeEditor
+                      recipeIngredients={recipe.ingredients}
+                      recipeSteps={recipe.steps}
+                      onChange={setRecipe}
+                      readOnly={false}
+                    />
+                    {recipeError ? <div className="kitchen-alert error" style={{ marginTop: 8 }}>{recipeError}</div> : null}
+                    {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Receta guardada.</div> : null}
+                    <div className="recipe-save-bar">
+                      {editingId ? (
+                        <button
+                          type="button"
+                          className="kitchen-button"
+                          onClick={saveRecipe}
+                          disabled={recipeSaving}
+                        >
+                          {recipeSaving ? "Guardando..." : "Guardar receta"}
+                        </button>
+                      ) : (
+                        <p className="kitchen-muted">Guarda el plato primero para poder guardar su receta.</p>
+                      )}
+                    </div>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <p className="kitchen-muted">Esta funcionalidad requiere un plan PRO. Crea el plato y actualiza tu suscripción para añadir una receta.</p>
+            )}
+          </div>
+        ) : null}
+        <form onSubmit={onSave} className="kitchen-form" style={{ display: activeTab === "datos" ? undefined : "none" }}>
           <label className="kitchen-field">
             <span className="kitchen-label">Nombre del plato</span>
             <input

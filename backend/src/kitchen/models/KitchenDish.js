@@ -29,7 +29,14 @@ const KitchenDishSchema = new mongoose.Schema(
     active: { type: Boolean, default: true },
     deletedAt: { type: Date, default: null },
     isArchived: { type: Boolean, default: false },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" }
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" },
+    recipe: {
+      ingredients: {
+        type: [{ name: { type: String }, quantity: { type: String }, _id: false }],
+        default: []
+      },
+      steps: { type: mongoose.Schema.Types.Mixed, default: null }
+    }
   },
   { timestamps: true }
 );

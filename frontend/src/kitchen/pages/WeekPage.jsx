@@ -5,6 +5,7 @@ import { useAuth } from "../auth";
 import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
 import IngredientPicker from "../components/IngredientPicker.jsx";
 import DishModal from "../components/DishModal.jsx";
+import RecipeModal from "../components/RecipeModal.jsx";
 import WeekPageSkeleton from "../components/WeekPageSkeleton.jsx";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import KitchenLayout from "../Layout.jsx";
@@ -149,6 +150,15 @@ function TodayIcon(props) {
   );
 }
 
+function BookIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M4 4h7a2 2 0 0 1 2 2v13a1.5 1.5 0 0 0-1.5-1.5H4V4z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M20 4h-7a2 2 0 0 0-2 2v13a1.5 1.5 0 0 1 1.5-1.5H20V4z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 const MAX_DISH_RESULTS = 8;
 const WEEK_MEAL_TAB_KEY = "kitchen_week_meal_tab";
 const OPTIONAL_WEEKEND_DAY_OFFSETS = {
@@ -286,6 +296,7 @@ export default function WeekPage() {
   const [weekDeleteConfirmOpen, setWeekDeleteConfirmOpen] = useState(false);
   const [weekDeleteBusy, setWeekDeleteBusy] = useState(false);
   const [weekendDialogOpen, setWeekendDialogOpen] = useState(false);
+  const [recipeModal, setRecipeModal] = useState(null);
   const [weekendBusy, setWeekendBusy] = useState(false);
   const ingredientCache = useRef(new Map());
   const saveTimers = useRef({});
@@ -2420,6 +2431,17 @@ export default function WeekPage() {
                       <div className="kitchen-day-dish-display">{displayDishName || "Sin plato"}</div>
                       {isPlanned ? (
                         <div className="kitchen-day-title-info-wrap">
+                          {mainDish?.recipe && (mainDish.recipe.ingredients?.length || mainDish.recipe.steps) ? (
+                            <button
+                              type="button"
+                              className="kitchen-day-title-info-action"
+                              onClick={() => setRecipeModal({ dish: mainDish })}
+                              aria-label="Ver receta"
+                              title="Ver receta"
+                            >
+                              <BookIcon />
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             className="kitchen-day-title-info-action"
@@ -3658,6 +3680,9 @@ export default function WeekPage() {
         initialSidedish={dishModalSidedish}
         initialIsDinner={dishModalMealType === "dinner"}
       />
+      {recipeModal ? (
+        <RecipeModal dish={recipeModal.dish} onClose={() => setRecipeModal(null)} />
+      ) : null}
     </KitchenLayout>
   );
 }
