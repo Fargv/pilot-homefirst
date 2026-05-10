@@ -1,7 +1,6 @@
 [build]
-  base = "frontend"
-  command = "npm run build"
-  publish = "dist"
+  command = "npm install && npm run build --workspace=frontend"
+  publish = "frontend/dist"
 
 [[redirects]]
   from = "/*"
