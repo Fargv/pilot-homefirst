@@ -279,7 +279,7 @@ export default function DishModal({
           </button>
         </div>
         {activeTab === "receta" ? (
-          <div style={{ padding: "0 2px" }}>
+          <div className="recipe-tab-content">
             {isPro || editingId ? (
               <>
                 {!isPro && editingId ? (
