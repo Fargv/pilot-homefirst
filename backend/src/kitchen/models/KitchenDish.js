@@ -32,7 +32,12 @@ const KitchenDishSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" },
     recipe: {
       ingredients: {
-        type: [{ name: { type: String }, quantity: { type: String }, _id: false }],
+        type: [{
+          name: { type: String },
+          quantity: { type: String },
+          ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient", default: null },
+          _id: false
+        }],
         default: []
       },
       steps: { type: mongoose.Schema.Types.Mixed, default: null },

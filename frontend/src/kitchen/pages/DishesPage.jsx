@@ -5,6 +5,7 @@ import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import DishModal from "../components/DishModal.jsx";
 import IngredientModal from "../components/IngredientModal.jsx";
+import RecipeModal from "../components/RecipeModal.jsx";
 import CategoryIcon from "../components/CategoryIcon.jsx";
 import { resolveCategoryCode } from "../components/categoryIconMap.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
@@ -102,6 +103,7 @@ export default function DishesPage() {
   const [assignDate, setAssignDate] = useState("");
   const [deleteDishModal, setDeleteDishModal] = useState({ open: false, dish: null, deleting: false });
   const [dishInfoOpenId, setDishInfoOpenId] = useState(null);
+  const [recipeModalDish, setRecipeModalDish] = useState(null);
   const [dishTogglePendingId, setDishTogglePendingId] = useState("");
   const [isInfoMobile, setIsInfoMobile] = useState(false);
   const infoPopoverRef = useRef(null);
@@ -1075,8 +1077,12 @@ export default function DishesPage() {
                           ref={(node) => registerInfoButton(dish._id, node)}
                           className="kitchen-icon-button info"
                           type="button"
-                          onClick={() => toggleDishInfo(dish._id)}
-                          aria-label={`Ver ingredientes de ${dish.name}`}
+                          onClick={() => {
+                            const hasRecipe = dish.recipe && (dish.recipe.ingredients?.length > 0 || dish.recipe.steps);
+                            if (hasRecipe) { setRecipeModalDish(dish); }
+                            else { toggleDishInfo(dish._id); }
+                          }}
+                          aria-label={`Ver información de ${dish.name}`}
                           aria-expanded={dishInfoOpenId === dish._id}
                           aria-controls={`dish-info-${dish._id}`}
                           title="Ingredientes"
@@ -1210,6 +1216,9 @@ export default function DishesPage() {
         ) : null}
       </div>
 
+      {recipeModalDish ? (
+        <RecipeModal dish={recipeModalDish} onClose={() => setRecipeModalDish(null)} />
+      ) : null}
       <DishModal
         isOpen={isModalOpen}
         onClose={closeModal}

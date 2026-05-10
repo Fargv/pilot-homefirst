@@ -7953,6 +7953,57 @@ body {
   background: #f5f3ff;
 }
 
+.recipe-ingredient-name-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.recipe-ingredient-name-wrap .recipe-ingredient-input {
+  width: 100%;
+}
+.recipe-ingredient-input.is-linked {
+  border-color: #a5b4fc;
+  background: #f5f3ff;
+}
+.recipe-ingredient-linked-dot {
+  position: absolute;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4f46e5;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.recipe-ingredient-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  z-index: 100;
+  overflow: hidden;
+}
+.recipe-ingredient-dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  cursor: pointer;
+  color: #1e293b;
+  transition: background 0.1s;
+}
+.recipe-ingredient-dropdown-item:hover {
+  background: #f5f3ff;
+  color: #4f46e5;
+}
+
 .recipe-servings-label {
   font-size: 13px;
   color: #6b7280;

@@ -1,5 +1,6 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
+import { apiRequest } from "../api.js";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
@@ -7,6 +8,83 @@ import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import TextStyle from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
+
+function RecipeIngredientInput({ item, index, onUpdateFields, onRemove, isNew, onAddToDish }) {
+  const [query, setQuery] = useState(item.name || "");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isLinked, setIsLinked] = useState(Boolean(item.ingredientId));
+  const containerRef = useRef(null);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (item.name !== query && !isLinked) setQuery(item.name || "");
+  }, [item.name]);
+
+  const search = (q) => {
+    clearTimeout(timeoutRef.current);
+    if (!q || q.length < 2) { setSuggestions([]); setShowDropdown(false); return; }
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(q)}&mode=recipe`);
+        setSuggestions(data.ingredients || []);
+        setShowDropdown(true);
+      } catch { setSuggestions([]); }
+    }, 250);
+  };
+
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setQuery(val);
+    setIsLinked(false);
+    onUpdateFields(index, { name: val, ingredientId: null });
+    search(val);
+  };
+
+  const handleSelect = (ingredient) => {
+    const name = ingredient.displayName || ingredient.canonicalName;
+    setQuery(name);
+    setIsLinked(true);
+    setShowDropdown(false);
+    setSuggestions([]);
+    onUpdateFields(index, { name, ingredientId: ingredient._id });
+  };
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setShowDropdown(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="recipe-ingredient-name-wrap">
+      <input
+        className={`recipe-ingredient-input${isLinked ? " is-linked" : ""}`}
+        value={query}
+        onChange={handleChange}
+        onFocus={() => query.length >= 2 && suggestions.length > 0 && setShowDropdown(true)}
+        placeholder="Ingrediente"
+      />
+      {isLinked && <span className="recipe-ingredient-linked-dot" title="Vinculado" />}
+      {showDropdown && suggestions.length > 0 && (
+        <div className="recipe-ingredient-dropdown">
+          {suggestions.slice(0, 6).map((s) => (
+            <button
+              key={s._id}
+              type="button"
+              className="recipe-ingredient-dropdown-item"
+              onMouseDown={() => handleSelect(s)}
+            >
+              {s.displayName || s.canonicalName}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ToolbarButton({ onClick, isActive, title, children }) {
   return (
@@ -183,11 +261,15 @@ export default function RecipeEditor({
     }));
   };
 
-  const updateIngredient = (index, field, value) => {
+  const updateIngredient = (index, fieldOrFields, value) => {
     if (!onChange) return;
     onChange((prev) => {
       const next = [...(prev.ingredients || [])];
-      next[index] = { ...next[index], [field]: value };
+      if (typeof fieldOrFields === "object") {
+        next[index] = { ...next[index], ...fieldOrFields };
+      } else {
+        next[index] = { ...next[index], [fieldOrFields]: value };
+      }
       return { ...prev, ingredients: next };
     });
   };
@@ -258,11 +340,10 @@ export default function RecipeEditor({
         <div className="recipe-ingredient-list">
           {(recipeIngredients || []).map((item, idx) => (
             <div key={idx} className="recipe-ingredient-row">
-              <input
-                className="recipe-ingredient-input"
-                placeholder="Ingrediente"
-                value={item.name || ""}
-                onChange={(e) => updateIngredient(idx, "name", e.target.value)}
+              <RecipeIngredientInput
+                item={item}
+                index={idx}
+                onUpdateFields={updateIngredient}
               />
               <input
                 className="recipe-ingredient-input recipe-ingredient-qty"

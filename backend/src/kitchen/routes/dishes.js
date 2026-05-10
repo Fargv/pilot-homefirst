@@ -571,7 +571,8 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
           .filter((item) => item && String(item.name || "").trim())
           .map((item) => ({
             name: String(item.name || "").trim(),
-            quantity: String(item.quantity || "").trim()
+            quantity: String(item.quantity || "").trim(),
+            ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
           }))
       : [];
     const normalizedServings = servings != null && Number.isFinite(Number(servings)) ? Number(servings) : null;

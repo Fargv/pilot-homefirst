@@ -2445,7 +2445,11 @@ export default function WeekPage() {
                           <button
                             type="button"
                             className="kitchen-day-title-info-action"
-                            onClick={() => setInfoOpenByDay((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))}
+                            onClick={() => {
+                              const hasRecipe = mainDish?.recipe && (mainDish.recipe.ingredients?.length > 0 || mainDish.recipe.steps);
+                              if (hasRecipe) { setRecipeModal({ dish: mainDish }); }
+                              else { setInfoOpenByDay((prev) => ({ ...prev, [dayKey]: !prev[dayKey] })); }
+                            }}
                             aria-label="Ver detalles del plato"
                             title="Detalles del plato"
                           >

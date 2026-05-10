@@ -129,7 +129,8 @@ export default function DishModal({
           ? existingRecipeIngredients
           : (initialDish.ingredients || []).map((ing) => ({
               name: ing.displayName || ing.canonicalName || "",
-              quantity: ""
+              quantity: "",
+              ingredientId: ing.ingredientId || null
             })).filter((ing) => ing.name);
         setRecipe({
           ingredients: recipeIngredients,
