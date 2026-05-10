@@ -140,9 +140,10 @@ function CloseIcon(props) {
 function TodayIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M8 3.5v2.2M16 3.5v2.2M4.5 9h15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <rect x="4.5" y="5.8" width="15" height="14.7" rx="2.4" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="12" cy="14" r="2.1" fill="currentColor" />
+      <rect x="3" y="5" width="18" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M3 10h18" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <rect x="9.5" y="12.5" width="5" height="4.5" rx="1" fill="currentColor" />
     </svg>
   );
 }
@@ -294,6 +295,9 @@ export default function WeekPage() {
   const sideDishPickingRef = useRef({});
   const selectedDayRef = useRef(selectedDay);
   const editingDayKeyRef = useRef("");
+  const weekDirRef = useRef(null);
+  const [contentSlideClass, setContentSlideClass] = useState("");
+  const prevLoadingRef = useRef(true);
   const hasInitializedRef = useRef(false);
   const pendingJumpToCurrentRef = useRef(false);
   const assignIntentRef = useRef(null);
@@ -514,6 +518,15 @@ export default function WeekPage() {
   useEffect(() => {
     loadData();
   }, [user, weekStart, isOwnerAdmin, isDiodGlobalMode, selectedMealType]);
+
+  useEffect(() => {
+    if (prevLoadingRef.current && !loading && weekDirRef.current) {
+      const cls = weekDirRef.current === "next" ? "slide-from-right" : "slide-from-left";
+      weekDirRef.current = null;
+      setContentSlideClass(cls);
+    }
+    prevLoadingRef.current = loading;
+  }, [loading]);
 
   useEffect(() => {
     const requestedWeek = normalizeWeekParam(searchParams.get("week"), "");
@@ -1889,6 +1902,7 @@ export default function WeekPage() {
   }, []);
 
   const handleWeekShift = (days) => {
+    weekDirRef.current = days > 0 ? "next" : "prev";
     setWeekStart((prev) => addDaysToISO(prev, days));
   };
 
@@ -2074,12 +2088,12 @@ export default function WeekPage() {
                     {!isCurrentWeek ? (
                       <button
                         type="button"
-                        className="kitchen-week-arrow kitchen-week-now-button"
+                        className="kitchen-week-now-button"
                         onClick={handleJumpToCurrentPeriod}
                         aria-label="Ir a la semana actual"
-                        title="Ir a la semana actual"
                       >
                         <TodayIcon className="kitchen-week-now-icon" />
+                        <span>Hoy</span>
                       </button>
                     ) : null}
                   </div>
@@ -2154,7 +2168,12 @@ export default function WeekPage() {
                 <ChevronIcon className="kitchen-week-carousel-arrow-icon" />
               </button>
             ) : null}
-            <div className="kitchen-grid kitchen-week-days" id="week-grid" ref={carouselRef}>
+            <div
+              className={`kitchen-grid kitchen-week-days ${contentSlideClass}`}
+              id="week-grid"
+              ref={carouselRef}
+              onAnimationEnd={() => setContentSlideClass("")}
+            >
               {!plan ? (
                 <div className="kitchen-card kitchen-empty">
                   <h3>No hay planificación para esta semana</h3>

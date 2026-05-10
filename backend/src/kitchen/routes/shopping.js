@@ -868,6 +868,36 @@ router.post("/purchase-sessions/:sessionId/complete", requireAuth, async (req, r
   }
 });
 
+router.put("/purchase-sessions/:sessionId/amount", requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const { budgetFeatureEnabled } = await resolveHouseholdBudgetAccess(effectiveHouseholdId);
+    if (!budgetFeatureEnabled) {
+      return res.status(403).json(buildBudgetFeatureUnavailablePayload());
+    }
+    const amount = parseAmount(req.body?.amount);
+    if (amount === null) {
+      return res.status(400).json({ ok: false, error: "Debes indicar un importe válido." });
+    }
+    const session = await PurchaseSession.findOne({
+      _id: req.params.sessionId,
+      householdId: effectiveHouseholdId,
+      status: "completed"
+    });
+    if (!session) {
+      return res.status(404).json({ ok: false, error: "Compra confirmada no encontrada." });
+    }
+    session.amount = amount;
+    session.updatedByUserId = req.kitchenUser._id;
+    await session.save();
+    return res.json({ ok: true, sessionId: session._id, amount: normalizeBudgetNumber(session.amount) });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el importe." });
+  }
+});
+
 router.post("/:weekStart/purchased/assign-store", requireAuth, async (req, res) => {
   try {
     const weekStart = parseISODate(req.params.weekStart);

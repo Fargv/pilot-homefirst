@@ -23,9 +23,10 @@ function RefreshIcon(props) {
 function TodayIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M8 3.5v2.2M16 3.5v2.2M4.5 9h15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <rect x="4.5" y="5.8" width="15" height="14.7" rx="2.4" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="12" cy="14" r="2.1" fill="currentColor" />
+      <rect x="3" y="5" width="18" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M3 10h18" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <rect x="9.5" y="12.5" width="5" height="4.5" rx="1" fill="currentColor" />
     </svg>
   );
 }
@@ -58,6 +59,15 @@ function PlusIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
       <path d="M12 6v12M6 12h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PencilIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M4 20h3.5l10-10-3.5-3.5-10 10V20z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M13.5 6.5l3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -236,6 +246,10 @@ export default function ShoppingPage() {
   const [allPendingSessions, setAllPendingSessions] = useState([]);
   const [sessionsTabBusy, setSessionsTabBusy] = useState(false);
   const [sessionsTabError, setSessionsTabError] = useState("");
+  const [editingGroupSessionId, setEditingGroupSessionId] = useState(null);
+  const [editingGroupAmount, setEditingGroupAmount] = useState("");
+  const [contentSlideClass, setContentSlideClass] = useState("");
+  const weekDirRef = useRef(null);
   const [dismissedBannerIds, setDismissedBannerIds] = useState(() => {
     try {
       const stored = localStorage.getItem("kitchen_dismissed_banners");
@@ -270,6 +284,9 @@ export default function ShoppingPage() {
     const nextWeekValue = typeof valueOrUpdater === "function" ? valueOrUpdater(weekStart) : valueOrUpdater;
     const normalizedWeek = normalizeWeekParam(nextWeekValue, weekStart || getCurrentWeekStart());
     if (!normalizedWeek) return;
+    if (normalizedWeek !== weekStart) {
+      weekDirRef.current = normalizedWeek > weekStart ? "next" : "prev";
+    }
     setWeekStart(normalizedWeek);
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("week", normalizedWeek);
@@ -321,6 +338,12 @@ export default function ShoppingPage() {
     setPendingPurchaseSessions(nextBudgetFeatureEnabled ? normalizedPendingPurchaseSessions : []);
     setCurrentPurchaseSession(nextCurrentPurchaseSession);
     setHasRestorableOpenPurchase(Boolean(nextOpenPurchaseSession?.id && Number(nextOpenPurchaseSession?.itemCount || 0) > 0));
+
+    // Trigger week-change slide animation
+    if (weekDirRef.current) {
+      setContentSlideClass(weekDirRef.current === "next" ? "slide-from-right" : "slide-from-left");
+      weekDirRef.current = null;
+    }
 
     // Prune dismissed IDs that are no longer pending (already confirmed/cancelled)
     const activePendingIds = new Set(normalizedPendingPurchaseSessions.map((s) => String(s.id)));
@@ -773,6 +796,20 @@ export default function ShoppingPage() {
     }
   };
 
+  const saveGroupAmount = async (group) => {
+    if (!group.purchaseSessionId) return;
+    try {
+      await apiRequest(`/api/kitchen/shopping/purchase-sessions/${group.purchaseSessionId}/amount`, {
+        method: "PUT",
+        body: JSON.stringify({ amount: editingGroupAmount })
+      });
+      setEditingGroupSessionId(null);
+      await loadList({ silent: true });
+    } catch (err) {
+      setError(err.message || "No se pudo actualizar el importe.");
+    }
+  };
+
   const updateGroupStore = async (group, newStoreId) => {
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/purchased/group-store`, {
@@ -990,12 +1027,12 @@ export default function ShoppingPage() {
                 {!isCurrentWeek ? (
                   <button
                     type="button"
-                    className="kitchen-week-arrow kitchen-week-now-button shopping-week-now-button"
+                    className="kitchen-week-now-button shopping-week-now-button"
                     onClick={handleJumpToCurrentWeek}
                     aria-label="Ir a la semana actual"
-                    title="Ir a la semana actual"
                   >
                     <TodayIcon className="kitchen-week-now-icon" />
+                    <span>Hoy</span>
                   </button>
                 ) : null}
               </div>
@@ -1118,6 +1155,10 @@ export default function ShoppingPage() {
             </div>
           ) : null}
 
+          <div
+            className={`shopping-week-content ${contentSlideClass}`}
+            onAnimationEnd={() => setContentSlideClass("")}
+          >
           {tab === "pending" ? (
             <div className="shopping-categories">
               <div className="shopping-bulk-actions">
@@ -1199,7 +1240,36 @@ export default function ShoppingPage() {
                       <span className="shopping-trip-date">{formatTripDate(group.purchasedDate)}</span>
                       <span className="shopping-purchased-by"> · por {group.purchasedByName || "Usuario"}</span>
                       {group.sessionAmount != null ? (
-                        <span className="shopping-trip-amount">{formatCurrency(group.sessionAmount)}</span>
+                        editingGroupSessionId === group.purchaseSessionId ? (
+                          <form
+                            className="shopping-trip-amount-form"
+                            onSubmit={(e) => { e.preventDefault(); void saveGroupAmount(group); }}
+                          >
+                            <input
+                              className="kitchen-input shopping-trip-amount-input"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              inputMode="decimal"
+                              value={editingGroupAmount}
+                              onChange={(e) => setEditingGroupAmount(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Escape") setEditingGroupSessionId(null); }}
+                              autoFocus
+                            />
+                            <button type="submit" className="shopping-trip-amount-save" aria-label="Guardar">✓</button>
+                            <button type="button" className="shopping-trip-amount-cancel" aria-label="Cancelar" onClick={() => setEditingGroupSessionId(null)}>✕</button>
+                          </form>
+                        ) : (
+                          <button
+                            type="button"
+                            className="shopping-trip-amount"
+                            onClick={() => { setEditingGroupSessionId(group.purchaseSessionId); setEditingGroupAmount(String(group.sessionAmount ?? "")); }}
+                            title="Editar importe"
+                          >
+                            {formatCurrency(group.sessionAmount)}
+                            <PencilIcon className="shopping-trip-amount-pencil" />
+                          </button>
+                        )
                       ) : null}
                     </div>
                     <div className="shopping-purchased-card-controls">
@@ -1300,6 +1370,7 @@ export default function ShoppingPage() {
               )}
             </div>
           ) : null}
+          </div>{/* end shopping-week-content */}
         </div>
       </div>
       <ModalSheet

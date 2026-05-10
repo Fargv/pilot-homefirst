@@ -1716,21 +1716,34 @@ body {
 }
 
 .kitchen-week-now-button {
-  grid-column: 3;
-  justify-self: start;
-  width: var(--kitchen-week-nav-control-height);
-  min-width: var(--kitchen-week-nav-control-height);
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 13px;
+  height: var(--kitchen-week-nav-control-height);
+  font-size: 13px;
+  font-weight: 600;
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.08);
+  border: 1.5px solid rgba(79, 70, 229, 0.22);
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: background 140ms, border-color 140ms;
+  flex-shrink: 0;
+}
+
+.kitchen-week-now-button:hover {
+  background: rgba(79, 70, 229, 0.14);
+  border-color: rgba(79, 70, 229, 0.38);
 }
 
 .kitchen-week-now-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 0;
   fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  flex-shrink: 0;
 }
 
 .kitchen-week-header-panel .kitchen-meal-tabs {
@@ -2723,9 +2736,7 @@ body {
   }
 
   .kitchen-week-now-button {
-    width: var(--kitchen-week-nav-control-height);
-    min-width: var(--kitchen-week-nav-control-height);
-    padding: 0;
+    padding: 0 10px;
   }
 
   .kitchen-week-randomize-button {
@@ -5030,6 +5041,78 @@ body {
   60%  { opacity: 1; transform: translateY(2px) scale(1.01); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* Week slide animations (shopping + week planner) */
+@keyframes slideFromRight {
+  from { opacity: 0; transform: translateX(36px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideFromLeft {
+  from { opacity: 0; transform: translateX(-36px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.shopping-week-content.slide-from-right,
+.kitchen-week-days.slide-from-right {
+  animation: slideFromRight 260ms cubic-bezier(0.22, 0.8, 0.36, 1) both;
+}
+.shopping-week-content.slide-from-left,
+.kitchen-week-days.slide-from-left {
+  animation: slideFromLeft 260ms cubic-bezier(0.22, 0.8, 0.36, 1) both;
+}
+
+/* Editable amount badge */
+.shopping-trip-amount {
+  cursor: pointer;
+  transition: background 130ms;
+}
+.shopping-trip-amount:hover {
+  background: #bbf7d0;
+}
+.shopping-trip-amount-pencil {
+  width: 11px;
+  height: 11px;
+  margin-left: 4px;
+  opacity: 0.55;
+  stroke: currentColor;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.shopping-trip-amount-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+}
+.shopping-trip-amount-input {
+  width: 80px;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+.shopping-trip-amount-save,
+.shopping-trip-amount-cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.shopping-trip-amount-save {
+  background: #dcfce7;
+  color: #15803d;
+}
+.shopping-trip-amount-save:hover { background: #bbf7d0; }
+.shopping-trip-amount-cancel {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.shopping-trip-amount-cancel:hover { background: #fecaca; }
 
 /* ===== SPRING ANIMATION SYSTEM ===== */
 
