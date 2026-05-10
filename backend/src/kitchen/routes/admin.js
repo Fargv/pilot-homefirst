@@ -128,20 +128,29 @@ router.post("/subscription/activate", requireAuth, requireDiod, async (req, res)
       return res.status(400).json({ ok: false, error: "El householdId no es válido." });
     }
 
-    const household = await Household.findById(householdId);
-    if (!household) {
+    const existing = await Household.findById(householdId).lean();
+    if (!existing) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
 
-    applyAdminSubscriptionActivation(household, req.body?.plan);
-    await household.save();
+    const draft = applyAdminSubscriptionActivation({ ...existing }, req.body?.plan);
+    const update = {
+      subscriptionPlan: draft.subscriptionPlan,
+      subscriptionStatus: draft.subscriptionStatus,
+      subscriptionRequestedPlan: draft.subscriptionRequestedPlan,
+      trialEndsAt: draft.trialEndsAt,
+      subscriptionEndsAt: draft.subscriptionEndsAt,
+      isPro: draft.isPro,
+      assignedByAdmin: draft.assignedByAdmin
+    };
+    await Household.updateOne({ _id: householdId }, { $set: update });
 
     return res.json({
       ok: true,
       household: {
-        id: household._id,
-        name: household.name,
-        ...buildHouseholdSubscriptionResponse(household)
+        id: existing._id,
+        name: existing.name,
+        ...buildHouseholdSubscriptionResponse(draft)
       }
     });
   } catch (error) {
@@ -165,20 +174,29 @@ router.post("/subscription/deactivate", requireAuth, requireDiod, async (req, re
       return res.status(400).json({ ok: false, error: "El householdId no es válido." });
     }
 
-    const household = await Household.findById(householdId);
-    if (!household) {
+    const existing = await Household.findById(householdId).lean();
+    if (!existing) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
 
-    applyAdminSubscriptionDeactivation(household);
-    await household.save();
+    const draft = applyAdminSubscriptionDeactivation({ ...existing });
+    const update = {
+      subscriptionPlan: draft.subscriptionPlan,
+      subscriptionStatus: draft.subscriptionStatus,
+      subscriptionRequestedPlan: draft.subscriptionRequestedPlan,
+      trialEndsAt: draft.trialEndsAt,
+      subscriptionEndsAt: draft.subscriptionEndsAt,
+      isPro: draft.isPro,
+      assignedByAdmin: draft.assignedByAdmin
+    };
+    await Household.updateOne({ _id: householdId }, { $set: update });
 
     return res.json({
       ok: true,
       household: {
-        id: household._id,
-        name: household.name,
-        ...buildHouseholdSubscriptionResponse(household)
+        id: existing._id,
+        name: existing.name,
+        ...buildHouseholdSubscriptionResponse(draft)
       }
     });
   } catch (error) {

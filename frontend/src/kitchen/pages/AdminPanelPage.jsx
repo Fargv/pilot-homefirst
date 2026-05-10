@@ -60,9 +60,13 @@ function StatusBadge({ status }) {
 }
 
 function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan }) {
-  const [localPlan, setLocalPlan] = useState(household.subscriptionPlan);
+  const [localPlan, setLocalPlan] = useState(household.subscriptionPlan || "basic");
   const [saving, setSaving] = useState(false);
   const [rowError, setRowError] = useState("");
+
+  useEffect(() => {
+    setLocalPlan(household.subscriptionPlan || "basic");
+  }, [household.subscriptionPlan]);
 
   const isActive = String(household.id) === String(activeHouseholdId || "");
 
