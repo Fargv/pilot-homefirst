@@ -4660,7 +4660,8 @@ body {
 
 .shopping-item.is-leaving {
   transition: none;
-  animation: shoppingItemLeave 220ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  overflow: hidden;
+  animation: shoppingItemLeave 340ms cubic-bezier(0.4, 0, 1, 1) forwards;
   pointer-events: none;
 }
 
@@ -4896,10 +4897,38 @@ body {
 }
 
 @keyframes shoppingItemLeave {
-  0%   { opacity: 1; transform: translateX(0) scale(1); }
-  12%  { opacity: 1; transform: translateX(-5px) scale(1.02); }
-  72%  { opacity: 0; transform: translateX(38px) scale(0.95); }
-  100% { opacity: 0; transform: translateX(44px) scale(0.94); }
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 80px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 0;
+    border-width: 1px;
+  }
+  10% {
+    opacity: 1;
+    transform: translateX(-5px) scale(1.02);
+    max-height: 80px;
+  }
+  65% {
+    opacity: 0;
+    transform: translateX(38px) scale(0.95);
+    max-height: 80px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 0;
+    border-width: 1px;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(44px) scale(0.94);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: -9px;
+    border-width: 0;
+  }
 }
 
 @keyframes checkPop {
