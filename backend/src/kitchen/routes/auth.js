@@ -855,15 +855,17 @@ router.post("/clerk/onboarding", async (req, res) => {
 router.get("/me", requireAuth, async (req, res) => {
   try {
     let householdName = null;
+    let subscriptionPlan = "basic";
     const effectiveHouseholdId = req.user?.activeHouseholdId || req.user?.householdId || null;
     if (effectiveHouseholdId) {
-      const household = await Household.findById(effectiveHouseholdId).select("name").lean();
+      const household = await Household.findById(effectiveHouseholdId).select("name subscriptionPlan").lean();
       householdName = household?.name || null;
+      subscriptionPlan = normalizeSubscriptionPlan(household?.subscriptionPlan);
     }
 
     res.json({
       ok: true,
-      user: buildSafeUserResponse(req.kitchenUser, householdName),
+      user: { ...buildSafeUserResponse(req.kitchenUser, householdName), subscriptionPlan },
       auth: req.user
     });
   } catch {

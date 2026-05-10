@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import IngredientPicker from "./IngredientPicker.jsx";
 import RecipeEditor from "./RecipeEditor.jsx";
+import { ProBadge } from "./ui/ProBadge.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { useAuth } from "../auth.jsx";
 import { canRandomizeFullWeek } from "../subscription.js";
@@ -33,6 +35,7 @@ export default function DishModal({
   scope = undefined
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -312,7 +315,16 @@ export default function DishModal({
                 ) : null}
               </>
             ) : (
-              <p className="kitchen-muted">Esta funcionalidad requiere un plan PRO. Crea el plato y actualiza tu suscripción para añadir una receta.</p>
+              <div className="pro-gate-message">
+                <p className="kitchen-muted">Añade una receta detallada a este plato con el plan</p>
+                <button
+                  type="button"
+                  className="pro-gate-pill"
+                  onClick={() => navigate(`/kitchen/upgrade?from=${encodeURIComponent(window.location.pathname)}`)}
+                >
+                  <ProBadge /> Actualizar plan
+                </button>
+              </div>
             )}
           </div>
         ) : null}
