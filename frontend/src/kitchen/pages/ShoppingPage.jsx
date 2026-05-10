@@ -233,6 +233,9 @@ export default function ShoppingPage() {
   const [quickCategorySearch, setQuickCategorySearch] = useState("");
   const [quickCategoryMenuOpen, setQuickCategoryMenuOpen] = useState(false);
   const [quickCategoryMenuPosition, setQuickCategoryMenuPosition] = useState(null);
+  const [allPendingSessions, setAllPendingSessions] = useState([]);
+  const [sessionsTabBusy, setSessionsTabBusy] = useState(false);
+  const [sessionsTabError, setSessionsTabError] = useState("");
   const quickInputRef = useRef(null);
   const quickCategoryFieldRef = useRef(null);
   const quickCategoryMenuRef = useRef(null);
@@ -748,6 +751,19 @@ export default function ShoppingPage() {
     }
   };
 
+  const updateGroupStore = async (group, newStoreId) => {
+    try {
+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/purchased/group-store`, {
+        method: "PUT",
+        body: JSON.stringify({ purchasedDate: group.purchasedDate, storeId: newStoreId || null })
+      });
+      applyPayload(data);
+    } catch (err) {
+      logShoppingApiError("updateGroupStore", `/api/kitchen/shopping/${weekStart}/purchased/group-store`, err);
+      setError(err.message || "No se pudo cambiar el supermercado.");
+    }
+  };
+
   const setAllItemsStatus = async (status) => {
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/status`, {
@@ -828,6 +844,12 @@ export default function ShoppingPage() {
         })
       });
       await loadList({ silent: true });
+      // Refresh sessions tab if it was active
+      if (tab === "sessions") {
+        apiRequest("/api/kitchen/shopping/purchase-sessions/pending")
+          .then((data) => setAllPendingSessions(Array.isArray(data?.sessions) ? data.sessions : []))
+          .catch(() => {});
+      }
       setPurchaseConfirmOpen(false);
       setPurchaseConfirmTarget(null);
       setPurchaseConfirmStoreId("");
@@ -868,6 +890,30 @@ export default function ShoppingPage() {
     }, 1200);
     return () => clearTimeout(timer);
   }, [pendingCount, budgetFeatureEnabled]);
+
+  useEffect(() => {
+    if (tab !== "sessions" || !budgetFeatureEnabled) return;
+    let active = true;
+    setSessionsTabBusy(true);
+    setSessionsTabError("");
+    apiRequest("/api/kitchen/shopping/purchase-sessions/pending")
+      .then((data) => {
+        if (!active) return;
+        setAllPendingSessions(Array.isArray(data?.sessions) ? data.sessions : []);
+      })
+      .catch((err) => {
+        if (!active) return;
+        if (isBudgetFeatureUnavailableError(err)) {
+          setSessionsTabError("Esta función requiere el plan PRO.");
+          return;
+        }
+        setSessionsTabError(err.message || "No se pudieron cargar las compras pendientes.");
+      })
+      .finally(() => {
+        if (active) setSessionsTabBusy(false);
+      });
+    return () => { active = false; };
+  }, [tab, budgetFeatureEnabled]);
 
   const purchasedCount = useMemo(() => {
     if (!Array.isArray(purchasedByStoreDay)) return null;
@@ -942,6 +988,11 @@ export default function ShoppingPage() {
                 <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
                   <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
                   <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+                  {budgetFeatureEnabled ? (
+                    <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
+                      Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
+                    </button>
+                  ) : null}
                 </div>
                 <ShareWhatsAppButton
                   iconOnly
@@ -1037,13 +1088,24 @@ export default function ShoppingPage() {
                       {session.storeName ? ` · ${session.storeName}` : ""}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    className="kitchen-button is-small shopping-confirm-banner-btn"
-                    onClick={() => openPurchaseConfirmModal(session)}
-                  >
-                    Registrar gasto
-                  </button>
+                  <div className="shopping-confirm-banner-actions">
+                    {session.weekStart ? (
+                      <button
+                        type="button"
+                        className="kitchen-button ghost is-small"
+                        onClick={() => { updateVisibleWeek(session.weekStart); setTab("purchased"); }}
+                      >
+                        Ver semana
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="kitchen-button is-small shopping-confirm-banner-btn"
+                      onClick={() => openPurchaseConfirmModal(session)}
+                    >
+                      Registrar gasto
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1102,7 +1164,9 @@ export default function ShoppingPage() {
                 );
               })}
             </div>
-          ) : (
+          ) : null}
+
+          {tab === "purchased" ? (
             <div className="shopping-categories">
               <div className="shopping-bulk-actions">
                 <button
@@ -1123,16 +1187,47 @@ export default function ShoppingPage() {
                 <div className="shopping-empty-state"><EmptyHistoryIcon /><h4>No hay nada comprado esta semana.</h4></div>
               ) : purchasedByStoreDay.map((group) => (
                 <div className="shopping-category-card shopping-purchased-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
-                  <h4>
-                    <span className="shopping-trip-date">{formatTripDate(group.purchasedDate)}</span>
-                    {" · "}
-                    <em>{group.storeName || "Sin supermercado"}</em>
-                    {" · "}
-                    <span>por {group.purchasedByName || "Usuario"}</span>
-                    {group.sessionAmount != null ? (
-                      <span className="shopping-trip-amount">{formatCurrency(group.sessionAmount)}</span>
-                    ) : null}
-                  </h4>
+                  <div className="shopping-purchased-card-head">
+                    <div className="shopping-purchased-card-meta">
+                      <span className="shopping-trip-date">{formatTripDate(group.purchasedDate)}</span>
+                      <span className="shopping-purchased-by"> · por {group.purchasedByName || "Usuario"}</span>
+                      {group.sessionAmount != null ? (
+                        <span className="shopping-trip-amount">{formatCurrency(group.sessionAmount)}</span>
+                      ) : null}
+                    </div>
+                    <div className="shopping-purchased-card-controls">
+                      <select
+                        className="kitchen-select shopping-group-store-select"
+                        value={group.storeId || ""}
+                        onChange={(event) => {
+                          const val = event.target.value;
+                          if (val === "__add__") { void createStoreFromDropdown(); return; }
+                          void updateGroupStore(group, val || null);
+                        }}
+                      >
+                        <option value="">Sin supermercado</option>
+                        {stores.map((store) => (
+                          <option key={store._id} value={store._id}>{store.name}</option>
+                        ))}
+                        <option value="__add__">Añadir supermercado…</option>
+                      </select>
+                      {budgetFeatureEnabled && group.purchaseSessionId && group.sessionAmount == null ? (
+                        <button
+                          type="button"
+                          className="kitchen-button is-small"
+                          onClick={() => openPurchaseConfirmModal({
+                            id: group.purchaseSessionId,
+                            itemCount: group.items.length,
+                            storeId: group.storeId || null,
+                            storeName: group.storeName || null,
+                            weekStart: group.purchasedDate
+                          })}
+                        >
+                          Confirmar gasto
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
                   <div className="shopping-items-list shopping-items-list-purchased">
                     {group.items.map((item) => {
                       const key = itemKey(item);
@@ -1141,12 +1236,6 @@ export default function ShoppingPage() {
                           <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
                           <span className="shopping-item-text">{item.displayName}</span>
                           {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
-                          <select className="kitchen-select shopping-store-select-compact" value={item.storeId || ""} onChange={(event) => updatePurchasedItemStore(item, event.target.value)}>
-                            <option value="">Sin supermercado</option>
-                            {stores.map((store) => (
-                              <option key={store._id} value={store._id}>{store.name}</option>
-                            ))}
-                          </select>
                           <button className="shopping-remove-item" type="button" onClick={() => removeItem(item)} aria-label={`Eliminar ${item.displayName}`} title="Eliminar">
                             <MinusIcon />
                           </button>
@@ -1157,7 +1246,53 @@ export default function ShoppingPage() {
                 </div>
               ))}
             </div>
-          )}
+          ) : null}
+
+          {tab === "sessions" ? (
+            <div className="shopping-categories">
+              {sessionsTabBusy ? (
+                <div className="shopping-empty-state"><span className="kitchen-muted">Cargando compras pendientes…</span></div>
+              ) : sessionsTabError ? (
+                <div className="kitchen-alert error">{sessionsTabError}</div>
+              ) : allPendingSessions.length === 0 ? (
+                <div className="shopping-empty-state"><EmptyCheckIcon /><h4>No hay compras pendientes de confirmar.</h4></div>
+              ) : (
+                <div className="shopping-session-cards">
+                  {allPendingSessions.map((session) => (
+                    <div className="shopping-session-card" key={session.id}>
+                      <div className="shopping-session-card-info">
+                        <strong className="shopping-session-card-title">
+                          {session.weekStart ? `Semana del ${formatTripDate(session.weekStart)}` : "Sin fecha"}
+                        </strong>
+                        <span className="shopping-session-card-sub">
+                          {session.itemCount} producto{session.itemCount !== 1 ? "s" : ""}
+                          {session.storeName ? ` · ${session.storeName}` : " · Sin supermercado"}
+                        </span>
+                      </div>
+                      <div className="shopping-session-card-actions">
+                        {session.weekStart ? (
+                          <button
+                            type="button"
+                            className="kitchen-button ghost is-small"
+                            onClick={() => { updateVisibleWeek(session.weekStart); setTab("purchased"); }}
+                          >
+                            Ver comprados
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="kitchen-button is-small"
+                          onClick={() => openPurchaseConfirmModal(session)}
+                        >
+                          Confirmar gasto
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
       </div>
       <ModalSheet

@@ -293,6 +293,7 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
           purchasedDate: dateKey,
           startedAt: item.purchasedAt,
           purchasedByName,
+          purchaseSessionId: item.purchaseSessionId || null,
           items: []
         });
       }
@@ -305,6 +306,18 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   const latestOpenPurchaseSession = budgetFeatureEnabled ? await getLatestOpenPurchaseSession(effectiveHouseholdId, weekStartDate) : null;
   const budget = budgetFeatureEnabled ? await buildBudgetSummary(weekStartDate, household, effectiveHouseholdId) : null;
 
+  const groupSessionIds = budgetFeatureEnabled
+    ? Array.from(purchasedByStoreDay.values())
+        .map((g) => g.purchaseSessionId)
+        .filter((id) => id && isValidObjectId(String(id)))
+    : [];
+  const completedGroupSessions = groupSessionIds.length
+    ? await PurchaseSession.find({ _id: { $in: groupSessionIds }, status: "completed" })
+        .select("_id amount")
+        .lean()
+    : [];
+  const completedGroupSessionById = new Map(completedGroupSessions.map((s) => [String(s._id), s]));
+
   return {
     list,
     stores,
@@ -316,9 +329,17 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
       .sort(compareCategoryGroups),
     purchasedByStoreDay: Array.from(purchasedByStoreDay.values()).sort(
       (a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime()
-    ).map((group) => ({
-      ...group
-    })),
+    ).map((group) => {
+      const { purchaseSessionId, ...groupRest } = group;
+      const completedSession = budgetFeatureEnabled && purchaseSessionId
+        ? completedGroupSessionById.get(String(purchaseSessionId))
+        : null;
+      return {
+        ...groupRest,
+        purchaseSessionId: budgetFeatureEnabled && purchaseSessionId ? String(purchaseSessionId) : null,
+        sessionAmount: completedSession ? normalizeBudgetNumber(completedSession.amount) : null
+      };
+    }),
     pendingPurchaseSessions: await Promise.all(pendingPurchaseSessions.map((session) => buildPurchaseSessionSummary(session, storeById))),
     currentPurchaseSession: await buildPurchaseSessionSummary(latestOpenPurchaseSession, storeById)
   };
@@ -850,6 +871,38 @@ router.post("/:weekStart/purchased/assign-store", requireAuth, async (req, res) 
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo asignar el supermercado." });
+  }
+});
+
+router.put("/:weekStart/purchased/group-store", requireAuth, async (req, res) => {
+  try {
+    const weekStart = parseISODate(req.params.weekStart);
+    if (!weekStart) return res.status(400).json({ ok: false, error: "Fecha inválida." });
+
+    const { purchasedDate, storeId } = req.body;
+    if (!purchasedDate) return res.status(400).json({ ok: false, error: "Fecha del grupo requerida." });
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const monday = getWeekStart(weekStart);
+    const list = await ensureShoppingList(monday, effectiveHouseholdId);
+    await repairShoppingListItems(list, effectiveHouseholdId, { context: "group-store" });
+    const validatedStoreId = await validateStoreSelection(storeId, effectiveHouseholdId);
+
+    let changed = false;
+    for (const item of list.items) {
+      if (item.status !== "purchased") continue;
+      if (toDateGroup(item.purchasedAt) !== purchasedDate) continue;
+      item.storeId = validatedStoreId;
+      changed = true;
+    }
+
+    if (changed) await list.save();
+    const payload = await getShoppingPayload(monday, effectiveHouseholdId);
+    return res.json({ ok: true, updated: changed, ...payload });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el supermercado del grupo." });
   }
 });
 

@@ -4701,20 +4701,11 @@ body {
   position: relative;
 }
 
-.shopping-item.purchased .shopping-item-text::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 53%;
-  width: 100%;
-  height: 1.5px;
-  background: rgba(100, 116, 139, 0.9);
-  transform-origin: left;
-  animation: shoppingStrike 130ms ease forwards;
-}
-
 .shopping-item.purchased .shopping-item-text {
   color: var(--hf-muted);
+  text-decoration: line-through;
+  text-decoration-color: rgba(100, 116, 139, 0.45);
+  text-decoration-thickness: 1.5px;
 }
 
 .shopping-item-controls {
@@ -4814,21 +4805,39 @@ body {
   height: 14px;
 }
 
-.shopping-purchased-card h4 {
-  margin: 2px 0 10px;
+.shopping-purchased-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.shopping-purchased-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
   font-size: 14px;
+  color: #64748b;
+}
+
+.shopping-purchased-by {
   color: #64748b;
   font-weight: 400;
 }
 
-.shopping-purchased-card h4 span {
-  color: #334155;
-  font-weight: 600;
+.shopping-purchased-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.shopping-purchased-card h4 em {
-  color: #4f46e5;
-  font-style: normal;
+.shopping-group-store-select {
+  font-size: 13px;
+  flex: 1;
+  min-width: 130px;
+  max-width: 220px;
 }
 
 .shopping-trip-date {
@@ -4837,15 +4846,67 @@ body {
 }
 
 .shopping-trip-amount {
-  display: inline-block;
-  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
   padding: 1px 9px;
   border-radius: 20px;
   background: #dcfce7;
   color: #15803d;
   font-size: 13px;
   font-weight: 700;
-  vertical-align: middle;
+}
+
+/* Sessions tab */
+.shopping-session-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shopping-session-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  flex-wrap: wrap;
+}
+
+.shopping-session-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.shopping-session-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2a58;
+}
+
+.shopping-session-card-sub {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.shopping-session-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Banner actions row */
+.shopping-confirm-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .shopping-items-list-purchased .shopping-item {
@@ -4879,7 +4940,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  flex-wrap: wrap;
+  gap: 10px 14px;
   padding: 13px 16px;
   background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 100%);
   border: 1.5px solid rgba(99, 102, 241, 0.22);
@@ -5033,10 +5095,6 @@ body {
     font-size: 14px;
     padding-inline: 10px;
   }
-}
-@keyframes shoppingStrike {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
 }
 
 @media (max-width: 900px) {
