@@ -165,6 +165,29 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
   }, []);
 
   useEffect(() => {
+    const handlePointerDown = (event) => {
+      const target = event.target.closest("button");
+      if (!target || target.disabled) return;
+      if (target.closest(".is-leaving")) return;
+      if (target.classList.contains("shopping-check")) return;
+      target.classList.remove("btn-spring");
+      void target.offsetWidth;
+      target.classList.add("btn-spring");
+    };
+    const handleAnimationEnd = (event) => {
+      if (event.animationName === "btnSpring") {
+        event.target.classList.remove("btn-spring");
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("animationend", handleAnimationEnd);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("animationend", handleAnimationEnd);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isDiod || !userMenuOpen) return;
     let active = true;
     setHouseholdError("");
