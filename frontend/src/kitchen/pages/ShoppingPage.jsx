@@ -236,6 +236,15 @@ export default function ShoppingPage() {
   const [allPendingSessions, setAllPendingSessions] = useState([]);
   const [sessionsTabBusy, setSessionsTabBusy] = useState(false);
   const [sessionsTabError, setSessionsTabError] = useState("");
+  const [dismissedBannerIds, setDismissedBannerIds] = useState(() => {
+    try {
+      const stored = localStorage.getItem("kitchen_dismissed_banners");
+      return new Set(stored ? JSON.parse(stored) : []);
+    } catch {
+      return new Set();
+    }
+  });
+  const dismissedBannerIdsRef = useRef(dismissedBannerIds);
   const quickInputRef = useRef(null);
   const quickCategoryFieldRef = useRef(null);
   const quickCategoryMenuRef = useRef(null);
@@ -312,6 +321,19 @@ export default function ShoppingPage() {
     setPendingPurchaseSessions(nextBudgetFeatureEnabled ? normalizedPendingPurchaseSessions : []);
     setCurrentPurchaseSession(nextCurrentPurchaseSession);
     setHasRestorableOpenPurchase(Boolean(nextOpenPurchaseSession?.id && Number(nextOpenPurchaseSession?.itemCount || 0) > 0));
+
+    // Prune dismissed IDs that are no longer pending (already confirmed/cancelled)
+    const activePendingIds = new Set(normalizedPendingPurchaseSessions.map((s) => String(s.id)));
+    if (nextCurrentPurchaseSession?.id) activePendingIds.add(String(nextCurrentPurchaseSession.id));
+    setDismissedBannerIds((prev) => {
+      const pruned = new Set([...prev].filter((id) => activePendingIds.has(id)));
+      if (pruned.size === prev.size) return prev;
+      dismissedBannerIdsRef.current = pruned;
+      try {
+        localStorage.setItem("kitchen_dismissed_banners", JSON.stringify([...pruned]));
+      } catch {}
+      return pruned;
+    });
   };
 
   const handleBudgetFeatureUnavailable = (message = "Upgrade your license to enable budgets.") => {
@@ -804,6 +826,19 @@ export default function ShoppingPage() {
     }
   };
 
+  const dismissBanner = (sessionId) => {
+    if (!sessionId) return;
+    setDismissedBannerIds((prev) => {
+      const next = new Set(prev);
+      next.add(String(sessionId));
+      dismissedBannerIdsRef.current = next;
+      try {
+        localStorage.setItem("kitchen_dismissed_banners", JSON.stringify([...next]));
+      } catch {}
+      return next;
+    });
+  };
+
   const postponePurchaseConfirmation = async () => {
     if (!purchaseConfirmTarget?.id || purchaseConfirmBusy) return;
     setPurchaseConfirmBusy(true);
@@ -884,7 +919,7 @@ export default function ShoppingPage() {
     if (prev === null || prev === 0 || pendingCount > 0) return;
     const timer = setTimeout(() => {
       const session = openPurchaseSessionRef.current;
-      if (session?.id && Number(session.itemCount || 0) > 0) {
+      if (session?.id && Number(session.itemCount || 0) > 0 && !dismissedBannerIdsRef.current.has(String(session.id))) {
         openPurchaseConfirmModal(session);
       }
     }, 1200);
@@ -1015,28 +1050,6 @@ export default function ShoppingPage() {
 
             {tab === "pending" ? (
               <div className="shopping-header-input-row">
-                <div className="shopping-header-store-col">
-                  <select
-                    className="kitchen-select shopping-store-select"
-                    value={selectedStoreId}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      if (value === "__add__") {
-                        void createStoreFromDropdown();
-                        return;
-                      }
-                      selectedStoreRef.current = value;
-                      setSelectedStoreId(value);
-                    }}
-                  >
-                    <option value="">Supermercado (opcional)</option>
-                    {stores.map((store) => (
-                      <option key={store._id} value={store._id}>{store.name}</option>
-                    ))}
-                    <option value="__add__">Añadir supermercado…</option>
-                  </select>
-                </div>
-
                 <div className="shopping-header-quick-col">
                   <div className="shopping-quick-add shopping-quick-add-header" role="region" aria-label="Añadir ingrediente rápido">
                     <div className="shopping-quick-add-row">
@@ -1075,39 +1088,33 @@ export default function ShoppingPage() {
             </div>
           ) : null}
 
-          {budgetFeatureEnabled && pendingPurchaseSessions.length > 0 && !purchaseConfirmOpen && tab !== "sessions" ? (
-            <div className="shopping-confirm-banners">
-              {pendingPurchaseSessions.map((session) => (
-                <div className="shopping-confirm-banner" key={session.id} role="status">
-                  <div className="shopping-confirm-banner-info">
-                    <strong className="shopping-confirm-banner-title">¿Cuánto has gastado?</strong>
-                    <span className="shopping-confirm-banner-sub">
-                      {session.weekStart ? `Semana del ${formatTripDate(session.weekStart)}` : "Esta semana"}
-                      {" · "}
-                      {session.itemCount} producto{session.itemCount !== 1 ? "s" : ""}
-                      {session.storeName ? ` · ${session.storeName}` : ""}
-                    </span>
-                  </div>
-                  <div className="shopping-confirm-banner-actions">
-                    {session.weekStart ? (
-                      <button
-                        type="button"
-                        className="kitchen-button ghost is-small"
-                        onClick={() => { updateVisibleWeek(session.weekStart); setTab("purchased"); }}
-                      >
-                        Ver semana
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="kitchen-button is-small shopping-confirm-banner-btn"
-                      onClick={() => openPurchaseConfirmModal(session)}
-                    >
-                      Registrar gasto
-                    </button>
-                  </div>
-                </div>
-              ))}
+          {budgetFeatureEnabled && currentPurchaseSession && !dismissedBannerIds.has(String(currentPurchaseSession.id)) && !purchaseConfirmOpen && tab !== "sessions" ? (
+            <div className="shopping-confirm-banner" role="status">
+              <div className="shopping-confirm-banner-info">
+                <strong className="shopping-confirm-banner-title">¿Cuánto has gastado?</strong>
+                <span className="shopping-confirm-banner-sub">
+                  {currentPurchaseSession.itemCount} producto{currentPurchaseSession.itemCount !== 1 ? "s" : ""}
+                  {currentPurchaseSession.storeName ? ` · ${currentPurchaseSession.storeName}` : ""}
+                </span>
+              </div>
+              <div className="shopping-confirm-banner-actions">
+                <button
+                  type="button"
+                  className="kitchen-button is-small shopping-confirm-banner-btn"
+                  onClick={() => openPurchaseConfirmModal(currentPurchaseSession)}
+                >
+                  Registrar gasto
+                </button>
+                <button
+                  type="button"
+                  className="shopping-confirm-banner-dismiss"
+                  onClick={() => dismissBanner(currentPurchaseSession.id)}
+                  aria-label="Cerrar aviso"
+                  title="No volver a mostrar este aviso"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           ) : null}
 
