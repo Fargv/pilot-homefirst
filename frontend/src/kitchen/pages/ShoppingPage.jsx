@@ -544,23 +544,6 @@ export default function ShoppingPage() {
     openPurchaseSessionRef.current = openPurchaseSession;
   }, [openPurchaseSession]);
 
-  useEffect(() => {
-    if (!budgetFeatureEnabled || pendingCount === null) {
-      prevPendingCountRef.current = pendingCount;
-      return;
-    }
-    const prev = prevPendingCountRef.current;
-    prevPendingCountRef.current = pendingCount;
-    if (prev === null || prev === 0 || pendingCount > 0) return;
-    const timer = setTimeout(() => {
-      const session = openPurchaseSessionRef.current;
-      if (session?.id && Number(session.itemCount || 0) > 0) {
-        openPurchaseConfirmModal(session);
-      }
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [pendingCount, budgetFeatureEnabled]);
-
   const refreshList = async () => {
     if (isDiodGlobalMode) return;
     setIsRefreshing(true);
@@ -868,6 +851,23 @@ export default function ShoppingPage() {
     if (!Array.isArray(pendingByCategory)) return null;
     return getPendingItemsCount(pendingByCategory);
   }, [pendingByCategory]);
+
+  useEffect(() => {
+    if (!budgetFeatureEnabled || pendingCount === null) {
+      prevPendingCountRef.current = pendingCount;
+      return;
+    }
+    const prev = prevPendingCountRef.current;
+    prevPendingCountRef.current = pendingCount;
+    if (prev === null || prev === 0 || pendingCount > 0) return;
+    const timer = setTimeout(() => {
+      const session = openPurchaseSessionRef.current;
+      if (session?.id && Number(session.itemCount || 0) > 0) {
+        openPurchaseConfirmModal(session);
+      }
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [pendingCount, budgetFeatureEnabled]);
 
   const purchasedCount = useMemo(() => {
     if (!Array.isArray(purchasedByStoreDay)) return null;
