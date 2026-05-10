@@ -32,6 +32,7 @@ import {
   updatePurchaseSessionStore
 } from "../purchaseSessionService.js";
 import { PurchaseSession } from "../models/PurchaseSession.js";
+import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
 import { canUseBudgetFeature } from "../subscriptionService.js";
 
 const router = express.Router();
@@ -776,9 +777,36 @@ router.get("/purchase-sessions/pending", requireAuth, async (req, res) => {
     );
     const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
     const sessions = await getPendingPurchaseSessions(effectiveHouseholdId);
+    const sessionIds = sessions.map((s) => String(s._id));
+
+    // Load items that belong to these sessions from all shopping lists
+    const itemsBySessionId = new Map();
+    if (sessionIds.length) {
+      const lists = await KitchenShoppingList.find({
+        householdId: effectiveHouseholdId,
+        "items.purchaseSessionId": { $in: sessionIds }
+      }).select("items").lean();
+      for (const list of lists) {
+        for (const item of list.items || []) {
+          if (!item.purchaseSessionId) continue;
+          const sid = String(item.purchaseSessionId);
+          if (!sessionIds.includes(sid)) continue;
+          if (!itemsBySessionId.has(sid)) itemsBySessionId.set(sid, []);
+          itemsBySessionId.get(sid).push({
+            name: item.displayName || item.canonicalName || "—",
+            occurrences: Number(item.occurrences) || 1
+          });
+        }
+      }
+    }
+
+    const summaries = await Promise.all(sessions.map((session) => buildPurchaseSessionSummary(session, storeById)));
     return res.json({
       ok: true,
-      sessions: await Promise.all(sessions.map((session) => buildPurchaseSessionSummary(session, storeById)))
+      sessions: summaries.map((summary) => ({
+        ...summary,
+        items: itemsBySessionId.get(String(summary.id)) || []
+      }))
     });
   } catch (error) {
     const handled = handleHouseholdError(res, error);

@@ -1075,7 +1075,7 @@ export default function ShoppingPage() {
             </div>
           ) : null}
 
-          {budgetFeatureEnabled && pendingPurchaseSessions.length > 0 && !purchaseConfirmOpen ? (
+          {budgetFeatureEnabled && pendingPurchaseSessions.length > 0 && !purchaseConfirmOpen && tab !== "sessions" ? (
             <div className="shopping-confirm-banners">
               {pendingPurchaseSessions.map((session) => (
                 <div className="shopping-confirm-banner" key={session.id} role="status">
@@ -1260,25 +1260,16 @@ export default function ShoppingPage() {
                 <div className="shopping-session-cards">
                   {allPendingSessions.map((session) => (
                     <div className="shopping-session-card" key={session.id}>
-                      <div className="shopping-session-card-info">
-                        <strong className="shopping-session-card-title">
-                          {session.weekStart ? `Semana del ${formatTripDate(session.weekStart)}` : "Sin fecha"}
-                        </strong>
-                        <span className="shopping-session-card-sub">
-                          {session.itemCount} producto{session.itemCount !== 1 ? "s" : ""}
-                          {session.storeName ? ` · ${session.storeName}` : " · Sin supermercado"}
-                        </span>
-                      </div>
-                      <div className="shopping-session-card-actions">
-                        {session.weekStart ? (
-                          <button
-                            type="button"
-                            className="kitchen-button ghost is-small"
-                            onClick={() => { updateVisibleWeek(session.weekStart); setTab("purchased"); }}
-                          >
-                            Ver comprados
-                          </button>
-                        ) : null}
+                      <div className="shopping-session-card-header">
+                        <div className="shopping-session-card-info">
+                          <strong className="shopping-session-card-title">
+                            {session.weekStart ? `Semana del ${formatTripDate(session.weekStart)}` : "Sin fecha"}
+                          </strong>
+                          <span className="shopping-session-card-sub">
+                            {session.itemCount} producto{session.itemCount !== 1 ? "s" : ""}
+                            {session.storeName ? ` · ${session.storeName}` : " · Sin supermercado"}
+                          </span>
+                        </div>
                         <button
                           type="button"
                           className="kitchen-button is-small"
@@ -1287,6 +1278,15 @@ export default function ShoppingPage() {
                           Confirmar gasto
                         </button>
                       </div>
+                      {session.items?.length > 0 ? (
+                        <div className="shopping-session-card-items">
+                          {session.items.map((item, idx) => (
+                            <span key={idx} className="shopping-session-item-chip">
+                              {item.name}{item.occurrences > 1 ? ` ×${item.occurrences}` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>
