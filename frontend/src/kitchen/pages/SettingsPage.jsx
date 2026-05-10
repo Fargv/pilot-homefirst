@@ -17,6 +17,7 @@ import {
 } from "../subscription.js";
 import { getColorPalette, getUserColorById, getUserColorPreference, setUserColorPreference } from "../utils/userColors.js";
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
+import { ProBadge } from "../components/ui/ProBadge.jsx";
 
 function initialsFromName(name = "") {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
@@ -953,8 +954,8 @@ export default function SettingsPage() {
     }
   };
 
-  const CardButton = ({ title, subtitle, onClick, icon = ">" }) => (
-    <button type="button" className="settings-hub-card" onClick={onClick}>
+  const CardButton = ({ title, subtitle, onClick, icon = ">", className = "" }) => (
+    <button type="button" className={`settings-hub-card ${className}`.trim()} onClick={onClick}>
       <div className="settings-hub-card-main">
         <h3>{title}</h3>
         <p>{subtitle}</p>
@@ -1504,9 +1505,10 @@ export default function SettingsPage() {
             <CardButton title="Perfil" subtitle="Informacion personal, password y color." onClick={() => setPanel("perfil")} />
             <CardButton title="Preferencias" subtitle="Idioma, dark mode y notificaciones." onClick={() => setPanel("preferencias")} />
             <CardButton
-              title="Presupuesto"
-              subtitle={budgetFeatureEnabled ? "Resumen e historico semanal de compras." : "Bloqueado en Basic. Upgrade your license."}
-              onClick={budgetFeatureEnabled ? openBudgetPanel : () => setPanel("preferencias")}
+              title={budgetFeatureEnabled ? "Presupuesto" : <span style={{ display: "flex", alignItems: "center" }}>Presupuesto<ProBadge /></span>}
+              subtitle={budgetFeatureEnabled ? "Resumen e historico semanal de compras." : "Lleva el control de lo que gastas cada semana."}
+              onClick={budgetFeatureEnabled ? openBudgetPanel : () => navigate("/kitchen/upgrade?from=%2Fkitchen%2Fconfiguracion")}
+              className={!budgetFeatureEnabled ? "is-pro-locked" : ""}
             />
             {canViewHousehold ? <CardButton title="Household" subtitle="Miembros y ajustes del hogar." onClick={() => setPanel("household-members")} /> : null}
             {canAccessShare ? <CardButton title="Compartir" subtitle="Invitaciones por email y código de acceso." onClick={() => setPanel("share")} /> : null}

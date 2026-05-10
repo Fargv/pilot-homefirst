@@ -7704,3 +7704,84 @@ body {
     font-size: 1.4rem;
   }
 }
+
+/* ─── PRO Badge & Gate ────────────────────────────────────────────────────── */
+
+.pro-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px 2px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 5px;
+  line-height: 1.6;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(79, 70, 229, 0.35);
+  pointer-events: none;
+}
+
+/* Botón que tiene una feature bloqueada por PRO */
+.pro-gate-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  opacity: 0.72;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.pro-gate-button:hover {
+  opacity: 1;
+}
+
+/* Card de settings con feature PRO */
+.settings-hub-card.is-pro-locked .settings-hub-card-main h3 {
+  display: flex;
+  align-items: center;
+}
+.settings-hub-card.is-pro-locked {
+  opacity: 0.82;
+}
+.settings-hub-card.is-pro-locked:hover {
+  opacity: 1;
+}
+
+/* ─── Upgrade Page – feature list & current badge ─────────────────────────── */
+
+.upgrade-feature-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.upgrade-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.upgrade-feature-item.is-excluded {
+  color: #9ca3af;
+}
+
+.upgrade-plan-card.is-current {
+  border-color: #4f46e5;
+}
+
+.upgrade-badge.is-current-badge {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.upgrade-plan-price {
+  font-size: 18px;
+}

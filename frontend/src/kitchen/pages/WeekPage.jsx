@@ -15,6 +15,7 @@ import { getUserColorById } from "../utils/userColors";
 import { getUserInitialsFromProfile } from "../utils/userInitials.js";
 import { useActiveWeek } from "../weekContext.jsx";
 import { canRandomizeFullWeek, isWeekRandomizationUnavailableError } from "../subscription.js";
+import { ProGateButton } from "../components/ui/ProBadge.jsx";
 
 const DAY_CARD_STYLES = [
   { background: "#eef2ff", color: "#1f2a60" },
@@ -2070,14 +2071,9 @@ export default function WeekPage() {
                 <DiceIcon /> Randomizar libres
               </button>
             ) : (
-              <button
-                type="button"
-                className="kitchen-button secondary is-small kitchen-week-randomize-button"
-                onClick={() => navigate("/kitchen/upgrade")}
-                title="Upgrade your license to unlock full week randomization"
-              >
-                <DiceIcon /> Upgrade your license
-              </button>
+              <ProGateButton className="kitchen-button secondary is-small kitchen-week-randomize-button">
+                <DiceIcon /> Randomizar semana
+              </ProGateButton>
             )
           ) : null}
           weekendAction={{

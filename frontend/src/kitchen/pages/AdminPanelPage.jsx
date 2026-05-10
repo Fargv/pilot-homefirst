@@ -6,7 +6,7 @@ import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
 
-const PLANS = ["free", "basic", "pro", "premium"];
+const PLANS = ["basic", "pro", "premium"];
 
 const PLAN_BADGE = {
   free:    { label: "free",    color: "#6b7280" },
@@ -378,7 +378,7 @@ function QuickSubscriptionPanel() {
               onChange={(e) => setPlan(e.target.value)}
             >
               {PLANS.map((p) => <option key={p} value={p}>{p}</option>)}
-              <option value="off">off (desactivar)</option>
+              <option value="off">— desactivar</option>
             </select>
           </label>
         </div>

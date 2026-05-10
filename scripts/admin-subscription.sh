@@ -163,19 +163,17 @@ echo ""
 PLAN="$ARG_PLAN"
 if [ -z "$PLAN" ]; then
   echo -e "${BOLD}Planes disponibles:${NC}"
-  echo "  [1] free     — Sin funciones premium"
-  echo "  [2] basic    — Randomización por día"
-  echo "  [3] pro      — Presupuesto + randomización completa  ★"
-  echo "  [4] premium  — Igual que pro"
-  echo "  [5] off      — Desactivar (resetea a basic/inactive)"
+  echo "  [1] basic    — Randomización por día"
+  echo "  [2] pro      — Presupuesto + randomización completa  ★"
+  echo "  [3] premium  — Como pro, usuarios ilimitados"
+  echo "  [4] off      — Desactivar (resetea a basic/inactive)"
   echo ""
-  read -rp "Selecciona plan [1-5] o nombre: " PLAN_CHOICE
+  read -rp "Selecciona plan [1-4] o nombre: " PLAN_CHOICE
   case "$PLAN_CHOICE" in
-    1|free)    PLAN="free" ;;
-    2|basic)   PLAN="basic" ;;
-    3|pro)     PLAN="pro" ;;
-    4|premium) PLAN="premium" ;;
-    5|off)     PLAN="off" ;;
+    1|basic)   PLAN="basic" ;;
+    2|pro)     PLAN="pro" ;;
+    3|premium) PLAN="premium" ;;
+    4|off)     PLAN="off" ;;
     *) echo -e "${RED}✗ Opción inválida${NC}"; exit 1 ;;
   esac
 fi
