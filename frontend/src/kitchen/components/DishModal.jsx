@@ -42,7 +42,7 @@ export default function DishModal({
   const [error, setError] = useState("");
   const [isCreatingIngredient, setIsCreatingIngredient] = useState(false);
   const [activeTab, setActiveTab] = useState("datos");
-  const [recipe, setRecipe] = useState({ ingredients: [], steps: null });
+  const [recipe, setRecipe] = useState({ ingredients: [], steps: null, servings: null });
   const [recipeSaving, setRecipeSaving] = useState(false);
   const [recipeError, setRecipeError] = useState("");
   const [recipeSaved, setRecipeSaved] = useState(false);
@@ -50,6 +50,11 @@ export default function DishModal({
 
   const isDiod = user?.globalRole === "diod";
   const isPro = isDiod || canRandomizeFullWeek(user?.subscriptionPlan);
+
+  const dishIngredientNames = useMemo(
+    () => (form.ingredients || []).map((ing) => (ing.displayName || ing.canonicalName || "").toLowerCase().trim()),
+    [form.ingredients]
+  );
 
   const fetchIngredientMatch = useCallback(async (canonicalName) => {
     if (!canonicalName) return null;
@@ -119,9 +124,17 @@ export default function DishModal({
           isArchived: Boolean(initialDish.isArchived)
         });
         setEditingId(initialDish._id);
+        const existingRecipeIngredients = initialDish.recipe?.ingredients || [];
+        const recipeIngredients = existingRecipeIngredients.length > 0
+          ? existingRecipeIngredients
+          : (initialDish.ingredients || []).map((ing) => ({
+              name: ing.displayName || ing.canonicalName || "",
+              quantity: ""
+            })).filter((ing) => ing.name);
         setRecipe({
-          ingredients: initialDish.recipe?.ingredients || [],
-          steps: initialDish.recipe?.steps || null
+          ingredients: recipeIngredients,
+          steps: initialDish.recipe?.steps || null,
+          servings: initialDish.recipe?.servings || null
         });
       } else {
         setForm({
@@ -136,7 +149,7 @@ export default function DishModal({
           isArchived: false
         });
         setEditingId(null);
-        setRecipe({ ingredients: [], steps: null });
+        setRecipe({ ingredients: [], steps: null, servings: null });
       }
     };
     setup();
@@ -212,19 +225,54 @@ export default function DishModal({
     }
   };
 
+  const handleAddIngredientToDish = async (ingredientName) => {
+    if (!editingId || !ingredientName) return;
+    const newIngredient = { displayName: ingredientName };
+    const updatedIngredients = [...(form.ingredients || []), newIngredient];
+    try {
+      const result = await apiRequest(`/api/kitchen/dishes/${editingId}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: form.name,
+          ingredients: updatedIngredients,
+          sidedish: form.sidedish,
+          isDinner: form.isDinner,
+          special: form.special,
+          active: form.active,
+          allowRandom: form.allowRandom,
+          isArchived: form.isArchived,
+          dishCategoryId: form.dishCategoryId || null
+        })
+      });
+      if (result.dish) {
+        const resolved = await resolveIngredients(result.dish.ingredients || []);
+        setForm((prev) => ({ ...prev, ingredients: resolved }));
+        if (result.overridden && result.dish._id) {
+          setEditingId(String(result.dish._id));
+        }
+      }
+    } catch {
+      // silently ignore - not critical
+    }
+  };
+
   const saveRecipe = async () => {
     if (!editingId) return;
     setRecipeError("");
     setRecipeSaved(false);
     setRecipeSaving(true);
     try {
-      await apiRequest(`/api/kitchen/dishes/${editingId}/recipe`, {
+      const result = await apiRequest(`/api/kitchen/dishes/${editingId}/recipe`, {
         method: "PUT",
         body: JSON.stringify({
           ingredients: recipe.ingredients || [],
-          steps: recipe.steps || null
+          steps: recipe.steps || null,
+          servings: recipe.servings || null
         })
       });
+      if (result.overridden && result.dish?.id) {
+        setEditingId(result.dish.id);
+      }
       setRecipeSaved(true);
       setTimeout(() => setRecipeSaved(false), 2500);
     } catch (err) {
@@ -292,6 +340,9 @@ export default function DishModal({
                     <RecipeEditor
                       recipeIngredients={recipe.ingredients}
                       recipeSteps={recipe.steps}
+                      recipeServings={recipe.servings}
+                      dishIngredientNames={dishIngredientNames}
+                      onAddIngredientToDish={editingId ? handleAddIngredientToDish : undefined}
                       onChange={setRecipe}
                       readOnly={false}
                     />

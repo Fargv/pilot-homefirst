@@ -1087,10 +1087,9 @@ body {
 }
 
 .recipe-tab-content {
-  flex: 1 1 0;
-  min-height: 0;
   overflow-y: auto;
   padding: 0 2px;
+  max-height: calc(min(90vh, 780px) - 210px);
 }
 
 .kitchen-modal-header {
@@ -7871,9 +7870,27 @@ body {
   flex-direction: column;
   gap: 6px;
 }
+.recipe-servings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.recipe-servings-input {
+  width: 56px;
+  padding: 4px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+  outline: none;
+}
+.recipe-servings-input:focus { border-color: #4f46e5; }
+.recipe-servings-label { font-size: 13px; color: #6b7280; }
+
 .recipe-ingredient-row {
   display: grid;
-  grid-template-columns: 1fr 120px 32px;
+  grid-template-columns: 1fr 110px auto 32px;
   gap: 6px;
   align-items: center;
 }
@@ -7919,6 +7936,28 @@ body {
   transition: color 0.15s;
 }
 .recipe-remove-btn:hover { color: #ef4444; }
+
+.recipe-add-to-dish-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 6px;
+  color: #6b7280;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.recipe-add-to-dish-btn:hover {
+  border-color: #4f46e5;
+  background: #f5f3ff;
+}
+
+.recipe-servings-label {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
 
 /* Tiptap toolbar */
 .recipe-toolbar {

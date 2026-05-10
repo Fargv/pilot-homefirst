@@ -35,7 +35,8 @@ const KitchenDishSchema = new mongoose.Schema(
         type: [{ name: { type: String }, quantity: { type: String }, _id: false }],
         default: []
       },
-      steps: { type: mongoose.Schema.Types.Mixed, default: null }
+      steps: { type: mongoose.Schema.Types.Mixed, default: null },
+      servings: { type: Number, default: null }
     }
   },
   { timestamps: true }

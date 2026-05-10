@@ -565,24 +565,7 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Plato no encontrado." });
     }
 
-    if (dish.scope === CATALOG_SCOPES.MASTER) {
-      if (!isDiod) {
-        return res.status(403).json({ ok: false, error: "Solo DIOD puede editar la receta de platos master." });
-      }
-    } else {
-      const requiredHouseholdId = getEffectiveHouseholdId(req.user);
-      if (!dish.householdId || String(dish.householdId) !== String(requiredHouseholdId)) {
-        return res.status(403).json({ ok: false, error: "No tienes permisos para editar la receta de este plato." });
-      }
-      if (!isDiod) {
-        const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan").lean();
-        if (!household || !canRandomizeFullWeek(household.subscriptionPlan)) {
-          return res.status(403).json({ ok: false, error: "Esta funcionalidad requiere un plan PRO o superior.", code: "PRO_REQUIRED" });
-        }
-      }
-    }
-
-    const { ingredients, steps } = req.body || {};
+    const { ingredients, steps, servings } = req.body || {};
     const normalizedIngredients = Array.isArray(ingredients)
       ? ingredients
           .filter((item) => item && String(item.name || "").trim())
@@ -591,20 +574,65 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
             quantity: String(item.quantity || "").trim()
           }))
       : [];
+    const normalizedServings = servings != null && Number.isFinite(Number(servings)) ? Number(servings) : null;
+    const recipeData = { ingredients: normalizedIngredients, steps: steps ?? null, servings: normalizedServings };
 
-    dish.recipe = {
-      ingredients: normalizedIngredients,
-      steps: steps ?? null
-    };
-    await dish.save();
-
-    return res.json({
-      ok: true,
-      dish: {
-        id: String(dish._id),
-        recipe: dish.recipe
+    if (dish.scope === CATALOG_SCOPES.MASTER) {
+      if (isDiod) {
+        dish.recipe = recipeData;
+        await dish.save();
+        return res.json({ ok: true, dish: { id: String(dish._id), recipe: dish.recipe } });
       }
-    });
+
+      const requiredHouseholdId = getEffectiveHouseholdId(req.user);
+      const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan").lean();
+      if (!household || !canRandomizeFullWeek(household.subscriptionPlan)) {
+        return res.status(403).json({ ok: false, error: "Esta funcionalidad requiere un plan PRO o superior.", code: "PRO_REQUIRED" });
+      }
+
+      let override = await KitchenDish.findOne({
+        householdId: requiredHouseholdId,
+        scope: CATALOG_SCOPES.OVERRIDE,
+        masterId: dish._id
+      });
+      if (!override) {
+        override = new KitchenDish({
+          name: dish.name,
+          ingredients: dish.ingredients,
+          sidedish: dish.sidedish,
+          isDinner: dish.isDinner,
+          dishCategoryId: dish.dishCategoryId,
+          active: dish.active !== false,
+          special: Boolean(dish.special),
+          allowRandom: dish.allowRandom !== false,
+          isArchived: false,
+          scope: CATALOG_SCOPES.OVERRIDE,
+          masterId: dish._id,
+          householdId: requiredHouseholdId,
+          createdBy: req.kitchenUser._id
+        });
+      }
+      override.recipe = recipeData;
+      await override.save();
+      await clearHiddenMasterForHousehold({ householdId: requiredHouseholdId, type: getDishHiddenMasterType(dish), masterId: dish._id });
+
+      return res.json({ ok: true, overridden: true, dish: { id: String(override._id), recipe: override.recipe } });
+    }
+
+    const requiredHouseholdId = getEffectiveHouseholdId(req.user);
+    if (!dish.householdId || String(dish.householdId) !== String(requiredHouseholdId)) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para editar la receta de este plato." });
+    }
+    if (!isDiod) {
+      const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan").lean();
+      if (!household || !canRandomizeFullWeek(household.subscriptionPlan)) {
+        return res.status(403).json({ ok: false, error: "Esta funcionalidad requiere un plan PRO o superior.", code: "PRO_REQUIRED" });
+      }
+    }
+
+    dish.recipe = recipeData;
+    await dish.save();
+    return res.json({ ok: true, dish: { id: String(dish._id), recipe: dish.recipe } });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;

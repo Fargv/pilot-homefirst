@@ -143,6 +143,9 @@ function Toolbar({ editor }) {
 export default function RecipeEditor({
   recipeIngredients = [],
   recipeSteps = null,
+  recipeServings = null,
+  dishIngredientNames = [],
+  onAddIngredientToDish,
   onChange,
   readOnly = false
 }) {
@@ -160,10 +163,7 @@ export default function RecipeEditor({
     editable: !readOnly,
     onUpdate: ({ editor: ed }) => {
       if (!onChange) return;
-      onChange((prev) => ({
-        ...prev,
-        steps: ed.getJSON()
-      }));
+      onChange((prev) => ({ ...prev, steps: ed.getJSON() }));
     }
   });
 
@@ -192,9 +192,17 @@ export default function RecipeEditor({
     });
   };
 
+  const isNewIngredient = (name) => {
+    if (!name || !dishIngredientNames.length) return false;
+    return !dishIngredientNames.includes(String(name).toLowerCase().trim());
+  };
+
   if (readOnly) {
     return (
       <div className="recipe-editor-section">
+        {recipeServings ? (
+          <p className="recipe-servings-label">Para {recipeServings} {recipeServings === 1 ? "persona" : "personas"}</p>
+        ) : null}
         {recipeIngredients && recipeIngredients.length > 0 ? (
           <div>
             <p className="recipe-section-title">Ingredientes</p>
@@ -227,6 +235,24 @@ export default function RecipeEditor({
 
   return (
     <div className="recipe-editor-section">
+      <div className="recipe-servings-row">
+        <label className="recipe-section-title" htmlFor="recipe-servings">Para</label>
+        <input
+          id="recipe-servings"
+          type="number"
+          min="1"
+          max="99"
+          className="recipe-servings-input"
+          placeholder="—"
+          value={recipeServings ?? ""}
+          onChange={(e) => {
+            if (!onChange) return;
+            const val = e.target.value === "" ? null : Number(e.target.value);
+            onChange((prev) => ({ ...prev, servings: val }));
+          }}
+        />
+        <span className="recipe-section-title">personas</span>
+      </div>
       <div>
         <p className="recipe-section-title">Ingredientes</p>
         <div className="recipe-ingredient-list">
@@ -239,11 +265,21 @@ export default function RecipeEditor({
                 onChange={(e) => updateIngredient(idx, "name", e.target.value)}
               />
               <input
-                className="recipe-ingredient-input"
+                className="recipe-ingredient-input recipe-ingredient-qty"
                 placeholder="Cantidad"
                 value={item.quantity || ""}
                 onChange={(e) => updateIngredient(idx, "quantity", e.target.value)}
               />
+              {isNewIngredient(item.name) && onAddIngredientToDish ? (
+                <button
+                  type="button"
+                  className="recipe-add-to-dish-btn"
+                  title="Añadir al plato (lista de la compra)"
+                  onClick={() => onAddIngredientToDish(item.name)}
+                >
+                  🛒
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="recipe-remove-btn"
