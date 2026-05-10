@@ -141,7 +141,7 @@ async function resolveHouseholdBudgetAccess(effectiveHouseholdId) {
   };
 }
 
-async function buildBudgetSummary(weekStartDate, household) {
+async function buildBudgetSummary(weekStartDate, household, effectiveHouseholdId) {
   const monthlyBudget = normalizeBudgetNumber(household?.monthlyBudget);
   const cycleStartDay = Number.isFinite(Number(household?.cycleStartDay)) ? Number(household.cycleStartDay) : 1;
   const weeklyBudget = calculateWeeklyBudget({
@@ -194,7 +194,7 @@ async function buildWeeklyBudgetDetails(weekStartDate, effectiveHouseholdId, hou
       .lean()
   );
   const storeById = new Map(stores.map((store) => [String(store._id), store.name]));
-  const budget = await buildBudgetSummary(weekStartDate, household);
+  const budget = await buildBudgetSummary(weekStartDate, household, effectiveHouseholdId);
   const completedSessions = await PurchaseSession.find({
     householdId: effectiveHouseholdId,
     status: "completed",
@@ -303,7 +303,7 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
   const { household, budgetFeatureEnabled } = await resolveHouseholdBudgetAccess(effectiveHouseholdId);
   const pendingPurchaseSessions = budgetFeatureEnabled ? await getPendingPurchaseSessions(effectiveHouseholdId) : [];
   const latestOpenPurchaseSession = budgetFeatureEnabled ? await getLatestOpenPurchaseSession(effectiveHouseholdId, weekStartDate) : null;
-  const budget = budgetFeatureEnabled ? await buildBudgetSummary(weekStartDate, household) : null;
+  const budget = budgetFeatureEnabled ? await buildBudgetSummary(weekStartDate, household, effectiveHouseholdId) : null;
 
   return {
     list,
@@ -564,6 +564,7 @@ router.put("/:weekStart/item", requireAuth, async (req, res) => {
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
+    const { budgetFeatureEnabled } = await resolveHouseholdBudgetAccess(effectiveHouseholdId);
     const list = await ensureShoppingList(monday, effectiveHouseholdId);
     await repairShoppingListItems(list, effectiveHouseholdId, {
       context: "update-item"
@@ -673,6 +674,7 @@ router.put("/:weekStart/items/status", requireAuth, async (req, res) => {
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
+    const { budgetFeatureEnabled } = await resolveHouseholdBudgetAccess(effectiveHouseholdId);
     const list = await ensureShoppingList(monday, effectiveHouseholdId);
     await repairShoppingListItems(list, effectiveHouseholdId, {
       context: "bulk-update-status"
