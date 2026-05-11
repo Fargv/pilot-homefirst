@@ -240,7 +240,9 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
 router.get("/", requireAuth, async (req, res) => {
   try {
     const { sidedish, includeInactive, isDinner } = req.query;
-    const optionalHouseholdId = getOptionalHouseholdId(req.user);
+    // ?global=1 forces master-only results (DIOD admin catalog view)
+    const forceMaster = isDiodUser(req.kitchenUser) && req.query.global === "1";
+    const optionalHouseholdId = forceMaster ? null : getOptionalHouseholdId(req.user);
     const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
     const activeFilter = shouldIncludeInactive ? {} : { active: true };
     const hasIsDinnerFilter = isDinner === "true" || isDinner === "false";

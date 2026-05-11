@@ -136,7 +136,9 @@ function buildSearchFilter(q) {
 router.get("/", requireAuth, async (req, res) => {
   try {
     const { q, includeInactive, limit, mode } = req.query;
-    const effectiveHouseholdId = getOptionalHouseholdId(req.user);
+    // ?global=1 forces master-only results (DIOD admin catalog view)
+    const forceMaster = isDiodUser(req.kitchenUser) && req.query.global === "1";
+    const effectiveHouseholdId = forceMaster ? null : getOptionalHouseholdId(req.user);
     const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
 
     const ingredients = await resolveCatalogForHousehold({
