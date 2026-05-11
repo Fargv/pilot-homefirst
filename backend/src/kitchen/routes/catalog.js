@@ -16,6 +16,53 @@ import {
 
 const router = express.Router();
 
+router.get("/packs/admin-all", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const packs = await CatalogPack.find({}).sort({ sortOrder: 1, createdAt: -1 }).lean();
+    const counts = await Promise.all(
+      packs.map((p) => HouseholdCatalogPack.countDocuments({ packId: p._id }))
+    );
+    return res.json({
+      ok: true,
+      packs: packs.map((p, i) => ({
+        id: p._id,
+        slug: p.slug,
+        title: p.title,
+        subtitle: p.subtitle,
+        description: p.description,
+        coverImage: p.coverImage,
+        tags: p.tags,
+        cuisineType: p.cuisineType,
+        active: p.active,
+        featured: p.featured,
+        priceBasic: p.priceBasic,
+        includedPlans: p.includedPlans,
+        monthlyCreditCost: p.monthlyCreditCost,
+        dishCount: Array.isArray(p.dishes) ? p.dishes.length : 0,
+        sortOrder: p.sortOrder,
+        releaseDate: p.releaseDate,
+        ownedByCount: counts[i],
+        createdAt: p.createdAt
+      }))
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error." });
+  }
+});
+
+router.delete("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+    const pack = await CatalogPack.findByIdAndDelete(req.params.packId);
+    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al eliminar." });
+  }
+});
+
 router.get("/packs", requireAuth, async (req, res) => {
   try {
     const householdId = getEffectiveHouseholdId(req.user);

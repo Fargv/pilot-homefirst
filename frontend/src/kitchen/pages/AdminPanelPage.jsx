@@ -1102,6 +1102,461 @@ function MasterCatalogSection() {
   );
 }
 
+// ─── Catalog Packs Admin ─────────────────────────────────────────────────────
+
+const INCLUDED_PLANS_OPTIONS = ["basic", "pro", "premium"];
+
+function PackForm({ item, onSave, onCancel }) {
+  const isEdit = Boolean(item.id || item._id);
+  const [form, setForm] = useState({
+    slug: item.slug || "",
+    title: item.title || "",
+    subtitle: item.subtitle || "",
+    description: item.description || "",
+    coverImage: item.coverImage || "",
+    tags: (item.tags || []).join(", "),
+    cuisineType: item.cuisineType || "",
+    active: item.active !== false,
+    featured: Boolean(item.featured),
+    priceBasic: item.priceBasic != null ? String(item.priceBasic) : "1.99",
+    includedPlans: item.includedPlans || ["pro", "premium"],
+    monthlyCreditCost: item.monthlyCreditCost != null ? String(item.monthlyCreditCost) : "1",
+    sortOrder: item.sortOrder != null ? String(item.sortOrder) : "0"
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (key) => (e) => setForm((p) => ({
+    ...p,
+    [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value
+  }));
+
+  const togglePlan = (plan) => setForm((p) => ({
+    ...p,
+    includedPlans: p.includedPlans.includes(plan)
+      ? p.includedPlans.filter((x) => x !== plan)
+      : [...p.includedPlans, plan]
+  }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.slug.trim() || !form.title.trim()) { setError("slug y título son obligatorios."); return; }
+    setSaving(true); setError("");
+    try {
+      await onSave({
+        ...form,
+        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        priceBasic: parseFloat(form.priceBasic) || 0,
+        monthlyCreditCost: parseInt(form.monthlyCreditCost, 10) || 1,
+        sortOrder: parseInt(form.sortOrder, 10) || 0,
+        coverImage: form.coverImage.trim() || null
+      });
+    } catch (err) { setError(err.message || "Error al guardar."); }
+    finally { setSaving(false); }
+  };
+
+  const fieldStyle = { width: "100%", boxSizing: "border-box", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", outline: "none" };
+  const labelStyle = { display: "flex", flexDirection: "column", gap: 3, fontSize: 13, color: "#374151", fontWeight: 500 };
+
+  return (
+    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 16px", fontSize: 15, color: "#1e293b", fontWeight: 700 }}>
+        {isEdit ? `✏️ Editar: ${item.title}` : "➕ Nuevo pack de catálogo"}
+      </h4>
+      <form onSubmit={handleSubmit}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 14 }}>
+          <label style={labelStyle}>
+            Slug (único)
+            <input style={fieldStyle} value={form.slug} onChange={set("slug")} placeholder="mexican-pack-vol1" required disabled={isEdit} />
+          </label>
+          <label style={labelStyle}>
+            Título
+            <input style={fieldStyle} value={form.title} onChange={set("title")} placeholder="10 platos mexicanos" required />
+          </label>
+          <label style={labelStyle}>
+            Subtítulo
+            <input style={fieldStyle} value={form.subtitle} onChange={set("subtitle")} placeholder="Sabores auténticos de México" />
+          </label>
+          <label style={labelStyle}>
+            Tipo de cocina
+            <input style={fieldStyle} value={form.cuisineType} onChange={set("cuisineType")} placeholder="mexicana" />
+          </label>
+          <label style={labelStyle}>
+            Precio básico (€)
+            <input style={fieldStyle} type="number" step="0.01" min="0" value={form.priceBasic} onChange={set("priceBasic")} />
+          </label>
+          <label style={labelStyle}>
+            Crédito mensual
+            <input style={fieldStyle} type="number" min="1" value={form.monthlyCreditCost} onChange={set("monthlyCreditCost")} />
+          </label>
+          <label style={labelStyle}>
+            Orden (sortOrder)
+            <input style={fieldStyle} type="number" value={form.sortOrder} onChange={set("sortOrder")} />
+          </label>
+        </div>
+
+        <label style={{ ...labelStyle, marginBottom: 12 }}>
+          Descripción
+          <textarea style={{ ...fieldStyle, minHeight: 64, resize: "vertical" }} value={form.description} onChange={set("description")} placeholder="Descripción del pack..." />
+        </label>
+
+        <label style={{ ...labelStyle, marginBottom: 12 }}>
+          Tags (separados por coma)
+          <input style={fieldStyle} value={form.tags} onChange={set("tags")} placeholder="mexicano, familia, picante" />
+        </label>
+
+        <label style={{ ...labelStyle, marginBottom: 12 }}>
+          URL imagen de portada
+          <input style={fieldStyle} value={form.coverImage} onChange={set("coverImage")} placeholder="https://..." />
+        </label>
+
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Planes incluidos</div>
+          <div style={{ display: "flex", gap: 12 }}>
+            {INCLUDED_PLANS_OPTIONS.map((plan) => (
+              <label key={plan} style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={form.includedPlans.includes(plan)}
+                  onChange={() => togglePlan(plan)}
+                />
+                {plan}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
+          {[["active", "Activo"], ["featured", "Destacado"]].map(([key, label]) => (
+            <label key={key} style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+              <input type="checkbox" checked={Boolean(form[key])} onChange={set(key)} />
+              {label}
+            </label>
+          ))}
+        </div>
+
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 10 }}>{error}</div> : null}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="submit" disabled={saving} style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear pack"}
+          </button>
+          <button type="button" onClick={onCancel} style={ABT.cancel}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function GrantModal({ pack, households, onGrant, onClose }) {
+  const [householdId, setHouseholdId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handle = async () => {
+    if (!householdId.trim()) { setError("Selecciona o introduce un household ID."); return; }
+    setSaving(true); setError(""); setSuccess("");
+    try {
+      await onGrant(String(pack.id), householdId.trim());
+      setSuccess("Pack concedido correctamente.");
+      setHouseholdId("");
+    } catch (err) { setError(err.message || "Error al conceder."); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: 420, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <h3 style={{ margin: "0 0 6px", fontSize: 16 }}>Conceder pack a un hogar</h3>
+        <p style={{ margin: "0 0 16px", fontSize: 13, color: "#64748b" }}>Pack: <strong>{pack.title}</strong></p>
+
+        <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, marginBottom: 10 }}>
+          Seleccionar household
+          <select
+            className="kitchen-select"
+            value={householdId}
+            onChange={(e) => setHouseholdId(e.target.value)}
+          >
+            <option value="">— Elige un hogar —</option>
+            {(households || []).map((h) => (
+              <option key={h.id} value={h.id}>{h.name} ({h.subscriptionPlan})</option>
+            ))}
+          </select>
+        </label>
+        <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, marginBottom: 14 }}>
+          O introduce el ID directamente
+          <input
+            style={{ padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", outline: "none" }}
+            value={householdId}
+            onChange={(e) => setHouseholdId(e.target.value)}
+            placeholder="MongoDB ObjectId..."
+          />
+        </label>
+
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 8 }}>{error}</div> : null}
+        {success ? <div className="kitchen-alert success" style={{ marginBottom: 8 }}>{success}</div> : null}
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" disabled={saving} onClick={handle} style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Concediendo..." : "Conceder"}
+          </button>
+          <button type="button" onClick={onClose} style={ABT.cancel}>Cerrar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CatalogPacksSection() {
+  const [packs, setPacks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [editItem, setEditItem] = useState(null);
+  const [search, setSearch] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
+  const [grantModal, setGrantModal] = useState(null);
+  const [households, setHouseholds] = useState([]);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const data = await apiRequest("/api/kitchen/catalog/packs/admin-all");
+      setPacks(data.packs || []);
+    } catch (err) { setError(err.message || "Error al cargar packs."); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    apiRequest("/api/admin/households")
+      .then((d) => setHouseholds(d.households || []))
+      .catch(() => {});
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return q ? packs.filter((p) => p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q)) : packs;
+  }, [packs, search]);
+
+  const handleSave = async (form) => {
+    const packId = editItem?.id;
+    if (packId) {
+      await apiRequest(`/api/kitchen/catalog/packs/${packId}`, {
+        method: "PUT",
+        body: JSON.stringify(form)
+      });
+    } else {
+      await apiRequest("/api/kitchen/catalog/packs", {
+        method: "POST",
+        body: JSON.stringify(form)
+      });
+    }
+    setEditItem(null);
+    await load();
+  };
+
+  const handleToggle = async (pack, field) => {
+    if (togglingId) return;
+    setTogglingId(`${pack.id}-${field}`);
+    try {
+      await apiRequest(`/api/kitchen/catalog/packs/${pack.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ [field]: !pack[field] })
+      });
+      await load();
+    } catch (err) { setError(err.message || "Error."); }
+    finally { setTogglingId(null); }
+  };
+
+  const handleSetFree = async (pack) => {
+    if (togglingId) return;
+    const newPrice = pack.priceBasic > 0 ? 0 : 1.99;
+    setTogglingId(`${pack.id}-price`);
+    try {
+      await apiRequest(`/api/kitchen/catalog/packs/${pack.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ priceBasic: newPrice, includedPlans: newPrice === 0 ? ["basic", "pro", "premium"] : ["pro", "premium"] })
+      });
+      await load();
+    } catch (err) { setError(err.message || "Error."); }
+    finally { setTogglingId(null); }
+  };
+
+  const handleDelete = async (pack) => {
+    if (!window.confirm(`¿Eliminar el pack "${pack.title}"? Esta acción no se puede deshacer.`)) return;
+    setDeletingId(pack.id);
+    try {
+      await apiRequest(`/api/kitchen/catalog/packs/${pack.id}`, { method: "DELETE" });
+      await load();
+    } catch (err) { setError(err.message || "Error al eliminar."); }
+    finally { setDeletingId(null); }
+  };
+
+  const handleGrant = async (packId, targetHouseholdId) => {
+    await apiRequest(`/api/kitchen/catalog/packs/${packId}/admin-grant`, {
+      method: "POST",
+      body: JSON.stringify({ targetHouseholdId })
+    });
+  };
+
+  return (
+    <Card className="kitchen-block-gap">
+      <div style={{ marginBottom: 16 }}>
+        <h2 className="kitchen-title-no-margin">Catálogo de packs</h2>
+        <p className="kitchen-muted">Crea, edita y gestiona los packs de platos del catálogo de Lunchfy.</p>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+        <input
+          style={{ padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", width: 220, outline: "none" }}
+          placeholder="Buscar por título o slug..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button type="button" style={{ ...ABT.save, padding: "7px 16px" }} onClick={() => setEditItem({})}>
+          + Nuevo pack
+        </button>
+        <button type="button" style={ABT.edit} onClick={load} disabled={loading}>
+          {loading ? "..." : "↺ Recargar"}
+        </button>
+        <span style={{ fontSize: 12, color: "#94a3b8", marginLeft: 4 }}>{packs.length} packs en total</span>
+      </div>
+
+      {editItem !== null && (
+        <PackForm
+          item={editItem}
+          onSave={handleSave}
+          onCancel={() => setEditItem(null)}
+        />
+      )}
+
+      {error ? <div className="kitchen-alert error">{error}</div> : null}
+
+      {loading ? <p className="kitchen-muted">Cargando packs...</p> : filtered.length === 0 ? (
+        <p className="kitchen-muted">No hay packs{search.trim() ? " con ese criterio" : ". Crea el primero."}.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="kitchen-table">
+            <thead>
+              <tr>
+                <th>Pack</th>
+                <th style={{ textAlign: "center" }}>Platos</th>
+                <th style={{ textAlign: "center" }}>Precio</th>
+                <th style={{ textAlign: "center" }}>Planes</th>
+                <th style={{ textAlign: "center" }}>Estado</th>
+                <th style={{ textAlign: "center" }}>Concedido</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((pack) => {
+                const isFree = !pack.priceBasic || pack.priceBasic <= 0;
+                const togId = togglingId;
+                return (
+                  <tr key={pack.id} style={{ opacity: pack.active ? 1 : 0.45 }}>
+                    <td>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>
+                        {pack.featured ? <span style={{ color: "#f59e0b", marginRight: 4 }}>★</span> : null}
+                        {pack.title}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>{pack.slug}</div>
+                      {pack.tags?.length > 0 && (
+                        <div style={{ marginTop: 3, display: "flex", gap: 3, flexWrap: "wrap" }}>
+                          {pack.tags.slice(0, 3).map((t) => (
+                            <span key={t} style={{ fontSize: 10, background: "#eef2ff", color: "#6366f1", borderRadius: 4, padding: "1px 5px" }}>{t}</span>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ textAlign: "center", fontWeight: 600 }}>{pack.dishCount}</td>
+                    <td style={{ textAlign: "center" }}>
+                      {isFree
+                        ? <span style={{ fontSize: 11, background: "#dcfce7", color: "#166534", borderRadius: 5, padding: "2px 7px", fontWeight: 700 }}>Gratis</span>
+                        : <span style={{ fontSize: 12, fontWeight: 600 }}>{Number(pack.priceBasic).toFixed(2)} €</span>}
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <div style={{ display: "flex", gap: 3, justifyContent: "center", flexWrap: "wrap" }}>
+                        {(pack.includedPlans || []).map((p) => (
+                          <span key={p} style={{ fontSize: 10, background: "#f0f4ff", color: "#4338ca", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>{p}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      {pack.active
+                        ? <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>● Activo</span>
+                        : <span style={{ fontSize: 11, color: "#94a3b8" }}>○ Inactivo</span>}
+                    </td>
+                    <td style={{ textAlign: "center", fontSize: 12, color: "#6b7280" }}>
+                      {pack.ownedByCount > 0
+                        ? <span style={{ fontWeight: 600, color: "#374151" }}>{pack.ownedByCount} hogares</span>
+                        : "—"}
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                        <button type="button" style={ABT.edit} onClick={() => setEditItem(pack)}>Editar</button>
+                        <button
+                          type="button"
+                          style={{ ...ABT.edit, color: pack.active ? "#b45309" : "#166534", borderColor: pack.active ? "#fcd34d" : "#86efac" }}
+                          disabled={togId === `${pack.id}-active`}
+                          onClick={() => handleToggle(pack, "active")}
+                        >
+                          {pack.active ? "Desactivar" : "Activar"}
+                        </button>
+                        <button
+                          type="button"
+                          style={{ ...ABT.edit, color: pack.featured ? "#6b7280" : "#d97706", borderColor: pack.featured ? "#e5e7eb" : "#fcd34d" }}
+                          disabled={togId === `${pack.id}-featured`}
+                          onClick={() => handleToggle(pack, "featured")}
+                        >
+                          {pack.featured ? "Quitar destaque" : "Destacar"}
+                        </button>
+                        <button
+                          type="button"
+                          style={{ ...ABT.edit, color: isFree ? "#7c3aed" : "#166534", borderColor: isFree ? "#ddd6fe" : "#86efac" }}
+                          disabled={togId === `${pack.id}-price`}
+                          onClick={() => handleSetFree(pack)}
+                        >
+                          {isFree ? "Poner precio" : "Poner gratis"}
+                        </button>
+                        <button
+                          type="button"
+                          style={{ ...ABT.green }}
+                          onClick={() => setGrantModal(pack)}
+                        >
+                          Conceder
+                        </button>
+                        <button
+                          type="button"
+                          style={{ ...ABT.del, opacity: deletingId === pack.id ? 0.6 : 1 }}
+                          disabled={deletingId === pack.id}
+                          onClick={() => handleDelete(pack)}
+                        >
+                          {deletingId === pack.id ? "..." : "Eliminar"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {grantModal && (
+        <GrantModal
+          pack={grantModal}
+          households={households}
+          onGrant={handleGrant}
+          onClose={() => setGrantModal(null)}
+        />
+      )}
+    </Card>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function AdminPanelPage() {
@@ -1172,7 +1627,8 @@ export default function AdminPanelPage() {
             { key: "households", label: "Households" },
             { key: "users", label: "Usuarios" },
             { key: "quick", label: "Cambio rápido" },
-            { key: "catalog", label: "Catálogo" }
+            { key: "master", label: "Master" },
+            { key: "catalog_packs", label: "Catálogo" }
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -1203,8 +1659,10 @@ export default function AdminPanelPage() {
           />
         ) : tab === "users" ? (
           <UsersSection />
-        ) : tab === "catalog" ? (
+        ) : tab === "master" ? (
           <MasterCatalogSection />
+        ) : tab === "catalog_packs" ? (
+          <CatalogPacksSection />
         ) : (
           <QuickSubscriptionPanel />
         )}
