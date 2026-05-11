@@ -2431,30 +2431,30 @@ export default function WeekPage() {
                       <div className="kitchen-day-dish-display">{displayDishName || "Sin plato"}</div>
                       {isPlanned ? (
                         <div className="kitchen-day-title-info-wrap">
-                          {mainDish?.recipe && (mainDish.recipe.ingredients?.length || mainDish.recipe.steps) ? (
-                            <button
-                              type="button"
-                              className="kitchen-day-title-info-action"
-                              onClick={() => setRecipeModal({ dish: mainDish })}
-                              aria-label="Ver receta"
-                              title="Ver receta"
-                            >
-                              <BookIcon />
-                            </button>
-                          ) : null}
-                          <button
-                            type="button"
-                            className="kitchen-day-title-info-action"
-                            onClick={() => {
-                              const hasRecipe = mainDish?.recipe && (mainDish.recipe.ingredients?.length > 0 || mainDish.recipe.steps);
-                              if (hasRecipe) { setRecipeModal({ dish: mainDish }); }
-                              else { setInfoOpenByDay((prev) => ({ ...prev, [dayKey]: !prev[dayKey] })); }
-                            }}
-                            aria-label="Ver detalles del plato"
-                            title="Detalles del plato"
-                          >
-                            <InfoIcon />
-                          </button>
+                          {(() => {
+                            const hasRecipe = Boolean(mainDish?.recipe && (mainDish.recipe.ingredients?.length > 0 || mainDish.recipe.steps));
+                            return hasRecipe ? (
+                              <button
+                                type="button"
+                                className="kitchen-day-title-info-action has-recipe"
+                                onClick={() => setRecipeModal({ dish: mainDish })}
+                                aria-label="Ver receta"
+                                title="Ver receta"
+                              >
+                                <BookIcon />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="kitchen-day-title-info-action"
+                                onClick={() => setInfoOpenByDay((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))}
+                                aria-label="Ver ingredientes del plato"
+                                title="Ver ingredientes"
+                              >
+                                <InfoIcon />
+                              </button>
+                            );
+                          })()}
                           {infoOpenByDay[dayKey] ? (
                             <div className="kitchen-day-info-popover is-title" role="dialog" aria-label="Detalles del día">
                               <strong>Ingredientes</strong>
