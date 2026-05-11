@@ -288,7 +288,7 @@ export default function DishModal({
   if (!isOpen) return null;
 
   return (
-    <div className="kitchen-modal-backdrop" role="presentation" onClick={resetAndClose}>
+    <div className="kitchen-modal-backdrop" role="presentation">
       <div
         className="kitchen-modal"
         role="dialog"

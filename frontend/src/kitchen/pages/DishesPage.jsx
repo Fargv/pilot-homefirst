@@ -1073,55 +1073,61 @@ export default function DishesPage() {
                     </label>
                     <div className="kitchen-dish-actions">
                       <div className="kitchen-dish-info-wrap">
-                        <button
-                          ref={(node) => registerInfoButton(dish._id, node)}
-                          className="kitchen-icon-button info"
-                          type="button"
-                          onClick={() => {
-                            const hasRecipe = dish.recipe && (dish.recipe.ingredients?.length > 0 || dish.recipe.steps);
-                            if (hasRecipe) { setRecipeModalDish(dish); }
-                            else { toggleDishInfo(dish._id); }
-                          }}
-                          aria-label={`Ver información de ${dish.name}`}
-                          aria-expanded={dishInfoOpenId === dish._id}
-                          aria-controls={`dish-info-${dish._id}`}
-                          title="Ingredientes"
-                        >
-                          <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              d="M12 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"
-                              fill="currentColor"
-                            />
-                            <path
-                              d="M12 11v6m9-5a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
-                        {isInfoOpen ? (
-                          <div
-                            id={`dish-info-${dish._id}`}
-                            className="kitchen-dish-info-popover"
-                            role="dialog"
-                            aria-label={`Ingredientes de ${dish.name}`}
-                            ref={infoPopoverRef}
-                          >
-                            <h4 className="kitchen-dish-info-heading">Ingredientes</h4>
-                            {ingredientNames.length > 0 ? (
-                              <ul className="kitchen-dish-info-list">
-                                {ingredientNames.map((name, index) => (
-                                  <li key={`${dish._id}-ingredient-${index}`}>{name}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
-                            )}
-                          </div>
-                        ) : null}
+                        {(() => {
+                          const hasRecipe = Boolean(dish.recipe && (dish.recipe.ingredients?.length > 0 || dish.recipe.steps));
+                          return (
+                            <>
+                              <button
+                                ref={(node) => registerInfoButton(dish._id, node)}
+                                className={`kitchen-icon-button info${hasRecipe ? " has-recipe" : ""}`}
+                                type="button"
+                                onClick={() => {
+                                  if (hasRecipe) { setRecipeModalDish(dish); }
+                                  else { toggleDishInfo(dish._id); }
+                                }}
+                                aria-label={hasRecipe ? `Ver receta de ${dish.name}` : `Ver ingredientes de ${dish.name}`}
+                                aria-expanded={dishInfoOpenId === dish._id}
+                                aria-controls={`dish-info-${dish._id}`}
+                                title={hasRecipe ? "Ver receta" : "Ingredientes"}
+                              >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path
+                                    d="M12 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"
+                                    fill="currentColor"
+                                  />
+                                  <path
+                                    d="M12 11v6m9-5a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </button>
+                              {isInfoOpen ? (
+                                <div
+                                  id={`dish-info-${dish._id}`}
+                                  className="kitchen-dish-info-popover"
+                                  role="dialog"
+                                  aria-label={`Ingredientes de ${dish.name}`}
+                                  ref={infoPopoverRef}
+                                >
+                                  <h4 className="kitchen-dish-info-heading">Ingredientes</h4>
+                                  {ingredientNames.length > 0 ? (
+                                    <ul className="kitchen-dish-info-list">
+                                      {ingredientNames.map((name, index) => (
+                                        <li key={`${dish._id}-ingredient-${index}`}>{name}</li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
+                                  )}
+                                </div>
+                              ) : null}
+                            </>
+                          );
+                        })()}
                       </div>
                       <button
                         className="kitchen-icon-button"

@@ -32,7 +32,7 @@ app.use(cors({
     callback(new Error(`Origin ${normalizedOrigin} not allowed by CORS`));
   }
 }));
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 
 app.get("/health", (req, res) => {
   res.json({ ok: true, env: config.nodeEnv, time: new Date().toISOString() });
