@@ -90,6 +90,7 @@ export default function DishesPage() {
   const [selectedDishCategoryId, setSelectedDishCategoryId] = useState("");
   const [selectedMealFilter, setSelectedMealFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("main");
+  const [showOnlyCatalog, setShowOnlyCatalog] = useState(false);
   const [initialSidedish, setInitialSidedish] = useState(false);
   const [ingredients, setIngredients] = useState([]);
   const [ingredientsLoading, setIngredientsLoading] = useState(false);
@@ -320,9 +321,14 @@ export default function DishesPage() {
       return categoryId ? String(categoryId) === String(selectedDishCategoryId) : false;
     });
   }, [mealFilteredDishes, selectedDishCategoryId]);
+  const catalogFilteredDishes = useMemo(() => {
+    if (!showOnlyCatalog) return categoryFilteredDishes;
+    return categoryFilteredDishes.filter((dish) => dish.source === "catalog");
+  }, [categoryFilteredDishes, showOnlyCatalog]);
+
   const visibleDishes = useMemo(() => {
-    if (!normalizedSearch) return categoryFilteredDishes;
-    return categoryFilteredDishes.filter((dish) => {
+    if (!normalizedSearch) return catalogFilteredDishes;
+    return catalogFilteredDishes.filter((dish) => {
       const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
       if (nameMatch) return true;
       return (dish.ingredients || []).some((item) => {
@@ -331,7 +337,7 @@ export default function DishesPage() {
         return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
       });
     });
-  }, [categoryFilteredDishes, normalizedSearch]);
+  }, [catalogFilteredDishes, normalizedSearch]);
   const dishMap = useMemo(() => {
     const map = new Map();
     dishes.forEach((dish) => {
@@ -369,6 +375,9 @@ export default function DishesPage() {
       if (dishSearchTerm.trim()) {
         return "No encontramos platos con ese criterio.";
       }
+      if (showOnlyCatalog) {
+        return "No has instalado ningún pack del catálogo aún.";
+      }
       if (selectedDishCategoryId) {
         return "No hay platos en la categoría seleccionada.";
       }
@@ -382,7 +391,7 @@ export default function DishesPage() {
         : "No hay platos principales aún. Crea el primero.";
     }
     return "";
-  }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, activeTab, dishSearchTerm, dishes.length, selectedDishCategoryId, selectedMealFilter, visibleDishes.length]);
+  }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, activeTab, dishSearchTerm, dishes.length, selectedDishCategoryId, selectedMealFilter, showOnlyCatalog, visibleDishes.length]);
 
   useEffect(() => {
     setSelectedDishCategoryId((previous) => {
@@ -396,6 +405,7 @@ export default function DishesPage() {
     if (activeTab === "ingredients") {
       setSelectedDishCategoryId("");
       setSelectedMealFilter(MEAL_FILTERS.ALL);
+      setShowOnlyCatalog(false);
     }
   }, [MEAL_FILTERS.ALL, activeTab]);
 
@@ -803,25 +813,37 @@ export default function DishesPage() {
           <>
             <div className="kitchen-dishes-tabs kitchen-dishes-subtabs" role="tablist" aria-label="Filtrar por tipo de comida">
               <button
-                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.ALL ? "is-active" : ""}`}
+                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.ALL && !showOnlyCatalog ? "is-active" : ""}`}
                 type="button"
-                onClick={() => setSelectedMealFilter(MEAL_FILTERS.ALL)}
+                onClick={() => { setSelectedMealFilter(MEAL_FILTERS.ALL); setShowOnlyCatalog(false); }}
               >
                 Todos
               </button>
               <button
-                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.LUNCH ? "is-active" : ""}`}
+                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.LUNCH && !showOnlyCatalog ? "is-active" : ""}`}
                 type="button"
-                onClick={() => setSelectedMealFilter(MEAL_FILTERS.LUNCH)}
+                onClick={() => { setSelectedMealFilter(MEAL_FILTERS.LUNCH); setShowOnlyCatalog(false); }}
               >
                 Comidas
               </button>
               <button
-                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.DINNER ? "is-active" : ""}`}
+                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.DINNER && !showOnlyCatalog ? "is-active" : ""}`}
                 type="button"
-                onClick={() => setSelectedMealFilter(MEAL_FILTERS.DINNER)}
+                onClick={() => { setSelectedMealFilter(MEAL_FILTERS.DINNER); setShowOnlyCatalog(false); }}
               >
                 Cenas
+              </button>
+              <button
+                className={`kitchen-tab-button kitchen-tab-catalog ${showOnlyCatalog ? "is-active" : ""}`}
+                type="button"
+                onClick={() => { setShowOnlyCatalog((v) => !v); setSelectedMealFilter(MEAL_FILTERS.ALL); }}
+                title="Mostrar solo platos instalados desde el catálogo"
+              >
+                <svg viewBox="0 0 16 16" aria-hidden="true" style={{ width: 13, height: 13, flexShrink: 0 }}>
+                  <rect x="1.5" y="1.5" width="13" height="13" rx="2.5" strokeWidth="1.5" fill="none" stroke="currentColor" />
+                  <path d="M4 5.5h8M4 8h5M4 10.5h6" strokeWidth="1.3" strokeLinecap="round" stroke="currentColor" />
+                </svg>
+                Del catálogo
               </button>
             </div>
             <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar por categoría">
@@ -1021,9 +1043,10 @@ export default function DishesPage() {
               const showCategoryIcon = !dish.sidedish && Boolean(dishCategoryCode);
               const randomEnabled = dish.allowRandom !== false;
               const toggleDisabled = dishTogglePendingId === dish._id;
+              const isCatalogDish = dish.source === "catalog";
               return (
                 <article
-                  className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
+                  className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""} ${isCatalogDish ? "is-catalog" : ""}`}
                   key={dish._id}
                 >
                   <div className="kitchen-dish-main">
@@ -1051,6 +1074,15 @@ export default function DishesPage() {
                           />
                         ) : null}
                         <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
+                      </div>
+                    ) : null}
+                    {isCatalogDish && dish.sourcePackTitle ? (
+                      <div className="kitchen-dish-catalog-origin">
+                        <svg viewBox="0 0 14 14" aria-hidden="true" style={{ width: 11, height: 11, flexShrink: 0 }}>
+                          <rect x="0.75" y="0.75" width="12.5" height="12.5" rx="2.25" strokeWidth="1.4" fill="none" stroke="currentColor" />
+                          <path d="M3 4h8M3 7h5M3 10h6" strokeWidth="1.2" strokeLinecap="round" stroke="currentColor" />
+                        </svg>
+                        <span>{dish.sourcePackTitle}</span>
                       </div>
                     ) : null}
                   </div>

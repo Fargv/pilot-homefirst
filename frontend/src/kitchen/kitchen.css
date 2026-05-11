@@ -8729,3 +8729,36 @@ body {
 }
 .catalog-toast button:hover { opacity: 1; }
 /* ─────────────────────────────────────────────────────────── */
+
+/* ─── CATALOG DISHES (DishesPage) ────────────────────────── */
+.kitchen-dish-card.is-catalog {
+  border-left: 3px solid #818cf8;
+  background: linear-gradient(100deg, #f5f3ff 0%, #fff 60%);
+}
+.kitchen-dish-catalog-origin {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366f1;
+  background: #eef2ff;
+  border-radius: 5px;
+  padding: 2px 7px 2px 5px;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.kitchen-tab-catalog {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.kitchen-tab-button.kitchen-tab-catalog.is-active {
+  background: #6366f1;
+  color: #fff;
+  border-color: #6366f1;
+}
+/* ─────────────────────────────────────────────────────────── */
