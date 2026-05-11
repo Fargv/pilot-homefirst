@@ -19,7 +19,8 @@
     "clerk:dev-export:dry-run": "node scripts/export-clerk-dev-users.js --dry-run",
     "clerk:dev-export": "node scripts/export-clerk-dev-users.js --export",
     "clerk:dev-validate": "node scripts/validate-clerk-dev-import.js",
-    "clerk:dev-reconcile-id": "node scripts/reconcile-dev-clerk-id.js"
+    "clerk:dev-reconcile-id": "node scripts/reconcile-dev-clerk-id.js",
+    "seed:catalog": "node scripts/seedCatalog.js"
   },
   "dependencies": {
     "@clerk/backend": "^3.2.8",

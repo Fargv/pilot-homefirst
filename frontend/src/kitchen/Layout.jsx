@@ -53,6 +53,24 @@ function SettingsIcon(props) {
   );
 }
 
+function CatalogIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <path d="M7 8h10M7 12h7M7 16h8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CreditCardIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" />
+    </svg>
+  );
+}
+
 function LogoutIcon(props) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -139,7 +157,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
       { to: "/kitchen/semana", label: "Semana" },
       { to: "/kitchen/platos", label: "Platos" },
       { to: "/kitchen/compra", label: "Lista de la compra" },
-      { to: "/kitchen/configuracion", label: "Configuración" }
+      { to: "/kitchen/catalogo", label: "Catálogo" }
     ],
     []
   );
@@ -149,7 +167,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
       { to: "/kitchen/semana", label: "Semana", icon: CalendarIcon },
       { to: "/kitchen/platos", label: "Platos", icon: UtensilsIcon },
       { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
-      { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon }
+      { to: "/kitchen/catalogo", label: "Catálogo", icon: CatalogIcon }
     ],
     []
   );
@@ -325,19 +343,23 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                   </>
                 ) : null}
                 {householdError ? <div className="kitchen-alert error">{householdError}</div> : null}
-                <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion?section=perfil")}>
+                <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/configuracion?section=perfil"); onNavigate(); }}>
                   <UserIcon className="kitchen-user-menu-icon" />
-                  Editar mi perfil
+                  Perfil
                 </button>
                 {(user?.role === "owner" || user?.role === "admin" || isDiod) ? (
-                  <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion?section=share")}>
+                  <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/configuracion?section=share"); onNavigate(); }}>
                     <ShareIcon className="kitchen-user-menu-icon" />
                     Compartir
                   </button>
                 ) : null}
-                <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion")}>
+                <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/configuracion"); onNavigate(); }}>
                   <SettingsIcon className="kitchen-user-menu-icon" />
                   Configuración
+                </button>
+                <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/upgrade"); onNavigate(); }}>
+                  <CreditCardIcon className="kitchen-user-menu-icon" />
+                  Suscripción / Plan
                 </button>
                 <button type="button" role="menuitem" onClick={onLogout}>
                   <LogoutIcon className="kitchen-user-menu-icon" />

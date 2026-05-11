@@ -29,7 +29,9 @@
       "Bash(npm install *)",
       "Bash(npm run *)",
       "Bash(dir /s /b \"C:\\\\APPS\\\\pilot-homefirst\\\\frontend\")",
-      "Bash(findstr -i admin)"
+      "Bash(findstr -i admin)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Force | Format-Table Name, @{Name=\"Type\";Expression={if\\($_.PSIsContainer\\){\"DIR\"}else{\"FILE\"}}} -AutoSize)",
+      "Bash(node --input-type=module --eval ' *)"
     ]
   }
 }

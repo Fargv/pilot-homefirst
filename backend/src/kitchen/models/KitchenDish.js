@@ -30,6 +30,12 @@ const KitchenDishSchema = new mongoose.Schema(
     deletedAt: { type: Date, default: null },
     isArchived: { type: Boolean, default: false },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" },
+    source: { type: String, default: null },
+    sourcePackId: { type: mongoose.Schema.Types.ObjectId, ref: "CatalogPack", default: null },
+    sourcePackSlug: { type: String, default: null },
+    sourcePackTitle: { type: String, default: null },
+    importedAt: { type: Date, default: null },
+    importedBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },
     recipe: {
       ingredients: {
         type: [{

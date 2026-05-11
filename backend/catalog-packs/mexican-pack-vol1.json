@@ -1,0 +1,263 @@
+{
+  "slug": "mexican-pack-vol1",
+  "title": "10 platos mexicanos",
+  "subtitle": "Sabores auténticos de México",
+  "description": "Un pack con 10 platos clásicos de la cocina mexicana, perfectos para darle vida a tu semana con colores y sabores intensos. Desde tacos hasta enchiladas, todo listo para añadir a tu planificador.",
+  "coverImage": null,
+  "tags": ["mexicano", "familia", "colorido", "picante"],
+  "cuisineType": "mexicana",
+  "active": true,
+  "featured": true,
+  "priceBasic": 1.99,
+  "includedPlans": ["pro", "premium"],
+  "monthlyCreditCost": 1,
+  "sortOrder": 10,
+  "dishes": [
+    {
+      "name": "Tacos de pollo",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Pollo", "canonicalName": "pollo" },
+        { "displayName": "Tortilla de maíz", "canonicalName": "tortilla de maíz" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Cilantro", "canonicalName": "cilantro" },
+        { "displayName": "Lima", "canonicalName": "lima" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Pollo", "quantity": "400 g" },
+          { "name": "Tortillas de maíz", "quantity": "8 unidades" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Cilantro fresco", "quantity": "1 manojo" },
+          { "name": "Lima", "quantity": "2 unidades" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Enchiladas verdes",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Pollo desmenuzado", "canonicalName": "pollo" },
+        { "displayName": "Tortillas de maíz", "canonicalName": "tortilla de maíz" },
+        { "displayName": "Salsa verde", "canonicalName": "salsa verde" },
+        { "displayName": "Crema agria", "canonicalName": "crema agria" },
+        { "displayName": "Queso fresco", "canonicalName": "queso fresco" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Pollo desmenuzado", "quantity": "300 g" },
+          { "name": "Tortillas de maíz", "quantity": "8 unidades" },
+          { "name": "Salsa verde", "quantity": "300 ml" },
+          { "name": "Crema agria", "quantity": "100 ml" },
+          { "name": "Queso fresco", "quantity": "100 g" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Guacamole con nachos",
+      "sidedish": true,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Aguacate", "canonicalName": "aguacate" },
+        { "displayName": "Tomate", "canonicalName": "tomate" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Cilantro", "canonicalName": "cilantro" },
+        { "displayName": "Nachos", "canonicalName": "nachos" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Aguacate maduro", "quantity": "2 unidades" },
+          { "name": "Tomate", "quantity": "1 unidad" },
+          { "name": "Cebolla", "quantity": "1/4 unidad" },
+          { "name": "Cilantro", "quantity": "al gusto" },
+          { "name": "Nachos", "quantity": "200 g" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Quesadillas de queso",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Tortilla de trigo", "canonicalName": "tortilla de trigo" },
+        { "displayName": "Queso mozzarella", "canonicalName": "queso mozzarella" },
+        { "displayName": "Pimiento rojo", "canonicalName": "pimiento rojo" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Tortilla de trigo grande", "quantity": "4 unidades" },
+          { "name": "Queso mozzarella", "quantity": "200 g" },
+          { "name": "Pimiento rojo", "quantity": "1 unidad" }
+        ],
+        "steps": null,
+        "servings": 2
+      }
+    },
+    {
+      "name": "Sopa de tortilla",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Caldo de pollo", "canonicalName": "caldo de pollo" },
+        { "displayName": "Tomate", "canonicalName": "tomate" },
+        { "displayName": "Chile", "canonicalName": "chile" },
+        { "displayName": "Tortilla frita", "canonicalName": "tortilla" },
+        { "displayName": "Aguacate", "canonicalName": "aguacate" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Caldo de pollo", "quantity": "1 litro" },
+          { "name": "Tomate triturado", "quantity": "200 g" },
+          { "name": "Chile seco", "quantity": "2 unidades" },
+          { "name": "Tortillas fritas en tiras", "quantity": "100 g" },
+          { "name": "Aguacate", "quantity": "1 unidad" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Chili con carne",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Carne picada de ternera", "canonicalName": "carne picada de ternera" },
+        { "displayName": "Alubias rojas", "canonicalName": "alubias rojas" },
+        { "displayName": "Tomate triturado", "canonicalName": "tomate triturado" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Pimiento", "canonicalName": "pimiento" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Carne picada de ternera", "quantity": "500 g" },
+          { "name": "Alubias rojas cocidas", "quantity": "400 g" },
+          { "name": "Tomate triturado", "quantity": "400 g" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Pimiento rojo", "quantity": "1 unidad" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Burritos de ternera",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Carne de ternera", "canonicalName": "carne de ternera" },
+        { "displayName": "Tortilla de trigo", "canonicalName": "tortilla de trigo" },
+        { "displayName": "Arroz cocido", "canonicalName": "arroz" },
+        { "displayName": "Alubias negras", "canonicalName": "alubias negras" },
+        { "displayName": "Queso cheddar", "canonicalName": "queso cheddar" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Carne de ternera", "quantity": "400 g" },
+          { "name": "Tortillas de trigo grandes", "quantity": "4 unidades" },
+          { "name": "Arroz cocido", "quantity": "200 g" },
+          { "name": "Alubias negras cocidas", "quantity": "200 g" },
+          { "name": "Queso cheddar rallado", "quantity": "100 g" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Pozole rojo",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "ingredients": [
+        { "displayName": "Cerdo", "canonicalName": "cerdo" },
+        { "displayName": "Maíz mote", "canonicalName": "maíz mote" },
+        { "displayName": "Chile rojo seco", "canonicalName": "chile rojo" },
+        { "displayName": "Ajo", "canonicalName": "ajo" },
+        { "displayName": "Orégano", "canonicalName": "orégano" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Cerdo en trozos", "quantity": "600 g" },
+          { "name": "Maíz pozolero cocido", "quantity": "400 g" },
+          { "name": "Chile guajillo seco", "quantity": "4 unidades" },
+          { "name": "Ajo", "quantity": "4 dientes" },
+          { "name": "Orégano seco", "quantity": "1 cucharadita" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Tostadas de frijoles",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Tortilla tostada", "canonicalName": "tortilla" },
+        { "displayName": "Frijoles refritos", "canonicalName": "frijoles" },
+        { "displayName": "Lechuga", "canonicalName": "lechuga" },
+        { "displayName": "Tomate", "canonicalName": "tomate" },
+        { "displayName": "Crema agria", "canonicalName": "crema agria" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Tortillas tostadas", "quantity": "4 unidades" },
+          { "name": "Frijoles refritos", "quantity": "250 g" },
+          { "name": "Lechuga", "quantity": "1/4 cabeza" },
+          { "name": "Tomate", "quantity": "1 unidad" },
+          { "name": "Crema agria", "quantity": "al gusto" }
+        ],
+        "steps": null,
+        "servings": 2
+      }
+    },
+    {
+      "name": "Fajitas de pollo",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Pollo en tiras", "canonicalName": "pollo" },
+        { "displayName": "Pimiento rojo", "canonicalName": "pimiento rojo" },
+        { "displayName": "Pimiento verde", "canonicalName": "pimiento verde" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Tortilla de trigo", "canonicalName": "tortilla de trigo" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Pollo en tiras", "quantity": "400 g" },
+          { "name": "Pimiento rojo", "quantity": "1 unidad" },
+          { "name": "Pimiento verde", "quantity": "1 unidad" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Tortillas de trigo", "quantity": "8 unidades" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    }
+  ]
+}

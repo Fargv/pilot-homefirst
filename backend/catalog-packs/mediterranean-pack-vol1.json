@@ -1,0 +1,217 @@
+{
+  "slug": "mediterranean-pack-vol1",
+  "title": "8 platos mediterráneos",
+  "subtitle": "Frescura y sabor del Mediterráneo",
+  "description": "Un pack con 8 platos ligeros y sabrosos de la cocina mediterránea. Ingredientes frescos, recetas sencillas y mucha variedad para tus almuerzos y cenas.",
+  "coverImage": null,
+  "tags": ["mediterráneo", "saludable", "ligero", "rápido"],
+  "cuisineType": "mediterránea",
+  "active": true,
+  "featured": false,
+  "priceBasic": 1.99,
+  "includedPlans": ["pro", "premium"],
+  "monthlyCreditCost": 1,
+  "sortOrder": 20,
+  "dishes": [
+    {
+      "name": "Ensalada griega",
+      "sidedish": true,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Tomate", "canonicalName": "tomate" },
+        { "displayName": "Pepino", "canonicalName": "pepino" },
+        { "displayName": "Cebolla roja", "canonicalName": "cebolla roja" },
+        { "displayName": "Aceitunas negras", "canonicalName": "aceitunas negras" },
+        { "displayName": "Queso feta", "canonicalName": "queso feta" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Tomate", "quantity": "3 unidades" },
+          { "name": "Pepino", "quantity": "1 unidad" },
+          { "name": "Cebolla roja", "quantity": "1/2 unidad" },
+          { "name": "Aceitunas negras", "quantity": "100 g" },
+          { "name": "Queso feta", "quantity": "150 g" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Hummus con pan de pita",
+      "sidedish": true,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Garbanzos cocidos", "canonicalName": "garbanzos" },
+        { "displayName": "Tahini", "canonicalName": "tahini" },
+        { "displayName": "Limón", "canonicalName": "limón" },
+        { "displayName": "Ajo", "canonicalName": "ajo" },
+        { "displayName": "Pan de pita", "canonicalName": "pan de pita" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Garbanzos cocidos", "quantity": "400 g" },
+          { "name": "Tahini", "quantity": "3 cucharadas" },
+          { "name": "Limón", "quantity": "1 unidad" },
+          { "name": "Ajo", "quantity": "2 dientes" },
+          { "name": "Pan de pita", "quantity": "4 unidades" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Pasta al pesto",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Pasta", "canonicalName": "pasta" },
+        { "displayName": "Albahaca fresca", "canonicalName": "albahaca" },
+        { "displayName": "Piñones", "canonicalName": "piñones" },
+        { "displayName": "Parmesano", "canonicalName": "parmesano" },
+        { "displayName": "Ajo", "canonicalName": "ajo" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Pasta", "quantity": "400 g" },
+          { "name": "Albahaca fresca", "quantity": "50 g" },
+          { "name": "Piñones", "quantity": "30 g" },
+          { "name": "Parmesano rallado", "quantity": "50 g" },
+          { "name": "Ajo", "quantity": "2 dientes" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Pollo al limón con orégano",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Pollo", "canonicalName": "pollo" },
+        { "displayName": "Limón", "canonicalName": "limón" },
+        { "displayName": "Orégano", "canonicalName": "orégano" },
+        { "displayName": "Ajo", "canonicalName": "ajo" },
+        { "displayName": "Aceite de oliva", "canonicalName": "aceite de oliva" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Pollo en piezas", "quantity": "1 kg" },
+          { "name": "Limón", "quantity": "2 unidades" },
+          { "name": "Orégano seco", "quantity": "1 cucharada" },
+          { "name": "Ajo", "quantity": "4 dientes" },
+          { "name": "Aceite de oliva", "quantity": "3 cucharadas" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Shakshuka",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Huevos", "canonicalName": "huevo" },
+        { "displayName": "Tomate triturado", "canonicalName": "tomate triturado" },
+        { "displayName": "Pimiento rojo", "canonicalName": "pimiento rojo" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Comino", "canonicalName": "comino" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Huevos", "quantity": "4 unidades" },
+          { "name": "Tomate triturado", "quantity": "400 g" },
+          { "name": "Pimiento rojo", "quantity": "1 unidad" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Comino molido", "quantity": "1 cucharadita" }
+        ],
+        "steps": null,
+        "servings": 2
+      }
+    },
+    {
+      "name": "Risotto de setas",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "ingredients": [
+        { "displayName": "Arroz arbóreo", "canonicalName": "arroz arbóreo" },
+        { "displayName": "Setas", "canonicalName": "setas" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Caldo de verduras", "canonicalName": "caldo de verduras" },
+        { "displayName": "Parmesano", "canonicalName": "parmesano" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Arroz arbóreo", "quantity": "320 g" },
+          { "name": "Setas variadas", "quantity": "300 g" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Caldo de verduras", "quantity": "1 litro" },
+          { "name": "Parmesano rallado", "quantity": "80 g" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    },
+    {
+      "name": "Merluza al horno con tomate",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Merluza", "canonicalName": "merluza" },
+        { "displayName": "Tomate", "canonicalName": "tomate" },
+        { "displayName": "Ajo", "canonicalName": "ajo" },
+        { "displayName": "Aceitunas", "canonicalName": "aceitunas" },
+        { "displayName": "Aceite de oliva", "canonicalName": "aceite de oliva" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Lomos de merluza", "quantity": "600 g" },
+          { "name": "Tomates cherry", "quantity": "200 g" },
+          { "name": "Ajo", "quantity": "3 dientes" },
+          { "name": "Aceitunas negras", "quantity": "80 g" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "3 cucharadas" }
+        ],
+        "steps": null,
+        "servings": 3
+      }
+    },
+    {
+      "name": "Lentejas con verduras",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        { "displayName": "Lentejas", "canonicalName": "lentejas" },
+        { "displayName": "Zanahoria", "canonicalName": "zanahoria" },
+        { "displayName": "Apio", "canonicalName": "apio" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Tomate triturado", "canonicalName": "tomate triturado" }
+      ],
+      "recipe": {
+        "ingredients": [
+          { "name": "Lentejas", "quantity": "300 g" },
+          { "name": "Zanahoria", "quantity": "2 unidades" },
+          { "name": "Apio", "quantity": "2 tallos" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Tomate triturado", "quantity": "200 g" }
+        ],
+        "steps": null,
+        "servings": 4
+      }
+    }
+  ]
+}

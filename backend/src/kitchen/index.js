@@ -9,6 +9,7 @@ import adminRoutes from "./routes/admin.js";
 import householdRoutes from "./routes/household.js";
 import dishCategoryRoutes from "./routes/dishCategories.js";
 import pushRoutes from "./routes/push.js";
+import catalogRoutes from "./routes/catalog.js";
 
 const router = express.Router();
 
@@ -22,5 +23,6 @@ router.use("/admin", adminRoutes);
 router.use("/household", householdRoutes);
 router.use("/dish-categories", dishCategoryRoutes);
 router.use("/push", pushRoutes);
+router.use("/catalog", catalogRoutes);
 
 export default router;
