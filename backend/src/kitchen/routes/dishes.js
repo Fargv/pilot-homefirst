@@ -394,6 +394,20 @@ router.put("/:id", requireAuth, async (req, res) => {
       }
 
       const requiredHouseholdId = getEffectiveHouseholdId(req.user);
+      const overrideSetData = {
+        ...nextData,
+        scope: CATALOG_SCOPES.OVERRIDE,
+        masterId: dish._id,
+        householdId: requiredHouseholdId,
+        sidedish: nextData.sidedish,
+        isDinner: nextData.isDinner,
+        dishCategoryId: nextData.dishCategoryId,
+        active: nextData.active,
+        special: nextData.special,
+        isArchived: nextData.isArchived
+      };
+      // On INSERT (new override): inherit the master's recipe so it is not lost.
+      // On UPDATE (existing override): recipe is left untouched ($setOnInsert is ignored).
       const override = await KitchenDish.findOneAndUpdate(
         {
           householdId: requiredHouseholdId,
@@ -401,18 +415,10 @@ router.put("/:id", requireAuth, async (req, res) => {
           masterId: dish._id
         },
         {
-          ...nextData,
-          scope: CATALOG_SCOPES.OVERRIDE,
-          masterId: dish._id,
-          householdId: requiredHouseholdId,
-          sidedish: nextData.sidedish,
-          isDinner: nextData.isDinner,
-          dishCategoryId: nextData.dishCategoryId,
-          active: nextData.active,
-          special: nextData.special,
-          isArchived: nextData.isArchived
+          $set: overrideSetData,
+          $setOnInsert: { recipe: dish.recipe || null }
         },
-        { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true }
       );
       await clearHiddenMasterForHousehold({
         householdId: requiredHouseholdId,
