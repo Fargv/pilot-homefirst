@@ -6351,6 +6351,27 @@ body {
   box-shadow: 0 6px 12px rgba(29, 78, 216, 0.13);
 }
 
+/* Master catalog mode banner (DIOD global) */
+.kitchen-master-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #92400e;
+  margin-bottom: 12px;
+}
+.kitchen-master-mode-banner svg {
+  flex-shrink: 0;
+  color: #d97706;
+}
+.kitchen-master-mode-banner strong {
+  color: #78350f;
+}
+
 /* Info button with recipe attached — tinted indigo */
 .kitchen-icon-button.info.has-recipe {
   color: #4338ca;

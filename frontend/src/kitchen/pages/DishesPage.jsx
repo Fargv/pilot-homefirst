@@ -139,11 +139,6 @@ export default function DishesPage() {
   }, []);
 
   const loadDishes = async () => {
-    if (isDiodGlobalMode) {
-      setDishes([]);
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setDishError("");
     try {
@@ -714,17 +709,6 @@ export default function DishesPage() {
     () => dishes.find((dish) => dish?._id === dishInfoOpenId) || null,
     [dishInfoOpenId, dishes]
   );
-  if (isDiodGlobalMode) {
-    return (
-      <KitchenLayout>
-        <div className="kitchen-card">
-          <h3>Selecciona un hogar para gestionar platos</h3>
-          <p className="kitchen-muted">En modo global DIOD solo está disponible el catálogo master.</p>
-        </div>
-      </KitchenLayout>
-    );
-  }
-
   const ingredientEmptyMessage = useMemo(() => {
     if (ingredients.length === 0) {
       return "No hay ingredientes aún. Crea el primero.";
@@ -738,18 +722,31 @@ export default function DishesPage() {
   const isIngredientsTab = activeTab === "ingredients";
   const headerTitle = isIngredientsTab ? "Ingredientes" : "Platos";
   const headerDescription = isIngredientsTab
-    ? "Gestiona el catálogo de ingredientes con sus categorías y estado."
-    : "Administra tus platos y sus ingredientes en un solo lugar.";
+    ? isDiodGlobalMode
+      ? "Catálogo master de ingredientes — visibles en todos los hogares."
+      : "Gestiona el catálogo de ingredientes con sus categorías y estado."
+    : isDiodGlobalMode
+      ? "Catálogo master de platos — visibles en todos los hogares."
+      : "Administra tus platos y sus ingredientes en un solo lugar.";
   const headerActionLabel = isIngredientsTab
-    ? "Nuevo ingrediente"
+    ? isDiodGlobalMode ? "Nuevo ingrediente master" : "Nuevo ingrediente"
     : activeTab === "side"
-      ? "Nueva guarnición"
-      : "Nuevo plato";
+      ? isDiodGlobalMode ? "Nueva guarnición master" : "Nueva guarnición"
+      : isDiodGlobalMode ? "Nuevo plato master" : "Nuevo plato";
   const headerActionHandler = isIngredientsTab ? startIngredientCreate : startCreate;
 
   return (
     <KitchenLayout>
       <div className="kitchen-dishes-page">
+        {isDiodGlobalMode && (
+          <div className="kitchen-master-mode-banner">
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+              <circle cx="10" cy="10" r="8" />
+              <path d="M10 6v4l2.5 2.5" />
+            </svg>
+            <span>Modo catálogo master · Los cambios afectan a <strong>todos los hogares</strong></span>
+          </div>
+        )}
         <div className="kitchen-dishes-header">
           <div>
             <h2>{headerTitle}</h2>
