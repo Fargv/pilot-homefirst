@@ -27,7 +27,9 @@
       "Bash(xargs wc -l)",
       "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Depth 2)",
       "Bash(npm install *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(dir /s /b \"C:\\\\APPS\\\\pilot-homefirst\\\\frontend\")",
+      "Bash(findstr -i admin)"
     ]
   }
 }
