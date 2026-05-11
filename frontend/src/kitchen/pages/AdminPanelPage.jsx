@@ -1,10 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
+import RecipeEditor from "../components/RecipeEditor.jsx";
+
+// ── Shared admin-light button styles ─────────────────────────────────────────
+const ABT = {  // admin button themes
+  edit:   { fontSize: 12, padding: "3px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#f8fafc", color: "#374151", cursor: "pointer", fontWeight: 500 },
+  del:    { fontSize: 12, padding: "3px 12px", borderRadius: 6, border: "1px solid #fca5a5", background: "#fff8f8", color: "#b42318", cursor: "pointer", fontWeight: 500 },
+  save:   { fontSize: 13, padding: "7px 18px", borderRadius: 6, border: "none", background: "#4338ca", color: "#fff", cursor: "pointer", fontWeight: 600 },
+  cancel: { fontSize: 13, padding: "7px 14px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#f1f5f9", color: "#374151", cursor: "pointer" },
+  green:  { fontSize: 12, padding: "3px 12px", borderRadius: 6, border: "1px solid #86efac", background: "#f0fdf4", color: "#15803d", cursor: "pointer", fontWeight: 500 }
+};
 
 const PLANS = ["basic", "pro", "premium"];
 
@@ -400,6 +410,8 @@ function QuickSubscriptionPanel() {
 
 function DishForm({ item, sidedish, dishCategories, onSave, onCancel }) {
   const isEdit = Boolean(item._id);
+
+  // ── Basic fields ────────────────────────────────────────────────────────────
   const [form, setForm] = useState({
     name: item.name || "",
     active: item.active !== false,
@@ -408,68 +420,286 @@ function DishForm({ item, sidedish, dishCategories, onSave, onCancel }) {
     allowRandom: item.allowRandom !== false,
     dishCategoryId: item.dishCategoryId?._id || item.dishCategoryId || ""
   });
+
+  // ── Dish-level ingredients (shopping list) ──────────────────────────────────
+  const [dishIngredients, setDishIngredients] = useState(
+    (item.ingredients || []).map((i) => ({
+      ingredientId: i.ingredientId,
+      displayName: i.displayName || i.name || "",
+      canonicalName: i.canonicalName || ""
+    }))
+  );
+  const [ingSearch, setIngSearch] = useState("");
+  const [ingResults, setIngResults] = useState([]);
+  const [ingSearching, setIngSearching] = useState(false);
+  const [showCreateIng, setShowCreateIng] = useState(false);
+  const [newIngName, setNewIngName] = useState("");
+  const [createIngErr, setCreateIngErr] = useState("");
+  const [creatingIng, setCreatingIng] = useState(false);
+  const ingDropdownRef = useRef(null);
+
+  // ── Recipe ──────────────────────────────────────────────────────────────────
+  const [showRecipe, setShowRecipe] = useState(false);
+  const [recipe, setRecipe] = useState({
+    ingredients: item.recipe?.ingredients || [],
+    steps: item.recipe?.steps ?? null,
+    servings: item.recipe?.servings ?? null
+  });
+
+  // ── Save state ──────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // ── Ingredient search ───────────────────────────────────────────────────────
+  useEffect(() => {
+    const q = ingSearch.trim();
+    if (!q) { setIngResults([]); return; }
+    const t = setTimeout(async () => {
+      setIngSearching(true);
+      try {
+        const d = await apiRequest(`/api/kitchenIngredients?global=1&q=${encodeURIComponent(q)}&limit=10`);
+        setIngResults(d.ingredients || []);
+      } catch { setIngResults([]); } finally { setIngSearching(false); }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [ingSearch]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const h = (e) => {
+      if (ingDropdownRef.current && !ingDropdownRef.current.contains(e.target)) setIngSearch("");
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const addIngredient = (ing) => {
+    const name = ing.displayName || ing.canonicalName;
+    if (dishIngredients.some((i) => (i.displayName || "").toLowerCase() === name.toLowerCase())) return;
+    setDishIngredients((prev) => [...prev, {
+      ingredientId: ing._id,
+      displayName: name,
+      canonicalName: ing.canonicalName || name.toLowerCase()
+    }]);
+    setIngSearch(""); setIngResults([]);
+  };
+
+  const createAndAdd = async () => {
+    if (!newIngName.trim() || creatingIng) return;
+    setCreatingIng(true); setCreateIngErr("");
+    try {
+      const d = await apiRequest("/api/kitchenIngredients", {
+        method: "POST",
+        body: JSON.stringify({ name: newIngName.trim(), scope: "master" })
+      });
+      const ing = d.ingredient;
+      addIngredient({ _id: ing._id, displayName: ing.displayName || ing.canonicalName, canonicalName: ing.canonicalName });
+      setNewIngName(""); setShowCreateIng(false);
+    } catch (err) { setCreateIngErr(err.message || "Error al crear."); }
+    finally { setCreatingIng(false); }
+  };
+
+  // ── Submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
-    setSaving(true);
-    setError("");
+    setSaving(true); setError("");
     try {
-      await onSave({ _id: item._id, ...form });
-    } catch (err) {
-      setError(err.message || "Error al guardar.");
-    } finally {
-      setSaving(false);
-    }
+      await onSave({ _id: item._id, ...form, ingredients: dishIngredients, recipe });
+    } catch (err) { setError(err.message || "Error al guardar."); }
+    finally { setSaving(false); }
   };
 
   const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+  const dishIngredientNames = dishIngredients.map((i) => (i.displayName || "").toLowerCase());
 
   return (
-    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 8, padding: 16, marginBottom: 16 }}>
-      <h4 style={{ margin: "0 0 12px", fontSize: 14, color: "#1e293b" }}>
-        {isEdit ? `Editar: ${item.name}` : `Nuevo ${sidedish ? "guarnición" : "plato"} master`}
+    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 14px", fontSize: 15, color: "#1e293b", fontWeight: 700 }}>
+        {isEdit ? `✏️ Editar: ${item.name}` : `➕ Nuevo ${sidedish ? "guarnición" : "plato"} master`}
       </h4>
       <form onSubmit={handleSubmit}>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "flex-end" }}>
-          <div style={{ flex: "1 1 200px" }}>
-            <Input id="df-name" label="Nombre" value={form.name} onChange={set("name")} required />
+
+        {/* ── Basic info ── */}
+        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 14, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Información básica</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "flex-end" }}>
+            <div style={{ flex: "1 1 200px" }}>
+              <Input id="df-name" label="Nombre" value={form.name} onChange={set("name")} required />
+            </div>
+            {!sidedish && (
+              <div style={{ flex: "1 1 160px" }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  <span className="kitchen-label">Categoría de plato</span>
+                  <select className="kitchen-select" value={form.dishCategoryId} onChange={set("dishCategoryId")}>
+                    <option value="">Sin categoría</option>
+                    {dishCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+                  </select>
+                </label>
+              </div>
+            )}
           </div>
-          {!sidedish && (
-            <div style={{ flex: "1 1 160px" }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <span className="kitchen-label">Categoría de plato</span>
-                <select className="kitchen-select" value={form.dishCategoryId} onChange={set("dishCategoryId")}>
-                  <option value="">Sin categoría</option>
-                  {dishCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-                </select>
+          <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 13 }}>
+            {[
+              ["active", "Activo"],
+              ...(!sidedish ? [["isDinner", "Es cena"]] : []),
+              ["special", "Especial (no random)"],
+              ["allowRandom", "Permitir random"]
+            ].map(([key, label]) => (
+              <label key={key} style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer", color: "#374151" }}>
+                <input type="checkbox" checked={Boolean(form[key])} onChange={set(key)} />
+                {label}
               </label>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Dish ingredients ── */}
+        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 14, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            Ingredientes del plato <span style={{ fontWeight: 400, color: "#9ca3af", fontSize: 11 }}>(lista de la compra)</span>
+          </div>
+
+          {/* Chips */}
+          {dishIngredients.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+              {dishIngredients.map((ing, idx) => (
+                <span key={idx} style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  background: "#eff6ff", border: "1px solid #bfdbfe",
+                  color: "#1d4ed8", borderRadius: 999, padding: "3px 10px", fontSize: 12, fontWeight: 500
+                }}>
+                  {ing.displayName}
+                  <button
+                    type="button"
+                    onClick={() => setDishIngredients((prev) => prev.filter((_, i) => i !== idx))}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#93c5fd", padding: 0, marginLeft: 2, fontSize: 15, lineHeight: 1 }}
+                  >×</button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Search */}
+          <div ref={ingDropdownRef} style={{ position: "relative" }}>
+            <input
+              type="text"
+              value={ingSearch}
+              onChange={(e) => { setIngSearch(e.target.value); setShowCreateIng(false); }}
+              placeholder="🔍 Buscar ingrediente para añadir..."
+              style={{ width: "100%", boxSizing: "border-box", padding: "7px 11px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", background: "#fff", outline: "none" }}
+            />
+            {ingSearch.trim() && (
+              <div style={{
+                position: "absolute", top: "100%", left: 0, right: 0, marginTop: 2,
+                background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
+                boxShadow: "0 6px 20px rgba(0,0,0,0.12)", zIndex: 50, maxHeight: 200, overflowY: "auto"
+              }}>
+                {ingSearching && <div style={{ padding: "10px 14px", fontSize: 12, color: "#9ca3af" }}>Buscando...</div>}
+                {!ingSearching && ingResults.map((ing) => (
+                  <button
+                    key={ing._id}
+                    type="button"
+                    onMouseDown={() => addIngredient(ing)}
+                    style={{ width: "100%", textAlign: "left", padding: "8px 14px", border: "none", background: "none", cursor: "pointer", fontSize: 13, color: "#1e293b", display: "block" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "#f1f5f9"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+                  >
+                    {ing.displayName || ing.canonicalName}
+                  </button>
+                ))}
+                {!ingSearching && ingResults.length === 0 && (
+                  <div style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>Sin resultados</span>
+                    <button
+                      type="button"
+                      onMouseDown={() => { setShowCreateIng(true); setNewIngName(ingSearch.trim()); setIngSearch(""); setIngResults([]); }}
+                      style={ABT.green}
+                    >+ Crear "{ingSearch.trim()}"</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Create inline form */}
+          {showCreateIng && (
+            <div style={{ marginTop: 8, display: "flex", gap: 6, alignItems: "center", padding: 10, background: "#f0fdf4", borderRadius: 6, border: "1px solid #86efac" }}>
+              <input
+                type="text"
+                value={newIngName}
+                onChange={(e) => setNewIngName(e.target.value)}
+                placeholder="Nombre del ingrediente"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createAndAdd(); } }}
+                style={{ flex: 1, padding: "5px 8px", fontSize: 13, borderRadius: 5, border: "1px solid #d1d5db", outline: "none" }}
+              />
+              <button type="button" onClick={createAndAdd} disabled={creatingIng || !newIngName.trim()}
+                style={{ ...ABT.save, padding: "5px 12px", fontSize: 12, background: "#16a34a" }}>
+                {creatingIng ? "..." : "Crear y añadir"}
+              </button>
+              <button type="button" onClick={() => setShowCreateIng(false)}
+                style={{ ...ABT.del, padding: "5px 10px" }}>✕</button>
+              {createIngErr && <span style={{ fontSize: 11, color: "#dc2626" }}>{createIngErr}</span>}
             </div>
           )}
         </div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 12, fontSize: 13 }}>
-          {[
-            ["active", "Activo"],
-            ...(!sidedish ? [["isDinner", "Es cena"]] : []),
-            ["special", "Especial (no random)"],
-            ["allowRandom", "Permitir random"]
-          ].map(([key, label]) => (
-            <label key={key} style={{ display: "flex", gap: 5, alignItems: "center", cursor: "pointer" }}>
-              <input type="checkbox" checked={Boolean(form[key])} onChange={set(key)} />
-              {label}
-            </label>
-          ))}
+
+        {/* ── Recipe ── */}
+        <div style={{ marginBottom: 14 }}>
+          <button
+            type="button"
+            onClick={() => setShowRecipe((v) => !v)}
+            style={{
+              fontSize: 13, fontWeight: 600, color: showRecipe ? "#3730a3" : "#4338ca",
+              background: showRecipe ? "#e0e7ff" : "#eef2ff",
+              border: "1px solid #c7d2fe", borderRadius: 7,
+              padding: "7px 16px", cursor: "pointer",
+              width: "100%", textAlign: "left"
+            }}
+          >
+            {showRecipe ? "▲ Ocultar receta" : "▼ Editar receta"}
+            {(item.recipe?.steps || (item.recipe?.ingredients?.length > 0)) && (
+              <span style={{ marginLeft: 8, fontSize: 11, background: "#818cf8", color: "#fff", borderRadius: 4, padding: "1px 6px" }}>tiene receta</span>
+            )}
+          </button>
+
+          {showRecipe && (
+            <div style={{ background: "#fff", border: "1px solid #c7d2fe", borderRadius: "0 0 8px 8px", padding: 14, borderTop: "none" }}>
+              <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                <label style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
+                  Raciones:
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={recipe.servings ?? ""}
+                  onChange={(e) => setRecipe((p) => ({ ...p, servings: e.target.value ? Number(e.target.value) : null }))}
+                  style={{ width: 70, padding: "4px 8px", borderRadius: 5, border: "1px solid #d1d5db", fontSize: 13 }}
+                />
+              </div>
+              <RecipeEditor
+                recipeIngredients={recipe.ingredients || []}
+                recipeSteps={recipe.steps}
+                recipeServings={recipe.servings}
+                dishIngredientNames={dishIngredientNames}
+                onAddIngredientToDish={(name) => {
+                  if (!name) return;
+                  if (dishIngredients.some((i) => (i.displayName || "").toLowerCase() === name.toLowerCase())) return;
+                  setDishIngredients((prev) => [...prev, { displayName: name, canonicalName: name.toLowerCase() }]);
+                }}
+                onChange={setRecipe}
+                readOnly={false}
+              />
+            </div>
+          )}
         </div>
-        {error ? <div className="kitchen-alert error" style={{ marginBottom: 8 }}>{error}</div> : null}
-        <div style={{ display: "flex", gap: 6 }}>
-          <Button type="submit" style={{ fontSize: 13 }} disabled={saving}>
+
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 10 }}>{error}</div> : null}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="submit" disabled={saving} style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }}>
             {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear"}
-          </Button>
-          <Button variant="secondary" type="button" style={{ fontSize: 13 }} onClick={onCancel}>
-            Cancelar
-          </Button>
+          </button>
+          <button type="button" onClick={onCancel} style={ABT.cancel}>Cancelar</button>
         </div>
       </form>
     </div>
@@ -488,7 +718,7 @@ function MasterDishesPanel({ sidedish, dishCategories }) {
     setLoading(true);
     setError("");
     try {
-      const url = `/api/kitchen/dishes?global=1${sidedish ? "&sidedish=true" : ""}`;
+      const url = `/api/kitchen/dishes?global=1&includeInactive=true${sidedish ? "&sidedish=true" : ""}`;
       const data = await apiRequest(url);
       setDishes(data.dishes || []);
     } catch (err) {
@@ -514,13 +744,31 @@ function MasterDishesPanel({ sidedish, dishCategories }) {
       isDinner: form.isDinner,
       special: form.special,
       allowRandom: form.allowRandom,
-      dishCategoryId: form.dishCategoryId || null
+      dishCategoryId: form.dishCategoryId || null,
+      ingredients: (form.ingredients || []).map((i) => ({
+        displayName: i.displayName || i.name || "",
+        canonicalName: i.canonicalName || (i.displayName || i.name || "").toLowerCase(),
+        ...(i.ingredientId ? { ingredientId: i.ingredientId } : {})
+      }))
     };
+
+    let dishId = form._id;
     if (form._id) {
-      await apiRequest(`/api/kitchen/dishes/${form._id}`, { method: "PUT", body: JSON.stringify(body) });
+      const result = await apiRequest(`/api/kitchen/dishes/${form._id}`, { method: "PUT", body: JSON.stringify(body) });
+      dishId = result.dish?._id || form._id;
     } else {
-      await apiRequest("/api/kitchen/dishes", { method: "POST", body: JSON.stringify(body) });
+      const result = await apiRequest("/api/kitchen/dishes", { method: "POST", body: JSON.stringify(body) });
+      dishId = result.dish?._id;
     }
+
+    // Save recipe separately via /recipe endpoint
+    if (form.recipe && dishId) {
+      await apiRequest(`/api/kitchen/dishes/${dishId}/recipe`, {
+        method: "PUT",
+        body: JSON.stringify(form.recipe)
+      });
+    }
+
     setEditItem(null);
     await load();
   };
@@ -548,12 +796,12 @@ function MasterDishesPanel({ sidedish, dishCategories }) {
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: 200, fontSize: 13 }}
         />
-        <Button style={{ fontSize: 13 }} onClick={() => setEditItem({})}>
+        <button type="button" style={{ ...ABT.save, padding: "6px 14px", fontSize: 13 }} onClick={() => setEditItem({})}>
           + Nuevo {sidedish ? "guarnición" : "plato"}
-        </Button>
-        <Button variant="secondary" style={{ fontSize: 13 }} onClick={load} disabled={loading}>
-          {loading ? "..." : "↺"}
-        </Button>
+        </button>
+        <button type="button" style={ABT.edit} onClick={load} disabled={loading}>
+          {loading ? "..." : "↺ Recargar"}
+        </button>
       </div>
 
       {editItem !== null && (
@@ -593,20 +841,10 @@ function MasterDishesPanel({ sidedish, dishCategories }) {
                   <td style={{ textAlign: "center" }}>{dish.special ? "★" : "—"}</td>
                   <td>
                     <div style={{ display: "flex", gap: 4 }}>
-                      <Button
-                        variant="secondary"
-                        style={{ fontSize: 12, padding: "2px 10px" }}
-                        onClick={() => setEditItem(dish)}
-                      >
-                        Editar
-                      </Button>
+                      <button type="button" style={ABT.edit} onClick={() => setEditItem(dish)}>Editar</button>
                       <button
                         type="button"
-                        style={{
-                          fontSize: 12, padding: "2px 10px", borderRadius: 6,
-                          border: "1px solid #fca5a5", background: "#fff",
-                          color: "#b42318", cursor: "pointer"
-                        }}
+                        style={{ ...ABT.del, opacity: deletingId === dish._id ? 0.6 : 1 }}
                         disabled={deletingId === dish._id}
                         onClick={() => handleDelete(dish)}
                       >
@@ -677,10 +915,10 @@ function IngredientForm({ item, ingredientCategories, onSave, onCancel }) {
         </div>
         {error ? <div className="kitchen-alert error" style={{ marginBottom: 8 }}>{error}</div> : null}
         <div style={{ display: "flex", gap: 6 }}>
-          <Button type="submit" style={{ fontSize: 13 }} disabled={saving}>
+          <button type="submit" disabled={saving} style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }}>
             {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear"}
-          </Button>
-          <Button variant="secondary" type="button" style={{ fontSize: 13 }} onClick={onCancel}>Cancelar</Button>
+          </button>
+          <button type="button" onClick={onCancel} style={ABT.cancel}>Cancelar</button>
         </div>
       </form>
     </div>
@@ -752,8 +990,8 @@ function MasterIngredientsPanel({ ingredientCategories }) {
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: 220, fontSize: 13 }}
         />
-        <Button style={{ fontSize: 13 }} onClick={() => setEditItem({})}>+ Nuevo ingrediente</Button>
-        <Button variant="secondary" style={{ fontSize: 13 }} onClick={load} disabled={loading}>{loading ? "..." : "↺"}</Button>
+        <button type="button" style={{ ...ABT.save, padding: "6px 14px", fontSize: 13 }} onClick={() => setEditItem({})}>+ Nuevo ingrediente</button>
+        <button type="button" style={ABT.edit} onClick={load} disabled={loading}>{loading ? "..." : "↺ Recargar"}</button>
       </div>
 
       {editItem !== null && (
@@ -788,10 +1026,10 @@ function MasterIngredientsPanel({ ingredientCategories }) {
                   <td style={{ textAlign: "center" }}>{ing.active !== false ? "✓" : "✗"}</td>
                   <td>
                     <div style={{ display: "flex", gap: 4 }}>
-                      <Button variant="secondary" style={{ fontSize: 12, padding: "2px 10px" }} onClick={() => setEditItem(ing)}>Editar</Button>
+                      <button type="button" style={ABT.edit} onClick={() => setEditItem(ing)}>Editar</button>
                       <button
                         type="button"
-                        style={{ fontSize: 12, padding: "2px 10px", borderRadius: 6, border: "1px solid #fca5a5", background: "#fff", color: "#b42318", cursor: "pointer" }}
+                        style={{ ...ABT.del, opacity: deletingId === ing._id ? 0.6 : 1 }}
                         disabled={deletingId === ing._id}
                         onClick={() => handleDelete(ing)}
                       >
