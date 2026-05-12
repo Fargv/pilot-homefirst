@@ -745,4 +745,57 @@ router.post("/packs/:packId/publish", requireAuth, requireDiod, async (req, res)
   }
 });
 
+router.post("/packs/:packId/status", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+    const nextStatus = String(req.body?.status || "").trim();
+    if (!["draft", "needs_review", "ready", "published"].includes(nextStatus)) {
+      return res.status(400).json({ ok: false, error: "Estado de pack no valido." });
+    }
+
+    const pack = await CatalogPack.findById(req.params.packId);
+    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+
+    if (nextStatus === "published") {
+      await applyCatalogPackValidation(pack, { autoApply: true });
+      if (pack.validationSummary?.unresolvedIssues > 0) {
+        await pack.save();
+        return res.status(409).json({
+          ok: false,
+          error: "No se puede publicar con issues de normalizacion pendientes.",
+          validationSummary: pack.validationSummary,
+          reviewIssues: pack.reviewIssues
+        });
+      }
+      pack.active = true;
+      pack.publishedAt = new Date();
+      pack.reviewedAt = pack.reviewedAt || new Date();
+    }
+
+    if (nextStatus === "ready") {
+      await applyCatalogPackValidation(pack, { autoApply: pack.status !== "published" });
+      if (pack.validationSummary?.unresolvedIssues > 0) {
+        await pack.save();
+        return res.status(409).json({
+          ok: false,
+          error: "No se puede marcar como ready con issues pendientes.",
+          validationSummary: pack.validationSummary,
+          reviewIssues: pack.reviewIssues
+        });
+      }
+    }
+
+    pack.status = nextStatus;
+    if (nextStatus === "needs_review") {
+      pack.reviewedAt = null;
+    }
+    await pack.save();
+    return res.json({ ok: true, pack: serializeAdminPack(pack.toObject()) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al cambiar estado del pack." });
+  }
+});
+
 export default router;
