@@ -1106,8 +1106,147 @@ function MasterCatalogSection() {
 
 const INCLUDED_PLANS_OPTIONS = ["basic", "pro", "premium"];
 
+const FS = { width: "100%", boxSizing: "border-box", padding: "5px 8px", fontSize: 12, borderRadius: 4, border: "1px solid #d1d5db" };
+
+function DishTemplateEditor({ dishes, onChange }) {
+  const [expanded, setExpanded] = useState(null);
+
+  const addDish = () => {
+    const next = [...dishes, { name: "", sidedish: false, isDinner: false, special: false, allowRandom: true, ingredients: [], recipe: { ingredients: [], steps: "", servings: "" } }];
+    onChange(next);
+    setExpanded(next.length - 1);
+  };
+
+  const removeDish = (i) => {
+    onChange(dishes.filter((_, idx) => idx !== i));
+    setExpanded((ex) => ex === i ? null : ex > i ? ex - 1 : ex);
+  };
+
+  const updateDish = (i, updates) => onChange(dishes.map((d, idx) => idx === i ? { ...d, ...updates } : d));
+
+  const addIng = (i) => updateDish(i, { ingredients: [...dishes[i].ingredients, { displayName: "", canonicalName: "" }] });
+  const removeIng = (i, j) => updateDish(i, { ingredients: dishes[i].ingredients.filter((_, idx) => idx !== j) });
+  const updateIng = (i, j, key, val) => updateDish(i, { ingredients: dishes[i].ingredients.map((x, idx) => idx === j ? { ...x, [key]: val } : x) });
+
+  const addRecIng = (i) => updateDish(i, { recipe: { ...dishes[i].recipe, ingredients: [...(dishes[i].recipe?.ingredients || []), { name: "", quantity: "" }] } });
+  const removeRecIng = (i, j) => updateDish(i, { recipe: { ...dishes[i].recipe, ingredients: dishes[i].recipe.ingredients.filter((_, idx) => idx !== j) } });
+  const updateRecIng = (i, j, key, val) => updateDish(i, { recipe: { ...dishes[i].recipe, ingredients: (dishes[i].recipe?.ingredients || []).map((x, idx) => idx === j ? { ...x, [key]: val } : x) } });
+
+  return (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          Platos del pack ({dishes.length})
+        </div>
+        <button type="button" onClick={addDish}
+          style={{ fontSize: 12, padding: "4px 10px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>
+          + Añadir plato
+        </button>
+      </div>
+      {dishes.length === 0 && (
+        <div style={{ padding: "10px 0", color: "#9ca3af", fontSize: 12, textAlign: "center" }}>
+          Sin platos — pulsa "+ Añadir plato" para empezar
+        </div>
+      )}
+      {dishes.map((dish, i) => (
+        <div key={i} style={{ border: "1px solid #e0e7ff", borderRadius: 8, marginBottom: 6, background: "#fafbff" }}>
+          <div style={{ display: "flex", alignItems: "center", padding: "8px 12px", cursor: "pointer", gap: 8 }}
+            onClick={() => setExpanded((ex) => ex === i ? null : i)}>
+            <span style={{ flex: 1, fontWeight: 600, fontSize: 13, color: expanded === i ? "#6366f1" : "#1e293b" }}>
+              {dish.name || <em style={{ color: "#9ca3af" }}>Plato sin nombre</em>}
+            </span>
+            <span style={{ fontSize: 11, color: "#9ca3af" }}>
+              {dish.ingredients.length} ing. · {dish.recipe?.ingredients?.length || 0} rec.
+            </span>
+            <button type="button" onClick={(e) => { e.stopPropagation(); removeDish(i); }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700, fontSize: 16, padding: "0 4px" }}>×</button>
+          </div>
+          {expanded === i && (
+            <div style={{ padding: "0 12px 12px", borderTop: "1px solid #e0e7ff" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500, marginTop: 10, marginBottom: 8 }}>
+                Nombre del plato *
+                <input style={FS} value={dish.name} onChange={(e) => updateDish(i, { name: e.target.value })} placeholder="Tacos de pollo" />
+              </label>
+              <div style={{ display: "flex", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
+                {[["sidedish", "Acompañamiento"], ["isDinner", "Cena"], ["special", "Especial"], ["allowRandom", "Aleatorio"]].map(([key, label]) => (
+                  <label key={key} style={{ display: "flex", gap: 4, alignItems: "center", fontSize: 12, cursor: "pointer" }}>
+                    <input type="checkbox" checked={Boolean(dish[key])} onChange={(e) => updateDish(i, { [key]: e.target.checked })} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
+                  Ingredientes — lista de la compra
+                </div>
+                {dish.ingredients.map((ing, j) => (
+                  <div key={j} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 4, marginBottom: 4 }}>
+                    <input style={FS} placeholder="Nombre a mostrar" value={ing.displayName} onChange={(e) => updateIng(i, j, "displayName", e.target.value)} />
+                    <input style={FS} placeholder="Nombre canónico" value={ing.canonicalName} onChange={(e) => updateIng(i, j, "canonicalName", e.target.value)} />
+                    <button type="button" onClick={() => removeIng(i, j)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700 }}>×</button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => addIng(i)}
+                  style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #6366f1", color: "#6366f1", borderRadius: 4, cursor: "pointer", marginTop: 2 }}>
+                  + Ingrediente
+                </button>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>Receta</div>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, marginBottom: 6 }}>
+                  Raciones:
+                  <input style={{ ...FS, width: 60 }} type="number" min="1" max="20" placeholder="4"
+                    value={dish.recipe?.servings ?? ""} onChange={(e) => updateDish(i, { recipe: { ...dish.recipe, servings: e.target.value ? parseInt(e.target.value, 10) : null } })} />
+                </label>
+                <div style={{ marginBottom: 6 }}>
+                  <div style={{ fontSize: 11, color: "#64748b", marginBottom: 3 }}>Ingredientes con cantidades</div>
+                  {(dish.recipe?.ingredients || []).map((ri, j) => (
+                    <div key={j} style={{ display: "grid", gridTemplateColumns: "1fr 90px auto", gap: 4, marginBottom: 4 }}>
+                      <input style={FS} placeholder="Ingrediente" value={ri.name} onChange={(e) => updateRecIng(i, j, "name", e.target.value)} />
+                      <input style={FS} placeholder="Cantidad" value={ri.quantity} onChange={(e) => updateRecIng(i, j, "quantity", e.target.value)} />
+                      <button type="button" onClick={() => removeRecIng(i, j)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700 }}>×</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => addRecIng(i)}
+                    style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #6366f1", color: "#6366f1", borderRadius: 4, cursor: "pointer" }}>
+                    + Ingrediente de receta
+                  </button>
+                </div>
+                <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500 }}>
+                  Pasos (uno por línea)
+                  <textarea style={{ ...FS, minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
+                    placeholder={"Pica la cebolla finamente.\nSofríe a fuego medio 5 min.\nAñade el pollo y cocina 10 min."}
+                    value={typeof dish.recipe?.steps === "string" ? dish.recipe.steps : (Array.isArray(dish.recipe?.steps) ? dish.recipe.steps.join("\n") : "")}
+                    onChange={(e) => updateDish(i, { recipe: { ...dish.recipe, steps: e.target.value } })} />
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PackForm({ item, onSave, onCancel }) {
   const isEdit = Boolean(item.id || item._id);
+
+  const freeUntilDefault = item.freeUntil ? new Date(item.freeUntil).toISOString().split("T")[0] : "";
+
+  const normDishes = (raw) => (raw || []).map((d) => ({
+    name: d.name || "",
+    sidedish: Boolean(d.sidedish),
+    isDinner: Boolean(d.isDinner),
+    special: Boolean(d.special),
+    allowRandom: d.allowRandom !== false,
+    ingredients: Array.isArray(d.ingredients) ? d.ingredients : [],
+    recipe: {
+      ingredients: Array.isArray(d.recipe?.ingredients) ? d.recipe.ingredients : [],
+      steps: Array.isArray(d.recipe?.steps) ? d.recipe.steps.join("\n") : (d.recipe?.steps || ""),
+      servings: d.recipe?.servings ?? ""
+    }
+  }));
+
   const [form, setForm] = useState({
     slug: item.slug || "",
     title: item.title || "",
@@ -1121,8 +1260,10 @@ function PackForm({ item, onSave, onCancel }) {
     priceBasic: item.priceBasic != null ? String(item.priceBasic) : "1.99",
     includedPlans: item.includedPlans || ["pro", "premium"],
     monthlyCreditCost: item.monthlyCreditCost != null ? String(item.monthlyCreditCost) : "1",
-    sortOrder: item.sortOrder != null ? String(item.sortOrder) : "0"
+    sortOrder: item.sortOrder != null ? String(item.sortOrder) : "0",
+    freeUntil: freeUntilDefault
   });
+  const [dishes, setDishes] = useState(() => normDishes(item.dishes));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -1138,6 +1279,22 @@ function PackForm({ item, onSave, onCancel }) {
       : [...p.includedPlans, plan]
   }));
 
+  const serializeDishes = () => dishes.map((d) => ({
+    name: d.name.trim(),
+    sidedish: d.sidedish,
+    isDinner: d.isDinner,
+    special: d.special,
+    allowRandom: d.allowRandom,
+    ingredients: d.ingredients.filter((x) => x.displayName.trim() || x.canonicalName.trim()),
+    recipe: {
+      ingredients: (d.recipe?.ingredients || []).filter((x) => x.name.trim()),
+      steps: typeof d.recipe?.steps === "string"
+        ? d.recipe.steps.split("\n").map((s) => s.trim()).filter(Boolean)
+        : [],
+      servings: d.recipe?.servings ? parseInt(d.recipe.servings, 10) : null
+    }
+  })).filter((d) => d.name);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.slug.trim() || !form.title.trim()) { setError("slug y título son obligatorios."); return; }
@@ -1149,7 +1306,9 @@ function PackForm({ item, onSave, onCancel }) {
         priceBasic: parseFloat(form.priceBasic) || 0,
         monthlyCreditCost: parseInt(form.monthlyCreditCost, 10) || 1,
         sortOrder: parseInt(form.sortOrder, 10) || 0,
-        coverImage: form.coverImage.trim() || null
+        coverImage: form.coverImage.trim() || null,
+        freeUntil: form.freeUntil || null,
+        dishes: serializeDishes()
       });
     } catch (err) { setError(err.message || "Error al guardar."); }
     finally { setSaving(false); }
@@ -1210,7 +1369,15 @@ function PackForm({ item, onSave, onCancel }) {
           <input style={fieldStyle} value={form.coverImage} onChange={set("coverImage")} placeholder="https://..." />
         </label>
 
-        <div style={{ marginBottom: 14 }}>
+        <label style={{ ...labelStyle, marginBottom: 12 }}>
+          Gratis hasta (fecha)
+          <input style={fieldStyle} type="date" value={form.freeUntil} onChange={set("freeUntil")} />
+          <span style={{ fontSize: 11, color: "#64748b" }}>Deja vacío para precio normal. Si se pone fecha, el pack es gratis hasta ese día y los usuarios ven la cuenta atrás.</span>
+        </label>
+
+        <DishTemplateEditor dishes={dishes} onChange={setDishes} />
+
+        <div style={{ marginBottom: 14, marginTop: 18 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Planes incluidos</div>
           <div style={{ display: "flex", gap: 12 }}>
             {INCLUDED_PLANS_OPTIONS.map((plan) => (

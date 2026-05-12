@@ -7,6 +7,12 @@ const CATALOG_MONTHLY_PACK_CREDITS = {
   premium: 2
 };
 
+export function isPackCurrentlyFree(pack) {
+  if (!pack.priceBasic || pack.priceBasic <= 0) return true;
+  if (pack.freeUntil && new Date(pack.freeUntil) > new Date()) return true;
+  return false;
+}
+
 export function getCatalogMonthlyCredits(plan) {
   const normalized = normalizeSubscriptionPlan(plan);
   return CATALOG_MONTHLY_PACK_CREDITS[normalized] ?? 0;
@@ -51,7 +57,8 @@ export async function resolvePackEntitlement(HouseholdCatalogPack, {
 
   const owned = Boolean(existingOwnership);
   const installed = existingOwnership?.status === "installed";
-  const isFree = !pack.priceBasic || pack.priceBasic <= 0;
+  const isFree = isPackCurrentlyFree(pack);
+  const isFreeUntil = pack.freeUntil && new Date(pack.freeUntil) > new Date() ? pack.freeUntil : null;
   const includedInPlan = isPlanIncludedInPack(subscriptionPlan, pack.includedPlans);
   const creditsRemaining = await getMonthlyCreditsRemaining(HouseholdCatalogPack, householdId, subscriptionPlan);
   const canClaimWithPlan = includedInPlan && creditsRemaining > 0 && !owned;
@@ -61,6 +68,7 @@ export async function resolvePackEntitlement(HouseholdCatalogPack, {
     owned,
     installed,
     isFree,
+    isFreeUntil,
     includedInPlan,
     creditsRemaining,
     canClaimWithPlan,

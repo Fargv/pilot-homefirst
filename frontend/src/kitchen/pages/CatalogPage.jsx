@@ -24,6 +24,13 @@ function isNew(pack) {
   return release >= cutoff;
 }
 
+function getFreeUntilDaysLeft(isFreeUntil) {
+  if (!isFreeUntil) return null;
+  const diff = new Date(isFreeUntil) - new Date();
+  if (diff <= 0) return null;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
 function matchesTab(pack, tab) {
   if (tab === "all") return true;
   if (tab === "included") return pack.entitlement?.includedInPlan;
@@ -94,6 +101,10 @@ function EntitlementBadge({ entitlement }) {
   if (entitlement.owned) {
     return <span className="catalog-badge catalog-badge-owned">En tu biblioteca</span>;
   }
+  const daysLeft = getFreeUntilDaysLeft(entitlement.isFreeUntil);
+  if (daysLeft !== null) {
+    return <span className="catalog-badge catalog-badge-free-until">Gratis · {daysLeft}d</span>;
+  }
   if (entitlement.isFree) {
     return <span className="catalog-badge catalog-badge-free">Gratis</span>;
   }
@@ -153,6 +164,15 @@ function PackCard({ pack, onAction }) {
 
         {pack.subtitle && <p className="catalog-pack-subtitle">{pack.subtitle}</p>}
         {pack.description && <p className="catalog-pack-description">{pack.description}</p>}
+
+        {(() => {
+          const days = getFreeUntilDaysLeft(pack.entitlement?.isFreeUntil);
+          return days !== null ? (
+            <div className="catalog-pack-free-countdown">
+              ⏳ Gratis todavía {days} {days === 1 ? "día" : "días"} más
+            </div>
+          ) : null;
+        })()}
 
         <div className="catalog-pack-meta">
           <span className="catalog-pack-dish-count">{pack.dishCount} platos</span>

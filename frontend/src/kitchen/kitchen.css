@@ -8636,6 +8636,21 @@ body {
   background: #dcfce7;
   color: #166534;
 }
+.catalog-badge-free-until {
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 700;
+}
+.catalog-pack-free-countdown {
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef9ec;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 5px 10px;
+  margin-bottom: 8px;
+}
 .catalog-badge-included {
   background: #eef2ff;
   color: #4338ca;

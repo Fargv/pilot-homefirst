@@ -49,6 +49,7 @@ const CatalogPackSchema = new mongoose.Schema(
     monthlyCreditCost: { type: Number, default: 1 },
     dishes: { type: [DishTemplateSchema], default: [] },
     releaseDate: { type: Date, default: null },
+    freeUntil: { type: Date, default: null },
     sortOrder: { type: Number, default: 0 }
   },
   { timestamps: true }

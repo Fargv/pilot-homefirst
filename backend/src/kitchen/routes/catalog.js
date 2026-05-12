@@ -11,7 +11,8 @@ import {
   getCatalogMonthlyCredits,
   getCurrentClaimMonth,
   getMonthlyCreditsRemaining,
-  resolvePackEntitlement
+  resolvePackEntitlement,
+  isPackCurrentlyFree
 } from "../catalogService.js";
 
 const router = express.Router();
@@ -39,8 +40,10 @@ router.get("/packs/admin-all", requireAuth, requireDiod, async (req, res) => {
         includedPlans: p.includedPlans,
         monthlyCreditCost: p.monthlyCreditCost,
         dishCount: Array.isArray(p.dishes) ? p.dishes.length : 0,
+        dishes: p.dishes || [],
         sortOrder: p.sortOrder,
         releaseDate: p.releaseDate,
+        freeUntil: p.freeUntil,
         ownedByCount: counts[i],
         createdAt: p.createdAt
       }))
@@ -85,7 +88,7 @@ router.get("/packs", requireAuth, async (req, res) => {
       const ownership = ownedMap[String(pack._id)] || null;
       const owned = Boolean(ownership);
       const installed = ownership?.status === "installed";
-      const isFree = !pack.priceBasic || pack.priceBasic <= 0;
+      const isFree = isPackCurrentlyFree(pack);
       const includedInPlan = Array.isArray(pack.includedPlans) && pack.includedPlans.includes(subscriptionPlan);
       const canClaimWithPlan = includedInPlan && creditsRemaining > 0 && !owned;
       const requiresPurchase = !isFree && !owned && !canClaimWithPlan;
@@ -104,10 +107,12 @@ router.get("/packs", requireAuth, async (req, res) => {
         includedPlans: pack.includedPlans,
         dishCount: Array.isArray(pack.dishes) ? pack.dishes.length : 0,
         releaseDate: pack.releaseDate,
+        freeUntil: pack.freeUntil,
         entitlement: {
           owned,
           installed,
           isFree,
+          isFreeUntil: pack.freeUntil && new Date(pack.freeUntil) > new Date() ? pack.freeUntil : null,
           includedInPlan,
           canClaimWithPlan,
           requiresPurchase,
@@ -255,7 +260,7 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
       });
     }
 
-    const isFree = !pack.priceBasic || pack.priceBasic <= 0;
+    const isFree = isPackCurrentlyFree(pack);
     const includedInPlan = Array.isArray(pack.includedPlans) && pack.includedPlans.includes(subscriptionPlan);
     const creditsRemaining = await getMonthlyCreditsRemaining(HouseholdCatalogPack, householdId, subscriptionPlan);
     const canInstall = existing || isFree || (includedInPlan && creditsRemaining > 0);
@@ -386,7 +391,7 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
   try {
     const {
       slug, title, subtitle, description, coverImage, tags, cuisineType,
-      active, featured, priceBasic, includedPlans, monthlyCreditCost, dishes, releaseDate, sortOrder
+      active, featured, priceBasic, includedPlans, monthlyCreditCost, dishes, releaseDate, freeUntil, sortOrder
     } = req.body;
 
     if (!slug || !title) {
@@ -398,6 +403,7 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
       active: active !== false, featured: Boolean(featured),
       priceBasic, includedPlans, monthlyCreditCost, dishes: dishes || [],
       releaseDate: releaseDate ? new Date(releaseDate) : null,
+      freeUntil: freeUntil ? new Date(freeUntil) : null,
       sortOrder: sortOrder ?? 0
     });
 
@@ -419,7 +425,7 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
     const allowedFields = [
       "title", "subtitle", "description", "coverImage", "tags", "cuisineType",
       "active", "featured", "priceBasic", "includedPlans", "monthlyCreditCost",
-      "dishes", "releaseDate", "sortOrder"
+      "dishes", "releaseDate", "freeUntil", "sortOrder"
     ];
 
     const update = {};
