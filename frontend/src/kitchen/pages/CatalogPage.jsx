@@ -182,6 +182,23 @@ function PackCard({ pack, onAction }) {
         {pack.subtitle && <p className="catalog-pack-subtitle">{pack.subtitle}</p>}
         {pack.description && <p className="catalog-pack-description">{pack.description}</p>}
 
+        {Array.isArray(pack.dishPreview) && pack.dishPreview.length > 0 && (
+          <div className="catalog-pack-dish-preview">
+            {pack.dishPreview.slice(0, 6).map((d, i) => (
+              <div key={i} className="catalog-pack-dish-preview-item">
+                <span className="catalog-pack-dish-preview-dot" aria-hidden="true">·</span>
+                <span className="catalog-pack-dish-preview-name">{d.name}</span>
+                {d.teaser && <span className="catalog-pack-dish-preview-teaser"> — {d.teaser}</span>}
+              </div>
+            ))}
+            {pack.dishCount > 6 && (
+              <div className="catalog-pack-dish-preview-more">
+                +{pack.dishCount - 6} platos más incluidos
+              </div>
+            )}
+          </div>
+        )}
+
         {(() => {
           const days = getFreeUntilDaysLeft(pack.entitlement?.isFreeUntil);
           return days !== null ? (

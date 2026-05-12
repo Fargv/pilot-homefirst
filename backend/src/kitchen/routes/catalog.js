@@ -175,6 +175,7 @@ router.get("/packs", requireAuth, async (req, res) => {
         priceBasic: pack.priceBasic,
         includedPlans: pack.includedPlans,
         dishCount: Array.isArray(pack.dishes) ? pack.dishes.length : 0,
+        dishPreview: (pack.dishes || []).map((d) => ({ name: d.name, teaser: d.teaser || null })),
         color: pack.color,
         releaseDate: pack.releaseDate,
         freeUntil: pack.freeUntil,
@@ -240,9 +241,11 @@ router.get("/packs/:packId", requireAuth, async (req, res) => {
         featured: pack.featured,
         priceBasic: pack.priceBasic,
         includedPlans: pack.includedPlans,
-        dishes: pack.dishes,
-        dishCount: pack.dishes?.length ?? 0,
-        releaseDate: pack.releaseDate
+        dishCount: (pack.dishes || []).length,
+        dishPreview: (pack.dishes || []).map((d) => ({ name: d.name, teaser: d.teaser || null })),
+        releaseDate: pack.releaseDate,
+        color: pack.color,
+        freeUntil: pack.freeUntil
       },
       entitlement
     });

@@ -1222,7 +1222,7 @@ function DishTemplateEditor({ dishes, onChange, defaults = {} }) {
 
   const addDish = () => {
     const next = [...dishes, {
-      name: "", sidedish: false, isDinner: false,
+      name: "", teaser: "", sidedish: false, isDinner: false,
       special: Boolean(defaults.defaultSpecial),
       allowRandom: defaults.defaultAllowRandom !== false,
       dishCategoryId: null, ingredients: [],
@@ -1274,7 +1274,7 @@ function DishTemplateEditor({ dishes, onChange, defaults = {} }) {
           </div>
           {expanded === i && (
             <div style={{ padding: "0 12px 12px", borderTop: "1px solid #e0e7ff" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10, marginBottom: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10, marginBottom: 6 }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500 }}>
                   Nombre del plato *
                   <input style={FS} value={dish.name} onChange={(e) => updateDish(i, { name: e.target.value })} placeholder="Tacos de pollo" />
@@ -1287,6 +1287,11 @@ function DishTemplateEditor({ dishes, onChange, defaults = {} }) {
                   </select>
                 </label>
               </div>
+              <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500, marginBottom: 8 }}>
+                Teaser (descripción corta visible antes de instalar)
+                <input style={FS} value={dish.teaser || ""} onChange={(e) => updateDish(i, { teaser: e.target.value })} placeholder="Ensalada fresca con tomate, pepino y aceitunas" maxLength={120} />
+                <span style={{ fontSize: 10, color: "#9ca3af" }}>Máx. 120 caracteres. Se muestra como preview comercial — no reveles la receta completa.</span>
+              </label>
               <div style={{ display: "flex", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
                 {[["sidedish", "Acompañamiento"], ["isDinner", "Cena"], ["special", "Especial"], ["allowRandom", "Aleatorio"]].map(([key, label]) => (
                   <label key={key} style={{ display: "flex", gap: 4, alignItems: "center", fontSize: 12, cursor: "pointer" }}>
@@ -1340,6 +1345,7 @@ function PackForm({ item, onSave, onCancel }) {
 
   const normDishes = (raw) => (raw || []).map((d) => ({
     name: d.name || "",
+    teaser: d.teaser || "",
     sidedish: Boolean(d.sidedish),
     isDinner: Boolean(d.isDinner),
     special: Boolean(d.special),
@@ -1392,6 +1398,7 @@ function PackForm({ item, onSave, onCancel }) {
 
   const serializeDishes = () => dishes.map((d) => ({
     name: d.name.trim(),
+    teaser: d.teaser?.trim() || "",
     sidedish: d.sidedish,
     isDinner: d.isDinner,
     special: d.special,
