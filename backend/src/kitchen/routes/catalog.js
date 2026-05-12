@@ -1,5 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
+import crypto from "crypto";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { Household } from "../models/Household.js";
@@ -24,6 +25,171 @@ import {
 } from "../catalogService.js";
 
 const router = express.Router();
+
+function normalizeTemplateId(value) {
+  return String(value || "").trim();
+}
+
+function createDishTemplateId(dish = {}, index = 0) {
+  const base = normalizeIngredientName(dish.name || `plato-${index + 1}`) || `plato-${index + 1}`;
+  return `${base.replace(/\s+/g, "-")}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+function ensureDishTemplateIds(pack) {
+  let changed = false;
+  (pack.dishes || []).forEach((dish, index) => {
+    if (!normalizeTemplateId(dish.dishTemplateId)) {
+      dish.dishTemplateId = createDishTemplateId(dish, index);
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function normalizeDishTemplateForHash(template = {}) {
+  return {
+    name: String(template.name || "").trim(),
+    teaser: String(template.teaser || "").trim(),
+    sidedish: Boolean(template.sidedish),
+    isDinner: Boolean(template.isDinner),
+    special: Boolean(template.special),
+    allowRandom: template.allowRandom !== false,
+    dishCategoryId: template.dishCategoryId ? String(template.dishCategoryId) : null,
+    ingredients: (template.ingredients || []).map((item) => ({
+      ingredientId: item?.ingredientId ? String(item.ingredientId) : null,
+      categoryId: item?.categoryId ? String(item.categoryId) : null,
+      displayName: String(item?.displayName || "").trim(),
+      canonicalName: normalizeIngredientName(item?.canonicalName || item?.displayName || "")
+    })),
+    recipe: {
+      ingredients: (template.recipe?.ingredients || []).map((item) => ({
+        name: String(item?.name || "").trim(),
+        quantity: String(item?.quantity || "").trim(),
+        ingredientId: item?.ingredientId ? String(item.ingredientId) : null
+      })),
+      steps: template.recipe?.steps ?? null,
+      servings: template.recipe?.servings || null
+    }
+  };
+}
+
+function catalogContentHash(template) {
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(normalizeDishTemplateForHash(template)))
+    .digest("hex");
+}
+
+function dishFieldsFromTemplate(template) {
+  return {
+    name: template.name,
+    sidedish: Boolean(template.sidedish),
+    isDinner: Boolean(template.isDinner),
+    special: Boolean(template.special),
+    allowRandom: template.allowRandom !== false,
+    dishCategoryId: template.dishCategoryId || null,
+    ingredients: (template.ingredients || []).map((ing) => ({
+      displayName: ing.displayName,
+      canonicalName: ing.canonicalName,
+      ingredientId: ing.ingredientId || null
+    })),
+    recipe: {
+      ingredients: Array.isArray(template.recipe?.ingredients) ? template.recipe.ingredients : [],
+      steps: template.recipe?.steps ?? null,
+      servings: template.recipe?.servings || null
+    }
+  };
+}
+
+function assertPublishedPackComposition(currentDishes = [], incomingDishes = []) {
+  if (currentDishes.length !== incomingDishes.length) {
+    const error = new Error("No se pueden añadir ni eliminar platos de un pack publicado.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const currentIds = currentDishes.map((dish, index) => normalizeTemplateId(dish.dishTemplateId) || `legacy-${index}`);
+  const incomingIds = incomingDishes.map((dish, index) => normalizeTemplateId(dish.dishTemplateId) || `legacy-${index}`);
+  for (let index = 0; index < currentIds.length; index += 1) {
+    if (currentIds[index] !== incomingIds[index]) {
+      const error = new Error("No se puede cambiar la identidad u orden de platos de un pack publicado.");
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+}
+
+async function propagatePublishedPackUpdates(pack, previousDishes = []) {
+  const summary = { synced: 0, skippedCustomized: 0, skippedAmbiguous: 0, skippedMissingIdentity: 0 };
+  const now = new Date();
+  const previousById = new Map((previousDishes || []).map((dish) => [normalizeTemplateId(dish.dishTemplateId), dish]));
+
+  for (const template of pack.dishes || []) {
+    const templateId = normalizeTemplateId(template.dishTemplateId);
+    if (!templateId) {
+      summary.skippedMissingIdentity += 1;
+      continue;
+    }
+    const nextHash = catalogContentHash(template);
+    const previousHash = catalogContentHash(previousById.get(templateId) || {});
+    if (nextHash === previousHash) continue;
+
+    const baseFilter = {
+      source: "catalog",
+      sourcePackId: pack._id,
+      isArchived: { $ne: true },
+      deletedAt: null,
+      active: { $ne: false }
+    };
+    const customizedCount = await KitchenDish.countDocuments({
+      ...baseFilter,
+      sourceDishTemplateId: templateId,
+      userModified: true
+    });
+    summary.skippedCustomized += customizedCount;
+
+    const existingWithTemplate = await KitchenDish.find({
+      ...baseFilter,
+      sourceDishTemplateId: templateId,
+      userModified: { $ne: true }
+    });
+
+    const legacyMatched = [];
+    if (!existingWithTemplate.length) {
+      const previousName = previousById.get(templateId)?.name || template.name;
+      const previousNameKey = normalizeIngredientName(previousName);
+      const legacyCandidates = (await KitchenDish.find({
+        ...baseFilter,
+        sourceDishTemplateId: { $in: [null, ""] },
+        userModified: { $ne: true }
+      })).filter((dish) => normalizeIngredientName(dish.name || "") === previousNameKey);
+      const byHousehold = new Map();
+      legacyCandidates.forEach((dish) => {
+        const key = String(dish.householdId || "");
+        byHousehold.set(key, [...(byHousehold.get(key) || []), dish]);
+      });
+      for (const list of byHousehold.values()) {
+        if (list.length === 1) legacyMatched.push(list[0]);
+        else summary.skippedAmbiguous += list.length;
+      }
+    }
+
+    const targets = [...existingWithTemplate, ...legacyMatched];
+    for (const dish of targets) {
+      Object.assign(dish, dishFieldsFromTemplate(template), {
+        sourcePackSlug: pack.slug,
+        sourcePackTitle: pack.title,
+        sourcePackColor: pack.color || null,
+        sourceDishTemplateId: templateId,
+        catalogSyncedAt: now,
+        catalogContentHash: nextHash
+      });
+      await dish.save();
+      summary.synced += 1;
+    }
+  }
+
+  return summary;
+}
 
 function serializeAdminPack(p, ownedByCount = 0) {
   return {
@@ -357,8 +523,10 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Pack no encontrado." });
     }
 
-    const pack = await CatalogPack.findOne({ _id: req.params.packId, active: true, status: "published" }).lean();
+    let pack = await CatalogPack.findOne({ _id: req.params.packId, active: true, status: "published" });
     if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    if (ensureDishTemplateIds(pack)) await pack.save();
+    pack = pack.toObject();
 
     const existing = await HouseholdCatalogPack.findOne({ householdId, packId: pack._id }).lean();
 
@@ -427,15 +595,8 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
     const createdDishes = [];
 
     for (const template of dishTemplates) {
-      const dishDoc = {
-        scope: "household",
-        householdId,
-        name: template.name,
-        sidedish: Boolean(template.sidedish),
-        isDinner: Boolean(template.isDinner),
-        special: Boolean(template.special),
-        allowRandom: template.allowRandom !== false,
-        dishCategoryId: template.dishCategoryId || null,
+      const templateWithResolvedIngredients = {
+        ...template,
         ingredients: (template.ingredients || []).map((ing) => {
           const cn = normalizeIngredientName(ing.canonicalName || ing.displayName);
           return {
@@ -443,7 +604,13 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
             canonicalName: ing.canonicalName,
             ingredientId: ing.ingredientId || ingIdMap[cn] || null
           };
-        }),
+        })
+      };
+      const contentHash = catalogContentHash(templateWithResolvedIngredients);
+      const dishDoc = {
+        scope: "household",
+        householdId,
+        ...dishFieldsFromTemplate(templateWithResolvedIngredients),
         active: true,
         createdBy: userId,
         source: "catalog",
@@ -451,13 +618,12 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
         sourcePackSlug: pack.slug,
         sourcePackTitle: pack.title,
         sourcePackColor: pack.color || null,
+        sourceDishTemplateId: template.dishTemplateId || null,
+        catalogSyncedAt: now,
+        catalogContentHash: contentHash,
+        userModified: false,
         importedAt: now,
-        importedBy: userId,
-        recipe: {
-          ingredients: Array.isArray(template.recipe?.ingredients) ? template.recipe.ingredients : [],
-          steps: template.recipe?.steps ?? null,
-          servings: template.recipe?.servings || null
-        }
+        importedBy: userId
       };
 
       const dish = await KitchenDish.create(dishDoc);
@@ -544,6 +710,7 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
       defaultAllowRandom: defaultAllowRandom !== false,
       sortOrder: sortOrder ?? 0
     });
+    ensureDishTemplateIds(pack);
     await applyCatalogPackValidation(pack, { autoApply: true });
     await pack.save();
 
@@ -571,8 +738,23 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
 
     const packDoc = await CatalogPack.findById(req.params.packId);
     if (!packDoc) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
-    if (packDoc.status === "published" && Object.prototype.hasOwnProperty.call(req.body, "dishes")) {
-      return res.status(409).json({ ok: false, error: "No se pueden modificar platos de un pack publicado automaticamente. Crea una nueva version del pack." });
+    const hasIncomingDishes = Object.prototype.hasOwnProperty.call(req.body, "dishes");
+    const isPublished = packDoc.status === "published";
+    ensureDishTemplateIds(packDoc);
+    const previousDishes = (packDoc.toObject().dishes || []).map((dish) => ({ ...dish }));
+
+    if (hasIncomingDishes) {
+      if (!Array.isArray(req.body.dishes)) {
+        return res.status(400).json({ ok: false, error: "dishes debe ser un array." });
+      }
+      if (isPublished) {
+        const incomingDishes = req.body.dishes.map((dish, index) => ({
+          ...dish,
+          dishTemplateId: normalizeTemplateId(dish?.dishTemplateId) || previousDishes[index]?.dishTemplateId || null
+        }));
+        assertPublishedPackComposition(previousDishes, incomingDishes);
+        req.body.dishes = incomingDishes;
+      }
     }
 
     for (const field of allowedFields) {
@@ -580,16 +762,26 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
         packDoc[field] = req.body[field];
       }
     }
+    ensureDishTemplateIds(packDoc);
 
-    if (packDoc.status !== "published") {
-      await applyCatalogPackValidation(packDoc, { autoApply: true });
+    await applyCatalogPackValidation(packDoc, { autoApply: packDoc.status !== "published" });
+    if (isPublished && hasIncomingDishes && Number(packDoc.validationSummary?.unresolvedIssues || 0) > 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "No se puede guardar un pack publicado con issues de normalizacion pendientes.",
+        validationSummary: packDoc.validationSummary,
+        reviewIssues: packDoc.reviewIssues
+      });
     }
     await packDoc.save();
-    const pack = packDoc.toObject();
+    const syncSummary = isPublished && hasIncomingDishes && req.body.propagateCatalogUpdates !== false
+      ? await propagatePublishedPackUpdates(packDoc, previousDishes)
+      : null;
+    const pack = serializeAdminPack(packDoc.toObject());
 
-    return res.json({ ok: true, pack: { id: pack._id, slug: pack.slug, title: pack.title, active: pack.active, status: pack.status, validationSummary: pack.validationSummary } });
+    return res.json({ ok: true, pack, ...(syncSummary ? { syncSummary } : {}) });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || "Error al actualizar el pack." });
+    return res.status(error.statusCode || 500).json({ ok: false, error: error.message || "Error al actualizar el pack." });
   }
 });
 
@@ -600,6 +792,7 @@ router.post("/packs/:packId/revalidate", requireAuth, requireDiod, async (req, r
     }
     const pack = await CatalogPack.findById(req.params.packId);
     if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    ensureDishTemplateIds(pack);
     await applyCatalogPackValidation(pack, { autoApply: pack.status !== "published" });
     await pack.save();
     return res.json({ ok: true, pack: serializeAdminPack(pack.toObject()) });
@@ -721,6 +914,7 @@ router.post("/packs/:packId/publish", requireAuth, requireDiod, async (req, res)
     }
     const pack = await CatalogPack.findById(req.params.packId);
     if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    ensureDishTemplateIds(pack);
     if (pack.status === "published") return res.json({ ok: true, pack: serializeAdminPack(pack.toObject()) });
 
     await applyCatalogPackValidation(pack, { autoApply: true });
@@ -757,6 +951,7 @@ router.post("/packs/:packId/status", requireAuth, requireDiod, async (req, res) 
 
     const pack = await CatalogPack.findById(req.params.packId);
     if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    ensureDishTemplateIds(pack);
 
     if (nextStatus === "published") {
       await applyCatalogPackValidation(pack, { autoApply: true });

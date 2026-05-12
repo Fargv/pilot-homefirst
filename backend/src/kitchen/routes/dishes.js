@@ -442,6 +442,10 @@ router.put("/:id", requireAuth, async (req, res) => {
     }
 
     Object.assign(dish, nextData);
+    if (dish.source === "catalog") {
+      dish.userModified = true;
+      dish.userModifiedAt = new Date();
+    }
     await dish.save();
     const warning = await rebuildFutureShoppingListsSafe({
       householdId: getEffectiveHouseholdId(req.user),
@@ -642,6 +646,10 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
     }
 
     dish.recipe = recipeData;
+    if (dish.source === "catalog") {
+      dish.userModified = true;
+      dish.userModifiedAt = new Date();
+    }
     await dish.save();
     return res.json({ ok: true, dish: { id: String(dish._id), recipe: dish.recipe } });
   } catch (error) {

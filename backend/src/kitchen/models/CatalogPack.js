@@ -20,6 +20,7 @@ const RecipeIngredientTemplateSchema = new mongoose.Schema(
 
 const DishTemplateSchema = new mongoose.Schema(
   {
+    dishTemplateId: { type: String, default: null, trim: true },
     name: { type: String, required: true, trim: true },
     teaser: { type: String, default: "", trim: true },
     sidedish: { type: Boolean, default: false },
