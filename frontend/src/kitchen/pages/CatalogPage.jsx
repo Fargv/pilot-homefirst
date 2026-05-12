@@ -184,16 +184,16 @@ function PackCard({ pack, onAction }) {
 
         {Array.isArray(pack.dishPreview) && pack.dishPreview.length > 0 && (
           <div className="catalog-pack-dish-preview">
-            {pack.dishPreview.slice(0, 6).map((d, i) => (
+            {pack.dishPreview.map((d, i) => (
               <div key={i} className="catalog-pack-dish-preview-item">
                 <span className="catalog-pack-dish-preview-dot" aria-hidden="true">·</span>
                 <span className="catalog-pack-dish-preview-name">{d.name}</span>
                 {d.teaser && <span className="catalog-pack-dish-preview-teaser"> — {d.teaser}</span>}
               </div>
             ))}
-            {pack.dishCount > 6 && (
+            {pack.dishCount > pack.dishPreview.length && (
               <div className="catalog-pack-dish-preview-more">
-                +{pack.dishCount - 6} platos más incluidos
+                +{pack.dishCount - pack.dishPreview.length} platos más incluidos
               </div>
             )}
           </div>
