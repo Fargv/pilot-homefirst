@@ -1202,6 +1202,7 @@ function IngredientSearchInput({ value, onChange }) {
       />
       {isLinked && <span style={{ fontSize: 10, color: "#6366f1", display: "block", marginTop: 1 }}>✓ {value.canonicalName}</span>}
       {!isLinked && hasName && <span style={{ fontSize: 10, color: "#b45309", display: "block", marginTop: 1 }}>⚠ sin vincular al master</span>}
+      {createSuccess ? <span style={{ fontSize: 10, color: "#047857", display: "block", marginTop: 2 }}>{createSuccess}</span> : null}
       {results.length > 0 && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, zIndex: 20, maxHeight: 160, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
           {results.map((ing) => (
@@ -1213,24 +1214,37 @@ function IngredientSearchInput({ value, onChange }) {
         </div>
       )}
       {query.trim() && results.length === 0 && !isSelected && !showCreate && (
-        <button type="button" onMouseDown={() => setShowCreate(true)}
+        <button type="button" onMouseDown={(event) => { event.preventDefault(); setCreateName(query.trim()); setShowCreate(true); setCreateError(""); setCreateSuccess(""); setDuplicateIngredient(null); }}
           style={{ fontSize: 11, marginTop: 3, padding: "2px 8px", background: "#fef3c7", border: "1px solid #fbbf24", color: "#92400e", borderRadius: 4, cursor: "pointer", display: "block" }}>
           No encontrado — Crear &quot;{query}&quot;
         </button>
       )}
       {showCreate && (
         <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, padding: 8, marginTop: 4 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>Crear en master: <em>{query}</em></div>
+          <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>Crear ingrediente master</div>
+          <input
+            style={{ ...FS, marginBottom: 4 }}
+            value={createName}
+            onChange={(e) => setCreateName(e.target.value)}
+            placeholder="Nombre del ingrediente"
+          />
           <select style={{ ...FS, marginBottom: 4 }} value={newCategoryId} onChange={(e) => setNewCategoryId(e.target.value)}>
             <option value="">— Categoría de ingrediente —</option>
             {ingCategories.map((c) => <option key={String(c.id)} value={String(c.id)}>{c.name}</option>)}
           </select>
+          {createError ? <div style={{ color: "#b42318", fontSize: 11, marginBottom: 5 }}>{createError}</div> : null}
+          {duplicateIngredient ? (
+            <button type="button" onMouseDown={(event) => { event.preventDefault(); select(duplicateIngredient); }}
+              style={{ fontSize: 11, padding: "3px 10px", background: "#fff", color: "#4338ca", border: "1px solid #c7d2fe", borderRadius: 4, cursor: "pointer", marginBottom: 5 }}>
+              Vincular a {duplicateIngredient.name}
+            </button>
+          ) : null}
           <div style={{ display: "flex", gap: 6 }}>
-            <button type="button" disabled={creating || !newCategoryId} onMouseDown={createNew}
-              style={{ fontSize: 11, padding: "3px 10px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", opacity: !newCategoryId ? 0.5 : 1 }}>
+            <button type="button" disabled={creating || !newCategoryId || !createName.trim()} onMouseDown={(event) => { event.preventDefault(); createNew(); }}
+              style={{ fontSize: 11, padding: "3px 10px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", opacity: (!newCategoryId || !createName.trim()) ? 0.5 : 1 }}>
               {creating ? "Creando..." : "Crear"}
             </button>
-            <button type="button" onMouseDown={() => setShowCreate(false)}
+            <button type="button" onMouseDown={(event) => { event.preventDefault(); setShowCreate(false); setCreateError(""); setDuplicateIngredient(null); }}
               style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer" }}>
               Cancelar
             </button>
@@ -1272,7 +1286,22 @@ function DishTemplateEditor({ dishes, onChange, defaults = {} }) {
 
   const addIng = (i) => updateDish(i, { ingredients: [...dishes[i].ingredients, { displayName: "", canonicalName: "" }] });
   const removeIng = (i, j) => updateDish(i, { ingredients: dishes[i].ingredients.filter((_, idx) => idx !== j) });
-  const setIng = (i, j, newIng) => updateDish(i, { ingredients: dishes[i].ingredients.map((x, idx) => idx === j ? newIng : x) });
+  const setIng = (i, j, newIng) => {
+    const current = dishes[i]?.ingredients?.[j] || {};
+    const currentKey = normalizeIngredientName(current.canonicalName || current.displayName || "");
+    if (newIng?.ingredientId && currentKey) {
+      onChange(dishes.map((dish) => ({
+        ...dish,
+        ingredients: (dish.ingredients || []).map((item, index) => {
+          const itemKey = normalizeIngredientName(item.canonicalName || item.displayName || "");
+          if (itemKey === currentKey) return { ...item, ...newIng };
+          return item;
+        })
+      })));
+      return;
+    }
+    updateDish(i, { ingredients: dishes[i].ingredients.map((x, idx) => idx === j ? newIng : x) });
+  };
 
   return (
     <div style={{ marginTop: 18 }}>
@@ -1627,6 +1656,7 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
   const [creating, setCreating] = useState({});
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     apiRequest("/api/kitchen/catalog/master/ingredient-categories")
@@ -1658,7 +1688,7 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
   };
 
   const revalidate = async () => {
-    setBusy("revalidate"); setError("");
+    setBusy("revalidate"); setError(""); setNotice("");
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/revalidate`, { method: "POST" });
       updatePack(data.pack);
@@ -1667,13 +1697,14 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
   };
 
   const mapIngredient = async (issue, ingredientId) => {
-    setBusy(`map-${issue.key}`); setError("");
+    setBusy(`map-${issue.key}`); setError(""); setNotice("");
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/ingredient`, {
         method: "POST",
         body: JSON.stringify({ normalizedName: issue.normalizedName, ingredientId })
       });
       updatePack(data.pack);
+      setNotice(`Vinculado a ${data.ingredient?.name || "ingrediente master"}.`);
     } catch (err) { setError(err.message || "No se pudo mapear el ingrediente."); }
     finally { setBusy(""); }
   };
@@ -1684,7 +1715,7 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
       setError("Nombre y categoria son obligatorios para crear ingrediente master.");
       return;
     }
-    setBusy(`create-${issue.key}`); setError("");
+    setBusy(`create-${issue.key}`); setError(""); setNotice("");
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/ingredient`, {
         method: "POST",
@@ -1694,25 +1725,29 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
         })
       });
       updatePack(data.pack);
+      setNotice(data.duplicateMatched
+        ? `Ya existia "${data.ingredient?.name}". Se ha vinculado sin crear duplicados.`
+        : `Ingrediente creado y vinculado a ${data.ingredient?.name || form.name.trim()}.`);
     } catch (err) { setError(err.message || "No se pudo crear el ingrediente."); }
     finally { setBusy(""); }
   };
 
   const setDishCategory = async (issue, categoryId) => {
     if (!categoryId) return;
-    setBusy(`dish-${issue.key}`); setError("");
+    setBusy(`dish-${issue.key}`); setError(""); setNotice("");
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/dish-category`, {
         method: "POST",
         body: JSON.stringify({ dishIndex: issue.dishIndex, categoryId })
       });
       updatePack(data.pack);
+      setNotice("Categoria de plato asignada.");
     } catch (err) { setError(err.message || "No se pudo asignar categoria."); }
     finally { setBusy(""); }
   };
 
   const publish = async () => {
-    setBusy("publish"); setError("");
+    setBusy("publish"); setError(""); setNotice("");
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/publish`, { method: "POST" });
       updatePack(data.pack);
@@ -1756,6 +1791,7 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
       </div>
 
       {error ? <div className="kitchen-alert error" style={{ marginBottom: 12 }}>{error}</div> : null}
+      {notice ? <div className="kitchen-alert success" style={{ marginBottom: 12 }}>{notice}</div> : null}
       {unresolved === 0 ? <div className="kitchen-alert success" style={{ marginBottom: 12 }}>Validacion limpia. El pack puede publicarse.</div> : null}
 
       {ingredientIssues.length > 0 && (

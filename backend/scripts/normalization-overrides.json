@@ -1,0 +1,36 @@
+{
+  "ingredientMappings": {
+    "queso fetta": "queso feta"
+  },
+  "ingredientCategories": {
+    "tortilla de maiz": "Pasta, Arroz y Legumbres",
+    "tortilla de maíz": "Pasta, Arroz y Legumbres",
+    "cilantro": "Frutas y Verduras",
+    "lima": "Frutas y Verduras",
+    "salsa verde": "Aceites, Salsas y Condimentos",
+    "crema agria": "Lácteos y Huevos",
+    "nachos": "Snacks y Aperitivos",
+    "caldo de pollo": "Aceites, Salsas y Condimentos",
+    "chile": "Frutas y Verduras",
+    "carne picada de ternera": "Carnicería",
+    "alubias rojas": "Pasta, Arroz y Legumbres",
+    "tortilla de trigo": "Pasta, Arroz y Legumbres",
+    "queso cheddar": "Lácteos y Huevos",
+    "maiz mote": "Pasta, Arroz y Legumbres",
+    "maíz mote": "Pasta, Arroz y Legumbres",
+    "frijoles": "Pasta, Arroz y Legumbres",
+    "queso feta": "Lácteos y Huevos",
+    "tahini": "Aceites, Salsas y Condimentos",
+    "pan de pita": "Panadería y Bollería",
+    "albahaca": "Frutas y Verduras",
+    "piñones": "Snacks y Aperitivos",
+    "parmesano": "Lácteos y Huevos",
+    "arroz arboreo": "Pasta, Arroz y Legumbres",
+    "arroz arbóreo": "Pasta, Arroz y Legumbres",
+    "caldo de verduras": "Aceites, Salsas y Condimentos"
+  },
+  "dishCategories": {
+    "Patatas bravas": "Guarniciones",
+    "Croquetas de jamón": "Especial"
+  }
+}

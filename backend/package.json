@@ -16,6 +16,7 @@
     "migrate:userEmailPartialIndex": "node scripts/migrate-user-email-partial-index.js",
     "migrate:userFlags": "node scripts/migrate-user-flags.js",
     "migrate:purchaseSessions": "node scripts/migrate-purchase-sessions.js",
+    "normalize:db": "node scripts/normalizeMasterData.js",
     "clerk:dev-export:dry-run": "node scripts/export-clerk-dev-users.js --dry-run",
     "clerk:dev-export": "node scripts/export-clerk-dev-users.js --export",
     "clerk:dev-validate": "node scripts/validate-clerk-dev-import.js",
