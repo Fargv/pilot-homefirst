@@ -116,6 +116,19 @@ router.post("/master/ingredients", requireAuth, requireDiod, async (req, res) =>
     const ing = await KitchenIngredient.create({ scope: "master", name, canonicalName, categoryId, active: true });
     return res.status(201).json({ ok: true, created: true, ingredient: { id: ing._id, name: ing.name, canonicalName: ing.canonicalName, categoryId: ing.categoryId } });
   } catch (error) {
+    if (error.statusCode === 409 && error.existing) {
+      return res.status(409).json({
+        ok: false,
+        code: "DUPLICATE_MASTER_INGREDIENT",
+        error: "Ya existe un ingrediente master con ese nombre normalizado.",
+        ingredient: {
+          id: error.existing._id,
+          name: error.existing.name,
+          canonicalName: error.existing.canonicalName,
+          categoryId: error.existing.categoryId
+        }
+      });
+    }
     return res.status(error.statusCode || 500).json({ ok: false, error: error.message || "Error al crear ingrediente." });
   }
 });
@@ -609,15 +622,22 @@ router.post("/packs/:packId/normalize/ingredient", requireAuth, requireDiod, asy
     if (!normalizedName) return res.status(400).json({ ok: false, error: "normalizedName es obligatorio." });
 
     let ingredient;
+    let duplicateMatched = false;
     if (req.body?.create) {
-      const prepared = await assertIngredientCanBeCreated(req.body.create);
-      ingredient = await KitchenIngredient.create({
-        scope: "master",
-        name: prepared.name,
-        canonicalName: prepared.canonicalName,
-        categoryId: prepared.category._id,
-        active: true
-      });
+      try {
+        const prepared = await assertIngredientCanBeCreated(req.body.create);
+        ingredient = await KitchenIngredient.create({
+          scope: "master",
+          name: prepared.name,
+          canonicalName: prepared.canonicalName,
+          categoryId: prepared.category._id,
+          active: true
+        });
+      } catch (error) {
+        if (error.statusCode !== 409 || !error.existing) throw error;
+        ingredient = await KitchenIngredient.findOne({ _id: error.existing._id, scope: "master" });
+        duplicateMatched = true;
+      }
     } else if (req.body?.ingredientId && mongoose.isValidObjectId(req.body.ingredientId)) {
       ingredient = await KitchenIngredient.findOne({
         _id: req.body.ingredientId,
@@ -628,6 +648,9 @@ router.post("/packs/:packId/normalize/ingredient", requireAuth, requireDiod, asy
       if (!ingredient.categoryId) return res.status(400).json({ ok: false, error: "El ingrediente master no tiene categoria." });
     } else {
       return res.status(400).json({ ok: false, error: "ingredientId o create es obligatorio." });
+    }
+    if (!ingredient?.categoryId) {
+      return res.status(400).json({ ok: false, error: "El ingrediente master no tiene categoria." });
     }
 
     let updatedCount = 0;
@@ -650,6 +673,7 @@ router.post("/packs/:packId/normalize/ingredient", requireAuth, requireDiod, asy
     return res.json({
       ok: true,
       updatedCount,
+      duplicateMatched,
       ingredient: { id: ingredient._id, name: ingredient.name, canonicalName: ingredient.canonicalName, categoryId: ingredient.categoryId },
       pack: serializeAdminPack(pack.toObject())
     });

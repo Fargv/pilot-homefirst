@@ -6,6 +6,7 @@ import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
 import RecipeEditor from "../components/RecipeEditor.jsx";
+import { normalizeIngredientName } from "../utils/normalize.js";
 
 // ── Shared admin-light button styles ─────────────────────────────────────────
 const ABT = {  // admin button themes
@@ -1113,8 +1114,12 @@ function IngredientSearchInput({ value, onChange }) {
   const [results, setResults] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
   const [ingCategories, setIngCategories] = useState([]);
+  const [createName, setCreateName] = useState(value?.displayName || "");
   const [newCategoryId, setNewCategoryId] = useState("");
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [createSuccess, setCreateSuccess] = useState("");
+  const [duplicateIngredient, setDuplicateIngredient] = useState(null);
   const timerRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -1132,6 +1137,9 @@ function IngredientSearchInput({ value, onChange }) {
 
   const search = (q) => {
     setQuery(q);
+    setCreateError("");
+    setCreateSuccess("");
+    setDuplicateIngredient(null);
     clearTimeout(timerRef.current);
     if (!q.trim()) { setResults([]); return; }
     timerRef.current = setTimeout(async () => {
@@ -1147,17 +1155,35 @@ function IngredientSearchInput({ value, onChange }) {
     setQuery(ing.name);
     setResults([]);
     setShowCreate(false);
+    setCreateError("");
+    setDuplicateIngredient(null);
+    setCreateSuccess(`Vinculado a ${ing.name}`);
   };
 
   const createNew = async () => {
-    if (!query.trim() || !newCategoryId) return;
+    const name = createName.trim();
+    setCreateError("");
+    setCreateSuccess("");
+    setDuplicateIngredient(null);
+    if (!name) { setCreateError("El nombre del ingrediente es obligatorio."); return; }
+    if (!newCategoryId) { setCreateError("Selecciona una categoria para continuar."); return; }
     setCreating(true);
     try {
-      const data = await apiRequest("/api/kitchen/catalog/master/ingredients", { method: "POST", body: JSON.stringify({ name: query.trim(), categoryId: newCategoryId }) });
+      const data = await apiRequest("/api/kitchen/catalog/master/ingredients", { method: "POST", body: JSON.stringify({ name, categoryId: newCategoryId }) });
       select(data.ingredient);
+      setCreateSuccess(`Ingrediente creado y vinculado a ${data.ingredient.name}`);
       setNewCategoryId("");
-    } catch (e) { alert(e.message || "Error al crear."); }
-    finally { setCreating(false); setShowCreate(false); }
+    } catch (e) {
+      const existing = e?.body?.ingredient;
+      if (e?.body?.code === "DUPLICATE_MASTER_INGREDIENT" && existing) {
+        setDuplicateIngredient(existing);
+        setCreateError(`Ya existe "${existing.name}" con el mismo nombre normalizado. Puedes vincularlo sin crear duplicados.`);
+      } else {
+        setCreateError(e.message || "No se pudo crear el ingrediente.");
+      }
+    } finally {
+      setCreating(false);
+    }
   };
 
   const isLinked = Boolean(value?.ingredientId);
