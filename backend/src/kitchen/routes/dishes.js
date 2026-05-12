@@ -17,7 +17,7 @@ import {
   hideMasterForHousehold,
   isDiodUser
 } from "../utils/catalogScopes.js";
-import { getDishHiddenMasterType, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
+import { buildManualPlanningDishFilter, getDishHiddenMasterType, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 
 const router = express.Router();
 // Fallback ObjectId for the "Guarniciones" dish category when it cannot be found by its code.
@@ -244,15 +244,24 @@ router.get("/", requireAuth, async (req, res) => {
     const forceMaster = isDiodUser(req.kitchenUser) && req.query.global === "1";
     const optionalHouseholdId = forceMaster ? null : getOptionalHouseholdId(req.user);
     const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
-    const activeFilter = shouldIncludeInactive ? {} : { active: true };
     const hasIsDinnerFilter = isDinner === "true" || isDinner === "false";
-    const isDinnerFilter = hasIsDinnerFilter ? { isDinner: isDinner === "true" } : {};
+    const listFilter = shouldIncludeInactive
+      ? {
+          sidedish: sidedish === "true" ? true : { $ne: true },
+          isArchived: { $ne: true },
+          deletedAt: null,
+          ...(hasIsDinnerFilter ? { isDinner: isDinner === "true" } : {})
+        }
+      : buildManualPlanningDishFilter({
+          sidedish: sidedish === "true",
+          isDinner: hasIsDinnerFilter ? isDinner === "true" : null
+        });
 
     if (sidedish === "true") {
       const dishes = await resolveDishCatalogForHousehold({
         Model: KitchenDish,
         householdId: optionalHouseholdId,
-        filter: { sidedish: true, ...isDinnerFilter, ...activeFilter },
+        filter: listFilter,
         sort: { createdAt: -1 }
       });
       return res.json({ ok: true, dishes });
@@ -262,19 +271,12 @@ router.get("/", requireAuth, async (req, res) => {
       ? await resolveDishCatalogForHousehold({
           Model: KitchenDish,
           householdId: optionalHouseholdId,
-          filter: {
-            sidedish: { $ne: true },
-            ...isDinnerFilter,
-            ...activeFilter
-          },
+          filter: listFilter,
           sort: { createdAt: -1 }
         })
       : await KitchenDish.find({
           scope: CATALOG_SCOPES.MASTER,
-          sidedish: { $ne: true },
-          isArchived: { $ne: true },
-          ...isDinnerFilter,
-          ...activeFilter
+          ...listFilter
         }).sort({ createdAt: -1 });
 
     res.json({ ok: true, dishes });

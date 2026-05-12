@@ -1,0 +1,1475 @@
+{
+  "timestamp": "20260512-1621",
+  "mode": "dry-run",
+  "generatedAt": "2026-05-12T14:21:54.154Z",
+  "summary": {
+    "ingredientsAnalyzed": 289,
+    "duplicateIngredientGroups": 4,
+    "ingredientsMissingCategoryId": 0,
+    "dishIngredientRefsToUpdate": 0,
+    "catalogIngredientRefsToUpdate": 0,
+    "ingredientsToCreate": 0,
+    "dishCategoriesToAssign": 0,
+    "manualReviewCount": 29,
+    "skippedUnsafeItems": 0
+  },
+  "duplicateIngredientGroups": [
+    {
+      "normalizedName": "pan brioche",
+      "preferred": {
+        "id": "69979a897235b4707c913481",
+        "name": "Pan Brioche",
+        "canonicalName": "pan brioche",
+        "categoryId": "699b7eec8deb38b04dd30163",
+        "scope": "master",
+        "active": true
+      },
+      "ingredients": [
+        {
+          "id": "69986c2f6a13bb1a6e2f7955",
+          "name": "Pan Brioche",
+          "canonicalName": "pan brioche",
+          "categoryId": "699b7eec8deb38b04dd30163",
+          "scope": "master",
+          "active": true,
+          "usageCount": 0,
+          "preferred": false
+        },
+        {
+          "id": "69979a897235b4707c913481",
+          "name": "Pan Brioche",
+          "canonicalName": "pan brioche",
+          "categoryId": "699b7eec8deb38b04dd30163",
+          "scope": "master",
+          "active": true,
+          "usageCount": 3,
+          "preferred": true
+        }
+      ]
+    },
+    {
+      "normalizedName": "queso en loncha",
+      "preferred": {
+        "id": "69979aab7235b4707c913495",
+        "name": "Queso en Lonchas",
+        "canonicalName": "queso en loncha",
+        "categoryId": "699b7eec8deb38b04dd30162",
+        "scope": "master",
+        "active": true
+      },
+      "ingredients": [
+        {
+          "id": "69986c1e6a13bb1a6e2f7944",
+          "name": "Queso en Lonchas",
+          "canonicalName": "queso en loncha",
+          "categoryId": "699b7eec8deb38b04dd30162",
+          "scope": "master",
+          "active": true,
+          "usageCount": 0,
+          "preferred": false
+        },
+        {
+          "id": "69979aab7235b4707c913495",
+          "name": "Queso en Lonchas",
+          "canonicalName": "queso en loncha",
+          "categoryId": "699b7eec8deb38b04dd30162",
+          "scope": "master",
+          "active": true,
+          "usageCount": 8,
+          "preferred": true
+        }
+      ]
+    },
+    {
+      "normalizedName": "pulpo",
+      "preferred": {
+        "id": "697389abf38758705669ee09",
+        "name": "Pulpo",
+        "canonicalName": "pulpo",
+        "categoryId": "699b7eec8deb38b04dd30160",
+        "scope": "master",
+        "active": true
+      },
+      "ingredients": [
+        {
+          "id": "697389abf38758705669ee09",
+          "name": "Pulpo",
+          "canonicalName": "pulpo",
+          "categoryId": "699b7eec8deb38b04dd30160",
+          "scope": "master",
+          "active": true,
+          "usageCount": 0,
+          "preferred": true
+        },
+        {
+          "id": "69987decabe44e589730b34b",
+          "name": "Pulpo",
+          "canonicalName": "pulpo",
+          "categoryId": "699b7eec8deb38b04dd30160",
+          "scope": "override",
+          "active": true,
+          "usageCount": 0,
+          "preferred": false
+        }
+      ]
+    },
+    {
+      "normalizedName": "patata congeladas",
+      "preferred": {
+        "id": "6976317e8764694d965b99f9",
+        "name": "Patatas congeladas",
+        "canonicalName": "patatas congelada",
+        "categoryId": "699b7eec8deb38b04dd30165",
+        "scope": "master",
+        "active": true
+      },
+      "ingredients": [
+        {
+          "id": "6976317e8764694d965b99f9",
+          "name": "Patatas congeladas",
+          "canonicalName": "patatas congelada",
+          "categoryId": "699b7eec8deb38b04dd30165",
+          "scope": "master",
+          "active": true,
+          "usageCount": 3,
+          "preferred": true
+        },
+        {
+          "id": "699b81f88deb38b04dd3018d",
+          "name": "Patatas congeladas",
+          "canonicalName": "patatas congeladas",
+          "categoryId": "699b7eec8deb38b04dd30165",
+          "scope": "master",
+          "active": true,
+          "usageCount": 0,
+          "preferred": false
+        }
+      ]
+    }
+  ],
+  "ingredientsMissingCategoryId": [],
+  "dishesMissingDishCategoryId": [],
+  "dishIngredientsMissingIngredientId": [],
+  "catalogPackDishesMissingDishCategoryId": [],
+  "catalogPackIngredientsMissingIngredientId": [],
+  "ingredientsToCreate": [],
+  "inconsistentCanonicalNames": [
+    {
+      "ingredientId": "697389abf38758705669edfc",
+      "name": "Huevos",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "huevo",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee0b",
+      "name": "Mejillones",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "mejillones",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee37",
+      "name": "Manzana",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "manzana",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee3d",
+      "name": "Uvas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "uvas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee58",
+      "name": "Semillas de sésamo",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "semillas de sesamo",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee67",
+      "name": "Vainilla",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "vainilla",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee72",
+      "name": "Miel",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "miel",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "699a3ab6ad2cb9b3514d605d",
+      "name": "San Jacobos",
+      "currentCanonicalName": "san jacobo",
+      "suggestedCanonicalName": "san jacobos",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee20",
+      "name": "Ajo",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "ajo",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee2c",
+      "name": "Lechuga",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "lechuga",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee36",
+      "name": "Maíz",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "maiz",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee41",
+      "name": "Melocotón",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "melocoton",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee4d",
+      "name": "Nata",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "nata",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee4f",
+      "name": "Aceite de oliva",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "aceite de oliva",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee6b",
+      "name": "Mostaza",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "mostaza",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee6f",
+      "name": "Tomate frito",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "tomate frito",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669edfe",
+      "name": "Sardinas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "sardinas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee3e",
+      "name": "Fresas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "fresas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee40",
+      "name": "Sandía",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "sandia",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee49",
+      "name": "Leche evaporada",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "leche evaporada",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "6973b42e35b74eb3bc1d93c1",
+      "name": "Chiles",
+      "currentCanonicalName": "chil",
+      "suggestedCanonicalName": "chiles",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee02",
+      "name": "Bacalao",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "bacalao",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee03",
+      "name": "Anchoas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "anchoas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee13",
+      "name": "Habas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "habas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee14",
+      "name": "Arroz",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "arroz",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee23",
+      "name": "Pepino",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pepino",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee24",
+      "name": "Calabacín",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "calabacin",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee26",
+      "name": "Zanahoria",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "zanahoria",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee2a",
+      "name": "Espinacas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "espinacas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee31",
+      "name": "Champiñones",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "champinones",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee39",
+      "name": "Naranja",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "naranja",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee3c",
+      "name": "Pera",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pera",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee65",
+      "name": "Nuez moscada",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "nuez moscada",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee74",
+      "name": "Levadura",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "levadura",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee77",
+      "name": "Agua",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "agua",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee79",
+      "name": "Té",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "te",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "6973ce18acd064507919adaf",
+      "name": "Quesitos",
+      "currentCanonicalName": "quesito",
+      "suggestedCanonicalName": "quesitos",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee10",
+      "name": "Alubias",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "alubias",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee1a",
+      "name": "Pan",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pan",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee1e",
+      "name": "Batata",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "batata",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee32",
+      "name": "Calabaza",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "calabaza",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee47",
+      "name": "Aguacate",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "aguacate",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee4e",
+      "name": "Mantequilla",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "mantequilla",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee51",
+      "name": "Aceitunas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "aceituna",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee5a",
+      "name": "Semillas de lino",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "semillas de lino",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee06",
+      "name": "Dorada",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "dorada",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee0a",
+      "name": "Gambas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "gambas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee1b",
+      "name": "Pan rallado",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pan rallado",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee21",
+      "name": "Pimiento",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pimiento",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee2e",
+      "name": "Coliflor",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "coliflor",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee33",
+      "name": "Espárragos",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "esparragos",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee4b",
+      "name": "Queso",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "queso",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "69986c1e6a13bb1a6e2f7944",
+      "name": "Queso en Lonchas",
+      "currentCanonicalName": "queso en loncha",
+      "suggestedCanonicalName": "queso en lonchas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee01",
+      "name": "Merluza",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "merluza",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee0e",
+      "name": "Garbanzos",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "garbanzo",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee22",
+      "name": "Tomate",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "tomate",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee28",
+      "name": "Apio",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "apio",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee2f",
+      "name": "Brócoli",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "brocoli",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee3f",
+      "name": "Melón",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "melon",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee68",
+      "name": "Vinagre",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "vinagre",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee6d",
+      "name": "Kétchup",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "ketchup",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "6973b44235b74eb3bc1d93cd",
+      "name": "habaneros",
+      "currentCanonicalName": "habanero",
+      "suggestedCanonicalName": "habaneros",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669edfd",
+      "name": "Atún",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "atun",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee0f",
+      "name": "Lentejas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "lenteja",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee30",
+      "name": "Setas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "setas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee34",
+      "name": "Alcachofas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "alcachofas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee5e",
+      "name": "Comino",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "comino",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee5f",
+      "name": "Orégano",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "oregano",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee63",
+      "name": "Curry",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "curry",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee69",
+      "name": "Vinagre balsámico",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "vinagre balsamico",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee6c",
+      "name": "Mayonesa",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "mayonesa",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee78",
+      "name": "Café",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "cafe",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee05",
+      "name": "Trucha",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "trucha",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee18",
+      "name": "Avena",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "avena",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee2d",
+      "name": "Col",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "col",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee4a",
+      "name": "Yogur",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "yogur",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee57",
+      "name": "Cacahuetes",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "cacahuetes",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee5b",
+      "name": "Sal",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "sal",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee08",
+      "name": "Calamares",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "calamares",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee0d",
+      "name": "Berberechos",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "berberechos",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee19",
+      "name": "Harina de trigo",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "harina de trigo",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee1c",
+      "name": "Tortillas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "tortilla",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee1f",
+      "name": "Cebolla",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "cebolla",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee44",
+      "name": "Cerezas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "cerezas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee4c",
+      "name": "Requesón",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "requeson",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee55",
+      "name": "Pistachos",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pistachos",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee17",
+      "name": "Bulgur",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "bulgur",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee27",
+      "name": "Puerro",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "puerro",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee38",
+      "name": "Plátano",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "platano",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee43",
+      "name": "Ciruelas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "ciruelas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee50",
+      "name": "Aceite de girasol",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "aceite de girasol",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee62",
+      "name": "Laurel",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "laurel",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee66",
+      "name": "Azafrán",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "azafran",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee70",
+      "name": "Caldo",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "caldo",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee09",
+      "name": "Pulpo",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pulpo",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee25",
+      "name": "Berenjena",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "berenjena",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee3a",
+      "name": "Limón",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "limon",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee56",
+      "name": "Piñones",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pinones",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee75",
+      "name": "Bicarbonato",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "bicarbonato",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee04",
+      "name": "Boquerones",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "boquerones",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee07",
+      "name": "Lubina",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "lubina",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee16",
+      "name": "Cuscús",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "cuscus",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee3b",
+      "name": "Mandarina",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "mandarina",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee48",
+      "name": "Leche",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "leche",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee53",
+      "name": "Nueces",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "nueces",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee54",
+      "name": "Avellanas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "avellanas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee5c",
+      "name": "Pimienta",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pimienta",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee71",
+      "name": "Azúcar",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "azucar",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee73",
+      "name": "Harina de maíz",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "harina de maiz",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "69979aab7235b4707c913495",
+      "name": "Queso en Lonchas",
+      "currentCanonicalName": "queso en loncha",
+      "suggestedCanonicalName": "queso en lonchas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee0c",
+      "name": "Almejas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "almejas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee12",
+      "name": "Guisantes",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "guisantes",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee1d",
+      "name": "Patata",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "patata",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee45",
+      "name": "Piña",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pina",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee61",
+      "name": "Romero",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "romero",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee64",
+      "name": "Canela",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "canela",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669edfb",
+      "name": "Morcilla",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "morcilla",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee00",
+      "name": "Salmón",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "salmon",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee42",
+      "name": "Albaricoque",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "albaricoque",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee52",
+      "name": "Almendras",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "almendras",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee59",
+      "name": "Semillas de chía",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "semillas de chia",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee5d",
+      "name": "Pimentón",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pimenton",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee60",
+      "name": "Tomillo",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "tomillo",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "6976317e8764694d965b99f9",
+      "name": "Patatas congeladas",
+      "currentCanonicalName": "patatas congelada",
+      "suggestedCanonicalName": "patata congeladas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669edff",
+      "name": "Caballa",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "caballa",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee11",
+      "name": "Judías",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "judias",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee15",
+      "name": "Pasta",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "pasta",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee29",
+      "name": "Judías verdes",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "judias verdes",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee2b",
+      "name": "Acelgas",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "acelgas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee35",
+      "name": "Remolacha",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "remolacha",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee46",
+      "name": "Mango",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "mango",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee6a",
+      "name": "Salsa de soja",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "salsa de soja",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee6e",
+      "name": "Tomate triturado",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "tomate triturado",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "697389abf38758705669ee76",
+      "name": "Chocolate",
+      "currentCanonicalName": null,
+      "suggestedCanonicalName": "chocolate",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "69a898a37ad5ed7eb5bb1594",
+      "name": "Quitagrasas",
+      "currentCanonicalName": "quitagrasa",
+      "suggestedCanonicalName": "quitagrasas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "69aa17a676afcb171c941c21",
+      "name": "Chalotas",
+      "currentCanonicalName": "chalota",
+      "suggestedCanonicalName": "chalotas",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    },
+    {
+      "ingredientId": "69bd4176203335e14cb6f03f",
+      "name": "Jabón de manos",
+      "currentCanonicalName": "jabon de mano",
+      "suggestedCanonicalName": "jabon de manos",
+      "reason": "canonicalName differs from robust normalized display name; not auto-updated by this script."
+    }
+  ],
+  "mappingsToApply": {
+    "duplicateIngredientIdMappings": [
+      {
+        "from": "69986c2f6a13bb1a6e2f7955",
+        "to": "69979a897235b4707c913481"
+      },
+      {
+        "from": "69986c1e6a13bb1a6e2f7944",
+        "to": "69979aab7235b4707c913495"
+      },
+      {
+        "from": "69987decabe44e589730b34b",
+        "to": "697389abf38758705669ee09"
+      },
+      {
+        "from": "699b81f88deb38b04dd3018d",
+        "to": "6976317e8764694d965b99f9"
+      }
+    ],
+    "dishIngredientUpdates": [],
+    "catalogIngredientUpdates": [],
+    "ingredientCategoryUpdates": [],
+    "dishCategoryUpdates": [],
+    "catalogDishCategoryUpdates": []
+  },
+  "ambiguousMatchesRequiringManualReview": [],
+  "skippedUnsafeItems": [],
+  "manualReview": [
+    {
+      "type": "missing_dish_category",
+      "collection": "kitchenDishes",
+      "documentId": "69bac0f06d705c3f49697215",
+      "documentName": "Gambones al Vapor",
+      "fieldPath": "dishCategoryId",
+      "currentValue": null,
+      "suggestedCandidates": [],
+      "reason": "no safe dish category inference",
+      "recommendedAction": "Choose a dish category or add dishCategories override."
+    },
+    {
+      "type": "missing_dish_category",
+      "collection": "kitchenDishes",
+      "documentId": "69bac4bb6d705c3f496972c6",
+      "documentName": "Pato Laqueado",
+      "fieldPath": "dishCategoryId",
+      "currentValue": null,
+      "suggestedCandidates": [],
+      "reason": "no safe dish category inference",
+      "recommendedAction": "Choose a dish category or add dishCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a01f5516b7cb75b88ae4716",
+      "documentName": "Enchiladas verdes",
+      "fieldPath": "ingredients.0",
+      "currentValue": "Pollo desmenuzado",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a01f5516b7cb75b88ae471c",
+      "documentName": "Sopa de tortilla",
+      "fieldPath": "ingredients.3",
+      "currentValue": "Tortilla frita",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a01f5516b7cb75b88ae4720",
+      "documentName": "Burritos de ternera",
+      "fieldPath": "ingredients.3",
+      "currentValue": "Alubias negras",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a01f5516b7cb75b88ae4726",
+      "documentName": "Fajitas de pollo",
+      "fieldPath": "ingredients.0",
+      "currentValue": "Pollo en tiras",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_dish_category",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e213b2ce87d473d0a024",
+      "documentName": "Gambas al ajillo",
+      "fieldPath": "dishCategoryId",
+      "currentValue": null,
+      "suggestedCandidates": [],
+      "reason": "no safe dish category inference",
+      "recommendedAction": "Choose a dish category or add dishCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e52676662bcef84238e0",
+      "documentName": "Caldo de Navidad con galets",
+      "fieldPath": "ingredients.0",
+      "currentValue": "Carcasa de pollo",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_dish_category",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e52676662bcef84238e2",
+      "documentName": "Langostinos a la plancha",
+      "fieldPath": "dishCategoryId",
+      "currentValue": null,
+      "suggestedCandidates": [],
+      "reason": "no safe dish category inference",
+      "recommendedAction": "Choose a dish category or add dishCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e52676662bcef84238e2",
+      "documentName": "Langostinos a la plancha",
+      "fieldPath": "ingredients.0",
+      "currentValue": "Langostinos",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e52676662bcef84238e4",
+      "documentName": "Besugo al horno",
+      "fieldPath": "ingredients.0",
+      "currentValue": "Besugo entero",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e52676662bcef84238e4",
+      "documentName": "Besugo al horno",
+      "fieldPath": "ingredients.6",
+      "currentValue": "Vino blanco",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e52676662bcef84238e6",
+      "documentName": "Cordero asado al horno",
+      "fieldPath": "ingredients.5",
+      "currentValue": "Vino blanco",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e52676662bcef84238e8",
+      "documentName": "Pavo relleno de Navidad",
+      "fieldPath": "ingredients.0",
+      "currentValue": "Pavo entero",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e52676662bcef84238e8",
+      "documentName": "Pavo relleno de Navidad",
+      "fieldPath": "ingredients.2",
+      "currentValue": "Ciruelas pasas",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e52676662bcef84238e8",
+      "documentName": "Pavo relleno de Navidad",
+      "fieldPath": "ingredients.3",
+      "currentValue": "Orejones de albaricoque",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "kitchenDishes",
+      "documentId": "6a02e52676662bcef84238e8",
+      "documentName": "Pavo relleno de Navidad",
+      "fieldPath": "ingredients.7",
+      "currentValue": "Vino de Oporto",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a01f28f04de57e076cb1303",
+      "documentName": "mexican-pack-vol1 / Enchiladas verdes",
+      "fieldPath": "dishes.1.ingredients.0",
+      "currentValue": "Pollo desmenuzado",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a01f28f04de57e076cb1303",
+      "documentName": "mexican-pack-vol1 / Sopa de tortilla",
+      "fieldPath": "dishes.4.ingredients.3",
+      "currentValue": "Tortilla frita",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a01f28f04de57e076cb1303",
+      "documentName": "mexican-pack-vol1 / Burritos de ternera",
+      "fieldPath": "dishes.6.ingredients.3",
+      "currentValue": "Alubias negras",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a01f28f04de57e076cb1303",
+      "documentName": "mexican-pack-vol1 / Fajitas de pollo",
+      "fieldPath": "dishes.9.ingredients.0",
+      "currentValue": "Pollo en tiras",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a02e36e04de57e076ee1977",
+      "documentName": "navidad-espanola-vol1 / Caldo de Navidad con galets",
+      "fieldPath": "dishes.0.ingredients.0",
+      "currentValue": "Carcasa de pollo",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a02e36e04de57e076ee1977",
+      "documentName": "navidad-espanola-vol1 / Langostinos a la plancha",
+      "fieldPath": "dishes.1.ingredients.0",
+      "currentValue": "Langostinos",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a02e36e04de57e076ee1977",
+      "documentName": "navidad-espanola-vol1 / Besugo al horno",
+      "fieldPath": "dishes.2.ingredients.6",
+      "currentValue": "Vino blanco",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a02e36e04de57e076ee1977",
+      "documentName": "navidad-espanola-vol1 / Cordero asado al horno",
+      "fieldPath": "dishes.3.ingredients.5",
+      "currentValue": "Vino blanco",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a02e36e04de57e076ee1977",
+      "documentName": "navidad-espanola-vol1 / Pavo relleno de Navidad",
+      "fieldPath": "dishes.4.ingredients.0",
+      "currentValue": "Pavo entero",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a02e36e04de57e076ee1977",
+      "documentName": "navidad-espanola-vol1 / Pavo relleno de Navidad",
+      "fieldPath": "dishes.4.ingredients.2",
+      "currentValue": "Ciruelas pasas",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a02e36e04de57e076ee1977",
+      "documentName": "navidad-espanola-vol1 / Pavo relleno de Navidad",
+      "fieldPath": "dishes.4.ingredients.3",
+      "currentValue": "Orejones de albaricoque",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    },
+    {
+      "type": "missing_master_ingredient",
+      "collection": "catalogPacks",
+      "documentId": "6a02e36e04de57e076ee1977",
+      "documentName": "navidad-espanola-vol1 / Pavo relleno de Navidad",
+      "fieldPath": "dishes.4.ingredients.7",
+      "currentValue": "Vino de Oporto",
+      "suggestedCandidates": [],
+      "reason": "No existing master ingredient and no safe category inference.",
+      "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+    }
+  ],
+  "applyStats": {
+    "createdIngredients": 0,
+    "updatedIngredientCategories": 0,
+    "updatedDishIngredientRefs": 0,
+    "updatedDishCategories": 0,
+    "updatedCatalogRefs": 0,
+    "updatedCatalogDishCategories": 0,
+    "skippedUnsafe": 0
+  },
+  "backupPath": null
+}

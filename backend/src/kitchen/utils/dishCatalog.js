@@ -6,6 +6,28 @@ export const DISH_HIDDEN_MASTER_TYPES = {
   SIDE: "side"
 };
 
+export function buildManualPlanningDishFilter({ sidedish = false, isDinner = null } = {}) {
+  return {
+    sidedish: sidedish ? true : { $ne: true },
+    active: { $ne: false },
+    isArchived: { $ne: true },
+    deletedAt: null,
+    ...(typeof isDinner === "boolean" ? { isDinner } : {})
+  };
+}
+
+export function buildRandomizableMainDishFilter({ isDinner = false } = {}) {
+  return {
+    sidedish: { $ne: true },
+    special: { $ne: true },
+    allowRandom: { $ne: false },
+    active: true,
+    isArchived: { $ne: true },
+    deletedAt: null,
+    isDinner: Boolean(isDinner)
+  };
+}
+
 function isNonEmptyObject(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0;
 }
