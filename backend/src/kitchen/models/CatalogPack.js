@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 
 const DishIngredientTemplateSchema = new mongoose.Schema(
   {
+    ingredientId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, default: null },
     displayName: { type: String, required: true, trim: true },
     canonicalName: { type: String, required: true, trim: true }
   },
@@ -44,6 +46,12 @@ const CatalogPackSchema = new mongoose.Schema(
     coverImage: { type: String, default: null },
     tags: { type: [String], default: [] },
     cuisineType: { type: String, default: "", trim: true },
+    status: {
+      type: String,
+      enum: ["draft", "needs_review", "ready", "published"],
+      default: "needs_review",
+      index: true
+    },
     active: { type: Boolean, default: true, index: true },
     featured: { type: Boolean, default: false },
     priceBasic: { type: Number, default: 1.99 },
@@ -57,7 +65,23 @@ const CatalogPackSchema = new mongoose.Schema(
     color: { type: String, default: null },
     defaultSpecial: { type: Boolean, default: false },
     defaultAllowRandom: { type: Boolean, default: true },
-    sortOrder: { type: Number, default: 0 }
+    sortOrder: { type: Number, default: 0 },
+    validationSummary: {
+      missingIngredientMappings: { type: Number, default: 0 },
+      missingIngredientCategories: { type: Number, default: 0 },
+      missingDishCategories: { type: Number, default: 0 },
+      ambiguousMatches: { type: Number, default: 0 },
+      invalidMappings: { type: Number, default: 0 },
+      duplicateIngredientNames: { type: Number, default: 0 },
+      unresolvedIssues: { type: Number, default: 0 },
+      normalizedIngredients: { type: Number, default: 0 },
+      totalIngredients: { type: Number, default: 0 },
+      totalDishes: { type: Number, default: 0 }
+    },
+    reviewIssues: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    normalizedAt: { type: Date, default: null },
+    reviewedAt: { type: Date, default: null },
+    publishedAt: { type: Date, default: null }
   },
   { timestamps: true }
 );

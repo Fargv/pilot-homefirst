@@ -12,6 +12,10 @@ import { HouseholdCatalogPack } from "../models/HouseholdCatalogPack.js";
 import { normalizeSubscriptionPlan } from "../subscriptionService.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import {
+  applyCatalogPackValidation,
+  assertIngredientCanBeCreated
+} from "../catalogNormalization.js";
+import {
   getCatalogMonthlyCredits,
   getCurrentClaimMonth,
   getMonthlyCreditsRemaining,
@@ -20,6 +24,42 @@ import {
 } from "../catalogService.js";
 
 const router = express.Router();
+
+function serializeAdminPack(p, ownedByCount = 0) {
+  return {
+    id: p._id,
+    slug: p.slug,
+    title: p.title,
+    subtitle: p.subtitle,
+    description: p.description,
+    coverImage: p.coverImage,
+    tags: p.tags,
+    cuisineType: p.cuisineType,
+    status: p.status || "needs_review",
+    active: p.active,
+    featured: p.featured,
+    priceBasic: p.priceBasic,
+    includedPlans: p.includedPlans,
+    monthlyCreditCost: p.monthlyCreditCost,
+    dishCount: Array.isArray(p.dishes) ? p.dishes.length : 0,
+    dishes: p.dishes || [],
+    sortOrder: p.sortOrder,
+    releaseDate: p.releaseDate,
+    freeUntil: p.freeUntil,
+    activeFrom: p.activeFrom,
+    activeUntil: p.activeUntil,
+    color: p.color,
+    defaultSpecial: p.defaultSpecial,
+    defaultAllowRandom: p.defaultAllowRandom,
+    validationSummary: p.validationSummary || null,
+    reviewIssues: p.reviewIssues || [],
+    normalizedAt: p.normalizedAt || null,
+    reviewedAt: p.reviewedAt || null,
+    publishedAt: p.publishedAt || null,
+    ownedByCount,
+    createdAt: p.createdAt
+  };
+}
 
 // ─── Master ingredient helpers for pack editor ───────────────────────────────
 
@@ -45,10 +85,22 @@ router.get("/master/ingredients", requireAuth, requireDiod, async (req, res) => 
       scope: "master",
       active: { $ne: false },
       $or: [{ name: regex }, { canonicalName: regex }]
-    }).select("_id name canonicalName").sort({ name: 1 }).limit(15).lean();
-    return res.json({ ok: true, ingredients: ingredients.map((i) => ({ id: i._id, name: i.name, canonicalName: i.canonicalName })) });
+    }).select("_id name canonicalName categoryId").sort({ name: 1 }).limit(15).lean();
+    return res.json({ ok: true, ingredients: ingredients.map((i) => ({ id: i._id, name: i.name, canonicalName: i.canonicalName, categoryId: i.categoryId })) });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Error al buscar ingredientes." });
+  }
+});
+
+router.get("/master/dish-categories", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const cats = await KitchenDishCategory.find({ active: { $ne: false } })
+      .select("_id code name")
+      .sort({ sortOrder: 1 })
+      .lean();
+    return res.json({ ok: true, categories: cats.map((c) => ({ id: c._id, code: c.code, name: c.name })) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error." });
   }
 });
 
@@ -60,15 +112,11 @@ router.post("/master/ingredients", requireAuth, requireDiod, async (req, res) =>
     if (!categoryId || !mongoose.isValidObjectId(categoryId)) {
       return res.status(400).json({ ok: false, error: "categoryId válido es obligatorio." });
     }
-    const canonicalName = normalizeIngredientName(name);
-    const existing = await KitchenIngredient.findOne({ scope: "master", canonicalName }).lean();
-    if (existing) {
-      return res.json({ ok: true, created: false, ingredient: { id: existing._id, name: existing.name, canonicalName: existing.canonicalName } });
-    }
+    const { canonicalName } = await assertIngredientCanBeCreated({ name, categoryId });
     const ing = await KitchenIngredient.create({ scope: "master", name, canonicalName, categoryId, active: true });
-    return res.status(201).json({ ok: true, created: true, ingredient: { id: ing._id, name: ing.name, canonicalName: ing.canonicalName } });
+    return res.status(201).json({ ok: true, created: true, ingredient: { id: ing._id, name: ing.name, canonicalName: ing.canonicalName, categoryId: ing.categoryId } });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || "Error al crear ingrediente." });
+    return res.status(error.statusCode || 500).json({ ok: false, error: error.message || "Error al crear ingrediente." });
   }
 });
 
@@ -82,33 +130,7 @@ router.get("/packs/admin-all", requireAuth, requireDiod, async (req, res) => {
     );
     return res.json({
       ok: true,
-      packs: packs.map((p, i) => ({
-        id: p._id,
-        slug: p.slug,
-        title: p.title,
-        subtitle: p.subtitle,
-        description: p.description,
-        coverImage: p.coverImage,
-        tags: p.tags,
-        cuisineType: p.cuisineType,
-        active: p.active,
-        featured: p.featured,
-        priceBasic: p.priceBasic,
-        includedPlans: p.includedPlans,
-        monthlyCreditCost: p.monthlyCreditCost,
-        dishCount: Array.isArray(p.dishes) ? p.dishes.length : 0,
-        dishes: p.dishes || [],
-        sortOrder: p.sortOrder,
-        releaseDate: p.releaseDate,
-        freeUntil: p.freeUntil,
-        activeFrom: p.activeFrom,
-        activeUntil: p.activeUntil,
-        color: p.color,
-        defaultSpecial: p.defaultSpecial,
-        defaultAllowRandom: p.defaultAllowRandom,
-        ownedByCount: counts[i],
-        createdAt: p.createdAt
-      }))
+      packs: packs.map((p, i) => serializeAdminPack(p, counts[i]))
     });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Error." });
@@ -137,6 +159,7 @@ router.get("/packs", requireAuth, async (req, res) => {
     const now = new Date();
     const filter = {
       active: true,
+      status: "published",
       $and: [
         { $or: [{ activeFrom: null }, { activeFrom: { $exists: false } }, { activeFrom: { $lte: now } }] },
         { $or: [{ activeUntil: null }, { activeUntil: { $exists: false } }, { activeUntil: { $gte: now } }] }
@@ -218,7 +241,7 @@ router.get("/packs/:packId", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Pack no encontrado." });
     }
 
-    const pack = await CatalogPack.findOne({ _id: req.params.packId, active: true }).lean();
+    const pack = await CatalogPack.findOne({ _id: req.params.packId, active: true, status: "published" }).lean();
     if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
 
     const entitlement = await resolvePackEntitlement(HouseholdCatalogPack, {
@@ -265,7 +288,7 @@ router.post("/packs/:packId/claim", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Pack no encontrado." });
     }
 
-    const pack = await CatalogPack.findOne({ _id: req.params.packId, active: true }).lean();
+    const pack = await CatalogPack.findOne({ _id: req.params.packId, active: true, status: "published" }).lean();
     if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
 
     const existing = await HouseholdCatalogPack.findOne({ householdId, packId: pack._id }).lean();
@@ -320,7 +343,7 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Pack no encontrado." });
     }
 
-    const pack = await CatalogPack.findOne({ _id: req.params.packId, active: true }).lean();
+    const pack = await CatalogPack.findOne({ _id: req.params.packId, active: true, status: "published" }).lean();
     if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
 
     const existing = await HouseholdCatalogPack.findOne({ householdId, packId: pack._id }).lean();
@@ -374,6 +397,19 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
     }
 
     const dishTemplates = Array.isArray(pack.dishes) ? pack.dishes : [];
+
+    // Pre-fetch master ingredient IDs to link ingredients on install
+    const allCanonicalNames = dishTemplates
+      .flatMap((d) => d.ingredients || [])
+      .map((i) => normalizeIngredientName(i.canonicalName || i.displayName))
+      .filter(Boolean);
+    const uniqueCanonicalNames = [...new Set(allCanonicalNames)];
+    const masterIngs = uniqueCanonicalNames.length > 0
+      ? await KitchenIngredient.find({ scope: "master", canonicalName: { $in: uniqueCanonicalNames }, active: { $ne: false } })
+          .select("_id canonicalName").lean()
+      : [];
+    const ingIdMap = Object.fromEntries(masterIngs.map((i) => [i.canonicalName, i._id]));
+
     const createdDishes = [];
 
     for (const template of dishTemplates) {
@@ -386,7 +422,14 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
         special: Boolean(template.special),
         allowRandom: template.allowRandom !== false,
         dishCategoryId: template.dishCategoryId || null,
-        ingredients: Array.isArray(template.ingredients) ? template.ingredients : [],
+        ingredients: (template.ingredients || []).map((ing) => {
+          const cn = normalizeIngredientName(ing.canonicalName || ing.displayName);
+          return {
+            displayName: ing.displayName,
+            canonicalName: ing.canonicalName,
+            ingredientId: ing.ingredientId || ingIdMap[cn] || null
+          };
+        }),
         active: true,
         createdBy: userId,
         source: "catalog",
@@ -435,7 +478,7 @@ router.post("/packs/:packId/admin-grant", requireAuth, requireDiod, async (req, 
       return res.status(404).json({ ok: false, error: "Pack no encontrado." });
     }
 
-    const pack = await CatalogPack.findById(req.params.packId).lean();
+    const pack = await CatalogPack.findOne({ _id: req.params.packId, status: "published", active: true }).lean();
     if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
 
     const existing = await HouseholdCatalogPack.findOne({
@@ -474,7 +517,7 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
       return res.status(400).json({ ok: false, error: "slug y title son obligatorios." });
     }
 
-    const pack = await CatalogPack.create({
+    const pack = new CatalogPack({
       slug, title, subtitle, description, coverImage, tags, cuisineType,
       active: active !== false, featured: Boolean(featured),
       priceBasic, includedPlans, monthlyCreditCost, dishes: dishes || [],
@@ -487,8 +530,10 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
       defaultAllowRandom: defaultAllowRandom !== false,
       sortOrder: sortOrder ?? 0
     });
+    await applyCatalogPackValidation(pack, { autoApply: true });
+    await pack.save();
 
-    return res.status(201).json({ ok: true, pack: { id: pack._id, slug: pack.slug, title: pack.title } });
+    return res.status(201).json({ ok: true, pack: { id: pack._id, slug: pack.slug, title: pack.title, status: pack.status, validationSummary: pack.validationSummary } });
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({ ok: false, error: "Ya existe un pack con ese slug." });
@@ -510,19 +555,168 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
       "color", "defaultSpecial", "defaultAllowRandom", "sortOrder"
     ];
 
-    const update = {};
+    const packDoc = await CatalogPack.findById(req.params.packId);
+    if (!packDoc) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    if (packDoc.status === "published" && Object.prototype.hasOwnProperty.call(req.body, "dishes")) {
+      return res.status(409).json({ ok: false, error: "No se pueden modificar platos de un pack publicado automaticamente. Crea una nueva version del pack." });
+    }
+
     for (const field of allowedFields) {
       if (Object.prototype.hasOwnProperty.call(req.body, field)) {
-        update[field] = req.body[field];
+        packDoc[field] = req.body[field];
       }
     }
 
-    const pack = await CatalogPack.findByIdAndUpdate(req.params.packId, update, { new: true }).lean();
-    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    if (packDoc.status !== "published") {
+      await applyCatalogPackValidation(packDoc, { autoApply: true });
+    }
+    await packDoc.save();
+    const pack = packDoc.toObject();
 
-    return res.json({ ok: true, pack: { id: pack._id, slug: pack.slug, title: pack.title, active: pack.active } });
+    return res.json({ ok: true, pack: { id: pack._id, slug: pack.slug, title: pack.title, active: pack.active, status: pack.status, validationSummary: pack.validationSummary } });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Error al actualizar el pack." });
+  }
+});
+
+router.post("/packs/:packId/revalidate", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+    const pack = await CatalogPack.findById(req.params.packId);
+    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    await applyCatalogPackValidation(pack, { autoApply: pack.status !== "published" });
+    await pack.save();
+    return res.json({ ok: true, pack: serializeAdminPack(pack.toObject()) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al validar el pack." });
+  }
+});
+
+router.post("/packs/:packId/normalize/ingredient", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+    const pack = await CatalogPack.findById(req.params.packId);
+    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    if (pack.status === "published") {
+      return res.status(409).json({ ok: false, error: "No se puede normalizar un pack publicado." });
+    }
+
+    const normalizedName = normalizeIngredientName(req.body?.normalizedName || req.body?.originalName || "");
+    if (!normalizedName) return res.status(400).json({ ok: false, error: "normalizedName es obligatorio." });
+
+    let ingredient;
+    if (req.body?.create) {
+      const prepared = await assertIngredientCanBeCreated(req.body.create);
+      ingredient = await KitchenIngredient.create({
+        scope: "master",
+        name: prepared.name,
+        canonicalName: prepared.canonicalName,
+        categoryId: prepared.category._id,
+        active: true
+      });
+    } else if (req.body?.ingredientId && mongoose.isValidObjectId(req.body.ingredientId)) {
+      ingredient = await KitchenIngredient.findOne({
+        _id: req.body.ingredientId,
+        scope: "master",
+        active: { $ne: false }
+      });
+      if (!ingredient) return res.status(400).json({ ok: false, error: "Ingrediente master no encontrado." });
+      if (!ingredient.categoryId) return res.status(400).json({ ok: false, error: "El ingrediente master no tiene categoria." });
+    } else {
+      return res.status(400).json({ ok: false, error: "ingredientId o create es obligatorio." });
+    }
+
+    let updatedCount = 0;
+    for (const dish of pack.dishes || []) {
+      for (const item of dish.ingredients || []) {
+        const itemName = normalizeIngredientName(item.canonicalName || item.displayName || "");
+        if (itemName !== normalizedName) continue;
+        item.ingredientId = ingredient._id;
+        item.categoryId = ingredient.categoryId;
+        item.canonicalName = normalizeIngredientName(ingredient.canonicalName || ingredient.name);
+        item.displayName = item.displayName || ingredient.name;
+        updatedCount += 1;
+      }
+    }
+
+    await applyCatalogPackValidation(pack, { autoApply: true });
+    pack.reviewedAt = new Date();
+    await pack.save();
+
+    return res.json({
+      ok: true,
+      updatedCount,
+      ingredient: { id: ingredient._id, name: ingredient.name, canonicalName: ingredient.canonicalName, categoryId: ingredient.categoryId },
+      pack: serializeAdminPack(pack.toObject())
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ ok: false, error: error.message || "Error al normalizar ingrediente." });
+  }
+});
+
+router.post("/packs/:packId/normalize/dish-category", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+    const pack = await CatalogPack.findById(req.params.packId);
+    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    if (pack.status === "published") {
+      return res.status(409).json({ ok: false, error: "No se puede modificar un pack publicado." });
+    }
+    const dishIndex = Number(req.body?.dishIndex);
+    const categoryId = req.body?.categoryId;
+    if (!Number.isInteger(dishIndex) || dishIndex < 0 || dishIndex >= (pack.dishes || []).length) {
+      return res.status(400).json({ ok: false, error: "dishIndex invalido." });
+    }
+    if (!categoryId || !mongoose.isValidObjectId(categoryId)) {
+      return res.status(400).json({ ok: false, error: "categoryId valido es obligatorio." });
+    }
+    const category = await KitchenDishCategory.findOne({ _id: categoryId, active: { $ne: false } }).lean();
+    if (!category) return res.status(400).json({ ok: false, error: "Categoria de plato no encontrada." });
+
+    pack.dishes[dishIndex].dishCategoryId = category._id;
+    await applyCatalogPackValidation(pack, { autoApply: true });
+    pack.reviewedAt = new Date();
+    await pack.save();
+    return res.json({ ok: true, pack: serializeAdminPack(pack.toObject()) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al asignar categoria." });
+  }
+});
+
+router.post("/packs/:packId/publish", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+    const pack = await CatalogPack.findById(req.params.packId);
+    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    if (pack.status === "published") return res.json({ ok: true, pack: serializeAdminPack(pack.toObject()) });
+
+    await applyCatalogPackValidation(pack, { autoApply: true });
+    if (pack.validationSummary?.unresolvedIssues > 0) {
+      await pack.save();
+      return res.status(409).json({
+        ok: false,
+        error: "No se puede publicar con issues de normalizacion pendientes.",
+        validationSummary: pack.validationSummary,
+        reviewIssues: pack.reviewIssues
+      });
+    }
+
+    pack.status = "published";
+    pack.active = true;
+    pack.publishedAt = new Date();
+    pack.reviewedAt = pack.reviewedAt || new Date();
+    await pack.save();
+    return res.json({ ok: true, pack: serializeAdminPack(pack.toObject()) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al publicar." });
   }
 });
 

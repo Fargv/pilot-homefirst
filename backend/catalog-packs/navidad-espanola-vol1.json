@@ -1,0 +1,592 @@
+{
+  "slug": "navidad-espanola-vol1",
+  "title": "5 platos de Navidad española",
+  "subtitle": "La mesa navideña de toda la vida",
+  "description": "Los cinco platos más icónicos de la Navidad española. Recetas tradicionales para que la mesa de estas fiestas sea perfecta: desde el caldo de primera hora hasta el asado que lo corona todo.",
+  "coverImage": null,
+  "tags": ["navidad", "especial", "tradicional", "español", "festivo"],
+  "cuisineType": "española",
+  "active": true,
+  "featured": true,
+  "priceBasic": 1.99,
+  "includedPlans": ["pro", "premium"],
+  "monthlyCreditCost": 1,
+  "sortOrder": 2,
+  "dishes": [
+    {
+      "name": "Caldo de Navidad con galets",
+      "dishCategoryId": "69ac70b1d23659ad70fcf948",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "ingredients": [
+        { "displayName": "Carcasa de pollo", "canonicalName": "carcasa de pollo" },
+        { "displayName": "Hueso de jamón", "canonicalName": "jamon" },
+        { "displayName": "Zanahoria", "canonicalName": "zanahoria" },
+        { "displayName": "Puerro", "canonicalName": "puerro" },
+        { "displayName": "Apio", "canonicalName": "apio" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Galets", "canonicalName": "galets" },
+        { "displayName": "Sal", "canonicalName": "sal" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Carcasa de pollo", "quantity": "1 unidad" },
+          { "name": "Hueso de jamón", "quantity": "1 unidad" },
+          { "name": "Zanahoria", "quantity": "2 unidades" },
+          { "name": "Puerro", "quantity": "1 unidad" },
+          { "name": "Apio", "quantity": "2 tallos" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Galets (o fideos gordos)", "quantity": "200 g" },
+          { "name": "Sal", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": { "level": 2 },
+              "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }]
+            },
+            {
+              "type": "heading",
+              "attrs": { "level": 3 },
+              "content": [{ "type": "text", "text": "El caldo" }]
+            },
+            {
+              "type": "orderedList",
+              "attrs": { "start": 1 },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Tuesta la carcasa " },
+                    { "type": "text", "text": "en el horno a " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 15 min" },
+                    { "type": "text", "text": ". Este paso potencia el sabor y da color ámbar al caldo." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Pon en una olla grande " },
+                    { "type": "text", "text": "la carcasa tostada, el hueso de jamón, zanahoria, puerro, apio y cebolla. Cubre con " },
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "3 litros de agua fría" },
+                    { "type": "text", "text": "." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Lleva a ebullición " },
+                    { "type": "text", "text": "y desespuma continuamente los primeros " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                    { "type": "text", "text": ". Baja el fuego al mínimo y cocina " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2 horas" },
+                    { "type": "text", "text": " destapado, a un hervor suave." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuela el caldo " },
+                    { "type": "text", "text": "por un colador fino. Rectifica de sal y retira la grasa superficial con una cuchara." }
+                  ]}]
+                }
+              ]
+            },
+            {
+              "type": "heading",
+              "attrs": { "level": 3 },
+              "content": [{ "type": "text", "text": "Los galets" }]
+            },
+            {
+              "type": "orderedList",
+              "attrs": { "start": 5 },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuece los galets " },
+                    { "type": "text", "text": "directamente en el caldo hirviendo, siguiendo el tiempo indicado en el paquete. Sirve bien caliente." }
+                  ]}]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: prepara el caldo el día anterior. Con el reposo los sabores se asientan y la grasa sube a la superficie, siendo fácil de retirar." }]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Langostinos a la plancha",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "ingredients": [
+        { "displayName": "Langostinos", "canonicalName": "langostino" },
+        { "displayName": "Ajo", "canonicalName": "ajo" },
+        { "displayName": "Perejil fresco", "canonicalName": "perejil fresco" },
+        { "displayName": "Aceite de oliva virgen extra", "canonicalName": "aceite de oliva" },
+        { "displayName": "Sal gruesa", "canonicalName": "sal" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Langostinos", "quantity": "1 kg (16-20 uds)" },
+          { "name": "Ajo", "quantity": "3 dientes" },
+          { "name": "Perejil fresco", "quantity": "1 manojo" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "4 cucharadas" },
+          { "name": "Sal gruesa", "quantity": "al gusto" },
+          { "name": "Limón", "quantity": "1 unidad" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": { "level": 2 },
+              "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }]
+            },
+            {
+              "type": "orderedList",
+              "attrs": { "start": 1 },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara la ajada: " },
+                    { "type": "text", "text": "pica el ajo y el perejil muy fino, mézclalos con el aceite y reserva. Esta salsa se añade en crudo al final." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Calienta la plancha " },
+                    { "type": "text", "text": "a " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "fuego muy alto" },
+                    { "type": "text", "text": ". Debe estar muy caliente antes de poner los langostinos." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Sala los langostinos " },
+                    { "type": "text", "text": "con sal gruesa y colócalos en la plancha. Cocina " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2 min por cada lado" },
+                    { "type": "text", "text": " sin mover. La piel debe quedar ligeramente tostada y el interior jugoso." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Retira y riega " },
+                    { "type": "text", "text": "con la ajada por encima. Sirve inmediatamente con gajos de limón." }
+                  ]}]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#ef4444" } }], "text": "⚠ Importante: no los cocines de más. Los langostinos se vuelven gomosos en segundos. 2 min por lado es el límite." }]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Besugo al horno",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": true,
+      "special": true,
+      "allowRandom": false,
+      "ingredients": [
+        { "displayName": "Besugo entero", "canonicalName": "besugo" },
+        { "displayName": "Patatas", "canonicalName": "patata" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Limón", "canonicalName": "limon" },
+        { "displayName": "Ajo", "canonicalName": "ajo" },
+        { "displayName": "Aceite de oliva virgen extra", "canonicalName": "aceite de oliva" },
+        { "displayName": "Vino blanco", "canonicalName": "vino blanco" },
+        { "displayName": "Perejil fresco", "canonicalName": "perejil fresco" },
+        { "displayName": "Sal", "canonicalName": "sal" },
+        { "displayName": "Pimienta", "canonicalName": "pimienta" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Besugo (entero, limpio y escamado)", "quantity": "1,5-2 kg" },
+          { "name": "Patatas", "quantity": "600 g" },
+          { "name": "Cebolla", "quantity": "2 unidades" },
+          { "name": "Limón", "quantity": "2 unidades" },
+          { "name": "Ajo", "quantity": "4 dientes" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "6 cucharadas" },
+          { "name": "Vino blanco", "quantity": "100 ml" },
+          { "name": "Perejil fresco", "quantity": "al gusto" },
+          { "name": "Sal", "quantity": "al gusto" },
+          { "name": "Pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": { "level": 2 },
+              "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }]
+            },
+            {
+              "type": "heading",
+              "attrs": { "level": 3 },
+              "content": [{ "type": "text", "text": "La cama de patatas" }]
+            },
+            {
+              "type": "orderedList",
+              "attrs": { "start": 1 },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno " },
+                    { "type": "text", "text": "a " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                    { "type": "text", "text": ". Pela y lamina las patatas y la cebolla en rodajas de 3-4 mm." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Sofríe " },
+                    { "type": "text", "text": "las patatas y cebolla en aceite a fuego medio " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                    { "type": "text", "text": " — solo para que se ablandedn. Extiéndelas en la base de la fuente de horno y salpimenta." }
+                  ]}]
+                }
+              ]
+            },
+            {
+              "type": "heading",
+              "attrs": { "level": 3 },
+              "content": [{ "type": "text", "text": "El besugo" }]
+            },
+            {
+              "type": "orderedList",
+              "attrs": { "start": 3 },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Haz 4 cortes " },
+                    { "type": "text", "text": "profundos en el lomo del besugo e inserta una rodaja de limón en cada uno. Salpimenta generosamente por dentro y por fuera." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Coloca el besugo " },
+                    { "type": "text", "text": "sobre la cama de patatas. Riega con aceite, el vino blanco y el zumo del limón restante. Distribuye el ajo laminado por encima." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Hornea " },
+                    { "type": "text", "text": "a " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 20-25 min" },
+                    { "type": "text", "text": " según el tamaño. A mitad de cocción, riega el besugo con los jugos de la fuente." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Comprueba el punto: " },
+                    { "type": "text", "text": "la carne debe separarse fácilmente con un tenedor junto a la espina. Espolvorea perejil picado y sirve." }
+                  ]}]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: pide al pescadero que lo limpie, escame y haga los cortes. Un besugo de 1,5 kg es perfecto para 4 personas." }]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cordero asado al horno",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": true,
+      "special": true,
+      "allowRandom": false,
+      "ingredients": [
+        { "displayName": "Pierna de cordero", "canonicalName": "cordero" },
+        { "displayName": "Ajo", "canonicalName": "ajo" },
+        { "displayName": "Romero", "canonicalName": "romero" },
+        { "displayName": "Tomillo", "canonicalName": "tomillo" },
+        { "displayName": "Aceite de oliva", "canonicalName": "aceite de oliva" },
+        { "displayName": "Vino blanco", "canonicalName": "vino blanco" },
+        { "displayName": "Patatas", "canonicalName": "patata" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Sal", "canonicalName": "sal" },
+        { "displayName": "Pimienta", "canonicalName": "pimienta" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Pierna de cordero", "quantity": "1,5-2 kg" },
+          { "name": "Ajo", "quantity": "6 dientes" },
+          { "name": "Romero fresco", "quantity": "3 ramas" },
+          { "name": "Tomillo fresco", "quantity": "3 ramas" },
+          { "name": "Aceite de oliva", "quantity": "4 cucharadas" },
+          { "name": "Vino blanco", "quantity": "150 ml" },
+          { "name": "Patatas", "quantity": "800 g" },
+          { "name": "Cebolla", "quantity": "2 unidades" },
+          { "name": "Sal", "quantity": "al gusto" },
+          { "name": "Pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": { "level": 2 },
+              "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }]
+            },
+            {
+              "type": "heading",
+              "attrs": { "level": 3 },
+              "content": [{ "type": "text", "text": "Preparación" }]
+            },
+            {
+              "type": "orderedList",
+              "attrs": { "start": 1 },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Saca el cordero " },
+                    { "type": "text", "text": "de la nevera " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "1 hora antes" },
+                    { "type": "text", "text": " de cocinarlo. Precalienta el horno a " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "180 °C" },
+                    { "type": "text", "text": "." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Pincha la pierna " },
+                    { "type": "text", "text": "con un cuchillo e inserta los dientes de ajo enteros y pelados en las incisiones. Frota toda la superficie con aceite, sal, pimienta, romero y tomillo." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara la fuente: " },
+                    { "type": "text", "text": "pela y corta las patatas en rodajas gruesas y la cebolla en gajos. Extiende en la fuente con aceite y sal. Añade el vino blanco." }
+                  ]}]
+                }
+              ]
+            },
+            {
+              "type": "heading",
+              "attrs": { "level": 3 },
+              "content": [{ "type": "text", "text": "El asado" }]
+            },
+            {
+              "type": "orderedList",
+              "attrs": { "start": 4 },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Coloca el cordero " },
+                    { "type": "text", "text": "sobre la cama de patatas y hornea a " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "180 °C durante 1,5-2 horas" },
+                    { "type": "text", "text": ". Riega con los jugos de la fuente cada " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "30 min" },
+                    { "type": "text", "text": "." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Los últimos 15 min, " },
+                    { "type": "text", "text": "sube la temperatura a " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "220 °C" },
+                    { "type": "text", "text": " para que la piel quede bien dorada y crujiente." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Reposa " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                    { "type": "text", "text": " antes de trinchar para que los jugos se redistribuyan." }
+                  ]}]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el cordero lechal (muy joven) se hace en 45 min a 200 °C. El recental necesita más tiempo a temperatura más baja. Pregunta en la carnicería qué tipo es." }]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pavo relleno de Navidad",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": true,
+      "special": true,
+      "allowRandom": false,
+      "ingredients": [
+        { "displayName": "Pavo entero", "canonicalName": "pavo" },
+        { "displayName": "Carne picada mixta", "canonicalName": "carne picada mixta" },
+        { "displayName": "Ciruelas pasas", "canonicalName": "ciruela" },
+        { "displayName": "Orejones de albaricoque", "canonicalName": "orejones" },
+        { "displayName": "Nueces", "canonicalName": "nuez" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Ajo", "canonicalName": "ajo" },
+        { "displayName": "Vino de Oporto", "canonicalName": "vino de oporto" },
+        { "displayName": "Mantequilla", "canonicalName": "mantequilla" },
+        { "displayName": "Caldo de ave", "canonicalName": "caldo" },
+        { "displayName": "Sal", "canonicalName": "sal" },
+        { "displayName": "Pimienta", "canonicalName": "pimienta" },
+        { "displayName": "Tomillo", "canonicalName": "tomillo" },
+        { "displayName": "Romero", "canonicalName": "romero" }
+      ],
+      "recipe": {
+        "servings": 6,
+        "ingredients": [
+          { "name": "Pavo entero (limpio)", "quantity": "4-5 kg" },
+          { "name": "Carne picada mixta", "quantity": "400 g" },
+          { "name": "Ciruelas pasas sin hueso", "quantity": "100 g" },
+          { "name": "Orejones de albaricoque", "quantity": "100 g" },
+          { "name": "Nueces", "quantity": "80 g" },
+          { "name": "Cebolla", "quantity": "2 unidades" },
+          { "name": "Ajo", "quantity": "4 dientes" },
+          { "name": "Vino de Oporto", "quantity": "100 ml" },
+          { "name": "Mantequilla (en pomada)", "quantity": "100 g" },
+          { "name": "Caldo de ave", "quantity": "200 ml" },
+          { "name": "Sal", "quantity": "al gusto" },
+          { "name": "Pimienta", "quantity": "al gusto" },
+          { "name": "Tomillo y romero", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": { "level": 2 },
+              "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }]
+            },
+            {
+              "type": "heading",
+              "attrs": { "level": 3 },
+              "content": [{ "type": "text", "text": "El relleno (día anterior)" }]
+            },
+            {
+              "type": "orderedList",
+              "attrs": { "start": 1 },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Sofríe " },
+                    { "type": "text", "text": "la cebolla y el ajo picados en aceite " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "8 min" },
+                    { "type": "text", "text": ". Añade la carne picada y cocina " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min más" },
+                    { "type": "text", "text": "." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Agrega las ciruelas, orejones y nueces " },
+                    { "type": "text", "text": "troceados y el Oporto. Cocina " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                    { "type": "text", "text": ", salpimenta y deja enfriar completamente antes de rellenar." }
+                  ]}]
+                }
+              ]
+            },
+            {
+              "type": "heading",
+              "attrs": { "level": 3 },
+              "content": [{ "type": "text", "text": "El pavo" }]
+            },
+            {
+              "type": "orderedList",
+              "attrs": { "start": 3 },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Saca el pavo " },
+                    { "type": "text", "text": "de la nevera " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2 horas antes" },
+                    { "type": "text", "text": ". Salpimenta generosamente por dentro y por fuera." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Rellena la cavidad " },
+                    { "type": "text", "text": "sin apelmazar. Ata las patas con hilo de cocina y coloca las alas pegadas al cuerpo." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Unta con mantequilla en pomada " },
+                    { "type": "text", "text": "toda la superficie, especialmente el pecho y los muslos. Añade tomillo y romero. Coloca en la fuente con el caldo en la base." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Cubre el pecho con papel de aluminio " },
+                    { "type": "text", "text": "y hornea a " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "160 °C" },
+                    { "type": "text", "text": ". Calcula " },
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "40 min por kg" },
+                    { "type": "text", "text": ". Riega cada 45 min con los jugos." }
+                  ]}]
+                },
+                {
+                  "type": "listItem",
+                  "content": [{ "type": "paragraph", "content": [
+                    { "type": "text", "marks": [{ "type": "bold" }], "text": "A 30 min del final, " },
+                    { "type": "text", "text": "retira el papel de aluminio y sube a " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                    { "type": "text", "text": " para que dore. Reposa " },
+                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "20 min" },
+                    { "type": "text", "text": " antes de trinchar." }
+                  ]}]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: la temperatura interna del muslo debe alcanzar 80 °C. Usa un termómetro de cocina — es la única forma de asegurarte de que está perfecto." }]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

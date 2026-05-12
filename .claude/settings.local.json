@@ -31,7 +31,13 @@
       "Bash(dir /s /b \"C:\\\\APPS\\\\pilot-homefirst\\\\frontend\")",
       "Bash(findstr -i admin)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Force | Format-Table Name, @{Name=\"Type\";Expression={if\\($_.PSIsContainer\\){\"DIR\"}else{\"FILE\"}}} -AutoSize)",
-      "Bash(node --input-type=module --eval ' *)"
+      "Bash(node --input-type=module --eval ' *)",
+      "Bash(git status *)",
+      "Bash(git check-ignore *)",
+      "WebFetch(domain:pilot-homefirst-backend-dev.onrender.com)",
+      "Bash(xargs grep -l \"catalog\\\\|Catalog\\\\|pack\\\\|Pack\")",
+      "Bash(xargs grep -l \"CatalogPack\\\\|catalog\")",
+      "Bash(xargs grep -l \"pack\\\\|Pack\")"
     ]
   }
 }

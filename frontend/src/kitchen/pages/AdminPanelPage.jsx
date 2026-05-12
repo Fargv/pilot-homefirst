@@ -1143,7 +1143,7 @@ function IngredientSearchInput({ value, onChange }) {
   };
 
   const select = (ing) => {
-    onChange({ displayName: ing.name, canonicalName: ing.canonicalName, ingredientId: ing.id });
+    onChange({ displayName: ing.name, canonicalName: ing.canonicalName, ingredientId: ing.id, categoryId: ing.categoryId || null });
     setQuery(ing.name);
     setResults([]);
     setShowCreate(false);
@@ -1160,17 +1160,22 @@ function IngredientSearchInput({ value, onChange }) {
     finally { setCreating(false); setShowCreate(false); }
   };
 
-  const isSelected = Boolean(value?.canonicalName);
+  const isLinked = Boolean(value?.ingredientId);
+  const hasName = Boolean(value?.canonicalName);
+  const isSelected = isLinked || results.some((ing) => String(ing.id) === String(value?.ingredientId || ""));
+  const borderColor = isLinked ? "#6366f1" : (hasName ? "#f59e0b" : "#d1d5db");
+  const bgColor = isLinked ? "#f5f3ff" : (hasName ? "#fffbeb" : "#fff");
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
       <input
-        style={{ ...FS, borderColor: isSelected ? "#6366f1" : "#d1d5db", background: isSelected ? "#f5f3ff" : "#fff" }}
+        style={{ ...FS, borderColor, background: bgColor }}
         placeholder="Buscar ingrediente master..."
         value={query}
-        onChange={(e) => { search(e.target.value); if (isSelected) onChange({ displayName: e.target.value, canonicalName: "" }); }}
+        onChange={(e) => { search(e.target.value); if (isLinked || hasName) onChange({ displayName: e.target.value, canonicalName: "", ingredientId: null }); }}
       />
-      {isSelected && <span style={{ fontSize: 10, color: "#6366f1", display: "block", marginTop: 1 }}>{value.canonicalName}</span>}
+      {isLinked && <span style={{ fontSize: 10, color: "#6366f1", display: "block", marginTop: 1 }}>✓ {value.canonicalName}</span>}
+      {!isLinked && hasName && <span style={{ fontSize: 10, color: "#b45309", display: "block", marginTop: 1 }}>⚠ sin vincular al master</span>}
       {results.length > 0 && (
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, zIndex: 20, maxHeight: 160, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
           {results.map((ing) => (
@@ -1351,7 +1356,12 @@ function PackForm({ item, onSave, onCancel }) {
     special: Boolean(d.special),
     allowRandom: d.allowRandom !== false,
     dishCategoryId: d.dishCategoryId ? String(d.dishCategoryId) : null,
-    ingredients: Array.isArray(d.ingredients) ? d.ingredients : [],
+    ingredients: Array.isArray(d.ingredients) ? d.ingredients.map((ing) => ({
+      displayName: ing.displayName || "",
+      canonicalName: ing.canonicalName || "",
+      ingredientId: ing.ingredientId || null,
+      categoryId: ing.categoryId || null
+    })) : [],
     recipe: {
       ingredients: Array.isArray(d.recipe?.ingredients) ? d.recipe.ingredients : [],
       steps: d.recipe?.steps ?? null,
@@ -1570,6 +1580,238 @@ function PackForm({ item, onSave, onCancel }) {
   );
 }
 
+function PackStatusBadge({ status }) {
+  const map = {
+    draft: { label: "draft", bg: "#f1f5f9", color: "#475569" },
+    needs_review: { label: "needs review", bg: "#fff7ed", color: "#c2410c" },
+    ready: { label: "ready", bg: "#ecfdf5", color: "#047857" },
+    published: { label: "published", bg: "#eef2ff", color: "#4338ca" }
+  };
+  const item = map[status] || map.needs_review;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 800, background: item.bg, color: item.color, textTransform: "uppercase" }}>
+      {item.label}
+    </span>
+  );
+}
+
+function PackReviewPanel({ pack, onClose, onPackUpdated }) {
+  const [ingredientCategories, setIngredientCategories] = useState([]);
+  const [dishCategories, setDishCategories] = useState([]);
+  const [creating, setCreating] = useState({});
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    apiRequest("/api/kitchen/catalog/master/ingredient-categories")
+      .then((d) => setIngredientCategories(d.categories || []))
+      .catch(() => {});
+    apiRequest("/api/kitchen/catalog/master/dish-categories")
+      .then((d) => setDishCategories(d.categories || []))
+      .catch(() => {});
+  }, []);
+
+  const summary = pack.validationSummary || {};
+  const issues = pack.reviewIssues || [];
+  const ingredientIssues = useMemo(() => {
+    const relevant = issues.filter((issue) => ["missing_ingredient_mapping", "ambiguous_ingredient_match", "invalid_ingredient_mapping", "missing_ingredient_category"].includes(issue.type));
+    const byName = new Map();
+    relevant.forEach((issue) => {
+      const key = issue.normalizedName || issue.key;
+      if (!byName.has(key)) byName.set(key, issue);
+    });
+    return [...byName.values()];
+  }, [issues]);
+  const dishIssues = issues.filter((issue) => issue.type === "missing_dish_category");
+  const duplicateIssues = issues.filter((issue) => issue.type === "duplicate_ingredient_name");
+  const unresolved = Number(summary.unresolvedIssues || 0);
+  const canPublish = pack.status !== "published" && unresolved === 0;
+
+  const updatePack = (nextPack) => {
+    if (nextPack) onPackUpdated(nextPack);
+  };
+
+  const revalidate = async () => {
+    setBusy("revalidate"); setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/revalidate`, { method: "POST" });
+      updatePack(data.pack);
+    } catch (err) { setError(err.message || "No se pudo validar."); }
+    finally { setBusy(""); }
+  };
+
+  const mapIngredient = async (issue, ingredientId) => {
+    setBusy(`map-${issue.key}`); setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/ingredient`, {
+        method: "POST",
+        body: JSON.stringify({ normalizedName: issue.normalizedName, ingredientId })
+      });
+      updatePack(data.pack);
+    } catch (err) { setError(err.message || "No se pudo mapear el ingrediente."); }
+    finally { setBusy(""); }
+  };
+
+  const createIngredient = async (issue) => {
+    const form = creating[issue.normalizedName] || {};
+    if (!form.name?.trim() || !form.categoryId) {
+      setError("Nombre y categoria son obligatorios para crear ingrediente master.");
+      return;
+    }
+    setBusy(`create-${issue.key}`); setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/ingredient`, {
+        method: "POST",
+        body: JSON.stringify({
+          normalizedName: issue.normalizedName,
+          create: { name: form.name.trim(), categoryId: form.categoryId }
+        })
+      });
+      updatePack(data.pack);
+    } catch (err) { setError(err.message || "No se pudo crear el ingrediente."); }
+    finally { setBusy(""); }
+  };
+
+  const setDishCategory = async (issue, categoryId) => {
+    if (!categoryId) return;
+    setBusy(`dish-${issue.key}`); setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/dish-category`, {
+        method: "POST",
+        body: JSON.stringify({ dishIndex: issue.dishIndex, categoryId })
+      });
+      updatePack(data.pack);
+    } catch (err) { setError(err.message || "No se pudo asignar categoria."); }
+    finally { setBusy(""); }
+  };
+
+  const publish = async () => {
+    setBusy("publish"); setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/publish`, { method: "POST" });
+      updatePack(data.pack);
+    } catch (err) { setError(err.message || "No se pudo publicar."); }
+    finally { setBusy(""); }
+  };
+
+  const metricStyle = { padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff" };
+  const labelStyle = { fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.04em" };
+  const valueStyle = { fontSize: 20, color: "#111827", fontWeight: 800, marginTop: 3 };
+
+  return (
+    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 18, marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
+        <div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+            <h3 style={{ margin: 0, fontSize: 17 }}>Revision editorial: {pack.title}</h3>
+            <PackStatusBadge status={pack.status} />
+          </div>
+          <p style={{ margin: 0, fontSize: 12, color: "#64748b" }}>{pack.slug}</p>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <button type="button" style={ABT.edit} onClick={revalidate} disabled={Boolean(busy)}>{busy === "revalidate" ? "Validando..." : "Revalidar"}</button>
+          <button type="button" style={{ ...ABT.green, opacity: canPublish ? 1 : 0.45 }} onClick={publish} disabled={!canPublish || Boolean(busy)}>
+            {pack.status === "published" ? "Publicado" : busy === "publish" ? "Publicando..." : "Publicar"}
+          </button>
+          <button type="button" style={ABT.cancel} onClick={onClose}>Cerrar</button>
+        </div>
+      </div>
+
+      <div style={{ height: 8, borderRadius: 999, background: "#e5e7eb", overflow: "hidden", marginBottom: 12 }}>
+        <div style={{ height: "100%", width: `${summary.totalIngredients ? Math.round((Number(summary.normalizedIngredients || 0) / Number(summary.totalIngredients || 1)) * 100) : 0}%`, background: unresolved ? "#f59e0b" : "#16a34a" }} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginBottom: 14 }}>
+        <div style={metricStyle}><div style={labelStyle}>Normalizados</div><div style={valueStyle}>{summary.normalizedIngredients || 0}/{summary.totalIngredients || 0}</div></div>
+        <div style={metricStyle}><div style={labelStyle}>Mapeos pendientes</div><div style={valueStyle}>{summary.missingIngredientMappings || 0}</div></div>
+        <div style={metricStyle}><div style={labelStyle}>Ambiguos</div><div style={valueStyle}>{summary.ambiguousMatches || 0}</div></div>
+        <div style={metricStyle}><div style={labelStyle}>Categorias ing.</div><div style={valueStyle}>{summary.missingIngredientCategories || 0}</div></div>
+        <div style={metricStyle}><div style={labelStyle}>Categorias plato</div><div style={valueStyle}>{summary.missingDishCategories || 0}</div></div>
+      </div>
+
+      {error ? <div className="kitchen-alert error" style={{ marginBottom: 12 }}>{error}</div> : null}
+      {unresolved === 0 ? <div className="kitchen-alert success" style={{ marginBottom: 12 }}>Validacion limpia. El pack puede publicarse.</div> : null}
+
+      {ingredientIssues.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Ingredientes por resolver</h4>
+          <div style={{ overflowX: "auto" }}>
+            <table className="kitchen-table">
+              <thead><tr><th>Original</th><th>Sugerencias</th><th>Crear nuevo master</th></tr></thead>
+              <tbody>
+                {ingredientIssues.map((issue) => {
+                  const createForm = creating[issue.normalizedName] || { name: issue.originalName || issue.normalizedName, categoryId: "" };
+                  return (
+                    <tr key={issue.key}>
+                      <td>
+                        <div style={{ fontWeight: 700, fontSize: 13 }}>{issue.originalName || issue.normalizedName}</div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>{issue.normalizedName}</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8" }}>{issue.message}</div>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {(issue.suggestedMatches || []).length ? issue.suggestedMatches.map((match) => (
+                            <button key={match.id} type="button" style={ABT.edit} disabled={Boolean(busy)} onClick={() => mapIngredient(issue, match.id)}>
+                              {match.name}
+                            </button>
+                          )) : <span style={{ fontSize: 12, color: "#94a3b8" }}>Sin sugerencias seguras</span>}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: "grid", gridTemplateColumns: "minmax(140px, 1fr) minmax(130px, 1fr) auto", gap: 6 }}>
+                          <input style={FS} value={createForm.name || ""} onChange={(e) => setCreating((prev) => ({ ...prev, [issue.normalizedName]: { ...createForm, name: e.target.value } }))} />
+                          <select style={FS} value={createForm.categoryId || ""} onChange={(e) => setCreating((prev) => ({ ...prev, [issue.normalizedName]: { ...createForm, categoryId: e.target.value } }))}>
+                            <option value="">Categoria</option>
+                            {ingredientCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                          </select>
+                          <button type="button" style={{ ...ABT.save, padding: "5px 10px", opacity: createForm.categoryId ? 1 : 0.5 }} disabled={!createForm.categoryId || Boolean(busy)} onClick={() => createIngredient(issue)}>
+                            Crear
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {dishIssues.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Categorias de plato pendientes</h4>
+          <div style={{ display: "grid", gap: 8 }}>
+            {dishIssues.map((issue) => (
+              <div key={issue.key} style={{ display: "grid", gridTemplateColumns: "1fr minmax(180px, 260px)", gap: 10, alignItems: "center", padding: 10, border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff" }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{issue.dishName}</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>Plato #{Number(issue.dishIndex) + 1}</div>
+                </div>
+                <select className="kitchen-select" defaultValue="" disabled={Boolean(busy)} onChange={(e) => setDishCategory(issue, e.target.value)}>
+                  <option value="">Asignar categoria</option>
+                  {dishCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {duplicateIssues.length > 0 && (
+        <div>
+          <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Avisos de nombres inconsistentes</h4>
+          {duplicateIssues.map((issue) => (
+            <div key={issue.key} style={{ padding: 10, border: "1px solid #fde68a", borderRadius: 8, background: "#fffbeb", fontSize: 12, color: "#92400e", marginBottom: 6 }}>
+              {issue.normalizedName}: {(issue.names || []).join(", ")}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GrantModal({ pack, households, onGrant, onClose }) {
   const [householdId, setHouseholdId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -1640,6 +1882,7 @@ function CatalogPacksSection() {
   const [togglingId, setTogglingId] = useState(null);
   const [grantModal, setGrantModal] = useState(null);
   const [households, setHouseholds] = useState([]);
+  const [reviewPack, setReviewPack] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -1724,6 +1967,11 @@ function CatalogPacksSection() {
     });
   };
 
+  const replacePack = (nextPack) => {
+    setPacks((prev) => prev.map((pack) => String(pack.id) === String(nextPack.id) ? nextPack : pack));
+    setReviewPack(nextPack);
+  };
+
   return (
     <Card className="kitchen-block-gap">
       <div style={{ marginBottom: 16 }}>
@@ -1747,6 +1995,14 @@ function CatalogPacksSection() {
         <span style={{ fontSize: 12, color: "#94a3b8", marginLeft: 4 }}>{packs.length} packs en total</span>
       </div>
 
+      {reviewPack && (
+        <PackReviewPanel
+          pack={reviewPack}
+          onClose={() => setReviewPack(null)}
+          onPackUpdated={replacePack}
+        />
+      )}
+
       {editItem !== null && (
         <PackForm
           item={editItem}
@@ -1769,6 +2025,7 @@ function CatalogPacksSection() {
                 <th style={{ textAlign: "center" }}>Precio</th>
                 <th style={{ textAlign: "center" }}>Planes</th>
                 <th style={{ textAlign: "center" }}>Estado</th>
+                <th style={{ textAlign: "center" }}>Revision</th>
                 <th style={{ textAlign: "center" }}>Concedido</th>
                 <th>Acciones</th>
               </tr>
@@ -1811,6 +2068,16 @@ function CatalogPacksSection() {
                         ? <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>● Activo</span>
                         : <span style={{ fontSize: 11, color: "#94a3b8" }}>○ Inactivo</span>}
                     </td>
+                    <td style={{ textAlign: "center" }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                        <PackStatusBadge status={pack.status} />
+                        {pack.validationSummary?.unresolvedIssues > 0 ? (
+                          <span style={{ fontSize: 11, color: "#c2410c", fontWeight: 700 }}>{pack.validationSummary.unresolvedIssues} pendientes</span>
+                        ) : (
+                          <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>validado</span>
+                        )}
+                      </div>
+                    </td>
                     <td style={{ textAlign: "center", fontSize: 12, color: "#6b7280" }}>
                       {pack.ownedByCount > 0
                         ? <span style={{ fontWeight: 600, color: "#374151" }}>{pack.ownedByCount} hogares</span>
@@ -1842,6 +2109,13 @@ function CatalogPacksSection() {
                           onClick={() => handleSetFree(pack)}
                         >
                           {isFree ? "Poner precio" : "Poner gratis"}
+                        </button>
+                        <button
+                          type="button"
+                          style={{ ...ABT.edit, color: "#4338ca", borderColor: "#c7d2fe" }}
+                          onClick={() => setReviewPack(pack)}
+                        >
+                          Revisar
                         </button>
                         <button
                           type="button"
