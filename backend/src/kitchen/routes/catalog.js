@@ -4,9 +4,13 @@ import { requireAuth, requireDiod } from "../middleware.js";
 import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { Household } from "../models/Household.js";
 import { KitchenDish } from "../models/KitchenDish.js";
+import { KitchenIngredient } from "../models/KitchenIngredient.js";
+import { Category } from "../models/Category.js";
+import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { CatalogPack } from "../models/CatalogPack.js";
 import { HouseholdCatalogPack } from "../models/HouseholdCatalogPack.js";
 import { normalizeSubscriptionPlan } from "../subscriptionService.js";
+import { normalizeIngredientName } from "../utils/normalize.js";
 import {
   getCatalogMonthlyCredits,
   getCurrentClaimMonth,
@@ -16,6 +20,59 @@ import {
 } from "../catalogService.js";
 
 const router = express.Router();
+
+// ─── Master ingredient helpers for pack editor ───────────────────────────────
+
+router.get("/master/ingredient-categories", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const categories = await Category.find({ scope: "master", active: { $ne: false } })
+      .select("_id name slug")
+      .sort({ name: 1 })
+      .lean();
+    return res.json({ ok: true, categories: categories.map((c) => ({ id: c._id, name: c.name, slug: c.slug })) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error." });
+  }
+});
+
+router.get("/master/ingredients", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const q = String(req.query.q || "").trim();
+    if (!q) return res.json({ ok: true, ingredients: [] });
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escaped, "i");
+    const ingredients = await KitchenIngredient.find({
+      scope: "master",
+      active: { $ne: false },
+      $or: [{ name: regex }, { canonicalName: regex }]
+    }).select("_id name canonicalName").sort({ name: 1 }).limit(15).lean();
+    return res.json({ ok: true, ingredients: ingredients.map((i) => ({ id: i._id, name: i.name, canonicalName: i.canonicalName })) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al buscar ingredientes." });
+  }
+});
+
+router.post("/master/ingredients", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const name = String(req.body?.name || "").trim();
+    const categoryId = req.body?.categoryId;
+    if (!name) return res.status(400).json({ ok: false, error: "El nombre es obligatorio." });
+    if (!categoryId || !mongoose.isValidObjectId(categoryId)) {
+      return res.status(400).json({ ok: false, error: "categoryId válido es obligatorio." });
+    }
+    const canonicalName = normalizeIngredientName(name);
+    const existing = await KitchenIngredient.findOne({ scope: "master", canonicalName }).lean();
+    if (existing) {
+      return res.json({ ok: true, created: false, ingredient: { id: existing._id, name: existing.name, canonicalName: existing.canonicalName } });
+    }
+    const ing = await KitchenIngredient.create({ scope: "master", name, canonicalName, categoryId, active: true });
+    return res.status(201).json({ ok: true, created: true, ingredient: { id: ing._id, name: ing.name, canonicalName: ing.canonicalName } });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al crear ingrediente." });
+  }
+});
+
+// ─── Admin pack management ────────────────────────────────────────────────────
 
 router.get("/packs/admin-all", requireAuth, requireDiod, async (req, res) => {
   try {
@@ -44,6 +101,11 @@ router.get("/packs/admin-all", requireAuth, requireDiod, async (req, res) => {
         sortOrder: p.sortOrder,
         releaseDate: p.releaseDate,
         freeUntil: p.freeUntil,
+        activeFrom: p.activeFrom,
+        activeUntil: p.activeUntil,
+        color: p.color,
+        defaultSpecial: p.defaultSpecial,
+        defaultAllowRandom: p.defaultAllowRandom,
         ownedByCount: counts[i],
         createdAt: p.createdAt
       }))
@@ -72,7 +134,14 @@ router.get("/packs", requireAuth, async (req, res) => {
     const household = await Household.findById(householdId).select("subscriptionPlan").lean();
     const subscriptionPlan = normalizeSubscriptionPlan(household?.subscriptionPlan);
 
-    const filter = { active: true };
+    const now = new Date();
+    const filter = {
+      active: true,
+      $and: [
+        { $or: [{ activeFrom: null }, { activeFrom: { $exists: false } }, { activeFrom: { $lte: now } }] },
+        { $or: [{ activeUntil: null }, { activeUntil: { $exists: false } }, { activeUntil: { $gte: now } }] }
+      ]
+    };
     const packs = await CatalogPack.find(filter)
       .sort({ sortOrder: 1, createdAt: -1 })
       .lean();
@@ -106,6 +175,7 @@ router.get("/packs", requireAuth, async (req, res) => {
         priceBasic: pack.priceBasic,
         includedPlans: pack.includedPlans,
         dishCount: Array.isArray(pack.dishes) ? pack.dishes.length : 0,
+        color: pack.color,
         releaseDate: pack.releaseDate,
         freeUntil: pack.freeUntil,
         entitlement: {
@@ -312,6 +382,7 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
         isDinner: Boolean(template.isDinner),
         special: Boolean(template.special),
         allowRandom: template.allowRandom !== false,
+        dishCategoryId: template.dishCategoryId || null,
         ingredients: Array.isArray(template.ingredients) ? template.ingredients : [],
         active: true,
         createdBy: userId,
@@ -319,11 +390,12 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
         sourcePackId: pack._id,
         sourcePackSlug: pack.slug,
         sourcePackTitle: pack.title,
+        sourcePackColor: pack.color || null,
         importedAt: now,
         importedBy: userId,
         recipe: {
           ingredients: Array.isArray(template.recipe?.ingredients) ? template.recipe.ingredients : [],
-          steps: template.recipe?.steps || null,
+          steps: template.recipe?.steps ?? null,
           servings: template.recipe?.servings || null
         }
       };
@@ -391,7 +463,8 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
   try {
     const {
       slug, title, subtitle, description, coverImage, tags, cuisineType,
-      active, featured, priceBasic, includedPlans, monthlyCreditCost, dishes, releaseDate, freeUntil, sortOrder
+      active, featured, priceBasic, includedPlans, monthlyCreditCost, dishes,
+      releaseDate, freeUntil, activeFrom, activeUntil, color, defaultSpecial, defaultAllowRandom, sortOrder
     } = req.body;
 
     if (!slug || !title) {
@@ -404,6 +477,11 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
       priceBasic, includedPlans, monthlyCreditCost, dishes: dishes || [],
       releaseDate: releaseDate ? new Date(releaseDate) : null,
       freeUntil: freeUntil ? new Date(freeUntil) : null,
+      activeFrom: activeFrom ? new Date(activeFrom) : null,
+      activeUntil: activeUntil ? new Date(activeUntil) : null,
+      color: color || null,
+      defaultSpecial: Boolean(defaultSpecial),
+      defaultAllowRandom: defaultAllowRandom !== false,
       sortOrder: sortOrder ?? 0
     });
 
@@ -425,7 +503,8 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
     const allowedFields = [
       "title", "subtitle", "description", "coverImage", "tags", "cuisineType",
       "active", "featured", "priceBasic", "includedPlans", "monthlyCreditCost",
-      "dishes", "releaseDate", "freeUntil", "sortOrder"
+      "dishes", "releaseDate", "freeUntil", "activeFrom", "activeUntil",
+      "color", "defaultSpecial", "defaultAllowRandom", "sortOrder"
     ];
 
     const update = {};

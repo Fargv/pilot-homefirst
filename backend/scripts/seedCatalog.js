@@ -64,7 +64,6 @@ async function upsertPack(data) {
     title: data.title,
     subtitle: data.subtitle || "",
     description: data.description || "",
-    coverImage: data.coverImage || null,
     tags: Array.isArray(data.tags) ? data.tags : [],
     cuisineType: data.cuisineType || "",
     active: data.active !== false,
@@ -73,9 +72,16 @@ async function upsertPack(data) {
     includedPlans: Array.isArray(data.includedPlans) ? data.includedPlans : ["pro", "premium"],
     monthlyCreditCost: typeof data.monthlyCreditCost === "number" ? data.monthlyCreditCost : 1,
     dishes: Array.isArray(data.dishes) ? data.dishes : [],
-    releaseDate: data.releaseDate ? new Date(data.releaseDate) : null,
     sortOrder: typeof data.sortOrder === "number" ? data.sortOrder : 0
   };
+
+  // Only overwrite these optional fields if explicitly present in JSON
+  if (data.coverImage !== undefined) update.coverImage = data.coverImage || null;
+  if (data.releaseDate !== undefined) update.releaseDate = data.releaseDate ? new Date(data.releaseDate) : null;
+  if (data.freeUntil !== undefined) update.freeUntil = data.freeUntil ? new Date(data.freeUntil) : null;
+  if (data.activeFrom !== undefined) update.activeFrom = data.activeFrom ? new Date(data.activeFrom) : null;
+  if (data.activeUntil !== undefined) update.activeUntil = data.activeUntil ? new Date(data.activeUntil) : null;
+  if (data.color !== undefined) update.color = data.color || null;
 
   const result = await CatalogPack.findOneAndUpdate(
     { slug: data.slug },

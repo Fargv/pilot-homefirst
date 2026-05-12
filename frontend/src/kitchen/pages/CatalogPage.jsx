@@ -59,8 +59,15 @@ function StarIcon() {
   );
 }
 
+function daysUntilMonthReset() {
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+}
+
 function CatalogCreditsPanel({ plan, credits }) {
   const planLabel = { basic: "Basic", pro: "Pro", premium: "Premium" }[plan] || plan;
+  const daysLeft = daysUntilMonthReset();
 
   if (!credits || credits.total === 0) {
     return (
@@ -90,6 +97,16 @@ function CatalogCreditsPanel({ plan, credits }) {
           />
         ))}
       </span>
+      {credits.remaining < credits.total && (
+        <span className="catalog-credits-reset">
+          Se recarga en {daysLeft} {daysLeft === 1 ? "día" : "días"}
+        </span>
+      )}
+      {credits.remaining === credits.total && (
+        <span className="catalog-credits-reset">
+          Recarga en {daysLeft} {daysLeft === 1 ? "día" : "días"}
+        </span>
+      )}
     </div>
   );
 }

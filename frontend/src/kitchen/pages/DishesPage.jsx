@@ -1044,10 +1044,12 @@ export default function DishesPage() {
               const randomEnabled = dish.allowRandom !== false;
               const toggleDisabled = dishTogglePendingId === dish._id;
               const isCatalogDish = dish.source === "catalog";
+              const packColor = isCatalogDish && dish.sourcePackColor ? dish.sourcePackColor : null;
               return (
                 <article
                   className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""} ${isCatalogDish ? "is-catalog" : ""}`}
                   key={dish._id}
+                  style={packColor ? { borderLeftColor: packColor, background: `linear-gradient(100deg, ${packColor}14 0%, #fff 60%)` } : undefined}
                 >
                   <div className="kitchen-dish-main">
                     <div className="kitchen-dish-title-row">

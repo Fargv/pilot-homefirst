@@ -36,6 +36,7 @@ const KitchenDishSchema = new mongoose.Schema(
     sourcePackTitle: { type: String, default: null },
     importedAt: { type: Date, default: null },
     importedBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },
+    sourcePackColor: { type: String, default: null },
     recipe: {
       ingredients: {
         type: [{

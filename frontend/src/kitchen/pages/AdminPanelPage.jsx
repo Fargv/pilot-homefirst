@@ -1108,11 +1108,126 @@ const INCLUDED_PLANS_OPTIONS = ["basic", "pro", "premium"];
 
 const FS = { width: "100%", boxSizing: "border-box", padding: "5px 8px", fontSize: 12, borderRadius: 4, border: "1px solid #d1d5db" };
 
-function DishTemplateEditor({ dishes, onChange }) {
+function IngredientSearchInput({ value, onChange }) {
+  const [query, setQuery] = useState(value?.displayName || "");
+  const [results, setResults] = useState([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [ingCategories, setIngCategories] = useState([]);
+  const [newCategoryId, setNewCategoryId] = useState("");
+  const [creating, setCreating] = useState(false);
+  const timerRef = useRef(null);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    apiRequest("/api/kitchen/catalog/master/ingredient-categories")
+      .then((d) => setIngCategories(d.categories || []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const onDown = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) { setResults([]); setShowCreate(false); } };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  const search = (q) => {
+    setQuery(q);
+    clearTimeout(timerRef.current);
+    if (!q.trim()) { setResults([]); return; }
+    timerRef.current = setTimeout(async () => {
+      try {
+        const data = await apiRequest(`/api/kitchen/catalog/master/ingredients?q=${encodeURIComponent(q)}`);
+        setResults(data.ingredients || []);
+      } catch { setResults([]); }
+    }, 280);
+  };
+
+  const select = (ing) => {
+    onChange({ displayName: ing.name, canonicalName: ing.canonicalName, ingredientId: ing.id });
+    setQuery(ing.name);
+    setResults([]);
+    setShowCreate(false);
+  };
+
+  const createNew = async () => {
+    if (!query.trim() || !newCategoryId) return;
+    setCreating(true);
+    try {
+      const data = await apiRequest("/api/kitchen/catalog/master/ingredients", { method: "POST", body: JSON.stringify({ name: query.trim(), categoryId: newCategoryId }) });
+      select(data.ingredient);
+      setNewCategoryId("");
+    } catch (e) { alert(e.message || "Error al crear."); }
+    finally { setCreating(false); setShowCreate(false); }
+  };
+
+  const isSelected = Boolean(value?.canonicalName);
+
+  return (
+    <div ref={containerRef} style={{ position: "relative" }}>
+      <input
+        style={{ ...FS, borderColor: isSelected ? "#6366f1" : "#d1d5db", background: isSelected ? "#f5f3ff" : "#fff" }}
+        placeholder="Buscar ingrediente master..."
+        value={query}
+        onChange={(e) => { search(e.target.value); if (isSelected) onChange({ displayName: e.target.value, canonicalName: "" }); }}
+      />
+      {isSelected && <span style={{ fontSize: 10, color: "#6366f1", display: "block", marginTop: 1 }}>{value.canonicalName}</span>}
+      {results.length > 0 && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, zIndex: 20, maxHeight: 160, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+          {results.map((ing) => (
+            <div key={String(ing.id)} onMouseDown={() => select(ing)}
+              style={{ padding: "6px 10px", cursor: "pointer", fontSize: 12, borderBottom: "1px solid #f3f4f6" }}>
+              <strong>{ing.name}</strong> <span style={{ color: "#9ca3af", fontSize: 11 }}>{ing.canonicalName}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {query.trim() && results.length === 0 && !isSelected && !showCreate && (
+        <button type="button" onMouseDown={() => setShowCreate(true)}
+          style={{ fontSize: 11, marginTop: 3, padding: "2px 8px", background: "#fef3c7", border: "1px solid #fbbf24", color: "#92400e", borderRadius: 4, cursor: "pointer", display: "block" }}>
+          No encontrado — Crear &quot;{query}&quot;
+        </button>
+      )}
+      {showCreate && (
+        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, padding: 8, marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>Crear en master: <em>{query}</em></div>
+          <select style={{ ...FS, marginBottom: 4 }} value={newCategoryId} onChange={(e) => setNewCategoryId(e.target.value)}>
+            <option value="">— Categoría de ingrediente —</option>
+            {ingCategories.map((c) => <option key={String(c.id)} value={String(c.id)}>{c.name}</option>)}
+          </select>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button type="button" disabled={creating || !newCategoryId} onMouseDown={createNew}
+              style={{ fontSize: 11, padding: "3px 10px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", opacity: !newCategoryId ? 0.5 : 1 }}>
+              {creating ? "Creando..." : "Crear"}
+            </button>
+            <button type="button" onMouseDown={() => setShowCreate(false)}
+              style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer" }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DishTemplateEditor({ dishes, onChange, defaults = {} }) {
   const [expanded, setExpanded] = useState(null);
+  const [dishCategories, setDishCategories] = useState([]);
+
+  useEffect(() => {
+    apiRequest("/api/kitchen/dish-categories")
+      .then((d) => setDishCategories(d.categories || []))
+      .catch(() => {});
+  }, []);
 
   const addDish = () => {
-    const next = [...dishes, { name: "", sidedish: false, isDinner: false, special: false, allowRandom: true, ingredients: [], recipe: { ingredients: [], steps: "", servings: "" } }];
+    const next = [...dishes, {
+      name: "", sidedish: false, isDinner: false,
+      special: Boolean(defaults.defaultSpecial),
+      allowRandom: defaults.defaultAllowRandom !== false,
+      dishCategoryId: null, ingredients: [],
+      recipe: { ingredients: [], steps: null, servings: null }
+    }];
     onChange(next);
     setExpanded(next.length - 1);
   };
@@ -1126,11 +1241,7 @@ function DishTemplateEditor({ dishes, onChange }) {
 
   const addIng = (i) => updateDish(i, { ingredients: [...dishes[i].ingredients, { displayName: "", canonicalName: "" }] });
   const removeIng = (i, j) => updateDish(i, { ingredients: dishes[i].ingredients.filter((_, idx) => idx !== j) });
-  const updateIng = (i, j, key, val) => updateDish(i, { ingredients: dishes[i].ingredients.map((x, idx) => idx === j ? { ...x, [key]: val } : x) });
-
-  const addRecIng = (i) => updateDish(i, { recipe: { ...dishes[i].recipe, ingredients: [...(dishes[i].recipe?.ingredients || []), { name: "", quantity: "" }] } });
-  const removeRecIng = (i, j) => updateDish(i, { recipe: { ...dishes[i].recipe, ingredients: dishes[i].recipe.ingredients.filter((_, idx) => idx !== j) } });
-  const updateRecIng = (i, j, key, val) => updateDish(i, { recipe: { ...dishes[i].recipe, ingredients: (dishes[i].recipe?.ingredients || []).map((x, idx) => idx === j ? { ...x, [key]: val } : x) } });
+  const setIng = (i, j, newIng) => updateDish(i, { ingredients: dishes[i].ingredients.map((x, idx) => idx === j ? newIng : x) });
 
   return (
     <div style={{ marginTop: 18 }}>
@@ -1145,7 +1256,7 @@ function DishTemplateEditor({ dishes, onChange }) {
       </div>
       {dishes.length === 0 && (
         <div style={{ padding: "10px 0", color: "#9ca3af", fontSize: 12, textAlign: "center" }}>
-          Sin platos — pulsa "+ Añadir plato" para empezar
+          Sin platos — pulsa &quot;+ Añadir plato&quot; para empezar
         </div>
       )}
       {dishes.map((dish, i) => (
@@ -1156,17 +1267,26 @@ function DishTemplateEditor({ dishes, onChange }) {
               {dish.name || <em style={{ color: "#9ca3af" }}>Plato sin nombre</em>}
             </span>
             <span style={{ fontSize: 11, color: "#9ca3af" }}>
-              {dish.ingredients.length} ing. · {dish.recipe?.ingredients?.length || 0} rec.
+              {(dish.ingredients || []).length} ing.
             </span>
             <button type="button" onClick={(e) => { e.stopPropagation(); removeDish(i); }}
               style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700, fontSize: 16, padding: "0 4px" }}>×</button>
           </div>
           {expanded === i && (
             <div style={{ padding: "0 12px 12px", borderTop: "1px solid #e0e7ff" }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500, marginTop: 10, marginBottom: 8 }}>
-                Nombre del plato *
-                <input style={FS} value={dish.name} onChange={(e) => updateDish(i, { name: e.target.value })} placeholder="Tacos de pollo" />
-              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10, marginBottom: 8 }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500 }}>
+                  Nombre del plato *
+                  <input style={FS} value={dish.name} onChange={(e) => updateDish(i, { name: e.target.value })} placeholder="Tacos de pollo" />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500 }}>
+                  Categoría de plato
+                  <select style={FS} value={dish.dishCategoryId || ""} onChange={(e) => updateDish(i, { dishCategoryId: e.target.value || null })}>
+                    <option value="">— Sin categoría —</option>
+                    {dishCategories.map((c) => <option key={String(c._id || c.id)} value={String(c._id || c.id)}>{c.name}</option>)}
+                  </select>
+                </label>
+              </div>
               <div style={{ display: "flex", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
                 {[["sidedish", "Acompañamiento"], ["isDinner", "Cena"], ["special", "Especial"], ["allowRandom", "Aleatorio"]].map(([key, label]) => (
                   <label key={key} style={{ display: "flex", gap: 4, alignItems: "center", fontSize: 12, cursor: "pointer" }}>
@@ -1179,46 +1299,29 @@ function DishTemplateEditor({ dishes, onChange }) {
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
                   Ingredientes — lista de la compra
                 </div>
-                {dish.ingredients.map((ing, j) => (
-                  <div key={j} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 4, marginBottom: 4 }}>
-                    <input style={FS} placeholder="Nombre a mostrar" value={ing.displayName} onChange={(e) => updateIng(i, j, "displayName", e.target.value)} />
-                    <input style={FS} placeholder="Nombre canónico" value={ing.canonicalName} onChange={(e) => updateIng(i, j, "canonicalName", e.target.value)} />
-                    <button type="button" onClick={() => removeIng(i, j)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700 }}>×</button>
+                {(dish.ingredients || []).map((ing, j) => (
+                  <div key={j} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 4, marginBottom: 4 }}>
+                    <IngredientSearchInput value={ing} onChange={(newIng) => setIng(i, j, newIng)} />
+                    <button type="button" onClick={() => removeIng(i, j)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700, alignSelf: "start", paddingTop: 6 }}>×</button>
                   </div>
                 ))}
                 <button type="button" onClick={() => addIng(i)}
-                  style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #6366f1", color: "#6366f1", borderRadius: 4, cursor: "pointer", marginTop: 2 }}>
+                  style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #6366f1", color: "#6366f1", borderRadius: 4, cursor: "pointer", marginTop: 4 }}>
                   + Ingrediente
                 </button>
               </div>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>Receta</div>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, marginBottom: 6 }}>
-                  Raciones:
-                  <input style={{ ...FS, width: 60 }} type="number" min="1" max="20" placeholder="4"
-                    value={dish.recipe?.servings ?? ""} onChange={(e) => updateDish(i, { recipe: { ...dish.recipe, servings: e.target.value ? parseInt(e.target.value, 10) : null } })} />
-                </label>
-                <div style={{ marginBottom: 6 }}>
-                  <div style={{ fontSize: 11, color: "#64748b", marginBottom: 3 }}>Ingredientes con cantidades</div>
-                  {(dish.recipe?.ingredients || []).map((ri, j) => (
-                    <div key={j} style={{ display: "grid", gridTemplateColumns: "1fr 90px auto", gap: 4, marginBottom: 4 }}>
-                      <input style={FS} placeholder="Ingrediente" value={ri.name} onChange={(e) => updateRecIng(i, j, "name", e.target.value)} />
-                      <input style={FS} placeholder="Cantidad" value={ri.quantity} onChange={(e) => updateRecIng(i, j, "quantity", e.target.value)} />
-                      <button type="button" onClick={() => removeRecIng(i, j)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700 }}>×</button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => addRecIng(i)}
-                    style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #6366f1", color: "#6366f1", borderRadius: 4, cursor: "pointer" }}>
-                    + Ingrediente de receta
-                  </button>
-                </div>
-                <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500 }}>
-                  Pasos (uno por línea)
-                  <textarea style={{ ...FS, minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
-                    placeholder={"Pica la cebolla finamente.\nSofríe a fuego medio 5 min.\nAñade el pollo y cocina 10 min."}
-                    value={typeof dish.recipe?.steps === "string" ? dish.recipe.steps : (Array.isArray(dish.recipe?.steps) ? dish.recipe.steps.join("\n") : "")}
-                    onChange={(e) => updateDish(i, { recipe: { ...dish.recipe, steps: e.target.value } })} />
-                </label>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>Receta</div>
+                <RecipeEditor
+                  recipeIngredients={dish.recipe?.ingredients || []}
+                  recipeSteps={dish.recipe?.steps ?? null}
+                  recipeServings={dish.recipe?.servings ?? null}
+                  onChange={(updater) => {
+                    const prev = dish.recipe || { ingredients: [], steps: null, servings: null };
+                    const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
+                    updateDish(i, { recipe: next });
+                  }}
+                />
               </div>
             </div>
           )}
@@ -1233,17 +1336,20 @@ function PackForm({ item, onSave, onCancel }) {
 
   const freeUntilDefault = item.freeUntil ? new Date(item.freeUntil).toISOString().split("T")[0] : "";
 
+  const toDateStr = (v) => (v ? new Date(v).toISOString().split("T")[0] : "");
+
   const normDishes = (raw) => (raw || []).map((d) => ({
     name: d.name || "",
     sidedish: Boolean(d.sidedish),
     isDinner: Boolean(d.isDinner),
     special: Boolean(d.special),
     allowRandom: d.allowRandom !== false,
+    dishCategoryId: d.dishCategoryId ? String(d.dishCategoryId) : null,
     ingredients: Array.isArray(d.ingredients) ? d.ingredients : [],
     recipe: {
       ingredients: Array.isArray(d.recipe?.ingredients) ? d.recipe.ingredients : [],
-      steps: Array.isArray(d.recipe?.steps) ? d.recipe.steps.join("\n") : (d.recipe?.steps || ""),
-      servings: d.recipe?.servings ?? ""
+      steps: d.recipe?.steps ?? null,
+      servings: d.recipe?.servings ?? null
     }
   }));
 
@@ -1261,7 +1367,12 @@ function PackForm({ item, onSave, onCancel }) {
     includedPlans: item.includedPlans || ["pro", "premium"],
     monthlyCreditCost: item.monthlyCreditCost != null ? String(item.monthlyCreditCost) : "1",
     sortOrder: item.sortOrder != null ? String(item.sortOrder) : "0",
-    freeUntil: freeUntilDefault
+    freeUntil: freeUntilDefault,
+    activeFrom: toDateStr(item.activeFrom),
+    activeUntil: toDateStr(item.activeUntil),
+    color: item.color || "#6366f1",
+    defaultSpecial: Boolean(item.defaultSpecial),
+    defaultAllowRandom: item.defaultAllowRandom !== false
   });
   const [dishes, setDishes] = useState(() => normDishes(item.dishes));
   const [saving, setSaving] = useState(false);
@@ -1285,12 +1396,11 @@ function PackForm({ item, onSave, onCancel }) {
     isDinner: d.isDinner,
     special: d.special,
     allowRandom: d.allowRandom,
-    ingredients: d.ingredients.filter((x) => x.displayName.trim() || x.canonicalName.trim()),
+    dishCategoryId: d.dishCategoryId || null,
+    ingredients: (d.ingredients || []).filter((x) => x.displayName?.trim() || x.canonicalName?.trim()),
     recipe: {
-      ingredients: (d.recipe?.ingredients || []).filter((x) => x.name.trim()),
-      steps: typeof d.recipe?.steps === "string"
-        ? d.recipe.steps.split("\n").map((s) => s.trim()).filter(Boolean)
-        : [],
+      ingredients: (d.recipe?.ingredients || []).filter((x) => x.name?.trim()),
+      steps: d.recipe?.steps ?? null,
       servings: d.recipe?.servings ? parseInt(d.recipe.servings, 10) : null
     }
   })).filter((d) => d.name);
@@ -1308,6 +1418,11 @@ function PackForm({ item, onSave, onCancel }) {
         sortOrder: parseInt(form.sortOrder, 10) || 0,
         coverImage: form.coverImage.trim() || null,
         freeUntil: form.freeUntil || null,
+        activeFrom: form.activeFrom || null,
+        activeUntil: form.activeUntil || null,
+        color: form.color || null,
+        defaultSpecial: form.defaultSpecial,
+        defaultAllowRandom: form.defaultAllowRandom,
         dishes: serializeDishes()
       });
     } catch (err) { setError(err.message || "Error al guardar."); }
@@ -1369,13 +1484,47 @@ function PackForm({ item, onSave, onCancel }) {
           <input style={fieldStyle} value={form.coverImage} onChange={set("coverImage")} placeholder="https://..." />
         </label>
 
-        <label style={{ ...labelStyle, marginBottom: 12 }}>
-          Gratis hasta (fecha)
-          <input style={fieldStyle} type="date" value={form.freeUntil} onChange={set("freeUntil")} />
-          <span style={{ fontSize: 11, color: "#64748b" }}>Deja vacío para precio normal. Si se pone fecha, el pack es gratis hasta ese día y los usuarios ven la cuenta atrás.</span>
-        </label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+          <label style={labelStyle}>
+            Gratis hasta (fecha)
+            <input style={fieldStyle} type="date" value={form.freeUntil} onChange={set("freeUntil")} />
+          </label>
+          <label style={labelStyle}>
+            Activo desde
+            <input style={fieldStyle} type="date" value={form.activeFrom} onChange={set("activeFrom")} />
+          </label>
+          <label style={labelStyle}>
+            Activo hasta
+            <input style={fieldStyle} type="date" value={form.activeUntil} onChange={set("activeUntil")} />
+          </label>
+        </div>
+        <p style={{ fontSize: 11, color: "#64748b", margin: "-8px 0 14px" }}>
+          Activo desde/hasta: programa cuándo aparece en el catálogo (ej. pack navideño del 1-dic al 6-ene). Vacío = siempre activo.
+        </p>
 
-        <DishTemplateEditor dishes={dishes} onChange={setDishes} />
+        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr 1fr", gap: 12, alignItems: "start", marginBottom: 14 }}>
+          <label style={labelStyle}>
+            Color del pack
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input type="color" value={form.color || "#6366f1"} onChange={set("color")} style={{ width: 36, height: 32, padding: 2, border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer" }} />
+              <span style={{ fontSize: 12, color: "#64748b" }}>{form.color || "#6366f1"}</span>
+            </div>
+          </label>
+          <label style={{ ...labelStyle, justifyContent: "flex-end", paddingBottom: 6 }}>
+            <span style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+              <input type="checkbox" checked={Boolean(form.defaultSpecial)} onChange={set("defaultSpecial")} />
+              Especiales por defecto (no entran en randomización)
+            </span>
+          </label>
+          <label style={{ ...labelStyle, justifyContent: "flex-end", paddingBottom: 6 }}>
+            <span style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+              <input type="checkbox" checked={Boolean(form.defaultAllowRandom)} onChange={set("defaultAllowRandom")} />
+              Aleatorios por defecto
+            </span>
+          </label>
+        </div>
+
+        <DishTemplateEditor dishes={dishes} onChange={setDishes} defaults={{ defaultSpecial: form.defaultSpecial, defaultAllowRandom: form.defaultAllowRandom }} />
 
         <div style={{ marginBottom: 14, marginTop: 18 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Planes incluidos</div>

@@ -23,6 +23,7 @@ const DishTemplateSchema = new mongoose.Schema(
     isDinner: { type: Boolean, default: false },
     special: { type: Boolean, default: false },
     allowRandom: { type: Boolean, default: true },
+    dishCategoryId: { type: mongoose.Schema.Types.ObjectId, default: null },
     ingredients: { type: [DishIngredientTemplateSchema], default: [] },
     recipe: {
       ingredients: { type: [RecipeIngredientTemplateSchema], default: [] },
@@ -50,6 +51,11 @@ const CatalogPackSchema = new mongoose.Schema(
     dishes: { type: [DishTemplateSchema], default: [] },
     releaseDate: { type: Date, default: null },
     freeUntil: { type: Date, default: null },
+    activeFrom: { type: Date, default: null },
+    activeUntil: { type: Date, default: null },
+    color: { type: String, default: null },
+    defaultSpecial: { type: Boolean, default: false },
+    defaultAllowRandom: { type: Boolean, default: true },
     sortOrder: { type: Number, default: 0 }
   },
   { timestamps: true }
