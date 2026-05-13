@@ -8551,6 +8551,9 @@ body {
   gap: 6px;
   margin-top: 4px;
 }
+.catalog-pack-actions-row.single {
+  grid-template-columns: 1fr;
+}
 .catalog-pack-actions-row .catalog-pack-action {
   margin-top: 0;
 }

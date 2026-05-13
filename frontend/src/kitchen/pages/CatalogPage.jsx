@@ -293,6 +293,7 @@ function PackCard({ pack, onAction, onBuyBites }) {
   };
 
   const bitesCost = entitlement.bitesCost ?? 1;
+  const hasBitesPrice = Number(bitesCost || 0) > 0;
   const canShowDirect = Number(entitlement.priceBasic || 0) > 0;
   const priceLine = getPackPriceLine(entitlement);
 
@@ -360,7 +361,7 @@ function PackCard({ pack, onAction, onBuyBites }) {
           if (entitlement.installed) {
             return (
               <button type="button" className="kitchen-btn catalog-pack-action" disabled>
-                Instalado
+                Ya instalado
               </button>
             );
           }
@@ -372,7 +373,7 @@ function PackCard({ pack, onAction, onBuyBites }) {
                 onClick={() => handleAction("install")}
                 disabled={loading}
               >
-                {loading ? "Procesando..." : "Instalar"}
+                {loading ? "Procesando..." : entitlement.isFree ? "Instalar gratis" : "Instalar"}
               </button>
             );
           }
@@ -389,7 +390,7 @@ function PackCard({ pack, onAction, onBuyBites }) {
             );
           }
           return (
-            <div className="catalog-pack-actions-row">
+            <div className={`catalog-pack-actions-row ${!hasBitesPrice || !canShowDirect ? "single" : ""}`}>
               {canShowDirect && (
                 <button
                   type="button"
@@ -400,14 +401,16 @@ function PackCard({ pack, onAction, onBuyBites }) {
                   {loading ? "..." : `Pagar ${formatPrice(entitlement.priceBasic)}`}
                 </button>
               )}
-              <button
-                type="button"
-                className="kitchen-btn catalog-pack-action bites"
-                onClick={() => onBuyBites(pack)}
-                disabled={loading}
-              >
-                <BitesIcon size={14} color="#fff" decorative /> Comprar Bites
-              </button>
+              {hasBitesPrice ? (
+                <button
+                  type="button"
+                  className="kitchen-btn catalog-pack-action bites"
+                  onClick={() => onBuyBites(pack)}
+                  disabled={loading}
+                >
+                  <BitesIcon size={14} color="#fff" decorative /> Comprar Bites
+                </button>
+              ) : null}
             </div>
           );
         })()}
