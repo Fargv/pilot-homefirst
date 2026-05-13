@@ -8544,6 +8544,26 @@ body {
   margin: 0;
 }
 
+/* ─── Pack actions: two-button row ──────────────────────────── */
+.catalog-pack-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 4px;
+}
+.catalog-pack-actions-row .catalog-pack-action {
+  margin-top: 0;
+}
+.catalog-pack-action-direct {
+  background: #f8fafc;
+  color: #374151;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+}
+.catalog-pack-action-direct:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
 /* ─── Pack action button: bites style ───────────────────────── */
 .catalog-pack-action.bites {
   background: #eef2ff;

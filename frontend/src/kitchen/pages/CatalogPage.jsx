@@ -294,7 +294,7 @@ function PackCard({ pack, onAction, onBuyBites }) {
 
   const bitesCost = entitlement.bitesCost ?? 1;
   const hasBitesPrice = Number(bitesCost || 0) > 0;
-  const canShowDirect = Boolean(entitlement.canPayDirect) && Number(entitlement.priceBasic || 0) > 0;
+  const canShowDirect = Number(entitlement.priceBasic || 0) > 0;
   const needsBitesPurchase = Boolean(entitlement.needsBitesPurchase);
   const priceLine = getPackPriceLine(entitlement);
 
@@ -384,34 +384,32 @@ function PackCard({ pack, onAction, onBuyBites }) {
           )}
         </div>
 
-        <button
-          type="button"
-          className={`kitchen-btn catalog-pack-action ${actionStyle} ${actionDisabled ? "disabled" : ""}`}
-          onClick={() => primaryPaymentMethod === "buy-bites" ? onBuyBites(pack) : handleAction(primaryPaymentMethod)}
-          disabled={actionDisabled || loading}
-        >
-          {loading ? "Procesando..." : actionLabel}
-        </button>
-        {canShowDirect && entitlement.canUnlockWithBites ? (
-          <button
-            type="button"
-            className="kitchen-btn catalog-pack-action secondary"
-            onClick={() => handleAction("direct")}
-            disabled={loading}
-          >
-            Pagar {formatPrice(entitlement.priceBasic)}
-          </button>
-        ) : null}
-        {canShowDirect && needsBitesPurchase ? (
-          <button
-            type="button"
-            className="kitchen-btn catalog-pack-action secondary"
-            onClick={() => handleAction("direct")}
-            disabled={loading}
-          >
-            Pagar {formatPrice(entitlement.priceBasic)}
-          </button>
-        ) : null}
+        {(() => {
+          const showSecondary = canShowDirect && !entitlement.installed && !entitlement.owned && !entitlement.isFree && !entitlement.includedInPlan;
+          const twoButtons = showSecondary && (entitlement.canUnlockWithBites || needsBitesPurchase || entitlement.requiresPurchase);
+          return (
+            <div className={twoButtons ? "catalog-pack-actions-row" : undefined}>
+              <button
+                type="button"
+                className={`kitchen-btn catalog-pack-action ${actionStyle} ${actionDisabled ? "disabled" : ""}`}
+                onClick={() => primaryPaymentMethod === "buy-bites" ? onBuyBites(pack) : handleAction(primaryPaymentMethod)}
+                disabled={actionDisabled || loading}
+              >
+                {loading ? "Procesando..." : actionLabel}
+              </button>
+              {twoButtons && (
+                <button
+                  type="button"
+                  className="kitchen-btn catalog-pack-action catalog-pack-action-direct"
+                  onClick={() => handleAction("direct")}
+                  disabled={loading}
+                >
+                  Pagar {formatPrice(entitlement.priceBasic)}
+                </button>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
