@@ -1701,13 +1701,77 @@ function PackStatusBadge({ status }) {
   );
 }
 
+function IngredientSearchSelector({ onSelect, disabled }) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const debounceRef = useRef(null);
+
+  const search = (value) => {
+    setQ(value);
+    clearTimeout(debounceRef.current);
+    if (value.trim().length < 2) { setResults([]); setOpen(false); return; }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = await apiRequest(`/api/kitchen/catalog/master/ingredients?q=${encodeURIComponent(value.trim())}`);
+        setResults(data.ingredients || []);
+        setOpen(true);
+      } catch { setResults([]); }
+      finally { setLoading(false); }
+    }, 300);
+  };
+
+  const pick = (ing) => {
+    setQ("");
+    setResults([]);
+    setOpen(false);
+    onSelect(ing);
+  };
+
+  return (
+    <div style={{ position: "relative", minWidth: 160 }}>
+      <input
+        style={{ ...FS, paddingRight: loading ? 24 : 8 }}
+        placeholder="Buscar en BD..."
+        value={q}
+        onChange={(e) => search(e.target.value)}
+        onBlur={() => setTimeout(() => setOpen(false), 160)}
+        disabled={disabled}
+      />
+      {loading && <span style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: "#94a3b8" }}>...</span>}
+      {open && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, zIndex: 20, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+          {results.length === 0
+            ? <div style={{ padding: "8px 10px", fontSize: 12, color: "#94a3b8" }}>Sin resultados</div>
+            : results.map((ing) => (
+              <button
+                key={ing.id}
+                type="button"
+                style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 10px", fontSize: 12, background: "none", border: "none", borderBottom: "1px solid #f3f4f6", cursor: "pointer" }}
+                onMouseDown={() => pick(ing)}
+              >
+                {ing.name} <span style={{ color: "#94a3b8", fontSize: 11 }}>{ing.canonicalName}</span>
+              </button>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PackReviewPanel({ pack, onClose, onPackUpdated }) {
   const [ingredientCategories, setIngredientCategories] = useState([]);
   const [dishCategories, setDishCategories] = useState([]);
   const [creating, setCreating] = useState({});
-  const [busy, setBusy] = useState("");
+  const [busyKeys, setBusyKeys] = useState({});
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  const setRowBusy = (key, val) => setBusyKeys((prev) => ({ ...prev, [key]: Boolean(val) }));
+  const isRowBusy = (key) => Boolean(busyKeys[key]);
+  const anyBusy = Object.values(busyKeys).some(Boolean);
 
   useEffect(() => {
     apiRequest("/api/kitchen/catalog/master/ingredient-categories")
@@ -1739,16 +1803,17 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
   };
 
   const revalidate = async () => {
-    setBusy("revalidate"); setError(""); setNotice("");
+    setRowBusy("revalidate", true); setError(""); setNotice("");
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/revalidate`, { method: "POST" });
       updatePack(data.pack);
     } catch (err) { setError(err.message || "No se pudo validar."); }
-    finally { setBusy(""); }
+    finally { setRowBusy("revalidate", false); }
   };
 
   const mapIngredient = async (issue, ingredientId) => {
-    setBusy(`map-${issue.key}`); setError(""); setNotice("");
+    const busyKey = `map-${issue.key}`;
+    setRowBusy(busyKey, true); setError(""); setNotice("");
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/ingredient`, {
         method: "POST",
@@ -1757,7 +1822,7 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
       updatePack(data.pack);
       setNotice(`Vinculado a ${data.ingredient?.name || "ingrediente master"}.`);
     } catch (err) { setError(err.message || "No se pudo mapear el ingrediente."); }
-    finally { setBusy(""); }
+    finally { setRowBusy(busyKey, false); }
   };
 
   const createIngredient = async (issue) => {
@@ -1766,7 +1831,8 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
       setError("Nombre y categoria son obligatorios para crear ingrediente master.");
       return;
     }
-    setBusy(`create-${issue.key}`); setError(""); setNotice("");
+    const busyKey = `create-${issue.key}`;
+    setRowBusy(busyKey, true); setError(""); setNotice("");
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/ingredient`, {
         method: "POST",
@@ -1780,12 +1846,13 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
         ? `Ya existia "${data.ingredient?.name}". Se ha vinculado sin crear duplicados.`
         : `Ingrediente creado y vinculado a ${data.ingredient?.name || form.name.trim()}.`);
     } catch (err) { setError(err.message || "No se pudo crear el ingrediente."); }
-    finally { setBusy(""); }
+    finally { setRowBusy(busyKey, false); }
   };
 
   const setDishCategory = async (issue, categoryId) => {
     if (!categoryId) return;
-    setBusy(`dish-${issue.key}`); setError(""); setNotice("");
+    const busyKey = `dish-${issue.key}`;
+    setRowBusy(busyKey, true); setError(""); setNotice("");
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/dish-category`, {
         method: "POST",
@@ -1794,16 +1861,16 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
       updatePack(data.pack);
       setNotice("Categoria de plato asignada.");
     } catch (err) { setError(err.message || "No se pudo asignar categoria."); }
-    finally { setBusy(""); }
+    finally { setRowBusy(busyKey, false); }
   };
 
   const publish = async () => {
-    setBusy("publish"); setError(""); setNotice("");
+    setRowBusy("publish", true); setError(""); setNotice("");
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/publish`, { method: "POST" });
       updatePack(data.pack);
     } catch (err) { setError(err.message || "No se pudo publicar."); }
-    finally { setBusy(""); }
+    finally { setRowBusy("publish", false); }
   };
 
   const metricStyle = { padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff" };
@@ -1821,9 +1888,9 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
           <p style={{ margin: 0, fontSize: 12, color: "#64748b" }}>{pack.slug}</p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <button type="button" style={ABT.edit} onClick={revalidate} disabled={Boolean(busy)}>{busy === "revalidate" ? "Validando..." : "Revalidar"}</button>
-          <button type="button" style={{ ...ABT.green, opacity: canPublish ? 1 : 0.45 }} onClick={publish} disabled={!canPublish || Boolean(busy)}>
-            {pack.status === "published" ? "Publicado" : busy === "publish" ? "Publicando..." : "Publicar"}
+          <button type="button" style={ABT.edit} onClick={revalidate} disabled={anyBusy}>{isRowBusy("revalidate") ? "Validando..." : "Revalidar"}</button>
+          <button type="button" style={{ ...ABT.green, opacity: canPublish ? 1 : 0.45 }} onClick={publish} disabled={!canPublish || anyBusy}>
+            {pack.status === "published" ? "Publicado" : isRowBusy("publish") ? "Publicando..." : "Publicar"}
           </button>
           <button type="button" style={ABT.cancel} onClick={onClose}>Cerrar</button>
         </div>
@@ -1850,9 +1917,12 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
           <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Ingredientes por resolver</h4>
           <div style={{ overflowX: "auto" }}>
             <table className="kitchen-table">
-              <thead><tr><th>Original</th><th>Sugerencias</th><th>Crear nuevo master</th></tr></thead>
+              <thead><tr><th>Original</th><th>Asignar existente</th><th>Crear nuevo master</th></tr></thead>
               <tbody>
                 {ingredientIssues.map((issue) => {
+                  const rowKey = `map-${issue.key}`;
+                  const createKey = `create-${issue.key}`;
+                  const rowBusy = isRowBusy(rowKey) || isRowBusy(createKey);
                   const createForm = creating[issue.normalizedName] || { name: issue.originalName || issue.normalizedName, categoryId: "" };
                   return (
                     <tr key={issue.key}>
@@ -1862,13 +1932,20 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
                         <div style={{ fontSize: 11, color: "#94a3b8" }}>{issue.message}</div>
                       </td>
                       <td>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          {(issue.suggestedMatches || []).length ? issue.suggestedMatches.map((match) => (
-                            <button key={match.id} type="button" style={ABT.edit} disabled={Boolean(busy)} onClick={() => mapIngredient(issue, match.id)}>
-                              {match.name}
-                            </button>
-                          )) : <span style={{ fontSize: 12, color: "#94a3b8" }}>Sin sugerencias seguras</span>}
-                        </div>
+                        {(issue.suggestedMatches || []).length > 0 && (
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+                            {issue.suggestedMatches.map((match) => (
+                              <button key={match.id} type="button" style={ABT.edit} disabled={rowBusy} onClick={() => mapIngredient(issue, match.id)}>
+                                {match.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <IngredientSearchSelector
+                          disabled={rowBusy}
+                          onSelect={(ing) => mapIngredient(issue, ing.id)}
+                        />
+                        {rowBusy && isRowBusy(rowKey) && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3 }}>Vinculando...</div>}
                       </td>
                       <td>
                         <div style={{ display: "grid", gridTemplateColumns: "minmax(140px, 1fr) minmax(130px, 1fr) auto", gap: 6 }}>
@@ -1877,8 +1954,8 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
                             <option value="">Categoria</option>
                             {ingredientCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                           </select>
-                          <button type="button" style={{ ...ABT.save, padding: "5px 10px", opacity: createForm.categoryId ? 1 : 0.5 }} disabled={!createForm.categoryId || Boolean(busy)} onClick={() => createIngredient(issue)}>
-                            Crear
+                          <button type="button" style={{ ...ABT.save, padding: "5px 10px", opacity: createForm.categoryId && !rowBusy ? 1 : 0.5 }} disabled={!createForm.categoryId || rowBusy} onClick={() => createIngredient(issue)}>
+                            {isRowBusy(createKey) ? "..." : "Crear"}
                           </button>
                         </div>
                       </td>
@@ -1895,18 +1972,21 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
         <div style={{ marginBottom: 18 }}>
           <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Categorias de plato pendientes</h4>
           <div style={{ display: "grid", gap: 8 }}>
-            {dishIssues.map((issue) => (
-              <div key={issue.key} style={{ display: "grid", gridTemplateColumns: "1fr minmax(180px, 260px)", gap: 10, alignItems: "center", padding: 10, border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff" }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 13 }}>{issue.dishName}</div>
-                  <div style={{ fontSize: 11, color: "#64748b" }}>Plato #{Number(issue.dishIndex) + 1}</div>
+            {dishIssues.map((issue) => {
+              const dishBusy = isRowBusy(`dish-${issue.key}`);
+              return (
+                <div key={issue.key} style={{ display: "grid", gridTemplateColumns: "1fr minmax(180px, 260px)", gap: 10, alignItems: "center", padding: 10, border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff" }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{issue.dishName}</div>
+                    <div style={{ fontSize: 11, color: "#64748b" }}>Plato #{Number(issue.dishIndex) + 1}</div>
+                  </div>
+                  <select className="kitchen-select" defaultValue="" disabled={dishBusy} onChange={(e) => setDishCategory(issue, e.target.value)}>
+                    <option value="">{dishBusy ? "Guardando..." : "Asignar categoria"}</option>
+                    {dishCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                  </select>
                 </div>
-                <select className="kitchen-select" defaultValue="" disabled={Boolean(busy)} onChange={(e) => setDishCategory(issue, e.target.value)}>
-                  <option value="">Asignar categoria</option>
-                  {dishCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                </select>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

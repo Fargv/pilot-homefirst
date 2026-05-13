@@ -37,7 +37,11 @@
       "WebFetch(domain:pilot-homefirst-backend-dev.onrender.com)",
       "Bash(xargs grep -l \"catalog\\\\|Catalog\\\\|pack\\\\|Pack\")",
       "Bash(xargs grep -l \"CatalogPack\\\\|catalog\")",
-      "Bash(xargs grep -l \"pack\\\\|Pack\")"
+      "Bash(xargs grep -l \"pack\\\\|Pack\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Recurse -Directory -Depth 2)",
+      "Bash(xargs ls -1)",
+      "Bash(npx --prefix frontend vite build --outDir ../dist-check)",
+      "Bash(npx vite *)"
     ]
   }
 }
