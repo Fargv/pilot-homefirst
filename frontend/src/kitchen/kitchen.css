@@ -1068,6 +1068,17 @@ body {
   z-index: 40;
 }
 
+.kitchen-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 60;
+}
+
 .kitchen-modal {
   width: min(640px, 100%);
   max-height: min(90vh, 780px);
@@ -8439,6 +8450,15 @@ body {
   gap: 12px;
   margin-bottom: 16px;
 }
+.catalog-bites-store-empty {
+  grid-column: 1 / -1;
+  padding: 18px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  color: #64748b;
+  text-align: center;
+  font-size: 13px;
+}
 .catalog-bites-bundle {
   border: 1.5px solid #e2e8f0;
   border-radius: 10px;
@@ -8767,6 +8787,11 @@ body {
   border-radius: 5px;
   padding: 2px 7px;
 }
+.catalog-pack-price-line {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 700;
+}
 .catalog-pack-tags {
   display: flex;
   flex-wrap: wrap;
@@ -8803,6 +8828,15 @@ body {
 }
 .catalog-pack-action.purchase:hover:not(:disabled) {
   background: #ffedd5;
+}
+.catalog-pack-action.secondary {
+  margin-top: 6px;
+  background: #fff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+.catalog-pack-action.secondary:hover:not(:disabled) {
+  background: #f8fafc;
 }
 .catalog-pack-action.disabled {
   background: #f1f5f9;
@@ -8901,6 +8935,18 @@ body {
 .catalog-badge-price {
   background: #fff7ed;
   color: #c2410c;
+}
+
+@media (max-width: 640px) {
+  .kitchen-modal-overlay {
+    align-items: flex-end;
+    padding: 12px;
+  }
+  .catalog-bites-store-modal {
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 18px 18px 12px 12px;
+  }
 }
 
 /* Purchase placeholder modal */

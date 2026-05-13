@@ -406,14 +406,19 @@ router.get("/packs", requireAuth, async (req, res) => {
     const days = daysUntilNextGrant();
 
     const packsWithEntitlement = packs.map((pack) => {
-      const bitesCost = pack.monthlyCreditCost ?? 1;
+      const bitesCost = Number(pack.monthlyCreditCost ?? 0);
+      const euroPrice = Number(pack.priceBasic ?? 0);
+      const hasBitesPrice = Number.isFinite(bitesCost) && bitesCost > 0;
+      const hasDirectPrice = Number.isFinite(euroPrice) && euroPrice > 0;
       const ownership = ownedMap[String(pack._id)] || null;
       const owned = Boolean(ownership);
       const installed = ownership?.status === "installed";
       const isFree = isPackCurrentlyFree(pack);
       const includedInPlan = Array.isArray(pack.includedPlans) && pack.includedPlans.includes(subscriptionPlan);
       const canClaimWithPlan = includedInPlan && creditsRemaining > 0 && !owned;
-      const canUnlockWithBites = !owned && !isFree && !includedInPlan && wallet.totalBites >= bitesCost;
+      const canUnlockWithBites = !owned && !isFree && !includedInPlan && hasBitesPrice && wallet.totalBites >= bitesCost;
+      const needsBitesPurchase = !owned && !isFree && !includedInPlan && hasBitesPrice && wallet.totalBites < bitesCost;
+      const canPayDirect = !owned && !isFree && !includedInPlan && hasDirectPrice;
       const requiresPurchase = !isFree && !owned && !canClaimWithPlan && !canUnlockWithBites;
 
       return {
@@ -444,6 +449,8 @@ router.get("/packs", requireAuth, async (req, res) => {
           includedInPlan,
           canClaimWithPlan,
           canUnlockWithBites,
+          needsBitesPurchase,
+          canPayDirect,
           requiresPurchase,
           priceBasic: pack.priceBasic,
           bitesCost
@@ -579,6 +586,10 @@ router.post("/packs/:packId/claim", requireAuth, async (req, res) => {
 router.post("/packs/:packId/unlock", requireAuth, async (req, res) => {
   try {
     const householdId = getEffectiveHouseholdId(req.user);
+    const paymentMethod = String(req.body?.paymentMethod || "bites").trim().toLowerCase();
+    if (!["bites", "direct"].includes(paymentMethod)) {
+      return res.status(400).json({ ok: false, code: "INVALID_PAYMENT_METHOD", error: "paymentMethod debe ser 'bites' o 'direct'." });
+    }
 
     if (!mongoose.isValidObjectId(req.params.packId)) {
       return res.status(404).json({ ok: false, error: "Pack no encontrado." });
@@ -592,8 +603,21 @@ router.post("/packs/:packId/unlock", requireAuth, async (req, res) => {
       return res.json({ ok: true, alreadyOwned: true, message: "Este pack ya está en tu biblioteca." });
     }
 
-    const bitesCost = pack.monthlyCreditCost ?? 1;
-    if (bitesCost <= 0) {
+    if (paymentMethod === "direct") {
+      const euroPrice = Number(pack.priceBasic ?? 0);
+      if (!Number.isFinite(euroPrice) || euroPrice <= 0) {
+        return res.status(400).json({ ok: false, code: "DIRECT_PAYMENT_NOT_AVAILABLE", error: "Este pack no tiene precio en euros configurado." });
+      }
+      return res.status(402).json({
+        ok: false,
+        code: "PAYMENT_NOT_CONNECTED",
+        payment_not_connected: true,
+        error: "La pasarela de pago todavía no está conectada."
+      });
+    }
+
+    const bitesCost = Number(pack.monthlyCreditCost ?? 0);
+    if (!Number.isFinite(bitesCost) || bitesCost <= 0) {
       return res.status(400).json({ ok: false, error: "Este pack no requiere Bites para desbloquearse." });
     }
 
