@@ -8397,6 +8397,9 @@ body {
 .catalog-bites-wallet-detail {
   font-size: 11px;
   color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .catalog-bites-wallet-detail.empty {
   color: #94a3b8;
@@ -8409,6 +8412,10 @@ body {
   white-space: nowrap;
 }
 .catalog-bites-buy-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   font-size: 12px;
   font-weight: 600;
   padding: 6px 14px;
@@ -8514,6 +8521,10 @@ body {
 }
 .catalog-bites-bundle-btn {
   width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   font-size: 13px;
   padding: 7px 0;
   border-radius: 7px;
@@ -8791,6 +8802,9 @@ body {
   font-size: 11px;
   color: #64748b;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .catalog-pack-tags {
   display: flex;
@@ -8808,6 +8822,10 @@ body {
 .catalog-pack-action {
   margin-top: 4px;
   width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   font-size: 13px;
   padding: 9px 12px;
   border-radius: 10px;

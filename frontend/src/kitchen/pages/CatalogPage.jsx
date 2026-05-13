@@ -4,6 +4,7 @@ import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth.jsx";
 import { canUseDietRandomization } from "../subscription.js";
 import { resolvePackCoverImageUrl } from "../utils/packImages.js";
+import BitesIcon from "../components/BitesIcon.jsx";
 
 const TABS = [
   { id: "all", label: "Todos" },
@@ -74,15 +75,6 @@ function StarIcon() {
   );
 }
 
-function BitesIcon({ size = 16 }) {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" style={{ width: size, height: size, display: "inline-block", verticalAlign: "middle", flexShrink: 0 }}>
-      <circle cx="10" cy="10" r="9" fill="#6366f1" opacity="0.15" />
-      <text x="10" y="14" textAnchor="middle" fontSize="10" fontWeight="700" fill="#6366f1" fontFamily="system-ui">B</text>
-    </svg>
-  );
-}
-
 // ─── Bites Wallet Panel ───────────────────────────────────────────────────────
 
 function CatalogBitesWallet({ wallet, plan, bitesConfig, onBuyBites }) {
@@ -103,17 +95,17 @@ function CatalogBitesWallet({ wallet, plan, bitesConfig, onBuyBites }) {
         <div className="catalog-bites-wallet-breakdown">
           {freeBitesBalance > 0 && (
             <span className="catalog-bites-wallet-detail">
-              {freeBitesBalance} incluidos en tu plan
+              <BitesIcon size={14} decorative /> {freeBitesBalance} incluidos en tu plan
             </span>
           )}
           {purchasedBitesBalance > 0 && (
             <span className="catalog-bites-wallet-detail">
-              {purchasedBitesBalance} comprados
+              <BitesIcon size={14} decorative /> {purchasedBitesBalance} comprados
             </span>
           )}
           {freeBitesBalance === 0 && purchasedBitesBalance === 0 && (
             <span className="catalog-bites-wallet-detail empty">
-              Sin Bites disponibles
+              <BitesIcon size={14} decorative /> Sin Bites disponibles
             </span>
           )}
         </div>
@@ -130,7 +122,7 @@ function CatalogBitesWallet({ wallet, plan, bitesConfig, onBuyBites }) {
         className="kitchen-btn catalog-bites-buy-cta"
         onClick={onBuyBites}
       >
-        Comprar Bites
+        <BitesIcon size={15} decorative /> Comprar Bites
       </button>
     </div>
   );
@@ -203,7 +195,7 @@ function InsufficientBitesModal({ pack, onClose, onBuyBites, onPayDirect }) {
         <div className="catalog-purchase-modal-icon"><PackIcon /></div>
         <h2 className="catalog-purchase-modal-title">No tienes Bites suficientes</h2>
         <p className="catalog-purchase-modal-text">
-          Este pack cuesta <strong>{bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</strong>.
+          Este pack cuesta <strong><BitesIcon size={15} decorative /> {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</strong>.
           Consigue más Bites para desbloquearlo.
         </p>
         {pack?.title && (
@@ -211,7 +203,7 @@ function InsufficientBitesModal({ pack, onClose, onBuyBites, onPayDirect }) {
         )}
         <div className="catalog-purchase-modal-actions">
           <button type="button" className="kitchen-btn primary" onClick={onBuyBites}>
-            Comprar Bites
+            <BitesIcon size={15} decorative /> Comprar Bites
           </button>
           {canPayDirect ? (
             <button type="button" className="kitchen-btn" onClick={() => onPayDirect(pack)}>
@@ -249,7 +241,7 @@ function EntitlementBadge({ entitlement }) {
     const priceLine = getPackPriceLine(entitlement);
     return (
       <span className="catalog-badge catalog-badge-bites">
-        {cost > 0 ? <BitesIcon size={11} /> : null} {priceLine || formatPrice(entitlement.priceBasic)}
+        {cost > 0 ? <BitesIcon size={12} decorative /> : null} {priceLine || formatPrice(entitlement.priceBasic)}
       </span>
     );
   }
@@ -270,6 +262,19 @@ function getPackPriceLine(entitlement = {}) {
   if (hasBites) return `${bitesCost} ${bitesCost === 1 ? "Bite" : "Bites"}`;
   if (hasDirect) return formatPrice(directPrice);
   return "";
+}
+
+function PackPriceLine({ entitlement }) {
+  const bitesCost = Number(entitlement?.bitesCost || 0);
+  const directPrice = Number(entitlement?.priceBasic || 0);
+  const hasBites = bitesCost > 0 && (entitlement?.canUnlockWithBites || entitlement?.needsBitesPurchase || !entitlement?.canPayDirect);
+  const hasDirect = directPrice > 0 && entitlement?.canPayDirect;
+  if (hasBites && hasDirect) {
+    return <><BitesIcon size={13} decorative /> {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"} · o {formatPrice(directPrice)}</>;
+  }
+  if (hasBites) return <><BitesIcon size={13} decorative /> {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>;
+  if (hasDirect) return <>{formatPrice(directPrice)}</>;
+  return null;
 }
 
 // ─── Pack card ────────────────────────────────────────────────────────────────
@@ -295,6 +300,7 @@ function PackCard({ pack, onAction, onBuyBites }) {
   };
 
   const bitesCost = entitlement.bitesCost ?? 1;
+  const hasBitesPrice = Number(bitesCost || 0) > 0;
   const canShowDirect = Boolean(entitlement.canPayDirect) && Number(entitlement.priceBasic || 0) > 0;
   const needsBitesPurchase = Boolean(entitlement.needsBitesPurchase);
   const priceLine = getPackPriceLine(entitlement);
@@ -304,7 +310,7 @@ function PackCard({ pack, onAction, onBuyBites }) {
     if (entitlement.owned) return "Instalar";
     if (entitlement.isFree) return "Instalar gratis";
     if (entitlement.canClaimWithPlan) return "Instalar (incluido en tu plan)";
-    if (entitlement.canUnlockWithBites) return `Desbloquear con ${bitesCost} ${bitesCost === 1 ? "Bite" : "Bites"}`;
+    if (entitlement.canUnlockWithBites) return <>Desbloquear con <BitesIcon size={15} decorative /> {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>;
     if (needsBitesPurchase) return "Comprar Bites";
     if (canShowDirect) return `Pagar ${formatPrice(entitlement.priceBasic)}`;
     if (entitlement.requiresPurchase) return "Comprar Bites";
@@ -319,8 +325,9 @@ function PackCard({ pack, onAction, onBuyBites }) {
       : "primary";
   const primaryPaymentMethod = (() => {
     if (entitlement.canUnlockWithBites) return "bites";
-    if (needsBitesPurchase || entitlement.requiresPurchase) return "buy-bites";
+    if (needsBitesPurchase) return "buy-bites";
     if (canShowDirect) return "direct";
+    if (entitlement.requiresPurchase && hasBitesPrice) return "buy-bites";
     return undefined;
   })();
 
@@ -374,7 +381,7 @@ function PackCard({ pack, onAction, onBuyBites }) {
 
         <div className="catalog-pack-meta">
           <span className="catalog-pack-dish-count">{pack.dishCount} platos</span>
-          {priceLine ? <span className="catalog-pack-price-line">{priceLine}</span> : null}
+          {priceLine ? <span className="catalog-pack-price-line"><PackPriceLine entitlement={entitlement} /></span> : null}
           {pack.tags && pack.tags.length > 0 && (
             <div className="catalog-pack-tags">
               {pack.tags.slice(0, 3).map((tag) => (

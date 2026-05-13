@@ -8,6 +8,7 @@ import Input from "../components/ui/Input.jsx";
 import RecipeEditor from "../components/RecipeEditor.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { resolvePackCoverImageUrl } from "../utils/packImages.js";
+import BitesIcon from "../components/BitesIcon.jsx";
 
 // ── Shared admin-light button styles ─────────────────────────────────────────
 const ABT = {  // admin button themes
@@ -2640,13 +2641,17 @@ function BitesEconomySection() {
 
   return (
     <Card style={{ maxWidth: 900 }}>
-      <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700 }}>Bites Economy</h2>
+      <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+        <BitesIcon size={22} decorative /> Bites Economy
+      </h2>
 
       {error && <div style={{ color: "#b91c1c", background: "#fef2f2", padding: "8px 12px", borderRadius: 6, marginBottom: 16, fontSize: 13 }}>{error}</div>}
 
       {/* ── Plan config ── */}
       <section style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#374151" }}>Bites mensuales por plan</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#374151", display: "flex", alignItems: "center", gap: 6 }}>
+          <BitesIcon size={16} decorative /> Bites mensuales por plan
+        </h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 12 }}>
           {[
             { key: "basic", label: "Basic", maxKey: "maxBasic" },
@@ -2655,7 +2660,7 @@ function BitesEconomySection() {
           ].map(({ key, label, maxKey }) => (
             <div key={key} style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>{label}</div>
-              <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 4 }}>Bites/mes</label>
+              <label style={{ fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><BitesIcon size={13} decorative /> Bites/mes</label>
               <input
                 type="number"
                 min="0"
@@ -2684,7 +2689,9 @@ function BitesEconomySection() {
       {/* ── Bundles ── */}
       <section style={{ marginBottom: 32 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", margin: 0 }}>Bundles de Bites</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+            <BitesIcon size={16} decorative /> Bundles de Bites
+          </h3>
           <button
             type="button"
             style={ABT.save}
@@ -2703,7 +2710,7 @@ function BitesEconomySection() {
                   value={bundleForm.name} onChange={(e) => setBundleForm((f) => ({ ...f, name: e.target.value }))} />
               </div>
               <div>
-                <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Bites</label>
+                <label style={{ fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}><BitesIcon size={13} decorative /> Bites</label>
                 <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
                   value={bundleForm.bitesAmount} onChange={(e) => setBundleForm((f) => ({ ...f, bitesAmount: Number(e.target.value) }))} />
               </div>
@@ -2745,18 +2752,22 @@ function BitesEconomySection() {
         <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
-              {["Nombre", "Bites", "Precio", "€/Bite", "Badge", "Activo", ""].map((h) => (
-                <th key={h} style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>{h}</th>
-              ))}
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Nombre</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}><BitesIcon size={13} decorative /> Bites</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Precio</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>€/Bite</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Badge</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Activo</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }} />
             </tr>
           </thead>
           <tbody>
             {bundles.map((b) => (
               <tr key={String(b._id)} style={{ borderBottom: "1px solid #f1f5f9" }}>
                 <td style={{ padding: "6px 8px", fontWeight: b.highlighted ? 700 : 400 }}>{b.name}</td>
-                <td style={{ padding: "6px 8px" }}>{b.bitesAmount}</td>
+                <td style={{ padding: "6px 8px" }}><BitesIcon size={14} decorative /> {b.bitesAmount}</td>
                 <td style={{ padding: "6px 8px" }}>{Number(b.price).toFixed(2)} €</td>
-                <td style={{ padding: "6px 8px", color: "#6b7280" }}>{(b.price / b.bitesAmount).toFixed(2)} €</td>
+                <td style={{ padding: "6px 8px", color: "#6b7280" }}>{Number(b.bitesAmount) > 0 ? (b.price / b.bitesAmount).toFixed(2) : "—"} €</td>
                 <td style={{ padding: "6px 8px" }}>{b.badge || "—"}</td>
                 <td style={{ padding: "6px 8px" }}>
                   <span style={{ color: b.active ? "#16a34a" : "#9ca3af", fontWeight: 600 }}>{b.active ? "Sí" : "No"}</span>
@@ -2778,7 +2789,9 @@ function BitesEconomySection() {
 
       {/* ── Manual grant ── */}
       <section style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 12 }}>Conceder / quitar Bites manualmente</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          <BitesIcon size={16} decorative /> Conceder / quitar Bites manualmente
+        </h3>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 2fr", gap: 10, marginBottom: 10 }}>
           <div>
             <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Hogar</label>
@@ -2823,12 +2836,16 @@ function BitesEconomySection() {
 
       {/* ── Recent transactions ── */}
       <section>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 12 }}>Últimas transacciones</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          <BitesIcon size={16} decorative /> Últimas transacciones
+        </h3>
         <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
               {["Fecha", "Hogar", "Tipo", "Amount", "Libre tras", "Comprado tras", "Razón"].map((h) => (
-                <th key={h} style={{ padding: "5px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 11 }}>{h}</th>
+                <th key={h} style={{ padding: "5px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 11 }}>
+                  {["Amount", "Libre tras", "Comprado tras"].includes(h) ? <BitesIcon size={12} decorative /> : null} {h}
+                </th>
               ))}
             </tr>
           </thead>
@@ -2851,10 +2868,10 @@ function BitesEconomySection() {
                   </span>
                 </td>
                 <td style={{ padding: "5px 8px", fontWeight: 600, color: tx.amount > 0 ? "#16a34a" : "#b91c1c" }}>
-                  {tx.amount > 0 ? "+" : ""}{tx.amount}
+                  {tx.amount > 0 ? "+" : ""}<BitesIcon size={13} decorative /> {tx.amount}
                 </td>
-                <td style={{ padding: "5px 8px" }}>{tx.balanceAfterFree}</td>
-                <td style={{ padding: "5px 8px" }}>{tx.balanceAfterPurchased}</td>
+                <td style={{ padding: "5px 8px" }}><BitesIcon size={13} decorative /> {tx.balanceAfterFree}</td>
+                <td style={{ padding: "5px 8px" }}><BitesIcon size={13} decorative /> {tx.balanceAfterPurchased}</td>
                 <td style={{ padding: "5px 8px", color: "#6b7280", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {tx.reason || "—"}
                 </td>
