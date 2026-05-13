@@ -83,33 +83,25 @@ function CatalogBitesWallet({ wallet, plan, bitesConfig, onBuyBites }) {
   const { freeBitesBalance = 0, purchasedBitesBalance = 0, totalBites = 0, daysUntilNextGrant = null } = wallet;
   const monthlyGrant = bitesConfig?.monthlyGrant ?? 0;
 
+  const breakdownParts = [];
+  if (freeBitesBalance > 0) breakdownParts.push(`${freeBitesBalance} incluidos en tu plan`);
+  if (purchasedBitesBalance > 0) breakdownParts.push(`${purchasedBitesBalance} comprados`);
+
   return (
-    <div className="kitchen-card catalog-bites-wallet">
-      <div className="catalog-bites-wallet-main">
-        <div className="catalog-bites-wallet-balance">
-          <BitesIcon size={20} />
-          <span className="catalog-bites-wallet-count">{totalBites}</span>
-          <span className="catalog-bites-wallet-label">Bites disponibles</span>
-        </div>
+    <div className="catalog-bites-wallet">
+      <div className="catalog-bites-wallet-top">
+        <span className="catalog-bites-wallet-eyebrow">Bites disponibles</span>
+      </div>
 
-        <div className="catalog-bites-wallet-breakdown">
-          {freeBitesBalance > 0 && (
-            <span className="catalog-bites-wallet-detail">
-              <BitesIcon size={14} decorative /> {freeBitesBalance} incluidos en tu plan
-            </span>
-          )}
-          {purchasedBitesBalance > 0 && (
-            <span className="catalog-bites-wallet-detail">
-              <BitesIcon size={14} decorative /> {purchasedBitesBalance} comprados
-            </span>
-          )}
-          {freeBitesBalance === 0 && purchasedBitesBalance === 0 && (
-            <span className="catalog-bites-wallet-detail empty">
-              <BitesIcon size={14} decorative /> Sin Bites disponibles
-            </span>
-          )}
-        </div>
+      <div className="catalog-bites-wallet-hero">
+        <BitesIcon size={36} color="#4338ca" decorative />
+        <span className="catalog-bites-wallet-hero-count">{totalBites}</span>
+      </div>
 
+      <div className="catalog-bites-wallet-meta">
+        {breakdownParts.length > 0 && (
+          <span className="catalog-bites-wallet-breakdown">{breakdownParts.join(" · ")}</span>
+        )}
         {daysUntilNextGrant !== null && monthlyGrant > 0 && (
           <span className="catalog-bites-wallet-recharge">
             Próxima recarga en {daysUntilNextGrant} {daysUntilNextGrant === 1 ? "día" : "días"}
@@ -119,10 +111,11 @@ function CatalogBitesWallet({ wallet, plan, bitesConfig, onBuyBites }) {
 
       <button
         type="button"
-        className="kitchen-btn catalog-bites-buy-cta"
+        className="catalog-bites-buy-cta"
         onClick={onBuyBites}
       >
-        <BitesIcon size={15} decorative /> Comprar Bites
+        <BitesIcon size={14} color="#fff" decorative />
+        Comprar Bites
       </button>
     </div>
   );
