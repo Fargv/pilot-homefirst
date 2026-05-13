@@ -306,7 +306,11 @@ router.post("/master/ingredients", requireAuth, requireDiod, async (req, res) =>
 
 router.get("/packs/admin-all", requireAuth, requireDiod, async (req, res) => {
   try {
-    const packs = await CatalogPack.find({}).sort({ sortOrder: 1, createdAt: -1 }).lean();
+    const filter = {};
+    if (String(req.query?.isDietPack || "").toLowerCase() === "true") {
+      filter.isDietPack = true;
+    }
+    const packs = await CatalogPack.find(filter).sort({ sortOrder: 1, createdAt: -1 }).lean();
     const counts = await Promise.all(
       packs.map((p) => HouseholdCatalogPack.countDocuments({ packId: p._id }))
     );

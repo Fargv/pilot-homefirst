@@ -2071,6 +2071,9 @@ function CatalogPacksSection() {
   const [error, setError] = useState("");
   const [editItem, setEditItem] = useState(null);
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState(() => ({
+    packType: window.localStorage.getItem("lunchfy.admin.catalog.packType") === "diet" ? "diet" : "all"
+  }));
   const [deletingId, setDeletingId] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
   const [grantModal, setGrantModal] = useState(null);
@@ -2081,13 +2084,20 @@ function CatalogPacksSection() {
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const data = await apiRequest("/api/kitchen/catalog/packs/admin-all");
+      const params = new URLSearchParams();
+      if (filters.packType === "diet") params.set("isDietPack", "true");
+      const query = params.toString();
+      const data = await apiRequest(`/api/kitchen/catalog/packs/admin-all${query ? `?${query}` : ""}`);
       setPacks(data.packs || []);
     } catch (err) { setError(err.message || "Error al cargar packs."); }
     finally { setLoading(false); }
-  }, []);
+  }, [filters.packType]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    window.localStorage.setItem("lunchfy.admin.catalog.packType", filters.packType);
+  }, [filters.packType]);
 
   useEffect(() => {
     apiRequest("/api/admin/households")
@@ -2099,6 +2109,8 @@ function CatalogPacksSection() {
     const q = search.trim().toLowerCase();
     return q ? packs.filter((p) => String(p.title || "").toLowerCase().includes(q) || String(p.slug || "").toLowerCase().includes(q)) : packs;
   }, [packs, search]);
+
+  const onlyDiets = filters.packType === "diet";
 
   const handleSave = async (form) => {
     const packId = editItem?.id;
@@ -2224,7 +2236,24 @@ function CatalogPacksSection() {
         <button type="button" style={ABT.edit} onClick={load} disabled={loading}>
           {loading ? "..." : "↺ Recargar"}
         </button>
-        <span style={{ fontSize: 12, color: "#94a3b8", marginLeft: 4 }}>{packs.length} packs en total</span>
+        <button
+          type="button"
+          aria-pressed={onlyDiets}
+          onClick={() => setFilters((prev) => ({ ...prev, packType: prev.packType === "diet" ? "all" : "diet" }))}
+          style={{
+            ...ABT.edit,
+            borderColor: onlyDiets ? "#86efac" : "#cbd5e1",
+            background: onlyDiets ? "#f0fdf4" : "#f8fafc",
+            color: onlyDiets ? "#15803d" : "#374151",
+            fontWeight: 700
+          }}
+        >
+          <span style={{ marginRight: 5 }}>{onlyDiets ? "✓" : "○"}</span>
+          Only diets
+        </button>
+        <span style={{ fontSize: 12, color: "#94a3b8", marginLeft: 4 }}>
+          {filtered.length}{search.trim() ? ` de ${packs.length}` : ""} packs{onlyDiets ? " de dieta" : " en total"}
+        </span>
       </div>
 
       {reviewPack && (

@@ -1,0 +1,1157 @@
+{
+  "slug": "keto-vol1",
+  "title": "Dieta Cetogénica — Vol. 1",
+  "shortDescription": "20 platos muy bajos en carbohidratos, ricos en grasas saludables y proteína",
+  "subtitle": "Grasas buenas, proteína real y cero azúcares: la keto sin complicaciones",
+  "description": "Recetas cetogénicas pensadas para adultos sanos que quieren reducir carbohidratos al máximo manteniendo platos sabrosos y fáciles de preparar. Aguacate, huevos, queso, bacon, salmón y verduras bajas en carbohidratos como protagonistas. Sin harinas, sin azúcar, sin cereales.",
+  "coverImage": null,
+  "tags": ["dieta", "keto", "cetogénica", "sin carbohidratos", "alta grasa", "sin gluten"],
+  "cuisineType": "variada",
+  "active": true,
+  "featured": false,
+  "diet": true,
+  "priceBasic": 2.99,
+  "includedPlans": ["pro", "premium"],
+  "monthlyCreditCost": 2,
+  "sortOrder": 12,
+  "disclaimer": "Recetas diseñadas para adultos sanos. La dieta cetogénica puede no ser adecuada para todas las personas. Consulta con un profesional de la salud antes de seguirla de forma prolongada.",
+  "dishes": [
+    {
+      "name": "Ensalada de salmón ahumado con aguacate y huevo duro",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "15 min",
+      "ingredients": [
+        { "displayName": "Salmón ahumado", "canonicalName": "salmon ahumado" },
+        { "displayName": "Aguacate", "canonicalName": "aguacate" },
+        { "displayName": "Huevos", "canonicalName": "huevo" },
+        { "displayName": "Rúcula", "canonicalName": "rucula" },
+        { "displayName": "Pepino", "canonicalName": "pepino" },
+        { "displayName": "Alcaparras", "canonicalName": "alcaparra" },
+        { "displayName": "Limón", "canonicalName": "limon" },
+        { "displayName": "Mostaza de Dijon", "canonicalName": "mostaza" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Salmón ahumado", "quantity": "150 g" },
+          { "name": "Aguacate maduro", "quantity": "1 unidad" },
+          { "name": "Huevos", "quantity": "2 unidades" },
+          { "name": "Rúcula", "quantity": "60 g" },
+          { "name": "Pepino", "quantity": "½ unidad" },
+          { "name": "Alcaparras", "quantity": "1 cucharada" },
+          { "name": "Limón", "quantity": "1 unidad" },
+          { "name": "Mostaza de Dijon", "quantity": "1 cucharadita" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "3 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuece los huevos " },
+                { "type": "text", "text": "en agua hirviendo " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                { "type": "text", "text": ". Enfría en agua fría, pela y corta en cuartos." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara el aliño: " },
+                { "type": "text", "text": "emulsiona mostaza, zumo de limón, aceite, sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Monta la ensalada: " },
+                { "type": "text", "text": "rúcula de base, pepino en rodajas, aguacate en láminas, salmón ahumado y el huevo. Distribuye las alcaparras por encima y aliña." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: aliña justo antes de servir para que la rúcula no se ablande y el aguacate no se oxide." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Bowl keto de atún con aguacate, pepino y queso feta",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "10 min",
+      "ingredients": [
+        { "displayName": "Atún en aceite de oliva", "canonicalName": "atun" },
+        { "displayName": "Aguacate", "canonicalName": "aguacate" },
+        { "displayName": "Pepino", "canonicalName": "pepino" },
+        { "displayName": "Queso feta", "canonicalName": "queso feta" },
+        { "displayName": "Tomate cherry", "canonicalName": "tomate cherry" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Atún en aceite de oliva (escurrido)", "quantity": "2 latas (160 g)" },
+          { "name": "Aguacate maduro", "quantity": "1 unidad" },
+          { "name": "Pepino", "quantity": "½ unidad" },
+          { "name": "Queso feta", "quantity": "80 g" },
+          { "name": "Tomates cherry", "quantity": "100 g" },
+          { "name": "Limón", "quantity": "½ unidad" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "2 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Trocea el aguacate y el pepino " },
+                { "type": "text", "text": "en dados medianos. Corta los cherry por la mitad." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Coloca el atún escurrido " },
+                { "type": "text", "text": "en la base del bowl. Añade el aguacate, pepino, cherry y el feta desmenuzado." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Aliña con zumo de limón, aceite, sal y pimienta. " },
+                { "type": "text", "text": "Mezcla suavemente sin deshacer el atún." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: usa el aceite de la lata de atún para aliñar en lugar de aceite aparte — suma sabor y no se desperdicia." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tortilla de huevos con bacon y champiñones",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b61",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "15 min",
+      "ingredients": [
+        { "displayName": "Huevos", "canonicalName": "huevo" },
+        { "displayName": "Bacon en tiras", "canonicalName": "bacon" },
+        { "displayName": "Champiñones", "canonicalName": "champinon" },
+        { "displayName": "Queso cheddar rallado", "canonicalName": "queso cheddar" },
+        { "displayName": "Mantequilla", "canonicalName": "mantequilla" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Huevos", "quantity": "4 unidades" },
+          { "name": "Bacon en tiras", "quantity": "80 g" },
+          { "name": "Champiñones laminados", "quantity": "150 g" },
+          { "name": "Queso cheddar rallado", "quantity": "50 g" },
+          { "name": "Mantequilla", "quantity": "1 cucharada" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Dora el bacon " },
+                { "type": "text", "text": "en sartén sin grasa a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": " hasta que esté crujiente. Retira y reserva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "En la misma sartén, saltea los champiñones " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "4-5 min" },
+                { "type": "text", "text": " con la mantequilla hasta que estén dorados. Añade el bacon." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Vierte los huevos batidos " },
+                { "type": "text", "text": "salpimentados sobre la sartén a fuego medio-bajo. Espolvorea el queso. Cuaja " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": ", voltea y cocina " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "1 min" },
+                { "type": "text", "text": " más." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: la grasa del bacon es suficiente para que no se pegue. La mantequilla extra solo es para los champiñones." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Wrap de lechuga con pollo, queso crema y aguacate",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "15 min",
+      "ingredients": [
+        { "displayName": "Pechuga de pollo", "canonicalName": "pechuga de pollo" },
+        { "displayName": "Hojas grandes de lechuga iceberg", "canonicalName": "lechuga" },
+        { "displayName": "Queso crema", "canonicalName": "queso crema" },
+        { "displayName": "Aguacate", "canonicalName": "aguacate" },
+        { "displayName": "Bacon en tiras", "canonicalName": "bacon" },
+        { "displayName": "Tomate cherry", "canonicalName": "tomate cherry" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Pechuga de pollo", "quantity": "250 g" },
+          { "name": "Hojas grandes de lechuga iceberg", "quantity": "6-8 hojas" },
+          { "name": "Queso crema", "quantity": "80 g" },
+          { "name": "Aguacate maduro", "quantity": "1 unidad" },
+          { "name": "Bacon en tiras", "quantity": "60 g" },
+          { "name": "Tomates cherry", "quantity": "80 g" },
+          { "name": "Limón", "quantity": "½ unidad" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "1 cucharada" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina el pollo a la plancha " },
+                { "type": "text", "text": "con aceite, sal y pimienta " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "4-5 min por lado" },
+                { "type": "text", "text": ". Deja reposar y desmenuza." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Dora el bacon " },
+                { "type": "text", "text": "en sartén seca hasta que esté crujiente. Reserva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Aplasta el aguacate " },
+                { "type": "text", "text": "con zumo de limón y sal." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Monta los wraps: " },
+                { "type": "text", "text": "extiende el queso crema en la hoja de lechuga, añade el aguacate, el pollo, el bacon y los cherry cortados. Enrolla y sirve." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: elige hojas del centro de la lechuga iceberg — son más grandes, más firmes y no se rompen al enrollar." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ensalada de pollo con queso azul, nueces y rúcula",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        { "displayName": "Pechuga de pollo", "canonicalName": "pechuga de pollo" },
+        { "displayName": "Rúcula", "canonicalName": "rucula" },
+        { "displayName": "Queso azul (roquefort o gorgonzola)", "canonicalName": "queso azul" },
+        { "displayName": "Nueces", "canonicalName": "nuez" },
+        { "displayName": "Apio", "canonicalName": "apio" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Pechuga de pollo", "quantity": "250 g" },
+          { "name": "Rúcula", "quantity": "80 g" },
+          { "name": "Queso azul", "quantity": "60 g" },
+          { "name": "Nueces", "quantity": "30 g" },
+          { "name": "Apio", "quantity": "1 tallo" },
+          { "name": "Limón", "quantity": "½ unidad" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "3 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina el pollo a la plancha " },
+                { "type": "text", "text": "salpimentado " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "4-5 min por lado" },
+                { "type": "text", "text": ". Reposa y lamina en diagonal." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Tuesta las nueces " },
+                { "type": "text", "text": "en sartén sin grasa " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2 min" },
+                { "type": "text", "text": ". Reserva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Monta la ensalada: " },
+                { "type": "text", "text": "rúcula, apio en rodajas finas, queso azul desmenuzado y el pollo. Aliña con zumo de limón, aceite, sal y pimienta. Añade las nueces." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el queso azul ya aporta sal intensa. Prueba antes de salar la ensalada para no pasarte." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Calabacines salteados con gambas y mantequilla de ajo",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        { "displayName": "Gambas peladas", "canonicalName": "gamba" },
+        { "displayName": "Calabacines", "canonicalName": "calabacin" },
+        { "displayName": "Mantequilla", "canonicalName": "mantequilla" },
+        { "displayName": "Limón", "canonicalName": "limon" },
+        { "displayName": "Perejil fresco", "canonicalName": "perejil" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Gambas peladas", "quantity": "300 g" },
+          { "name": "Calabacines", "quantity": "2 unidades medianas" },
+          { "name": "Mantequilla", "quantity": "40 g" },
+          { "name": "Ajo", "quantity": "3 dientes" },
+          { "name": "Limón", "quantity": "½ unidad" },
+          { "name": "Perejil fresco picado", "quantity": "2 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Corta los calabacines en cintas con un pelador " },
+                { "type": "text", "text": "o en rodajas finas. Saltea a fuego vivo en sartén seca " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": " hasta que tengan algo de color. Salpimienta y reserva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Derrite la mantequilla " },
+                { "type": "text", "text": "a fuego medio. Añade el ajo laminado y las gambas. Saltea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2-3 min" },
+                { "type": "text", "text": " hasta que las gambas cambien de color." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Incorpora los calabacines, " },
+                { "type": "text", "text": "el zumo de limón y el perejil. Mezcla " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "30 seg" },
+                { "type": "text", "text": " y sirve inmediatamente." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#ef4444" } }], "text": "⚠ No sobrecocines las gambas: cambian de color en 2-3 min. Más tiempo y quedan gomosas." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ensalada de langostinos con aguacate y lima",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "15 min",
+      "ingredients": [
+        { "displayName": "Langostinos cocidos y pelados", "canonicalName": "langostino" },
+        { "displayName": "Aguacate", "canonicalName": "aguacate" },
+        { "displayName": "Lechuga variada", "canonicalName": "lechuga" },
+        { "displayName": "Lima", "canonicalName": "lima" },
+        { "displayName": "Tomate cherry", "canonicalName": "tomate cherry" },
+        { "displayName": "Cilantro fresco (opcional)", "canonicalName": "cilantro" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Langostinos cocidos y pelados", "quantity": "300 g" },
+          { "name": "Aguacate maduro", "quantity": "1 unidad" },
+          { "name": "Mezcla de lechugas", "quantity": "80 g" },
+          { "name": "Lima", "quantity": "1 unidad" },
+          { "name": "Tomates cherry", "quantity": "100 g" },
+          { "name": "Cilantro fresco", "quantity": "al gusto" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "3 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara el aliño: " },
+                { "type": "text", "text": "zumo de lima, aceite, sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Monta la ensalada: " },
+                { "type": "text", "text": "lechuga de base, aguacate en láminas, cherry cortados y los langostinos encima. Añade el cilantro." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Aliña justo antes de servir " },
+                { "type": "text", "text": "para que las hojas no se ablanden." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: la lima aporta más frescor que el limón en este tipo de ensalada. Si no tienes, usa limón verde." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Bowl de coliflor asada con bacon y queso cheddar",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "35 min",
+      "ingredients": [
+        { "displayName": "Coliflor", "canonicalName": "coliflor" },
+        { "displayName": "Bacon en tiras", "canonicalName": "bacon" },
+        { "displayName": "Queso cheddar rallado", "canonicalName": "queso cheddar" },
+        { "displayName": "Cebolleta", "canonicalName": "cebolleta" },
+        { "displayName": "Nata agria o crème fraîche", "canonicalName": "nata agria" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Coliflor en ramilletes", "quantity": "600 g" },
+          { "name": "Bacon en tiras", "quantity": "100 g" },
+          { "name": "Queso cheddar rallado", "quantity": "80 g" },
+          { "name": "Cebolleta (parte verde)", "quantity": "2 unidades" },
+          { "name": "Nata agria o crème fraîche", "quantity": "60 g" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "2 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno " },
+                { "type": "text", "text": "a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "220 °C" },
+                { "type": "text", "text": ". Mezcla los ramilletes con aceite, sal y pimienta. Extiende en bandeja y hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "25 min" },
+                { "type": "text", "text": " hasta que tengan bordes dorados." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Dora el bacon " },
+                { "type": "text", "text": "en sartén seca hasta que esté crujiente. Reserva sobre papel absorbente." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve la coliflor en bowl, " },
+                { "type": "text", "text": "añade el bacon, el queso cheddar, una cucharada de nata agria y la cebolleta picada." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: hornear a alta temperatura (220 °C) es la clave para que la coliflor caramelice en los bordes en lugar de cocerse." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ensalada de ternera con rúcula, parmesano y alcaparras",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        { "displayName": "Filete de ternera", "canonicalName": "ternera" },
+        { "displayName": "Rúcula", "canonicalName": "rucula" },
+        { "displayName": "Queso parmesano en lascas", "canonicalName": "parmesano" },
+        { "displayName": "Alcaparras", "canonicalName": "alcaparra" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Filete de ternera (entrecot o solomillo)", "quantity": "300 g" },
+          { "name": "Rúcula", "quantity": "80 g" },
+          { "name": "Queso parmesano en lascas", "quantity": "30 g" },
+          { "name": "Alcaparras", "quantity": "1 cucharada" },
+          { "name": "Limón", "quantity": "½ unidad" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "4 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Saca la carne de la nevera " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "15 min antes" },
+                { "type": "text", "text": ". Sazona con sal y pimienta. Dora en plancha muy caliente " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2-3 min por lado" },
+                { "type": "text", "text": " para punto medio. Reposa " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3 min" },
+                { "type": "text", "text": " y lamina fino." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Extiende la rúcula " },
+                { "type": "text", "text": "en la base. Coloca las láminas de carne encima, el parmesano en lascas y las alcaparras." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Aliña con zumo de limón, aceite, sal y pimienta. " },
+                { "type": "text", "text": "Sirve inmediatamente." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: si tienes tiempo, congela el filete 20 min antes de laminarlo — queda en lonchas perfectas." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Revuelto de huevos con salmón ahumado y crème fraîche",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b61",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "10 min",
+      "ingredients": [
+        { "displayName": "Huevos", "canonicalName": "huevo" },
+        { "displayName": "Salmón ahumado", "canonicalName": "salmon ahumado" },
+        { "displayName": "Crème fraîche", "canonicalName": "creme fraiche" },
+        { "displayName": "Cebollino fresco", "canonicalName": "cebollino" },
+        { "displayName": "Mantequilla", "canonicalName": "mantequilla" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Huevos", "quantity": "4 unidades" },
+          { "name": "Salmón ahumado", "quantity": "80 g" },
+          { "name": "Crème fraîche", "quantity": "2 cucharadas" },
+          { "name": "Cebollino fresco picado", "quantity": "1 cucharada" },
+          { "name": "Mantequilla", "quantity": "20 g" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Bate los huevos " },
+                { "type": "text", "text": "con la crème fraîche, sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Derrite la mantequilla " },
+                { "type": "text", "text": "a fuego mínimo. Vierte los huevos y remueve despacio con espátula en círculos lentos durante " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": ". Retira antes de que cuajen del todo." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade el salmón ahumado " },
+                { "type": "text", "text": "cortado en tiras y el cebollino. Sirve inmediatamente." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: la crème fraîche en el batido hace el revuelto más cremoso y menos gomoso. No escatimes en la mantequilla." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ensalada de pollo con bacon, aguacate y queso manchego",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        { "displayName": "Pechuga de pollo", "canonicalName": "pechuga de pollo" },
+        { "displayName": "Bacon en tiras", "canonicalName": "bacon" },
+        { "displayName": "Aguacate", "canonicalName": "aguacate" },
+        { "displayName": "Queso manchego curado", "canonicalName": "queso manchego" },
+        { "displayName": "Lechuga romana", "canonicalName": "lechuga romana" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Pechuga de pollo", "quantity": "250 g" },
+          { "name": "Bacon en tiras", "quantity": "80 g" },
+          { "name": "Aguacate maduro", "quantity": "1 unidad" },
+          { "name": "Queso manchego curado en lascas", "quantity": "50 g" },
+          { "name": "Lechuga romana", "quantity": "1 corazón" },
+          { "name": "Limón", "quantity": "½ unidad" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "3 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina el pollo a la plancha " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "4-5 min por lado" },
+                { "type": "text", "text": ". Reposa y lamina. Dora el bacon en sartén seca hasta que esté crujiente." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Monta la ensalada: " },
+                { "type": "text", "text": "lechuga en trozos, aguacate en láminas, pollo, bacon y el manchego en lascas." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Aliña con zumo de limón, aceite, sal y pimienta " },
+                { "type": "text", "text": "justo antes de servir." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el manchego curado aporta más sabor que el semicurado. Cómpralo en cuña y lámina tú mismo en el momento." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Rollitos de salmón ahumado con queso crema y pepino",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "10 min",
+      "ingredients": [
+        { "displayName": "Salmón ahumado", "canonicalName": "salmon ahumado" },
+        { "displayName": "Queso crema", "canonicalName": "queso crema" },
+        { "displayName": "Pepino", "canonicalName": "pepino" },
+        { "displayName": "Aguacate", "canonicalName": "aguacate" },
+        { "displayName": "Eneldo fresco", "canonicalName": "eneldo" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Salmón ahumado en lonchas", "quantity": "150 g" },
+          { "name": "Queso crema", "quantity": "100 g" },
+          { "name": "Pepino", "quantity": "½ unidad" },
+          { "name": "Aguacate", "quantity": "½ unidad" },
+          { "name": "Eneldo fresco", "quantity": "al gusto" },
+          { "name": "Limón", "quantity": "½ unidad" },
+          { "name": "Pimienta negra", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Mezcla el queso crema " },
+                { "type": "text", "text": "con eneldo picado, zumo de limón y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Extiende la mezcla " },
+                { "type": "text", "text": "sobre cada loncha de salmón. Coloca una tira de pepino y una lámina de aguacate en un extremo." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Enrolla con firmeza " },
+                { "type": "text", "text": "y sirve cortado en dos o entero. Sirve inmediatamente o refrigera tapado hasta " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2 horas" },
+                { "type": "text", "text": "." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: estos rollitos son perfectos para llevar al trabajo. Envuélvelos en papel film individualmente para que no se sequen." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Bowl keto de carne picada con guacamole y queso",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        { "displayName": "Carne picada de ternera", "canonicalName": "carne picada de ternera" },
+        { "displayName": "Aguacate", "canonicalName": "aguacate" },
+        { "displayName": "Tomate cherry", "canonicalName": "tomate cherry" },
+        { "displayName": "Queso cheddar rallado", "canonicalName": "queso cheddar" },
+        { "displayName": "Lechuga iceberg", "canonicalName": "lechuga" },
+        { "displayName": "Nata agria", "canonicalName": "nata agria" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Carne picada de ternera", "quantity": "300 g" },
+          { "name": "Aguacate maduro", "quantity": "1 unidad" },
+          { "name": "Tomates cherry", "quantity": "100 g" },
+          { "name": "Queso cheddar rallado", "quantity": "60 g" },
+          { "name": "Lechuga iceberg picada", "quantity": "100 g" },
+          { "name": "Nata agria", "quantity": "60 g" },
+          { "name": "Limón", "quantity": "½ unidad" },
+          { "name": "Comino molido", "quantity": "½ cucharadita" },
+          { "name": "Pimentón ahumado", "quantity": "½ cucharadita" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Dora la carne picada " },
+                { "type": "text", "text": "en sartén sin aceite a fuego vivo " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "6-8 min" },
+                { "type": "text", "text": " rompiéndola con espátula. Sazona con comino, pimentón, sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara el guacamole: " },
+                { "type": "text", "text": "aplasta el aguacate con zumo de limón, sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Monta el bowl: " },
+                { "type": "text", "text": "lechuga en la base, carne picada, guacamole, cherry cortados, queso cheddar y una cucharada de nata agria." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: añade un chorro de tabasco o jalapeño en rodajas si te gusta el picante. Suma sabor sin carbohidratos." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pechuga de pollo con salsa de mostaza y nata",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        { "displayName": "Pechugas de pollo", "canonicalName": "pechuga de pollo" },
+        { "displayName": "Nata para cocinar", "canonicalName": "nata" },
+        { "displayName": "Mostaza de Dijon", "canonicalName": "mostaza" },
+        { "displayName": "Espinacas frescas (para acompañar)", "canonicalName": "espinaca" },
+        { "displayName": "Mantequilla", "canonicalName": "mantequilla" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Pechugas de pollo", "quantity": "2 unidades (300 g)" },
+          { "name": "Nata para cocinar", "quantity": "150 ml" },
+          { "name": "Mostaza de Dijon", "quantity": "2 cucharaditas" },
+          { "name": "Espinacas frescas", "quantity": "100 g" },
+          { "name": "Mantequilla", "quantity": "20 g" },
+          { "name": "Caldo de pollo", "quantity": "50 ml" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sella las pechugas salpimentadas " },
+                { "type": "text", "text": "en mantequilla caliente " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min por lado" },
+                { "type": "text", "text": ". Reserva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "En la misma sartén, añade el caldo " },
+                { "type": "text", "text": "y desglasa. Incorpora la nata y la mostaza. Cocina " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": " a fuego suave hasta que la salsa espese." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade las espinacas " },
+                { "type": "text", "text": "y el pollo a la sartén. Cocina " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": " más hasta que el pollo esté hecho y las espinacas pochadas." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: añade mostaza en grano junto a la de Dijon para más textura y un sabor más complejo." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Berenjenas rellenas de queso y bacon gratinadas",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "medio",
+      "estimatedPrepTime": "40 min",
+      "ingredients": [
+        { "displayName": "Berenjenas", "canonicalName": "berenjena" },
+        { "displayName": "Bacon en tiras", "canonicalName": "bacon" },
+        { "displayName": "Queso crema", "canonicalName": "queso crema" },
+        { "displayName": "Queso mozzarella rallado", "canonicalName": "mozzarella" },
+        { "displayName": "Cebolleta", "canonicalName": "cebolleta" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Berenjenas medianas", "quantity": "2 unidades" },
+          { "name": "Bacon en tiras", "quantity": "100 g" },
+          { "name": "Queso crema", "quantity": "100 g" },
+          { "name": "Queso mozzarella rallado", "quantity": "80 g" },
+          { "name": "Cebolleta", "quantity": "2 unidades" },
+          { "name": "Ajo", "quantity": "1 diente" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "2 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno " },
+                { "type": "text", "text": "a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                { "type": "text", "text": ". Corta las berenjenas por la mitad, marca la pulpa y hornea con aceite y sal " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "20 min" },
+                { "type": "text", "text": ". Extrae la pulpa con cuchara y pica." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Dora el bacon y el ajo " },
+                { "type": "text", "text": "picado en sartén. Mezcla con la pulpa, el queso crema y la cebolleta picada. Salpimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Rellena las berenjenas, " },
+                { "type": "text", "text": "cubre con mozzarella y gratina en el horno " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10-12 min" },
+                { "type": "text", "text": " hasta que el queso esté dorado." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: espolvorea pimentón ahumado sobre el queso antes de gratinar — da un toque ahumado espectacular." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Salmón al horno con mantequilla de hierbas y espárragos",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "25 min",
+      "ingredients": [
+        { "displayName": "Lomo de salmón", "canonicalName": "salmon" },
+        { "displayName": "Espárragos verdes", "canonicalName": "esparrago" },
+        { "displayName": "Mantequilla", "canonicalName": "mantequilla" },
+        { "displayName": "Limón", "canonicalName": "limon" },
+        { "displayName": "Eneldo fresco", "canonicalName": "eneldo" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Lomo de salmón", "quantity": "2 filetes (150 g c/u)" },
+          { "name": "Espárragos verdes", "quantity": "1 manojo (300 g)" },
+          { "name": "Mantequilla en pomada", "quantity": "60 g" },
+          { "name": "Limón", "quantity": "1 unidad" },
+          { "name": "Eneldo fresco picado", "quantity": "2 cucharaditas" },
+          { "name": "Ajo", "quantity": "1 diente (rallado)" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara la mantequilla de hierbas: " },
+                { "type": "text", "text": "mezcla la mantequilla en pomada con el eneldo, ajo rallado, ralladura y zumo de ½ limón, sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno " },
+                { "type": "text", "text": "a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                { "type": "text", "text": ". Coloca los espárragos en la bandeja, el salmón encima y distribuye la mantequilla de hierbas sobre ambos." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "15-18 min" },
+                { "type": "text", "text": ". Sirve con el resto del limón en gajos." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: la mantequilla de hierbas sobrante se puede enrollar en film, congelar y usar en cualquier pescado o carne." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pollo en salsa cremosa de queso azul y nueces",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "30 min",
+      "ingredients": [
+        { "displayName": "Pechugas de pollo", "canonicalName": "pechuga de pollo" },
+        { "displayName": "Queso azul (roquefort o gorgonzola)", "canonicalName": "queso azul" },
+        { "displayName": "Nata para cocinar", "canonicalName": "nata" },
+        { "displayName": "Nueces", "canonicalName": "nuez" },
+        { "displayName": "Mantequilla", "canonicalName": "mantequilla" },
+        { "displayName": "Espinacas frescas (para acompañar)", "canonicalName": "espinaca" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Pechugas de pollo", "quantity": "2 unidades (300 g)" },
+          { "name": "Queso azul", "quantity": "80 g" },
+          { "name": "Nata para cocinar", "quantity": "150 ml" },
+          { "name": "Nueces", "quantity": "40 g" },
+          { "name": "Mantequilla", "quantity": "20 g" },
+          { "name": "Espinacas frescas", "quantity": "100 g" },
+          { "name": "Caldo de pollo", "quantity": "50 ml" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sella las pechugas " },
+                { "type": "text", "text": "en mantequilla caliente " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min por lado" },
+                { "type": "text", "text": ". Reserva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Desglasa con el caldo. " },
+                { "type": "text", "text": "Añade la nata y el queso azul desmenuzado. Remueve a fuego suave " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": " hasta que el queso se funda y la salsa espese." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade el pollo y las espinacas. " },
+                { "type": "text", "text": "Cocina " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": " más. Sirve con las nueces tostadas por encima." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el queso azul es intenso — empieza con 60 g, prueba y añade más si quieres más potencia." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Entrecot con mantequilla de perejil y brócoli al vapor",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        { "displayName": "Entrecot de ternera", "canonicalName": "ternera" },
+        { "displayName": "Brócoli", "canonicalName": "brocoli" },
+        { "displayName": "Mantequilla", "canonicalName": "mantequilla" },
+        { "displayName": "Perejil fresco", "canonicalName": "perejil" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Entrecot de ternera", "quantity": "2 unidades (180 g c/u)" },
+          { "name": "Brócoli", "quantity": "400 g en ramilletes" },
+          { "name": "Mantequilla en pomada", "quantity": "50 g" },
+          { "name": "Perejil fresco picado", "quantity": "2 cucharadas" },
+          { "name": "Limón (ralladura y zumo)", "quantity": "½ unidad" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Mezcla la mantequilla de perejil: " },
+                { "type": "text", "text": "mantequilla en pomada con perejil picado, ralladura de limón, sal y pimienta. Reserva en frío." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuece el brócoli al vapor " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5-6 min" },
+                { "type": "text", "text": ". Debe quedar al dente con color vivo." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Saca el filete de la nevera " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "15 min antes" },
+                { "type": "text", "text": ". Sazona y dora en plancha muy caliente " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2-3 min por lado" },
+                { "type": "text", "text": ". Reposa " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3 min" },
+                { "type": "text", "text": " y sirve con una nuez de mantequilla de perejil encima." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#ef4444" } }], "text": "⚠ La mantequilla se pone sobre el filete caliente justo al servir — no durante la cocción, o se quemaría." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Lubina en papillote con limón y mantequilla de alcaparras",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "25 min",
+      "ingredients": [
+        { "displayName": "Filetes de lubina", "canonicalName": "lubina" },
+        { "displayName": "Mantequilla", "canonicalName": "mantequilla" },
+        { "displayName": "Alcaparras", "canonicalName": "alcaparra" },
+        { "displayName": "Limón", "canonicalName": "limon" },
+        { "displayName": "Espárragos o judías verdes", "canonicalName": "esparrago" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Filetes de lubina", "quantity": "2 unidades (150 g c/u)" },
+          { "name": "Mantequilla", "quantity": "40 g" },
+          { "name": "Alcaparras", "quantity": "2 cucharadas" },
+          { "name": "Limón", "quantity": "1 unidad" },
+          { "name": "Espárragos", "quantity": "8 tallos" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno " },
+                { "type": "text", "text": "a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                { "type": "text", "text": ". Prepara dos cuadrados grandes de papel de horno." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Coloca sobre cada papel " },
+                { "type": "text", "text": "los espárragos, encima la lubina salpimentada, una nuez de mantequilla, las alcaparras y rodajas de limón." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cierra el papillote " },
+                { "type": "text", "text": "plegando los bordes bien sellados. Hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "15-18 min" },
+                { "type": "text", "text": ". Abre en la mesa para que se libere el vapor." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el papillote es perfecto para dieta — concentra todo el sabor sin necesidad de aceite extra. El propio vapor cocina el pescado." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Muslos de pollo al horno con costra de parmesano y hierbas",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "55 min",
+      "ingredients": [
+        { "displayName": "Muslos de pollo (sin piel opcional)", "canonicalName": "muslo de pollo" },
+        { "displayName": "Queso parmesano rallado", "canonicalName": "parmesano" },
+        { "displayName": "Mantequilla", "canonicalName": "mantequilla" },
+        { "displayName": "Brócoli o espárragos (para acompañar)", "canonicalName": "brocoli" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Muslos de pollo", "quantity": "4 unidades" },
+          { "name": "Queso parmesano rallado fino", "quantity": "80 g" },
+          { "name": "Mantequilla derretida", "quantity": "40 g" },
+          { "name": "Ajo en polvo", "quantity": "½ cucharadita" },
+          { "name": "Orégano seco", "quantity": "1 cucharadita" },
+          { "name": "Brócoli en ramilletes", "quantity": "400 g" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno " },
+                { "type": "text", "text": "a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                { "type": "text", "text": ". Mezcla la mantequilla derretida con el parmesano, ajo en polvo, orégano, sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Unta los muslos " },
+                { "type": "text", "text": "con la mezcla de parmesano por todos lados. Coloca en bandeja con el brócoli alrededor con un chorro de aceite." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "45-50 min" },
+                { "type": "text", "text": ". La costra de parmesano debe quedar dorada y crujiente y el brócoli ligeramente tostado." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el parmesano forma una costra crujiente en el horno que sustituye perfectamente al pan rallado. Sin carbohidratos y con más sabor." }] }
+          ]
+        }
+      }
+    }
+  ]
+}
