@@ -55,7 +55,7 @@ export function daysUntilNextGrant() {
 }
 
 export async function grantMonthlyBites(householdId, adminUserId = null) {
-  const household = await Household.findById(householdId);
+  const household = await Household.findById(householdId).lean();
   if (!household) throw Object.assign(new Error("Hogar no encontrado."), { statusCode: 404 });
 
   const config = await getBitesConfig();
@@ -77,9 +77,10 @@ export async function grantMonthlyBites(householdId, adminUserId = null) {
   const newFree = Math.min(currentFree + grantAmount, maxCarryOver);
   const actualGranted = newFree - currentFree;
 
-  household.freeBitesBalance = newFree;
-  household.lastMonthlyBitesGrantAt = now;
-  await household.save();
+  await Household.updateOne(
+    { _id: household._id },
+    { $set: { freeBitesBalance: newFree, lastMonthlyBitesGrantAt: now } }
+  );
 
   await BitesTransaction.create({
     householdId: household._id,
@@ -97,12 +98,12 @@ export async function grantMonthlyBites(householdId, adminUserId = null) {
     granted: grantAmount,
     actualGranted,
     capped: actualGranted < grantAmount,
-    wallet: getWalletFromHousehold(household)
+    wallet: getWalletFromHousehold({ ...household, freeBitesBalance: newFree, lastMonthlyBitesGrantAt: now })
   };
 }
 
 export async function spendBites(householdId, amount, reason, metadata = {}) {
-  const household = await Household.findById(householdId);
+  const household = await Household.findById(householdId).lean();
   if (!household) throw Object.assign(new Error("Hogar no encontrado."), { statusCode: 404 });
 
   const freeBal = household.freeBitesBalance ?? 0;
@@ -117,11 +118,12 @@ export async function spendBites(householdId, amount, reason, metadata = {}) {
   const purchasedToSpend = amount - freeToSpend;
   const newFree = freeBal - freeToSpend;
   const newPurchased = purchasedBal - purchasedToSpend;
+  const newSpent = (household.totalBitesSpent ?? 0) + amount;
 
-  household.freeBitesBalance = newFree;
-  household.purchasedBitesBalance = newPurchased;
-  household.totalBitesSpent = (household.totalBitesSpent ?? 0) + amount;
-  await household.save();
+  await Household.updateOne(
+    { _id: household._id },
+    { $set: { freeBitesBalance: newFree, purchasedBitesBalance: newPurchased, totalBitesSpent: newSpent } }
+  );
 
   const transaction = await BitesTransaction.create({
     householdId: household._id,
@@ -134,7 +136,7 @@ export async function spendBites(householdId, amount, reason, metadata = {}) {
   });
 
   return {
-    wallet: getWalletFromHousehold(household),
+    wallet: getWalletFromHousehold({ ...household, freeBitesBalance: newFree, purchasedBitesBalance: newPurchased, totalBitesSpent: newSpent }),
     transaction: { id: transaction._id }
   };
 }
@@ -147,7 +149,7 @@ export async function adminGrantBites(householdId, amount, bucket, reason, admin
     throw Object.assign(new Error("amount debe ser un número no-cero."), { statusCode: 400 });
   }
 
-  const household = await Household.findById(householdId);
+  const household = await Household.findById(householdId).lean();
   if (!household) throw Object.assign(new Error("Hogar no encontrado."), { statusCode: 404 });
 
   const config = await getBitesConfig();
@@ -155,6 +157,7 @@ export async function adminGrantBites(householdId, amount, bucket, reason, admin
 
   let newFree = household.freeBitesBalance ?? 0;
   let newPurchased = household.purchasedBitesBalance ?? 0;
+  let newSpent = household.totalBitesSpent ?? 0;
 
   if (bucket === "free") {
     if (amount > 0) {
@@ -167,12 +170,14 @@ export async function adminGrantBites(householdId, amount, bucket, reason, admin
     newPurchased = Math.max(0, newPurchased + amount);
   }
 
-  household.freeBitesBalance = newFree;
-  household.purchasedBitesBalance = newPurchased;
   if (amount < 0) {
-    household.totalBitesSpent = (household.totalBitesSpent ?? 0) + Math.abs(amount);
+    newSpent += Math.abs(amount);
   }
-  await household.save();
+
+  await Household.updateOne(
+    { _id: household._id },
+    { $set: { freeBitesBalance: newFree, purchasedBitesBalance: newPurchased, totalBitesSpent: newSpent } }
+  );
 
   const txType = amount > 0 ? "admin_grant" : "admin_remove";
   const transaction = await BitesTransaction.create({
@@ -187,7 +192,7 @@ export async function adminGrantBites(householdId, amount, bucket, reason, admin
   });
 
   return {
-    wallet: getWalletFromHousehold(household),
+    wallet: getWalletFromHousehold({ ...household, freeBitesBalance: newFree, purchasedBitesBalance: newPurchased, totalBitesSpent: newSpent }),
     transaction: { id: transaction._id }
   };
 }
