@@ -1,0 +1,581 @@
+{
+  "slug": "thanksgiving-vol1",
+  "title": "Thanksgiving americano",
+  "subtitle": "La mesa clásica del Día de Acción de Gracias",
+  "description": "Los ocho platos imprescindibles del Thanksgiving en un solo pack: el pavo asado perfecto con su gravy, el stuffing con salvia, el puré cremoso, los boniatos glaseados con sirope de arce, las judías verdes con almendras, la salsa de arándanos casera y la tarta de calabaza especiada. Una mesa de fiesta americana completa.",
+  "coverImage": "https://images.unsplash.com/photo-1510195429239-8a5c0222144a?w=1200&q=80&auto=format&fit=crop",
+  "tags": ["thanksgiving", "americano", "especial", "festivo", "otoño", "fiesta"],
+  "cuisineType": "americana",
+  "active": true,
+  "featured": true,
+  "diet": false,
+  "priceBasic": 1.99,
+  "includedPlans": ["pro", "premium"],
+  "monthlyCreditCost": 1,
+  "sortOrder": 13,
+  "disclaimer": "Las cantidades están calculadas para 8 personas, perfectas para una mesa de Thanksgiving completa. Los ingredientes básicos de despensa (sal, aceite, pimienta, especias molidas) no aparecen en la lista de la compra pero sí se usan en las recetas.",
+  "dishes": [
+    {
+      "name": "Pavo asado con mantequilla de hierbas",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "difícil",
+      "estimatedPrepTime": "3 h 30 min",
+      "ingredients": [
+        { "displayName": "Pavo entero (5-6 kg)", "canonicalName": "pavo" },
+        { "displayName": "Mantequilla sin sal", "canonicalName": "mantequilla" },
+        { "displayName": "Tomillo fresco", "canonicalName": "tomillo" },
+        { "displayName": "Romero fresco", "canonicalName": "romero" },
+        { "displayName": "Ajo", "canonicalName": "ajo" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Naranja", "canonicalName": "naranja" },
+        { "displayName": "Limón", "canonicalName": "limon" },
+        { "displayName": "Caldo de pollo o pavo", "canonicalName": "caldo" }
+      ],
+      "recipe": {
+        "servings": 8,
+        "ingredients": [
+          { "name": "Pavo entero", "quantity": "1 unidad (5-6 kg)" },
+          { "name": "Mantequilla sin sal, ablandada", "quantity": "150 g" },
+          { "name": "Ajo", "quantity": "4 dientes" },
+          { "name": "Tomillo fresco", "quantity": "5 ramitas" },
+          { "name": "Romero fresco", "quantity": "3 ramitas" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Naranja", "quantity": "1 unidad" },
+          { "name": "Limón", "quantity": "1 unidad" },
+          { "name": "Caldo de pollo o pavo", "quantity": "250 ml" },
+          { "name": "Aceite de oliva", "quantity": "2 cucharadas" },
+          { "name": "Sal y pimienta negra", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Preparar el pavo" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Atempera el pavo: " },
+                { "type": "text", "text": "sécalo bien con papel de cocina por dentro y por fuera. Déjalo a temperatura ambiente " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "1 hora" },
+                { "type": "text", "text": " antes de meterlo al horno." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara la mantequilla de hierbas: " },
+                { "type": "text", "text": "mezcla la mantequilla ablandada con el ajo picado fino, el tomillo y el romero deshojados, sal y pimienta negra hasta obtener una pasta homogénea." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Rellena bajo la piel: " },
+                { "type": "text", "text": "separa suavemente la piel de la pechuga con los dedos sin romperla. Introduce 2/3 de la mantequilla de hierbas entre la piel y la carne y masajea por fuera para distribuirla bien." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Unta el exterior: " },
+                { "type": "text", "text": "frota el resto de la mantequilla por toda la superficie del pavo. Salpimienta generosamente." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Rellena la cavidad: " },
+                { "type": "text", "text": "introduce la cebolla partida en cuartos, la naranja y el limón a la mitad en el interior del pavo para aromatizarlo desde dentro." }
+              ]}] }
+            ]},
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Hornear" }] },
+            { "type": "orderedList", "attrs": { "start": 6 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "220 °C" },
+                { "type": "text", "text": ". Coloca el pavo en una bandeja honda sobre rejilla. Vierte el caldo en el fondo de la bandeja." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Dora la piel: " },
+                { "type": "text", "text": "hornea a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "220 °C durante 30 min" },
+                { "type": "text", "text": " para sellar y dorar bien la piel." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Baja a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "165 °C" },
+                { "type": "text", "text": " y continúa horneando. Calcula " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "40 min por kg" },
+                { "type": "text", "text": " (para 5 kg, unas 3 h en total). Riega con los jugos de la bandeja cada " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "45 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Comprueba el punto: " },
+                { "type": "text", "text": "el pavo está listo cuando un termómetro insertado en la parte más gruesa del muslo (sin tocar hueso) marque " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "74 °C" },
+                { "type": "text", "text": "." }
+              ]}] }
+            ]},
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Reposar y trinchar" }] },
+            { "type": "orderedList", "attrs": { "start": 10 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Reposa el pavo: " },
+                { "type": "text", "text": "retíralo del horno, cúbrelo holgadamente con papel de aluminio y deja reposar " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "30 min" },
+                { "type": "text", "text": ". Este paso es fundamental para que los jugos se redistribuyan y la carne quede jugosa." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Reserva los jugos de la bandeja " },
+                { "type": "text", "text": "para preparar la salsa gravy. Trincha el pavo y sirve." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: si la piel se dora demasiado antes de terminar la cocción, cúbrela con papel de aluminio y retíralo los últimos 20 min para que quede crujiente." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Stuffing de pan con salvia y apio",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": true,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "mealType": "guarnición",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "1 h",
+      "ingredients": [
+        { "displayName": "Pan del día anterior", "canonicalName": "pan" },
+        { "displayName": "Apio", "canonicalName": "apio" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Mantequilla sin sal", "canonicalName": "mantequilla" },
+        { "displayName": "Salvia fresca", "canonicalName": "salvia" },
+        { "displayName": "Caldo de pollo", "canonicalName": "caldo" },
+        { "displayName": "Huevos", "canonicalName": "huevo" }
+      ],
+      "recipe": {
+        "servings": 8,
+        "ingredients": [
+          { "name": "Pan del día anterior (tipo rústico o de molde)", "quantity": "500 g" },
+          { "name": "Apio", "quantity": "4 tallos" },
+          { "name": "Cebolla grande", "quantity": "1 unidad" },
+          { "name": "Mantequilla sin sal", "quantity": "100 g" },
+          { "name": "Salvia fresca picada", "quantity": "2 cucharadas" },
+          { "name": "Caldo de pollo", "quantity": "350 ml" },
+          { "name": "Huevos", "quantity": "2 unidades" },
+          { "name": "Sal y pimienta negra", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Seca el pan: " },
+                { "type": "text", "text": "córtalo en cubos de 2 cm. Extiéndelos en una bandeja y sécalos en el horno a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "120 °C durante 20 min" },
+                { "type": "text", "text": ", o déjalos al aire la noche anterior." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sofríe las verduras: " },
+                { "type": "text", "text": "derrite la mantequilla en una sartén grande. Cocina la cebolla y el apio picados a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "8-10 min" },
+                { "type": "text", "text": " hasta que estén tiernos y translúcidos." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade la salvia " },
+                { "type": "text", "text": "fresca picada y cocina 1 min más. Salpimienta y retira del fuego." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Mezcla: " },
+                { "type": "text", "text": "bate los huevos con el caldo en un bol grande. Añade el pan seco y las verduras salteadas. Remueve bien y deja absorber " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Hornea: " },
+                { "type": "text", "text": "vuelca en una fuente de horno engrasada. Hornea a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "180 °C durante 35-40 min" },
+                { "type": "text", "text": " hasta que la superficie esté dorada y crujiente." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: puedes montarlo el día anterior hasta el paso 4, refrigerarlo y hornear el mismo día del Thanksgiving." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Puré de patatas cremoso con mantequilla y nata",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": true,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "mealType": "guarnición",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "35 min",
+      "ingredients": [
+        { "displayName": "Patatas (tipo Monalisa)", "canonicalName": "patata" },
+        { "displayName": "Mantequilla sin sal", "canonicalName": "mantequilla" },
+        { "displayName": "Nata para cocinar (35% MG)", "canonicalName": "nata" }
+      ],
+      "recipe": {
+        "servings": 8,
+        "ingredients": [
+          { "name": "Patatas (tipo Monalisa o Agria)", "quantity": "1,2 kg" },
+          { "name": "Mantequilla sin sal", "quantity": "100 g" },
+          { "name": "Nata para cocinar (35% MG)", "quantity": "200 ml" },
+          { "name": "Sal", "quantity": "al gusto" },
+          { "name": "Pimienta blanca molida", "quantity": "al gusto" },
+          { "name": "Nuez moscada", "quantity": "una pizca" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuece las patatas: " },
+                { "type": "text", "text": "pélalas y córtalas en trozos iguales. Cuécelas en agua abundante con sal a fuego medio-alto " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "20-25 min" },
+                { "type": "text", "text": " hasta que un palillo entre sin resistencia." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Seca las patatas: " },
+                { "type": "text", "text": "escúrrelas bien y vuelve a ponerlas en el cazo al fuego " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "1-2 min" },
+                { "type": "text", "text": " para evaporar el exceso de agua." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Calienta la nata y la mantequilla " },
+                { "type": "text", "text": "juntas en un cazo pequeño hasta que la mantequilla se funda completamente. No dejes que hierva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Aplasta con pasapurés: " },
+                { "type": "text", "text": "usa un pasapurés o prensa de patatas (nunca un procesador: quedarían gomosas). Incorpora la mezcla de nata y mantequilla caliente poco a poco removiendo." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Ajusta: " },
+                { "type": "text", "text": "rectifica de sal, pimienta blanca y nuez moscada. Sirve inmediatamente o mantén caliente al baño maría." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: cuanto más caliente la nata al añadirla, más sedoso y liso quedará el puré." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Salsa gravy de jugos de pavo",
+      "dishCategoryId": "69ac70b1d23659ad70fcf948",
+      "sidedish": true,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "mealType": "guarnición",
+      "estimatedDifficulty": "media",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        { "displayName": "Caldo de pavo o pollo", "canonicalName": "caldo" },
+        { "displayName": "Mantequilla sin sal", "canonicalName": "mantequilla" },
+        { "displayName": "Harina de trigo", "canonicalName": "harina" }
+      ],
+      "recipe": {
+        "servings": 8,
+        "ingredients": [
+          { "name": "Jugos de la bandeja del pavo asado", "quantity": "todos los que salgan" },
+          { "name": "Caldo de pavo o pollo", "quantity": "500 ml" },
+          { "name": "Mantequilla sin sal", "quantity": "3 cucharadas (45 g)" },
+          { "name": "Harina de trigo", "quantity": "3 cucharadas (30 g)" },
+          { "name": "Sal y pimienta negra", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara el fondo: " },
+                { "type": "text", "text": "vierte los jugos de la bandeja del pavo en un cazo. Desgrasa ligeramente con una cuchara. Añade el caldo y lleva a ebullición a fuego medio." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Haz el roux: " },
+                { "type": "text", "text": "en otro cazo, derrite la mantequilla a fuego medio. Añade la harina y cocina sin dejar de remover " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2 min" },
+                { "type": "text", "text": " hasta obtener una pasta dorada." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Incorpora el caldo: " },
+                { "type": "text", "text": "vierte el caldo caliente sobre el roux poco a poco sin dejar de remover con varillas para evitar grumos." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "8-10 min" },
+                { "type": "text", "text": " removiendo constantemente hasta que la salsa espese y brille. Ajusta de sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuela si es necesario " },
+                { "type": "text", "text": "por un colador fino para obtener una salsa completamente lisa. Sirve muy caliente en salsera." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: los jugos del pavo son el alma de esta salsa. Si son muy oscuros, añade más caldo para equilibrar el sabor." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cazuela de judías verdes con almendras tostadas",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": true,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "mealType": "guarnición",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "25 min",
+      "ingredients": [
+        { "displayName": "Judías verdes", "canonicalName": "judia verde" },
+        { "displayName": "Almendras fileteadas", "canonicalName": "almendra" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Ajo", "canonicalName": "ajo" },
+        { "displayName": "Mantequilla sin sal", "canonicalName": "mantequilla" }
+      ],
+      "recipe": {
+        "servings": 8,
+        "ingredients": [
+          { "name": "Judías verdes (frescas o congeladas)", "quantity": "700 g" },
+          { "name": "Almendras fileteadas", "quantity": "80 g" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Ajo", "quantity": "2 dientes" },
+          { "name": "Mantequilla sin sal", "quantity": "30 g" },
+          { "name": "Sal y pimienta negra", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Escalda las judías: " },
+                { "type": "text", "text": "lava y retira los extremos. Cuécelas en agua hirviendo con sal " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                { "type": "text", "text": " (deben quedar al dente). Escurre y enfría inmediatamente en agua con hielo para fijar el color verde vivo." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Tuesta las almendras: " },
+                { "type": "text", "text": "en una sartén seca a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2-3 min" },
+                { "type": "text", "text": " removiendo constantemente hasta que estén doradas. Reserva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sofríe la cebolla y el ajo: " },
+                { "type": "text", "text": "en la misma sartén, derrite la mantequilla. Cocina la cebolla en juliana fina y el ajo picado a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5-6 min" },
+                { "type": "text", "text": " hasta que estén blandos y ligeramente dorados." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Saltea las judías: " },
+                { "type": "text", "text": "añade las judías verdes escurridas y saltea a fuego vivo " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": " hasta que se calienten bien. Salpimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve " },
+                { "type": "text", "text": "con las almendras tostadas esparcidas por encima en el último momento." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el baño de agua con hielo es clave para que las judías no pierdan su color verde brillante." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Boniatos glaseados con sirope de arce",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": true,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "mealType": "guarnición",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "55 min",
+      "ingredients": [
+        { "displayName": "Boniatos", "canonicalName": "boniato" },
+        { "displayName": "Sirope de arce", "canonicalName": "sirope de arce" },
+        { "displayName": "Mantequilla sin sal", "canonicalName": "mantequilla" }
+      ],
+      "recipe": {
+        "servings": 8,
+        "ingredients": [
+          { "name": "Boniatos", "quantity": "900 g" },
+          { "name": "Sirope de arce puro", "quantity": "70 ml" },
+          { "name": "Mantequilla sin sal", "quantity": "40 g" },
+          { "name": "Canela molida", "quantity": "1 cucharadita" },
+          { "name": "Jengibre molido", "quantity": "¼ cucharadita" },
+          { "name": "Sal", "quantity": "una pizca" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                { "type": "text", "text": ". Pela los boniatos y córtalos en rodajas de 2 cm de grosor." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara el glaseado: " },
+                { "type": "text", "text": "derrite la mantequilla en un cazo pequeño. Mezcla con el sirope de arce, la canela, el jengibre y una pizca de sal." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Glasea los boniatos: " },
+                { "type": "text", "text": "extiéndelos en una bandeja de horno sin amontonarlos. Vierte el glaseado por encima y remueve para cubrir bien todas las piezas." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Hornea a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 20 min" },
+                { "type": "text", "text": ". Da la vuelta, riega con los jugos de la bandeja y hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "15-20 min más" },
+                { "type": "text", "text": " hasta que estén tiernos y caramelizados por los bordes." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve " },
+                { "type": "text", "text": "directamente de la bandeja, bien calientes." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: un puñado de nueces pecán tostadas por encima en el último momento añade un contraste crujiente perfecto." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Salsa de arándanos rojos casera",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": true,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "mealType": "guarnición",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        { "displayName": "Arándanos rojos (frescos o congelados)", "canonicalName": "arandano" },
+        { "displayName": "Azúcar", "canonicalName": "azucar" },
+        { "displayName": "Naranja", "canonicalName": "naranja" }
+      ],
+      "recipe": {
+        "servings": 8,
+        "ingredients": [
+          { "name": "Arándanos rojos (frescos o congelados)", "quantity": "300 g" },
+          { "name": "Azúcar", "quantity": "150 g" },
+          { "name": "Zumo de naranja fresco", "quantity": "120 ml" },
+          { "name": "Ralladura de naranja", "quantity": "1 unidad" },
+          { "name": "Canela molida", "quantity": "una pizca" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Combina los ingredientes: " },
+                { "type": "text", "text": "pon los arándanos, el azúcar, el zumo y la ralladura de naranja en un cazo mediano." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Lleva a ebullición " },
+                { "type": "text", "text": "a fuego medio-alto removiendo de vez en cuando." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Reduce el fuego " },
+                { "type": "text", "text": "y cocina " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10-12 min" },
+                { "type": "text", "text": ". Los arándanos reventarán solos; aplasta algunos con una cuchara de madera para una textura rústica." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade la canela, " },
+                { "type": "text", "text": "retira del fuego y deja enfriar. La salsa espesará considerablemente al enfriar." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Prueba y ajusta de azúcar. " },
+                { "type": "text", "text": "Sirve a temperatura ambiente o fría. Se conserva en nevera hasta 1 semana." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: esta salsa mejora con el reposo. Prepárala 1 o 2 días antes del Thanksgiving." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tarta de calabaza especiada",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "media",
+      "estimatedPrepTime": "1 h 30 min",
+      "ingredients": [
+        { "displayName": "Masa brisa (pre-hecha)", "canonicalName": "masa brisa" },
+        { "displayName": "Puré de calabaza (o calabaza asada)", "canonicalName": "calabaza" },
+        { "displayName": "Nata para cocinar", "canonicalName": "nata" },
+        { "displayName": "Huevos", "canonicalName": "huevo" },
+        { "displayName": "Azúcar moreno", "canonicalName": "azucar moreno" }
+      ],
+      "recipe": {
+        "servings": 8,
+        "ingredients": [
+          { "name": "Base de masa brisa (pre-hecha)", "quantity": "1 lámina (230 g)" },
+          { "name": "Puré de calabaza (lata o casero)", "quantity": "400 g" },
+          { "name": "Nata para cocinar", "quantity": "180 ml" },
+          { "name": "Huevos", "quantity": "3 unidades" },
+          { "name": "Azúcar moreno", "quantity": "150 g" },
+          { "name": "Canela molida", "quantity": "1 cucharadita" },
+          { "name": "Jengibre molido", "quantity": "½ cucharadita" },
+          { "name": "Clavo molido", "quantity": "¼ cucharadita" },
+          { "name": "Nuez moscada molida", "quantity": "¼ cucharadita" },
+          { "name": "Sal", "quantity": "una pizca" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Preparar la base" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Forra el molde: " },
+                { "type": "text", "text": "extiende la masa brisa en un molde desmontable de 22-24 cm. Pínchala con un tenedor y refrigera " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "30 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Hornea en blanco: " },
+                { "type": "text", "text": "cubre con papel de hornear y pesas de cocina (o alubias secas). Hornea a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "180 °C durante 15 min" },
+                { "type": "text", "text": ". Retira el papel y las pesas y hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min más" },
+                { "type": "text", "text": ". Deja enfriar sobre rejilla." }
+              ]}] }
+            ]},
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Relleno y horneado" }] },
+            { "type": "orderedList", "attrs": { "start": 3 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Bate el relleno: " },
+                { "type": "text", "text": "mezcla el puré de calabaza con el azúcar moreno en un bol grande. Añade los huevos uno a uno, batiendo después de cada adición." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Incorpora la nata y las especias: " },
+                { "type": "text", "text": "añade la nata, la canela, el jengibre, el clavo, la nuez moscada y la pizca de sal. Mezcla hasta obtener una crema completamente lisa." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Rellena y hornea: " },
+                { "type": "text", "text": "vierte sobre la base prehorneada. Hornea a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "160 °C durante 50-55 min" },
+                { "type": "text", "text": " hasta que el relleno esté cuajado en los bordes pero con un ligero temblor en el centro." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Enfría con calma: " },
+                { "type": "text", "text": "apaga el horno y deja la tarta dentro con la puerta entreabierta " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "15 min" },
+                { "type": "text", "text": ". Después enfría completamente sobre rejilla antes de servir." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#ef4444" } }], "text": "⚠ El centro debe quedar ligeramente tembloroso al salir del horno — cuajará del todo al enfriarse. Si lo sacas completamente cuajado, quedará seco." }] },
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: sirve con un copete generoso de nata montada o una bola de helado de vainilla." }] }
+          ]
+        }
+      }
+    }
+  ]
+}
