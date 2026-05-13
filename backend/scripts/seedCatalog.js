@@ -96,7 +96,7 @@ async function upsertPack(data) {
   };
 
   // Only overwrite these optional fields if explicitly present in JSON
-  if (data.coverImage !== undefined) update.coverImage = data.coverImage || null;
+  if (data.coverImage != null) update.coverImage = data.coverImage;
   if (data.releaseDate !== undefined) update.releaseDate = data.releaseDate ? new Date(data.releaseDate) : null;
   if (data.freeUntil !== undefined) update.freeUntil = data.freeUntil ? new Date(data.freeUntil) : null;
   if (data.activeFrom !== undefined) update.activeFrom = data.activeFrom ? new Date(data.activeFrom) : null;

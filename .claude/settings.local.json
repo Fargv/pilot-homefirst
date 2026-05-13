@@ -41,7 +41,12 @@
       "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Recurse -Directory -Depth 2)",
       "Bash(xargs ls -1)",
       "Bash(npx --prefix frontend vite build --outDir ../dist-check)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(static\")",
+      "Bash(xargs grep -l \"CatalogPack\\\\|coverImage\")",
+      "Bash(xargs grep -l \"catalog.*pack\\\\|pack.*card\" -i)",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\backend\\\\uploads\\\\packs\")",
+      "PowerShell(New-Item -ItemType File -Force -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\backend\\\\uploads\\\\packs\\\\.gitkeep\")"
     ]
   }
 }

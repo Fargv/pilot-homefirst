@@ -1,6 +1,10 @@
 import express from "express";
 import mongoose from "mongoose";
 import crypto from "crypto";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { Household } from "../models/Household.js";
@@ -23,6 +27,31 @@ import {
   resolvePackEntitlement,
   isPackCurrentlyFree
 } from "../catalogService.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const UPLOADS_DIR = path.resolve(__dirname, "../../../uploads/packs");
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const packCoverStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  }
+});
+
+const uploadPackCover = multer({
+  storage: packCoverStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Solo se permiten imágenes."));
+    }
+    cb(null, true);
+  }
+});
 
 const router = express.Router();
 
@@ -1007,6 +1036,52 @@ router.post("/packs/:packId/status", requireAuth, requireDiod, async (req, res) 
     return res.json({ ok: true, pack: serializeAdminPack(pack.toObject()) });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Error al cambiar estado del pack." });
+  }
+});
+
+router.post("/packs/:packId/cover", requireAuth, requireDiod, uploadPackCover.single("cover"), async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+    if (!req.file) {
+      return res.status(400).json({ ok: false, error: "No se recibió ningún archivo." });
+    }
+    const pack = await CatalogPack.findById(req.params.packId);
+    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+
+    // Delete previous local file if it was uploaded
+    if (pack.coverImage && pack.coverImage.startsWith("/uploads/")) {
+      const oldPath = path.join(UPLOADS_DIR, path.basename(pack.coverImage));
+      fs.unlink(oldPath, () => {});
+    }
+
+    pack.coverImage = `/uploads/packs/${req.file.filename}`;
+    await pack.save();
+    return res.json({ ok: true, coverImage: pack.coverImage });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al subir imagen." });
+  }
+});
+
+router.delete("/packs/:packId/cover", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+    const pack = await CatalogPack.findById(req.params.packId);
+    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+
+    if (pack.coverImage && pack.coverImage.startsWith("/uploads/")) {
+      const oldPath = path.join(UPLOADS_DIR, path.basename(pack.coverImage));
+      fs.unlink(oldPath, () => {});
+    }
+
+    pack.coverImage = null;
+    await pack.save();
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al eliminar imagen." });
   }
 });
 

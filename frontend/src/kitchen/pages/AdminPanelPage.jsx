@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiRequest } from "../api.js";
+import { apiRequest, buildApiUrl, getToken } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -1457,6 +1457,43 @@ function PackForm({ item, onSave, onCancel }) {
   const [propagateCatalogUpdates, setPropagateCatalogUpdates] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState("");
+
+  const packId = item.id || item._id;
+
+  const handleCoverUpload = async (file) => {
+    if (!file || !packId) return;
+    setCoverUploading(true);
+    setCoverUploadError("");
+    try {
+      const fd = new FormData();
+      fd.append("cover", file);
+      const token = getToken();
+      const resp = await fetch(buildApiUrl(`/api/kitchen/catalog/packs/${packId}/cover`), {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data?.error || "Error al subir imagen.");
+      setForm((p) => ({ ...p, coverImage: data.coverImage }));
+    } catch (err) {
+      setCoverUploadError(err.message || "Error al subir imagen.");
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const handleCoverRemove = async () => {
+    if (!packId) { setForm((p) => ({ ...p, coverImage: "" })); return; }
+    try {
+      await apiRequest(`/api/kitchen/catalog/packs/${packId}/cover`, { method: "DELETE" });
+      setForm((p) => ({ ...p, coverImage: "" }));
+    } catch (err) {
+      setCoverUploadError(err.message || "Error al eliminar imagen.");
+    }
+  };
 
   const set = (key) => (e) => setForm((p) => ({
     ...p,
@@ -1564,10 +1601,31 @@ function PackForm({ item, onSave, onCancel }) {
           <input style={fieldStyle} value={form.tags} onChange={set("tags")} placeholder="mexicano, familia, picante" />
         </label>
 
-        <label style={{ ...labelStyle, marginBottom: 12 }}>
-          URL imagen de portada
-          <input style={fieldStyle} value={form.coverImage} onChange={set("coverImage")} placeholder="https://..." />
-        </label>
+        <div style={{ marginBottom: 14 }}>
+          <span style={{ ...labelStyle, marginBottom: 6 }}>Imagen de portada</span>
+          {form.coverImage && (
+            <div style={{ marginBottom: 8, display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <img
+                src={form.coverImage.startsWith("/uploads/") ? buildApiUrl(form.coverImage) : form.coverImage}
+                alt="portada"
+                style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 6, border: "1px solid #d1d5db" }}
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+              <button type="button" onClick={handleCoverRemove} style={{ ...ABT.del, alignSelf: "flex-start" }}>Quitar</button>
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <input style={{ ...fieldStyle, flex: 1, minWidth: 160 }} value={form.coverImage} onChange={set("coverImage")} placeholder="https://... o sube un archivo" />
+            {isEdit && (
+              <label style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, ...ABT.edit }}>
+                {coverUploading ? "Subiendo…" : "📁 Subir"}
+                <input type="file" accept="image/*" style={{ display: "none" }} disabled={coverUploading} onChange={(e) => handleCoverUpload(e.target.files?.[0])} />
+              </label>
+            )}
+          </div>
+          {coverUploadError && <p style={{ color: "#b42318", fontSize: 11, margin: "4px 0 0" }}>{coverUploadError}</p>}
+          {!isEdit && <p style={{ fontSize: 11, color: "#64748b", margin: "3px 0 0" }}>Guarda el pack primero para poder subir una imagen.</p>}
+        </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
           <label style={labelStyle}>

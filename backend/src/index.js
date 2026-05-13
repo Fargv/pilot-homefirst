@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { config } from "./config.js";
 import { connectDb } from "./db.js";
 import { sendTestEmail } from "./mailer.js";
@@ -13,6 +15,9 @@ import testEmailRouter from "./routes/testEmail.js";
 import authRoutes from "./kitchen/routes/auth.js";
 import internalPushRouter from "./routes/internalPush.js";
 import subscriptionRouter from "./routes/subscription.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -33,6 +38,7 @@ app.use(cors({
   }
 }));
 app.use(express.json({ limit: "5mb" }));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.get("/health", (req, res) => {
   res.json({ ok: true, env: config.nodeEnv, time: new Date().toISOString() });
