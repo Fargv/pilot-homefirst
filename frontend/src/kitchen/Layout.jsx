@@ -312,6 +312,11 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                 {userInitials}
               </span>
               <span className="kitchen-user-name">{userName}</span>
+              {user?.subscriptionPlan && (
+                <span className={`kitchen-user-plan-badge plan-${String(user.subscriptionPlan).toLowerCase()}`}>
+                  {String(user.subscriptionPlan).toLowerCase() === "premium" ? "Premium" : String(user.subscriptionPlan).toLowerCase() === "pro" ? "Pro" : "Basic"}
+                </span>
+              )}
               <ChevronDownIcon className="kitchen-user-chevron" />
             </button>
             {userMenuOpen ? (

@@ -7,6 +7,7 @@ import { canUseDietRandomization } from "../subscription.js";
 const TABS = [
   { id: "all", label: "Todos" },
   { id: "included", label: "En mi plan" },
+  { id: "diet", label: "Dieta" },
   { id: "new", label: "Nuevos" },
   { id: "healthy", label: "Saludables" },
   { id: "quick", label: "Rápidos" },
@@ -35,12 +36,24 @@ function getFreeUntilDaysLeft(isFreeUntil) {
 function matchesTab(pack, tab) {
   if (tab === "all") return true;
   if (tab === "included") return pack.entitlement?.includedInPlan;
+  if (tab === "diet") return Boolean(pack.isDietPack);
   if (tab === "new") return isNew(pack);
   const tags = (pack.tags || []).map((t) => t.toLowerCase());
   if (tab === "healthy") return tags.some((t) => HEALTHY_TAGS.includes(t));
   if (tab === "quick") return tags.some((t) => QUICK_TAGS.includes(t));
   if (tab === "special") return tags.some((t) => SPECIAL_TAGS.includes(t));
   return true;
+}
+
+function matchesSearch(pack, search) {
+  if (!search) return true;
+  const q = search.toLowerCase();
+  return (
+    (pack.title || "").toLowerCase().includes(q) ||
+    (pack.subtitle || "").toLowerCase().includes(q) ||
+    (pack.description || "").toLowerCase().includes(q) ||
+    (pack.dietLabel || "").toLowerCase().includes(q)
+  );
 }
 
 function PackIcon() {
@@ -323,6 +336,7 @@ function DietPackInstallModal({ pack, onUseAsDefault, onDecline }) {
 export default function CatalogPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
+  const [search, setSearch] = useState("");
   const [packs, setPacks] = useState([]);
   const [credits, setCredits] = useState(null);
   const [plan, setPlan] = useState("basic");
@@ -356,10 +370,10 @@ export default function CatalogPage() {
     loadCatalog();
   }, [loadCatalog]);
 
-  const visiblePacks = useMemo(
-    () => packs.filter((p) => matchesTab(p, activeTab)),
-    [packs, activeTab]
-  );
+  const visiblePacks = useMemo(() => {
+    const filtered = packs.filter((p) => matchesTab(p, activeTab) && matchesSearch(p, search));
+    return [...filtered].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+  }, [packs, activeTab, search]);
 
   const handlePackAction = useCallback(async (pack) => {
     const { entitlement } = pack;
@@ -420,6 +434,17 @@ export default function CatalogPage() {
         </div>
 
         <CatalogCreditsPanel plan={plan} credits={credits} />
+
+        <div className="catalog-search-row">
+          <input
+            type="search"
+            className="kitchen-input catalog-search-input"
+            placeholder="Buscar packs..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Buscar packs"
+          />
+        </div>
 
         <div className="catalog-tabs">
           {TABS.map((tab) => (

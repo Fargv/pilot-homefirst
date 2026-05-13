@@ -141,11 +141,9 @@ export default function UpgradeToProPage() {
             <p className="kitchen-muted">
               Elige el plan que mejor se adapte a tu hogar. Durante la beta, la activación la realiza un administrador — sin pagos por ahora.
             </p>
-            {householdLicense ? (
-              <span className="kitchen-muted" style={{ fontSize: 13 }}>
-                Usuarios: {householdLicense?.usage?.users || 0} / {isUnlimitedLicenseLimit(householdLicense?.limits?.maxUsers) ? "∞" : householdLicense?.limits?.maxUsers}
-                {" · "}
-                Comensales: {householdLicense?.usage?.nonUserDiners || 0} / {isUnlimitedLicenseLimit(householdLicense?.limits?.maxNonUserDiners) ? "∞" : householdLicense?.limits?.maxNonUserDiners}
+            {subscriptionPlan && !summaryLoading ? (
+              <span className={`upgrade-current-plan-chip upgrade-current-plan-${subscriptionPlan}`}>
+                Plan actual: <strong>{subscriptionPlan === "premium" ? "Premium" : subscriptionPlan === "pro" ? "Pro" : "Basic"}</strong>
               </span>
             ) : null}
           </div>
