@@ -198,11 +198,6 @@ function PackCard({ pack, onAction }) {
         <div className="catalog-pack-header">
           <h3 className="catalog-pack-title">{pack.title}</h3>
           <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
-            {pack.isDietPack ? (
-              <span style={{ fontSize: 10, fontWeight: 700, background: "#fdf4ff", color: "#7c3aed", border: "1px solid #e9d5ff", borderRadius: 4, padding: "2px 7px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                {pack.dietLabel || "Dieta"}
-              </span>
-            ) : null}
             <EntitlementBadge entitlement={entitlement} />
           </div>
         </div>

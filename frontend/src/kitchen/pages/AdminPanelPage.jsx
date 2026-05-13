@@ -2364,11 +2364,6 @@ function CatalogPacksSection() {
                       <div style={{ fontWeight: 600, fontSize: 13 }}>
                         {pack.featured ? <span style={{ color: "#f59e0b", marginRight: 4 }}>★</span> : null}
                         {pack.title}
-                        {pack.isDietPack ? (
-                          <span style={{ marginLeft: 5, fontSize: 10, background: "#fdf4ff", color: "#7c3aed", border: "1px solid #e9d5ff", borderRadius: 4, padding: "1px 6px", fontWeight: 700 }}>
-                            {pack.dietLabel ? pack.dietLabel : "DIETA"}
-                          </span>
-                        ) : null}
                       </div>
                       <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>{pack.slug}</div>
                       {pack.tags?.length > 0 && (
