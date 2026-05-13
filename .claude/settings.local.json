@@ -48,7 +48,12 @@
       "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\backend\\\\uploads\\\\packs\")",
       "PowerShell(New-Item -ItemType File -Force -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\backend\\\\uploads\\\\packs\\\\.gitkeep\")",
       "WebSearch",
-      "WebFetch(domain:unsplash.com)"
+      "WebFetch(domain:unsplash.com)",
+      "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Recurse -Depth 2)",
+      "Bash(xargs grep -l \"catalog\\\\|packs\")",
+      "Bash(node --input-type=module --eval \"import\\('./backend/src/kitchen/models/BitesTransaction.js'\\).then\\(\\(\\) => console.log\\('BitesTransaction OK'\\)\\).catch\\(e => console.error\\('BitesTransaction ERR', e.message\\)\\)\")",
+      "Bash(node --input-type=module --eval \"import\\('./backend/src/kitchen/models/BitesConfig.js'\\).then\\(\\(\\) => console.log\\('BitesConfig OK'\\)\\).catch\\(e => console.error\\('BitesConfig ERR', e.message\\)\\)\")",
+      "Bash(node_modules/.bin/vite build *)"
     ]
   }
 }

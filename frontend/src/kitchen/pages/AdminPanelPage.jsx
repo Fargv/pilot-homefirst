@@ -2510,6 +2510,366 @@ function CatalogPacksSection() {
   );
 }
 
+// ─── Bites Economy section ───────────────────────────────────────────────────
+
+function BitesEconomySection() {
+  const [config, setConfig] = useState(null);
+  const [bundles, setBundles] = useState([]);
+  const [households, setHouseholds] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [configDraft, setConfigDraft] = useState(null);
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  const [bundleForm, setBundleForm] = useState(null);
+  const [savingBundle, setSavingBundle] = useState(false);
+
+  const [grantForm, setGrantForm] = useState({ householdId: "", amount: 1, bucket: "free", reason: "" });
+  const [savingGrant, setSavingGrant] = useState(false);
+  const [grantMsg, setGrantMsg] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [cfgRes, hhRes, txRes] = await Promise.all([
+        apiRequest("/api/kitchen/bites/admin/config"),
+        apiRequest("/api/admin/households"),
+        apiRequest("/api/kitchen/bites/admin/transactions?limit=20")
+      ]);
+      const c = cfgRes.config || {};
+      setConfig(c);
+      setConfigDraft({
+        basic: c.monthlyGrantByPlan?.basic ?? 1,
+        pro: c.monthlyGrantByPlan?.pro ?? 3,
+        premium: c.monthlyGrantByPlan?.premium ?? 10,
+        maxBasic: c.maxFreeCarryOverByPlan?.basic ?? 5,
+        maxPro: c.maxFreeCarryOverByPlan?.pro ?? 10,
+        maxPremium: c.maxFreeCarryOverByPlan?.premium ?? 50
+      });
+      setBundles(c.bundles || []);
+      setHouseholds(hhRes.households || []);
+      setTransactions(txRes.transactions || []);
+    } catch (err) {
+      setError(err.message || "Error al cargar la economía de Bites.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const saveConfig = async () => {
+    setSavingConfig(true);
+    try {
+      await apiRequest("/api/kitchen/bites/admin/config", {
+        method: "PUT",
+        body: JSON.stringify({
+          monthlyGrantByPlan: { basic: Number(configDraft.basic), pro: Number(configDraft.pro), premium: Number(configDraft.premium) },
+          maxFreeCarryOverByPlan: { basic: Number(configDraft.maxBasic), pro: Number(configDraft.maxPro), premium: Number(configDraft.maxPremium) }
+        })
+      });
+      await load();
+    } catch (err) {
+      setError(err.message || "Error al guardar la configuración.");
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  const saveBundle = async () => {
+    setSavingBundle(true);
+    try {
+      if (bundleForm._id) {
+        await apiRequest(`/api/kitchen/bites/admin/bundles/${bundleForm._id}`, {
+          method: "PUT",
+          body: JSON.stringify(bundleForm)
+        });
+      } else {
+        await apiRequest("/api/kitchen/bites/admin/bundles", {
+          method: "POST",
+          body: JSON.stringify(bundleForm)
+        });
+      }
+      setBundleForm(null);
+      await load();
+    } catch (err) {
+      setError(err.message || "Error al guardar el bundle.");
+    } finally {
+      setSavingBundle(false);
+    }
+  };
+
+  const deleteBundle = async (bundleId) => {
+    if (!window.confirm("¿Eliminar este bundle?")) return;
+    try {
+      await apiRequest(`/api/kitchen/bites/admin/bundles/${bundleId}`, { method: "DELETE" });
+      await load();
+    } catch (err) {
+      setError(err.message || "Error al eliminar.");
+    }
+  };
+
+  const submitGrant = async () => {
+    setSavingGrant(true);
+    setGrantMsg("");
+    try {
+      const res = await apiRequest("/api/kitchen/bites/admin/grant", {
+        method: "POST",
+        body: JSON.stringify({
+          householdId: grantForm.householdId,
+          amount: Number(grantForm.amount),
+          bucket: grantForm.bucket,
+          reason: grantForm.reason
+        })
+      });
+      setGrantMsg(`OK — libre: ${res.wallet?.freeBitesBalance ?? "?"}, comprados: ${res.wallet?.purchasedBitesBalance ?? "?"}`);
+      await load();
+    } catch (err) {
+      setGrantMsg(`Error: ${err.message}`);
+    } finally {
+      setSavingGrant(false);
+    }
+  };
+
+  if (loading) return <div style={{ padding: 24 }}>Cargando...</div>;
+
+  const cdNum = (key) => Number(configDraft?.[key] ?? 0);
+
+  return (
+    <Card style={{ maxWidth: 900 }}>
+      <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700 }}>Bites Economy</h2>
+
+      {error && <div style={{ color: "#b91c1c", background: "#fef2f2", padding: "8px 12px", borderRadius: 6, marginBottom: 16, fontSize: 13 }}>{error}</div>}
+
+      {/* ── Plan config ── */}
+      <section style={{ marginBottom: 32 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#374151" }}>Bites mensuales por plan</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 12 }}>
+          {[
+            { key: "basic", label: "Basic", maxKey: "maxBasic" },
+            { key: "pro", label: "Pro", maxKey: "maxPro" },
+            { key: "premium", label: "Premium", maxKey: "maxPremium" }
+          ].map(({ key, label, maxKey }) => (
+            <div key={key} style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>{label}</div>
+              <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 4 }}>Bites/mes</label>
+              <input
+                type="number"
+                min="0"
+                className="kitchen-input"
+                style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                value={cdNum(key)}
+                onChange={(e) => setConfigDraft((d) => ({ ...d, [key]: e.target.value }))}
+              />
+              <label style={{ fontSize: 12, color: "#64748b", display: "block", marginTop: 8, marginBottom: 4 }}>Máx. acumulados</label>
+              <input
+                type="number"
+                min="0"
+                className="kitchen-input"
+                style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                value={cdNum(maxKey)}
+                onChange={(e) => setConfigDraft((d) => ({ ...d, [maxKey]: e.target.value }))}
+              />
+            </div>
+          ))}
+        </div>
+        <button type="button" style={ABT.save} onClick={saveConfig} disabled={savingConfig}>
+          {savingConfig ? "Guardando..." : "Guardar configuración"}
+        </button>
+      </section>
+
+      {/* ── Bundles ── */}
+      <section style={{ marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", margin: 0 }}>Bundles de Bites</h3>
+          <button
+            type="button"
+            style={ABT.save}
+            onClick={() => setBundleForm({ name: "", bitesAmount: 10, price: 9.99, badge: "", highlighted: false, active: true, sortOrder: 0 })}
+          >
+            + Nuevo bundle
+          </button>
+        </div>
+
+        {bundleForm && (
+          <div style={{ background: "#f0f4ff", border: "1px solid #c7d2fe", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <div>
+                <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Nombre</label>
+                <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                  value={bundleForm.name} onChange={(e) => setBundleForm((f) => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Bites</label>
+                <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                  value={bundleForm.bitesAmount} onChange={(e) => setBundleForm((f) => ({ ...f, bitesAmount: Number(e.target.value) }))} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Precio (€)</label>
+                <input type="number" step="0.01" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                  value={bundleForm.price} onChange={(e) => setBundleForm((f) => ({ ...f, price: Number(e.target.value) }))} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Badge</label>
+                <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                  value={bundleForm.badge} onChange={(e) => setBundleForm((f) => ({ ...f, badge: e.target.value }))} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Sort order</label>
+                <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                  value={bundleForm.sortOrder} onChange={(e) => setBundleForm((f) => ({ ...f, sortOrder: Number(e.target.value) }))} />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, paddingTop: 18 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                  <input type="checkbox" checked={bundleForm.highlighted} onChange={(e) => setBundleForm((f) => ({ ...f, highlighted: e.target.checked }))} />
+                  Destacado
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                  <input type="checkbox" checked={bundleForm.active} onChange={(e) => setBundleForm((f) => ({ ...f, active: e.target.checked }))} />
+                  Activo
+                </label>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="button" style={ABT.save} disabled={savingBundle} onClick={saveBundle}>
+                {savingBundle ? "..." : "Guardar"}
+              </button>
+              <button type="button" style={ABT.cancel} onClick={() => setBundleForm(null)}>Cancelar</button>
+            </div>
+          </div>
+        )}
+
+        <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+              {["Nombre", "Bites", "Precio", "€/Bite", "Badge", "Activo", ""].map((h) => (
+                <th key={h} style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {bundles.map((b) => (
+              <tr key={String(b._id)} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                <td style={{ padding: "6px 8px", fontWeight: b.highlighted ? 700 : 400 }}>{b.name}</td>
+                <td style={{ padding: "6px 8px" }}>{b.bitesAmount}</td>
+                <td style={{ padding: "6px 8px" }}>{Number(b.price).toFixed(2)} €</td>
+                <td style={{ padding: "6px 8px", color: "#6b7280" }}>{(b.price / b.bitesAmount).toFixed(2)} €</td>
+                <td style={{ padding: "6px 8px" }}>{b.badge || "—"}</td>
+                <td style={{ padding: "6px 8px" }}>
+                  <span style={{ color: b.active ? "#16a34a" : "#9ca3af", fontWeight: 600 }}>{b.active ? "Sí" : "No"}</span>
+                </td>
+                <td style={{ padding: "6px 8px" }}>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button type="button" style={ABT.edit} onClick={() => setBundleForm({ ...b, _id: b._id })}>Editar</button>
+                    <button type="button" style={ABT.del} onClick={() => deleteBundle(b._id)}>Eliminar</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {bundles.length === 0 && (
+              <tr><td colSpan={7} style={{ padding: 16, color: "#9ca3af", textAlign: "center" }}>Sin bundles configurados</td></tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      {/* ── Manual grant ── */}
+      <section style={{ marginBottom: 32 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 12 }}>Conceder / quitar Bites manualmente</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 2fr", gap: 10, marginBottom: 10 }}>
+          <div>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Hogar</label>
+            <select
+              className="kitchen-select"
+              style={{ fontSize: 13, padding: "4px 6px", width: "100%" }}
+              value={grantForm.householdId}
+              onChange={(e) => setGrantForm((f) => ({ ...f, householdId: e.target.value }))}
+            >
+              <option value="">Seleccionar hogar...</option>
+              {households.map((h) => (
+                <option key={h.id} value={h.id}>{h.name} ({h.subscriptionPlan})</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Amount (negativo = quitar)</label>
+            <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+              value={grantForm.amount} onChange={(e) => setGrantForm((f) => ({ ...f, amount: Number(e.target.value) }))} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Bolsillo</label>
+            <select className="kitchen-select" style={{ fontSize: 13, padding: "4px 6px", width: "100%" }}
+              value={grantForm.bucket} onChange={(e) => setGrantForm((f) => ({ ...f, bucket: e.target.value }))}>
+              <option value="free">Incluidos (plan)</option>
+              <option value="purchased">Comprados</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Razón (obligatorio)</label>
+            <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+              value={grantForm.reason} onChange={(e) => setGrantForm((f) => ({ ...f, reason: e.target.value }))} />
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button type="button" style={ABT.save} disabled={savingGrant || !grantForm.householdId || !grantForm.reason} onClick={submitGrant}>
+            {savingGrant ? "..." : "Aplicar"}
+          </button>
+          {grantMsg && <span style={{ fontSize: 12, color: grantMsg.startsWith("Error") ? "#b91c1c" : "#16a34a" }}>{grantMsg}</span>}
+        </div>
+      </section>
+
+      {/* ── Recent transactions ── */}
+      <section>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 12 }}>Últimas transacciones</h3>
+        <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+              {["Fecha", "Hogar", "Tipo", "Amount", "Libre tras", "Comprado tras", "Razón"].map((h) => (
+                <th key={h} style={{ padding: "5px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 11 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((tx) => (
+              <tr key={String(tx._id)} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                <td style={{ padding: "5px 8px", color: "#6b7280" }}>
+                  {new Date(tx.createdAt).toLocaleDateString("es", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                </td>
+                <td style={{ padding: "5px 8px", color: "#6b7280", fontFamily: "monospace", fontSize: 10 }}>
+                  {String(tx.householdId).slice(-6)}
+                </td>
+                <td style={{ padding: "5px 8px" }}>
+                  <span style={{
+                    padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 600,
+                    background: tx.type === "monthly_grant" ? "#ede9fe" : tx.type === "pack_unlock" ? "#fef9c3" : tx.type.includes("admin") ? "#dcfce7" : "#f1f5f9",
+                    color: tx.type === "monthly_grant" ? "#6d28d9" : tx.type === "pack_unlock" ? "#854d0e" : tx.type.includes("admin") ? "#166534" : "#374151"
+                  }}>
+                    {tx.type}
+                  </span>
+                </td>
+                <td style={{ padding: "5px 8px", fontWeight: 600, color: tx.amount > 0 ? "#16a34a" : "#b91c1c" }}>
+                  {tx.amount > 0 ? "+" : ""}{tx.amount}
+                </td>
+                <td style={{ padding: "5px 8px" }}>{tx.balanceAfterFree}</td>
+                <td style={{ padding: "5px 8px" }}>{tx.balanceAfterPurchased}</td>
+                <td style={{ padding: "5px 8px", color: "#6b7280", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {tx.reason || "—"}
+                </td>
+              </tr>
+            ))}
+            {transactions.length === 0 && (
+              <tr><td colSpan={7} style={{ padding: 16, color: "#9ca3af", textAlign: "center" }}>Sin transacciones aún</td></tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+    </Card>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function AdminPanelPage() {
@@ -2581,7 +2941,8 @@ export default function AdminPanelPage() {
             { key: "users", label: "Usuarios" },
             { key: "quick", label: "Cambio rápido" },
             { key: "master", label: "Master" },
-            { key: "catalog_packs", label: "Catálogo" }
+            { key: "catalog_packs", label: "Catálogo" },
+            { key: "bites_economy", label: "Bites" }
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -2616,6 +2977,8 @@ export default function AdminPanelPage() {
           <MasterCatalogSection />
         ) : tab === "catalog_packs" ? (
           <CatalogPacksSection />
+        ) : tab === "bites_economy" ? (
+          <BitesEconomySection />
         ) : (
           <QuickSubscriptionPanel />
         )}

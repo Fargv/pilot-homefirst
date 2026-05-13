@@ -10,6 +10,7 @@ import householdRoutes from "./routes/household.js";
 import dishCategoryRoutes from "./routes/dishCategories.js";
 import pushRoutes from "./routes/push.js";
 import catalogRoutes from "./routes/catalog.js";
+import bitesRoutes from "./routes/bites.js";
 
 const router = express.Router();
 
@@ -24,5 +25,6 @@ router.use("/household", householdRoutes);
 router.use("/dish-categories", dishCategoryRoutes);
 router.use("/push", pushRoutes);
 router.use("/catalog", catalogRoutes);
+router.use("/bites", bitesRoutes);
 
 export default router;

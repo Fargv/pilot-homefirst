@@ -27,6 +27,14 @@ import {
   resolvePackEntitlement,
   isPackCurrentlyFree
 } from "../catalogService.js";
+import {
+  getBitesConfig,
+  getWalletFromHousehold,
+  getMonthlyGrant,
+  getMaxCarryOver,
+  daysUntilNextGrant,
+  spendBites
+} from "../bitesService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -388,17 +396,25 @@ router.get("/packs", requireAuth, async (req, res) => {
     const creditsTotal = getCatalogMonthlyCredits(subscriptionPlan);
     const creditsRemaining = await getMonthlyCreditsRemaining(HouseholdCatalogPack, householdId, subscriptionPlan);
 
-    const ownedPacks = await HouseholdCatalogPack.find({ householdId }).lean();
+    const [ownedPacks, fullHousehold, bitesConfig] = await Promise.all([
+      HouseholdCatalogPack.find({ householdId }).lean(),
+      Household.findById(householdId).lean(),
+      getBitesConfig()
+    ]);
     const ownedMap = Object.fromEntries(ownedPacks.map((o) => [String(o.packId), o]));
+    const wallet = getWalletFromHousehold(fullHousehold || {});
+    const days = daysUntilNextGrant();
 
     const packsWithEntitlement = packs.map((pack) => {
+      const bitesCost = pack.monthlyCreditCost ?? 1;
       const ownership = ownedMap[String(pack._id)] || null;
       const owned = Boolean(ownership);
       const installed = ownership?.status === "installed";
       const isFree = isPackCurrentlyFree(pack);
       const includedInPlan = Array.isArray(pack.includedPlans) && pack.includedPlans.includes(subscriptionPlan);
       const canClaimWithPlan = includedInPlan && creditsRemaining > 0 && !owned;
-      const requiresPurchase = !isFree && !owned && !canClaimWithPlan;
+      const canUnlockWithBites = !owned && !isFree && !includedInPlan && wallet.totalBites >= bitesCost;
+      const requiresPurchase = !isFree && !owned && !canClaimWithPlan && !canUnlockWithBites;
 
       return {
         id: pack._id,
@@ -411,6 +427,7 @@ router.get("/packs", requireAuth, async (req, res) => {
         cuisineType: pack.cuisineType,
         featured: pack.featured,
         priceBasic: pack.priceBasic,
+        bitesCost,
         includedPlans: pack.includedPlans,
         dishCount: Array.isArray(pack.dishes) ? pack.dishes.length : 0,
         dishPreview: (() => { const all = pack.dishes || []; const count = Math.min(5, Math.floor(all.length / 2)); return all.slice(0, count).map((d) => ({ name: d.name, teaser: d.teaser || null })); })(),
@@ -426,8 +443,10 @@ router.get("/packs", requireAuth, async (req, res) => {
           isFreeUntil: pack.freeUntil && new Date(pack.freeUntil) > new Date() ? pack.freeUntil : null,
           includedInPlan,
           canClaimWithPlan,
+          canUnlockWithBites,
           requiresPurchase,
-          priceBasic: pack.priceBasic
+          priceBasic: pack.priceBasic,
+          bitesCost
         }
       };
     });
@@ -440,6 +459,12 @@ router.get("/packs", requireAuth, async (req, res) => {
         total: creditsTotal,
         remaining: creditsRemaining,
         claimMonth
+      },
+      wallet: { ...wallet, daysUntilNextGrant: days },
+      bitesConfig: {
+        monthlyGrant: getMonthlyGrant(bitesConfig, subscriptionPlan),
+        maxCarryOver: getMaxCarryOver(bitesConfig, subscriptionPlan),
+        bundles: (bitesConfig.bundles || []).filter((b) => b.active).sort((a, b) => a.sortOrder - b.sortOrder)
       }
     });
   } catch (error) {
@@ -548,6 +573,58 @@ router.post("/packs/:packId/claim", requireAuth, async (req, res) => {
   } catch (error) {
     if (handleHouseholdError(res, error)) return;
     return res.status(500).json({ ok: false, error: error.message || "Error al reclamar el pack." });
+  }
+});
+
+router.post("/packs/:packId/unlock", requireAuth, async (req, res) => {
+  try {
+    const householdId = getEffectiveHouseholdId(req.user);
+
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+
+    const pack = await CatalogPack.findOne({ _id: req.params.packId, active: true, status: "published" }).lean();
+    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+
+    const existing = await HouseholdCatalogPack.findOne({ householdId, packId: pack._id }).lean();
+    if (existing) {
+      return res.json({ ok: true, alreadyOwned: true, message: "Este pack ya está en tu biblioteca." });
+    }
+
+    const bitesCost = pack.monthlyCreditCost ?? 1;
+    if (bitesCost <= 0) {
+      return res.status(400).json({ ok: false, error: "Este pack no requiere Bites para desbloquearse." });
+    }
+
+    const { wallet } = await spendBites(
+      householdId,
+      bitesCost,
+      `Desbloquear pack: ${pack.title}`,
+      { packId: String(pack._id), packTitle: pack.title }
+    );
+
+    const ownership = await HouseholdCatalogPack.create({
+      householdId,
+      packId: pack._id,
+      acquiredVia: "purchase",
+      acquiredAt: new Date(),
+      status: "owned",
+      paymentStatus: "paid",
+      pricePaid: bitesCost
+    });
+
+    return res.json({
+      ok: true,
+      ownership: { id: ownership._id, status: ownership.status },
+      newWallet: wallet
+    });
+  } catch (error) {
+    if (handleHouseholdError(res, error)) return;
+    if (error.code === "INSUFFICIENT_BITES") {
+      return res.status(402).json({ ok: false, code: "INSUFFICIENT_BITES", error: error.message });
+    }
+    return res.status(500).json({ ok: false, error: error.message || "Error al desbloquear el pack." });
   }
 });
 

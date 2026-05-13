@@ -30,7 +30,11 @@ const HouseholdSchema = new mongoose.Schema(
     isPro: { type: Boolean, default: false },
     assignedByAdmin: { type: Boolean, default: false },
     randomizationUseDietFilter: { type: Boolean, default: false },
-    randomizationDefaultDietPackIds: { type: [mongoose.Schema.Types.ObjectId], default: [] }
+    randomizationDefaultDietPackIds: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+    freeBitesBalance: { type: Number, default: 0, min: 0 },
+    purchasedBitesBalance: { type: Number, default: 0, min: 0 },
+    totalBitesSpent: { type: Number, default: 0, min: 0 },
+    lastMonthlyBitesGrantAt: { type: Date, default: null }
   },
   { timestamps: true }
 );

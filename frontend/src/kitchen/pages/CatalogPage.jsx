@@ -74,57 +74,149 @@ function StarIcon() {
   );
 }
 
-function daysUntilMonthReset() {
-  const now = new Date();
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+function BitesIcon({ size = 16 }) {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true" style={{ width: size, height: size, display: "inline-block", verticalAlign: "middle", flexShrink: 0 }}>
+      <circle cx="10" cy="10" r="9" fill="#6366f1" opacity="0.15" />
+      <text x="10" y="14" textAnchor="middle" fontSize="10" fontWeight="700" fill="#6366f1" fontFamily="system-ui">B</text>
+    </svg>
+  );
 }
 
-function CatalogCreditsPanel({ plan, credits }) {
-  const planLabel = { basic: "Basic", pro: "Pro", premium: "Premium" }[plan] || plan;
-  const daysLeft = daysUntilMonthReset();
+// ─── Bites Wallet Panel ───────────────────────────────────────────────────────
 
-  if (!credits || credits.total === 0) {
-    return (
-      <div className="kitchen-card catalog-credits-panel catalog-credits-none">
-        <span className="catalog-credits-plan">{planLabel}</span>
-        <span className="catalog-credits-text">Tu plan no incluye packs mensuales</span>
-        <a href="/kitchen/upgrade" className="kitchen-link catalog-credits-upgrade">Ver planes</a>
-      </div>
-    );
-  }
+function CatalogBitesWallet({ wallet, plan, bitesConfig, onBuyBites }) {
+  if (!wallet) return null;
+
+  const { freeBitesBalance = 0, purchasedBitesBalance = 0, totalBites = 0, daysUntilNextGrant = null } = wallet;
+  const monthlyGrant = bitesConfig?.monthlyGrant ?? 0;
 
   return (
-    <div className="kitchen-card catalog-credits-panel">
-      <span className="catalog-credits-plan">{planLabel}</span>
-      <span className="catalog-credits-text">
-        {credits.remaining === 0
-          ? "Has usado todos tus packs de este mes"
-          : credits.remaining === 1
-            ? "Te queda 1 pack este mes"
-            : `Te quedan ${credits.remaining} packs este mes`}
-      </span>
-      <span className="catalog-credits-dots">
-        {Array.from({ length: credits.total }, (_, i) => (
-          <span
-            key={i}
-            className={`catalog-credits-dot ${i < credits.remaining ? "active" : ""}`}
-          />
-        ))}
-      </span>
-      {credits.remaining < credits.total && (
-        <span className="catalog-credits-reset">
-          Se recarga en {daysLeft} {daysLeft === 1 ? "día" : "días"}
-        </span>
-      )}
-      {credits.remaining === credits.total && (
-        <span className="catalog-credits-reset">
-          Recarga en {daysLeft} {daysLeft === 1 ? "día" : "días"}
-        </span>
-      )}
+    <div className="kitchen-card catalog-bites-wallet">
+      <div className="catalog-bites-wallet-main">
+        <div className="catalog-bites-wallet-balance">
+          <BitesIcon size={20} />
+          <span className="catalog-bites-wallet-count">{totalBites}</span>
+          <span className="catalog-bites-wallet-label">Bites disponibles</span>
+        </div>
+
+        <div className="catalog-bites-wallet-breakdown">
+          {freeBitesBalance > 0 && (
+            <span className="catalog-bites-wallet-detail">
+              {freeBitesBalance} incluidos en tu plan
+            </span>
+          )}
+          {purchasedBitesBalance > 0 && (
+            <span className="catalog-bites-wallet-detail">
+              {purchasedBitesBalance} comprados
+            </span>
+          )}
+          {freeBitesBalance === 0 && purchasedBitesBalance === 0 && (
+            <span className="catalog-bites-wallet-detail empty">
+              Sin Bites disponibles
+            </span>
+          )}
+        </div>
+
+        {daysUntilNextGrant !== null && monthlyGrant > 0 && (
+          <span className="catalog-bites-wallet-recharge">
+            Próxima recarga en {daysUntilNextGrant} {daysUntilNextGrant === 1 ? "día" : "días"}
+          </span>
+        )}
+      </div>
+
+      <button
+        type="button"
+        className="kitchen-btn catalog-bites-buy-cta"
+        onClick={onBuyBites}
+      >
+        Comprar Bites
+      </button>
     </div>
   );
 }
+
+// ─── Bites Store ─────────────────────────────────────────────────────────────
+
+function CatalogBitesStore({ bundles, onClose, onBuyBundle }) {
+  return (
+    <div className="kitchen-modal-overlay" onClick={onClose}>
+      <div className="kitchen-modal catalog-bites-store-modal" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="kitchen-modal-close" onClick={onClose} aria-label="Cerrar">×</button>
+        <h2 className="catalog-bites-store-title">
+          <BitesIcon size={20} /> Comprar Bites
+        </h2>
+        <p className="catalog-bites-store-subtitle">
+          Los Bites comprados no caducan. Los Bites incluidos en tu plan se acumulan hasta el límite de tu plan.
+        </p>
+
+        <div className="catalog-bites-bundles-grid">
+          {(bundles || []).map((bundle) => (
+            <div
+              key={String(bundle._id || bundle.id || bundle.name)}
+              className={`catalog-bites-bundle ${bundle.highlighted ? "highlighted" : ""}`}
+            >
+              {bundle.badge && (
+                <span className="catalog-bites-bundle-badge">{bundle.badge}</span>
+              )}
+              <div className="catalog-bites-bundle-name">{bundle.name}</div>
+              <div className="catalog-bites-bundle-amount">
+                <BitesIcon size={18} /> {bundle.bitesAmount} Bites
+              </div>
+              <div className="catalog-bites-bundle-price">
+                {Number(bundle.price).toFixed(2).replace(".", ",")} €
+              </div>
+              <div className="catalog-bites-bundle-per">
+                {(bundle.price / bundle.bitesAmount).toFixed(2).replace(".", ",")} €/Bite
+              </div>
+              <button
+                type="button"
+                className={`kitchen-btn catalog-bites-bundle-btn ${bundle.highlighted ? "primary" : ""}`}
+                onClick={() => onBuyBundle(bundle)}
+              >
+                Comprar
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <p className="catalog-bites-store-note">
+          El sistema de pago estará disponible próximamente. Contacta con soporte si necesitas Bites ahora.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Insufficient Bites modal ─────────────────────────────────────────────────
+
+function InsufficientBitesModal({ pack, bundles, onClose, onBuyBites }) {
+  const bitesCost = pack?.bitesCost ?? pack?.entitlement?.bitesCost ?? 1;
+  return (
+    <div className="kitchen-modal-overlay" onClick={onClose}>
+      <div className="kitchen-modal catalog-purchase-modal" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="kitchen-modal-close" onClick={onClose} aria-label="Cerrar">×</button>
+        <div className="catalog-purchase-modal-icon"><PackIcon /></div>
+        <h2 className="catalog-purchase-modal-title">No tienes Bites suficientes</h2>
+        <p className="catalog-purchase-modal-text">
+          Este pack cuesta <strong>{bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</strong>.
+          Consigue más Bites para desbloquearlo.
+        </p>
+        {pack?.title && (
+          <p className="catalog-purchase-modal-pack">Pack: <strong>{pack.title}</strong></p>
+        )}
+        <div className="catalog-purchase-modal-actions">
+          <button type="button" className="kitchen-btn primary" onClick={onBuyBites}>
+            Comprar Bites
+          </button>
+          <button type="button" className="kitchen-btn" onClick={onClose}>Cerrar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Entitlement badge ────────────────────────────────────────────────────────
 
 function EntitlementBadge({ entitlement }) {
   if (entitlement.installed) {
@@ -143,6 +235,14 @@ function EntitlementBadge({ entitlement }) {
   if (entitlement.includedInPlan) {
     return <span className="catalog-badge catalog-badge-included">Incluido en tu plan</span>;
   }
+  if (entitlement.canUnlockWithBites || entitlement.requiresPurchase) {
+    const cost = entitlement.bitesCost ?? 1;
+    return (
+      <span className="catalog-badge catalog-badge-bites">
+        <BitesIcon size={11} /> {cost} {cost === 1 ? "Bite" : "Bites"}
+      </span>
+    );
+  }
   return <span className="catalog-badge catalog-badge-price">{formatPrice(entitlement.priceBasic)}</span>;
 }
 
@@ -150,6 +250,8 @@ function formatPrice(price) {
   if (!price || price <= 0) return "Gratis";
   return `${Number(price).toFixed(2).replace(".", ",")} €`;
 }
+
+// ─── Pack card ────────────────────────────────────────────────────────────────
 
 function PackCard({ pack, onAction }) {
   const { entitlement } = pack;
@@ -171,17 +273,24 @@ function PackCard({ pack, onAction }) {
     }
   };
 
+  const bitesCost = entitlement.bitesCost ?? 1;
+
   const actionLabel = (() => {
     if (entitlement.installed) return "Ya instalado";
     if (entitlement.owned) return "Instalar";
     if (entitlement.isFree) return "Instalar gratis";
-    if (entitlement.canClaimWithPlan) return "Usar crédito mensual";
-    if (entitlement.requiresPurchase) return `Comprar ${formatPrice(entitlement.priceBasic)}`;
+    if (entitlement.canClaimWithPlan) return "Instalar (incluido en tu plan)";
+    if (entitlement.canUnlockWithBites) return `Desbloquear pack · ${bitesCost} ${bitesCost === 1 ? "Bite" : "Bites"}`;
+    if (entitlement.requiresPurchase) return "Comprar Bites";
     return "Instalar";
   })();
 
   const actionDisabled = entitlement.installed;
-  const actionStyle = entitlement.requiresPurchase ? "purchase" : "primary";
+  const actionStyle = entitlement.requiresPurchase
+    ? "purchase"
+    : entitlement.canUnlockWithBites
+      ? "bites"
+      : "primary";
 
   return (
     <div className={`kitchen-card catalog-pack-card ${pack.featured ? "catalog-pack-featured" : ""}`}>
@@ -255,28 +364,7 @@ function PackCard({ pack, onAction }) {
   );
 }
 
-function PurchasePlaceholderModal({ pack, onClose }) {
-  return (
-    <div className="kitchen-modal-overlay" onClick={onClose}>
-      <div className="kitchen-modal catalog-purchase-modal" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="kitchen-modal-close" onClick={onClose} aria-label="Cerrar">×</button>
-        <div className="catalog-purchase-modal-icon">
-          <PackIcon />
-        </div>
-        <h2 className="catalog-purchase-modal-title">Compra próximamente</h2>
-        <p className="catalog-purchase-modal-text">
-          La compra de packs individuales estará disponible próximamente. Por ahora, con el plan Pro o Premium
-          puedes acceder a packs incluidos usando tus créditos mensuales.
-        </p>
-        <p className="catalog-purchase-modal-pack">Pack: <strong>{pack?.title}</strong></p>
-        <div className="catalog-purchase-modal-actions">
-          <a href="/kitchen/upgrade" className="kitchen-btn primary">Ver planes</a>
-          <button type="button" className="kitchen-btn" onClick={onClose}>Cerrar</button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── Diet pack modal ──────────────────────────────────────────────────────────
 
 function Toast({ message, type, onClose }) {
   useEffect(() => {
@@ -335,17 +423,21 @@ function DietPackInstallModal({ pack, onUseAsDefault, onDecline }) {
   );
 }
 
+// ─── Main page ────────────────────────────────────────────────────────────────
+
 export default function CatalogPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [packs, setPacks] = useState([]);
-  const [credits, setCredits] = useState(null);
+  const [wallet, setWallet] = useState(null);
+  const [bitesConfig, setBitesConfig] = useState(null);
   const [plan, setPlan] = useState("basic");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
-  const [purchaseModalPack, setPurchaseModalPack] = useState(null);
+  const [bitesStoreOpen, setBitesStoreOpen] = useState(false);
+  const [insufficientBitesPack, setInsufficientBitesPack] = useState(null);
   const [dietInstallModal, setDietInstallModal] = useState(null);
 
   const showToast = useCallback((message, type = "success") => {
@@ -359,8 +451,9 @@ export default function CatalogPage() {
     try {
       const data = await apiRequest("/api/kitchen/catalog/packs");
       setPacks(data.packs || []);
-      setCredits(data.credits || null);
       setPlan(data.plan || "basic");
+      if (data.wallet) setWallet(data.wallet);
+      if (data.bitesConfig) setBitesConfig(data.bitesConfig);
     } catch (err) {
       setError(err.message || "No se pudo cargar el catálogo.");
     } finally {
@@ -383,11 +476,23 @@ export default function CatalogPage() {
     if (entitlement.installed) return;
 
     if (entitlement.requiresPurchase) {
-      setPurchaseModalPack(pack);
+      setInsufficientBitesPack(pack);
       return;
     }
 
-    if (!entitlement.owned && entitlement.canClaimWithPlan) {
+    if (entitlement.canUnlockWithBites && !entitlement.owned) {
+      try {
+        const result = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/unlock`, { method: "POST" });
+        if (result.newWallet) setWallet((prev) => ({ ...prev, ...result.newWallet }));
+      } catch (err) {
+        if (err.message?.includes("INSUFFICIENT_BITES") || err.message?.includes("Bites suficientes")) {
+          setInsufficientBitesPack(pack);
+          return;
+        }
+        showToast(err.message || "Error al desbloquear el pack.", "error");
+        return;
+      }
+    } else if (!entitlement.owned && entitlement.canClaimWithPlan) {
       try {
         await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/claim`, { method: "POST" });
       } catch (err) {
@@ -405,7 +510,6 @@ export default function CatalogPage() {
         showToast("Este pack ya estaba instalado.", "info");
       } else {
         showToast(`¡Pack instalado! ${result.dishesCreated} platos añadidos a tu biblioteca.`, "success");
-        // Show diet-pack modal for Pro/Premium owners/admins if not already dismissed
         if (result.isDietPack && canUseDietRandomization(plan) && !isDietPackModalDismissed(String(pack.id))) {
           const isOwnerOrAdmin = String(user?.role || "").toLowerCase() === "owner"
             || String(user?.globalRole || "").toLowerCase() === "diod";
@@ -418,14 +522,18 @@ export default function CatalogPage() {
       await loadCatalog();
     } catch (err) {
       if (err.message?.includes("NO_CREDITS_REMAINING") || err.message?.includes("crédito")) {
-        showToast("Has agotado tus créditos mensuales para este plan.", "error");
+        showToast("Has agotado tus Bites para este mes.", "error");
       } else if (err.message?.includes("NOT_ENTITLED") || err.message?.includes("acceso")) {
-        showToast("No tienes acceso a este pack. Actualiza tu suscripción.", "error");
+        showToast("No tienes acceso a este pack.", "error");
       } else {
         showToast(err.message || "Error al instalar el pack.", "error");
       }
     }
   }, [loadCatalog, showToast, plan, user]);
+
+  const handleBuyBundle = useCallback((_bundle) => {
+    showToast("El sistema de pago estará disponible próximamente.", "info");
+  }, [showToast]);
 
   return (
     <KitchenLayout>
@@ -435,7 +543,12 @@ export default function CatalogPage() {
           <p className="catalog-subtitle">Packs de platos listos para añadir a tu hogar</p>
         </div>
 
-        <CatalogCreditsPanel plan={plan} credits={credits} />
+        <CatalogBitesWallet
+          wallet={wallet}
+          plan={plan}
+          bitesConfig={bitesConfig}
+          onBuyBites={() => setBitesStoreOpen(true)}
+        />
 
         <div className="catalog-search-row">
           <input
@@ -492,10 +605,23 @@ export default function CatalogPage() {
         )}
       </div>
 
-      {purchaseModalPack && (
-        <PurchasePlaceholderModal
-          pack={purchaseModalPack}
-          onClose={() => setPurchaseModalPack(null)}
+      {bitesStoreOpen && (
+        <CatalogBitesStore
+          bundles={bitesConfig?.bundles || []}
+          onClose={() => setBitesStoreOpen(false)}
+          onBuyBundle={handleBuyBundle}
+        />
+      )}
+
+      {insufficientBitesPack && (
+        <InsufficientBitesModal
+          pack={insufficientBitesPack}
+          bundles={bitesConfig?.bundles || []}
+          onClose={() => setInsufficientBitesPack(null)}
+          onBuyBites={() => {
+            setInsufficientBitesPack(null);
+            setBitesStoreOpen(true);
+          }}
         />
       )}
 

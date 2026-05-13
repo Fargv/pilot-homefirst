@@ -8342,7 +8342,203 @@ body {
   margin: 0;
 }
 
-/* Credits panel */
+/* ─── Bites wallet panel ────────────────────────────────────── */
+.catalog-bites-wallet {
+  margin: 10px 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+}
+.catalog-bites-wallet-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.catalog-bites-wallet-balance {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.catalog-bites-wallet-count {
+  font-size: 22px;
+  font-weight: 800;
+  color: #4338ca;
+  line-height: 1;
+}
+.catalog-bites-wallet-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4338ca;
+}
+.catalog-bites-wallet-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.catalog-bites-wallet-detail {
+  font-size: 11px;
+  color: #64748b;
+}
+.catalog-bites-wallet-detail.empty {
+  color: #94a3b8;
+  font-style: italic;
+}
+.catalog-bites-wallet-recharge {
+  font-size: 11px;
+  color: #6366f1;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.catalog-bites-buy-cta {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.catalog-bites-buy-cta:hover { background: #4f46e5; }
+
+/* ─── Bites store modal ─────────────────────────────────────── */
+.catalog-bites-store-modal {
+  max-width: 540px;
+  width: 94%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.catalog-bites-store-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #1e1b4b;
+}
+.catalog-bites-store-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+.catalog-bites-bundles-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.catalog-bites-bundle {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 12px;
+  text-align: center;
+  position: relative;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+.catalog-bites-bundle.highlighted {
+  border-color: #6366f1;
+  background: #fafafe;
+}
+.catalog-bites-bundle-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #6366f1;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.catalog-bites-bundle-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e1b4b;
+  margin-bottom: 6px;
+}
+.catalog-bites-bundle-amount {
+  font-size: 18px;
+  font-weight: 800;
+  color: #4338ca;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.catalog-bites-bundle-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 2px;
+}
+.catalog-bites-bundle-per {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+.catalog-bites-bundle-btn {
+  width: 100%;
+  font-size: 13px;
+  padding: 7px 0;
+  border-radius: 7px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #374151;
+  cursor: pointer;
+  font-weight: 600;
+}
+.catalog-bites-bundle-btn.primary {
+  background: #6366f1;
+  color: #fff;
+  border-color: #6366f1;
+}
+.catalog-bites-bundle-btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+.catalog-bites-store-note {
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0;
+}
+
+/* ─── Pack action button: bites style ───────────────────────── */
+.catalog-pack-action.bites {
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+.catalog-pack-action.bites:hover:not(:disabled) {
+  background: #e0e7ff;
+}
+
+/* ─── Bites badge ───────────────────────────────────────────── */
+.catalog-badge-bites {
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Credits panel (legacy - kept for any remaining references) */
 .catalog-credits-panel {
   margin: 12px 16px;
   padding: 14px 16px;
