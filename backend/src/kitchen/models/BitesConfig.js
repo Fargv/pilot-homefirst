@@ -3,8 +3,9 @@ import mongoose from "mongoose";
 const BitesBundleSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    bitesAmount: { type: Number, required: true },
-    price: { type: Number, required: true },
+    bitesAmount: { type: Number, required: true, min: 1 },
+    price: { type: Number, required: true, min: 0 },
+    discountPercent: { type: Number, default: 0, min: 0, max: 95 },
     badge: { type: String, default: "" },
     highlighted: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
@@ -27,6 +28,7 @@ const BitesConfigSchema = new mongoose.Schema(
     key: { type: String, default: "bitesEconomy", unique: true },
     monthlyGrantByPlan: { type: PlanGrantSchema, default: () => ({ basic: 1, pro: 3, premium: 10 }) },
     maxFreeCarryOverByPlan: { type: PlanGrantSchema, default: () => ({ basic: 5, pro: 10, premium: 50 }) },
+    baseBitePrice: { type: Number, default: 1.99, min: 0.01 },
     bundles: { type: [BitesBundleSchema], default: [] },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null }
   },

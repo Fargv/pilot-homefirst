@@ -416,9 +416,9 @@ router.get("/packs", requireAuth, async (req, res) => {
       const isFree = isPackCurrentlyFree(pack);
       const includedInPlan = Array.isArray(pack.includedPlans) && pack.includedPlans.includes(subscriptionPlan);
       const canClaimWithPlan = includedInPlan && creditsRemaining > 0 && !owned;
-      const canUnlockWithBites = !owned && !isFree && !includedInPlan && hasBitesPrice && wallet.totalBites >= bitesCost;
-      const needsBitesPurchase = !owned && !isFree && !includedInPlan && hasBitesPrice && wallet.totalBites < bitesCost;
-      const canPayDirect = !owned && !isFree && !includedInPlan && hasDirectPrice;
+      const canUnlockWithBites = !owned && !isFree && !canClaimWithPlan && hasBitesPrice && wallet.totalBites >= bitesCost;
+      const needsBitesPurchase = !owned && !isFree && !canClaimWithPlan && hasBitesPrice && wallet.totalBites < bitesCost;
+      const canPayDirect = !owned && !isFree && !canClaimWithPlan && hasDirectPrice;
       const requiresPurchase = !isFree && !owned && !canClaimWithPlan && !canUnlockWithBites;
 
       return {

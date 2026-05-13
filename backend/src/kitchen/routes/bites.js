@@ -62,7 +62,7 @@ router.get("/admin/config", requireAuth, requireDiod, async (req, res) => {
 
 router.put("/admin/config", requireAuth, requireDiod, async (req, res) => {
   try {
-    const { monthlyGrantByPlan, maxFreeCarryOverByPlan } = req.body;
+    const { monthlyGrantByPlan, maxFreeCarryOverByPlan, baseBitePrice } = req.body;
 
     let config = await BitesConfig.findOne({ key: "bitesEconomy" });
     if (!config) {
@@ -83,6 +83,13 @@ router.put("/admin/config", requireAuth, requireDiod, async (req, res) => {
           config.maxFreeCarryOverByPlan[plan] = maxFreeCarryOverByPlan[plan];
         }
       }
+    }
+    if (baseBitePrice !== undefined) {
+      const bbp = Number(baseBitePrice);
+      if (!Number.isFinite(bbp) || bbp <= 0) {
+        return res.status(400).json({ ok: false, error: "baseBitePrice debe ser un número positivo." });
+      }
+      config.baseBitePrice = bbp;
     }
 
     config.updatedBy = req.kitchenUser._id;
@@ -109,9 +116,21 @@ router.get("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
 
 router.post("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
   try {
-    const { name, bitesAmount, price, badge, highlighted, active, sortOrder } = req.body;
-    if (!name || !bitesAmount || !price) {
+    const { name, bitesAmount, price, discountPercent, badge, highlighted, active, sortOrder } = req.body;
+    if (!name || !bitesAmount || price == null) {
       return res.status(400).json({ ok: false, error: "name, bitesAmount y price son obligatorios." });
+    }
+    const parsedBites = Number(bitesAmount);
+    const parsedPrice = Number(price);
+    if (!Number.isFinite(parsedBites) || parsedBites < 1) {
+      return res.status(400).json({ ok: false, error: "bitesAmount debe ser un entero >= 1." });
+    }
+    if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      return res.status(400).json({ ok: false, error: "price no puede ser negativo." });
+    }
+    const parsedDiscount = discountPercent !== undefined ? Number(discountPercent) : 0;
+    if (!Number.isFinite(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 95) {
+      return res.status(400).json({ ok: false, error: "discountPercent debe estar entre 0 y 95." });
     }
 
     const config = await BitesConfig.findOne({ key: "bitesEconomy" });
@@ -119,8 +138,9 @@ router.post("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
 
     config.bundles.push({
       name: String(name).trim(),
-      bitesAmount: Number(bitesAmount),
-      price: Number(price),
+      bitesAmount: parsedBites,
+      price: parsedPrice,
+      discountPercent: parsedDiscount,
       badge: badge ? String(badge).trim() : "",
       highlighted: Boolean(highlighted),
       active: active !== false,
@@ -144,10 +164,23 @@ router.put("/admin/bundles/:bundleId", requireAuth, requireDiod, async (req, res
     const bundle = config.bundles.id(req.params.bundleId);
     if (!bundle) return res.status(404).json({ ok: false, error: "Bundle no encontrado." });
 
-    const { name, bitesAmount, price, badge, highlighted, active, sortOrder } = req.body;
+    const { name, bitesAmount, price, discountPercent, badge, highlighted, active, sortOrder } = req.body;
     if (name !== undefined) bundle.name = String(name).trim();
-    if (bitesAmount !== undefined) bundle.bitesAmount = Number(bitesAmount);
-    if (price !== undefined) bundle.price = Number(price);
+    if (bitesAmount !== undefined) {
+      const v = Number(bitesAmount);
+      if (!Number.isFinite(v) || v < 1) return res.status(400).json({ ok: false, error: "bitesAmount debe ser un entero >= 1." });
+      bundle.bitesAmount = v;
+    }
+    if (price !== undefined) {
+      const v = Number(price);
+      if (!Number.isFinite(v) || v < 0) return res.status(400).json({ ok: false, error: "price no puede ser negativo." });
+      bundle.price = v;
+    }
+    if (discountPercent !== undefined) {
+      const v = Number(discountPercent);
+      if (!Number.isFinite(v) || v < 0 || v > 95) return res.status(400).json({ ok: false, error: "discountPercent debe estar entre 0 y 95." });
+      bundle.discountPercent = v;
+    }
     if (badge !== undefined) bundle.badge = String(badge).trim();
     if (highlighted !== undefined) bundle.highlighted = Boolean(highlighted);
     if (active !== undefined) bundle.active = Boolean(active);

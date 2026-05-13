@@ -293,36 +293,8 @@ function PackCard({ pack, onAction, onBuyBites }) {
   };
 
   const bitesCost = entitlement.bitesCost ?? 1;
-  const hasBitesPrice = Number(bitesCost || 0) > 0;
   const canShowDirect = Number(entitlement.priceBasic || 0) > 0;
-  const needsBitesPurchase = Boolean(entitlement.needsBitesPurchase);
   const priceLine = getPackPriceLine(entitlement);
-
-  const actionLabel = (() => {
-    if (entitlement.installed) return "Ya instalado";
-    if (entitlement.owned) return "Instalar";
-    if (entitlement.isFree) return "Instalar gratis";
-    if (entitlement.canClaimWithPlan) return "Instalar (incluido en tu plan)";
-    if (entitlement.canUnlockWithBites) return <>Desbloquear con <BitesIcon size={15} decorative /> {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>;
-    if (needsBitesPurchase) return "Comprar Bites";
-    if (canShowDirect) return `Pagar ${formatPrice(entitlement.priceBasic)}`;
-    if (entitlement.requiresPurchase) return "Comprar Bites";
-    return "Instalar";
-  })();
-
-  const actionDisabled = entitlement.installed;
-  const actionStyle = entitlement.requiresPurchase
-    ? "purchase"
-    : entitlement.canUnlockWithBites
-      ? "bites"
-      : "primary";
-  const primaryPaymentMethod = (() => {
-    if (entitlement.canUnlockWithBites) return "bites";
-    if (needsBitesPurchase) return "buy-bites";
-    if (canShowDirect) return "direct";
-    if (entitlement.requiresPurchase && hasBitesPrice) return "buy-bites";
-    return undefined;
-  })();
 
   return (
     <div className={`kitchen-card catalog-pack-card ${pack.featured ? "catalog-pack-featured" : ""}`}>
@@ -385,28 +357,57 @@ function PackCard({ pack, onAction, onBuyBites }) {
         </div>
 
         {(() => {
-          const showSecondary = canShowDirect && !entitlement.installed && !entitlement.owned && !entitlement.isFree && !entitlement.includedInPlan;
-          const twoButtons = showSecondary && (entitlement.canUnlockWithBites || needsBitesPurchase || entitlement.requiresPurchase);
-          return (
-            <div className={twoButtons ? "catalog-pack-actions-row" : undefined}>
+          if (entitlement.installed) {
+            return (
+              <button type="button" className="kitchen-btn catalog-pack-action" disabled>
+                Instalado
+              </button>
+            );
+          }
+          if (entitlement.owned || entitlement.isFree || entitlement.canClaimWithPlan) {
+            return (
               <button
                 type="button"
-                className={`kitchen-btn catalog-pack-action ${actionStyle} ${actionDisabled ? "disabled" : ""}`}
-                onClick={() => primaryPaymentMethod === "buy-bites" ? onBuyBites(pack) : handleAction(primaryPaymentMethod)}
-                disabled={actionDisabled || loading}
+                className="kitchen-btn catalog-pack-action primary"
+                onClick={() => handleAction("install")}
+                disabled={loading}
               >
-                {loading ? "Procesando..." : actionLabel}
+                {loading ? "Procesando..." : "Instalar"}
               </button>
-              {twoButtons && (
+            );
+          }
+          if (entitlement.canUnlockWithBites) {
+            return (
+              <button
+                type="button"
+                className="kitchen-btn catalog-pack-action bites"
+                onClick={() => handleAction("bites")}
+                disabled={loading}
+              >
+                {loading ? "Procesando..." : <><BitesIcon size={14} color="#fff" decorative /> Canjear {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>}
+              </button>
+            );
+          }
+          return (
+            <div className="catalog-pack-actions-row">
+              {canShowDirect && (
                 <button
                   type="button"
                   className="kitchen-btn catalog-pack-action catalog-pack-action-direct"
                   onClick={() => handleAction("direct")}
                   disabled={loading}
                 >
-                  Pagar {formatPrice(entitlement.priceBasic)}
+                  {loading ? "..." : `Pagar ${formatPrice(entitlement.priceBasic)}`}
                 </button>
               )}
+              <button
+                type="button"
+                className="kitchen-btn catalog-pack-action bites"
+                onClick={() => onBuyBites(pack)}
+                disabled={loading}
+              >
+                <BitesIcon size={14} color="#fff" decorative /> Comprar Bites
+              </button>
             </div>
           );
         })()}

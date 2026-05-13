@@ -1402,7 +1402,7 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
   );
 }
 
-function PackForm({ item, onSave, onCancel }) {
+function PackForm({ item, onSave, onCancel, baseBitePrice = 1.99 }) {
   const isEdit = Boolean(item.id || item._id);
   const isPublished = item.status === "published";
 
@@ -1461,6 +1461,8 @@ function PackForm({ item, onSave, onCancel }) {
   const [error, setError] = useState("");
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState("");
+  // pricing sync: track which field was last manually edited; stop auto-sync once both touched
+  const [pricingSync, setPricingSync] = useState({ priceTouched: false, bitesTouched: false, lastField: null });
 
   const packId = item.id || item._id;
 
@@ -1581,12 +1583,48 @@ function PackForm({ item, onSave, onCancel }) {
             <input style={fieldStyle} value={form.cuisineType} onChange={set("cuisineType")} placeholder="mexicana" />
           </label>
           <label style={labelStyle}>
-            Precio básico (€)
-            <input style={fieldStyle} type="number" step="0.01" min="0" value={form.priceBasic} onChange={set("priceBasic")} />
+            Precio (€)
+            <input
+              style={fieldStyle}
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.priceBasic}
+              onChange={(e) => {
+                const newPrice = e.target.value;
+                setPricingSync((ps) => ({ ...ps, priceTouched: true, lastField: "price" }));
+                if (!pricingSync.bitesTouched) {
+                  const parsed = parseFloat(newPrice) || 0;
+                  const calcBites = parsed > 0 ? Math.max(1, Math.round(parsed / baseBitePrice)) : parseInt(form.monthlyCreditCost, 10) || 1;
+                  setForm((p) => ({ ...p, priceBasic: newPrice, monthlyCreditCost: String(calcBites) }));
+                } else {
+                  setForm((p) => ({ ...p, priceBasic: newPrice }));
+                }
+              }}
+            />
           </label>
           <label style={labelStyle}>
-            Crédito mensual
-            <input style={fieldStyle} type="number" min="1" value={form.monthlyCreditCost} onChange={set("monthlyCreditCost")} />
+            Coste en Bites
+            <input
+              style={fieldStyle}
+              type="number"
+              min="1"
+              value={form.monthlyCreditCost}
+              onChange={(e) => {
+                const newBites = e.target.value;
+                setPricingSync((ps) => ({ ...ps, bitesTouched: true, lastField: "bites" }));
+                if (!pricingSync.priceTouched) {
+                  const parsed = parseInt(newBites, 10) || 0;
+                  const calcPrice = parsed > 0 ? parseFloat((parsed * baseBitePrice).toFixed(2)) : parseFloat(form.priceBasic) || 0;
+                  setForm((p) => ({ ...p, monthlyCreditCost: newBites, priceBasic: String(calcPrice) }));
+                } else {
+                  setForm((p) => ({ ...p, monthlyCreditCost: newBites }));
+                }
+              }}
+            />
+            <span style={{ fontSize: 11, color: "#6b7280" }}>
+              Se calcula usando el precio base del Bite ({Number(baseBitePrice).toFixed(2).replace(".", ",")} €), pero puedes ajustar ambos valores manualmente.
+            </span>
           </label>
           <label style={labelStyle}>
             Orden (sortOrder)
@@ -2141,6 +2179,7 @@ function CatalogPacksSection() {
   const [households, setHouseholds] = useState([]);
   const [reviewPack, setReviewPack] = useState(null);
   const [saveNotice, setSaveNotice] = useState("");
+  const [baseBitePrice, setBaseBitePrice] = useState(1.99);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -2163,6 +2202,9 @@ function CatalogPacksSection() {
   useEffect(() => {
     apiRequest("/api/admin/households")
       .then((d) => setHouseholds(d.households || []))
+      .catch(() => {});
+    apiRequest("/api/kitchen/bites/admin/config")
+      .then((d) => setBaseBitePrice(d.config?.baseBitePrice ?? 1.99))
       .catch(() => {});
   }, []);
 
@@ -2330,6 +2372,7 @@ function CatalogPacksSection() {
           item={editItem}
           onSave={handleSave}
           onCancel={() => setEditItem(null)}
+          baseBitePrice={baseBitePrice}
         />
       )}
 
@@ -2548,7 +2591,8 @@ function BitesEconomySection() {
         premium: c.monthlyGrantByPlan?.premium ?? 10,
         maxBasic: c.maxFreeCarryOverByPlan?.basic ?? 5,
         maxPro: c.maxFreeCarryOverByPlan?.pro ?? 10,
-        maxPremium: c.maxFreeCarryOverByPlan?.premium ?? 50
+        maxPremium: c.maxFreeCarryOverByPlan?.premium ?? 50,
+        baseBitePrice: c.baseBitePrice ?? 1.99
       });
       setBundles(c.bundles || []);
       setHouseholds(hhRes.households || []);
@@ -2569,7 +2613,8 @@ function BitesEconomySection() {
         method: "PUT",
         body: JSON.stringify({
           monthlyGrantByPlan: { basic: Number(configDraft.basic), pro: Number(configDraft.pro), premium: Number(configDraft.premium) },
-          maxFreeCarryOverByPlan: { basic: Number(configDraft.maxBasic), pro: Number(configDraft.maxPro), premium: Number(configDraft.maxPremium) }
+          maxFreeCarryOverByPlan: { basic: Number(configDraft.maxBasic), pro: Number(configDraft.maxPro), premium: Number(configDraft.maxPremium) },
+          baseBitePrice: Number(configDraft.baseBitePrice)
         })
       });
       await load();
@@ -2647,6 +2692,30 @@ function BitesEconomySection() {
 
       {error && <div style={{ color: "#b91c1c", background: "#fef2f2", padding: "8px 12px", borderRadius: 6, marginBottom: 16, fontSize: 13 }}>{error}</div>}
 
+      {/* ── Base price ── */}
+      <section style={{ marginBottom: 24, background: "#f0f4ff", border: "1px solid #c7d2fe", borderRadius: 8, padding: "14px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <BitesIcon size={15} decorative /> Precio base por Bite
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              className="kitchen-input"
+              style={{ fontSize: 14, fontWeight: 700, padding: "5px 10px", width: 90, textAlign: "right" }}
+              value={configDraft?.baseBitePrice ?? 1.99}
+              onChange={(e) => setConfigDraft((d) => ({ ...d, baseBitePrice: e.target.value }))}
+            />
+            <span style={{ fontSize: 13, color: "#6b7280" }}>€ / Bite</span>
+          </div>
+          <span style={{ fontSize: 12, color: "#6366f1" }}>
+            Usado para sugerir precios en packs y bundles. No modifica precios guardados existentes.
+          </span>
+        </div>
+      </section>
+
       {/* ── Plan config ── */}
       <section style={{ marginBottom: 32 }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#374151", display: "flex", alignItems: "center", gap: 6 }}>
@@ -2695,59 +2764,125 @@ function BitesEconomySection() {
           <button
             type="button"
             style={ABT.save}
-            onClick={() => setBundleForm({ name: "", bitesAmount: 10, price: 9.99, badge: "", highlighted: false, active: true, sortOrder: 0 })}
+            onClick={() => {
+              const bbp = Number(configDraft?.baseBitePrice ?? 1.99);
+              const amt = 10;
+              const disc = 25;
+              const suggestedPrice = parseFloat((amt * bbp * (1 - disc / 100)).toFixed(2));
+              setBundleForm({ name: "", bitesAmount: amt, price: suggestedPrice, discountPercent: disc, badge: "", highlighted: false, active: true, sortOrder: 0, _priceManuallySet: false });
+            }}
           >
             + Nuevo bundle
           </button>
         </div>
 
-        {bundleForm && (
-          <div style={{ background: "#f0f4ff", border: "1px solid #c7d2fe", borderRadius: 8, padding: 16, marginBottom: 16 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-              <div>
-                <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Nombre</label>
-                <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
-                  value={bundleForm.name} onChange={(e) => setBundleForm((f) => ({ ...f, name: e.target.value }))} />
+        {bundleForm && (() => {
+          const bbp = Number(configDraft?.baseBitePrice ?? 1.99);
+          const bundleAmt = Number(bundleForm.bitesAmount) || 0;
+          const bundleDisc = Number(bundleForm.discountPercent ?? 0);
+          const baseValue = parseFloat((bundleAmt * bbp).toFixed(2));
+          const suggestedPrice = bundleAmt > 0 ? parseFloat((baseValue * (1 - bundleDisc / 100)).toFixed(2)) : 0;
+          const finalPrice = Number(bundleForm.price) || 0;
+          const perBite = bundleAmt > 0 ? (finalPrice / bundleAmt).toFixed(2) : "—";
+          const actualDiscount = baseValue > 0 ? Math.round((1 - finalPrice / baseValue) * 100) : 0;
+
+          const handleBundleBitesChange = (e) => {
+            const newAmt = Number(e.target.value);
+            setBundleForm((f) => {
+              if (f._priceManuallySet) return { ...f, bitesAmount: newAmt };
+              const newPrice = parseFloat((newAmt * bbp * (1 - (f.discountPercent ?? 0) / 100)).toFixed(2));
+              return { ...f, bitesAmount: newAmt, price: newPrice };
+            });
+          };
+
+          const handleBundleDiscountChange = (e) => {
+            const newDisc = Number(e.target.value);
+            setBundleForm((f) => {
+              if (f._priceManuallySet) return { ...f, discountPercent: newDisc };
+              const newPrice = parseFloat((Number(f.bitesAmount) * bbp * (1 - newDisc / 100)).toFixed(2));
+              return { ...f, discountPercent: newDisc, price: newPrice };
+            });
+          };
+
+          const handleBundlePriceChange = (e) => {
+            setBundleForm((f) => ({ ...f, price: Number(e.target.value), _priceManuallySet: true }));
+          };
+
+          return (
+            <div style={{ background: "#f0f4ff", border: "1px solid #c7d2fe", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Nombre</label>
+                  <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.name} onChange={(e) => setBundleForm((f) => ({ ...f, name: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}><BitesIcon size={13} decorative /> Bites</label>
+                  <input type="number" min="1" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.bitesAmount} onChange={handleBundleBitesChange} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>
+                    Descuento (%)
+                  </label>
+                  <input type="number" min="0" max="95" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.discountPercent ?? 0} onChange={handleBundleDiscountChange} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>
+                    Precio final (€)
+                    {!bundleForm._priceManuallySet && bundleAmt > 0 && (
+                      <span style={{ fontSize: 11, color: "#6366f1", marginLeft: 4 }}>auto</span>
+                    )}
+                  </label>
+                  <input type="number" step="0.01" min="0" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.price} onChange={handleBundlePriceChange} />
+                  {bundleForm._priceManuallySet && (
+                    <button type="button" style={{ fontSize: 11, color: "#6366f1", background: "none", border: "none", cursor: "pointer", padding: "2px 0" }}
+                      onClick={() => setBundleForm((f) => ({ ...f, price: suggestedPrice, _priceManuallySet: false }))}>
+                      ↺ Recalcular
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Badge</label>
+                  <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.badge} onChange={(e) => setBundleForm((f) => ({ ...f, badge: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Sort order</label>
+                  <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.sortOrder} onChange={(e) => setBundleForm((f) => ({ ...f, sortOrder: Number(e.target.value) }))} />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, paddingTop: 18 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                    <input type="checkbox" checked={bundleForm.highlighted} onChange={(e) => setBundleForm((f) => ({ ...f, highlighted: e.target.checked }))} />
+                    Destacado
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                    <input type="checkbox" checked={bundleForm.active} onChange={(e) => setBundleForm((f) => ({ ...f, active: e.target.checked }))} />
+                    Activo
+                  </label>
+                </div>
+                {bundleAmt > 0 && (
+                  <div style={{ gridColumn: "1 / -1", background: "#fff", border: "1px solid #e0e7ff", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#374151", display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    <span><strong>{bundleAmt} Bites</strong></span>
+                    <span>Valor base: <strong>{baseValue.toFixed(2).replace(".", ",")} €</strong></span>
+                    <span>Precio final: <strong>{finalPrice.toFixed(2).replace(".", ",")} €</strong></span>
+                    <span>€/Bite: <strong>{perBite.replace(".", ",")} €</strong></span>
+                    {actualDiscount > 0 && <span style={{ color: "#16a34a", fontWeight: 700 }}>Ahorra {actualDiscount}%</span>}
+                  </div>
+                )}
               </div>
-              <div>
-                <label style={{ fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}><BitesIcon size={13} decorative /> Bites</label>
-                <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
-                  value={bundleForm.bitesAmount} onChange={(e) => setBundleForm((f) => ({ ...f, bitesAmount: Number(e.target.value) }))} />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Precio (€)</label>
-                <input type="number" step="0.01" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
-                  value={bundleForm.price} onChange={(e) => setBundleForm((f) => ({ ...f, price: Number(e.target.value) }))} />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Badge</label>
-                <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
-                  value={bundleForm.badge} onChange={(e) => setBundleForm((f) => ({ ...f, badge: e.target.value }))} />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Sort order</label>
-                <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
-                  value={bundleForm.sortOrder} onChange={(e) => setBundleForm((f) => ({ ...f, sortOrder: Number(e.target.value) }))} />
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 16, paddingTop: 18 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-                  <input type="checkbox" checked={bundleForm.highlighted} onChange={(e) => setBundleForm((f) => ({ ...f, highlighted: e.target.checked }))} />
-                  Destacado
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-                  <input type="checkbox" checked={bundleForm.active} onChange={(e) => setBundleForm((f) => ({ ...f, active: e.target.checked }))} />
-                  Activo
-                </label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" style={ABT.save} disabled={savingBundle} onClick={saveBundle}>
+                  {savingBundle ? "..." : "Guardar"}
+                </button>
+                <button type="button" style={ABT.cancel} onClick={() => setBundleForm(null)}>Cancelar</button>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" style={ABT.save} disabled={savingBundle} onClick={saveBundle}>
-                {savingBundle ? "..." : "Guardar"}
-              </button>
-              <button type="button" style={ABT.cancel} onClick={() => setBundleForm(null)}>Cancelar</button>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
           <thead>
@@ -2756,32 +2891,47 @@ function BitesEconomySection() {
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}><BitesIcon size={13} decorative /> Bites</th>
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Precio</th>
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>€/Bite</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Descuento</th>
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Badge</th>
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Activo</th>
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }} />
             </tr>
           </thead>
           <tbody>
-            {bundles.map((b) => (
-              <tr key={String(b._id)} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                <td style={{ padding: "6px 8px", fontWeight: b.highlighted ? 700 : 400 }}>{b.name}</td>
-                <td style={{ padding: "6px 8px" }}><BitesIcon size={14} decorative /> {b.bitesAmount}</td>
-                <td style={{ padding: "6px 8px" }}>{Number(b.price).toFixed(2)} €</td>
-                <td style={{ padding: "6px 8px", color: "#6b7280" }}>{Number(b.bitesAmount) > 0 ? (b.price / b.bitesAmount).toFixed(2) : "—"} €</td>
-                <td style={{ padding: "6px 8px" }}>{b.badge || "—"}</td>
-                <td style={{ padding: "6px 8px" }}>
-                  <span style={{ color: b.active ? "#16a34a" : "#9ca3af", fontWeight: 600 }}>{b.active ? "Sí" : "No"}</span>
-                </td>
-                <td style={{ padding: "6px 8px" }}>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <button type="button" style={ABT.edit} onClick={() => setBundleForm({ ...b, _id: b._id })}>Editar</button>
-                    <button type="button" style={ABT.del} onClick={() => deleteBundle(b._id)}>Eliminar</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {bundles.map((b) => {
+              const bbp = Number(configDraft?.baseBitePrice ?? 1.99);
+              const baseVal = Number(b.bitesAmount) * bbp;
+              const discPct = Number(b.discountPercent ?? 0);
+              const actualSaving = baseVal > 0 ? Math.round((1 - Number(b.price) / baseVal) * 100) : 0;
+              return (
+                <tr key={String(b._id)} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "6px 8px", fontWeight: b.highlighted ? 700 : 400 }}>{b.name}</td>
+                  <td style={{ padding: "6px 8px" }}><BitesIcon size={14} decorative /> {b.bitesAmount}</td>
+                  <td style={{ padding: "6px 8px" }}>
+                    <div>{Number(b.price).toFixed(2).replace(".", ",")} €</div>
+                    {baseVal > 0 && <div style={{ fontSize: 11, color: "#9ca3af" }}>base {baseVal.toFixed(2).replace(".", ",")} €</div>}
+                  </td>
+                  <td style={{ padding: "6px 8px", color: "#6b7280" }}>{Number(b.bitesAmount) > 0 ? (b.price / b.bitesAmount).toFixed(2).replace(".", ",") : "—"} €</td>
+                  <td style={{ padding: "6px 8px" }}>
+                    {discPct > 0 && <span style={{ fontSize: 11, background: "#dcfce7", color: "#166534", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>-{discPct}%</span>}
+                    {actualSaving > 0 && actualSaving !== discPct && <span style={{ fontSize: 11, color: "#16a34a", marginLeft: 4 }}>({actualSaving}% real)</span>}
+                    {discPct === 0 && "—"}
+                  </td>
+                  <td style={{ padding: "6px 8px" }}>{b.badge || "—"}</td>
+                  <td style={{ padding: "6px 8px" }}>
+                    <span style={{ color: b.active ? "#16a34a" : "#9ca3af", fontWeight: 600 }}>{b.active ? "Sí" : "No"}</span>
+                  </td>
+                  <td style={{ padding: "6px 8px" }}>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" style={ABT.edit} onClick={() => setBundleForm({ ...b, _id: b._id, _priceManuallySet: true })}>Editar</button>
+                      <button type="button" style={ABT.del} onClick={() => deleteBundle(b._id)}>Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
             {bundles.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: 16, color: "#9ca3af", textAlign: "center" }}>Sin bundles configurados</td></tr>
+              <tr><td colSpan={8} style={{ padding: 16, color: "#9ca3af", textAlign: "center" }}>Sin bundles configurados</td></tr>
             )}
           </tbody>
         </table>
