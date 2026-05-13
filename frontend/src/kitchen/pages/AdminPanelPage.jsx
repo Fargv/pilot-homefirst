@@ -7,6 +7,7 @@ import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
 import RecipeEditor from "../components/RecipeEditor.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
+import { resolvePackCoverImageUrl } from "../utils/packImages.js";
 
 // ── Shared admin-light button styles ─────────────────────────────────────────
 const ABT = {  // admin button themes
@@ -1553,6 +1554,7 @@ function PackForm({ item, onSave, onCancel }) {
 
   const fieldStyle = { width: "100%", boxSizing: "border-box", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", outline: "none" };
   const labelStyle = { display: "flex", flexDirection: "column", gap: 3, fontSize: 13, color: "#374151", fontWeight: 500 };
+  const coverPreviewUrl = resolvePackCoverImageUrl(form.coverImage);
 
   return (
     <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 20, marginBottom: 16 }}>
@@ -1603,10 +1605,10 @@ function PackForm({ item, onSave, onCancel }) {
 
         <div style={{ marginBottom: 14 }}>
           <span style={{ ...labelStyle, marginBottom: 6 }}>Imagen de portada</span>
-          {form.coverImage && (
+          {coverPreviewUrl && (
             <div style={{ marginBottom: 8, display: "flex", alignItems: "flex-start", gap: 10 }}>
               <img
-                src={form.coverImage.startsWith("/uploads/") ? buildApiUrl(form.coverImage) : form.coverImage}
+                src={coverPreviewUrl}
                 alt="portada"
                 style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 6, border: "1px solid #d1d5db" }}
                 onError={(e) => { e.currentTarget.style.display = "none"; }}

@@ -46,7 +46,9 @@
       "Bash(xargs grep -l \"CatalogPack\\\\|coverImage\")",
       "Bash(xargs grep -l \"catalog.*pack\\\\|pack.*card\" -i)",
       "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\backend\\\\uploads\\\\packs\")",
-      "PowerShell(New-Item -ItemType File -Force -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\backend\\\\uploads\\\\packs\\\\.gitkeep\")"
+      "PowerShell(New-Item -ItemType File -Force -Path \"C:\\\\APPS\\\\pilot-homefirst\\\\backend\\\\uploads\\\\packs\\\\.gitkeep\")",
+      "WebSearch",
+      "WebFetch(domain:unsplash.com)"
     ]
   }
 }

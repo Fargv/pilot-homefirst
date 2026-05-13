@@ -3,6 +3,7 @@ import { apiRequest } from "../api.js";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth.jsx";
 import { canUseDietRandomization } from "../subscription.js";
+import { resolvePackCoverImageUrl } from "../utils/packImages.js";
 
 const TABS = [
   { id: "all", label: "Todos" },
@@ -153,6 +154,12 @@ function formatPrice(price) {
 function PackCard({ pack, onAction }) {
   const { entitlement } = pack;
   const [loading, setLoading] = useState(false);
+  const [coverFailed, setCoverFailed] = useState(false);
+  const coverUrl = resolvePackCoverImageUrl(pack.coverImage);
+
+  useEffect(() => {
+    setCoverFailed(false);
+  }, [coverUrl]);
 
   const handleAction = async () => {
     if (loading) return;
@@ -179,8 +186,8 @@ function PackCard({ pack, onAction }) {
   return (
     <div className={`kitchen-card catalog-pack-card ${pack.featured ? "catalog-pack-featured" : ""}`}>
       <div className="catalog-pack-cover">
-        {pack.coverImage
-          ? <img src={pack.coverImage} alt={pack.title} className="catalog-pack-cover-img" />
+        {coverUrl && !coverFailed
+          ? <img src={coverUrl} alt={pack.title} className="catalog-pack-cover-img" onError={() => setCoverFailed(true)} />
           : <div className="catalog-pack-cover-placeholder"><PackIcon /></div>}
         {pack.featured && (
           <span className="catalog-pack-featured-badge"><StarIcon /> Destacado</span>
