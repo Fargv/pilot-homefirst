@@ -10,6 +10,7 @@ import { useActiveWeek } from "../weekContext.jsx";
 import {
   buildLicenseState,
   canUseBudgetFeature,
+  canUseDietRandomization,
   countLicenseUsage,
   isNonUserDinerLimitReachedError,
   isUnlimitedLicenseLimit,
@@ -150,6 +151,9 @@ export default function SettingsPage() {
   const [subscriptionRequestedPlan, setSubscriptionRequestedPlan] = useState("");
   const [avoidRepeatsInfoOpen, setAvoidRepeatsInfoOpen] = useState(false);
   const [householdPrefsSaving, setHouseholdPrefsSaving] = useState(false);
+  const [dietFilterEnabled, setDietFilterEnabled] = useState(false);
+  const [dietDefaultPackIds, setDietDefaultPackIds] = useState([]);
+  const [installedDietPacks, setInstalledDietPacks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [dishCategories, setDishCategories] = useState([]);
   const [categoriesAccordion, setCategoriesAccordion] = useState({
@@ -419,6 +423,8 @@ export default function SettingsPage() {
       setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
       setSubscriptionStatus(String(householdData?.household?.subscriptionStatus || "inactive").toLowerCase());
       setSubscriptionRequestedPlan(String(householdData?.household?.subscriptionRequestedPlan || "").toLowerCase());
+      setDietFilterEnabled(Boolean(householdData?.household?.randomizationUseDietFilter));
+      setDietDefaultPackIds(Array.isArray(householdData?.household?.randomizationDefaultDietPackIds) ? householdData.household.randomizationDefaultDietPackIds : []);
       setMembers(memberData.users || []);
       setInvitations(invitationData.invitations || []);
       setHouseholdCode(codeData.inviteCode || householdData?.household?.inviteCode || "");
@@ -448,6 +454,16 @@ export default function SettingsPage() {
   useEffect(() => {
     void loadData();
   }, [isDiod, canManageHousehold, user?.activeHouseholdId]);
+
+  useEffect(() => {
+    if (!canManageHousehold) return;
+    apiRequest("/api/kitchen/catalog/packs")
+      .then((data) => {
+        const dietPacks = (data.packs || []).filter((p) => p.isDietPack && p.entitlement?.installed);
+        setInstalledDietPacks(dietPacks);
+      })
+      .catch(() => {});
+  }, [canManageHousehold, user?.activeHouseholdId]);
 
   useEffect(() => {
     if (!copiedField) return;
@@ -586,6 +602,13 @@ export default function SettingsPage() {
         ), 10) || 1
       )
     );
+    const dietEnabled = canUseDietRandomization(subscriptionPlan);
+    const nextDietFilterEnabled = Object.prototype.hasOwnProperty.call(nextValues, "randomizationUseDietFilter")
+      ? Boolean(nextValues.randomizationUseDietFilter)
+      : Boolean(dietFilterEnabled);
+    const nextDietDefaultPackIds = Object.prototype.hasOwnProperty.call(nextValues, "randomizationDefaultDietPackIds")
+      ? nextValues.randomizationDefaultDietPackIds
+      : dietDefaultPackIds;
 
     setHouseholdPrefsSaving(true);
     try {
@@ -600,6 +623,12 @@ export default function SettingsPage() {
                 monthlyBudget: nextMonthlyBudget === "" ? null : Number(nextMonthlyBudget),
                 cycleStartDay: nextCycleStartDay
               }
+            : {}),
+          ...(dietEnabled
+            ? {
+                randomizationUseDietFilter: nextDietFilterEnabled,
+                randomizationDefaultDietPackIds: nextDietDefaultPackIds
+              }
             : {})
         })
       });
@@ -611,6 +640,8 @@ export default function SettingsPage() {
       setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
       setSubscriptionStatus(String(data?.household?.subscriptionStatus || "inactive").toLowerCase());
       setSubscriptionRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
+      setDietFilterEnabled(Boolean(data?.household?.randomizationUseDietFilter));
+      setDietDefaultPackIds(Array.isArray(data?.household?.randomizationDefaultDietPackIds) ? data.household.randomizationDefaultDietPackIds : []);
       updateSuccess("Preferencia del household actualizada.");
     } catch (err) {
       setError(err.message || "No se pudieron guardar las preferencias del household.");
@@ -1334,6 +1365,79 @@ export default function SettingsPage() {
             <p>Ejemplo: con X=3 y solo 10 platos, el sistema intentara evitar repetidos y completara la semana igualmente.</p>
           </div>
         ) : null}
+
+        <div style={{ marginTop: 8, padding: "14px 0 4px", borderTop: "1px solid #f1f5f9" }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 2 }}>Aleatorización por dieta</div>
+          <p className="kitchen-muted" style={{ marginBottom: 10 }}>Usa por defecto platos de las dietas descargadas al aleatorizar días o semanas.</p>
+          {canUseDietRandomization(subscriptionPlan) ? (
+            <>
+              <div className="settings-household-pref-row">
+                <div className="settings-household-pref-main">
+                  <div className="settings-household-pref-title">
+                    <span>Usar dietas por defecto al aleatorizar</span>
+                  </div>
+                </div>
+                <label className="kitchen-toggle" aria-label="Activar aleatorización por dieta">
+                  <input
+                    type="checkbox"
+                    className="kitchen-toggle-input"
+                    checked={dietFilterEnabled}
+                    disabled={householdPrefsSaving}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setDietFilterEnabled(checked);
+                      void saveHouseholdPreferences({ randomizationUseDietFilter: checked });
+                    }}
+                  />
+                  <span className="kitchen-toggle-track" />
+                </label>
+              </div>
+              {dietFilterEnabled ? (
+                installedDietPacks.length === 0 ? (
+                  <p className="kitchen-muted" style={{ fontSize: 13, marginTop: 6 }}>
+                    No tienes packs de dieta instalados. Descarga uno desde el Catálogo.
+                  </p>
+                ) : (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6 }}>Selecciona las dietas para la aleatorización:</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {installedDietPacks.map((pack) => {
+                        const isSelected = dietDefaultPackIds.includes(String(pack.id));
+                        return (
+                          <label key={String(pack.id)} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              disabled={householdPrefsSaving}
+                              onChange={() => {
+                                const nextIds = isSelected
+                                  ? dietDefaultPackIds.filter((id) => id !== String(pack.id))
+                                  : [...dietDefaultPackIds, String(pack.id)];
+                                setDietDefaultPackIds(nextIds);
+                                void saveHouseholdPreferences({ randomizationDefaultDietPackIds: nextIds });
+                              }}
+                            />
+                            <span style={{ fontWeight: 500 }}>{pack.dietLabel || pack.title}</span>
+                            <span className="kitchen-muted" style={{ fontSize: 11 }}>{pack.title}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )
+              ) : null}
+            </>
+          ) : (
+            <div className="settings-budget-locked-card">
+              <p className="kitchen-muted" style={{ fontSize: 13 }}>
+                Disponible en Pro y Premium. Puedes descargar dietas, pero la selección automática por defecto requiere mejorar el plan.
+              </p>
+              <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>
+                Mejorar plan
+              </button>
+            </div>
+          )}
+        </div>
         </div>
       ) : null}
     </div>

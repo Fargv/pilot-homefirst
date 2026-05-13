@@ -17,7 +17,7 @@ import { rebuildShoppingList } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import { buildManualPlanningDishFilter, buildRandomizableMainDishFilter, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 import { notifyCookAssignments } from "../assignmentPushService.js";
-import { canRandomizeFullWeek } from "../subscriptionService.js";
+import { canRandomizeFullWeek, canUseDietRandomization } from "../subscriptionService.js";
 
 const router = express.Router();
 
@@ -828,13 +828,30 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
     }
 
     const household = await Household.findById(effectiveHouseholdId)
-      .select("avoidRepeatsEnabled avoidRepeatsWeeks")
+      .select("avoidRepeatsEnabled avoidRepeatsWeeks randomizationUseDietFilter randomizationDefaultDietPackIds subscriptionPlan")
       .lean();
     const avoidRepeatsEnabled = Boolean(household?.avoidRepeatsEnabled);
     const avoidRepeatsWeeks = normalizeAvoidRepeatsWeeks(household?.avoidRepeatsWeeks);
     const recentDishIds = avoidRepeatsEnabled
       ? await getRecentWeeksDishIds(effectiveHouseholdId, monday, avoidRepeatsWeeks, mealType)
       : new Set();
+
+    // Apply diet filter for single-day randomization
+    const singleDayDietEnabled = canUseDietRandomization(household?.subscriptionPlan)
+      && Boolean(household?.randomizationUseDietFilter);
+    const singleDayDietPackIds = singleDayDietEnabled
+      ? (Array.isArray(household?.randomizationDefaultDietPackIds) ? household.randomizationDefaultDietPackIds.map(String) : [])
+      : [];
+    let effectiveEligible = allEligible;
+    if (singleDayDietEnabled && singleDayDietPackIds.length > 0) {
+      const dietEligible = allEligible.filter(
+        (d) => d.sourcePackId && singleDayDietPackIds.includes(String(d.sourcePackId))
+      );
+      if (dietEligible.length === 0) {
+        return res.json({ ok: true, dish: null, reason: "diet_filter_no_candidates" });
+      }
+      effectiveEligible = dietEligible;
+    }
 
     const previouslyAssignedDishes = previouslyAssignedDishIds.length
       ? await resolveDishCatalogForHousehold({
@@ -849,7 +866,7 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
         .filter(Boolean)
     );
 
-    const candidatesNoDishRepeat = allEligible.filter((dish) => !usedMainDishIds.has(String(dish._id)));
+    const candidatesNoDishRepeat = effectiveEligible.filter((dish) => !usedMainDishIds.has(String(dish._id)));
     const candidatesNoDishAndCategoryAndRecent = candidatesNoDishRepeat.filter((dish) => {
       const categoryId = dishCategoryKey(dish);
       if (categoryId && usedCategoryIds.has(categoryId)) return false;
@@ -964,14 +981,12 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       filter: buildRandomizableMainDishFilter({ isDinner: isDinnerMeal(mealType) })
     });
     const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(candidatesRaw);
-    const candidates = candidatesRaw.filter((dish) => {
+    const candidatesAll = candidatesRaw.filter((dish) => {
       const categoryId = dishCategoryKey(dish);
       return !categoryId || !excludedGuarnicionesCategoryIds.has(categoryId);
     });
 
-    const allDishIds = candidates.map((dish) => String(dish._id));
-    const candidateById = new Map(candidates.map((dish) => [String(dish._id), dish]));
-    if (!allDishIds.length) {
+    if (!candidatesAll.length) {
       const allVisible = await resolveDishCatalogForHousehold({
         Model: KitchenDish,
         householdId: effectiveHouseholdId,
@@ -1001,13 +1016,41 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     }
 
     const household = await Household.findById(effectiveHouseholdId)
-      .select("avoidRepeatsEnabled avoidRepeatsWeeks")
+      .select("avoidRepeatsEnabled avoidRepeatsWeeks randomizationUseDietFilter randomizationDefaultDietPackIds")
       .lean();
     const avoidRepeatsEnabled = Boolean(household?.avoidRepeatsEnabled);
     const avoidRepeatsWeeks = normalizeAvoidRepeatsWeeks(household?.avoidRepeatsWeeks);
     const recentDishIds = avoidRepeatsEnabled
       ? await getRecentWeeksDishIds(effectiveHouseholdId, monday, avoidRepeatsWeeks, mealType)
       : new Set();
+
+    // Apply diet filter if Pro/Premium and preference is enabled
+    const householdDietEnabled = canUseDietRandomization(householdForAccess.subscriptionPlan)
+      && Boolean(household?.randomizationUseDietFilter);
+    const householdDietPackIds = householdDietEnabled
+      ? (Array.isArray(household?.randomizationDefaultDietPackIds) ? household.randomizationDefaultDietPackIds.map(String) : [])
+      : [];
+    let candidates = candidatesAll;
+    if (householdDietEnabled && householdDietPackIds.length > 0) {
+      const dietCandidates = candidatesAll.filter(
+        (d) => d.sourcePackId && householdDietPackIds.includes(String(d.sourcePackId))
+      );
+      if (dietCandidates.length === 0) {
+        return res.json({
+          ok: true,
+          plan,
+          assignedCount: 0,
+          targetCount: targetDays.length,
+          insufficient: true,
+          warnings: ["No hay platos disponibles para las dietas seleccionadas con las reglas actuales."],
+          warningCodes: ["diet_filter_no_candidates"]
+        });
+      }
+      candidates = dietCandidates;
+    }
+
+    const allDishIds = candidates.map((dish) => String(dish._id));
+    const candidateById = new Map(candidates.map((dish) => [String(dish._id), dish]));
 
     const alreadyAssignedDishes = alreadyAssignedDishIds.length
       ? await resolveDishCatalogForHousehold({

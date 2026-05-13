@@ -218,6 +218,8 @@ function serializeAdminPack(p, ownedByCount = 0) {
     color: p.color,
     defaultSpecial: p.defaultSpecial,
     defaultAllowRandom: p.defaultAllowRandom,
+    isDietPack: Boolean(p.isDietPack),
+    dietLabel: p.dietLabel || "",
     validationSummary: p.validationSummary || null,
     reviewIssues: p.reviewIssues || [],
     normalizedAt: p.normalizedAt || null,
@@ -382,6 +384,8 @@ router.get("/packs", requireAuth, async (req, res) => {
         color: pack.color,
         releaseDate: pack.releaseDate,
         freeUntil: pack.freeUntil,
+        isDietPack: Boolean(pack.isDietPack),
+        dietLabel: pack.dietLabel || "",
         entitlement: {
           owned,
           installed,
@@ -448,7 +452,9 @@ router.get("/packs/:packId", requireAuth, async (req, res) => {
         dishPreview: (() => { const all = pack.dishes || []; return all.slice(0, Math.floor(all.length / 2)).map((d) => ({ name: d.name, teaser: d.teaser || null })); })(),
         releaseDate: pack.releaseDate,
         color: pack.color,
-        freeUntil: pack.freeUntil
+        freeUntil: pack.freeUntil,
+        isDietPack: Boolean(pack.isDietPack),
+        dietLabel: pack.dietLabel || ""
       },
       entitlement
     });
@@ -618,6 +624,7 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
         sourcePackSlug: pack.slug,
         sourcePackTitle: pack.title,
         sourcePackColor: pack.color || null,
+        sourcePackIsDietPack: Boolean(pack.isDietPack),
         sourceDishTemplateId: template.dishTemplateId || null,
         catalogSyncedAt: now,
         catalogContentHash: contentHash,
@@ -639,7 +646,9 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
       ok: true,
       installed: true,
       dishesCreated: createdDishes.length,
-      dishes: createdDishes
+      dishes: createdDishes,
+      isDietPack: Boolean(pack.isDietPack),
+      dietLabel: pack.dietLabel || ""
     });
   } catch (error) {
     if (handleHouseholdError(res, error)) return;
@@ -690,7 +699,8 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
     const {
       slug, title, subtitle, description, coverImage, tags, cuisineType,
       active, featured, priceBasic, includedPlans, monthlyCreditCost, dishes,
-      releaseDate, freeUntil, activeFrom, activeUntil, color, defaultSpecial, defaultAllowRandom, sortOrder
+      releaseDate, freeUntil, activeFrom, activeUntil, color, defaultSpecial, defaultAllowRandom, sortOrder,
+      isDietPack, dietLabel
     } = req.body;
 
     if (!slug || !title) {
@@ -708,7 +718,9 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
       color: color || null,
       defaultSpecial: Boolean(defaultSpecial),
       defaultAllowRandom: defaultAllowRandom !== false,
-      sortOrder: sortOrder ?? 0
+      sortOrder: sortOrder ?? 0,
+      isDietPack: Boolean(isDietPack),
+      dietLabel: String(dietLabel || "").trim()
     });
     ensureDishTemplateIds(pack);
     await applyCatalogPackValidation(pack, { autoApply: true });
@@ -733,7 +745,8 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
       "title", "subtitle", "description", "coverImage", "tags", "cuisineType",
       "active", "featured", "priceBasic", "includedPlans", "monthlyCreditCost",
       "dishes", "releaseDate", "freeUntil", "activeFrom", "activeUntil",
-      "color", "defaultSpecial", "defaultAllowRandom", "sortOrder"
+      "color", "defaultSpecial", "defaultAllowRandom", "sortOrder",
+      "isDietPack", "dietLabel"
     ];
 
     const packDoc = await CatalogPack.findById(req.params.packId);

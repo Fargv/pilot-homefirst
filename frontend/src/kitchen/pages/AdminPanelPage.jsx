@@ -1255,7 +1255,7 @@ function IngredientSearchInput({ value, onChange }) {
   );
 }
 
-function DishTemplateEditor({ dishes, onChange, defaults = {} }) {
+function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked = false }) {
   const [expanded, setExpanded] = useState(null);
   const [dishCategories, setDishCategories] = useState([]);
 
@@ -1309,14 +1309,16 @@ function DishTemplateEditor({ dishes, onChange, defaults = {} }) {
         <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           Platos del pack ({dishes.length})
         </div>
-        <button type="button" onClick={addDish}
-          style={{ fontSize: 12, padding: "4px 10px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>
-          + Añadir plato
-        </button>
+        {!compositionLocked ? (
+          <button type="button" onClick={addDish}
+            style={{ fontSize: 12, padding: "4px 10px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>
+            + Añadir plato
+          </button>
+        ) : null}
       </div>
       {dishes.length === 0 && (
         <div style={{ padding: "10px 0", color: "#9ca3af", fontSize: 12, textAlign: "center" }}>
-          Sin platos — pulsa &quot;+ Añadir plato&quot; para empezar
+          {compositionLocked ? "Este pack publicado no tiene platos." : "Sin platos - pulsa \"+ Añadir plato\" para empezar"}
         </div>
       )}
       {dishes.map((dish, i) => (
@@ -1329,8 +1331,10 @@ function DishTemplateEditor({ dishes, onChange, defaults = {} }) {
             <span style={{ fontSize: 11, color: "#9ca3af" }}>
               {(dish.ingredients || []).length} ing.
             </span>
-            <button type="button" onClick={(e) => { e.stopPropagation(); removeDish(i); }}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700, fontSize: 16, padding: "0 4px" }}>×</button>
+            {!compositionLocked ? (
+              <button type="button" onClick={(e) => { e.stopPropagation(); removeDish(i); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700, fontSize: 16, padding: "0 4px" }}>×</button>
+            ) : null}
           </div>
           {expanded === i && (
             <div style={{ padding: "0 12px 12px", borderTop: "1px solid #e0e7ff" }}>
@@ -1398,12 +1402,14 @@ function DishTemplateEditor({ dishes, onChange, defaults = {} }) {
 
 function PackForm({ item, onSave, onCancel }) {
   const isEdit = Boolean(item.id || item._id);
+  const isPublished = item.status === "published";
 
   const freeUntilDefault = item.freeUntil ? new Date(item.freeUntil).toISOString().split("T")[0] : "";
 
   const toDateStr = (v) => (v ? new Date(v).toISOString().split("T")[0] : "");
 
   const normDishes = (raw) => (raw || []).map((d) => ({
+    dishTemplateId: d.dishTemplateId || null,
     name: d.name || "",
     teaser: d.teaser || "",
     sidedish: Boolean(d.sidedish),
@@ -1443,9 +1449,12 @@ function PackForm({ item, onSave, onCancel }) {
     activeUntil: toDateStr(item.activeUntil),
     color: item.color || "#6366f1",
     defaultSpecial: Boolean(item.defaultSpecial),
-    defaultAllowRandom: item.defaultAllowRandom !== false
+    defaultAllowRandom: item.defaultAllowRandom !== false,
+    isDietPack: Boolean(item.isDietPack),
+    dietLabel: item.dietLabel || ""
   });
   const [dishes, setDishes] = useState(() => normDishes(item.dishes));
+  const [propagateCatalogUpdates, setPropagateCatalogUpdates] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -1462,6 +1471,7 @@ function PackForm({ item, onSave, onCancel }) {
   }));
 
   const serializeDishes = () => dishes.map((d) => ({
+    dishTemplateId: d.dishTemplateId || null,
     name: d.name.trim(),
     teaser: d.teaser?.trim() || "",
     sidedish: d.sidedish,
@@ -1495,7 +1505,10 @@ function PackForm({ item, onSave, onCancel }) {
         color: form.color || null,
         defaultSpecial: form.defaultSpecial,
         defaultAllowRandom: form.defaultAllowRandom,
-        dishes: serializeDishes()
+        isDietPack: form.isDietPack,
+        dietLabel: form.isDietPack ? form.dietLabel.trim() : "",
+        dishes: serializeDishes(),
+        propagateCatalogUpdates
       });
     } catch (err) { setError(err.message || "Error al guardar."); }
     finally { setSaving(false); }
@@ -1596,7 +1609,44 @@ function PackForm({ item, onSave, onCancel }) {
           </label>
         </div>
 
-        <DishTemplateEditor dishes={dishes} onChange={setDishes} defaults={{ defaultSpecial: form.defaultSpecial, defaultAllowRandom: form.defaultAllowRandom }} />
+        <div style={{ background: "#fdf4ff", border: "1px solid #e9d5ff", borderRadius: 8, padding: 12, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Dieta / Régimen</div>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer", marginBottom: 8 }}>
+            <input type="checkbox" checked={Boolean(form.isDietPack)} onChange={set("isDietPack")} />
+            <span>Pack de dieta / régimen</span>
+          </label>
+          {form.isDietPack ? (
+            <label style={labelStyle}>
+              Nombre de la dieta (visible para el usuario)
+              <input
+                style={fieldStyle}
+                value={form.dietLabel}
+                onChange={set("dietLabel")}
+                placeholder="Ej: Dieta mediterránea, Keto, etc."
+              />
+            </label>
+          ) : null}
+        </div>
+
+        {isPublished ? (
+          <div className="kitchen-alert warning" style={{ marginBottom: 12 }}>
+            Este pack ya está publicado. Puedes corregir recetas y preferencias de los platos, pero no añadir ni eliminar platos del pack.
+          </div>
+        ) : null}
+
+        <DishTemplateEditor
+          dishes={dishes}
+          onChange={setDishes}
+          defaults={{ defaultSpecial: form.defaultSpecial, defaultAllowRandom: form.defaultAllowRandom }}
+          compositionLocked={isPublished}
+        />
+
+        {isPublished ? (
+          <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer", margin: "12px 0 14px" }}>
+            <input type="checkbox" checked={propagateCatalogUpdates} onChange={(e) => setPropagateCatalogUpdates(e.target.checked)} />
+            Actualizar también en hogares donde no se haya personalizado
+          </label>
+        ) : null}
 
         <div style={{ marginBottom: 14, marginTop: 18 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Planes incluidos</div>
@@ -1637,12 +1687,13 @@ function PackForm({ item, onSave, onCancel }) {
 
 function PackStatusBadge({ status }) {
   const map = {
+    none: { label: "Sin estado", bg: "#f8fafc", color: "#64748b" },
     draft: { label: "draft", bg: "#f1f5f9", color: "#475569" },
     needs_review: { label: "needs review", bg: "#fff7ed", color: "#c2410c" },
     ready: { label: "ready", bg: "#ecfdf5", color: "#047857" },
     published: { label: "published", bg: "#eef2ff", color: "#4338ca" }
   };
-  const item = map[status] || map.needs_review;
+  const item = status ? (map[status] || map.needs_review) : map.none;
   return (
     <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 800, background: item.bg, color: item.color, textTransform: "uppercase" }}>
       {item.label}
@@ -1945,6 +1996,7 @@ function CatalogPacksSection() {
   const [grantModal, setGrantModal] = useState(null);
   const [households, setHouseholds] = useState([]);
   const [reviewPack, setReviewPack] = useState(null);
+  const [saveNotice, setSaveNotice] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -1965,16 +2017,21 @@ function CatalogPacksSection() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return q ? packs.filter((p) => p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q)) : packs;
+    return q ? packs.filter((p) => String(p.title || "").toLowerCase().includes(q) || String(p.slug || "").toLowerCase().includes(q)) : packs;
   }, [packs, search]);
 
   const handleSave = async (form) => {
     const packId = editItem?.id;
+    setSaveNotice("");
     if (packId) {
-      await apiRequest(`/api/kitchen/catalog/packs/${packId}`, {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${packId}`, {
         method: "PUT",
         body: JSON.stringify(form)
       });
+      if (data.syncSummary) {
+        const s = data.syncSummary;
+        setSaveNotice(`Pack actualizado. ${s.synced || 0} platos instalados sincronizados, ${s.skippedCustomized || 0} omitidos por personalizacion, ${s.skippedAmbiguous || 0} omitidos por coincidencia ambigua.`);
+      }
     } else {
       await apiRequest("/api/kitchen/catalog/packs", {
         method: "POST",
@@ -1991,7 +2048,7 @@ function CatalogPacksSection() {
     try {
       await apiRequest(`/api/kitchen/catalog/packs/${pack.id}`, {
         method: "PUT",
-        body: JSON.stringify({ [field]: !pack[field] })
+        body: JSON.stringify({ [field]: field === "active" ? !(pack.active !== false) : !pack[field] })
       });
       await load();
     } catch (err) { setError(err.message || "Error."); }
@@ -2027,6 +2084,39 @@ function CatalogPacksSection() {
       method: "POST",
       body: JSON.stringify({ targetHouseholdId })
     });
+  };
+
+  const handlePublish = async (pack) => {
+    if (togglingId) return;
+    setTogglingId(`${pack.id}-publish`);
+    setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/publish`, { method: "POST" });
+      setPacks((prev) => prev.map((item) => String(item.id) === String(data.pack.id) ? data.pack : item));
+      if (reviewPack && String(reviewPack.id) === String(data.pack.id)) setReviewPack(data.pack);
+    } catch (err) {
+      setError(err.message || "No se pudo publicar el pack.");
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleSetStatus = async (pack, status) => {
+    if (togglingId) return;
+    setTogglingId(`${pack.id}-status-${status}`);
+    setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/status`, {
+        method: "POST",
+        body: JSON.stringify({ status })
+      });
+      setPacks((prev) => prev.map((item) => String(item.id) === String(data.pack.id) ? data.pack : item));
+      if (reviewPack && String(reviewPack.id) === String(data.pack.id)) setReviewPack(data.pack);
+    } catch (err) {
+      setError(err.message || "No se pudo cambiar el estado del pack.");
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   const replacePack = (nextPack) => {
@@ -2074,6 +2164,7 @@ function CatalogPacksSection() {
       )}
 
       {error ? <div className="kitchen-alert error">{error}</div> : null}
+      {saveNotice ? <div className="kitchen-alert success">{saveNotice}</div> : null}
 
       {loading ? <p className="kitchen-muted">Cargando packs...</p> : filtered.length === 0 ? (
         <p className="kitchen-muted">No hay packs{search.trim() ? " con ese criterio" : ". Crea el primero."}.</p>
@@ -2096,12 +2187,19 @@ function CatalogPacksSection() {
               {filtered.map((pack) => {
                 const isFree = !pack.priceBasic || pack.priceBasic <= 0;
                 const togId = togglingId;
+                const unresolved = Number(pack.validationSummary?.unresolvedIssues || 0);
+                const canPublishPack = pack.status !== "published" && unresolved === 0;
                 return (
-                  <tr key={pack.id} style={{ opacity: pack.active ? 1 : 0.45 }}>
+                  <tr key={pack.id} style={{ opacity: pack.active !== false ? 1 : 0.45 }}>
                     <td>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>
                         {pack.featured ? <span style={{ color: "#f59e0b", marginRight: 4 }}>★</span> : null}
                         {pack.title}
+                        {pack.isDietPack ? (
+                          <span style={{ marginLeft: 5, fontSize: 10, background: "#fdf4ff", color: "#7c3aed", border: "1px solid #e9d5ff", borderRadius: 4, padding: "1px 6px", fontWeight: 700 }}>
+                            {pack.dietLabel ? pack.dietLabel : "DIETA"}
+                          </span>
+                        ) : null}
                       </div>
                       <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>{pack.slug}</div>
                       {pack.tags?.length > 0 && (
@@ -2126,14 +2224,16 @@ function CatalogPacksSection() {
                       </div>
                     </td>
                     <td style={{ textAlign: "center" }}>
-                      {pack.active
+                      {pack.active !== false
                         ? <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>● Activo</span>
                         : <span style={{ fontSize: 11, color: "#94a3b8" }}>○ Inactivo</span>}
                     </td>
                     <td style={{ textAlign: "center" }}>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
                         <PackStatusBadge status={pack.status} />
-                        {pack.validationSummary?.unresolvedIssues > 0 ? (
+                      {!pack.status ? (
+                        <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>legacy</span>
+                      ) : pack.validationSummary?.unresolvedIssues > 0 ? (
                           <span style={{ fontSize: 11, color: "#c2410c", fontWeight: 700 }}>{pack.validationSummary.unresolvedIssues} pendientes</span>
                         ) : (
                           <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>validado</span>
@@ -2150,11 +2250,11 @@ function CatalogPacksSection() {
                         <button type="button" style={ABT.edit} onClick={() => setEditItem(pack)}>Editar</button>
                         <button
                           type="button"
-                          style={{ ...ABT.edit, color: pack.active ? "#b45309" : "#166534", borderColor: pack.active ? "#fcd34d" : "#86efac" }}
+                          style={{ ...ABT.edit, color: pack.active !== false ? "#b45309" : "#166534", borderColor: pack.active !== false ? "#fcd34d" : "#86efac" }}
                           disabled={togId === `${pack.id}-active`}
                           onClick={() => handleToggle(pack, "active")}
                         >
-                          {pack.active ? "Desactivar" : "Activar"}
+                          {pack.active !== false ? "Desactivar" : "Activar"}
                         </button>
                         <button
                           type="button"
@@ -2179,6 +2279,36 @@ function CatalogPacksSection() {
                         >
                           Revisar
                         </button>
+                        {pack.status === "published" ? (
+                          <button
+                            type="button"
+                            style={{ ...ABT.edit, color: "#7c2d12", borderColor: "#fed7aa" }}
+                            disabled={togId === `${pack.id}-status-ready`}
+                            onClick={() => handleSetStatus(pack, "ready")}
+                          >
+                            Despublicar
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            title={!canPublishPack ? "Resuelve la revision antes de publicar" : "Publicar pack"}
+                            style={{ ...ABT.green, opacity: canPublishPack ? 1 : 0.45 }}
+                            disabled={!canPublishPack || togId === `${pack.id}-publish`}
+                            onClick={() => handlePublish(pack)}
+                          >
+                            {togId === `${pack.id}-publish` ? "..." : "Publicar"}
+                          </button>
+                        )}
+                        {pack.status !== "needs_review" ? (
+                          <button
+                            type="button"
+                            style={{ ...ABT.edit, color: "#c2410c", borderColor: "#fed7aa" }}
+                            disabled={togId === `${pack.id}-status-needs_review`}
+                            onClick={() => handleSetStatus(pack, "needs_review")}
+                          >
+                            Mandar a revision
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           style={{ ...ABT.green }}

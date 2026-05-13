@@ -14,6 +14,8 @@ import {
   normalizeColorId
 } from "../../users/utils.js";
 import { Household } from "../models/Household.js";
+import { HouseholdCatalogPack } from "../models/HouseholdCatalogPack.js";
+import { CatalogPack } from "../models/CatalogPack.js";
 import { ensureHouseholdInviteCode } from "../householdInviteCode.js";
 import { sendEmail } from "../../services/emailService.js";
 import { buildHouseholdInvitationEmail } from "../householdInvitationEmail.js";
@@ -25,7 +27,8 @@ import {
 import {
   buildHouseholdFeatureAvailability,
   buildHouseholdSubscriptionResponse,
-  canUseBudgetFeature
+  canUseBudgetFeature,
+  canUseDietRandomization
 } from "../subscriptionService.js";
 import {
   assertCanAddNonUserDinerToHousehold,
@@ -94,6 +97,7 @@ function parseCycleStartDayInput(value) {
 
 function buildHouseholdResponse(household, license = null) {
   const budgetFeatureEnabled = canUseBudgetFeature(household?.subscriptionPlan);
+  const dietFeatureEnabled = canUseDietRandomization(household?.subscriptionPlan);
   return {
     id: household._id,
     name: household.name || "Mi household",
@@ -106,6 +110,10 @@ function buildHouseholdResponse(household, license = null) {
       ? Number(household.monthlyBudget)
       : null,
     cycleStartDay: budgetFeatureEnabled ? normalizeCycleStartDay(household.cycleStartDay) : null,
+    randomizationUseDietFilter: dietFeatureEnabled ? Boolean(household.randomizationUseDietFilter) : false,
+    randomizationDefaultDietPackIds: dietFeatureEnabled
+      ? (Array.isArray(household.randomizationDefaultDietPackIds) ? household.randomizationDefaultDietPackIds.map(String) : [])
+      : [],
     ...buildHouseholdSubscriptionResponse(household),
     featureAvailability: buildHouseholdFeatureAvailability(household),
     license: license || buildHouseholdLicenseSummary(household)
@@ -227,7 +235,7 @@ router.get("/summary", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin")
+      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin randomizationUseDietFilter randomizationDefaultDietPackIds")
       .lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
@@ -285,6 +293,16 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       });
     }
 
+    const dietFeatureEnabled = canUseDietRandomization(household?.subscriptionPlan);
+    const isDietMutation = req.body?.randomizationUseDietFilter !== undefined || req.body?.randomizationDefaultDietPackIds !== undefined;
+    if (!dietFeatureEnabled && isDietMutation) {
+      return res.status(403).json({
+        ok: false,
+        code: "DIET_RANDOMIZATION_NOT_AVAILABLE",
+        message: "La aleatorización por dieta por defecto está disponible solo para hogares Pro y Premium."
+      });
+    }
+
     const incomingEnabled = req.body?.avoidRepeatsEnabled;
     const incomingDinnersEnabled = req.body?.dinnersEnabled;
     const parsedEnabled = incomingEnabled === undefined
@@ -318,6 +336,52 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       return res.status(400).json({ ok: false, error: "avoidRepeatsWeeks debe ser un entero entre 1 y 12." });
     }
 
+    // Build diet pref update
+    let nextDietUseDietFilter = Boolean(household.randomizationUseDietFilter);
+    let nextDietDefaultPackIds = Array.isArray(household.randomizationDefaultDietPackIds)
+      ? household.randomizationDefaultDietPackIds.map(String)
+      : [];
+
+    if (dietFeatureEnabled && isDietMutation) {
+      if (req.body?.randomizationUseDietFilter !== undefined) {
+        const parsed = parseBooleanInput(req.body.randomizationUseDietFilter);
+        if (!parsed.ok) {
+          return res.status(400).json({ ok: false, error: "randomizationUseDietFilter debe ser booleano." });
+        }
+        nextDietUseDietFilter = parsed.value;
+      }
+
+      if (req.body?.randomizationDefaultDietPackIds !== undefined) {
+        const incomingIds = req.body.randomizationDefaultDietPackIds;
+        if (!Array.isArray(incomingIds)) {
+          return res.status(400).json({ ok: false, error: "randomizationDefaultDietPackIds debe ser un array." });
+        }
+        const validIds = incomingIds.filter((id) => mongoose.isValidObjectId(id)).map(String);
+        // Sanitize: only installed diet packs owned by this household
+        const installedOwnerships = validIds.length > 0
+          ? await HouseholdCatalogPack.find({
+              householdId: effectiveHouseholdId,
+              packId: { $in: validIds },
+              status: "installed"
+            }).select("packId").lean()
+          : [];
+        const installedPackIds = new Set(installedOwnerships.map((o) => String(o.packId)));
+        const validInstalledIds = validIds.filter((id) => installedPackIds.has(id));
+        if (validInstalledIds.length > 0) {
+          const dietPacks = await CatalogPack.find({
+            _id: { $in: validInstalledIds },
+            isDietPack: true,
+            status: "published",
+            active: true
+          }).select("_id").lean();
+          const dietPackIds = new Set(dietPacks.map((p) => String(p._id)));
+          nextDietDefaultPackIds = validInstalledIds.filter((id) => dietPackIds.has(id));
+        } else {
+          nextDietDefaultPackIds = [];
+        }
+      }
+    }
+
     const updated = await Household.findByIdAndUpdate(
       effectiveHouseholdId,
       {
@@ -326,7 +390,9 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
           dinnersEnabled: parsedDinnersEnabled.value,
           avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(nextWeeks),
           monthlyBudget: parsedBudget.value,
-          cycleStartDay: parsedCycleStartDay.value
+          cycleStartDay: parsedCycleStartDay.value,
+          randomizationUseDietFilter: nextDietUseDietFilter,
+          randomizationDefaultDietPackIds: nextDietDefaultPackIds
         }
       },
       { new: true, runValidators: true }

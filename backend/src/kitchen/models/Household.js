@@ -28,7 +28,9 @@ const HouseholdSchema = new mongoose.Schema(
     trialEndsAt: { type: Date, default: null },
     subscriptionEndsAt: { type: Date, default: null },
     isPro: { type: Boolean, default: false },
-    assignedByAdmin: { type: Boolean, default: false }
+    assignedByAdmin: { type: Boolean, default: false },
+    randomizationUseDietFilter: { type: Boolean, default: false },
+    randomizationDefaultDietPackIds: { type: [mongoose.Schema.Types.ObjectId], default: [] }
   },
   { timestamps: true }
 );

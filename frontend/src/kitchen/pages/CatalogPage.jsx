@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../api.js";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth.jsx";
+import { canUseDietRandomization } from "../subscription.js";
 
 const TABS = [
   { id: "all", label: "Todos" },
@@ -176,7 +177,14 @@ function PackCard({ pack, onAction }) {
       <div className="catalog-pack-body">
         <div className="catalog-pack-header">
           <h3 className="catalog-pack-title">{pack.title}</h3>
-          <EntitlementBadge entitlement={entitlement} />
+          <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
+            {pack.isDietPack ? (
+              <span style={{ fontSize: 10, fontWeight: 700, background: "#fdf4ff", color: "#7c3aed", border: "1px solid #e9d5ff", borderRadius: 4, padding: "2px 7px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                {pack.dietLabel || "Dieta"}
+              </span>
+            ) : null}
+            <EntitlementBadge entitlement={entitlement} />
+          </div>
         </div>
 
         {pack.subtitle && <p className="catalog-pack-subtitle">{pack.subtitle}</p>}
@@ -269,6 +277,49 @@ function Toast({ message, type, onClose }) {
   );
 }
 
+function getDietPackDismissKey(packId) {
+  return `diet_pack_modal_dismissed_${packId}`;
+}
+
+function isDietPackModalDismissed(packId) {
+  try {
+    return localStorage.getItem(getDietPackDismissKey(packId)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markDietPackModalDismissed(packId) {
+  try {
+    localStorage.setItem(getDietPackDismissKey(packId), "1");
+  } catch {}
+}
+
+function DietPackInstallModal({ pack, onUseAsDefault, onDecline }) {
+  const label = pack.dietLabel || pack.title;
+  return (
+    <div className="kitchen-modal-overlay" onClick={onDecline}>
+      <div className="kitchen-modal catalog-purchase-modal" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="kitchen-modal-close" onClick={onDecline} aria-label="Cerrar">×</button>
+        <div className="catalog-purchase-modal-icon">
+          <PackIcon />
+        </div>
+        <h2 className="catalog-purchase-modal-title">¿Usar esta dieta por defecto?</h2>
+        <p className="catalog-purchase-modal-text">
+          <strong>{label}</strong> está instalado. ¿Quieres usarlo por defecto al aleatorizar días y semanas?
+        </p>
+        <div className="catalog-purchase-modal-actions">
+          <button type="button" className="kitchen-btn primary" onClick={onUseAsDefault}>Usar por defecto</button>
+          <button type="button" className="kitchen-btn" onClick={onDecline}>Ahora no</button>
+        </div>
+        <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 8, textAlign: "center" }}>
+          Puedes cambiar esto más tarde en Configuración &rsaquo; Aleatorización por dieta.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function CatalogPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
@@ -279,6 +330,7 @@ export default function CatalogPage() {
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
   const [purchaseModalPack, setPurchaseModalPack] = useState(null);
+  const [dietInstallModal, setDietInstallModal] = useState(null);
 
   const showToast = useCallback((message, type = "success") => {
     setToast({ message, type });
@@ -337,6 +389,14 @@ export default function CatalogPage() {
         showToast("Este pack ya estaba instalado.", "info");
       } else {
         showToast(`¡Pack instalado! ${result.dishesCreated} platos añadidos a tu biblioteca.`, "success");
+        // Show diet-pack modal for Pro/Premium owners/admins if not already dismissed
+        if (result.isDietPack && canUseDietRandomization(plan) && !isDietPackModalDismissed(String(pack.id))) {
+          const isOwnerOrAdmin = String(user?.role || "").toLowerCase() === "owner"
+            || String(user?.globalRole || "").toLowerCase() === "diod";
+          if (isOwnerOrAdmin) {
+            setDietInstallModal({ pack: { ...pack, dietLabel: result.dietLabel || pack.dietLabel } });
+          }
+        }
       }
 
       await loadCatalog();
@@ -349,7 +409,7 @@ export default function CatalogPage() {
         showToast(err.message || "Error al instalar el pack.", "error");
       }
     }
-  }, [loadCatalog, showToast]);
+  }, [loadCatalog, showToast, plan, user]);
 
   return (
     <KitchenLayout>
@@ -409,6 +469,33 @@ export default function CatalogPage() {
         <PurchasePlaceholderModal
           pack={purchaseModalPack}
           onClose={() => setPurchaseModalPack(null)}
+        />
+      )}
+
+      {dietInstallModal && (
+        <DietPackInstallModal
+          pack={dietInstallModal.pack}
+          onUseAsDefault={async () => {
+            const packId = String(dietInstallModal.pack.id);
+            markDietPackModalDismissed(packId);
+            setDietInstallModal(null);
+            try {
+              await apiRequest("/api/kitchen/household/preferences", {
+                method: "PATCH",
+                body: JSON.stringify({
+                  randomizationUseDietFilter: true,
+                  randomizationDefaultDietPackIds: [packId]
+                })
+              });
+              showToast("Dieta activada por defecto para la aleatorización.", "success");
+            } catch {
+              showToast("No se pudo activar la dieta por defecto.", "error");
+            }
+          }}
+          onDecline={() => {
+            markDietPackModalDismissed(String(dietInstallModal.pack.id));
+            setDietInstallModal(null);
+          }}
         />
       )}
 

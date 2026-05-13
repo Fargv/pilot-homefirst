@@ -893,14 +893,6 @@ export default function WeekPage() {
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
     setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
     try {
-      if (import.meta.env.DEV) {
-        console.debug("[kitchen][update-day] request", {
-          householdId: getCurrentHouseholdId() ? String(getCurrentHouseholdId()) : null,
-          weekStart: targetWeekStart,
-          day: day.date.slice(0, 10),
-          mainDishId: requestUpdates?.mainDishId ? String(requestUpdates.mainDishId) : null
-        });
-      }
       const mealType = dayMealType(day);
       const data = await apiRequest(`/api/kitchen/weeks/${targetWeekStart}/day/${day.date.slice(0, 10)}?mealType=${mealType}`, {
         method: "PUT",
@@ -966,15 +958,6 @@ export default function WeekPage() {
         ? draftCookUserByDay[dayKey]
         : previousPersistedCookUserId
     );
-
-    if (import.meta.env.DEV) {
-      console.debug("[kitchen][cook-finalize]", {
-        dayKey,
-        reason,
-        previousPersistedCookUserId,
-        finalCookUserId
-      });
-    }
 
     if (previousPersistedCookUserId === finalCookUserId) {
       console.info("[kitchen][cook-finalize] push skipped", {
@@ -1699,16 +1682,6 @@ export default function WeekPage() {
         .map((value) => String(value))
     );
 
-    if (import.meta.env.DEV) {
-      console.debug("[kitchen][random-dish] click", {
-        householdIdAtClick: clickHouseholdId ? String(clickHouseholdId) : null,
-        weekStartAtClick: clickWeekStart,
-        day: dayKey,
-        dishesTotal: (dishesRef.current || []).length,
-        usedIdsCount: usedIds.size
-      });
-    }
-
     let targetDay = day;
     if (!isAssigned && userRef.current) {
       const started = await startEditingDay(day, {
@@ -1753,14 +1726,6 @@ export default function WeekPage() {
     }
 
     let randomDish = randomResponse.dish;
-    if (import.meta.env.DEV) {
-      console.debug("[kitchen][random-dish] selected", {
-        householdIdAtClick: clickHouseholdId ? String(clickHouseholdId) : null,
-        requestWeekStart: clickWeekStart,
-        selectedDishId: String(randomDish._id),
-        selectedDishHouseholdId: randomDish.householdId ? String(randomDish.householdId) : null
-      });
-    }
 
     const firstUpdatePayload = buildMainDishUpdatePayload(targetDay, randomDish._id);
     if (dayMealType(targetDay) === "dinner") {
@@ -1788,11 +1753,6 @@ export default function WeekPage() {
         .includes("no pertenece a este hogar");
 
     if (shouldRetry) {
-      if (import.meta.env.DEV) {
-        console.debug("[kitchen][random-dish] retry-after-ownership-error", {
-          error: String(updateResult?.error?.message || "")
-        });
-      }
       try {
         await refreshCurrentDishes();
         randomResponse = await fetchRandomCandidate();

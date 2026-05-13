@@ -1,6 +1,7 @@
 const ACTIVE_PLANS = new Set(["pro", "premium"]);
 const BUDGET_ENABLED_PLANS = new Set(["pro", "premium"]);
 const FULL_WEEK_RANDOMIZATION_PLANS = new Set(["pro", "premium"]);
+const DIET_RANDOMIZATION_PLANS = new Set(["pro", "premium"]);
 
 export const SUBSCRIPTION_PLANS = ["free", "basic", "pro", "premium"];
 export const REQUESTABLE_SUBSCRIPTION_PLANS = ["basic", "pro", "premium"];
@@ -35,11 +36,16 @@ export function canRandomizeSingleDay(plan) {
   return ["basic", "pro", "premium"].includes(normalizeSubscriptionPlan(plan));
 }
 
+export function canUseDietRandomization(plan) {
+  return DIET_RANDOMIZATION_PLANS.has(normalizeSubscriptionPlan(plan));
+}
+
 export function buildHouseholdFeatureAvailability(household) {
   return {
     budget: canUseBudgetFeature(household?.subscriptionPlan),
     fullWeekRandomization: canRandomizeFullWeek(household?.subscriptionPlan),
-    singleDayRandomization: canRandomizeSingleDay(household?.subscriptionPlan)
+    singleDayRandomization: canRandomizeSingleDay(household?.subscriptionPlan),
+    dietRandomization: canUseDietRandomization(household?.subscriptionPlan)
   };
 }
 

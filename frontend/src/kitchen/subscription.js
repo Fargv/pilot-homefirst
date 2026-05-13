@@ -43,6 +43,11 @@ export function canRandomizeSingleDay(plan) {
   return normalizedPlan === "basic" || normalizedPlan === "pro" || normalizedPlan === "premium";
 }
 
+export function canUseDietRandomization(plan) {
+  const normalizedPlan = normalizeSubscriptionPlan(plan);
+  return normalizedPlan === "pro" || normalizedPlan === "premium";
+}
+
 export function canAddUser(plan, currentUsersCount) {
   const { maxUsers } = getPlanLimits(plan);
   return maxUsers === LICENSE_LIMIT_UNLIMITED || Number(currentUsersCount || 0) < maxUsers;

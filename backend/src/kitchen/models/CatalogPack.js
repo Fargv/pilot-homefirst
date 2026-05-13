@@ -67,6 +67,8 @@ const CatalogPackSchema = new mongoose.Schema(
     defaultSpecial: { type: Boolean, default: false },
     defaultAllowRandom: { type: Boolean, default: true },
     sortOrder: { type: Number, default: 0 },
+    isDietPack: { type: Boolean, default: false },
+    dietLabel: { type: String, default: "", trim: true },
     validationSummary: {
       missingIngredientMappings: { type: Number, default: 0 },
       missingIngredientCategories: { type: Number, default: 0 },
