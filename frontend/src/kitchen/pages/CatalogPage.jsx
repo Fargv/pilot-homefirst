@@ -272,9 +272,18 @@ function PackPriceLine({ entitlement }) {
 
 // ─── Pack card ────────────────────────────────────────────────────────────────
 
-function PackCard({ pack, onAction, onBuyBites }) {
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" style={{ width: 14, height: 14, flexShrink: 0 }}>
+      <path d="M2.5 8l4 4 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </svg>
+  );
+}
+
+function PackCard({ pack, onAction, onBuyBites, onUninstall }) {
   const { entitlement } = pack;
   const [loading, setLoading] = useState(false);
+  const [uninstalling, setUninstalling] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
   const coverUrl = resolvePackCoverImageUrl(pack.coverImage);
 
@@ -289,6 +298,17 @@ function PackCard({ pack, onAction, onBuyBites }) {
       await onAction(pack, paymentMethod);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUninstall = async () => {
+    if (uninstalling || loading) return;
+    if (!window.confirm(`¿Desinstalar "${pack.title}"? Se eliminarán sus platos de tu biblioteca. Podrás reinstalarlo gratis en el futuro.`)) return;
+    setUninstalling(true);
+    try {
+      await onUninstall(pack);
+    } finally {
+      setUninstalling(false);
     }
   };
 
@@ -321,13 +341,15 @@ function PackCard({ pack, onAction, onBuyBites }) {
 
         {Array.isArray(pack.dishPreview) && pack.dishPreview.length > 0 && (
           <div className="catalog-pack-dish-preview">
-            {pack.dishPreview.map((d, i) => (
-              <div key={i} className="catalog-pack-dish-preview-item">
-                <span className="catalog-pack-dish-preview-dot" aria-hidden="true">·</span>
-                <span className="catalog-pack-dish-preview-name">{d.name}</span>
-                {d.teaser && <span className="catalog-pack-dish-preview-teaser"> — {d.teaser}</span>}
-              </div>
-            ))}
+            <div>
+              {pack.dishPreview.map((d, i) => (
+                <div key={i} className="catalog-pack-dish-preview-item">
+                  <span className="catalog-pack-dish-preview-dot" aria-hidden="true">·</span>
+                  <span className="catalog-pack-dish-preview-name">{d.name}</span>
+                  {d.teaser && <span className="catalog-pack-dish-preview-teaser"> — {d.teaser}</span>}
+                </div>
+              ))}
+            </div>
             {pack.dishCount > pack.dishPreview.length && (
               <div className="catalog-pack-dish-preview-more">
                 +{pack.dishCount - pack.dishPreview.length} platos más incluidos
@@ -336,84 +358,91 @@ function PackCard({ pack, onAction, onBuyBites }) {
           </div>
         )}
 
-        {(() => {
-          const days = getFreeUntilDaysLeft(pack.entitlement?.isFreeUntil);
-          return days !== null ? (
-            <div className="catalog-pack-free-countdown">
-              ⏳ Gratis todavía {days} {days === 1 ? "día" : "días"} más
-            </div>
-          ) : null;
-        })()}
+        <div className="catalog-pack-footer">
+          {(() => {
+            const days = getFreeUntilDaysLeft(pack.entitlement?.isFreeUntil);
+            return days !== null ? (
+              <div className="catalog-pack-free-countdown">
+                ⏳ Gratis todavía {days} {days === 1 ? "día" : "días"} más
+              </div>
+            ) : null;
+          })()}
 
-        <div className="catalog-pack-meta">
-          <span className="catalog-pack-dish-count">{pack.dishCount} platos</span>
-          {priceLine ? <span className="catalog-pack-price-line"><PackPriceLine entitlement={entitlement} /></span> : null}
-          {pack.tags && pack.tags.length > 0 && (
-            <div className="catalog-pack-tags">
-              {pack.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="catalog-pack-tag">{tag}</span>
-              ))}
-            </div>
-          )}
-        </div>
+          <div className="catalog-pack-meta">
+            <span className="catalog-pack-dish-count">{pack.dishCount} platos</span>
+            {priceLine ? <span className="catalog-pack-price-line"><PackPriceLine entitlement={entitlement} /></span> : null}
+            {pack.tags && pack.tags.length > 0 && (
+              <div className="catalog-pack-tags">
+                {pack.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="catalog-pack-tag">{tag}</span>
+                ))}
+              </div>
+            )}
+          </div>
 
-        {(() => {
-          if (entitlement.installed) {
-            return (
-              <button type="button" className="kitchen-btn catalog-pack-action" disabled>
-                Ya instalado
-              </button>
-            );
-          }
-          if (entitlement.owned || entitlement.isFree || entitlement.canClaimWithPlan) {
-            return (
-              <button
-                type="button"
-                className="kitchen-btn catalog-pack-action primary"
-                onClick={() => handleAction("install")}
-                disabled={loading}
-              >
-                {loading ? "Procesando..." : entitlement.isFree ? "Instalar gratis" : "Instalar"}
-              </button>
-            );
-          }
-          if (entitlement.canUnlockWithBites) {
-            return (
-              <button
-                type="button"
-                className="kitchen-btn catalog-pack-action bites"
-                onClick={() => handleAction("bites")}
-                disabled={loading}
-              >
-                {loading ? "Procesando..." : <><BitesIcon size={14} color="#fff" decorative /> Canjear {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>}
-              </button>
-            );
-          }
-          return (
-            <div className={`catalog-pack-actions-row ${!hasBitesPrice || !canShowDirect ? "single" : ""}`}>
-              {canShowDirect && (
+          {(() => {
+            if (entitlement.installed) {
+              return (
+                <>
+                  <button type="button" className="kitchen-btn catalog-pack-action installed" disabled>
+                    <CheckIcon /> Ya instalado
+                  </button>
+                  <button type="button" className="catalog-pack-uninstall" onClick={handleUninstall} disabled={uninstalling}>
+                    {uninstalling ? "Desinstalando..." : "Desinstalar"}
+                  </button>
+                </>
+              );
+            }
+            if (entitlement.owned || entitlement.isFree || entitlement.canClaimWithPlan) {
+              return (
                 <button
                   type="button"
-                  className="kitchen-btn catalog-pack-action catalog-pack-action-direct"
-                  onClick={() => handleAction("direct")}
+                  className="kitchen-btn catalog-pack-action primary"
+                  onClick={() => handleAction("install")}
                   disabled={loading}
                 >
-                  {loading ? "..." : `Pagar ${formatPrice(entitlement.priceBasic)}`}
+                  {loading ? "Procesando..." : entitlement.isFree ? "Instalar gratis" : "Instalar"}
                 </button>
-              )}
-              {hasBitesPrice ? (
+              );
+            }
+            if (entitlement.canUnlockWithBites) {
+              return (
                 <button
                   type="button"
                   className="kitchen-btn catalog-pack-action bites"
-                  onClick={() => onBuyBites(pack)}
+                  onClick={() => handleAction("bites")}
                   disabled={loading}
                 >
-                  <BitesIcon size={14} color="#fff" decorative /> Comprar Bites
+                  {loading ? "Procesando..." : <><BitesIcon size={14} color="#fff" decorative /> Canjear {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>}
                 </button>
-              ) : null}
-            </div>
-          );
-        })()}
+              );
+            }
+            return (
+              <div className={`catalog-pack-actions-row ${!hasBitesPrice || !canShowDirect ? "single" : ""}`}>
+                {canShowDirect && (
+                  <button
+                    type="button"
+                    className="kitchen-btn catalog-pack-action catalog-pack-action-direct"
+                    onClick={() => handleAction("direct")}
+                    disabled={loading}
+                  >
+                    {loading ? "..." : `Pagar ${formatPrice(entitlement.priceBasic)}`}
+                  </button>
+                )}
+                {hasBitesPrice ? (
+                  <button
+                    type="button"
+                    className="kitchen-btn catalog-pack-action bites"
+                    onClick={() => onBuyBites(pack)}
+                    disabled={loading}
+                  >
+                    <BitesIcon size={14} color="#fff" decorative /> Comprar Bites
+                  </button>
+                ) : null}
+              </div>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );
@@ -634,6 +663,16 @@ export default function CatalogPage() {
     showToast("La pasarela de pago todavía no está conectada.", "info");
   }, [showToast]);
 
+  const handleUninstall = useCallback(async (pack) => {
+    try {
+      const result = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/install`, { method: "DELETE" });
+      showToast(`Pack desinstalado. ${result.dishesRemoved} platos eliminados de tu biblioteca.`, "success");
+      await loadCatalog();
+    } catch (err) {
+      showToast(err.message || "Error al desinstalar el pack.", "error");
+    }
+  }, [loadCatalog, showToast]);
+
   return (
     <KitchenLayout>
       <div className="catalog-page">
@@ -699,6 +738,7 @@ export default function CatalogPage() {
                 pack={pack}
                 onAction={handlePackAction}
                 onBuyBites={() => setBitesStoreOpen(true)}
+                onUninstall={handleUninstall}
               />
             ))}
           </div>

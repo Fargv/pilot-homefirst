@@ -78,39 +78,46 @@ function validatePackData(data, filePath) {
 }
 
 async function upsertPack(data) {
-  const update = {
-    title: data.title,
-    subtitle: data.subtitle || "",
-    description: data.description || "",
-    tags: Array.isArray(data.tags) ? data.tags : [],
-    cuisineType: data.cuisineType || "",
-    active: data.active !== false,
-    featured: Boolean(data.featured),
-    priceBasic: typeof data.priceBasic === "number" ? data.priceBasic : 1.99,
-    includedPlans: Array.isArray(data.includedPlans) ? data.includedPlans : ["pro", "premium"],
-    monthlyCreditCost: typeof data.monthlyCreditCost === "number" ? data.monthlyCreditCost : 1,
-    dishes: Array.isArray(data.dishes) ? data.dishes : [],
-    defaultSpecial: Boolean(data.defaultSpecial),
-    defaultAllowRandom: data.defaultAllowRandom !== false,
-    sortOrder: typeof data.sortOrder === "number" ? data.sortOrder : 0
-  };
-
-  // Only overwrite these optional fields if explicitly present in JSON
-  if (data.coverImage != null) update.coverImage = data.coverImage;
-  if (data.releaseDate !== undefined) update.releaseDate = data.releaseDate ? new Date(data.releaseDate) : null;
-  if (data.freeUntil !== undefined) update.freeUntil = data.freeUntil ? new Date(data.freeUntil) : null;
-  if (data.activeFrom !== undefined) update.activeFrom = data.activeFrom ? new Date(data.activeFrom) : null;
-  if (data.activeUntil !== undefined) update.activeUntil = data.activeUntil ? new Date(data.activeUntil) : null;
-  if (data.color !== undefined) update.color = data.color || null;
-
   const existing = await CatalogPack.findOne({ slug: data.slug });
-  const result = existing || new CatalogPack({ slug: data.slug });
 
-  if (result.status === "published") {
-    return { pack: result, created: false, skippedPublished: true };
+  if (existing && existing.status === "published") {
+    return { pack: existing, created: false, skippedPublished: true };
   }
 
-  Object.assign(result, update);
+  const result = existing || new CatalogPack({ slug: data.slug });
+
+  // ── Campos de contenido: siempre se sincronizan desde el JSON ────────────
+  // Añade aquí campos nuevos cuando los definas en el JSON del pack.
+  result.title = data.title;
+  result.subtitle = data.subtitle || "";
+  result.description = data.description || "";
+  result.tags = Array.isArray(data.tags) ? data.tags : [];
+  result.cuisineType = data.cuisineType || "";
+  result.dishes = Array.isArray(data.dishes) ? data.dishes : [];
+  result.priceBasic = typeof data.priceBasic === "number" ? data.priceBasic : 1.99;
+  result.includedPlans = Array.isArray(data.includedPlans) ? data.includedPlans : ["pro", "premium"];
+  result.monthlyCreditCost = typeof data.monthlyCreditCost === "number" ? data.monthlyCreditCost : 1;
+  result.defaultSpecial = Boolean(data.defaultSpecial);
+  result.defaultAllowRandom = data.defaultAllowRandom !== false;
+  result.sortOrder = typeof data.sortOrder === "number" ? data.sortOrder : 0;
+  if (data.disclaimer !== undefined) result.disclaimer = data.disclaimer || "";
+  if (data.isDietPack !== undefined) result.isDietPack = Boolean(data.isDietPack);
+  if (data.dietLabel !== undefined) result.dietLabel = String(data.dietLabel || "").trim();
+
+  // ── Campos gestionados por el admin: SOLO se aplican al crear el pack ────
+  // Nunca se sobrescriben en packs ya existentes, aunque cambien en el JSON.
+  // Para modificarlos usa el panel de administración.
+  if (!existing) {
+    result.active = data.active !== false;
+    result.featured = Boolean(data.featured);
+    if (data.coverImage != null) result.coverImage = data.coverImage;
+    if (data.color != null) result.color = data.color;
+    if (data.releaseDate) result.releaseDate = new Date(data.releaseDate);
+    if (data.freeUntil) result.freeUntil = new Date(data.freeUntil);
+    if (data.activeFrom) result.activeFrom = new Date(data.activeFrom);
+    if (data.activeUntil) result.activeUntil = new Date(data.activeUntil);
+  }
+
   await applyCatalogPackValidation(result, { autoApply: true });
   await result.save();
 

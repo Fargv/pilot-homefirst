@@ -790,6 +790,42 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
   }
 });
 
+router.delete("/packs/:packId/install", requireAuth, async (req, res) => {
+  try {
+    const householdId = getEffectiveHouseholdId(req.user);
+
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+
+    const ownership = await HouseholdCatalogPack.findOne({ householdId, packId: req.params.packId });
+    if (!ownership || ownership.status !== "installed") {
+      return res.status(400).json({ ok: false, error: "Este pack no está instalado." });
+    }
+
+    const deletedDishes = await KitchenDish.deleteMany({
+      householdId,
+      sourcePackId: req.params.packId,
+      source: "catalog",
+      userModified: { $ne: true }
+    });
+
+    ownership.status = "owned";
+    ownership.installedAt = null;
+    ownership.installedBy = null;
+    await ownership.save();
+
+    return res.json({
+      ok: true,
+      uninstalled: true,
+      dishesRemoved: deletedDishes.deletedCount
+    });
+  } catch (error) {
+    if (handleHouseholdError(res, error)) return;
+    return res.status(500).json({ ok: false, error: error.message || "Error al desinstalar el pack." });
+  }
+});
+
 router.post("/packs/:packId/admin-grant", requireAuth, requireDiod, async (req, res) => {
   try {
     const { targetHouseholdId } = req.body;

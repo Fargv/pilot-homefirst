@@ -8783,6 +8783,7 @@ body {
   gap: 8px;
   padding: 14px;
   flex: 1;
+  min-height: 0;
 }
 .catalog-pack-header {
   display: flex;
@@ -8811,6 +8812,12 @@ body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.catalog-pack-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .catalog-pack-meta {
   display: flex;
@@ -8884,6 +8891,30 @@ body {
 .catalog-pack-action.secondary:hover:not(:disabled) {
   background: #f8fafc;
 }
+.catalog-pack-action.installed {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1.5px solid #bbf7d0;
+  cursor: default;
+  font-weight: 600;
+  gap: 6px;
+}
+.catalog-pack-uninstall {
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  text-align: center;
+  width: 100%;
+  font-family: inherit;
+  letter-spacing: 0.01em;
+}
+.catalog-pack-uninstall:hover {
+  color: #ef4444;
+  text-decoration: underline;
+}
 .catalog-pack-action.disabled {
   background: #f1f5f9;
   color: #94a3b8;
@@ -8934,7 +8965,11 @@ body {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 8px 12px;
-  margin-bottom: 10px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 .catalog-pack-dish-preview-item {
   display: flex;

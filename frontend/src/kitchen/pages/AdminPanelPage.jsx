@@ -2958,7 +2958,7 @@ function BitesEconomySection() {
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Amount (negativo = quitar)</label>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Amount (+/-)</label>
             <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
               value={grantForm.amount} onChange={(e) => setGrantForm((f) => ({ ...f, amount: Number(e.target.value) }))} />
           </div>
