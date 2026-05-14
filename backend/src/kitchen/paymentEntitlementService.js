@@ -14,33 +14,57 @@ const ENTITLEMENT_PLANS = new Set(["pro", "premium"]);
 /**
  * Safety gate for test-mode automatic entitlements.
  * Returns { allowed: true } or { allowed: false, reason: string }.
+ * Logs a full diagnostic block so every env var and attempt field is visible in the logs.
  */
 function checkTestEntitlementAllowed(attempt) {
+  const ctx = {
+    attemptId: attempt._id?.toString(),
+    type: attempt.type,
+    planKey: attempt.planKey,
+    mode: attempt.mode,
+    status: attempt.status,
+    householdId: attempt.householdId,
+    // Config state — the most common reason for skips is missing env vars
+    envPaymentsEnabled: config.stripe.paymentsEnabled,
+    envStripeMode: config.stripe.mode,
+    envAllowTestEntitlements: config.stripe.allowTestEntitlements
+  };
+
   if (!config.stripe.paymentsEnabled) {
+    console.warn("[entitlements][gate] BLOCKED — PAYMENTS_ENABLED is not true", ctx);
     return { allowed: false, reason: "PAYMENTS_ENABLED is not true" };
   }
   if (config.stripe.mode !== "test") {
+    console.warn(`[entitlements][gate] BLOCKED — STRIPE_MODE="${config.stripe.mode}", must be "test"`, ctx);
     return { allowed: false, reason: `STRIPE_MODE is "${config.stripe.mode}", must be "test"` };
   }
   if (!config.stripe.allowTestEntitlements) {
+    console.warn("[entitlements][gate] BLOCKED — ALLOW_TEST_PAYMENT_ENTITLEMENTS is not true (set to 'true' on Render/env to enable DEV auto-upgrade)", ctx);
     return { allowed: false, reason: "ALLOW_TEST_PAYMENT_ENTITLEMENTS is not true" };
   }
   if (attempt.mode !== "test") {
+    console.warn(`[entitlements][gate] BLOCKED — attempt.mode="${attempt.mode}", must be "test"`, ctx);
     return { allowed: false, reason: `attempt.mode is "${attempt.mode}", must be "test"` };
   }
   if (attempt.status !== "completed") {
+    console.warn(`[entitlements][gate] BLOCKED — attempt.status="${attempt.status}", must be "completed"`, ctx);
     return { allowed: false, reason: `attempt.status is "${attempt.status}", must be "completed"` };
   }
   if (attempt.type !== "subscription") {
+    console.log(`[entitlements][gate] SKIP — attempt.type="${attempt.type}", only "subscription" triggers entitlements`, ctx);
     return { allowed: false, reason: `attempt.type is "${attempt.type}", only "subscription" triggers entitlements` };
   }
   const planKey = normalizeSubscriptionPlan(attempt.planKey);
   if (!ENTITLEMENT_PLANS.has(planKey)) {
+    console.warn(`[entitlements][gate] BLOCKED — planKey="${attempt.planKey}" (normalized="${planKey}") not in {pro, premium}`, ctx);
     return { allowed: false, reason: `planKey "${attempt.planKey}" is not in entitlement plans (pro, premium)` };
   }
   if (!attempt.householdId || !mongoose.isValidObjectId(attempt.householdId)) {
+    console.warn(`[entitlements][gate] BLOCKED — householdId="${attempt.householdId}" missing or invalid`, ctx);
     return { allowed: false, reason: `householdId "${attempt.householdId}" is missing or invalid` };
   }
+
+  console.log("[entitlements][gate] ALL GATES PASSED — proceeding with entitlement", ctx);
   return { allowed: true, planKey };
 }
 
@@ -68,14 +92,7 @@ export async function applyTestSubscriptionEntitlementFromAttempt(attempt) {
   const gate = checkTestEntitlementAllowed(attempt);
 
   if (!gate.allowed) {
-    console.log("[entitlements] Test entitlement skipped", {
-      attemptId: attempt._id?.toString(),
-      reason: gate.reason,
-      type: attempt.type,
-      planKey: attempt.planKey,
-      mode: attempt.mode,
-      status: attempt.status
-    });
+    // Individual gate already logged at WARN/LOG level with full context
     return { applied: false, reason: gate.reason };
   }
 

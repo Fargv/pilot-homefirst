@@ -131,15 +131,25 @@ router.post("/checkout-session", requireAuth, async (req, res) => {
         });
       }
 
-      const household = await Household.findById(effectiveHouseholdId).select(
-        "stripeSubscriptionId subscriptionStatus"
-      );
-      if (household?.stripeSubscriptionId && household.subscriptionStatus === "active") {
-        return res.status(409).json({
-          ok: false,
-          code: "SUBSCRIPTION_ACTIVE",
-          redirectToPortal: config.stripe.portalEnabled,
-          error: "Ya tienes una suscripción activa. Gestiona tu suscripción desde el portal de facturación."
+      // In DEV/test mode with entitlements enabled, skip the guard — demos need to re-checkout freely.
+      const isDevTestMode = config.stripe.mode === "test" && config.stripe.allowTestEntitlements;
+
+      if (!isDevTestMode) {
+        const household = await Household.findById(effectiveHouseholdId).select(
+          "stripeSubscriptionId subscriptionStatus"
+        );
+        if (household?.stripeSubscriptionId && household.subscriptionStatus === "active") {
+          return res.status(409).json({
+            ok: false,
+            code: "SUBSCRIPTION_ACTIVE",
+            redirectToPortal: config.stripe.portalEnabled,
+            error: "Ya tienes una suscripción activa. Gestiona tu suscripción desde el portal de facturación."
+          });
+        }
+      } else {
+        console.log("[payments] DEV test mode — subscription active guard bypassed", {
+          householdId: effectiveHouseholdId,
+          planKey: resolvedPlanKey
         });
       }
     }
@@ -326,6 +336,9 @@ router.post("/dev/reset-plan", requireDevEnv, requireAuth, requireDiod, async (r
       applyAdminSubscriptionActivation(household, normalizedPlan);
     }
 
+    // Clear all Stripe metadata so the next test checkout starts fresh with no active-subscription guard
+    household.stripeCustomerId = "";
+    household.stripeSubscriptionId = "";
     household.paymentProvider = "";
     household.paymentMode = "";
     household.planUpdatedAt = new Date();
@@ -356,6 +369,85 @@ router.post("/dev/reset-plan", requireDevEnv, requireAuth, requireDiod, async (r
       stack: error?.stack
     });
     return res.status(500).json({ ok: false, error: "No se pudo resetear el plan." });
+  }
+});
+
+// ─── POST /api/payments/dev/change-plan ──────────────────────────────────────
+// DEV/test shortcut — change the calling user's own household plan directly,
+// without going through Stripe. Requires STRIPE_MODE=test AND
+// ALLOW_TEST_PAYMENT_ENTITLEMENTS=true. Safe to use for demo resets.
+
+function requireDevTestEntitlements(req, res, next) {
+  if (config.stripe.mode !== "test" || !config.stripe.allowTestEntitlements) {
+    return res.status(403).json({
+      ok: false,
+      code: "DEV_ONLY",
+      error: "Este endpoint solo está disponible cuando STRIPE_MODE=test y ALLOW_TEST_PAYMENT_ENTITLEMENTS=true."
+    });
+  }
+  return next();
+}
+
+router.post("/dev/change-plan", requireDevTestEntitlements, requireAuth, async (req, res) => {
+  try {
+    const { planKey } = req.body || {};
+    const normalizedPlan = normalizeSubscriptionPlan(planKey);
+
+    if (!["basic", "pro", "premium"].includes(normalizedPlan)) {
+      return res.status(400).json({
+        ok: false,
+        error: "planKey inválido. Valores permitidos: basic, pro, premium."
+      });
+    }
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const household = await Household.findById(effectiveHouseholdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "Hogar no encontrado." });
+    }
+
+    const previousPlan = household.subscriptionPlan;
+
+    if (normalizedPlan === "basic") {
+      applyAdminSubscriptionDeactivation(household);
+    } else {
+      applyAdminSubscriptionActivation(household, normalizedPlan);
+    }
+
+    // Clear Stripe metadata so the next checkout starts clean
+    household.stripeCustomerId = "";
+    household.stripeSubscriptionId = "";
+    household.paymentProvider = "dev-override";
+    household.paymentMode = "test";
+    household.planUpdatedAt = new Date();
+    household.planUpdatedByPaymentAttemptId = "";
+
+    await household.save();
+
+    console.log("[payments][dev] Household plan changed via dev/change-plan", {
+      householdId: effectiveHouseholdId,
+      previousPlan,
+      newPlan: normalizedPlan,
+      userId: req.user?.id || null
+    });
+
+    return res.json({
+      ok: true,
+      household: {
+        id: household._id.toString(),
+        name: household.name,
+        previousPlan,
+        ...buildHouseholdSubscriptionResponse(household)
+      }
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    console.error("[payments][dev] change-plan error", {
+      body: req.body,
+      error: error?.message
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo cambiar el plan." });
   }
 });
 

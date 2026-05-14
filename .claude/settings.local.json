@@ -65,7 +65,8 @@
       "PowerShell(ls -R \"C:\\\\APPS\\\\pilot-homefirst\" -Depth 2)",
       "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Force)",
       "Bash(Select-Object Name, FullName)",
-      "Bash(xargs grep -l \"admin\\\\|Admin\\\\|pack.*edit\\\\|catalog.*admin\\\\|packs.*admin\")"
+      "Bash(xargs grep -l \"admin\\\\|Admin\\\\|pack.*edit\\\\|catalog.*admin\\\\|packs.*admin\")",
+      "Bash(node --input-type=module --eval \"import\\('./src/routes/payments.js'\\).then\\(\\(\\) => console.log\\('payments.js OK'\\)\\).catch\\(e => console.error\\('ERROR', e.message\\)\\)\")"
     ]
   }
 }

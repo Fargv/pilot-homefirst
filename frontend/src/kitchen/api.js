@@ -172,3 +172,14 @@ export function getMyPaymentAttempts() {
 export function createCustomerPortalSession() {
   return apiRequest("/api/payments/customer-portal", { method: "POST" });
 }
+
+/**
+ * DEV/test only — change the current user's household plan directly without Stripe.
+ * Requires STRIPE_MODE=test and ALLOW_TEST_PAYMENT_ENTITLEMENTS=true on the backend.
+ */
+export function devChangePlan(planKey) {
+  return apiRequest("/api/payments/dev/change-plan", {
+    method: "POST",
+    body: JSON.stringify({ planKey })
+  });
+}

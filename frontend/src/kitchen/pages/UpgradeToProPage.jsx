@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
-import { apiRequest, createCheckoutSession, createCustomerPortalSession } from "../api.js";
+import { apiRequest, createCheckoutSession, createCustomerPortalSession, devChangePlan } from "../api.js";
 import { getPlanLimits, isUnlimitedLicenseLimit } from "../subscription.js";
 
 const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
@@ -80,11 +80,13 @@ export default function UpgradeToProPage() {
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [loadingPlanId, setLoadingPlanId] = useState("");
   const [portalLoading, setPortalLoading] = useState(false);
+  const [devChangePlanLoading, setDevChangePlanLoading] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [requestedPlan, setRequestedPlan] = useState("");
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
   const [hasActiveStripeSubscription, setHasActiveStripeSubscription] = useState(false);
+  const [paymentMeta, setPaymentMeta] = useState(null);
   const [householdLicense, setHouseholdLicense] = useState(null);
 
   const from = searchParams.get("from") || "";
@@ -105,6 +107,7 @@ export default function UpgradeToProPage() {
         setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
         setRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
         setHasActiveStripeSubscription(Boolean(data?.household?.hasActiveStripeSubscription));
+        setPaymentMeta(data?.household?.paymentMeta || null);
         setHouseholdLicense(data?.household?.license || null);
       } catch (loadError) {
         if (!active) return;
@@ -173,6 +176,23 @@ export default function UpgradeToProPage() {
     } catch (portalError) {
       setError(portalError.message || "No se pudo abrir el portal de facturación.");
       setPortalLoading(false);
+    }
+  };
+
+  const handleDevChangePlan = async (planKey) => {
+    setDevChangePlanLoading(planKey);
+    setError("");
+    setSuccess("");
+    try {
+      const data = await devChangePlan(planKey);
+      setSubscriptionPlan(data?.household?.subscriptionPlan || planKey);
+      setHasActiveStripeSubscription(false);
+      setPaymentMeta(null);
+      setSuccess(`Plan cambiado a ${planKey} (DEV override).`);
+    } catch (err) {
+      setError(err.message || "No se pudo cambiar el plan.");
+    } finally {
+      setDevChangePlanLoading("");
     }
   };
 
@@ -320,6 +340,53 @@ export default function UpgradeToProPage() {
             ← Volver
           </button>
         </div>
+
+        {IS_TEST_MODE && !summaryLoading && (
+          <details style={{ marginTop: 32, border: "1px dashed #f59e0b", borderRadius: 8, padding: 16, background: "#fffbeb" }}>
+            <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: 13, color: "#92400e", marginBottom: 0 }}>
+              🛠 Panel de diagnóstico DEV (solo visible en test mode)
+            </summary>
+            <div style={{ marginTop: 12, display: "grid", gap: 6, fontSize: 12, fontFamily: "monospace" }}>
+              <div><strong>plan actual:</strong> {subscriptionPlan}</div>
+              <div><strong>subscriptionStatus:</strong> {householdLicense?.subscriptionStatus || "—"}</div>
+              <div><strong>isPro:</strong> {String(householdLicense?.isPro ?? "—")}</div>
+              <div><strong>hasActiveStripeSubscription:</strong> {String(hasActiveStripeSubscription)}</div>
+              <div><strong>stripeCustomerId:</strong> {paymentMeta?.stripeCustomerId || "—"}</div>
+              <div><strong>stripeSubscriptionId:</strong> {paymentMeta?.stripeSubscriptionId || "—"}</div>
+              <div><strong>paymentProvider:</strong> {paymentMeta?.paymentProvider || "—"}</div>
+              <div><strong>paymentMode:</strong> {paymentMeta?.paymentMode || "—"}</div>
+              <div><strong>planUpdatedAt:</strong> {paymentMeta?.planUpdatedAt ? new Date(paymentMeta.planUpdatedAt).toLocaleString() : "—"}</div>
+              <div><strong>VITE_STRIPE_ENABLED:</strong> {String(STRIPE_ENABLED)}</div>
+              <div><strong>VITE_PAYMENTS_MODE:</strong> {PAYMENTS_MODE}</div>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <p style={{ fontSize: 12, color: "#92400e", marginBottom: 8 }}>
+                <strong>Cambio rápido de plan (DEV override — sin Stripe):</strong>
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {["basic", "pro", "premium"].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    style={{
+                      padding: "5px 12px",
+                      fontSize: 12,
+                      borderRadius: 6,
+                      border: `1px solid ${p === subscriptionPlan ? "#92400e" : "#d97706"}`,
+                      background: p === subscriptionPlan ? "#fde68a" : "#fff",
+                      cursor: devChangePlanLoading ? "not-allowed" : "pointer",
+                      fontWeight: p === subscriptionPlan ? 700 : 400
+                    }}
+                    disabled={Boolean(devChangePlanLoading) || p === subscriptionPlan}
+                    onClick={() => handleDevChangePlan(p)}
+                  >
+                    {devChangePlanLoading === p ? "..." : p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </details>
+        )}
       </div>
     </KitchenLayout>
   );

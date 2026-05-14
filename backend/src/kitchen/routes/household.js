@@ -116,6 +116,14 @@ function buildHouseholdResponse(household, license = null) {
       : [],
     ...buildHouseholdSubscriptionResponse(household),
     hasActiveStripeSubscription: Boolean(household.stripeSubscriptionId),
+    // Payment debug fields — always returned so admin/test UI can inspect state
+    paymentMeta: {
+      stripeCustomerId: household.stripeCustomerId || null,
+      stripeSubscriptionId: household.stripeSubscriptionId || null,
+      paymentProvider: household.paymentProvider || null,
+      paymentMode: household.paymentMode || null,
+      planUpdatedAt: household.planUpdatedAt || null
+    },
     featureAvailability: buildHouseholdFeatureAvailability(household),
     license: license || buildHouseholdLicenseSummary(household)
   };
@@ -236,7 +244,7 @@ router.get("/summary", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin randomizationUseDietFilter randomizationDefaultDietPackIds stripeSubscriptionId")
+      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin randomizationUseDietFilter randomizationDefaultDietPackIds stripeSubscriptionId stripeCustomerId paymentProvider paymentMode planUpdatedAt")
       .lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
