@@ -1022,81 +1022,88 @@ export default function ShoppingPage() {
               </div>
             </div>
 
-            <div className="shopping-header-week-row">
-              <div className="kitchen-week-nav-row shopping-week-nav-row">
-                <WeekNavigator
-                  className="shopping-week-nav shopping-week-header-navigator"
-                  value={weekStart}
-                  onChange={(nextValue) => updateVisibleWeek(normalizeWeekStartInput(nextValue))}
-                  onPrevious={() => updateVisibleWeek((prev) => addDaysToISO(prev, -7))}
-                  onNext={() => updateVisibleWeek((prev) => addDaysToISO(prev, 7))}
-                />
-                {!isCurrentWeek ? (
-                  <button
-                    type="button"
-                    className="kitchen-week-now-button shopping-week-now-button"
-                    onClick={handleJumpToCurrentWeek}
-                    aria-label="Ir a la semana actual"
-                  >
-                    <TodayIcon className="kitchen-week-now-icon" />
-                    <span>Hoy</span>
-                  </button>
-                ) : null}
+            {/* Unified controls bar: week navigator + state filters on one line */}
+            <div className="shopping-controls-bar">
+              <div className="shopping-header-week-row">
+                <div className="kitchen-week-nav-row shopping-week-nav-row">
+                  <WeekNavigator
+                    className="shopping-week-nav shopping-week-header-navigator"
+                    value={weekStart}
+                    onChange={(nextValue) => updateVisibleWeek(normalizeWeekStartInput(nextValue))}
+                    onPrevious={() => updateVisibleWeek((prev) => addDaysToISO(prev, -7))}
+                    onNext={() => updateVisibleWeek((prev) => addDaysToISO(prev, 7))}
+                  />
+                  {!isCurrentWeek ? (
+                    <button
+                      type="button"
+                      className="kitchen-week-now-button shopping-week-now-button"
+                      onClick={handleJumpToCurrentWeek}
+                      aria-label="Ir a la semana actual"
+                    >
+                      <TodayIcon className="kitchen-week-now-icon" />
+                      <span>Hoy</span>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              <span className="shopping-controls-divider" aria-hidden="true" />
+
+              <div className="shopping-header-tabs-row">
+                <div className="kitchen-tab-share-row shopping-tab-share-row">
+                  <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
+                    <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
+                    <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+                    {budgetFeatureEnabled ? (
+                      <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
+                        Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
+                      </button>
+                    ) : null}
+                  </div>
+                  <ShareWhatsAppButton
+                    iconOnly
+                    size={22}
+                    className="kitchen-tab-share-button"
+                    buttonLabel="Compartir lista por WhatsApp"
+                    title="Compartir en HomeFirst"
+                    items={[
+                      {
+                        id: "shopping-list",
+                        label: "Compartir esta lista",
+                        description: "Comparte la lista de la compra de esta semana con acceso protegido.",
+                        url: buildShoppingShareUrl(weekStart),
+                        message: `Here is the shopping list in HomeFirst: ${buildShoppingShareUrl(weekStart)}`
+                      }
+                    ]}
+                  />
+                </div>
               </div>
             </div>
 
+            {/* Budget cards — shown below the unified controls bar */}
             {budgetFeatureEnabled === true ? (
               <div className="shopping-budget-row">
                 <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
                   <span className="shopping-budget-label">Budget semanal</span>
-                  <strong>{formatCurrency(budget?.weeklyBudget)}</strong>
+                  <strong className="shopping-budget-amount">{formatCurrency(budget?.weeklyBudget)}</strong>
                 </button>
-                <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
+                <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--spent" onClick={openWeeklyBudgetPanel}>
                   <span className="shopping-budget-label">Gastado esta semana</span>
-                  <strong>{formatCurrency(budget?.spent)}</strong>
+                  <strong className="shopping-budget-amount">{formatCurrency(budget?.spent)}</strong>
                 </button>
-                <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
-                  <span className="shopping-budget-label">Disponible esta semana</span>
-                  <strong>{formatCurrency(budget?.available)}</strong>
+                <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--available" onClick={openWeeklyBudgetPanel}>
+                  <span className="shopping-budget-label">Disponible</span>
+                  <strong className="shopping-budget-amount">{formatCurrency(budget?.available)}</strong>
                 </button>
               </div>
             ) : null}
-
-            <div className="shopping-header-tabs-row">
-              <div className="kitchen-tab-share-row shopping-tab-share-row">
-                <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
-                  <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-                  <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-                  {budgetFeatureEnabled ? (
-                    <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
-                      Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
-                    </button>
-                  ) : null}
-                </div>
-                <ShareWhatsAppButton
-                  iconOnly
-                  size={22}
-                  className="kitchen-tab-share-button"
-                  buttonLabel="Compartir lista por WhatsApp"
-                  title="Compartir en HomeFirst"
-                  items={[
-                    {
-                      id: "shopping-list",
-                      label: "Compartir esta lista",
-                      description: "Comparte la lista de la compra de esta semana con acceso protegido.",
-                      url: buildShoppingShareUrl(weekStart),
-                      message: `Here is the shopping list in HomeFirst: ${buildShoppingShareUrl(weekStart)}`
-                    }
-                  ]}
-                />
-              </div>
-            </div>
 
             {tab === "pending" ? (
               <div className="shopping-header-input-row">
                 <div className="shopping-header-quick-col">
                   <div className="shopping-quick-add shopping-quick-add-header" role="region" aria-label="Añadir ingrediente rápido">
                     <div className="shopping-quick-add-row">
+                      <span className="shopping-quick-add-icon" aria-hidden="true">+</span>
                       <input
                         ref={quickInputRef}
                         className="kitchen-input shopping-quick-add-input"
@@ -1169,7 +1176,7 @@ export default function ShoppingPage() {
           {tab === "pending" ? (
             <div className="shopping-categories">
               <div className="shopping-bulk-actions">
-                <button className="kitchen-button ghost shopping-bulk-button" type="button" onClick={() => setAllItemsStatus("purchased")}>Marcar todo como comprado</button>
+                <button className="kitchen-button shopping-bulk-button shopping-bulk-gradient" type="button" onClick={() => setAllItemsStatus("purchased")}>Marcar todo comprado</button>
               </div>
               {!Array.isArray(pendingByCategory) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
@@ -1225,7 +1232,7 @@ export default function ShoppingPage() {
             <div className="shopping-categories">
               <div className="shopping-bulk-actions">
                 <button
-                  className="kitchen-button ghost shopping-bulk-button"
+                  className="kitchen-button secondary shopping-bulk-button"
                   type="button"
                   onClick={() => {
                     if (window.confirm("¿Desmarcar todo lo comprado de esta semana?")) {
