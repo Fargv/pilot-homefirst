@@ -1,0 +1,1152 @@
+{
+  "slug": "perdida-grasa-sostenible-vol1",
+  "title": "Dieta de pérdida de grasa sostenible — Vol. 1",
+  "subtitle": "Come bien, pierde grasa y mantén el resultado",
+  "description": "20 recetas pensadas para la vida real: cocina en familia, batch cooking fácil y platos de confort saludables para el día a día. Sin restricciones extremas, sin hambre. El camino sostenible hacia un déficit calórico que puedes mantener semanas y meses.",
+  "coverImage": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1200&q=80&auto=format&fit=crop",
+  "tags": ["dieta", "pérdida de grasa", "sostenible", "batch cooking", "familia", "saludable"],
+  "cuisineType": "variada",
+  "active": true,
+  "featured": false,
+  "diet": true,
+  "priceBasic": 2.99,
+  "includedPlans": ["pro", "premium"],
+  "monthlyCreditCost": 2,
+  "sortOrder": 14,
+  "disclaimer": "Recetas diseñadas para adultos sanos que quieren reducir grasa corporal de forma progresiva y sostenible. Las cantidades son orientativas. Consulta con un profesional de la salud o nutricionista si tienes alguna condición médica.",
+  "dishes": [
+    {
+      "name": "Pollo al horno con boniato y brócoli",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "45 min",
+      "ingredients": [
+        { "displayName": "Pechuga o muslos de pollo", "canonicalName": "pollo" },
+        { "displayName": "Boniato", "canonicalName": "boniato" },
+        { "displayName": "Brócoli", "canonicalName": "brocoli" },
+        { "displayName": "Ajo", "canonicalName": "ajo" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Pechuga de pollo (o muslos sin piel)", "quantity": "400 g" },
+          { "name": "Boniato", "quantity": "300 g" },
+          { "name": "Brócoli", "quantity": "250 g" },
+          { "name": "Ajo", "quantity": "3 dientes" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Pimentón ahumado", "quantity": "1 cucharadita" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                { "type": "text", "text": ". Pela el boniato y córtalo en dados de 2 cm. Separa el brócoli en ramilletes." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Condimenta el pollo " },
+                { "type": "text", "text": "con ajo picado, pimentón ahumado, sal y pimienta. Deja marinar " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                { "type": "text", "text": " mientras preparas las verduras." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Coloca el boniato en la bandeja, " },
+                { "type": "text", "text": "rocía con aceite y hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                { "type": "text", "text": ". Añade el pollo y el brócoli y hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "20-25 min más" },
+                { "type": "text", "text": " hasta que el pollo esté hecho y las verduras doradas." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve en el momento " },
+                { "type": "text", "text": "o guarda en tápers para el batch cooking semanal." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: multiplica x3 las cantidades y tendrás comida para 3 días. Aguanta bien en nevera." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Salmón al horno con espárragos y limón",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "25 min",
+      "ingredients": [
+        { "displayName": "Filetes de salmón", "canonicalName": "salmon" },
+        { "displayName": "Espárragos", "canonicalName": "esparrago" },
+        { "displayName": "Limón", "canonicalName": "limon" },
+        { "displayName": "Ajo", "canonicalName": "ajo" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Filetes de salmón", "quantity": "2 unidades (150 g c/u)" },
+          { "name": "Espárragos verdes", "quantity": "250 g" },
+          { "name": "Limón", "quantity": "1 unidad" },
+          { "name": "Ajo", "quantity": "2 dientes" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                { "type": "text", "text": ". Retira la parte dura de los espárragos y colócalos en una bandeja con el ajo laminado, aceite, sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Coloca el salmón " },
+                { "type": "text", "text": "sobre los espárragos. Exprime medio limón por encima y añade rodajas de la otra mitad." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "12-15 min" },
+                { "type": "text", "text": " hasta que el salmón se desmigue fácilmente con un tenedor. No sobrecocines." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el salmón debe quedar ligeramente rosado en el centro para conservar jugosidad y nutrientes." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Lentejas estofadas con zanahoria y pavo",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5d",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "40 min",
+      "ingredients": [
+        { "displayName": "Lentejas pardinas", "canonicalName": "lenteja" },
+        { "displayName": "Zanahoria", "canonicalName": "zanahoria" },
+        { "displayName": "Puerro", "canonicalName": "puerro" },
+        { "displayName": "Tomate triturado", "canonicalName": "tomate" },
+        { "displayName": "Fiambre de pavo", "canonicalName": "pavo" },
+        { "displayName": "Caldo de verduras", "canonicalName": "caldo" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Lentejas pardinas (secas)", "quantity": "300 g" },
+          { "name": "Zanahoria", "quantity": "2 unidades" },
+          { "name": "Puerro", "quantity": "1 unidad" },
+          { "name": "Tomate triturado", "quantity": "200 g" },
+          { "name": "Fiambre de pavo en tiras", "quantity": "150 g" },
+          { "name": "Caldo de verduras", "quantity": "1 litro" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Comino molido", "quantity": "1 cucharadita" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sofríe el puerro y la zanahoria " },
+                { "type": "text", "text": "en una olla con aceite a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                { "type": "text", "text": ". Añade el tomate triturado y el comino; cocina " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3 min" },
+                { "type": "text", "text": " más." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Incorpora las lentejas " },
+                { "type": "text", "text": "(sin remojar previo) y el caldo. Lleva a ebullición, baja el fuego y cocina tapado " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "25-30 min" },
+                { "type": "text", "text": " hasta que estén tiernas." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade el pavo " },
+                { "type": "text", "text": "en tiras los últimos 5 minutos para que se caliente sin pasar. Ajusta de sal y pimienta." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: prepara el doble y congela la mitad. Las lentejas aguantan perfectamente en el congelador." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pechuga de pollo en salsa de tomate con pimiento",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "35 min",
+      "ingredients": [
+        { "displayName": "Pechugas de pollo", "canonicalName": "pechuga de pollo" },
+        { "displayName": "Tomate triturado", "canonicalName": "tomate" },
+        { "displayName": "Pimiento rojo", "canonicalName": "pimiento rojo" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Pechugas de pollo", "quantity": "2 unidades (400 g)" },
+          { "name": "Tomate triturado", "quantity": "400 g" },
+          { "name": "Pimiento rojo", "quantity": "1 unidad" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Ajo", "quantity": "2 dientes" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Orégano seco", "quantity": "1 cucharadita" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Dora las pechugas " },
+                { "type": "text", "text": "salpimentadas en una sartén con aceite a fuego fuerte " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2 min por lado" },
+                { "type": "text", "text": ". Retira y reserva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "En la misma sartén, " },
+                { "type": "text", "text": "sofríe la cebolla, el pimiento y el ajo picados a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "8 min" },
+                { "type": "text", "text": ". Añade el tomate triturado y el orégano; cocina " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Incorpora el pollo " },
+                { "type": "text", "text": "en la salsa, tapa y cocina a fuego suave " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                { "type": "text", "text": " hasta que esté bien hecho y jugoso." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: la salsa de tomate multiplica x4 y aguanta 5 días en nevera. Añade el pollo al momento." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Merluza al vapor con patatas y judías verdes",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "30 min",
+      "ingredients": [
+        { "displayName": "Filetes de merluza", "canonicalName": "merluza" },
+        { "displayName": "Patatas", "canonicalName": "patata" },
+        { "displayName": "Judías verdes", "canonicalName": "judia verde" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Filetes de merluza", "quantity": "2 unidades (150 g c/u)" },
+          { "name": "Patatas medianas", "quantity": "2 unidades" },
+          { "name": "Judías verdes", "quantity": "200 g" },
+          { "name": "Limón", "quantity": "1 unidad" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuece las patatas " },
+                { "type": "text", "text": "con piel en agua con sal " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "20 min" },
+                { "type": "text", "text": ". A los 10 min añade las judías al mismo cazo." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina la merluza al vapor " },
+                { "type": "text", "text": "sobre las verduras o en vaporera aparte " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "6-8 min" },
+                { "type": "text", "text": " hasta que se desmigue al toque." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve con un chorrito de limón " },
+                { "type": "text", "text": "y aceite de oliva en crudo." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: añade una hoja de laurel al agua de cocción para aromatizar patatas y judías." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Estofado ligero de ternera con zanahoria y patata",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "media",
+      "estimatedPrepTime": "1 h",
+      "ingredients": [
+        { "displayName": "Ternera para estofar", "canonicalName": "ternera" },
+        { "displayName": "Zanahoria", "canonicalName": "zanahoria" },
+        { "displayName": "Patatas", "canonicalName": "patata" },
+        { "displayName": "Tomate triturado", "canonicalName": "tomate" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Caldo de carne o verduras", "canonicalName": "caldo" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Ternera para estofar en dados", "quantity": "600 g" },
+          { "name": "Zanahoria", "quantity": "2 unidades" },
+          { "name": "Patatas medianas", "quantity": "2 unidades" },
+          { "name": "Tomate triturado", "quantity": "200 g" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Caldo de carne o verduras", "quantity": "400 ml" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Tomillo seco", "quantity": "1 cucharadita" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Dora la ternera " },
+                { "type": "text", "text": "salpimentada en una olla con aceite a fuego fuerte " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": ". Retira y sofríe la cebolla y la zanahoria en el mismo aceite " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade el tomate, el tomillo, la ternera y el caldo. " },
+                { "type": "text", "text": "Lleva a ebullición, tapa y cocina a fuego suave " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "35 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Incorpora las patatas " },
+                { "type": "text", "text": "peladas y troceadas y cocina " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "15 min más" },
+                { "type": "text", "text": " hasta que estén tiernas. Ajusta de sal." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: de sabor aún mejor al día siguiente. Prepara el doble y guarda en táper para el resto de la semana." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Garbanzos salteados con espinacas y huevo pochado",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5d",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        { "displayName": "Garbanzos cocidos (bote)", "canonicalName": "garbanzo" },
+        { "displayName": "Espinacas frescas", "canonicalName": "espinaca" },
+        { "displayName": "Huevos", "canonicalName": "huevo" },
+        { "displayName": "Tomate triturado", "canonicalName": "tomate" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Garbanzos cocidos escurridos", "quantity": "400 g (1 bote)" },
+          { "name": "Espinacas frescas", "quantity": "150 g" },
+          { "name": "Huevos", "quantity": "2 unidades" },
+          { "name": "Tomate triturado", "quantity": "150 g" },
+          { "name": "Cebolla", "quantity": "½ unidad" },
+          { "name": "Ajo", "quantity": "2 dientes" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Comino molido", "quantity": "½ cucharadita" },
+          { "name": "Pimentón", "quantity": "½ cucharadita" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sofríe la cebolla y el ajo " },
+                { "type": "text", "text": "picados en aceite a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                { "type": "text", "text": ". Añade el tomate, comino y pimentón; cocina " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade los garbanzos y las espinacas. " },
+                { "type": "text", "text": "Saltea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": " hasta que las espinacas se marchiten." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Pocha los huevos " },
+                { "type": "text", "text": "en agua con un chorro de vinagre durante " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3 min" },
+                { "type": "text", "text": ". Sirve sobre los garbanzos." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: usa garbanzos de bote para tener este plato listo en menos de 20 minutos cualquier día de semana." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Arroz integral con pollo y verduras al wok",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "45 min",
+      "ingredients": [
+        { "displayName": "Arroz integral", "canonicalName": "arroz integral" },
+        { "displayName": "Pechuga de pollo", "canonicalName": "pechuga de pollo" },
+        { "displayName": "Zanahoria", "canonicalName": "zanahoria" },
+        { "displayName": "Guisantes congelados", "canonicalName": "guisante" },
+        { "displayName": "Pimiento rojo", "canonicalName": "pimiento rojo" },
+        { "displayName": "Huevos", "canonicalName": "huevo" }
+      ],
+      "recipe": {
+        "servings": 3,
+        "ingredients": [
+          { "name": "Arroz integral (cocido)", "quantity": "300 g en seco" },
+          { "name": "Pechuga de pollo en dados", "quantity": "300 g" },
+          { "name": "Zanahoria", "quantity": "1 unidad" },
+          { "name": "Guisantes congelados", "quantity": "100 g" },
+          { "name": "Pimiento rojo", "quantity": "½ unidad" },
+          { "name": "Huevos", "quantity": "2 unidades" },
+          { "name": "Salsa de soja baja en sodio", "quantity": "2 cucharadas" },
+          { "name": "Aceite de sésamo o de oliva", "quantity": "1 cucharada" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuece el arroz integral " },
+                { "type": "text", "text": "según el paquete (normalmente " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "30-35 min" },
+                { "type": "text", "text": "). Puede hacerse con antelación (batch)." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Saltea el pollo " },
+                { "type": "text", "text": "en un wok o sartén grande con aceite a fuego fuerte " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "4 min" },
+                { "type": "text", "text": ". Añade la zanahoria y el pimiento en dados y saltea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Incorpora los guisantes y el arroz. " },
+                { "type": "text", "text": "Haz un hueco en el centro, añade los huevos batidos y revuelve integrándolos con el arroz." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Aliña con salsa de soja, " },
+                { "type": "text", "text": "saltea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2 min" },
+                { "type": "text", "text": " a fuego vivo. Sirve caliente." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: cuece el arroz integral el domingo y tendrás la base para varios días de semana." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Albóndigas de pavo en salsa de tomate",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "media",
+      "estimatedPrepTime": "45 min",
+      "ingredients": [
+        { "displayName": "Carne picada de pavo", "canonicalName": "carne picada de pavo" },
+        { "displayName": "Tomate triturado", "canonicalName": "tomate" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Huevos", "canonicalName": "huevo" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Carne picada de pavo", "quantity": "500 g" },
+          { "name": "Tomate triturado", "quantity": "400 g" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Huevo", "quantity": "1 unidad" },
+          { "name": "Pan rallado integral", "quantity": "2 cucharadas" },
+          { "name": "Ajo", "quantity": "2 dientes" },
+          { "name": "Perejil fresco", "quantity": "1 cucharada" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Mezcla el pavo picado " },
+                { "type": "text", "text": "con el huevo, el pan rallado, el ajo y el perejil picados, sal y pimienta. Forma albóndigas del tamaño de una pelota de golf." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Dora las albóndigas " },
+                { "type": "text", "text": "en una sartén con aceite a fuego medio-alto " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
+                { "type": "text", "text": " dándoles la vuelta. Retira y reserva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sofríe la cebolla " },
+                { "type": "text", "text": "en el mismo aceite " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                { "type": "text", "text": ". Añade el tomate triturado y cocina " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                { "type": "text", "text": ". Incorpora las albóndigas y cocina tapado " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "15 min" },
+                { "type": "text", "text": " a fuego suave." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: congela las albóndigas ya cocinadas con la salsa. Se descongelan perfectamente." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ensalada de atún con aguacate, tomate y huevo",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "15 min",
+      "ingredients": [
+        { "displayName": "Atún al natural (lata)", "canonicalName": "atun" },
+        { "displayName": "Aguacate", "canonicalName": "aguacate" },
+        { "displayName": "Tomate", "canonicalName": "tomate" },
+        { "displayName": "Huevos", "canonicalName": "huevo" },
+        { "displayName": "Lechuga o mezclum", "canonicalName": "lechuga" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Atún al natural escurrido", "quantity": "2 latas (160 g)" },
+          { "name": "Aguacate maduro", "quantity": "1 unidad" },
+          { "name": "Tomate", "quantity": "2 unidades" },
+          { "name": "Huevos cocidos", "quantity": "2 unidades" },
+          { "name": "Lechuga o mezclum", "quantity": "80 g" },
+          { "name": "Limón", "quantity": "½ unidad" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "1 cucharada" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuece los huevos " },
+                { "type": "text", "text": "en agua hirviendo " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10 min" },
+                { "type": "text", "text": ". Enfría, pela y corta en cuartos." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Corta el aguacate, el tomate " },
+                { "type": "text", "text": "en dados y dispón todo sobre la base de lechuga." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Desmenuza el atún por encima. " },
+                { "type": "text", "text": "Aliña con zumo de limón, aceite, sal y pimienta justo antes de servir." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: cuece huevos a principio de semana y tenlos listos en nevera para añadir a cualquier ensalada." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tortilla española de boniato",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b61",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "media",
+      "estimatedPrepTime": "40 min",
+      "ingredients": [
+        { "displayName": "Boniato", "canonicalName": "boniato" },
+        { "displayName": "Huevos", "canonicalName": "huevo" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Boniatos", "quantity": "500 g" },
+          { "name": "Huevos", "quantity": "6 unidades" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Aceite de oliva", "quantity": "2 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Pela y lamina el boniato fino. " },
+                { "type": "text", "text": "Cocina con la cebolla en rodajas en una sartén con aceite a fuego medio-bajo " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "20 min" },
+                { "type": "text", "text": " hasta que esté tierno. Escurre el aceite sobrante." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Bate los huevos " },
+                { "type": "text", "text": "con sal y pimienta. Mezcla con el boniato y la cebolla. Deja reposar " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuaja la tortilla " },
+                { "type": "text", "text": "en la sartén a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "4 min por lado" },
+                { "type": "text", "text": ". El interior debe quedar ligeramente jugoso." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: aguanta 3 días en nevera. Perfecta para llevar al trabajo o como comida rápida entre semana." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Dorada al horno con tomate, cebolla y limón",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "35 min",
+      "ingredients": [
+        { "displayName": "Dorada (entera o filetes)", "canonicalName": "dorada" },
+        { "displayName": "Tomate", "canonicalName": "tomate" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Dorada entera limpia", "quantity": "1 unidad (500-600 g)" },
+          { "name": "Tomate", "quantity": "2 unidades" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Limón", "quantity": "1 unidad" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Tomillo o perejil", "quantity": "al gusto" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el horno a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                { "type": "text", "text": ". Coloca rodajas de cebolla y tomate en la base de la bandeja. Añade la dorada salpimentada encima." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Rellena la cavidad de la dorada " },
+                { "type": "text", "text": "con rodajas de limón y hierbas. Rocía con aceite y zumo de limón por encima." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "20-25 min" },
+                { "type": "text", "text": " hasta que la piel esté dorada y la carne se separe fácilmente de la espina." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: pide al pescadero que te limpie la dorada para ir directamente al horno sin perder tiempo." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pasta integral con pesto de espinacas y pavo",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "25 min",
+      "ingredients": [
+        { "displayName": "Pasta integral (espirales o penne)", "canonicalName": "pasta integral" },
+        { "displayName": "Espinacas frescas", "canonicalName": "espinaca" },
+        { "displayName": "Pechuga de pavo en lonchas", "canonicalName": "pechuga de pavo" },
+        { "displayName": "Queso parmesano", "canonicalName": "queso parmesano" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Pasta integral", "quantity": "160 g" },
+          { "name": "Espinacas frescas", "quantity": "100 g" },
+          { "name": "Pechuga de pavo en lonchas", "quantity": "150 g" },
+          { "name": "Queso parmesano rallado", "quantity": "30 g" },
+          { "name": "Limón", "quantity": "½ unidad" },
+          { "name": "Ajo", "quantity": "1 diente" },
+          { "name": "Aceite de oliva virgen extra", "quantity": "2 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuece la pasta integral " },
+                { "type": "text", "text": "en agua con sal según el paquete. Reserva un vaso del agua de cocción antes de escurrir." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Tritura las espinacas crudas " },
+                { "type": "text", "text": "con el ajo, el parmesano, el aceite, el zumo de limón y 2-3 cucharadas del agua de pasta hasta obtener un pesto ligero." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Mezcla la pasta caliente " },
+                { "type": "text", "text": "con el pesto y el pavo en tiras. Si queda seco, añade más agua de cocción. Sirve con parmesano extra." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el agua de la pasta es clave para ligar el pesto y conseguir una salsa cremosa sin añadir nata." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crema de calabacín con queso fresco",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "30 min",
+      "ingredients": [
+        { "displayName": "Calabacín", "canonicalName": "calabacin" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Queso fresco", "canonicalName": "queso fresco" },
+        { "displayName": "Caldo de verduras", "canonicalName": "caldo" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Calabacín", "quantity": "4 unidades medianas (700 g)" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Queso fresco", "quantity": "150 g" },
+          { "name": "Caldo de verduras", "quantity": "600 ml" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sofríe la cebolla " },
+                { "type": "text", "text": "en aceite a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                { "type": "text", "text": ". Añade el calabacín en trozos y el caldo. Cocina tapado " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "15 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Tritura con el queso fresco " },
+                { "type": "text", "text": "hasta obtener una crema suave. Ajusta de sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve caliente " },
+                { "type": "text", "text": "con un hilo de aceite en crudo y pimienta negra." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: aguanta 4 días en nevera. También puede congelarse en porciones individuales." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Muslos de pollo al horno con patata y pimiento",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "55 min",
+      "ingredients": [
+        { "displayName": "Muslos de pollo sin piel", "canonicalName": "muslo de pollo" },
+        { "displayName": "Patatas", "canonicalName": "patata" },
+        { "displayName": "Pimiento rojo", "canonicalName": "pimiento rojo" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Muslos de pollo sin piel", "quantity": "8 unidades" },
+          { "name": "Patatas medianas", "quantity": "4 unidades" },
+          { "name": "Pimiento rojo", "quantity": "2 unidades" },
+          { "name": "Cebolla", "quantity": "2 unidades" },
+          { "name": "Ajo", "quantity": "4 dientes" },
+          { "name": "Pimentón ahumado", "quantity": "1 cucharadita" },
+          { "name": "Aceite de oliva", "quantity": "2 cucharadas" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C" },
+                { "type": "text", "text": ". Mezcla el pollo con el pimentón, el ajo laminado, aceite, sal y pimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Extiende las patatas en gajos, la cebolla y el pimiento " },
+                { "type": "text", "text": "en una bandeja grande. Coloca los muslos encima." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Hornea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "45-50 min" },
+                { "type": "text", "text": " hasta que el pollo esté dorado y las patatas tiernas. A mitad dale la vuelta." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: perfecto para hacer para toda la semana. Los muslos están aún más jugosos al día siguiente." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Revuelto de huevos con champiñones y espinacas",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b61",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "15 min",
+      "ingredients": [
+        { "displayName": "Huevos", "canonicalName": "huevo" },
+        { "displayName": "Champiñones", "canonicalName": "champinon" },
+        { "displayName": "Espinacas frescas", "canonicalName": "espinaca" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Huevos", "quantity": "4 unidades" },
+          { "name": "Champiñones", "quantity": "200 g" },
+          { "name": "Espinacas frescas", "quantity": "80 g" },
+          { "name": "Ajo", "quantity": "1 diente" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Saltea los champiñones laminados " },
+                { "type": "text", "text": "con el ajo en aceite a fuego fuerte " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "4-5 min" },
+                { "type": "text", "text": " hasta que suelten el agua y se doren. Añade las espinacas y saltea " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "1 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Baja el fuego a medio-bajo. " },
+                { "type": "text", "text": "Añade los huevos batidos con sal y pimienta. Remueve suavemente hasta cuajar al gusto." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: retira la sartén del fuego cuando el huevo aún esté ligeramente líquido — el calor residual termina de cuajarlo." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Sopa de verduras con pollo desmenuzado",
+      "dishCategoryId": "69ac70b1d23659ad70fcf948",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "40 min",
+      "ingredients": [
+        { "displayName": "Pechuga de pollo", "canonicalName": "pechuga de pollo" },
+        { "displayName": "Zanahoria", "canonicalName": "zanahoria" },
+        { "displayName": "Apio", "canonicalName": "apio" },
+        { "displayName": "Puerro", "canonicalName": "puerro" },
+        { "displayName": "Caldo de pollo", "canonicalName": "caldo" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Pechuga de pollo", "quantity": "300 g" },
+          { "name": "Zanahoria", "quantity": "2 unidades" },
+          { "name": "Apio", "quantity": "2 tallos" },
+          { "name": "Puerro", "quantity": "1 unidad" },
+          { "name": "Caldo de pollo bajo en sodio", "quantity": "1,2 litros" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Lleva el caldo a ebullición. " },
+                { "type": "text", "text": "Añade la pechuga entera, la zanahoria, el apio y el puerro en trozos grandes. Cocina a fuego suave " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "25 min" },
+                { "type": "text", "text": "." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Retira la pechuga, " },
+                { "type": "text", "text": "desmenúzala con dos tenedores y vuelve a incorporarla a la sopa." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Ajusta de sal y pimienta. " },
+                { "type": "text", "text": "Sirve bien caliente." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: prepara el doble y congela en porciones. Una cena reconfortante lista en minutos cualquier noche." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tortilla de claras con pimientos y queso fresco",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b61",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "15 min",
+      "ingredients": [
+        { "displayName": "Claras de huevo (o huevos enteros)", "canonicalName": "clara de huevo" },
+        { "displayName": "Pimiento rojo", "canonicalName": "pimiento rojo" },
+        { "displayName": "Queso fresco", "canonicalName": "queso fresco" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" }
+      ],
+      "recipe": {
+        "servings": 1,
+        "ingredients": [
+          { "name": "Claras de huevo (o 3 huevos enteros)", "quantity": "5 claras" },
+          { "name": "Pimiento rojo", "quantity": "½ unidad" },
+          { "name": "Queso fresco", "quantity": "50 g" },
+          { "name": "Cebolla", "quantity": "¼ unidad" },
+          { "name": "Aceite de oliva", "quantity": "½ cucharadita" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sofríe la cebolla y el pimiento " },
+                { "type": "text", "text": "en dados en una sartén antiadherente con aceite " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                { "type": "text", "text": ". Salpimienta." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Bate las claras " },
+                { "type": "text", "text": "con sal y piéntelas sobre las verduras a fuego medio-bajo. Distribuye el queso fresco desmenuzado por encima." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Dobla la tortilla a la mitad " },
+                { "type": "text", "text": "cuando los bordes estén cuajados y el centro aún jugoso. Sirve inmediatamente." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: puedes usar huevos enteros si prefieres — el plato seguirá siendo muy ligero y saciante." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ensalada templada de quinoa con verduras asadas y feta",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "35 min",
+      "ingredients": [
+        { "displayName": "Quinoa", "canonicalName": "quinoa" },
+        { "displayName": "Pimiento rojo", "canonicalName": "pimiento rojo" },
+        { "displayName": "Calabacín", "canonicalName": "calabacin" },
+        { "displayName": "Cebolla roja", "canonicalName": "cebolla" },
+        { "displayName": "Queso feta", "canonicalName": "queso feta" },
+        { "displayName": "Limón", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "servings": 2,
+        "ingredients": [
+          { "name": "Quinoa", "quantity": "150 g en seco" },
+          { "name": "Pimiento rojo", "quantity": "1 unidad" },
+          { "name": "Calabacín", "quantity": "1 unidad" },
+          { "name": "Cebolla roja", "quantity": "½ unidad" },
+          { "name": "Queso feta", "quantity": "80 g" },
+          { "name": "Limón", "quantity": "1 unidad" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Orégano seco", "quantity": "1 cucharadita" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cuece la quinoa " },
+                { "type": "text", "text": "en agua con sal al doble de volumen durante " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "12-15 min" },
+                { "type": "text", "text": ". Escurre y reserva." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Asa las verduras " },
+                { "type": "text", "text": "en dados en el horno a " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 20 min" },
+                { "type": "text", "text": " con aceite, sal y orégano." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Mezcla la quinoa con las verduras asadas. " },
+                { "type": "text", "text": "Aliña con limón, desmenuza el feta por encima y sirve templado." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: cuece quinoa en cantidad el domingo. Añade las verduras del momento y tienes cena en 20 min." }] }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crema de zanahoria y jengibre",
+      "dishCategoryId": "69ac70b1d23659ad70fcf948",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": true,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "30 min",
+      "ingredients": [
+        { "displayName": "Zanahoria", "canonicalName": "zanahoria" },
+        { "displayName": "Cebolla", "canonicalName": "cebolla" },
+        { "displayName": "Jengibre fresco", "canonicalName": "jengibre" },
+        { "displayName": "Caldo de verduras", "canonicalName": "caldo" }
+      ],
+      "recipe": {
+        "servings": 4,
+        "ingredients": [
+          { "name": "Zanahoria", "quantity": "600 g" },
+          { "name": "Cebolla", "quantity": "1 unidad" },
+          { "name": "Jengibre fresco rallado", "quantity": "1 cucharadita" },
+          { "name": "Caldo de verduras", "quantity": "700 ml" },
+          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
+          { "name": "Sal y pimienta", "quantity": "al gusto" }
+        ],
+        "steps": {
+          "type": "doc",
+          "content": [
+            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
+            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sofríe la cebolla " },
+                { "type": "text", "text": "en aceite a fuego medio " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
+                { "type": "text", "text": ". Añade la zanahoria pelada y en rodajas, el jengibre y el caldo." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina tapado " },
+                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "20 min" },
+                { "type": "text", "text": " hasta que la zanahoria esté muy tierna. Tritura hasta obtener una crema lisa." }
+              ]}] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
+                { "type": "text", "marks": [{ "type": "bold" }], "text": "Ajusta de sal y pimienta. " },
+                { "type": "text", "text": "Sirve con un hilo de aceite y pimienta negra recién molida." }
+              ]}] }
+            ]},
+            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: congela en botes individuales. Una crema caliente disponible cualquier noche sin esfuerzo." }] }
+          ]
+        }
+      }
+    }
+  ]
+}

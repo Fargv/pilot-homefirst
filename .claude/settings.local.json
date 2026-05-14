@@ -54,7 +54,12 @@
       "Bash(node --input-type=module --eval \"import\\('./backend/src/kitchen/models/BitesTransaction.js'\\).then\\(\\(\\) => console.log\\('BitesTransaction OK'\\)\\).catch\\(e => console.error\\('BitesTransaction ERR', e.message\\)\\)\")",
       "Bash(node --input-type=module --eval \"import\\('./backend/src/kitchen/models/BitesConfig.js'\\).then\\(\\(\\) => console.log\\('BitesConfig OK'\\)\\).catch\\(e => console.error\\('BitesConfig ERR', e.message\\)\\)\")",
       "Bash(node_modules/.bin/vite build *)",
-      "Bash(node --input-type=module --eval \"import\\('./backend/src/kitchen/bitesService.js'\\).then\\(\\(\\) => console.log\\('OK'\\)\\).catch\\(e => console.error\\(e.message\\)\\)\")"
+      "Bash(node --input-type=module --eval \"import\\('./backend/src/kitchen/bitesService.js'\\).then\\(\\(\\) => console.log\\('OK'\\)\\).catch\\(e => console.error\\(e.message\\)\\)\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Directory)",
+      "Bash(xargs grep -l \"export\")",
+      "Bash(npx --yes lsport 3000)",
+      "Bash(findstr -i \"dev\\\\|start\\\\|vite\\\\|port\")",
+      "mcp__Claude_in_Chrome__list_connected_browsers"
     ]
   }
 }
