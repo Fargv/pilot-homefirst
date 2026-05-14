@@ -9678,3 +9678,91 @@ body {
     font-size: 1rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Dishes Page Refresh — unified controls bar + card polish
+   ═══════════════════════════════════════════════════════════ */
+
+/* Mobile-first: stacked column */
+.dishes-controls-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.dishes-controls-divider { display: none; }
+
+.dishes-controls-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dishes-controls-search {
+  display: flex;
+  flex: 1 1 auto;
+}
+
+.dishes-search-input {
+  width: 100%;
+}
+
+/* Gradient primary action button */
+.dishes-new-button {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.28);
+  transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dishes-new-button:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6366f1 100%);
+  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.38);
+  transform: translateY(-1px);
+}
+
+.dishes-new-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.22);
+}
+
+/* Desktop (≥ 901px): unified glassmorphism bar on one line */
+@media (min-width: 901px) {
+  .dishes-controls-bar {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(199, 210, 254, 0.65);
+    border-radius: var(--hf-radius-lg);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .dishes-controls-divider {
+    display: block;
+    width: 1px;
+    height: 26px;
+    background: rgba(199, 210, 254, 0.7);
+    flex-shrink: 0;
+    align-self: center;
+  }
+}
+
+/* Dish card: smooth hover lift */
+.kitchen-dish-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.kitchen-dish-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.1);
+  border-color: rgba(199, 210, 254, 0.9);
+}

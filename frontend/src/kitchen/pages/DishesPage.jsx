@@ -757,57 +757,53 @@ export default function DishesPage() {
             <span>Modo catálogo master · Los cambios afectan a <strong>todos los hogares</strong></span>
           </div>
         )}
-        <div className="kitchen-dishes-header">
-          <div>
-            <h2>{headerTitle}</h2>
-            <p className="kitchen-muted">{headerDescription}</p>
+        {/* Unified controls bar: tabs + search + primary action */}
+        <div className="dishes-controls-bar">
+          <div className="dishes-controls-tabs" role="tablist" aria-label="Secciones de cocina">
+            <button
+              className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "main"}
+              onClick={() => setActiveTab("main")}
+            >
+              Platos
+            </button>
+            <button
+              className={`kitchen-tab-button ${activeTab === "side" ? "is-active" : ""}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "side"}
+              onClick={() => setActiveTab("side")}
+            >
+              Guarniciones
+            </button>
+            <button
+              className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "ingredients"}
+              onClick={() => setActiveTab("ingredients")}
+            >
+              Ingredientes
+            </button>
           </div>
-          <button className="kitchen-button" type="button" onClick={headerActionHandler}>
-            {headerActionLabel}
+          <span className="dishes-controls-divider" aria-hidden="true" />
+          <div className="dishes-controls-search">
+            <input
+              className="kitchen-input dishes-search-input"
+              placeholder={isIngredientsTab ? "Buscar ingrediente…" : "Buscar por plato o ingrediente…"}
+              value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
+              onChange={(event) =>
+                isIngredientsTab
+                  ? setIngredientSearchTerm(event.target.value)
+                  : setDishSearchTerm(event.target.value)
+              }
+            />
+          </div>
+          <button className="kitchen-button dishes-new-button" type="button" onClick={headerActionHandler}>
+            + {headerActionLabel}
           </button>
-        </div>
-        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Secciones de cocina">
-          <button
-            className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "main"}
-            onClick={() => setActiveTab("main")}
-          >
-            Platos
-          </button>
-          <button
-            className={`kitchen-tab-button ${activeTab === "side" ? "is-active" : ""}`}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "side"}
-            onClick={() => setActiveTab("side")}
-          >
-            Guarniciones
-          </button>
-          <button
-            className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "ingredients"}
-            onClick={() => setActiveTab("ingredients")}
-          >
-            Ingredientes
-          </button>
-        </div>
-        <div className="kitchen-dishes-search">
-          <input
-            className="kitchen-input"
-            placeholder={
-              isIngredientsTab ? "Buscar ingrediente…" : "Buscar por plato o ingrediente…"
-            }
-            value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
-            onChange={(event) =>
-              isIngredientsTab
-                ? setIngredientSearchTerm(event.target.value)
-                : setDishSearchTerm(event.target.value)
-            }
-          />
         </div>
         {!isIngredientsTab ? (
           <>
