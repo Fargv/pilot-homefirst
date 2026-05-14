@@ -1,8 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
-import { apiRequest } from "../api.js";
+import { apiRequest, createCheckoutSession } from "../api.js";
 import { getPlanLimits, isUnlimitedLicenseLimit } from "../subscription.js";
+
+const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
+const PAYMENTS_MODE = import.meta.env.VITE_PAYMENTS_MODE || "disabled";
+const IS_TEST_MODE = PAYMENTS_MODE === "test";
+
+const PRICE_IDS = {
+  pro: import.meta.env.VITE_STRIPE_PRO_PRICE_ID || "",
+  premium: import.meta.env.VITE_STRIPE_PREMIUM_PRICE_ID || ""
+};
 
 const PLANS = [
   {
@@ -105,17 +114,44 @@ export default function UpgradeToProPage() {
     return () => { active = false; };
   }, []);
 
-  const requestPlan = async (planId) => {
+  const handlePlanAction = async (planId) => {
+    if (planId === "basic") return;
     setLoadingPlanId(planId);
     setError("");
     setSuccess("");
+
+    // ── Stripe Checkout path ────────────────────────────────────────────────
+    if (STRIPE_ENABLED && PRICE_IDS[planId]) {
+      try {
+        const { url } = await createCheckoutSession({
+          type: "subscription",
+          planKey: planId,
+          targetName: `Plan ${planId}`,
+          stripePriceId: PRICE_IDS[planId]
+        });
+        // Redirect to Stripe-hosted Checkout
+        window.location.href = url;
+        // Don't reset loadingPlanId — page is navigating away
+      } catch (checkoutError) {
+        console.error("[upgrade] createCheckoutSession failed", checkoutError);
+        setError(checkoutError.message || "No se pudo iniciar el proceso de pago. Inténtalo de nuevo.");
+        setLoadingPlanId("");
+      }
+      return;
+    }
+
+    // ── Fallback: legacy "request" flow (beta / payments disabled) ──────────
     try {
       await apiRequest("/api/subscription/request", {
         method: "POST",
         body: JSON.stringify({ plan: planId })
       });
       setRequestedPlan(planId);
-      setSuccess("Solicitud enviada. Un administrador activará tu plan durante la beta.");
+      setSuccess(
+        PAYMENTS_MODE === "disabled"
+          ? "Solicitud enviada. Un administrador activará tu plan durante la beta."
+          : "Solicitud enviada."
+      );
     } catch (requestError) {
       setError(requestError.message || "No se pudo enviar la solicitud.");
     } finally {
@@ -123,9 +159,29 @@ export default function UpgradeToProPage() {
     }
   };
 
+  const getButtonLabel = (plan) => {
+    const { id } = plan;
+    if (subscriptionPlan === id) return "Plan actual";
+    if (loadingPlanId === id) return STRIPE_ENABLED && PRICE_IDS[id] ? "Redirigiendo..." : "Enviando...";
+    if (id === "basic") return "Mantener Basic";
+
+    if (STRIPE_ENABLED && PRICE_IDS[id]) {
+      return IS_TEST_MODE ? `Probar compra — ${plan.price}` : `Suscribirse — ${plan.price}`;
+    }
+
+    if (requestedPlan === id) return "✓ Solicitud enviada";
+    return `Solicitar ${plan.name}`;
+  };
+
   return (
     <KitchenLayout>
       <div className="upgrade-page">
+
+        {IS_TEST_MODE && STRIPE_ENABLED && (
+          <div className="payment-test-mode-banner" role="status">
+            MODO TEST — Los pagos son simulados. No se realizarán cargos reales.
+          </div>
+        )}
 
         <div className="upgrade-hero">
           <button
@@ -139,7 +195,11 @@ export default function UpgradeToProPage() {
             <span className="upgrade-eyebrow">Planes</span>
             <h1>{subscriptionPlan === "premium" ? "Cambiar suscripción" : "Desbloquea todo"}</h1>
             <p className="kitchen-muted">
-              Elige el plan que mejor se adapte a tu hogar. Durante la beta, la activación la realiza un administrador — sin pagos por ahora.
+              {STRIPE_ENABLED
+                ? IS_TEST_MODE
+                  ? "Elige el plan que mejor se adapte a tu hogar. Estás en entorno de pruebas — ningún cargo será real."
+                  : "Elige el plan que mejor se adapte a tu hogar."
+                : "Elige el plan que mejor se adapte a tu hogar. Durante la beta, la activación la realiza un administrador — sin pagos por ahora."}
             </p>
             {subscriptionPlan && !summaryLoading ? (
               <span className={`upgrade-current-plan-chip upgrade-current-plan-${subscriptionPlan}`}>
@@ -159,6 +219,7 @@ export default function UpgradeToProPage() {
             const isRequested = requestedPlan === plan.id;
             const isCurrent = subscriptionPlan === plan.id;
             const limits = getPlanLimits(plan.id);
+            const hasStripePrice = Boolean(STRIPE_ENABLED && PRICE_IDS[plan.id]);
 
             return (
               <article
@@ -191,26 +252,24 @@ export default function UpgradeToProPage() {
 
                 <button
                   type="button"
-                  className={`kitchen-button ${plan.recommended ? "" : "secondary"}`}
-                  onClick={() => isCurrent ? null : requestPlan(plan.id)}
-                  disabled={Boolean(loadingPlanId) || isCurrent}
+                  className={`kitchen-button ${plan.recommended ? "" : "secondary"} ${hasStripePrice && !isCurrent ? "payment-checkout-btn" : ""}`}
+                  onClick={() => isCurrent || plan.id === "basic" ? null : handlePlanAction(plan.id)}
+                  disabled={Boolean(loadingPlanId) || isCurrent || plan.id === "basic"}
                 >
-                  {isCurrent
-                    ? "Plan actual"
-                    : isLoading
-                    ? "Enviando..."
-                    : isRequested
-                    ? "✓ Solicitud enviada"
-                    : plan.id === "basic"
-                    ? "Mantener Basic"
-                    : `Solicitar ${plan.name}`}
+                  {getButtonLabel(plan)}
                 </button>
+
+                {hasStripePrice && !isCurrent && IS_TEST_MODE && (
+                  <p className="kitchen-muted" style={{ fontSize: "0.72rem", marginTop: 6, textAlign: "center" }}>
+                    Pago de prueba — no se cobrarán fondos reales
+                  </p>
+                )}
               </article>
             );
           })}
         </div>
 
-        {selectedPlan && !summaryLoading ? (
+        {!STRIPE_ENABLED && selectedPlan && !summaryLoading ? (
           <div className="upgrade-footnote">
             <strong>{selectedPlan.name} solicitado</strong>
             <span className="kitchen-muted">

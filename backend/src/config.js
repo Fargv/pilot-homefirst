@@ -50,6 +50,13 @@ export const config = {
     publicKey: process.env.WEB_PUSH_PUBLIC_KEY || "",
     privateKey: process.env.WEB_PUSH_PRIVATE_KEY || "",
     contactEmail: process.env.WEB_PUSH_CONTACT_EMAIL || ""
+  },
+
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY || "",
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
+    mode: process.env.STRIPE_MODE || "test",
+    paymentsEnabled: process.env.PAYMENTS_ENABLED === "true"
   }
 };
 

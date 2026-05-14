@@ -149,3 +149,21 @@ export function requestResetPassword(token, newPassword) {
     body: JSON.stringify({ token, newPassword })
   });
 }
+
+// ─── Payments ─────────────────────────────────────────────────────────────────
+
+/**
+ * Create a Stripe Checkout Session on the backend and return { url, sessionId }.
+ * @param {{ type: string, targetId?: string, targetName?: string, stripePriceId: string, planKey?: string }} payload
+ */
+export function createCheckoutSession(payload) {
+  return apiRequest("/api/payments/checkout-session", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+/** Fetch the current user's PurchaseAttempt history (DEV/debug use). */
+export function getMyPaymentAttempts() {
+  return apiRequest("/api/payments/my-attempts");
+}

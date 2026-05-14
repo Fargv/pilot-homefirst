@@ -9942,3 +9942,79 @@ body {
   color: var(--hf-text, #1e293b);
   line-height: 1.6;
 }
+
+/* ─── Stripe / Payment UI ────────────────────────────────────── */
+
+.payment-test-mode-banner {
+  background: #fef3c7;
+  border: 1.5px solid #f59e0b;
+  color: #92400e;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-align: center;
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.payment-result-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payment-result-card {
+  background: var(--hf-card-bg, #fff);
+  border: 1px solid var(--hf-border, #e2e8f0);
+  border-radius: 16px;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.payment-result-icon svg {
+  width: 72px;
+  height: 72px;
+}
+
+.payment-result-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--hf-text, #1e293b);
+  margin: 0;
+}
+
+.payment-result-body {
+  margin: 0;
+  line-height: 1.6;
+  max-width: 340px;
+}
+
+.payment-result-note {
+  margin: 0;
+  max-width: 320px;
+}
+
+.payment-result-session {
+  margin: 0;
+  opacity: 0.6;
+}
+
+.payment-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.payment-checkout-btn {
+  position: relative;
+}

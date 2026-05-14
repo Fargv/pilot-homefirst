@@ -15,6 +15,7 @@ import testEmailRouter from "./routes/testEmail.js";
 import authRoutes from "./kitchen/routes/auth.js";
 import internalPushRouter from "./routes/internalPush.js";
 import subscriptionRouter from "./routes/subscription.js";
+import paymentsRouter, { stripeWebhookHandler } from "./routes/payments.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,6 +38,11 @@ app.use(cors({
     callback(new Error(`Origin ${normalizedOrigin} not allowed by CORS`));
   }
 }));
+
+// Stripe webhook must receive the raw body for signature verification.
+// This route is registered BEFORE the global express.json() middleware.
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);
+
 app.use(express.json({ limit: "5mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
@@ -70,6 +76,7 @@ app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/auth", authRoutes);
 app.use("/api/subscription", subscriptionRouter);
+app.use("/api/payments", paymentsRouter);
 app.use("/api", testEmailRouter);
 app.use("/api/internal/push", internalPushRouter);
 

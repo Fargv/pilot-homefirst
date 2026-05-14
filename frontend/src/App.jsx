@@ -19,6 +19,8 @@ import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
 import UpgradeToProPage from "./kitchen/pages/UpgradeToProPage.jsx";
 import CatalogPage from "./kitchen/pages/CatalogPage.jsx";
 import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
+import PaymentSuccessPage from "./kitchen/pages/PaymentSuccessPage.jsx";
+import PaymentCancelledPage from "./kitchen/pages/PaymentCancelledPage.jsx";
 import DevEnvironmentBanner from "./components/DevEnvironmentBanner.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import PwaInstallPrompt from "./kitchen/components/PwaInstallPrompt.jsx";
@@ -157,6 +159,22 @@ function AppRoutes() {
           element={(
             <RequireAuth>
               <CatalogPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/payments/success"
+          element={(
+            <RequireAuth>
+              <PaymentSuccessPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/payments/cancelled"
+          element={(
+            <RequireAuth>
+              <PaymentCancelledPage />
             </RequireAuth>
           )}
         />
