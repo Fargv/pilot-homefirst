@@ -59,7 +59,10 @@ export const config = {
     paymentsEnabled: process.env.PAYMENTS_ENABLED === "true",
     // Only grant entitlements automatically in DEV test mode when this flag is explicitly set.
     // Production must never have this true — it is an additional guard beyond PAYMENTS_ENABLED.
-    allowTestEntitlements: process.env.ALLOW_TEST_PAYMENT_ENTITLEMENTS === "true"
+    allowTestEntitlements: process.env.ALLOW_TEST_PAYMENT_ENTITLEMENTS === "true",
+    proPriceId: process.env.STRIPE_PRO_PRICE_ID || "",
+    premiumPriceId: process.env.STRIPE_PREMIUM_PRICE_ID || "",
+    portalEnabled: process.env.STRIPE_PORTAL_ENABLED === "true"
   }
 };
 

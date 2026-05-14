@@ -4,9 +4,14 @@ import Stripe from "stripe";
 import { config } from "../config.js";
 import { requireAuth, requireDiod } from "../kitchen/middleware.js";
 import { PurchaseAttempt } from "../kitchen/models/PurchaseAttempt.js";
+import { CatalogPack } from "../kitchen/models/CatalogPack.js";
+import { PackEntitlement } from "../kitchen/models/PackEntitlement.js";
 import { Household } from "../kitchen/models/Household.js";
 import { getEffectiveHouseholdId, handleHouseholdError } from "../kitchen/householdScope.js";
-import { applyTestSubscriptionEntitlementFromAttempt } from "../kitchen/paymentEntitlementService.js";
+import {
+  applyTestSubscriptionEntitlementFromAttempt,
+  applyPackEntitlementFromAttempt
+} from "../kitchen/paymentEntitlementService.js";
 import {
   applyAdminSubscriptionActivation,
   applyAdminSubscriptionDeactivation,
@@ -21,46 +26,50 @@ const VALID_TYPES = ["pack", "subscription", "bites"];
 const STRIPE_API_VERSION = "2024-04-10";
 
 function buildStripeClient() {
-  if (!config.stripe.secretKey) {
+  if (!config.stripe.secretKey) return null;
+  return new Stripe(config.stripe.secretKey, { apiVersion: STRIPE_API_VERSION });
+}
+
+function paymentsEnabledGuard(res) {
+  if (!config.stripe.paymentsEnabled) {
+    res.status(403).json({
+      ok: false,
+      code: "PAYMENTS_DISABLED",
+      error: "Los pagos no están activados en este entorno."
+    });
+    return false;
+  }
+  return true;
+}
+
+function stripeClientGuard(res) {
+  const stripe = buildStripeClient();
+  if (!stripe) {
+    console.error("[payments] Stripe not configured — STRIPE_SECRET_KEY missing");
+    res.status(503).json({
+      ok: false,
+      code: "STRIPE_NOT_CONFIGURED",
+      error: "El servicio de pago no está configurado. Contacta al administrador."
+    });
     return null;
   }
-  return new Stripe(config.stripe.secretKey, { apiVersion: STRIPE_API_VERSION });
+  return stripe;
 }
 
 // ─── POST /api/payments/checkout-session ─────────────────────────────────────
 
 router.post("/checkout-session", requireAuth, async (req, res) => {
   try {
-    if (!config.stripe.paymentsEnabled) {
-      return res.status(403).json({
-        ok: false,
-        code: "PAYMENTS_DISABLED",
-        error: "Los pagos no están activados en este entorno."
-      });
-    }
+    if (!paymentsEnabledGuard(res)) return;
+    const stripe = stripeClientGuard(res);
+    if (!stripe) return;
 
-    const stripe = buildStripeClient();
-    if (!stripe) {
-      console.error("[payments] Stripe not configured — STRIPE_SECRET_KEY missing");
-      return res.status(503).json({
-        ok: false,
-        code: "STRIPE_NOT_CONFIGURED",
-        error: "El servicio de pago no está configurado. Contacta al administrador."
-      });
-    }
-
-    const { type, targetId, targetName, stripePriceId, planKey } = req.body || {};
+    const { type, targetId, targetName, stripePriceId: clientPriceId, planKey } = req.body || {};
 
     if (!type || !VALID_TYPES.includes(type)) {
       return res.status(400).json({
         ok: false,
         error: `Tipo de pago inválido. Valores permitidos: ${VALID_TYPES.join(", ")}.`
-      });
-    }
-    if (!stripePriceId || typeof stripePriceId !== "string" || !stripePriceId.startsWith("price_")) {
-      return res.status(400).json({
-        ok: false,
-        error: "stripePriceId es obligatorio y debe ser un Stripe price ID válido."
       });
     }
 
@@ -69,15 +78,88 @@ router.post("/checkout-session", requireAuth, async (req, res) => {
     const email = req.kitchenUser?.email || "";
     const appEnv = process.env.APP_ENV || config.nodeEnv || "development";
 
+    let resolvedPriceId = clientPriceId;
+    let resolvedPlanKey = planKey || null;
+    let resolvedTargetId = targetId || "";
+    let resolvedTargetName = targetName || "";
+
+    // ── Pack checkout: resolve price from the catalog pack ────────────────
+    if (type === "pack") {
+      if (!targetId || !mongoose.isValidObjectId(targetId)) {
+        return res.status(400).json({ ok: false, error: "targetId debe ser un ObjectId válido para tipo 'pack'." });
+      }
+
+      const pack = await CatalogPack.findById(targetId).select(
+        "isPaid stripePriceId paymentMode title status active"
+      );
+      if (!pack || !pack.active) {
+        return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+      }
+      if (!pack.isPaid || pack.paymentMode !== "stripe" || !pack.stripePriceId) {
+        return res.status(400).json({
+          ok: false,
+          code: "PACK_NOT_FOR_SALE",
+          error: "Este pack no está disponible para compra directa."
+        });
+      }
+
+      // Check existing active entitlement (no duplicates)
+      const existingEntitlement = await PackEntitlement.findOne({
+        householdId: effectiveHouseholdId,
+        packId: targetId,
+        mode: config.stripe.mode,
+        status: "active"
+      });
+      if (existingEntitlement) {
+        return res.status(409).json({
+          ok: false,
+          code: "PACK_ALREADY_OWNED",
+          error: "Ya tienes este pack activo."
+        });
+      }
+
+      resolvedPriceId = pack.stripePriceId;
+      resolvedTargetName = resolvedTargetName || pack.title;
+    }
+
+    // ── Subscription checkout: guard against existing active subscription ─
+    if (type === "subscription") {
+      if (!resolvedPriceId || typeof resolvedPriceId !== "string" || !resolvedPriceId.startsWith("price_")) {
+        return res.status(400).json({
+          ok: false,
+          error: "stripePriceId es obligatorio y debe ser un Stripe price ID válido."
+        });
+      }
+
+      const household = await Household.findById(effectiveHouseholdId).select(
+        "stripeSubscriptionId subscriptionStatus"
+      );
+      if (household?.stripeSubscriptionId && household.subscriptionStatus === "active") {
+        return res.status(409).json({
+          ok: false,
+          code: "SUBSCRIPTION_ACTIVE",
+          redirectToPortal: config.stripe.portalEnabled,
+          error: "Ya tienes una suscripción activa. Gestiona tu suscripción desde el portal de facturación."
+        });
+      }
+    }
+
+    if (!resolvedPriceId || typeof resolvedPriceId !== "string" || !resolvedPriceId.startsWith("price_")) {
+      return res.status(400).json({
+        ok: false,
+        error: "stripePriceId es obligatorio y debe ser un Stripe price ID válido."
+      });
+    }
+
     const attempt = await PurchaseAttempt.create({
       userId,
       householdId: effectiveHouseholdId,
       email,
       type,
-      targetId: targetId || "",
-      targetName: targetName || "",
-      planKey: planKey || null,
-      stripePriceId,
+      targetId: resolvedTargetId,
+      targetName: resolvedTargetName,
+      planKey: resolvedPlanKey,
+      stripePriceId: resolvedPriceId,
       status: "created",
       mode: config.stripe.mode,
       metadata: { appEnv }
@@ -88,16 +170,16 @@ router.post("/checkout-session", requireAuth, async (req, res) => {
 
     const session = await stripe.checkout.sessions.create({
       mode: checkoutMode,
-      line_items: [{ price: stripePriceId, quantity: 1 }],
-      success_url: `${frontendUrl}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+      line_items: [{ price: resolvedPriceId, quantity: 1 }],
+      success_url: `${frontendUrl}/payments/success?session_id={CHECKOUT_SESSION_ID}&type=${type}`,
       cancel_url: `${frontendUrl}/payments/cancelled`,
       customer_email: email || undefined,
       metadata: {
         userId,
         householdId: effectiveHouseholdId,
         type,
-        targetId: targetId || "",
-        planKey: planKey || "",
+        targetId: resolvedTargetId,
+        planKey: resolvedPlanKey || "",
         purchaseAttemptId: attempt._id.toString(),
         appEnv
       }
@@ -110,7 +192,7 @@ router.post("/checkout-session", requireAuth, async (req, res) => {
       attemptId: attempt._id.toString(),
       sessionId: session.id,
       type,
-      planKey: planKey || null,
+      planKey: resolvedPlanKey || null,
       userId,
       householdId: effectiveHouseholdId,
       stripeMode: config.stripe.mode,
@@ -128,6 +210,54 @@ router.post("/checkout-session", requireAuth, async (req, res) => {
       stack: error?.stack
     });
     return res.status(500).json({ ok: false, error: "No se pudo crear la sesión de pago." });
+  }
+});
+
+// ─── POST /api/payments/customer-portal ──────────────────────────────────────
+
+router.post("/customer-portal", requireAuth, async (req, res) => {
+  try {
+    if (!paymentsEnabledGuard(res)) return;
+    if (!config.stripe.portalEnabled) {
+      return res.status(403).json({
+        ok: false,
+        code: "PORTAL_DISABLED",
+        error: "El portal de facturación no está activado en este entorno."
+      });
+    }
+    const stripe = stripeClientGuard(res);
+    if (!stripe) return;
+
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const household = await Household.findById(effectiveHouseholdId).select("stripeCustomerId");
+    if (!household?.stripeCustomerId) {
+      return res.status(404).json({
+        ok: false,
+        code: "NO_STRIPE_CUSTOMER",
+        error: "No se encontró una cuenta de facturación asociada. Realiza una compra primero."
+      });
+    }
+
+    const frontendUrl = String(config.frontendUrl || "").replace(/\/$/, "");
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: household.stripeCustomerId,
+      return_url: `${frontendUrl}/kitchen/configuracion`
+    });
+
+    console.log("[payments] Customer portal session created", {
+      householdId: effectiveHouseholdId,
+      customerId: household.stripeCustomerId
+    });
+
+    return res.json({ ok: true, url: portalSession.url });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    console.error("[payments] customer-portal error", {
+      userId: req.user?.id || null,
+      error: error?.message
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo abrir el portal de facturación." });
   }
 });
 
@@ -152,9 +282,7 @@ router.get("/my-attempts", requireAuth, async (req, res) => {
 });
 
 // ─── POST /api/payments/dev/reset-plan ───────────────────────────────────────
-// DEV-only utility to reset a household plan for demo purposes.
-// Protected by: non-production env check + DIOD admin role.
-// NEVER enabled in production — the env guard is the primary safety mechanism.
+// DEV-only. Protected by non-production env check + DIOD admin role.
 
 function requireDevEnv(req, res, next) {
   const appEnv = process.env.APP_ENV || config.nodeEnv || "";
@@ -198,7 +326,6 @@ router.post("/dev/reset-plan", requireDevEnv, requireAuth, requireDiod, async (r
       applyAdminSubscriptionActivation(household, normalizedPlan);
     }
 
-    // Clear Stripe test metadata on reset so the next checkout starts fresh
     household.paymentProvider = "";
     household.paymentMode = "";
     household.planUpdatedAt = new Date();
@@ -232,7 +359,8 @@ router.post("/dev/reset-plan", requireDevEnv, requireAuth, requireDiod, async (r
   }
 });
 
-// ─── Webhook handler (exported separately — needs raw body, registered in index.js) ──
+// ─── Webhook handler ──────────────────────────────────────────────────────────
+// Exported separately — needs raw body, registered in index.js before express.json()
 
 async function handleCheckoutCompleted(session) {
   const attemptId = session.metadata?.purchaseAttemptId;
@@ -271,19 +399,11 @@ async function handleCheckoutCompleted(session) {
     mode: attempt.mode
   });
 
-  // DEV TEST ENTITLEMENTS — only fires when all safety flags pass:
-  //   PAYMENTS_ENABLED=true, STRIPE_MODE=test, ALLOW_TEST_PAYMENT_ENTITLEMENTS=true
-  //   attempt.mode=test, attempt.type=subscription, planKey in {pro, premium}
-  // In live/production mode this call is a no-op (the service checks STRIPE_MODE).
-  await applyTestSubscriptionEntitlementFromAttempt(attempt);
-
-  // FUTURE PRODUCTION ACTIVATION (live mode):
-  // When STRIPE_MODE=live and production entitlement logic is ready:
-  //   - For "subscription": the same applyAdminSubscriptionActivation path applies,
-  //     but guarded by attempt.mode === "live" inside applyTestSubscriptionEntitlementFromAttempt
-  //     (or a new applyLiveSubscriptionEntitlement function).
-  //   - For "pack": update HouseholdCatalogPack to acquiredVia="purchase", paymentStatus="paid".
-  //   - Add real billing period tracking (subscriptionEndsAt from Stripe event data).
+  if (attempt.type === "subscription") {
+    await applyTestSubscriptionEntitlementFromAttempt(attempt);
+  } else if (attempt.type === "pack") {
+    await applyPackEntitlementFromAttempt(attempt, session);
+  }
 }
 
 async function handleCheckoutStatusUpdate(session, status) {
@@ -310,6 +430,125 @@ async function handleCheckoutStatusUpdate(session, status) {
     type: attempt.type,
     userId: attempt.userId
   });
+}
+
+function resolvePlanFromPriceId(priceId) {
+  if (!priceId) return null;
+  if (config.stripe.proPriceId && priceId === config.stripe.proPriceId) return "pro";
+  if (config.stripe.premiumPriceId && priceId === config.stripe.premiumPriceId) return "premium";
+  return null;
+}
+
+async function handleSubscriptionEvent(subscription, eventType) {
+  const customerId = typeof subscription.customer === "string"
+    ? subscription.customer
+    : subscription.customer?.id;
+
+  if (!customerId) {
+    console.warn("[payments][webhook] subscription event missing customer", { eventType });
+    return;
+  }
+
+  const household = await Household.findOne({ stripeCustomerId: customerId });
+  if (!household) {
+    console.warn("[payments][webhook] Household not found for stripeCustomerId", {
+      customerId,
+      eventType
+    });
+    return;
+  }
+
+  if (eventType === "customer.subscription.deleted") {
+    applyAdminSubscriptionDeactivation(household);
+    household.stripeSubscriptionId = "";
+    household.paymentProvider = "stripe";
+    household.paymentMode = config.stripe.mode;
+    household.planUpdatedAt = new Date();
+    await household.save();
+    console.log("[payments][webhook] Subscription cancelled — plan deactivated", {
+      householdId: household._id.toString(),
+      customerId
+    });
+    return;
+  }
+
+  // created or updated — resolve plan from price IDs
+  const items = subscription.items?.data || [];
+  const priceId = items[0]?.price?.id || "";
+  const planKey = resolvePlanFromPriceId(priceId);
+
+  if (!planKey) {
+    console.warn("[payments][webhook] Could not resolve planKey from subscription price", {
+      priceId,
+      subscriptionId: subscription.id,
+      eventType
+    });
+    return;
+  }
+
+  const status = subscription.status;
+  if (status === "active" || status === "trialing") {
+    applyAdminSubscriptionActivation(household, planKey);
+    household.stripeSubscriptionId = subscription.id;
+    household.stripeCustomerId = customerId;
+    household.paymentProvider = "stripe";
+    household.paymentMode = config.stripe.mode;
+    household.planUpdatedAt = new Date();
+    await household.save();
+    console.log("[payments][webhook] Subscription activated", {
+      householdId: household._id.toString(),
+      planKey,
+      subscriptionId: subscription.id,
+      status,
+      eventType
+    });
+  } else if (status === "past_due" || status === "unpaid" || status === "canceled") {
+    applyAdminSubscriptionDeactivation(household);
+    household.paymentProvider = "stripe";
+    household.paymentMode = config.stripe.mode;
+    household.planUpdatedAt = new Date();
+    await household.save();
+    console.log("[payments][webhook] Subscription deactivated due to status", {
+      householdId: household._id.toString(),
+      status,
+      eventType
+    });
+  }
+}
+
+async function handleInvoicePaymentFailed(invoice) {
+  const customerId = typeof invoice.customer === "string"
+    ? invoice.customer
+    : invoice.customer?.id;
+  if (!customerId) return;
+
+  console.warn("[payments][webhook] Invoice payment failed", {
+    customerId,
+    invoiceId: invoice.id,
+    subscriptionId: invoice.subscription || null
+  });
+  // Subscription deactivation is handled by customer.subscription.updated (status=past_due)
+}
+
+async function handleChargeRefunded(charge) {
+  const paymentIntentId = typeof charge.payment_intent === "string"
+    ? charge.payment_intent
+    : charge.payment_intent?.id;
+
+  if (!paymentIntentId) return;
+
+  // Mark matching pack entitlements as refunded
+  const updated = await PackEntitlement.updateMany(
+    { stripePaymentIntentId: paymentIntentId, status: "active" },
+    { $set: { status: "refunded" } }
+  );
+
+  if (updated.modifiedCount > 0) {
+    console.log("[payments][webhook] Pack entitlement(s) refunded", {
+      paymentIntentId,
+      count: updated.modifiedCount
+    });
+  }
 }
 
 export async function stripeWebhookHandler(req, res) {
@@ -352,11 +591,25 @@ export async function stripeWebhookHandler(req, res) {
       case "checkout.session.async_payment_failed":
         await handleCheckoutStatusUpdate(event.data.object, "failed");
         break;
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        await handleSubscriptionEvent(event.data.object, event.type);
+        break;
+      case "invoice.payment_succeeded":
+        // Subscription activation is handled via customer.subscription events
+        break;
+      case "invoice.payment_failed":
+        await handleInvoicePaymentFailed(event.data.object);
+        break;
+      case "charge.refunded":
+        await handleChargeRefunded(event.data.object);
+        break;
       default:
         console.log("[payments][webhook] Unhandled event type — ignored", { type: event.type });
     }
   } catch (handlerError) {
-    // Log but still return 200 — Stripe retries on non-2xx, which could cause duplicate processing
+    // Log but return 200 — Stripe retries on non-2xx, risking duplicate processing
     console.error("[payments][webhook] Handler threw unexpectedly", {
       type: event.type,
       error: handlerError?.message,

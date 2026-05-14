@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { apiRequest } from "../api.js";
+import { apiRequest, createCheckoutSession } from "../api.js";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth.jsx";
 import { canUseDietRandomization } from "../subscription.js";
@@ -584,19 +584,28 @@ export default function CatalogPage() {
     }
 
     if (paymentMethod === "direct") {
-      try {
-        await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/unlock`, {
-          method: "POST",
-          body: JSON.stringify({ paymentMethod: "direct" })
-        });
-      } catch (err) {
-        if (err.body?.code === "PAYMENT_NOT_CONNECTED" || err.body?.payment_not_connected) {
-          showToast("La pasarela de pago todavía no está conectada.", "info");
-          return;
+      // If pack has Stripe checkout configured, redirect to Stripe
+      if (pack.entitlement?.canBuyWithStripe) {
+        try {
+          const result = await createCheckoutSession({
+            type: "pack",
+            targetId: String(pack.id),
+            targetName: pack.title
+          });
+          if (result?.url) {
+            window.location.href = result.url;
+          }
+        } catch (err) {
+          if (err.body?.code === "PACK_ALREADY_OWNED") {
+            showToast("Ya tienes este pack activo.", "info");
+          } else {
+            showToast(err.message || "No se pudo iniciar el pago.", "error");
+          }
         }
-        showToast(err.message || "No se pudo iniciar el pago.", "error");
         return;
       }
+      // Legacy: Stripe not yet connected
+      showToast("La pasarela de pago todavía no está conectada.", "info");
       return;
     }
 

@@ -167,3 +167,8 @@ export function createCheckoutSession(payload) {
 export function getMyPaymentAttempts() {
   return apiRequest("/api/payments/my-attempts");
 }
+
+/** Open a Stripe Customer Portal session. Returns { url } to redirect to. */
+export function createCustomerPortalSession() {
+  return apiRequest("/api/payments/customer-portal", { method: "POST" });
+}

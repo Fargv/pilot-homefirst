@@ -2,6 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { Household } from "../models/Household.js";
+import { PurchaseAttempt } from "../models/PurchaseAttempt.js";
+import { PackEntitlement } from "../models/PackEntitlement.js";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { Invitation } from "../models/Invitation.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
@@ -344,6 +346,66 @@ router.get("/active-household", requireAuth, async (req, res) => {
     return res.json({ ok: true, activeHouseholdId: req.kitchenUser.householdId || null });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudo obtener el hogar activo." });
+  }
+});
+
+// ─── GET /api/kitchen/admin/payments/attempts ────────────────────────────────
+
+router.get("/payments/attempts", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const { status, type, email, householdId, mode, limit: limitParam, offset: offsetParam } = req.query;
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (type) filter.type = type;
+    if (mode) filter.mode = mode;
+    if (email) filter.email = { $regex: String(email).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+    if (householdId && mongoose.isValidObjectId(householdId)) filter.householdId = householdId;
+
+    const limit = Math.min(Number(limitParam) || 50, 200);
+    const skip = Number(offsetParam) || 0;
+
+    const [attempts, total] = await Promise.all([
+      PurchaseAttempt.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      PurchaseAttempt.countDocuments(filter)
+    ]);
+
+    return res.json({ ok: true, attempts, total, limit, offset: skip });
+  } catch (error) {
+    console.error("[admin] payments/attempts error", { error: error?.message });
+    return res.status(500).json({ ok: false, error: "No se pudieron cargar los intentos de pago." });
+  }
+});
+
+// ─── GET /api/kitchen/admin/payments/entitlements ────────────────────────────
+
+router.get("/payments/entitlements", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const { status, mode, householdId, packId, limit: limitParam, offset: offsetParam } = req.query;
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (mode) filter.mode = mode;
+    if (householdId && mongoose.isValidObjectId(householdId)) filter.householdId = householdId;
+    if (packId && mongoose.isValidObjectId(packId)) filter.packId = packId;
+
+    const limit = Math.min(Number(limitParam) || 50, 200);
+    const skip = Number(offsetParam) || 0;
+
+    const [entitlements, total] = await Promise.all([
+      PackEntitlement.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("packId", "slug title")
+        .lean(),
+      PackEntitlement.countDocuments(filter)
+    ]);
+
+    return res.json({ ok: true, entitlements, total, limit, offset: skip });
+  } catch (error) {
+    console.error("[admin] payments/entitlements error", { error: error?.message });
+    return res.status(500).json({ ok: false, error: "No se pudieron cargar los entitlements de pago." });
   }
 });
 

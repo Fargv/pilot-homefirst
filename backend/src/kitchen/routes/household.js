@@ -115,6 +115,7 @@ function buildHouseholdResponse(household, license = null) {
       ? (Array.isArray(household.randomizationDefaultDietPackIds) ? household.randomizationDefaultDietPackIds.map(String) : [])
       : [],
     ...buildHouseholdSubscriptionResponse(household),
+    hasActiveStripeSubscription: Boolean(household.stripeSubscriptionId),
     featureAvailability: buildHouseholdFeatureAvailability(household),
     license: license || buildHouseholdLicenseSummary(household)
   };
@@ -235,7 +236,7 @@ router.get("/summary", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin randomizationUseDietFilter randomizationDefaultDietPackIds")
+      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin randomizationUseDietFilter randomizationDefaultDietPackIds stripeSubscriptionId")
       .lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });

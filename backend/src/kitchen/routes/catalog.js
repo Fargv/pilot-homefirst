@@ -263,7 +263,15 @@ function serializeAdminPack(p, ownedByCount = 0) {
     reviewedAt: p.reviewedAt || null,
     publishedAt: p.publishedAt || null,
     ownedByCount,
-    createdAt: p.createdAt
+    createdAt: p.createdAt,
+    // Payment fields
+    isPaid: Boolean(p.isPaid),
+    priceAmount: p.priceAmount ?? null,
+    currency: p.currency || "eur",
+    stripePriceId: p.stripePriceId || null,
+    paymentMode: p.paymentMode || "none",
+    purchasedCount: p.purchasedCount || 0,
+    lastPurchasedAt: p.lastPurchasedAt || null
   };
 }
 
@@ -452,6 +460,10 @@ router.get("/packs", requireAuth, async (req, res) => {
           needsBitesPurchase,
           canPayDirect,
           requiresPurchase,
+          canBuyWithStripe: !owned && Boolean(pack.isPaid) && pack.paymentMode === "stripe" && Boolean(pack.stripePriceId),
+          stripePriceId: pack.stripePriceId || null,
+          priceAmount: pack.priceAmount ?? null,
+          currency: pack.currency || "eur",
           priceBasic: pack.priceBasic,
           bitesCost
         }
@@ -965,6 +977,63 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
     return res.json({ ok: true, pack, ...(syncSummary ? { syncSummary } : {}) });
   } catch (error) {
     return res.status(error.statusCode || 500).json({ ok: false, error: error.message || "Error al actualizar el pack." });
+  }
+});
+
+router.patch("/packs/:packId/payment", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+
+    const pack = await CatalogPack.findById(req.params.packId);
+    if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+
+    const { isPaid, priceAmount, currency, stripePriceId, paymentMode } = req.body || {};
+
+    if (isPaid !== undefined) pack.isPaid = Boolean(isPaid);
+    if (priceAmount !== undefined) pack.priceAmount = priceAmount === null ? null : Number(priceAmount);
+    if (currency !== undefined) pack.currency = String(currency).toLowerCase().trim() || "eur";
+    if (stripePriceId !== undefined) {
+      if (stripePriceId !== null && stripePriceId !== "" && !String(stripePriceId).startsWith("price_")) {
+        return res.status(400).json({ ok: false, error: "stripePriceId debe comenzar con 'price_' o ser null." });
+      }
+      pack.stripePriceId = stripePriceId || null;
+    }
+    if (paymentMode !== undefined) {
+      if (!["none", "stripe"].includes(paymentMode)) {
+        return res.status(400).json({ ok: false, error: "paymentMode debe ser 'none' o 'stripe'." });
+      }
+      pack.paymentMode = paymentMode;
+    }
+
+    await pack.save();
+
+    console.log("[catalog] Pack payment config updated", {
+      packId: pack._id.toString(),
+      slug: pack.slug,
+      isPaid: pack.isPaid,
+      priceAmount: pack.priceAmount,
+      currency: pack.currency,
+      stripePriceId: pack.stripePriceId,
+      paymentMode: pack.paymentMode,
+      updatedBy: req.user?.id || null
+    });
+
+    return res.json({
+      ok: true,
+      payment: {
+        isPaid: pack.isPaid,
+        priceAmount: pack.priceAmount,
+        currency: pack.currency,
+        stripePriceId: pack.stripePriceId,
+        paymentMode: pack.paymentMode,
+        purchasedCount: pack.purchasedCount,
+        lastPurchasedAt: pack.lastPurchasedAt
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al actualizar la configuración de pago." });
   }
 });
 

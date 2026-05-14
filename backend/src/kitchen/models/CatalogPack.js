@@ -84,7 +84,16 @@ const CatalogPackSchema = new mongoose.Schema(
     reviewIssues: { type: [mongoose.Schema.Types.Mixed], default: [] },
     normalizedAt: { type: Date, default: null },
     reviewedAt: { type: Date, default: null },
-    publishedAt: { type: Date, default: null }
+    publishedAt: { type: Date, default: null },
+
+    // ── Stripe / Payments ────────────────────────────────────────────────────
+    isPaid: { type: Boolean, default: false },
+    priceAmount: { type: Number, default: null },
+    currency: { type: String, default: "eur", trim: true, lowercase: true },
+    stripePriceId: { type: String, default: null, trim: true },
+    paymentMode: { type: String, enum: ["none", "stripe"], default: "none" },
+    purchasedCount: { type: Number, default: 0 },
+    lastPurchasedAt: { type: Date, default: null }
   },
   { timestamps: true }
 );

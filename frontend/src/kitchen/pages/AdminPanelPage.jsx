@@ -1459,6 +1459,18 @@ function PackForm({ item, onSave, onCancel, baseBitePrice = 1.99 }) {
   const [propagateCatalogUpdates, setPropagateCatalogUpdates] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Payment config (separate save via PATCH)
+  const [paymentForm, setPaymentForm] = useState({
+    isPaid: Boolean(item.isPaid),
+    priceAmount: item.priceAmount != null ? String(item.priceAmount) : "",
+    currency: item.currency || "eur",
+    stripePriceId: item.stripePriceId || "",
+    paymentMode: item.paymentMode || "none"
+  });
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [paymentSuccess, setPaymentSuccess] = useState("");
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState("");
   // pricing sync: track which field was last manually edited; stop auto-sync once both touched
@@ -1780,6 +1792,102 @@ function PackForm({ item, onSave, onCancel, baseBitePrice = 1.99 }) {
           <button type="button" onClick={onCancel} style={ABT.cancel}>Cancelar</button>
         </div>
       </form>
+
+      {isEdit && (
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #e2e8f0" }}>
+          <h5 style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 700, color: "#374151" }}>
+            Configuración de pago (Stripe)
+          </h5>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, marginBottom: 10 }}>
+            <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={paymentForm.isPaid}
+                onChange={(e) => setPaymentForm((p) => ({ ...p, isPaid: e.target.checked }))}
+              />
+              Pack de pago
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 13 }}>
+              Modo de pago
+              <select
+                style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                value={paymentForm.paymentMode}
+                onChange={(e) => setPaymentForm((p) => ({ ...p, paymentMode: e.target.value }))}
+              >
+                <option value="none">Ninguno</option>
+                <option value="stripe">Stripe</option>
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 13 }}>
+              Precio (céntimos, ej: 299 = 2,99 €)
+              <input
+                style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                type="number"
+                min="0"
+                step="1"
+                value={paymentForm.priceAmount}
+                onChange={(e) => setPaymentForm((p) => ({ ...p, priceAmount: e.target.value }))}
+                placeholder="299"
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 13 }}>
+              Moneda
+              <input
+                style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                value={paymentForm.currency}
+                onChange={(e) => setPaymentForm((p) => ({ ...p, currency: e.target.value }))}
+                placeholder="eur"
+                maxLength={3}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 13, gridColumn: "span 2" }}>
+              Stripe Price ID
+              <input
+                style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                value={paymentForm.stripePriceId}
+                onChange={(e) => setPaymentForm((p) => ({ ...p, stripePriceId: e.target.value }))}
+                placeholder="price_xxx"
+              />
+            </label>
+          </div>
+          {paymentError ? <div className="kitchen-alert error" style={{ marginBottom: 8, fontSize: 12 }}>{paymentError}</div> : null}
+          {paymentSuccess ? <div className="kitchen-alert success" style={{ marginBottom: 8, fontSize: 12 }}>{paymentSuccess}</div> : null}
+          <button
+            type="button"
+            disabled={paymentSaving}
+            style={{ padding: "6px 14px", fontSize: 13, borderRadius: 6, background: "#4f46e5", color: "#fff", border: "none", cursor: paymentSaving ? "not-allowed" : "pointer", opacity: paymentSaving ? 0.7 : 1 }}
+            onClick={async () => {
+              setPaymentSaving(true);
+              setPaymentError("");
+              setPaymentSuccess("");
+              try {
+                await apiRequest(`/api/kitchen/catalog/packs/${packId}/payment`, {
+                  method: "PATCH",
+                  body: JSON.stringify({
+                    isPaid: paymentForm.isPaid,
+                    priceAmount: paymentForm.priceAmount !== "" ? Number(paymentForm.priceAmount) : null,
+                    currency: paymentForm.currency.trim().toLowerCase() || "eur",
+                    stripePriceId: paymentForm.stripePriceId.trim() || null,
+                    paymentMode: paymentForm.paymentMode
+                  })
+                });
+                setPaymentSuccess("Configuración de pago guardada.");
+              } catch (err) {
+                setPaymentError(err.message || "Error al guardar la configuración de pago.");
+              } finally {
+                setPaymentSaving(false);
+              }
+            }}
+          >
+            {paymentSaving ? "Guardando..." : "Guardar pago"}
+          </button>
+          {item.purchasedCount > 0 && (
+            <p style={{ margin: "8px 0 0", fontSize: 12, color: "#6b7280" }}>
+              {item.purchasedCount} compra{item.purchasedCount !== 1 ? "s" : ""} registrada{item.purchasedCount !== 1 ? "s" : ""}.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

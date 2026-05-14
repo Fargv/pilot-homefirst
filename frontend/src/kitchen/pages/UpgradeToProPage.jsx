@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
-import { apiRequest, createCheckoutSession } from "../api.js";
+import { apiRequest, createCheckoutSession, createCustomerPortalSession } from "../api.js";
 import { getPlanLimits, isUnlimitedLicenseLimit } from "../subscription.js";
 
 const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
@@ -79,10 +79,12 @@ export default function UpgradeToProPage() {
   const [searchParams] = useSearchParams();
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [loadingPlanId, setLoadingPlanId] = useState("");
+  const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [requestedPlan, setRequestedPlan] = useState("");
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
+  const [hasActiveStripeSubscription, setHasActiveStripeSubscription] = useState(false);
   const [householdLicense, setHouseholdLicense] = useState(null);
 
   const from = searchParams.get("from") || "";
@@ -102,6 +104,7 @@ export default function UpgradeToProPage() {
         if (!active) return;
         setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
         setRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
+        setHasActiveStripeSubscription(Boolean(data?.household?.hasActiveStripeSubscription));
         setHouseholdLicense(data?.household?.license || null);
       } catch (loadError) {
         if (!active) return;
@@ -129,12 +132,14 @@ export default function UpgradeToProPage() {
           targetName: `Plan ${planId}`,
           stripePriceId: PRICE_IDS[planId]
         });
-        // Redirect to Stripe-hosted Checkout
         window.location.href = url;
-        // Don't reset loadingPlanId — page is navigating away
       } catch (checkoutError) {
         console.error("[upgrade] createCheckoutSession failed", checkoutError);
-        setError(checkoutError.message || "No se pudo iniciar el proceso de pago. Inténtalo de nuevo.");
+        if (checkoutError.body?.code === "SUBSCRIPTION_ACTIVE") {
+          setError("Ya tienes una suscripción activa. Usa el portal de facturación para cambiar de plan.");
+        } else {
+          setError(checkoutError.message || "No se pudo iniciar el proceso de pago. Inténtalo de nuevo.");
+        }
         setLoadingPlanId("");
       }
       return;
@@ -156,6 +161,18 @@ export default function UpgradeToProPage() {
       setError(requestError.message || "No se pudo enviar la solicitud.");
     } finally {
       setLoadingPlanId("");
+    }
+  };
+
+  const handleOpenPortal = async () => {
+    setPortalLoading(true);
+    setError("");
+    try {
+      const { url } = await createCustomerPortalSession();
+      window.location.href = url;
+    } catch (portalError) {
+      setError(portalError.message || "No se pudo abrir el portal de facturación.");
+      setPortalLoading(false);
     }
   };
 
@@ -212,6 +229,22 @@ export default function UpgradeToProPage() {
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}
         {summaryLoading ? <p className="kitchen-muted">Cargando...</p> : null}
+
+        {STRIPE_ENABLED && hasActiveStripeSubscription && !summaryLoading && (
+          <div className="upgrade-portal-section">
+            <p className="kitchen-muted" style={{ marginBottom: 8 }}>
+              Tienes una suscripción activa gestionada por Stripe.
+            </p>
+            <button
+              type="button"
+              className="kitchen-button secondary"
+              onClick={handleOpenPortal}
+              disabled={portalLoading}
+            >
+              {portalLoading ? "Abriendo portal..." : "Gestionar suscripción"}
+            </button>
+          </div>
+        )}
 
         <div className="upgrade-plan-grid">
           {PLANS.map((plan) => {
