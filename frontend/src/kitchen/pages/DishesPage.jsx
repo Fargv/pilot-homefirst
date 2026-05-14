@@ -99,6 +99,8 @@ export default function DishesPage() {
   const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
   const [activeIngredient, setActiveIngredient] = useState(null);
   const [ingredientInfoOpenId, setIngredientInfoOpenId] = useState(null);
+  const [selectedIngredientCategoryId, setSelectedIngredientCategoryId] = useState("");
+  const [showAllIngredientCategories, setShowAllIngredientCategories] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignDish, setAssignDish] = useState(null);
   const [assignDate, setAssignDate] = useState("");
@@ -406,16 +408,17 @@ export default function DishesPage() {
       setSelectedDishCategoryId("");
       setSelectedMealFilter(MEAL_FILTERS.ALL);
       setShowOnlyCatalog(false);
+    } else {
+      setSelectedIngredientCategoryId("");
+      setShowAllIngredientCategories(false);
     }
   }, [MEAL_FILTERS.ALL, activeTab]);
 
-  const loadIngredients = useCallback(async (query = "") => {
+  const loadIngredients = useCallback(async () => {
     setIngredientsLoading(true);
     setIngredientsError("");
     try {
-      const params = new URLSearchParams({ limit: "0" });
-      if (query.trim()) params.set("q", query.trim());
-      const data = await apiRequest(`/api/kitchenIngredients?${params.toString()}`);
+      const data = await apiRequest("/api/kitchenIngredients?limit=0");
       setIngredients(data.ingredients || []);
     } catch (err) {
       setIngredientsError(err.message || "No se pudieron cargar los ingredientes.");
@@ -426,11 +429,8 @@ export default function DishesPage() {
 
   useEffect(() => {
     if (activeTab !== "ingredients") return;
-    const timeout = setTimeout(() => {
-      loadIngredients(ingredientSearchTerm);
-    }, 250);
-    return () => clearTimeout(timeout);
-  }, [activeTab, ingredientSearchTerm, loadIngredients]);
+    void loadIngredients();
+  }, [activeTab, loadIngredients]);
 
   useEffect(() => {
     const onCatalogInvalidated = () => {
@@ -441,7 +441,7 @@ export default function DishesPage() {
     };
     window.addEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
     return () => window.removeEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
-  }, [activeTab, ingredientSearchTerm, loadIngredients]);
+  }, [activeTab, loadIngredients]);
 
   const startIngredientCreate = () => {
     setActiveIngredient(null);
@@ -466,7 +466,7 @@ export default function DishesPage() {
         categoryId: ingredient.categoryId?._id || ingredient.categoryId || undefined
       })
     });
-    await loadIngredients(ingredientSearchTerm);
+    await loadIngredients();
   };
 
   const deleteIngredient = async (ingredient) => {
@@ -476,7 +476,7 @@ export default function DishesPage() {
     await apiRequest(`/api/kitchenIngredients/${ingredient._id}`, { method: "DELETE" });
     if (activeIngredient?._id === ingredient._id) closeIngredientModal();
     if (ingredientInfoOpenId === ingredient._id) setIngredientInfoOpenId(null);
-    await loadIngredients(ingredientSearchTerm);
+    await loadIngredients();
   };
   const closeIngredientModal = () => {
     setIsIngredientModalOpen(false);
@@ -719,15 +719,82 @@ export default function DishesPage() {
     () => dishes.find((dish) => dish?._id === dishInfoOpenId) || null,
     [dishInfoOpenId, dishes]
   );
+  const ingredientCategories = useMemo(() => {
+    const catMap = new Map();
+    ingredients.forEach((ing) => {
+      const cat = ing.categoryId;
+      if (cat?._id && cat.name) catMap.set(String(cat._id), cat);
+    });
+    return Array.from(catMap.values());
+  }, [ingredients]);
+
+  const ingredientCategoryCount = useMemo(() => {
+    const counts = {};
+    ingredients.forEach((ing) => {
+      const catId = String(ing.categoryId?._id || "");
+      if (catId) counts[catId] = (counts[catId] || 0) + 1;
+    });
+    return counts;
+  }, [ingredients]);
+
+  const sortedIngredientCategories = useMemo(() => {
+    return [...ingredientCategories].sort(
+      (a, b) => (ingredientCategoryCount[String(b._id)] || 0) - (ingredientCategoryCount[String(a._id)] || 0)
+    );
+  }, [ingredientCategories, ingredientCategoryCount]);
+
+  const TOP_INGREDIENT_CATS = 6;
+
+  const extraIngredientCategories = useMemo(
+    () => sortedIngredientCategories.slice(TOP_INGREDIENT_CATS),
+    [sortedIngredientCategories]
+  );
+
+  const visibleIngredientCategoryChips = useMemo(() => {
+    const base = showAllIngredientCategories
+      ? sortedIngredientCategories
+      : sortedIngredientCategories.slice(0, TOP_INGREDIENT_CATS);
+    if (
+      selectedIngredientCategoryId &&
+      !base.some((c) => String(c._id) === selectedIngredientCategoryId)
+    ) {
+      const pinned = ingredientCategories.find((c) => String(c._id) === selectedIngredientCategoryId);
+      if (pinned) return [pinned, ...base];
+    }
+    return base;
+  }, [showAllIngredientCategories, sortedIngredientCategories, selectedIngredientCategoryId, ingredientCategories]);
+
+  const normalizedIngredientSearch = useMemo(
+    () => normalizeIngredientName(ingredientSearchTerm),
+    [ingredientSearchTerm]
+  );
+
+  const visibleIngredients = useMemo(() => {
+    let result = ingredients;
+    if (selectedIngredientCategoryId) {
+      result = result.filter(
+        (ing) => String(ing.categoryId?._id || "") === selectedIngredientCategoryId
+      );
+    }
+    if (normalizedIngredientSearch) {
+      result = result.filter((ing) => {
+        const nameMatch = normalizeIngredientName(ing.name || "").includes(normalizedIngredientSearch);
+        const catMatch = normalizeIngredientName(ing.categoryId?.name || "").includes(normalizedIngredientSearch);
+        return nameMatch || catMatch;
+      });
+    }
+    return result;
+  }, [ingredients, selectedIngredientCategoryId, normalizedIngredientSearch]);
+
   const ingredientEmptyMessage = useMemo(() => {
     if (ingredients.length === 0) {
       return "No hay ingredientes aún. Crea el primero.";
     }
-    if (ingredientSearchTerm.trim()) {
+    if (ingredientSearchTerm.trim() || selectedIngredientCategoryId) {
       return "No encontramos ingredientes con ese criterio.";
     }
     return "";
-  }, [ingredientSearchTerm, ingredients.length]);
+  }, [ingredientSearchTerm, ingredients.length, selectedIngredientCategoryId]);
 
   const isIngredientsTab = activeTab === "ingredients";
   const headerTitle = isIngredientsTab ? "Ingredientes" : "Platos";
@@ -870,15 +937,55 @@ export default function DishesPage() {
           </>
         ) : null}
         {isIngredientsTab ? (
-          ingredientsLoading ? (
-            <div className="kitchen-card kitchen-dishes-loading">Cargando ingredientes...</div>
-          ) : ingredients.length === 0 ? (
-            <div className="kitchen-card kitchen-empty">
-              <p>{ingredientEmptyMessage}</p>
-            </div>
-          ) : (
+          <>
+            {!ingredientsLoading && ingredientCategories.length > 0 ? (
+              <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar ingredientes por categoría">
+                <button
+                  type="button"
+                  className={`kitchen-filter-chip ${!selectedIngredientCategoryId ? "is-active is-all" : ""}`}
+                  onClick={() => setSelectedIngredientCategoryId("")}
+                >
+                  Todos
+                </button>
+                {visibleIngredientCategoryChips.map((cat) => {
+                  const catId = String(cat._id || "");
+                  const selected = selectedIngredientCategoryId === catId;
+                  return (
+                    <button
+                      key={catId}
+                      type="button"
+                      className={`kitchen-filter-chip ${selected ? "is-active" : ""}`}
+                      style={selected && cat.colorBg ? { background: cat.colorBg, borderColor: cat.colorText } : undefined}
+                      onClick={() => setSelectedIngredientCategoryId((prev) => (prev === catId ? "" : catId))}
+                    >
+                      {cat.colorText ? (
+                        <span className="kitchen-filter-chip-dot" style={{ background: cat.colorText }} />
+                      ) : null}
+                      {cat.name}
+                      <span className="dishes-cat-count">{ingredientCategoryCount[catId] || 0}</span>
+                    </button>
+                  );
+                })}
+                {extraIngredientCategories.length > 0 ? (
+                  <button
+                    type="button"
+                    className="kitchen-filter-chip dishes-cat-more"
+                    onClick={() => setShowAllIngredientCategories((v) => !v)}
+                  >
+                    {showAllIngredientCategories ? "▲ Menos" : `+${extraIngredientCategories.length} más`}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+            {ingredientsLoading ? (
+              <div className="kitchen-card kitchen-dishes-loading">Cargando ingredientes...</div>
+            ) : visibleIngredients.length === 0 ? (
+              <div className="kitchen-card kitchen-empty">
+                <p>{ingredientEmptyMessage}</p>
+              </div>
+            ) : (
             <div className="kitchen-dishes-grid">
-              {ingredients.map((ingredient) => {
+              {visibleIngredients.map((ingredient) => {
                 const categoryName = ingredient.categoryId?.name || "Sin categoría";
                 const isInfoOpen = ingredientInfoOpenId === ingredient._id && !isInfoMobile;
                 return (
@@ -1019,7 +1126,8 @@ export default function DishesPage() {
                 );
               })}
             </div>
-          )
+            )}
+          </>
         ) : loading ? (
           <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
         ) : visibleDishes.length === 0 ? (
