@@ -56,7 +56,10 @@ export const config = {
     secretKey: process.env.STRIPE_SECRET_KEY || "",
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
     mode: process.env.STRIPE_MODE || "test",
-    paymentsEnabled: process.env.PAYMENTS_ENABLED === "true"
+    paymentsEnabled: process.env.PAYMENTS_ENABLED === "true",
+    // Only grant entitlements automatically in DEV test mode when this flag is explicitly set.
+    // Production must never have this true — it is an additional guard beyond PAYMENTS_ENABLED.
+    allowTestEntitlements: process.env.ALLOW_TEST_PAYMENT_ENTITLEMENTS === "true"
   }
 };
 

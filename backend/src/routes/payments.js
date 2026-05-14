@@ -1,9 +1,19 @@
 import express from "express";
+import mongoose from "mongoose";
 import Stripe from "stripe";
 import { config } from "../config.js";
-import { requireAuth } from "../kitchen/middleware.js";
+import { requireAuth, requireDiod } from "../kitchen/middleware.js";
 import { PurchaseAttempt } from "../kitchen/models/PurchaseAttempt.js";
+import { Household } from "../kitchen/models/Household.js";
 import { getEffectiveHouseholdId, handleHouseholdError } from "../kitchen/householdScope.js";
+import { applyTestSubscriptionEntitlementFromAttempt } from "../kitchen/paymentEntitlementService.js";
+import {
+  applyAdminSubscriptionActivation,
+  applyAdminSubscriptionDeactivation,
+  buildHouseholdSubscriptionResponse,
+  normalizeSubscriptionPlan,
+  SUBSCRIPTION_PLANS
+} from "../kitchen/subscriptionService.js";
 
 const router = express.Router();
 
@@ -141,6 +151,87 @@ router.get("/my-attempts", requireAuth, async (req, res) => {
   }
 });
 
+// ─── POST /api/payments/dev/reset-plan ───────────────────────────────────────
+// DEV-only utility to reset a household plan for demo purposes.
+// Protected by: non-production env check + DIOD admin role.
+// NEVER enabled in production — the env guard is the primary safety mechanism.
+
+function requireDevEnv(req, res, next) {
+  const appEnv = process.env.APP_ENV || config.nodeEnv || "";
+  const isProduction = appEnv === "production" || config.nodeEnv === "production";
+  if (isProduction) {
+    return res.status(403).json({
+      ok: false,
+      code: "DEV_ONLY",
+      error: "Este endpoint solo está disponible en entornos no-productivos."
+    });
+  }
+  return next();
+}
+
+router.post("/dev/reset-plan", requireDevEnv, requireAuth, requireDiod, async (req, res) => {
+  try {
+    const { householdId, planKey } = req.body || {};
+
+    if (!householdId || !mongoose.isValidObjectId(householdId)) {
+      return res.status(400).json({ ok: false, error: "householdId inválido o ausente." });
+    }
+
+    const normalizedPlan = normalizeSubscriptionPlan(planKey);
+    if (!SUBSCRIPTION_PLANS.includes(normalizedPlan)) {
+      return res.status(400).json({
+        ok: false,
+        error: `planKey inválido. Valores permitidos: ${SUBSCRIPTION_PLANS.join(", ")}.`
+      });
+    }
+
+    const household = await Household.findById(householdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "Hogar no encontrado." });
+    }
+
+    const previousPlan = household.subscriptionPlan;
+
+    if (normalizedPlan === "basic" || normalizedPlan === "free") {
+      applyAdminSubscriptionDeactivation(household);
+    } else {
+      applyAdminSubscriptionActivation(household, normalizedPlan);
+    }
+
+    // Clear Stripe test metadata on reset so the next checkout starts fresh
+    household.paymentProvider = "";
+    household.paymentMode = "";
+    household.planUpdatedAt = new Date();
+    household.planUpdatedByPaymentAttemptId = "";
+
+    await household.save();
+
+    console.log("[payments][dev] Household plan reset", {
+      householdId,
+      previousPlan,
+      newPlan: normalizedPlan,
+      resetBy: req.user?.id || null
+    });
+
+    return res.json({
+      ok: true,
+      household: {
+        id: household._id.toString(),
+        name: household.name,
+        previousPlan,
+        ...buildHouseholdSubscriptionResponse(household)
+      }
+    });
+  } catch (error) {
+    console.error("[payments][dev] reset-plan error", {
+      body: req.body,
+      error: error?.message,
+      stack: error?.stack
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo resetear el plan." });
+  }
+});
+
 // ─── Webhook handler (exported separately — needs raw body, registered in index.js) ──
 
 async function handleCheckoutCompleted(session) {
@@ -180,12 +271,19 @@ async function handleCheckoutCompleted(session) {
     mode: attempt.mode
   });
 
-  // FUTURE PRODUCTION ACTIVATION:
-  // Once entitlement logic is production-ready, add activation here:
-  //   - For "subscription": call subscriptionService.applyAdminSubscriptionActivation(household, attempt.planKey)
-  //   - For "pack": update HouseholdCatalogPack to acquiredVia="purchase", paymentStatus="paid"
-  //   - Guard with: if (attempt.mode === "live") { ... }
-  // For now (test mode), we only log purchase intent — no plan or pack changes.
+  // DEV TEST ENTITLEMENTS — only fires when all safety flags pass:
+  //   PAYMENTS_ENABLED=true, STRIPE_MODE=test, ALLOW_TEST_PAYMENT_ENTITLEMENTS=true
+  //   attempt.mode=test, attempt.type=subscription, planKey in {pro, premium}
+  // In live/production mode this call is a no-op (the service checks STRIPE_MODE).
+  await applyTestSubscriptionEntitlementFromAttempt(attempt);
+
+  // FUTURE PRODUCTION ACTIVATION (live mode):
+  // When STRIPE_MODE=live and production entitlement logic is ready:
+  //   - For "subscription": the same applyAdminSubscriptionActivation path applies,
+  //     but guarded by attempt.mode === "live" inside applyTestSubscriptionEntitlementFromAttempt
+  //     (or a new applyLiveSubscriptionEntitlement function).
+  //   - For "pack": update HouseholdCatalogPack to acquiredVia="purchase", paymentStatus="paid".
+  //   - Add real billing period tracking (subscriptionEndsAt from Stripe event data).
 }
 
 async function handleCheckoutStatusUpdate(session, status) {

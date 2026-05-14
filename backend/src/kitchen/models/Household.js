@@ -34,7 +34,17 @@ const HouseholdSchema = new mongoose.Schema(
     freeBitesBalance: { type: Number, default: 0, min: 0 },
     purchasedBitesBalance: { type: Number, default: 0, min: 0 },
     totalBitesSpent: { type: Number, default: 0, min: 0 },
-    lastMonthlyBitesGrantAt: { type: Date, default: null }
+    lastMonthlyBitesGrantAt: { type: Date, default: null },
+
+    // Stripe payment metadata — populated by webhook when a checkout completes.
+    // These are intentionally separate from core subscription fields so the
+    // subscription logic doesn't depend on them.
+    stripeCustomerId: { type: String, default: "" },
+    stripeSubscriptionId: { type: String, default: "" },
+    paymentProvider: { type: String, default: "" },
+    paymentMode: { type: String, default: "" },
+    planUpdatedAt: { type: Date, default: null },
+    planUpdatedByPaymentAttemptId: { type: String, default: "" }
   },
   { timestamps: true }
 );
