@@ -9,7 +9,8 @@ const BitesBundleSchema = new mongoose.Schema(
     badge: { type: String, default: "" },
     highlighted: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
-    sortOrder: { type: Number, default: 0 }
+    sortOrder: { type: Number, default: 0 },
+    stripePriceId: { type: String, default: "" }
   },
   { _id: true }
 );

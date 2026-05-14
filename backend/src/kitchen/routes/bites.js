@@ -116,7 +116,7 @@ router.get("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
 
 router.post("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
   try {
-    const { name, bitesAmount, price, discountPercent, badge, highlighted, active, sortOrder } = req.body;
+    const { name, bitesAmount, price, discountPercent, badge, highlighted, active, sortOrder, stripePriceId } = req.body;
     if (!name || !bitesAmount || price == null) {
       return res.status(400).json({ ok: false, error: "name, bitesAmount y price son obligatorios." });
     }
@@ -132,6 +132,10 @@ router.post("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
     if (!Number.isFinite(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 95) {
       return res.status(400).json({ ok: false, error: "discountPercent debe estar entre 0 y 95." });
     }
+    const priceIdTrimmed = stripePriceId ? String(stripePriceId).trim() : "";
+    if (priceIdTrimmed && !priceIdTrimmed.startsWith("price_")) {
+      return res.status(400).json({ ok: false, error: "stripePriceId debe comenzar con 'price_'." });
+    }
 
     const config = await BitesConfig.findOne({ key: "bitesEconomy" });
     if (!config) return res.status(500).json({ ok: false, error: "Config no inicializada." });
@@ -144,7 +148,8 @@ router.post("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
       badge: badge ? String(badge).trim() : "",
       highlighted: Boolean(highlighted),
       active: active !== false,
-      sortOrder: sortOrder ?? 0
+      sortOrder: sortOrder ?? 0,
+      stripePriceId: priceIdTrimmed
     });
     config.updatedBy = req.kitchenUser._id;
     await config.save();
@@ -164,7 +169,7 @@ router.put("/admin/bundles/:bundleId", requireAuth, requireDiod, async (req, res
     const bundle = config.bundles.id(req.params.bundleId);
     if (!bundle) return res.status(404).json({ ok: false, error: "Bundle no encontrado." });
 
-    const { name, bitesAmount, price, discountPercent, badge, highlighted, active, sortOrder } = req.body;
+    const { name, bitesAmount, price, discountPercent, badge, highlighted, active, sortOrder, stripePriceId } = req.body;
     if (name !== undefined) bundle.name = String(name).trim();
     if (bitesAmount !== undefined) {
       const v = Number(bitesAmount);
@@ -185,6 +190,11 @@ router.put("/admin/bundles/:bundleId", requireAuth, requireDiod, async (req, res
     if (highlighted !== undefined) bundle.highlighted = Boolean(highlighted);
     if (active !== undefined) bundle.active = Boolean(active);
     if (sortOrder !== undefined) bundle.sortOrder = Number(sortOrder);
+    if (stripePriceId !== undefined) {
+      const pid = String(stripePriceId || "").trim();
+      if (pid && !pid.startsWith("price_")) return res.status(400).json({ ok: false, error: "stripePriceId debe comenzar con 'price_'." });
+      bundle.stripePriceId = pid;
+    }
 
     config.updatedBy = req.kitchenUser._id;
     await config.save();

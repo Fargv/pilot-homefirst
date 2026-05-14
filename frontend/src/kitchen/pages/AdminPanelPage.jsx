@@ -1469,9 +1469,6 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
     paymentMode: item.paymentMode || "none",
     purchasedCount: item.purchasedCount || 0
   });
-  const [paymentSaving, setPaymentSaving] = useState(false);
-  const [paymentError, setPaymentError] = useState("");
-  const [paymentSuccess, setPaymentSuccess] = useState("");
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState("");
   // pricing sync: track which field was last manually edited; stop auto-sync once both touched
@@ -1564,6 +1561,20 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
         dishes: serializeDishes(),
         propagateCatalogUpdates
       });
+      if (isEdit) {
+        const priceIdTrimmed = paymentForm.stripePriceId.trim();
+        await apiRequest(`/api/kitchen/catalog/packs/${packId}/payment`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            isPaid: paymentForm.isPaid,
+            priceAmount: Math.round((parseFloat(form.priceBasic) || 0) * 100),
+            currency: paymentForm.currency || "eur",
+            stripePriceId: priceIdTrimmed || null,
+            paymentMode: paymentForm.paymentMode
+          })
+        });
+        if (onPaymentSaved) onPaymentSaved();
+      }
     } catch (err) { setError(err.message || "Error al guardar."); }
     finally { setSaving(false); }
   };
@@ -1643,6 +1654,40 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
             Orden (sortOrder)
             <input style={fieldStyle} type="number" value={form.sortOrder} onChange={set("sortOrder")} />
           </label>
+
+          {isEdit && (
+            <>
+              <label style={{ ...labelStyle, gridColumn: "1 / -1", borderTop: "1px dashed #e0e7ff", paddingTop: 10, marginTop: 4 }}>
+                <span style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer" }}>
+                  <input type="checkbox" checked={paymentForm.isPaid} onChange={(e) => setPaymentForm((p) => ({ ...p, isPaid: e.target.checked }))} />
+                  <span style={{ fontWeight: 600 }}>💳 Paquete de pago (Stripe)</span>
+                </span>
+              </label>
+              <label style={labelStyle}>
+                Modo de pago
+                <select style={fieldStyle} value={paymentForm.paymentMode} onChange={(e) => setPaymentForm((p) => ({ ...p, paymentMode: e.target.value }))}>
+                  <option value="none">Ninguno</option>
+                  <option value="stripe">Stripe</option>
+                </select>
+              </label>
+              <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>
+                <span style={{ fontWeight: 600 }}>Stripe Price ID</span>
+                <input
+                  style={{ ...fieldStyle, fontFamily: "monospace", borderColor: paymentForm.stripePriceId && !paymentForm.stripePriceId.startsWith("price_") ? "#ef4444" : "#d1d5db" }}
+                  value={paymentForm.stripePriceId}
+                  onChange={(e) => setPaymentForm((p) => ({ ...p, stripePriceId: e.target.value }))}
+                  placeholder="price_1abc..."
+                />
+                {paymentForm.paymentMode === "stripe" && !paymentForm.stripePriceId && (
+                  <span style={{ fontSize: 11, color: "#dc2626" }}>Obligatorio cuando modo=stripe.</span>
+                )}
+                {paymentForm.stripePriceId && !paymentForm.stripePriceId.startsWith("price_") && (
+                  <span style={{ fontSize: 11, color: "#dc2626" }}>Debe comenzar con price_</span>
+                )}
+                <span style={{ fontSize: 11, color: "#6b7280" }}>Crea el producto/precio en Stripe y pega aquí el ID.</span>
+              </label>
+            </>
+          )}
         </div>
 
         <label style={{ ...labelStyle, marginBottom: 12 }}>
@@ -1794,148 +1839,6 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
         </div>
       </form>
 
-      {isEdit && (
-        <div style={{ marginTop: 20, paddingTop: 18, borderTop: "2px solid #6366f1" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <span style={{ fontSize: 15 }}>💳</span>
-            <h5 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#3730a3" }}>
-              Pagos del paquete
-            </h5>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, marginBottom: 10 }}>
-            <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer", gridColumn: "1 / -1" }}>
-              <input
-                type="checkbox"
-                checked={paymentForm.isPaid}
-                onChange={(e) => setPaymentForm((p) => ({ ...p, isPaid: e.target.checked }))}
-              />
-              <span style={{ fontWeight: 600 }}>Paquete de pago</span>
-            </label>
-
-            <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 13 }}>
-              Modo de pago
-              <select
-                style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
-                value={paymentForm.paymentMode}
-                onChange={(e) => setPaymentForm((p) => ({ ...p, paymentMode: e.target.value }))}
-              >
-                <option value="none">Ninguno</option>
-                <option value="stripe">Stripe</option>
-              </select>
-            </label>
-
-            <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 13 }}>
-              Precio visible (€, ej: 2.99)
-              <input
-                style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
-                type="number"
-                min="0"
-                step="0.01"
-                value={paymentForm.priceAmount !== "" ? (Number(paymentForm.priceAmount) / 100).toFixed(2) : ""}
-                onChange={(e) => {
-                  const euros = parseFloat(e.target.value) || 0;
-                  setPaymentForm((p) => ({ ...p, priceAmount: String(Math.round(euros * 100)) }));
-                }}
-                placeholder="2.99"
-              />
-              <span style={{ fontSize: 11, color: "#6b7280" }}>
-                {paymentForm.priceAmount ? `= ${paymentForm.priceAmount} céntimos` : "en euros"}
-              </span>
-            </label>
-
-            <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 13 }}>
-              Moneda
-              <input
-                style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
-                value={paymentForm.currency}
-                onChange={(e) => setPaymentForm((p) => ({ ...p, currency: e.target.value }))}
-                placeholder="eur"
-                maxLength={3}
-              />
-            </label>
-
-            <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 13, gridColumn: "1 / -1" }}>
-              <span style={{ fontWeight: 600 }}>Stripe Price ID</span>
-              <input
-                style={{
-                  padding: "6px 8px", borderRadius: 6, fontSize: 13, fontFamily: "monospace",
-                  border: `1px solid ${paymentForm.stripePriceId && !paymentForm.stripePriceId.startsWith("price_") ? "#ef4444" : "#d1d5db"}`
-                }}
-                value={paymentForm.stripePriceId}
-                onChange={(e) => setPaymentForm((p) => ({ ...p, stripePriceId: e.target.value }))}
-                placeholder="price_1abc..."
-              />
-              {paymentForm.paymentMode === "stripe" && !paymentForm.stripePriceId && (
-                <span style={{ fontSize: 11, color: "#dc2626" }}>Obligatorio cuando modo=stripe.</span>
-              )}
-              {paymentForm.stripePriceId && !paymentForm.stripePriceId.startsWith("price_") && (
-                <span style={{ fontSize: 11, color: "#dc2626" }}>Debe comenzar con price_</span>
-              )}
-              <span style={{ fontSize: 11, color: "#6b7280" }}>
-                Crea el producto/precio en Stripe test mode y pega aquí el ID price_...
-              </span>
-            </label>
-          </div>
-
-          {paymentError ? <div className="kitchen-alert error" style={{ marginBottom: 8, fontSize: 12 }}>{paymentError}</div> : null}
-          {paymentSuccess ? <div className="kitchen-alert success" style={{ marginBottom: 8, fontSize: 12 }}>{paymentSuccess}</div> : null}
-
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              disabled={paymentSaving || (paymentForm.paymentMode === "stripe" && paymentForm.stripePriceId && !paymentForm.stripePriceId.startsWith("price_"))}
-              style={{ padding: "7px 16px", fontSize: 13, borderRadius: 6, background: "#4f46e5", color: "#fff", border: "none", cursor: paymentSaving ? "not-allowed" : "pointer", opacity: paymentSaving ? 0.7 : 1, fontWeight: 600 }}
-              onClick={async () => {
-                const priceIdTrimmed = paymentForm.stripePriceId.trim();
-                if (paymentForm.paymentMode === "stripe" && priceIdTrimmed && !priceIdTrimmed.startsWith("price_")) {
-                  setPaymentError("Stripe Price ID debe comenzar con price_");
-                  return;
-                }
-                setPaymentSaving(true);
-                setPaymentError("");
-                setPaymentSuccess("");
-                try {
-                  const result = await apiRequest(`/api/kitchen/catalog/packs/${packId}/payment`, {
-                    method: "PATCH",
-                    body: JSON.stringify({
-                      isPaid: paymentForm.isPaid,
-                      priceAmount: paymentForm.priceAmount !== "" ? Number(paymentForm.priceAmount) : null,
-                      currency: paymentForm.currency.trim().toLowerCase() || "eur",
-                      stripePriceId: priceIdTrimmed || null,
-                      paymentMode: paymentForm.paymentMode
-                    })
-                  });
-                  // Sync local state with saved values from server
-                  const saved = result.payment || {};
-                  setPaymentForm((p) => ({
-                    ...p,
-                    isPaid: saved.isPaid ?? p.isPaid,
-                    priceAmount: saved.priceAmount != null ? String(saved.priceAmount) : p.priceAmount,
-                    currency: saved.currency || p.currency,
-                    stripePriceId: saved.stripePriceId || "",
-                    paymentMode: saved.paymentMode || p.paymentMode,
-                    purchasedCount: saved.purchasedCount ?? p.purchasedCount
-                  }));
-                  setPaymentSuccess("✓ Configuración de pago guardada.");
-                  if (onPaymentSaved) onPaymentSaved();
-                } catch (err) {
-                  setPaymentError(err.message || "Error al guardar la configuración de pago.");
-                } finally {
-                  setPaymentSaving(false);
-                }
-              }}
-            >
-              {paymentSaving ? "Guardando..." : "Guardar configuración de pago"}
-            </button>
-            {paymentForm.purchasedCount > 0 && (
-              <span style={{ fontSize: 12, color: "#6b7280" }}>
-                {paymentForm.purchasedCount} compra{paymentForm.purchasedCount !== 1 ? "s" : ""} registrada{paymentForm.purchasedCount !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -2926,7 +2829,7 @@ function BitesEconomySection() {
               const amt = 10;
               const disc = 25;
               const suggestedPrice = parseFloat((amt * bbp * (1 - disc / 100)).toFixed(2));
-              setBundleForm({ name: "", bitesAmount: amt, price: suggestedPrice, discountPercent: disc, badge: "", highlighted: false, active: true, sortOrder: 0, _priceManuallySet: false });
+              setBundleForm({ name: "", bitesAmount: amt, price: suggestedPrice, discountPercent: disc, badge: "", highlighted: false, active: true, sortOrder: 0, stripePriceId: "", _priceManuallySet: false });
             }}
           >
             + Nuevo bundle
@@ -3020,6 +2923,24 @@ function BitesEconomySection() {
                     <input type="checkbox" checked={bundleForm.active} onChange={(e) => setBundleForm((f) => ({ ...f, active: e.target.checked }))} />
                     Activo
                   </label>
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3, fontWeight: 600 }}>
+                    💳 Stripe Price ID
+                  </label>
+                  <input
+                    className="kitchen-input"
+                    style={{
+                      fontSize: 13, padding: "4px 8px", width: "100%", fontFamily: "monospace",
+                      borderColor: bundleForm.stripePriceId && !bundleForm.stripePriceId.startsWith("price_") ? "#ef4444" : undefined
+                    }}
+                    value={bundleForm.stripePriceId || ""}
+                    onChange={(e) => setBundleForm((f) => ({ ...f, stripePriceId: e.target.value }))}
+                    placeholder="price_1abc... (opcional)"
+                  />
+                  {bundleForm.stripePriceId && !bundleForm.stripePriceId.startsWith("price_") && (
+                    <span style={{ fontSize: 11, color: "#dc2626" }}>Debe comenzar con price_</span>
+                  )}
                 </div>
                 {bundleAmt > 0 && (
                   <div style={{ gridColumn: "1 / -1", background: "#fff", border: "1px solid #e0e7ff", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#374151", display: "flex", gap: 16, flexWrap: "wrap" }}>
