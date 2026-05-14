@@ -6,6 +6,7 @@ import { apiRequest } from "../api.js";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import SettingsSharePanel from "../components/SettingsSharePanel.jsx";
 import PushNotificationsPanel from "../components/PushNotificationsPanel.jsx";
+import { PwaInstallSettingsBlock } from "../components/PwaInstallPrompt.jsx";
 import { useActiveWeek } from "../weekContext.jsx";
 import {
   buildLicenseState,
@@ -1174,6 +1175,7 @@ export default function SettingsPage() {
         )}
       </div>
       <PushNotificationsPanel refreshKey={user?.id || ""} />
+      <PwaInstallSettingsBlock />
     </div>
   );
 

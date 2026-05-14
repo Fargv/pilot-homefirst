@@ -59,7 +59,10 @@
       "Bash(xargs grep -l \"export\")",
       "Bash(npx --yes lsport 3000)",
       "Bash(findstr -i \"dev\\\\|start\\\\|vite\\\\|port\")",
-      "mcp__Claude_in_Chrome__list_connected_browsers"
+      "mcp__Claude_in_Chrome__list_connected_browsers",
+      "Bash(Get-ChildItem -Path . -Depth 1 -Force)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "PowerShell(ls -R \"C:\\\\APPS\\\\pilot-homefirst\" -Depth 2)"
     ]
   }
 }

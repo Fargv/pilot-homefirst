@@ -21,6 +21,7 @@ import CatalogPage from "./kitchen/pages/CatalogPage.jsx";
 import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
 import DevEnvironmentBanner from "./components/DevEnvironmentBanner.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
+import PwaInstallPrompt from "./kitchen/components/PwaInstallPrompt.jsx";
 import { AppLoadingScreen } from "./kitchen/components/WeekPageSkeleton.jsx";
 import "./kitchen/kitchen.css";
 import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
@@ -80,6 +81,7 @@ function AppRoutes() {
   return (
     <ActiveWeekProvider>
       <DevEnvironmentBanner />
+      <PwaInstallPrompt />
       <BootstrapRedirect />
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
