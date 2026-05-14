@@ -2135,20 +2135,39 @@ export default function WeekPage() {
                   </div>
                 ) : null}
 
-                {/* Desktop-only: divider + "Añadir Finde" button inside the unified bar */}
-                <span className="kitchen-week-controls-divider" aria-hidden="true" />
-                <button
-                  type="button"
-                  className="kitchen-week-finde-desktop"
-                  onClick={() => setWeekendDialogOpen(true)}
-                  disabled={weekendOptionState.availableDays.length === 0}
-                  title={weekendOptionState.availableDays.length
-                    ? "Añadir sábado o domingo"
-                    : "Sábado y domingo ya añadidos esta semana"}
-                  aria-label="Añadir fin de semana a esta semana"
-                >
-                  + Finde
-                </button>
+                {/* Desktop-only: action buttons grouped at the right of the bar */}
+                <div className="kitchen-week-header-actions-right">
+                  <span className="kitchen-week-controls-divider" aria-hidden="true" />
+                  {canShowWeekRandomize ? (
+                    canUseFullWeekRandomization ? (
+                      <button
+                        type="button"
+                        className="kitchen-week-randomize-desktop"
+                        onClick={() => setWeekRandomizeConfirmOpen(true)}
+                        disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+                        title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
+                      >
+                        <DiceIcon /> Randomizar
+                      </button>
+                    ) : (
+                      <ProGateButton className="kitchen-week-randomize-desktop">
+                        <DiceIcon /> Randomizar
+                      </ProGateButton>
+                    )
+                  ) : null}
+                  <button
+                    type="button"
+                    className="kitchen-week-finde-desktop"
+                    onClick={() => setWeekendDialogOpen(true)}
+                    disabled={weekendOptionState.availableDays.length === 0}
+                    title={weekendOptionState.availableDays.length
+                      ? "Añadir sábado o domingo"
+                      : "Sábado y domingo ya añadidos esta semana"}
+                    aria-label="Añadir fin de semana a esta semana"
+                  >
+                    + Finde
+                  </button>
+                </div>
 
               </div>
               {weekNotice ? (
