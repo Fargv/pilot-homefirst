@@ -560,26 +560,38 @@ router.post("/dev/apply-latest-subscription", requireDevTestEntitlements, requir
       householdId: attempt.householdId
     });
 
-    const result = await applyDevSubscriptionPlanToHousehold(attempt);
-
+    // Apply directly — same logic as the webhook path, no complex gate
     const household = await Household.findById(effectiveHouseholdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "Household no encontrado." });
+    }
 
-    console.log("[payments][dev] apply-latest-subscription: result", {
-      applied: result.applied,
-      reason: result.reason || null,
-      newPlan: household?.subscriptionPlan,
-      isPro: household?.isPro,
-      subscriptionStatus: household?.subscriptionStatus
+    const oldPlan = household.subscriptionPlan;
+    applyAdminSubscriptionActivation(household, normalizedPlanKey);
+    household.stripeCustomerId = attempt.stripeCustomerId || household.stripeCustomerId || "";
+    household.stripeSubscriptionId = attempt.stripeSubscriptionId || household.stripeSubscriptionId || "";
+    household.paymentProvider = "stripe-test";
+    household.paymentMode = "test";
+    household.planUpdatedAt = new Date();
+    household.planUpdatedByPaymentAttemptId = attempt._id.toString();
+    await household.save();
+
+    console.log("[payments][dev] apply-latest-subscription: ==== SUBSCRIPTION ACTIVATED ====", {
+      householdId: household._id.toString(),
+      oldPlan,
+      newPlan: household.subscriptionPlan,
+      subscriptionStatus: household.subscriptionStatus,
+      isPro: household.isPro,
+      planKey: normalizedPlanKey
     });
 
     return res.json({
       ok: true,
-      applied: result.applied,
-      reason: result.reason || null,
-      household: household ? {
+      applied: oldPlan !== household.subscriptionPlan,
+      household: {
         id: household._id.toString(),
         ...buildHouseholdSubscriptionResponse(household)
-      } : null
+      }
     });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
@@ -671,15 +683,57 @@ async function handleCheckoutCompleted(session) {
   }
 
   if (attempt.type === "subscription") {
-    console.log("[payments][webhook] Dispatching subscription entitlement", {
+    // Apply subscription directly — same pattern as packs. The webhook signature has
+    // already been verified by Stripe, so no extra env-var gate is needed here.
+    // For test attempts, require allowTestEntitlements (same guard packs use).
+    const isTestAttempt = attempt.mode === "test";
+    const planKey = normalizeSubscriptionPlan(attempt.planKey);
+    const isValidPlan = planKey === "pro" || planKey === "premium";
+
+    console.log("[payments][webhook] checkout.session.completed — subscription", {
       attemptId: attempt._id.toString(),
-      planKey: attempt.planKey,
-      mode: attempt.mode,
-      envPaymentsEnabled: config.stripe.paymentsEnabled,
-      envStripeMode: config.stripe.mode,
-      envAllowTestEntitlements: config.stripe.allowTestEntitlements
+      planKey,
+      originalPlanKey: attempt.planKey,
+      isValidPlan,
+      isTestAttempt,
+      paymentsEnabled: config.stripe.paymentsEnabled,
+      allowTestEntitlements: config.stripe.allowTestEntitlements,
+      householdId: attempt.householdId
     });
-    await applyDevSubscriptionPlanToHousehold(attempt);
+
+    if (!config.stripe.paymentsEnabled) {
+      console.warn("[payments][webhook] subscription entitlement skipped — PAYMENTS_ENABLED is not true");
+    } else if (isTestAttempt && !config.stripe.allowTestEntitlements) {
+      console.warn("[payments][webhook] subscription entitlement skipped — ALLOW_TEST_PAYMENT_ENTITLEMENTS is not true");
+    } else if (!isValidPlan) {
+      console.warn("[payments][webhook] subscription entitlement skipped — planKey not pro/premium", { planKey, raw: attempt.planKey });
+    } else if (!attempt.householdId || !mongoose.isValidObjectId(String(attempt.householdId))) {
+      console.warn("[payments][webhook] subscription entitlement skipped — invalid householdId", { householdId: attempt.householdId });
+    } else {
+      const household = await Household.findById(attempt.householdId);
+      if (!household) {
+        console.error("[payments][webhook] subscription entitlement failed — household not found", { householdId: attempt.householdId });
+      } else {
+        const oldPlan = household.subscriptionPlan;
+        applyAdminSubscriptionActivation(household, planKey);
+        household.stripeCustomerId = attempt.stripeCustomerId || household.stripeCustomerId || "";
+        household.stripeSubscriptionId = attempt.stripeSubscriptionId || household.stripeSubscriptionId || "";
+        household.paymentProvider = isTestAttempt ? "stripe-test" : "stripe";
+        household.paymentMode = attempt.mode;
+        household.planUpdatedAt = new Date();
+        household.planUpdatedByPaymentAttemptId = attempt._id.toString();
+        await household.save();
+        console.log("[payments][webhook] ==== SUBSCRIPTION ACTIVATED ====", {
+          householdId: household._id.toString(),
+          oldPlan,
+          newPlan: household.subscriptionPlan,
+          subscriptionStatus: household.subscriptionStatus,
+          isPro: household.isPro,
+          planKey,
+          mode: attempt.mode
+        });
+      }
+    }
   } else if (attempt.type === "pack") {
     await applyPackEntitlementFromAttempt(attempt, session);
   } else if (attempt.type === "bites") {
