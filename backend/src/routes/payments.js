@@ -495,10 +495,11 @@ router.post("/dev/change-plan", requireDevTestEntitlements, requireAuth, async (
 });
 
 // ─── POST /api/payments/dev/apply-latest-subscription ────────────────────────
-// DEV-only fallback. If the webhook applied the entitlement but the plan didn't
-// appear to update (e.g. due to polling timing), the frontend calls this after
-// the success page polls fail. Re-applies the latest completed subscription
-// PurchaseAttempt for the current household.
+// DEV-only fallback. Called from PaymentSuccessPage when polling exhausts without
+// detecting an upgrade. Works even if the Stripe webhook never reached this server
+// (common in Render/tunnel setups where webhook delivery is unreliable).
+// Finds the latest test subscription attempt (any status), marks it completed if
+// needed, and applies the entitlement.
 
 router.post("/dev/apply-latest-subscription", requireDevTestEntitlements, requireAuth, async (req, res) => {
   try {
@@ -512,19 +513,43 @@ router.post("/dev/apply-latest-subscription", requireDevTestEntitlements, requir
       envAllowTestEntitlements: config.stripe.allowTestEntitlements
     });
 
+    // Find the most recent test subscription attempt regardless of status.
+    // The webhook may not have fired (Render endpoint unreachable, tunnel issues, etc.)
+    // so we cannot require status === "completed".
     const attempt = await PurchaseAttempt.findOne({
       householdId: effectiveHouseholdId,
       type: "subscription",
-      status: "completed",
       mode: "test"
-    }).sort({ updatedAt: -1 });
+    }).sort({ createdAt: -1 });
 
     if (!attempt) {
       return res.status(404).json({
         ok: false,
-        code: "NO_COMPLETED_ATTEMPT",
-        error: "No se encontró ningún intento de suscripción completado para este hogar en modo test."
+        code: "NO_COMPLETED_SUBSCRIPTION_ATTEMPT",
+        error: "No se encontró ningún intento de suscripción en modo test para este hogar."
       });
+    }
+
+    // Validate it has a usable planKey before touching anything
+    const normalizedPlanKey = String(attempt.planKey || "").toLowerCase();
+    if (!["pro", "premium"].includes(normalizedPlanKey)) {
+      return res.status(422).json({
+        ok: false,
+        code: "INVALID_PLAN_KEY",
+        error: `planKey "${attempt.planKey}" no es válido (debe ser 'pro' o 'premium').`
+      });
+    }
+
+    // If the webhook never fired, the attempt is still "created". Mark it completed
+    // here so applyDevSubscriptionPlanToHousehold's gate passes.
+    if (attempt.status !== "completed") {
+      console.log("[payments][dev] apply-latest-subscription: attempt not completed — marking completed now (webhook likely missed)", {
+        attemptId: attempt._id.toString(),
+        previousStatus: attempt.status,
+        planKey: attempt.planKey
+      });
+      attempt.status = "completed";
+      await attempt.save();
     }
 
     console.log("[payments][dev] apply-latest-subscription: attempt found", {
@@ -688,10 +713,19 @@ async function handleCheckoutStatusUpdate(session, status) {
   });
 }
 
-function resolvePlanFromPriceId(priceId) {
+async function resolvePlanFromPriceId(priceId) {
   if (!priceId) return null;
+  // Check env vars first (fast path)
   if (config.stripe.proPriceId && priceId === config.stripe.proPriceId) return "pro";
   if (config.stripe.premiumPriceId && priceId === config.stripe.premiumPriceId) return "premium";
+  // Fall back to DB-stored price IDs (PlansConfig admin panel)
+  try {
+    const plansConfig = await getPlansConfig();
+    if (plansConfig.pro?.stripePriceId && priceId === plansConfig.pro.stripePriceId) return "pro";
+    if (plansConfig.premium?.stripePriceId && priceId === plansConfig.premium.stripePriceId) return "premium";
+  } catch (err) {
+    console.warn("[payments][webhook] resolvePlanFromPriceId DB lookup failed", { error: err.message });
+  }
   return null;
 }
 
@@ -756,10 +790,10 @@ async function handleSubscriptionEvent(subscription, eventType) {
     return;
   }
 
-  // created or updated — resolve plan from price IDs
+  // created or updated — resolve plan from price IDs (env vars + DB PlansConfig)
   const items = subscription.items?.data || [];
   const priceId = items[0]?.price?.id || "";
-  const planKey = resolvePlanFromPriceId(priceId);
+  const planKey = await resolvePlanFromPriceId(priceId);
 
   if (!planKey) {
     console.warn("[payments][webhook] Could not resolve planKey from subscription price", {
@@ -858,10 +892,13 @@ export async function stripeWebhookHandler(req, res) {
     return res.status(400).json({ error: `Webhook signature invalid: ${err.message}` });
   }
 
-  console.log("[payments][webhook] Event received", {
+  console.log("==== STRIPE WEBHOOK RECEIVED ====", {
     type: event.type,
     id: event.id,
-    mode: config.stripe.mode
+    livemode: event.livemode,
+    mode: config.stripe.mode,
+    paymentsEnabled: config.stripe.paymentsEnabled,
+    allowTestEntitlements: config.stripe.allowTestEntitlements
   });
 
   try {

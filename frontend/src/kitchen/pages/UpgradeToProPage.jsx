@@ -127,13 +127,16 @@ export default function UpgradeToProPage() {
     setSuccess("");
 
     // ── Stripe Checkout path ────────────────────────────────────────────────
-    if (STRIPE_ENABLED && PRICE_IDS[planId]) {
+    // Send planKey so the backend can resolve the price ID from DB (PlansConfig)
+    // even when VITE_STRIPE_*_PRICE_ID env vars are not set. stripePriceId from
+    // env is passed as a hint; the backend prefers DB-stored IDs when planKey is set.
+    if (STRIPE_ENABLED) {
       try {
         const { url } = await createCheckoutSession({
           type: "subscription",
           planKey: planId,
           targetName: `Plan ${planId}`,
-          stripePriceId: PRICE_IDS[planId]
+          stripePriceId: PRICE_IDS[planId] || ""
         });
         window.location.href = url;
       } catch (checkoutError) {

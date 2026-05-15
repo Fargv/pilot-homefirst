@@ -8,9 +8,9 @@ const isTestMode = import.meta.env.VITE_PAYMENTS_MODE === "test";
 const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
 
 const PAID_PLANS = new Set(["pro", "premium"]);
-const POLL_DELAY_MS = 2000;
+const POLL_DELAY_MS = 1500;
 const POLL_INTERVAL_MS = 2500;
-const POLL_MAX_ATTEMPTS = 1;
+const POLL_MAX_ATTEMPTS = 3;
 
 function PlanLabel({ plan }) {
   if (plan === "pro") return <strong>Pro</strong>;
@@ -29,13 +29,18 @@ export default function PaymentSuccessPage() {
   const [checking, setChecking] = useState(!isPack);
   const [activePlan, setActivePlan] = useState(null);
   const [planUpdated, setPlanUpdated] = useState(false);
-  const [devFallbackUsed, setDevFallbackUsed] = useState(false);
+  const [devFallbackError, setDevFallbackError] = useState("");
+  // Use refs for poll state so mutations never re-trigger the effect
   const pollCountRef = useRef(0);
+  const devFallbackUsedRef = useRef(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (isPack) return; // packs: no polling needed, webhook handles entitlement asynchronously
+    if (isPack) return;
 
+    // Reset poll state on each mount (handles StrictMode double-invoke safely)
+    pollCountRef.current = 0;
+    devFallbackUsedRef.current = false;
     let cancelled = false;
 
     const checkPlan = async () => {
@@ -60,12 +65,12 @@ export default function PaymentSuccessPage() {
         }
 
         // Polls exhausted. In DEV test mode, try the fallback endpoint once.
-        if (isTestMode && STRIPE_ENABLED && !devFallbackUsed) {
-          setDevFallbackUsed(true);
+        // Works even if the Stripe webhook never reached the server — the
+        // fallback marks the attempt completed and applies the entitlement.
+        if (isTestMode && STRIPE_ENABLED && !devFallbackUsedRef.current) {
+          devFallbackUsedRef.current = true;
           try {
-            if (import.meta.env.DEV) {
-              console.log("[PaymentSuccess] Polls exhausted — trying DEV fallback apply-latest-subscription");
-            }
+            console.log("[PaymentSuccess] Polls exhausted — calling DEV apply-latest-subscription");
             const fallbackData = await devApplyLatestSubscription();
             if (cancelled) return;
             const fallbackPlan = String(fallbackData?.household?.subscriptionPlan || "basic").toLowerCase();
@@ -77,14 +82,19 @@ export default function PaymentSuccessPage() {
               return;
             }
           } catch (fallbackErr) {
-            if (import.meta.env.DEV) {
-              console.warn("[PaymentSuccess] DEV fallback failed", fallbackErr?.message);
+            if (!cancelled) {
+              const msg = fallbackErr?.body?.code === "NO_COMPLETED_SUBSCRIPTION_ATTEMPT"
+                ? "No se encontró intento de suscripción. ¿Completaste el checkout de Stripe?"
+                : fallbackErr?.message || "Error en fallback DEV.";
+              setDevFallbackError(msg);
+              console.warn("[PaymentSuccess] DEV fallback failed", fallbackErr?.message, fallbackErr?.body);
             }
           }
         }
 
-        setChecking(false);
-        refreshUser().catch(() => {});
+        // Stop checking — do NOT call refreshUser() here as it triggers a
+        // loading flash in the layout when no upgrade happened.
+        if (!cancelled) setChecking(false);
       } catch {
         if (!cancelled) setChecking(false);
       }
@@ -96,7 +106,7 @@ export default function PaymentSuccessPage() {
       cancelled = true;
       clearTimeout(timerRef.current);
     };
-  }, [isPack, refreshUser, devFallbackUsed]);
+  }, [isPack, refreshUser]);
 
   const title = isTestMode ? "Pago de prueba completado" : "Pago completado";
 
@@ -109,6 +119,8 @@ export default function PaymentSuccessPage() {
     bodyText = "Verificando tu plan… un momento.";
   } else if (planUpdated && activePlan) {
     bodyText = null; // rendered inline with PlanLabel
+  } else if (devFallbackError) {
+    bodyText = `Pago registrado, pero no se pudo activar la licencia automáticamente. ${devFallbackError}`;
   } else {
     bodyText = "Pago registrado. La licencia puede tardar unos segundos en actualizarse. Vuelve a la configuración para comprobar el estado.";
   }
