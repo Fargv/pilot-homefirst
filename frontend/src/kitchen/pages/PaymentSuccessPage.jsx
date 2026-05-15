@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
-import { apiRequest } from "../api.js";
+import { apiRequest, devApplyLatestSubscription } from "../api.js";
 import { useAuth } from "../auth.jsx";
 
 const isTestMode = import.meta.env.VITE_PAYMENTS_MODE === "test";
+const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
 
 const PAID_PLANS = new Set(["pro", "premium"]);
 const POLL_DELAY_MS = 2000;
@@ -28,6 +29,7 @@ export default function PaymentSuccessPage() {
   const [checking, setChecking] = useState(!isPack);
   const [activePlan, setActivePlan] = useState(null);
   const [planUpdated, setPlanUpdated] = useState(false);
+  const [devFallbackUsed, setDevFallbackUsed] = useState(false);
   const pollCountRef = useRef(0);
   const timerRef = useRef(null);
 
@@ -51,12 +53,38 @@ export default function PaymentSuccessPage() {
         }
 
         pollCountRef.current += 1;
+
         if (pollCountRef.current < POLL_MAX_ATTEMPTS) {
           timerRef.current = setTimeout(checkPlan, POLL_INTERVAL_MS);
-        } else {
-          setChecking(false);
-          refreshUser().catch(() => {});
+          return;
         }
+
+        // Polls exhausted. In DEV test mode, try the fallback endpoint once.
+        if (isTestMode && STRIPE_ENABLED && !devFallbackUsed) {
+          setDevFallbackUsed(true);
+          try {
+            if (import.meta.env.DEV) {
+              console.log("[PaymentSuccess] Polls exhausted — trying DEV fallback apply-latest-subscription");
+            }
+            const fallbackData = await devApplyLatestSubscription();
+            if (cancelled) return;
+            const fallbackPlan = String(fallbackData?.household?.subscriptionPlan || "basic").toLowerCase();
+            setActivePlan(fallbackPlan);
+            if (PAID_PLANS.has(fallbackPlan)) {
+              setPlanUpdated(true);
+              setChecking(false);
+              refreshUser().catch(() => {});
+              return;
+            }
+          } catch (fallbackErr) {
+            if (import.meta.env.DEV) {
+              console.warn("[PaymentSuccess] DEV fallback failed", fallbackErr?.message);
+            }
+          }
+        }
+
+        setChecking(false);
+        refreshUser().catch(() => {});
       } catch {
         if (!cancelled) setChecking(false);
       }
@@ -68,7 +96,7 @@ export default function PaymentSuccessPage() {
       cancelled = true;
       clearTimeout(timerRef.current);
     };
-  }, [isPack, refreshUser]);
+  }, [isPack, refreshUser, devFallbackUsed]);
 
   const title = isTestMode ? "Pago de prueba completado" : "Pago completado";
 

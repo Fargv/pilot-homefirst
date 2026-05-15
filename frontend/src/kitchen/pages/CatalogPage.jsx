@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest, createCheckoutSession } from "../api.js";
+
+const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
+const IS_DEV = import.meta.env.DEV;
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth.jsx";
 import { canUseDietRandomization } from "../subscription.js";
@@ -442,6 +445,19 @@ function PackCard({ pack, onAction, onBuyBites, onUninstall }) {
               </div>
             );
           })()}
+
+          {IS_DEV && (entitlement.isPaid || entitlement.stripePriceId) && (
+            <details style={{ marginTop: 8, fontSize: 11, color: "#6b7280", borderTop: "1px dashed #e0e7ff", paddingTop: 6 }}>
+              <summary style={{ cursor: "pointer", fontWeight: 600, color: "#7c3aed" }}>💳 DEV: payment config</summary>
+              <div style={{ marginTop: 4, display: "grid", gap: 2 }}>
+                <div>isPaid: <strong>{String(entitlement.isPaid)}</strong></div>
+                <div>paymentMode: <strong>{entitlement.paymentMode || "none"}</strong></div>
+                <div>stripePriceId: <strong>{entitlement.stripePriceId ? "✓ set" : "✗ missing"}</strong></div>
+                <div>canBuyWithStripe: <strong style={{ color: entitlement.canBuyWithStripe ? "#16a34a" : "#b91c1c" }}>{String(entitlement.canBuyWithStripe)}</strong></div>
+                <div>VITE_STRIPE_ENABLED: <strong>{String(STRIPE_ENABLED)}</strong></div>
+              </div>
+            </details>
+          )}
         </div>
       </div>
     </div>
@@ -586,6 +602,10 @@ export default function CatalogPage() {
     if (paymentMethod === "direct") {
       // If pack has Stripe checkout configured, redirect to Stripe
       if (pack.entitlement?.canBuyWithStripe) {
+        if (!STRIPE_ENABLED) {
+          showToast("Los pagos no están activados en este entorno (VITE_STRIPE_ENABLED).", "info");
+          return;
+        }
         try {
           const result = await createCheckoutSession({
             type: "pack",
@@ -598,14 +618,30 @@ export default function CatalogPage() {
         } catch (err) {
           if (err.body?.code === "PACK_ALREADY_OWNED") {
             showToast("Ya tienes este pack activo.", "info");
+          } else if (err.body?.code === "PAYMENTS_DISABLED") {
+            showToast("Los pagos no están activados en el servidor. Activa PAYMENTS_ENABLED=true.", "error");
           } else {
             showToast(err.message || "No se pudo iniciar el pago.", "error");
           }
         }
         return;
       }
-      // Legacy: Stripe not yet connected
-      showToast("La pasarela de pago todavía no está conectada.", "info");
+
+      // canBuyWithStripe is false — show a specific reason in DEV
+      const e = pack.entitlement || {};
+      if (IS_DEV) {
+        if (!e.isPaid) {
+          showToast("[DEV] Pack no marcado como de pago (isPaid=false). Actívalo en el panel admin.", "error");
+        } else if (e.paymentMode !== "stripe") {
+          showToast(`[DEV] Modo de pago es "${e.paymentMode}", debe ser "stripe". Cámbialo en el panel admin.`, "error");
+        } else if (!e.stripePriceId) {
+          showToast("[DEV] Falta el Stripe Price ID. Añádelo en el panel admin.", "error");
+        } else {
+          showToast("[DEV] La pasarela de pago está desactivada en el servidor (PAYMENTS_ENABLED).", "error");
+        }
+      } else {
+        showToast("La pasarela de pago todavía no está conectada.", "info");
+      }
       return;
     }
 

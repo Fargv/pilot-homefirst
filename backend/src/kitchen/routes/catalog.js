@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { config } from "../../config.js";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { Household } from "../models/Household.js";
@@ -429,6 +430,19 @@ router.get("/packs", requireAuth, async (req, res) => {
       const canPayDirect = !owned && !isFree && !canClaimWithPlan && hasDirectPrice;
       const requiresPurchase = !isFree && !owned && !canClaimWithPlan && !canUnlockWithBites;
 
+      // DEV verbose: log canBuyWithStripe decision for any pack that has payment config
+      if (pack.isPaid || pack.stripePriceId) {
+        console.log("[catalog][dev] canBuyWithStripe calculation", {
+          slug: pack.slug,
+          isPaid: Boolean(pack.isPaid),
+          paymentMode: pack.paymentMode,
+          hasStripePriceId: Boolean(pack.stripePriceId),
+          owned,
+          paymentsEnabled: config.stripe.paymentsEnabled,
+          canBuyWithStripe: config.stripe.paymentsEnabled && !owned && Boolean(pack.isPaid) && pack.paymentMode === "stripe" && Boolean(pack.stripePriceId)
+        });
+      }
+
       return {
         id: pack._id,
         slug: pack.slug,
@@ -460,7 +474,12 @@ router.get("/packs", requireAuth, async (req, res) => {
           needsBitesPurchase,
           canPayDirect,
           requiresPurchase,
-          canBuyWithStripe: !owned && Boolean(pack.isPaid) && pack.paymentMode === "stripe" && Boolean(pack.stripePriceId),
+          // canBuyWithStripe: all four conditions must be met
+          canBuyWithStripe: config.stripe.paymentsEnabled && !owned && Boolean(pack.isPaid) && pack.paymentMode === "stripe" && Boolean(pack.stripePriceId),
+          // Expose raw payment config fields so the frontend can distinguish
+          // "not configured" from "payments disabled" and show the right message
+          isPaid: Boolean(pack.isPaid),
+          paymentMode: pack.paymentMode || "none",
           stripePriceId: pack.stripePriceId || null,
           priceAmount: pack.priceAmount ?? null,
           currency: pack.currency || "eur",

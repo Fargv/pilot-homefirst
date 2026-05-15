@@ -451,12 +451,94 @@ router.post("/dev/change-plan", requireDevTestEntitlements, requireAuth, async (
   }
 });
 
+// ─── POST /api/payments/dev/apply-latest-subscription ────────────────────────
+// DEV-only fallback. If the webhook applied the entitlement but the plan didn't
+// appear to update (e.g. due to polling timing), the frontend calls this after
+// the success page polls fail. Re-applies the latest completed subscription
+// PurchaseAttempt for the current household.
+
+router.post("/dev/apply-latest-subscription", requireDevTestEntitlements, requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+
+    console.log("[payments][dev] apply-latest-subscription called", {
+      householdId: effectiveHouseholdId,
+      userId: req.user?.id || null,
+      envPaymentsEnabled: config.stripe.paymentsEnabled,
+      envStripeMode: config.stripe.mode,
+      envAllowTestEntitlements: config.stripe.allowTestEntitlements
+    });
+
+    const attempt = await PurchaseAttempt.findOne({
+      householdId: effectiveHouseholdId,
+      type: "subscription",
+      status: "completed",
+      mode: "test"
+    }).sort({ updatedAt: -1 });
+
+    if (!attempt) {
+      return res.status(404).json({
+        ok: false,
+        code: "NO_COMPLETED_ATTEMPT",
+        error: "No se encontró ningún intento de suscripción completado para este hogar en modo test."
+      });
+    }
+
+    console.log("[payments][dev] apply-latest-subscription: attempt found", {
+      attemptId: attempt._id.toString(),
+      planKey: attempt.planKey,
+      mode: attempt.mode,
+      status: attempt.status,
+      householdId: attempt.householdId
+    });
+
+    const result = await applyTestSubscriptionEntitlementFromAttempt(attempt);
+
+    const household = await Household.findById(effectiveHouseholdId);
+
+    console.log("[payments][dev] apply-latest-subscription: result", {
+      applied: result.applied,
+      reason: result.reason || null,
+      newPlan: household?.subscriptionPlan,
+      isPro: household?.isPro,
+      subscriptionStatus: household?.subscriptionStatus
+    });
+
+    return res.json({
+      ok: true,
+      applied: result.applied,
+      reason: result.reason || null,
+      household: household ? {
+        id: household._id.toString(),
+        ...buildHouseholdSubscriptionResponse(household)
+      } : null
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    console.error("[payments][dev] apply-latest-subscription error", {
+      error: error?.message,
+      stack: error?.stack
+    });
+    return res.status(500).json({ ok: false, error: "No se pudo aplicar la suscripción." });
+  }
+});
+
 // ─── Webhook handler ──────────────────────────────────────────────────────────
 // Exported separately — needs raw body, registered in index.js before express.json()
 
 async function handleCheckoutCompleted(session) {
   const attemptId = session.metadata?.purchaseAttemptId;
   const sessionId = session.id;
+
+  console.log("[payments][webhook] handleCheckoutCompleted start", {
+    sessionId,
+    attemptId: attemptId || null,
+    type: session.metadata?.type || null,
+    planKey: session.metadata?.planKey || null,
+    householdId: session.metadata?.householdId || null,
+    customer: session.customer || null
+  });
 
   const attempt = attemptId
     ? await PurchaseAttempt.findById(attemptId)
@@ -488,10 +570,47 @@ async function handleCheckoutCompleted(session) {
     householdId: attempt.householdId,
     amountTotal: attempt.amountTotal,
     currency: attempt.currency,
-    mode: attempt.mode
+    mode: attempt.mode,
+    stripeCustomerId: attempt.stripeCustomerId
   });
 
+  // Always store stripeCustomerId on the household immediately, even if the
+  // entitlement gate is blocked. This ensures the customer.subscription.created
+  // event can look up the household by stripeCustomerId regardless of env flags.
+  if (attempt.stripeCustomerId && attempt.householdId && mongoose.isValidObjectId(String(attempt.householdId))) {
+    try {
+      const updated = await Household.findByIdAndUpdate(
+        attempt.householdId,
+        { $set: { stripeCustomerId: attempt.stripeCustomerId } },
+        { new: false }
+      );
+      if (updated) {
+        console.log("[payments][webhook] stripeCustomerId stored on household (pre-entitlement)", {
+          householdId: attempt.householdId,
+          stripeCustomerId: attempt.stripeCustomerId
+        });
+      } else {
+        console.warn("[payments][webhook] Household not found when storing stripeCustomerId", {
+          householdId: attempt.householdId
+        });
+      }
+    } catch (err) {
+      console.error("[payments][webhook] Failed to store stripeCustomerId on household", {
+        householdId: attempt.householdId,
+        error: err.message
+      });
+    }
+  }
+
   if (attempt.type === "subscription") {
+    console.log("[payments][webhook] Dispatching subscription entitlement", {
+      attemptId: attempt._id.toString(),
+      planKey: attempt.planKey,
+      mode: attempt.mode,
+      envPaymentsEnabled: config.stripe.paymentsEnabled,
+      envStripeMode: config.stripe.mode,
+      envAllowTestEntitlements: config.stripe.allowTestEntitlements
+    });
     await applyTestSubscriptionEntitlementFromAttempt(attempt);
   } else if (attempt.type === "pack") {
     await applyPackEntitlementFromAttempt(attempt, session);
@@ -541,13 +660,41 @@ async function handleSubscriptionEvent(subscription, eventType) {
     return;
   }
 
-  const household = await Household.findOne({ stripeCustomerId: customerId });
+  let household = await Household.findOne({ stripeCustomerId: customerId });
+
   if (!household) {
-    console.warn("[payments][webhook] Household not found for stripeCustomerId", {
+    // Fallback: look up via the most recent subscription PurchaseAttempt for this Stripe customer.
+    // This happens when checkout.session.completed couldn't store stripeCustomerId in time,
+    // or when the household was never linked (first subscription, DEV scenarios).
+    console.warn("[payments][webhook] Household not found by stripeCustomerId — trying PurchaseAttempt fallback", {
       customerId,
       eventType
     });
-    return;
+    const fallbackAttempt = await PurchaseAttempt.findOne({
+      stripeCustomerId: customerId,
+      type: "subscription"
+    }).sort({ updatedAt: -1 });
+
+    if (fallbackAttempt?.householdId && mongoose.isValidObjectId(String(fallbackAttempt.householdId))) {
+      household = await Household.findById(fallbackAttempt.householdId);
+      if (household) {
+        console.log("[payments][webhook] Household found via PurchaseAttempt fallback", {
+          householdId: household._id.toString(),
+          attemptId: fallbackAttempt._id.toString(),
+          customerId
+        });
+        // Store stripeCustomerId so future events can find it directly
+        household.stripeCustomerId = customerId;
+      }
+    }
+
+    if (!household) {
+      console.warn("[payments][webhook] Household not found for stripeCustomerId (both paths failed)", {
+        customerId,
+        eventType
+      });
+      return;
+    }
   }
 
   if (eventType === "customer.subscription.deleted") {

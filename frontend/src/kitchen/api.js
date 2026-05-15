@@ -183,3 +183,12 @@ export function devChangePlan(planKey) {
     body: JSON.stringify({ planKey })
   });
 }
+
+/**
+ * DEV/test only — re-apply the latest completed subscription PurchaseAttempt for
+ * the current household. Call this from PaymentSuccessPage if polling fails.
+ * Requires STRIPE_MODE=test and ALLOW_TEST_PAYMENT_ENTITLEMENTS=true on the backend.
+ */
+export function devApplyLatestSubscription() {
+  return apiRequest("/api/payments/dev/apply-latest-subscription", { method: "POST" });
+}
