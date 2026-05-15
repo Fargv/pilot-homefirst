@@ -924,7 +924,19 @@ async function handleChargeRefunded(charge) {
 }
 
 export async function stripeWebhookHandler(req, res) {
+  // Log immediately before any guard — this fires even if paymentsEnabled=false or sig missing.
+  // If this log never appears in Render, the Stripe webhook URL is wrong.
+  console.log("==== WEBHOOK HIT ====", {
+    path: req.path,
+    method: req.method,
+    hasSig: Boolean(req.headers["stripe-signature"]),
+    contentType: req.headers["content-type"] || "",
+    paymentsEnabled: config.stripe.paymentsEnabled,
+    hasWebhookSecret: Boolean(config.stripe.webhookSecret)
+  });
+
   if (!config.stripe.paymentsEnabled) {
+    console.warn("[payments][webhook] BLOCKED — PAYMENTS_ENABLED is not true");
     return res.status(403).json({ error: "Payments not enabled." });
   }
   if (!config.stripe.webhookSecret) {
@@ -934,6 +946,7 @@ export async function stripeWebhookHandler(req, res) {
 
   const sig = req.headers["stripe-signature"];
   if (!sig) {
+    console.error("[payments][webhook] Missing stripe-signature header");
     return res.status(400).json({ error: "Missing stripe-signature header." });
   }
 
@@ -942,7 +955,7 @@ export async function stripeWebhookHandler(req, res) {
     const stripe = new Stripe(config.stripe.secretKey, { apiVersion: STRIPE_API_VERSION });
     event = stripe.webhooks.constructEvent(req.body, sig, config.stripe.webhookSecret);
   } catch (err) {
-    console.error("[payments][webhook] Signature verification failed", { error: err.message });
+    console.error("[payments][webhook] Signature verification FAILED — check STRIPE_WEBHOOK_SECRET matches Stripe dashboard", { error: err.message });
     return res.status(400).json({ error: `Webhook signature invalid: ${err.message}` });
   }
 
