@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiRequest, buildApiUrl, getToken } from "../api.js";
+import { apiRequest, buildApiUrl, getToken, getPlansAdminConfig, savePlansAdminConfig } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -3165,6 +3165,163 @@ function BitesEconomySection() {
   );
 }
 
+// ─── PlansSection ─────────────────────────────────────────────────────────────
+
+const PLAN_KEYS = ["basic", "pro", "premium"];
+const PLAN_DISPLAY = { basic: "Basic", pro: "Pro", premium: "Premium" };
+
+const fieldStyle = {
+  width: "100%", padding: "6px 10px", borderRadius: 6,
+  border: "1px solid #e2e8f0", fontSize: 13, boxSizing: "border-box"
+};
+
+function PlansSection() {
+  const [cfg, setCfg] = useState(null);
+  const [env, setEnv] = useState(null);
+  const [form, setForm] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await getPlansAdminConfig();
+        setCfg(data.config);
+        setEnv(data.env);
+        setForm({
+          basic: { ...data.config.basic },
+          pro: { ...data.config.pro },
+          premium: { ...data.config.premium }
+        });
+      } catch (err) {
+        setError(err.message || "Error cargando configuración de planes.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      await savePlansAdminConfig(form);
+      setSuccess("Configuración guardada.");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err.message || "Error guardando configuración.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const setField = (planKey, field, value) => {
+    setForm((prev) => ({ ...prev, [planKey]: { ...prev[planKey], [field]: value } }));
+  };
+
+  if (loading) return <div style={{ padding: 32, color: "#6366f1" }}>Cargando...</div>;
+  if (!form) return <div style={{ padding: 32, color: "#ef4444" }}>{error || "Error."}</div>;
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Planes de suscripción</h2>
+      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}>
+        Configura el precio, plataforma de pago y Price ID de Stripe para cada plan.
+      </p>
+
+      {env && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+          <span style={{ fontSize: 12, padding: "3px 10px", borderRadius: 999, background: env.paymentsEnabled ? "#dcfce7" : "#fee2e2", color: env.paymentsEnabled ? "#15803d" : "#b91c1c", fontWeight: 600 }}>
+            Pagos: {env.paymentsEnabled ? "ON" : "OFF"}
+          </span>
+          <span style={{ fontSize: 12, padding: "3px 10px", borderRadius: 999, background: "#e0e7ff", color: "#3730a3", fontWeight: 600 }}>
+            Modo: {env.stripeMode || "—"}
+          </span>
+          {env.allowTestEntitlements && (
+            <span style={{ fontSize: 12, padding: "3px 10px", borderRadius: 999, background: "#fef9c3", color: "#854d0e", fontWeight: 600 }}>
+              Test entitlements ON
+            </span>
+          )}
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
+        {PLAN_KEYS.map((planKey) => {
+          const entry = form[planKey];
+          const envPriceId = cfg?.[planKey]?.envStripePriceId || "";
+          return (
+            <div key={planKey} style={{ border: "1px solid #e2e8f0", borderRadius: 10, padding: 18, background: "#fafafa" }}>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14, color: "#312e81" }}>
+                {PLAN_DISPLAY[planKey]}
+              </div>
+
+              <label style={{ display: "block", marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 3 }}>Precio visible</div>
+                <input
+                  style={fieldStyle}
+                  value={entry.displayPrice}
+                  onChange={(e) => setField(planKey, "displayPrice", e.target.value)}
+                  placeholder="Gratis / €4.99/mes..."
+                />
+              </label>
+
+              <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={entry.isPaid}
+                  onChange={(e) => setField(planKey, "isPaid", e.target.checked)}
+                />
+                <span style={{ fontSize: 13, fontWeight: 600 }}>Plan de pago</span>
+              </label>
+
+              <label style={{ display: "block", marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 3 }}>Plataforma</div>
+                <select style={fieldStyle} value={entry.paymentMode} onChange={(e) => setField(planKey, "paymentMode", e.target.value)}>
+                  <option value="none">Ninguna</option>
+                  <option value="stripe">Stripe</option>
+                </select>
+              </label>
+
+              <label style={{ display: "block" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 3 }}>
+                  Stripe Price ID
+                  {envPriceId && <span style={{ marginLeft: 6, fontWeight: 400, color: "#9ca3af", fontFamily: "monospace", fontSize: 11 }}>env: {envPriceId}</span>}
+                </div>
+                <input
+                  style={{ ...fieldStyle, fontFamily: "monospace", borderColor: entry.stripePriceId && !entry.stripePriceId.startsWith("price_") ? "#ef4444" : "#e2e8f0" }}
+                  value={entry.stripePriceId}
+                  onChange={(e) => setField(planKey, "stripePriceId", e.target.value)}
+                  placeholder="price_1abc..."
+                />
+                {entry.stripePriceId && !entry.stripePriceId.startsWith("price_") && (
+                  <div style={{ color: "#ef4444", fontSize: 11, marginTop: 2 }}>Debe comenzar con "price_"</div>
+                )}
+              </label>
+            </div>
+          );
+        })}
+      </div>
+
+      {error && <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 8 }}>{error}</div>}
+      {success && <div style={{ color: "#16a34a", fontSize: 13, marginBottom: 8 }}>{success}</div>}
+
+      <button
+        type="button"
+        style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }}
+        disabled={saving}
+        onClick={handleSave}
+      >
+        {saving ? "Guardando..." : "Guardar planes"}
+      </button>
+    </div>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function AdminPanelPage() {
@@ -3237,7 +3394,8 @@ export default function AdminPanelPage() {
             { key: "quick", label: "Cambio rápido" },
             { key: "master", label: "Master" },
             { key: "catalog_packs", label: "Catálogo" },
-            { key: "bites_economy", label: "Bites" }
+            { key: "bites_economy", label: "Bites" },
+            { key: "plans", label: "Planes" }
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -3274,6 +3432,8 @@ export default function AdminPanelPage() {
           <CatalogPacksSection />
         ) : tab === "bites_economy" ? (
           <BitesEconomySection />
+        ) : tab === "plans" ? (
+          <PlansSection />
         ) : (
           <QuickSubscriptionPanel />
         )}

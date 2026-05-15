@@ -8,6 +8,7 @@ import { CatalogPack } from "../kitchen/models/CatalogPack.js";
 import { PackEntitlement } from "../kitchen/models/PackEntitlement.js";
 import { Household } from "../kitchen/models/Household.js";
 import { BitesConfig } from "../kitchen/models/BitesConfig.js";
+import { getPlansConfig } from "../kitchen/models/PlansConfig.js";
 import { getEffectiveHouseholdId, handleHouseholdError } from "../kitchen/householdScope.js";
 import {
   applyDevSubscriptionPlanToHousehold,
@@ -145,6 +146,23 @@ router.post("/checkout-session", requireAuth, async (req, res) => {
       resolvedPriceId = bundle.stripePriceId;
       resolvedTargetId = targetId;
       resolvedTargetName = resolvedTargetName || bundle.name;
+    }
+
+    // ── Subscription checkout: resolve price ID from DB PlansConfig ──────
+    if (type === "subscription" && resolvedPlanKey) {
+      try {
+        const plansConfig = await getPlansConfig();
+        const planEntry = plansConfig[resolvedPlanKey];
+        if (planEntry?.isPaid && planEntry?.paymentMode === "stripe" && String(planEntry?.stripePriceId || "").startsWith("price_")) {
+          resolvedPriceId = planEntry.stripePriceId;
+          console.log("[payments] Resolved subscription price ID from DB PlansConfig", {
+            planKey: resolvedPlanKey,
+            stripePriceId: resolvedPriceId
+          });
+        }
+      } catch (err) {
+        console.warn("[payments] Failed to load PlansConfig for price ID resolution", { error: err.message });
+      }
     }
 
     // ── Subscription checkout: guard against existing active subscription ─

@@ -11,6 +11,7 @@ import dishCategoryRoutes from "./routes/dishCategories.js";
 import pushRoutes from "./routes/push.js";
 import catalogRoutes from "./routes/catalog.js";
 import bitesRoutes from "./routes/bites.js";
+import plansRoutes from "./routes/plans.js";
 
 const router = express.Router();
 
@@ -26,5 +27,6 @@ router.use("/dish-categories", dishCategoryRoutes);
 router.use("/push", pushRoutes);
 router.use("/catalog", catalogRoutes);
 router.use("/bites", bitesRoutes);
+router.use("/plans", plansRoutes);
 
 export default router;

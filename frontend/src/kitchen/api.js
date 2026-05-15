@@ -192,3 +192,14 @@ export function devChangePlan(planKey) {
 export function devApplyLatestSubscription() {
   return apiRequest("/api/payments/dev/apply-latest-subscription", { method: "POST" });
 }
+
+export function getPlansAdminConfig() {
+  return apiRequest("/api/kitchen/plans/admin/config");
+}
+
+export function savePlansAdminConfig(plans) {
+  return apiRequest("/api/kitchen/plans/admin/config", {
+    method: "PUT",
+    body: JSON.stringify({ plans })
+  });
+}
