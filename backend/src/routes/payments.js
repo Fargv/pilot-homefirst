@@ -7,10 +7,12 @@ import { PurchaseAttempt } from "../kitchen/models/PurchaseAttempt.js";
 import { CatalogPack } from "../kitchen/models/CatalogPack.js";
 import { PackEntitlement } from "../kitchen/models/PackEntitlement.js";
 import { Household } from "../kitchen/models/Household.js";
+import { BitesConfig } from "../kitchen/models/BitesConfig.js";
 import { getEffectiveHouseholdId, handleHouseholdError } from "../kitchen/householdScope.js";
 import {
-  applyTestSubscriptionEntitlementFromAttempt,
-  applyPackEntitlementFromAttempt
+  applyDevSubscriptionPlanToHousehold,
+  applyPackEntitlementFromAttempt,
+  applyBitesBundleEntitlementFromAttempt
 } from "../kitchen/paymentEntitlementService.js";
 import {
   applyAdminSubscriptionActivation,
@@ -92,10 +94,10 @@ router.post("/checkout-session", requireAuth, async (req, res) => {
       const pack = await CatalogPack.findById(targetId).select(
         "isPaid stripePriceId paymentMode title status active"
       );
-      if (!pack || !pack.active) {
+      if (!pack || !pack.active || pack.status !== "published") {
         return res.status(404).json({ ok: false, error: "Pack no encontrado." });
       }
-      if (!pack.isPaid || pack.paymentMode !== "stripe" || !pack.stripePriceId) {
+      if (!pack.isPaid || pack.paymentMode !== "stripe" || !String(pack.stripePriceId || "").startsWith("price_")) {
         return res.status(400).json({
           ok: false,
           code: "PACK_NOT_FOR_SALE",
@@ -120,6 +122,29 @@ router.post("/checkout-session", requireAuth, async (req, res) => {
 
       resolvedPriceId = pack.stripePriceId;
       resolvedTargetName = resolvedTargetName || pack.title;
+    }
+
+    if (type === "bites") {
+      if (!targetId || !mongoose.isValidObjectId(targetId)) {
+        return res.status(400).json({ ok: false, error: "targetId debe ser un ObjectId vÃ¡lido para tipo 'bites'." });
+      }
+
+      const bitesConfig = await BitesConfig.findOne({ key: "bitesEconomy" });
+      const bundle = bitesConfig?.bundles?.id?.(targetId);
+      if (!bundle || !bundle.active) {
+        return res.status(404).json({ ok: false, error: "Bundle no encontrado." });
+      }
+      if (!bundle.isPaid || bundle.paymentMode !== "stripe" || !String(bundle.stripePriceId || "").startsWith("price_")) {
+        return res.status(400).json({
+          ok: false,
+          code: "BUNDLE_NOT_FOR_SALE",
+          error: "Este bundle no estÃ¡ disponible para compra directa."
+        });
+      }
+
+      resolvedPriceId = bundle.stripePriceId;
+      resolvedTargetId = targetId;
+      resolvedTargetName = resolvedTargetName || bundle.name;
     }
 
     // ── Subscription checkout: guard against existing active subscription ─
@@ -492,7 +517,7 @@ router.post("/dev/apply-latest-subscription", requireDevTestEntitlements, requir
       householdId: attempt.householdId
     });
 
-    const result = await applyTestSubscriptionEntitlementFromAttempt(attempt);
+    const result = await applyDevSubscriptionPlanToHousehold(attempt);
 
     const household = await Household.findById(effectiveHouseholdId);
 
@@ -611,9 +636,11 @@ async function handleCheckoutCompleted(session) {
       envStripeMode: config.stripe.mode,
       envAllowTestEntitlements: config.stripe.allowTestEntitlements
     });
-    await applyTestSubscriptionEntitlementFromAttempt(attempt);
+    await applyDevSubscriptionPlanToHousehold(attempt);
   } else if (attempt.type === "pack") {
     await applyPackEntitlementFromAttempt(attempt, session);
+  } else if (attempt.type === "bites") {
+    await applyBitesBundleEntitlementFromAttempt(attempt, session);
   }
 }
 

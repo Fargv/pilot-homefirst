@@ -4,6 +4,9 @@ import { Household } from "./models/Household.js";
 import { CatalogPack } from "./models/CatalogPack.js";
 import { PackEntitlement } from "./models/PackEntitlement.js";
 import { HouseholdCatalogPack } from "./models/HouseholdCatalogPack.js";
+import { BitesConfig } from "./models/BitesConfig.js";
+import { BitesTransaction } from "./models/BitesTransaction.js";
+import { grantPurchasedBites } from "./bitesService.js";
 import {
   applyAdminSubscriptionActivation,
   normalizeSubscriptionPlan
@@ -29,6 +32,8 @@ function checkTestEntitlementAllowed(attempt) {
     envStripeMode: config.stripe.mode,
     envAllowTestEntitlements: config.stripe.allowTestEntitlements
   };
+
+  console.log("DEV ENTITLEMENT CHECK START", ctx);
 
   if (!config.stripe.paymentsEnabled) {
     console.warn("[entitlements][gate] BLOCKED — PAYMENTS_ENABLED is not true", ctx);
@@ -88,7 +93,7 @@ function checkTestEntitlementAllowed(attempt) {
  * @param {object} attempt - A saved PurchaseAttempt document
  * @returns {Promise<{ applied: boolean, reason?: string, household?: object }>}
  */
-export async function applyTestSubscriptionEntitlementFromAttempt(attempt) {
+export async function applyDevSubscriptionPlanToHousehold(attempt) {
   const gate = checkTestEntitlementAllowed(attempt);
 
   if (!gate.allowed) {
@@ -108,23 +113,24 @@ export async function applyTestSubscriptionEntitlementFromAttempt(attempt) {
     return { applied: false, reason: `Household ${householdId} not found` };
   }
 
-  // Idempotency: already on the target plan and active — nothing to do
-  if (household.subscriptionPlan === planKey && household.subscriptionStatus === "active") {
-    console.log("[entitlements] Household already on target plan — skipping (idempotent)", {
-      attemptId: attempt._id?.toString(),
-      householdId,
-      planKey,
-      subscriptionStatus: household.subscriptionStatus
-    });
-    return { applied: false, reason: "already_active_on_plan" };
-  }
+  const oldPlanFields = {
+    subscriptionPlan: household.subscriptionPlan,
+    subscriptionStatus: household.subscriptionStatus,
+    subscriptionRequestedPlan: household.subscriptionRequestedPlan,
+    isPro: household.isPro,
+    assignedByAdmin: household.assignedByAdmin,
+    stripeCustomerId: household.stripeCustomerId,
+    stripeSubscriptionId: household.stripeSubscriptionId,
+    paymentProvider: household.paymentProvider,
+    paymentMode: household.paymentMode,
+    planUpdatedAt: household.planUpdatedAt,
+    planUpdatedByPaymentAttemptId: household.planUpdatedByPaymentAttemptId
+  };
 
-  const previousPlan = household.subscriptionPlan;
-
-  // Apply subscription using the same service used by admin activation
+  // Apply subscription using the same service used by admin activation. This updates
+  // the real gating/UI fields: subscriptionPlan, subscriptionStatus and isPro.
   applyAdminSubscriptionActivation(household, planKey);
 
-  // Store Stripe test metadata alongside the subscription state
   household.stripeCustomerId = attempt.stripeCustomerId || household.stripeCustomerId || "";
   household.stripeSubscriptionId = attempt.stripeSubscriptionId || household.stripeSubscriptionId || "";
   household.paymentProvider = "stripe-test";
@@ -134,19 +140,44 @@ export async function applyTestSubscriptionEntitlementFromAttempt(attempt) {
 
   await household.save();
 
-  console.log("[entitlements] Test subscription entitlement applied", {
+  const reloaded = await Household.findById(householdId).lean();
+  const newPlanFields = reloaded ? {
+    subscriptionPlan: reloaded.subscriptionPlan,
+    subscriptionStatus: reloaded.subscriptionStatus,
+    subscriptionRequestedPlan: reloaded.subscriptionRequestedPlan,
+    isPro: reloaded.isPro,
+    assignedByAdmin: reloaded.assignedByAdmin,
+    stripeCustomerId: reloaded.stripeCustomerId,
+    stripeSubscriptionId: reloaded.stripeSubscriptionId,
+    paymentProvider: reloaded.paymentProvider,
+    paymentMode: reloaded.paymentMode,
+    planUpdatedAt: reloaded.planUpdatedAt,
+    planUpdatedByPaymentAttemptId: reloaded.planUpdatedByPaymentAttemptId
+  } : null;
+
+  const wasAlreadyActiveOnPlan =
+    oldPlanFields.subscriptionPlan === planKey
+    && oldPlanFields.subscriptionStatus === "active";
+
+  console.log("[entitlements] DEV subscription entitlement applied", {
     attemptId: attempt._id?.toString(),
+    sessionId: attempt.stripeCheckoutSessionId || "",
     householdId,
     planKey,
-    previousPlan,
-    subscriptionStatus: household.subscriptionStatus,
-    isPro: household.isPro,
-    subscriptionEndsAt: household.subscriptionEndsAt
+    oldPlanFields,
+    newPlanFields,
+    applied: !wasAlreadyActiveOnPlan,
+    reason: wasAlreadyActiveOnPlan ? "already_active_on_plan_metadata_refreshed" : "plan_applied"
   });
 
-  return { applied: true, household };
+  return {
+    applied: !wasAlreadyActiveOnPlan,
+    reason: wasAlreadyActiveOnPlan ? "already_active_on_plan_metadata_refreshed" : "plan_applied",
+    household: reloaded || household
+  };
 }
 
+export const applyTestSubscriptionEntitlementFromAttempt = applyDevSubscriptionPlanToHousehold;
 /**
  * Applies a pack entitlement after a completed checkout (test or live).
  * Creates or updates a PackEntitlement record and upserts HouseholdCatalogPack to "purchase".
@@ -268,4 +299,76 @@ export async function applyPackEntitlementFromAttempt(attempt, session = {}) {
   });
 
   return { applied: true, entitlement };
+}
+
+export async function applyBitesBundleEntitlementFromAttempt(attempt, session = {}) {
+  if (!config.stripe.paymentsEnabled) {
+    return { applied: false, reason: "PAYMENTS_ENABLED is not true" };
+  }
+
+  if (attempt.mode === "test") {
+    if (config.stripe.mode !== "test") {
+      return { applied: false, reason: `STRIPE_MODE is "${config.stripe.mode}", must be "test" for test attempts` };
+    }
+    if (!config.stripe.allowTestEntitlements) {
+      return { applied: false, reason: "ALLOW_TEST_PAYMENT_ENTITLEMENTS is not true" };
+    }
+  }
+
+  if (attempt.status !== "completed") return { applied: false, reason: `attempt.status is "${attempt.status}", must be "completed"` };
+  if (attempt.type !== "bites") return { applied: false, reason: `attempt.type is "${attempt.type}", must be "bites"` };
+  if (!attempt.householdId || !mongoose.isValidObjectId(attempt.householdId)) {
+    return { applied: false, reason: `householdId "${attempt.householdId}" is missing or invalid` };
+  }
+  if (!attempt.targetId || !mongoose.isValidObjectId(attempt.targetId)) {
+    return { applied: false, reason: `targetId "${attempt.targetId}" is missing or invalid` };
+  }
+
+  const existingTransaction = await BitesTransaction.findOne({ "metadata.purchaseAttemptId": attempt._id.toString() });
+  if (existingTransaction) {
+    return { applied: false, reason: "already_granted" };
+  }
+
+  const bitesConfig = await BitesConfig.findOne({ key: "bitesEconomy" });
+  const bundle = bitesConfig?.bundles?.id?.(attempt.targetId);
+  if (!bundle || !bundle.active) {
+    return { applied: false, reason: "bundle_not_found_or_inactive" };
+  }
+
+  const amount = Number(bundle.bitesAmount || 0);
+  if (!Number.isFinite(amount) || amount < 1) {
+    return { applied: false, reason: "bundle_amount_invalid" };
+  }
+
+  const stripePaymentIntentId =
+    session.payment_intent
+      ? (typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || "")
+      : "";
+
+  const result = await grantPurchasedBites(
+    attempt.householdId,
+    amount,
+    `Compra de bundle ${bundle.name}`,
+    {
+      purchaseAttemptId: attempt._id.toString(),
+      bundleId: attempt.targetId,
+      bundleName: bundle.name,
+      stripeCheckoutSessionId: attempt.stripeCheckoutSessionId || "",
+      stripePaymentIntentId,
+      stripePriceId: attempt.stripePriceId || "",
+      amountTotal: attempt.amountTotal ?? null,
+      currency: attempt.currency || bundle.currency || "eur",
+      mode: attempt.mode
+    }
+  );
+
+  console.log("[entitlements] Bites bundle purchase applied", {
+    attemptId: attempt._id?.toString(),
+    householdId: attempt.householdId,
+    bundleId: attempt.targetId,
+    bitesAmount: amount,
+    mode: attempt.mode
+  });
+
+  return { applied: true, wallet: result.wallet };
 }

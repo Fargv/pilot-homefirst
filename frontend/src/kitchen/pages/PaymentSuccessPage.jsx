@@ -10,7 +10,7 @@ const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
 const PAID_PLANS = new Set(["pro", "premium"]);
 const POLL_DELAY_MS = 2000;
 const POLL_INTERVAL_MS = 2500;
-const POLL_MAX_ATTEMPTS = 5;
+const POLL_MAX_ATTEMPTS = 1;
 
 function PlanLabel({ plan }) {
   if (plan === "pro") return <strong>Pro</strong>;

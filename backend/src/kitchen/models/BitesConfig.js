@@ -10,6 +10,9 @@ const BitesBundleSchema = new mongoose.Schema(
     highlighted: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
     sortOrder: { type: Number, default: 0 },
+    isPaid: { type: Boolean, default: false },
+    paymentMode: { type: String, enum: ["none", "stripe"], default: "none" },
+    currency: { type: String, default: "eur", lowercase: true, trim: true },
     stripePriceId: { type: String, default: "" }
   },
   { _id: true }

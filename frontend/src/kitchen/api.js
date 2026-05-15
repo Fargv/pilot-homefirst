@@ -154,7 +154,7 @@ export function requestResetPassword(token, newPassword) {
 
 /**
  * Create a Stripe Checkout Session on the backend and return { url, sessionId }.
- * @param {{ type: string, targetId?: string, targetName?: string, stripePriceId: string, planKey?: string }} payload
+ * @param {{ type: string, targetId?: string, targetName?: string, stripePriceId?: string, planKey?: string }} payload
  */
 export function createCheckoutSession(payload) {
   return apiRequest("/api/payments/checkout-session", {

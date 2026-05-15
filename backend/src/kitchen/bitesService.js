@@ -144,6 +144,37 @@ export async function spendBites(householdId, amount, reason, metadata = {}) {
   };
 }
 
+export async function grantPurchasedBites(householdId, amount, reason, metadata = {}) {
+  if (!Number.isFinite(Number(amount)) || Number(amount) < 1) {
+    throw Object.assign(new Error("amount debe ser un entero positivo."), { statusCode: 400 });
+  }
+
+  const household = await Household.findById(householdId).lean();
+  if (!household) throw Object.assign(new Error("Hogar no encontrado."), { statusCode: 404 });
+
+  const newPurchased = (household.purchasedBitesBalance ?? 0) + Number(amount);
+
+  await Household.updateOne(
+    { _id: household._id },
+    { $set: { purchasedBitesBalance: newPurchased } }
+  );
+
+  const transaction = await BitesTransaction.create({
+    householdId: household._id,
+    type: "purchase",
+    amount: Number(amount),
+    balanceAfterFree: household.freeBitesBalance ?? 0,
+    balanceAfterPurchased: newPurchased,
+    reason,
+    metadata
+  });
+
+  return {
+    wallet: getWalletFromHousehold({ ...household, purchasedBitesBalance: newPurchased }),
+    transaction: { id: transaction._id }
+  };
+}
+
 export async function adminGrantBites(householdId, amount, bucket, reason, adminUserId) {
   if (!["free", "purchased"].includes(bucket)) {
     throw Object.assign(new Error("bucket debe ser 'free' o 'purchased'."), { statusCode: 400 });

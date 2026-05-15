@@ -181,7 +181,7 @@ function CatalogBitesStore({ bundles, onClose, onBuyBundle }) {
 // ─── Insufficient Bites modal ─────────────────────────────────────────────────
 
 function InsufficientBitesModal({ pack, onClose, onBuyBites, onPayDirect }) {
-  const bitesCost = pack?.bitesCost ?? pack?.entitlement?.bitesCost ?? 1;
+  const bitesCost = Number(pack?.bitesCost ?? pack?.entitlement?.bitesCost ?? 0);
   const canPayDirect = Boolean(pack?.entitlement?.canPayDirect) && Number(pack?.entitlement?.priceBasic || pack?.priceBasic || 0) > 0;
   const directPrice = pack?.entitlement?.priceBasic || pack?.priceBasic;
   return (
@@ -252,8 +252,10 @@ function formatPrice(price) {
 function getPackPriceLine(entitlement = {}) {
   const bitesCost = Number(entitlement.bitesCost || 0);
   const directPrice = Number(entitlement.priceBasic || 0);
-  const hasBites = bitesCost > 0 && (entitlement.canUnlockWithBites || entitlement.needsBitesPurchase || !entitlement.canPayDirect);
+  const canRedeemWithBites = bitesCost > 0 && entitlement.canUnlockWithBites;
+  const hasBites = bitesCost > 0 && (canRedeemWithBites || entitlement.needsBitesPurchase || !entitlement.canPayDirect);
   const hasDirect = directPrice > 0 && entitlement.canPayDirect;
+  if (canRedeemWithBites) return `${bitesCost} ${bitesCost === 1 ? "Bite" : "Bites"}`;
   if (hasBites && hasDirect) return `${bitesCost} ${bitesCost === 1 ? "Bite" : "Bites"} · o ${formatPrice(directPrice)}`;
   if (hasBites) return `${bitesCost} ${bitesCost === 1 ? "Bite" : "Bites"}`;
   if (hasDirect) return formatPrice(directPrice);
@@ -263,8 +265,10 @@ function getPackPriceLine(entitlement = {}) {
 function PackPriceLine({ entitlement }) {
   const bitesCost = Number(entitlement?.bitesCost || 0);
   const directPrice = Number(entitlement?.priceBasic || 0);
-  const hasBites = bitesCost > 0 && (entitlement?.canUnlockWithBites || entitlement?.needsBitesPurchase || !entitlement?.canPayDirect);
+  const canRedeemWithBites = bitesCost > 0 && entitlement?.canUnlockWithBites;
+  const hasBites = bitesCost > 0 && (canRedeemWithBites || entitlement?.needsBitesPurchase || !entitlement?.canPayDirect);
   const hasDirect = directPrice > 0 && entitlement?.canPayDirect;
+  if (canRedeemWithBites) return <><BitesIcon size={13} decorative /> {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>;
   if (hasBites && hasDirect) {
     return <><BitesIcon size={13} decorative /> {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"} · o {formatPrice(directPrice)}</>;
   }
@@ -315,7 +319,7 @@ function PackCard({ pack, onAction, onBuyBites, onUninstall }) {
     }
   };
 
-  const bitesCost = entitlement.bitesCost ?? 1;
+  const bitesCost = Number(entitlement.bitesCost || 0);
   const hasBitesPrice = Number(bitesCost || 0) > 0;
   const canShowDirect = Number(entitlement.priceBasic || 0) > 0;
   const priceLine = getPackPriceLine(entitlement);
@@ -416,7 +420,7 @@ function PackCard({ pack, onAction, onBuyBites, onUninstall }) {
                   onClick={() => handleAction("bites")}
                   disabled={loading}
                 >
-                  {loading ? "Procesando..." : <><BitesIcon size={14} color="#fff" decorative /> Canjear {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>}
+                  {loading ? "Procesando..." : <><BitesIcon size={14} decorative /> Canjear {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>}
                 </button>
               );
             }
@@ -439,7 +443,7 @@ function PackCard({ pack, onAction, onBuyBites, onUninstall }) {
                     onClick={() => onBuyBites(pack)}
                     disabled={loading}
                   >
-                    <BitesIcon size={14} color="#fff" decorative /> Comprar Bites
+                    <BitesIcon size={14} decorative /> Comprar Bites
                   </button>
                 ) : null}
               </div>
@@ -705,7 +709,29 @@ export default function CatalogPage() {
   }, [loadCatalog, showToast, plan, user]);
 
   const handleBuyBundle = useCallback((_bundle) => {
-    showToast("La pasarela de pago todavía no está conectada.", "info");
+    const bundle = _bundle || {};
+    const canBuyWithStripe = Boolean(bundle.isPaid)
+      && bundle.paymentMode === "stripe"
+      && String(bundle.stripePriceId || "").startsWith("price_");
+    if (!canBuyWithStripe) {
+      showToast("La pasarela de pago todavía no está conectada.", "info");
+      return;
+    }
+    if (!STRIPE_ENABLED) {
+      showToast("Los pagos no están activados en este entorno (VITE_STRIPE_ENABLED).", "info");
+      return;
+    }
+    createCheckoutSession({
+      type: "bites",
+      targetId: String(bundle._id || bundle.id),
+      targetName: bundle.name
+    })
+      .then((result) => {
+        if (result?.url) window.location.href = result.url;
+      })
+      .catch((err) => {
+        showToast(err.message || "No se pudo iniciar el pago.", "error");
+      });
   }, [showToast]);
 
   const handleUninstall = useCallback(async (pack) => {

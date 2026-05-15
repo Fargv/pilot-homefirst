@@ -64,6 +64,20 @@ const uploadPackCover = multer({
 
 const router = express.Router();
 
+const isDevRuntime = String(process.env.NODE_ENV || "development").toLowerCase() !== "production";
+
+function hasValidStripePriceId(value) {
+  return String(value || "").trim().startsWith("price_");
+}
+
+function canBuyPackWithStripe(pack, owned = false) {
+  return config.stripe.paymentsEnabled
+    && !owned
+    && Boolean(pack?.isPaid)
+    && pack?.paymentMode === "stripe"
+    && hasValidStripePriceId(pack?.stripePriceId);
+}
+
 function normalizeTemplateId(value) {
   return String(value || "").trim();
 }
@@ -429,17 +443,18 @@ router.get("/packs", requireAuth, async (req, res) => {
       const needsBitesPurchase = !owned && !isFree && !canClaimWithPlan && hasBitesPrice && wallet.totalBites < bitesCost;
       const canPayDirect = !owned && !isFree && !canClaimWithPlan && hasDirectPrice;
       const requiresPurchase = !isFree && !owned && !canClaimWithPlan && !canUnlockWithBites;
+      const canBuyWithStripe = canBuyPackWithStripe(pack, owned);
 
       // DEV verbose: log canBuyWithStripe decision for any pack that has payment config
-      if (pack.isPaid || pack.stripePriceId) {
+      if (isDevRuntime && (pack.isPaid || pack.stripePriceId)) {
         console.log("[catalog][dev] canBuyWithStripe calculation", {
           slug: pack.slug,
           isPaid: Boolean(pack.isPaid),
           paymentMode: pack.paymentMode,
-          hasStripePriceId: Boolean(pack.stripePriceId),
+          hasStripePriceId: hasValidStripePriceId(pack.stripePriceId),
           owned,
           paymentsEnabled: config.stripe.paymentsEnabled,
-          canBuyWithStripe: config.stripe.paymentsEnabled && !owned && Boolean(pack.isPaid) && pack.paymentMode === "stripe" && Boolean(pack.stripePriceId)
+          canBuyWithStripe
         });
       }
 
@@ -475,7 +490,7 @@ router.get("/packs", requireAuth, async (req, res) => {
           canPayDirect,
           requiresPurchase,
           // canBuyWithStripe: all four conditions must be met
-          canBuyWithStripe: config.stripe.paymentsEnabled && !owned && Boolean(pack.isPaid) && pack.paymentMode === "stripe" && Boolean(pack.stripePriceId),
+          canBuyWithStripe,
           // Expose raw payment config fields so the frontend can distinguish
           // "not configured" from "payments disabled" and show the right message
           isPaid: Boolean(pack.isPaid),
@@ -1018,12 +1033,20 @@ router.patch("/packs/:packId/payment", requireAuth, requireDiod, async (req, res
         return res.status(400).json({ ok: false, error: "stripePriceId debe comenzar con 'price_' o ser null." });
       }
       pack.stripePriceId = stripePriceId || null;
+      if (pack.stripePriceId) {
+        pack.isPaid = true;
+        pack.paymentMode = "stripe";
+        pack.currency = pack.currency || "eur";
+      }
     }
     if (paymentMode !== undefined) {
       if (!["none", "stripe"].includes(paymentMode)) {
         return res.status(400).json({ ok: false, error: "paymentMode debe ser 'none' o 'stripe'." });
       }
       pack.paymentMode = paymentMode;
+    }
+    if (pack.isPaid && pack.paymentMode === "stripe" && !hasValidStripePriceId(pack.stripePriceId)) {
+      return res.status(400).json({ ok: false, error: "stripePriceId es obligatorio para vender este pack con Stripe." });
     }
 
     await pack.save();

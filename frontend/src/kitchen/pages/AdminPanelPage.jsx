@@ -1659,13 +1659,13 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
             <>
               <label style={{ ...labelStyle, gridColumn: "1 / -1", borderTop: "1px dashed #e0e7ff", paddingTop: 10, marginTop: 4 }}>
                 <span style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer" }}>
-                  <input type="checkbox" checked={paymentForm.isPaid} onChange={(e) => setPaymentForm((p) => ({ ...p, isPaid: e.target.checked }))} />
+                  <input type="checkbox" checked={paymentForm.isPaid} onChange={(e) => setPaymentForm((p) => ({ ...p, isPaid: e.target.checked, paymentMode: e.target.checked ? (p.paymentMode === "none" ? "stripe" : p.paymentMode) : "none" }))} />
                   <span style={{ fontWeight: 600 }}>💳 Paquete de pago (Stripe)</span>
                 </span>
               </label>
               <label style={labelStyle}>
                 Modo de pago
-                <select style={fieldStyle} value={paymentForm.paymentMode} onChange={(e) => setPaymentForm((p) => ({ ...p, paymentMode: e.target.value }))}>
+                <select style={fieldStyle} value={paymentForm.paymentMode} onChange={(e) => setPaymentForm((p) => ({ ...p, paymentMode: e.target.value, isPaid: e.target.value === "stripe" ? true : p.isPaid }))}>
                   <option value="none">Ninguno</option>
                   <option value="stripe">Stripe</option>
                 </select>
@@ -1675,7 +1675,14 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
                 <input
                   style={{ ...fieldStyle, fontFamily: "monospace", borderColor: paymentForm.stripePriceId && !paymentForm.stripePriceId.startsWith("price_") ? "#ef4444" : "#d1d5db" }}
                   value={paymentForm.stripePriceId}
-                  onChange={(e) => setPaymentForm((p) => ({ ...p, stripePriceId: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPaymentForm((p) => ({
+                      ...p,
+                      stripePriceId: value,
+                      ...(value.trim().startsWith("price_") ? { isPaid: true, paymentMode: "stripe", currency: p.currency || "eur" } : {})
+                    }));
+                  }}
                   placeholder="price_1abc..."
                 />
                 {paymentForm.paymentMode === "stripe" && !paymentForm.stripePriceId && (
@@ -2829,7 +2836,7 @@ function BitesEconomySection() {
               const amt = 10;
               const disc = 25;
               const suggestedPrice = parseFloat((amt * bbp * (1 - disc / 100)).toFixed(2));
-              setBundleForm({ name: "", bitesAmount: amt, price: suggestedPrice, discountPercent: disc, badge: "", highlighted: false, active: true, sortOrder: 0, stripePriceId: "", _priceManuallySet: false });
+              setBundleForm({ name: "", bitesAmount: amt, price: suggestedPrice, discountPercent: disc, badge: "", highlighted: false, active: true, sortOrder: 0, isPaid: false, paymentMode: "none", currency: "eur", stripePriceId: "", _priceManuallySet: false });
             }}
           >
             + Nuevo bundle
@@ -2924,6 +2931,42 @@ function BitesEconomySection() {
                     Activo
                   </label>
                 </div>
+                <div style={{ gridColumn: "1 / -1", background: "#fff", border: "1px solid #e0e7ff", borderRadius: 6, padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700 }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(bundleForm.isPaid)}
+                      onChange={(e) => setBundleForm((f) => ({
+                        ...f,
+                        isPaid: e.target.checked,
+                        paymentMode: e.target.checked ? (f.paymentMode === "none" ? "stripe" : f.paymentMode) : "none"
+                      }))}
+                    />
+                    Este bundle es de pago
+                  </label>
+                  <div>
+                    <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Modo de pago</label>
+                    <select
+                      className="kitchen-select"
+                      style={{ fontSize: 13, padding: "4px 6px", width: "100%" }}
+                      value={bundleForm.paymentMode || "none"}
+                      onChange={(e) => setBundleForm((f) => ({ ...f, paymentMode: e.target.value, isPaid: e.target.value === "stripe" ? true : f.isPaid }))}
+                    >
+                      <option value="none">none</option>
+                      <option value="stripe">stripe</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Moneda</label>
+                    <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                      value={bundleForm.currency || "eur"} onChange={(e) => setBundleForm((f) => ({ ...f, currency: e.target.value }))} />
+                  </div>
+                  {bundleForm.isPaid && bundleForm.paymentMode !== "stripe" && (
+                    <div style={{ gridColumn: "1 / -1", fontSize: 11, color: "#b45309" }}>
+                      Para vender este bundle, activa el bundle de pago y selecciona Stripe como modo de pago.
+                    </div>
+                  )}
+                </div>
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3, fontWeight: 600 }}>
                     💳 Stripe Price ID
@@ -2935,7 +2978,14 @@ function BitesEconomySection() {
                       borderColor: bundleForm.stripePriceId && !bundleForm.stripePriceId.startsWith("price_") ? "#ef4444" : undefined
                     }}
                     value={bundleForm.stripePriceId || ""}
-                    onChange={(e) => setBundleForm((f) => ({ ...f, stripePriceId: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setBundleForm((f) => ({
+                        ...f,
+                        stripePriceId: value,
+                        ...(value.trim().startsWith("price_") ? { isPaid: true, paymentMode: "stripe", currency: f.currency || "eur" } : {})
+                      }));
+                    }}
                     placeholder="price_1abc... (opcional)"
                   />
                   {bundleForm.stripePriceId && !bundleForm.stripePriceId.startsWith("price_") && (
