@@ -445,9 +445,43 @@ router.post("/session-activate", requireAuth, async (req, res) => {
       });
     }
 
-    // Webhook already fired and completed the entitlement — return current plan
+    // Attempt was already completed (webhook fired). Check if the plan was actually
+    // applied — the webhook may have marked it completed but skipped the entitlement
+    // (e.g. ALLOW_TEST_PAYMENT_ENTITLEMENTS was false). If so, apply it now.
     if (attempt.status === "completed") {
       const household = await Household.findById(effectiveHouseholdId);
+      if (!household) {
+        return res.status(404).json({ ok: false, error: "Household no encontrado." });
+      }
+
+      if (attempt.type === "subscription") {
+        const expectedPlan = normalizeSubscriptionPlan(attempt.planKey);
+        const currentPlan = normalizeSubscriptionPlan(household.subscriptionPlan);
+
+        if (["pro", "premium"].includes(expectedPlan) && currentPlan !== expectedPlan) {
+          applyAdminSubscriptionActivation(household, expectedPlan);
+          household.stripeCustomerId = attempt.stripeCustomerId || household.stripeCustomerId || "";
+          household.stripeSubscriptionId = attempt.stripeSubscriptionId || household.stripeSubscriptionId || "";
+          household.paymentProvider = attempt.mode === "test" ? "stripe-test" : "stripe";
+          household.paymentMode = attempt.mode;
+          household.planUpdatedAt = new Date();
+          household.planUpdatedByPaymentAttemptId = attempt._id.toString();
+          await household.save();
+          console.log("[payments] session-activate: applied plan from completed-but-unactivated attempt", {
+            householdId: effectiveHouseholdId,
+            expectedPlan,
+            sessionId,
+            mode: attempt.mode
+          });
+          const reloaded = await Household.findById(effectiveHouseholdId);
+          return res.json({
+            ok: true,
+            applied: true,
+            household: { id: reloaded._id.toString(), ...buildHouseholdSubscriptionResponse(reloaded) }
+          });
+        }
+      }
+
       return res.json({
         ok: true,
         applied: false,
