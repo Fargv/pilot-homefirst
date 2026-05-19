@@ -144,9 +144,14 @@ router.post("/subscription/activate", requireAuth, requireDiod, async (req, res)
       subscriptionStatus: draft.subscriptionStatus,
       subscriptionRequestedPlan: draft.subscriptionRequestedPlan,
       trialEndsAt: draft.trialEndsAt,
-      subscriptionEndsAt: draft.subscriptionEndsAt,
+      // Admin grants never expire via cron — no billing period to track
+      subscriptionEndsAt: null,
       isPro: draft.isPro,
-      assignedByAdmin: draft.assignedByAdmin
+      assignedByAdmin: draft.assignedByAdmin,
+      // Mark as admin-managed: clear Stripe subscription link and any pending downgrade
+      stripeSubscriptionId: "",
+      pendingDowngradeAt: null,
+      pendingDowngradeReason: ""
     };
     await Household.updateOne({ _id: householdId }, { $set: update });
 

@@ -853,24 +853,35 @@ router.post("/cancel-subscription", requireAuth, async (req, res) => {
     household.pendingDowngradeAt = downgradeAt;
     household.pendingDowngradeReason = `${String(reason || "").slice(0, 100)}${details ? ` — ${String(details).slice(0, 200)}` : ""}`.trim();
 
-    // Try to set cancel_at_period_end on Stripe — non-fatal if it fails
+    // Stripe-paid subscriptions: must confirm cancellation with Stripe (fatal on failure).
+    // Admin-granted subscriptions (stripeSubscriptionId empty): skip Stripe entirely.
     if (household.stripeSubscriptionId) {
       const stripe = buildStripeClient();
-      if (stripe) {
-        try {
-          await stripe.subscriptions.update(household.stripeSubscriptionId, {
-            cancel_at_period_end: true
-          });
-          console.log("[payments] cancel-subscription: Stripe cancel_at_period_end=true", {
-            householdId: effectiveHouseholdId,
-            stripeSubscriptionId: household.stripeSubscriptionId
-          });
-        } catch (stripeErr) {
-          console.warn("[payments] cancel-subscription: Stripe update failed (non-fatal)", {
-            error: stripeErr.message,
-            stripeSubscriptionId: household.stripeSubscriptionId
-          });
-        }
+      if (!stripe) {
+        return res.status(503).json({
+          ok: false,
+          code: "STRIPE_NOT_CONFIGURED",
+          error: "El servicio de pago no está disponible. Contacta con soporte."
+        });
+      }
+      try {
+        await stripe.subscriptions.update(household.stripeSubscriptionId, {
+          cancel_at_period_end: true
+        });
+        console.log("[payments] cancel-subscription: Stripe cancel_at_period_end=true", {
+          householdId: effectiveHouseholdId,
+          stripeSubscriptionId: household.stripeSubscriptionId
+        });
+      } catch (stripeErr) {
+        console.error("[payments] cancel-subscription: Stripe update failed", {
+          error: stripeErr.message,
+          stripeSubscriptionId: household.stripeSubscriptionId
+        });
+        return res.status(502).json({
+          ok: false,
+          code: "STRIPE_CANCEL_FAILED",
+          error: "No se pudo cancelar la suscripción en Stripe. Inténtalo de nuevo o contacta con soporte."
+        });
       }
     }
 
@@ -917,21 +928,31 @@ router.post("/undo-cancel-subscription", requireAuth, async (req, res) => {
 
     if (household.stripeSubscriptionId) {
       const stripe = buildStripeClient();
-      if (stripe) {
-        try {
-          await stripe.subscriptions.update(household.stripeSubscriptionId, {
-            cancel_at_period_end: false
-          });
-          console.log("[payments] undo-cancel-subscription: Stripe cancel_at_period_end=false", {
-            householdId: effectiveHouseholdId,
-            stripeSubscriptionId: household.stripeSubscriptionId
-          });
-        } catch (stripeErr) {
-          console.warn("[payments] undo-cancel-subscription: Stripe update failed (non-fatal)", {
-            error: stripeErr.message,
-            stripeSubscriptionId: household.stripeSubscriptionId
-          });
-        }
+      if (!stripe) {
+        return res.status(503).json({
+          ok: false,
+          code: "STRIPE_NOT_CONFIGURED",
+          error: "El servicio de pago no está disponible. Contacta con soporte."
+        });
+      }
+      try {
+        await stripe.subscriptions.update(household.stripeSubscriptionId, {
+          cancel_at_period_end: false
+        });
+        console.log("[payments] undo-cancel-subscription: Stripe cancel_at_period_end=false", {
+          householdId: effectiveHouseholdId,
+          stripeSubscriptionId: household.stripeSubscriptionId
+        });
+      } catch (stripeErr) {
+        console.error("[payments] undo-cancel-subscription: Stripe update failed", {
+          error: stripeErr.message,
+          stripeSubscriptionId: household.stripeSubscriptionId
+        });
+        return res.status(502).json({
+          ok: false,
+          code: "STRIPE_REACTIVATE_FAILED",
+          error: "No se pudo reactivar la suscripción en Stripe. Inténtalo de nuevo o contacta con soporte."
+        });
       }
     }
 
