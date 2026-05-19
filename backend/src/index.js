@@ -17,6 +17,7 @@ import authRoutes from "./kitchen/routes/auth.js";
 import internalPushRouter from "./routes/internalPush.js";
 import subscriptionRouter from "./routes/subscription.js";
 import paymentsRouter, { stripeWebhookHandler } from "./routes/payments.js";
+import { deactivateExpiredSubscriptions } from "./kitchen/subscriptionCron.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,6 +91,10 @@ connectDb()
 app.listen(PORT, () => {
   console.log(`🚀 API escuchando en :${PORT}`);
 });
+
+    // O-6: Deactivate expired subscriptions hourly
+    deactivateExpiredSubscriptions();
+    setInterval(deactivateExpiredSubscriptions, 60 * 60 * 1000);
   })
   .catch((e) => {
     console.error("❌ Error conectando DB", e);

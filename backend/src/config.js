@@ -77,3 +77,33 @@ config.corsOrigin = config.corsOrigins[0] || "http://localhost:5173";
 if (!config.mongodbUri) {
   console.warn("Warning: MONGODB_URI is missing.");
 }
+
+// ── Startup assertions ────────────────────────────────────────────────────────
+const _isProduction = config.nodeEnv === "production" || process.env.APP_ENV === "production";
+
+// B-5: JWT_SECRET — fatal in production, warn with dev fallback otherwise.
+if (!process.env.JWT_SECRET) {
+  if (_isProduction) {
+    console.error("[startup] FATAL: JWT_SECRET is not set. Exiting to prevent insecure token signing.");
+    process.exit(1);
+  } else {
+    console.warn("[startup] WARNING: JWT_SECRET not set — using insecure dev fallback. Set JWT_SECRET before going to production.");
+  }
+}
+
+// B-1: Stripe key/mode mismatch — always fatal regardless of environment.
+const _stripeKey = process.env.STRIPE_SECRET_KEY || "";
+if (_stripeKey.startsWith("sk_live_") && process.env.STRIPE_MODE !== "live") {
+  console.error("[startup] FATAL: STRIPE_SECRET_KEY is a live key but STRIPE_MODE is not 'live'. Refusing to start.");
+  process.exit(1);
+}
+if (process.env.STRIPE_MODE === "live" && _stripeKey && !_stripeKey.startsWith("sk_live_")) {
+  console.error("[startup] FATAL: STRIPE_MODE=live but STRIPE_SECRET_KEY is not a live key. Refusing to start.");
+  process.exit(1);
+}
+
+// B-2: Test entitlements flag must never be on in live mode.
+if (process.env.STRIPE_MODE === "live" && process.env.ALLOW_TEST_PAYMENT_ENTITLEMENTS === "true") {
+  console.error("[startup] FATAL: ALLOW_TEST_PAYMENT_ENTITLEMENTS=true is not allowed when STRIPE_MODE=live.");
+  process.exit(1);
+}

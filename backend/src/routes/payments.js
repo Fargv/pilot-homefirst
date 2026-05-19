@@ -1,8 +1,10 @@
 import express from "express";
 import mongoose from "mongoose";
 import Stripe from "stripe";
+import rateLimit from "express-rate-limit";
 import { config } from "../config.js";
 import { requireAuth, requireDiod } from "../kitchen/middleware.js";
+import { StripeWebhookEvent } from "../kitchen/models/StripeWebhookEvent.js";
 import { PurchaseAttempt } from "../kitchen/models/PurchaseAttempt.js";
 import { CatalogPack } from "../kitchen/models/CatalogPack.js";
 import { PackEntitlement } from "../kitchen/models/PackEntitlement.js";
@@ -25,6 +27,15 @@ import {
 const router = express.Router();
 
 const VALID_TYPES = ["pack", "subscription", "bites"];
+
+// S-1: Rate-limit checkout creation — 10 attempts per 15 minutes per IP.
+const checkoutRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, code: "RATE_LIMITED", error: "Demasiadas solicitudes de pago. Inténtalo de nuevo en 15 minutos." }
+});
 const STRIPE_API_VERSION = "2024-04-10";
 
 function buildStripeClient() {
@@ -60,7 +71,7 @@ function stripeClientGuard(res) {
 
 // ─── POST /api/payments/checkout-session ─────────────────────────────────────
 
-router.post("/checkout-session", requireAuth, async (req, res) => {
+router.post("/checkout-session", checkoutRateLimit, requireAuth, async (req, res) => {
   try {
     if (!paymentsEnabledGuard(res)) return;
     const stripe = stripeClientGuard(res);
@@ -1244,6 +1255,18 @@ export async function stripeWebhookHandler(req, res) {
     });
   }
 
+  // S-5: Idempotency — deduplicate by event ID before processing.
+  try {
+    await StripeWebhookEvent.create({ eventId: event.id, eventType: event.type });
+  } catch (dupErr) {
+    if (dupErr.code === 11000) {
+      console.log("[payments][webhook] Duplicate event — already processed, skipping", { eventId: event.id, eventType: event.type });
+      return res.status(200).json({ received: true, duplicate: true });
+    }
+    // Can't write dedup record — still process to avoid silently dropping events.
+    console.warn("[payments][webhook] Could not write to dedup store — proceeding anyway", { error: dupErr.message });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed":
@@ -1273,12 +1296,14 @@ export async function stripeWebhookHandler(req, res) {
         console.log("[payments][webhook] Unhandled event type — ignored", { type: event.type });
     }
   } catch (handlerError) {
-    // Log but return 200 — Stripe retries on non-2xx, risking duplicate processing
+    // O-2: Return 500 so Stripe retries. Delete the dedup record first so the retry isn't blocked.
+    await StripeWebhookEvent.deleteOne({ eventId: event.id }).catch(() => {});
     console.error("[payments][webhook] Handler threw unexpectedly", {
       type: event.type,
       error: handlerError?.message,
       stack: handlerError?.stack
     });
+    return res.status(500).json({ error: "Internal error processing webhook." });
   }
 
   return res.status(200).json({ received: true });
