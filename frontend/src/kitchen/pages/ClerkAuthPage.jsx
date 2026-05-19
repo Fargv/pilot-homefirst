@@ -80,6 +80,8 @@ function ClerkAuthContent({ mode }) {
   const { isLoaded, isSignedIn } = useClerkAuth();
   const clerk = useClerk();
   const [finalBootstrapError, setFinalBootstrapError] = useState("");
+  const [retryLoading, setRetryLoading] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [inviteDetails, setInviteDetails] = useState(null);
   const [inviteDetailsLoaded, setInviteDetailsLoaded] = useState(false);
   const finalBootstrapErrorTimerRef = useRef(null);
@@ -205,13 +207,21 @@ function ClerkAuthContent({ mode }) {
   ), []);
 
   const signOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
     clearSession();
     await clerk.signOut({ redirectUrl: loginRoute });
   };
 
   const retryBootstrap = async () => {
+    if (retryLoading) return;
+    setRetryLoading(true);
     setFinalBootstrapError("");
-    await refreshUser({ authMode: "clerk" });
+    try {
+      await refreshUser({ authMode: "clerk" });
+    } finally {
+      setRetryLoading(false);
+    }
   };
 
   const isResolvingClerkHandoff = isLoaded && isSignedIn && (loading || (!user?.id && !onboardingRequired && !finalBootstrapError));
@@ -265,11 +275,11 @@ function ClerkAuthContent({ mode }) {
           Tu sesion segura esta activa, pero Lunchfy todavia no pudo terminar el acceso.
         </div>
         <div className="kitchen-actions" style={{ alignItems: "center" }}>
-          <button type="button" className="kitchen-button" onClick={retryBootstrap}>
-            Reintentar
+          <button type="button" className="kitchen-button" disabled={retryLoading || signingOut} onClick={retryBootstrap}>
+            {retryLoading ? "Reintentando..." : "Reintentar"}
           </button>
-          <button type="button" className="kitchen-button secondary" onClick={signOut}>
-            Cambiar cuenta
+          <button type="button" className="kitchen-button secondary" disabled={retryLoading || signingOut} onClick={signOut}>
+            {signingOut ? "Saliendo..." : "Cambiar cuenta"}
           </button>
         </div>
       </AuthShell>
