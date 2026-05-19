@@ -11,7 +11,7 @@
   "diet": true,
   "priceBasic": 2.99,
   "includedPlans": ["pro", "premium"],
-  "monthlyCreditCost": 2,
+  "monthlyCreditCost": 200,
   "sortOrder": 14,
   "disclaimer": "Recetas diseñadas para adultos sanos que quieren reducir grasa corporal de forma progresiva y sostenible. Las cantidades son orientativas. Consulta con un profesional de la salud o nutricionista si tienes alguna condición médica.",
   "dishes": [

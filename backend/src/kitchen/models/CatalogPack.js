@@ -57,7 +57,7 @@ const CatalogPackSchema = new mongoose.Schema(
     featured: { type: Boolean, default: false },
     priceBasic: { type: Number, default: 1.99 },
     includedPlans: { type: [String], default: ["pro", "premium"] },
-    monthlyCreditCost: { type: Number, default: 1 },
+    monthlyCreditCost: { type: Number, default: 100 },
     dishes: { type: [DishTemplateSchema], default: [] },
     releaseDate: { type: Date, default: null },
     freeUntil: { type: Date, default: null },

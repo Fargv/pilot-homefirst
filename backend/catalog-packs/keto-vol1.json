@@ -12,7 +12,7 @@
   "diet": true,
   "priceBasic": 2.99,
   "includedPlans": ["pro", "premium"],
-  "monthlyCreditCost": 2,
+  "monthlyCreditCost": 200,
   "sortOrder": 12,
   "disclaimer": "Recetas diseñadas para adultos sanos. La dieta cetogénica puede no ser adecuada para todas las personas. Consulta con un profesional de la salud antes de seguirla de forma prolongada.",
   "dishes": [

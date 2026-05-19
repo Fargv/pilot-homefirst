@@ -11,7 +11,7 @@
   "diet": false,
   "priceBasic": 1.99,
   "includedPlans": ["pro", "premium"],
-  "monthlyCreditCost": 1,
+  "monthlyCreditCost": 100,
   "sortOrder": 13,
   "disclaimer": "Las cantidades están calculadas para 8 personas, perfectas para una mesa de Thanksgiving completa. Los ingredientes básicos de despensa (sal, aceite, pimienta, especias molidas) no aparecen en la lista de la compra pero sí se usan en las recetas.",
   "dishes": [

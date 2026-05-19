@@ -20,9 +20,9 @@ const BitesBundleSchema = new mongoose.Schema(
 
 const PlanGrantSchema = new mongoose.Schema(
   {
-    basic: { type: Number, default: 1 },
-    pro: { type: Number, default: 3 },
-    premium: { type: Number, default: 10 }
+    basic: { type: Number, default: 100 },
+    pro: { type: Number, default: 300 },
+    premium: { type: Number, default: 1000 }
   },
   { _id: false }
 );
@@ -30,8 +30,10 @@ const PlanGrantSchema = new mongoose.Schema(
 const BitesConfigSchema = new mongoose.Schema(
   {
     key: { type: String, default: "bitesEconomy", unique: true },
-    monthlyGrantByPlan: { type: PlanGrantSchema, default: () => ({ basic: 1, pro: 3, premium: 10 }) },
-    maxFreeCarryOverByPlan: { type: PlanGrantSchema, default: () => ({ basic: 5, pro: 10, premium: 50 }) },
+    // Economy: 100 Bites = 1.99 EUR; monthly grants and carry-over limits are in Bites
+    monthlyGrantByPlan: { type: PlanGrantSchema, default: () => ({ basic: 100, pro: 300, premium: 1000 }) },
+    maxFreeCarryOverByPlan: { type: PlanGrantSchema, default: () => ({ basic: 500, pro: 1000, premium: 5000 }) },
+    // baseBitePrice = price for 100 Bites in EUR (not per-Bite price)
     baseBitePrice: { type: Number, default: 1.99, min: 0.01 },
     bundles: { type: [BitesBundleSchema], default: [] },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null }

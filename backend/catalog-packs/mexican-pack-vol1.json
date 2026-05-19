@@ -10,7 +10,7 @@
   "featured": true,
   "priceBasic": 1.99,
   "includedPlans": ["pro", "premium"],
-  "monthlyCreditCost": 1,
+  "monthlyCreditCost": 100,
   "sortOrder": 10,
   "dishes": [
     {

@@ -3,16 +3,18 @@ import { BitesTransaction } from "./models/BitesTransaction.js";
 import { BitesConfig } from "./models/BitesConfig.js";
 import { normalizeSubscriptionPlan } from "./subscriptionService.js";
 
-const DEFAULT_MONTHLY_GRANT = { basic: 1, pro: 3, premium: 10 };
-const DEFAULT_MAX_CARRY_OVER = { basic: 5, pro: 10, premium: 50 };
+// Economy: 100 Bites = 1.99 EUR (see bitesConstants.js)
+const DEFAULT_MONTHLY_GRANT = { basic: 100, pro: 300, premium: 1000 };
+const DEFAULT_MAX_CARRY_OVER = { basic: 500, pro: 1000, premium: 5000 };
 
+// baseBitePrice represents the price for 100 Bites (1.99 EUR = 100 Bites)
 const DEFAULT_BASE_BITE_PRICE = 1.99;
 
 const DEFAULT_BUNDLES = [
-  { name: "Starter", bitesAmount: 5, price: 8.95, discountPercent: 10, badge: "", highlighted: false, active: true, sortOrder: 1 },
-  { name: "Popular", bitesAmount: 15, price: 22.38, discountPercent: 25, badge: "Popular", highlighted: true, active: true, sortOrder: 2 },
-  { name: "Premium", bitesAmount: 40, price: 47.76, discountPercent: 40, badge: "", highlighted: false, active: true, sortOrder: 3 },
-  { name: "Mega", bitesAmount: 100, price: 79.60, discountPercent: 60, badge: "Mejor valor", highlighted: false, active: true, sortOrder: 4 }
+  { name: "Starter", bitesAmount: 500, price: 8.95, discountPercent: 10, badge: "", highlighted: false, active: true, sortOrder: 1 },
+  { name: "Popular", bitesAmount: 1500, price: 22.38, discountPercent: 25, badge: "Popular", highlighted: true, active: true, sortOrder: 2 },
+  { name: "Premium", bitesAmount: 4000, price: 47.76, discountPercent: 40, badge: "", highlighted: false, active: true, sortOrder: 3 },
+  { name: "Mega", bitesAmount: 10000, price: 79.60, discountPercent: 60, badge: "Mejor valor", highlighted: false, active: true, sortOrder: 4 }
 ];
 
 export async function getBitesConfig() {

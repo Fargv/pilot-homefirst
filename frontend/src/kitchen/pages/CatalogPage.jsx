@@ -155,7 +155,7 @@ function CatalogBitesStore({ bundles, onClose, onBuyBundle }) {
                 {Number(bundle.price).toFixed(2).replace(".", ",")} €
               </div>
               <div className="catalog-bites-bundle-per">
-                {Number(bundle.bitesAmount) > 0 ? `${(bundle.price / bundle.bitesAmount).toFixed(2).replace(".", ",")} €/Bite` : "Precio por Bite no disponible"}
+                {Number(bundle.bitesAmount) > 0 ? `${(bundle.price / bundle.bitesAmount * 100).toFixed(2).replace(".", ",")} €/100 Bites` : "Precio por Bite no disponible"}
               </div>
               <button
                 type="button"

@@ -12,7 +12,7 @@
   "diet": true,
   "priceBasic": 2.99,
   "includedPlans": ["pro", "premium"],
-  "monthlyCreditCost": 2,
+  "monthlyCreditCost": 200,
   "sortOrder": 10,
   "disclaimer": "Recetas diseñadas para adultos sanos. No sustituyen el asesoramiento de un profesional de la nutrición o de la salud.",
   "dishes": [

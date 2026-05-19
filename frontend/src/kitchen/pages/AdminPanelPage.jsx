@@ -1444,7 +1444,7 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
     featured: Boolean(item.featured),
     priceBasic: item.priceBasic != null ? String(item.priceBasic) : "1.99",
     includedPlans: item.includedPlans || ["pro", "premium"],
-    monthlyCreditCost: item.monthlyCreditCost != null ? String(item.monthlyCreditCost) : "1",
+    monthlyCreditCost: item.monthlyCreditCost != null ? String(item.monthlyCreditCost) : "100",
     sortOrder: item.sortOrder != null ? String(item.sortOrder) : "0",
     freeUntil: freeUntilDefault,
     activeFrom: toDateStr(item.activeFrom),
@@ -1619,7 +1619,8 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
                 setPricingSync((ps) => ({ ...ps, priceTouched: true, lastField: "price" }));
                 if (!pricingSync.bitesTouched) {
                   const parsed = parseFloat(newPrice) || 0;
-                  const calcBites = parsed > 0 ? Math.max(1, Math.round(parsed / baseBitePrice)) : parseInt(form.monthlyCreditCost, 10) || 1;
+                  // baseBitePrice is price per 100 Bites; divide by 100 to get EUR/Bite
+                  const calcBites = parsed > 0 ? Math.max(1, Math.round(parsed * 100 / baseBitePrice)) : parseInt(form.monthlyCreditCost, 10) || 100;
                   setForm((p) => ({ ...p, priceBasic: newPrice, monthlyCreditCost: String(calcBites) }));
                 } else {
                   setForm((p) => ({ ...p, priceBasic: newPrice }));
@@ -1639,7 +1640,8 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
                 setPricingSync((ps) => ({ ...ps, bitesTouched: true, lastField: "bites" }));
                 if (!pricingSync.priceTouched) {
                   const parsed = parseInt(newBites, 10) || 0;
-                  const calcPrice = parsed > 0 ? parseFloat((parsed * baseBitePrice).toFixed(2)) : parseFloat(form.priceBasic) || 0;
+                  // baseBitePrice is price per 100 Bites; multiply bites by (baseBitePrice/100)
+                  const calcPrice = parsed > 0 ? parseFloat((parsed * baseBitePrice / 100).toFixed(2)) : parseFloat(form.priceBasic) || 0;
                   setForm((p) => ({ ...p, monthlyCreditCost: newBites, priceBasic: String(calcPrice) }));
                 } else {
                   setForm((p) => ({ ...p, monthlyCreditCost: newBites }));
@@ -1647,7 +1649,7 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
               }}
             />
             <span style={{ fontSize: 11, color: "#6b7280" }}>
-              Se calcula usando el precio base del Bite ({Number(baseBitePrice).toFixed(2).replace(".", ",")} €), pero puedes ajustar ambos valores manualmente.
+              Se calcula usando {Number(baseBitePrice).toFixed(2).replace(".", ",")} €/100 Bites. Puedes ajustar ambos valores manualmente.
             </span>
           </label>
           <label style={labelStyle}>
@@ -2653,12 +2655,12 @@ function BitesEconomySection() {
       const c = cfgRes.config || {};
       setConfig(c);
       setConfigDraft({
-        basic: c.monthlyGrantByPlan?.basic ?? 1,
-        pro: c.monthlyGrantByPlan?.pro ?? 3,
-        premium: c.monthlyGrantByPlan?.premium ?? 10,
-        maxBasic: c.maxFreeCarryOverByPlan?.basic ?? 5,
-        maxPro: c.maxFreeCarryOverByPlan?.pro ?? 10,
-        maxPremium: c.maxFreeCarryOverByPlan?.premium ?? 50,
+        basic: c.monthlyGrantByPlan?.basic ?? 100,
+        pro: c.monthlyGrantByPlan?.pro ?? 300,
+        premium: c.monthlyGrantByPlan?.premium ?? 1000,
+        maxBasic: c.maxFreeCarryOverByPlan?.basic ?? 500,
+        maxPro: c.maxFreeCarryOverByPlan?.pro ?? 1000,
+        maxPremium: c.maxFreeCarryOverByPlan?.premium ?? 5000,
         baseBitePrice: c.baseBitePrice ?? 1.99
       });
       setBundles(c.bundles || []);
@@ -2763,7 +2765,7 @@ function BitesEconomySection() {
       <section style={{ marginBottom: 24, background: "#f0f4ff", border: "1px solid #c7d2fe", borderRadius: 8, padding: "14px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <BitesIcon size={15} decorative /> Precio base por Bite
+            <BitesIcon size={15} decorative /> Precio base por 100 Bites
           </label>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <input
@@ -2775,10 +2777,10 @@ function BitesEconomySection() {
               value={configDraft?.baseBitePrice ?? 1.99}
               onChange={(e) => setConfigDraft((d) => ({ ...d, baseBitePrice: e.target.value }))}
             />
-            <span style={{ fontSize: 13, color: "#6b7280" }}>€ / Bite</span>
+            <span style={{ fontSize: 13, color: "#6b7280" }}>€ / 100 Bites</span>
           </div>
           <span style={{ fontSize: 12, color: "#6366f1" }}>
-            Usado para sugerir precios en packs y bundles. No modifica precios guardados existentes.
+            Equivalencia base: 100 Bites = {Number(configDraft?.baseBitePrice ?? 1.99).toFixed(2).replace(".", ",")} €. Usado para sugerir precios en packs y bundles. No modifica precios guardados existentes.
           </span>
         </div>
       </section>
@@ -2833,9 +2835,10 @@ function BitesEconomySection() {
             style={ABT.save}
             onClick={() => {
               const bbp = Number(configDraft?.baseBitePrice ?? 1.99);
-              const amt = 10;
+              const amt = 1000;
               const disc = 25;
-              const suggestedPrice = parseFloat((amt * bbp * (1 - disc / 100)).toFixed(2));
+              // bbp is price per 100 Bites; divide by 100 to get EUR/Bite
+              const suggestedPrice = parseFloat((amt * (bbp / 100) * (1 - disc / 100)).toFixed(2));
               setBundleForm({ name: "", bitesAmount: amt, price: suggestedPrice, discountPercent: disc, badge: "", highlighted: false, active: true, sortOrder: 0, isPaid: false, paymentMode: "none", currency: "eur", stripePriceId: "", _priceManuallySet: false });
             }}
           >
@@ -2845,19 +2848,22 @@ function BitesEconomySection() {
 
         {bundleForm && (() => {
           const bbp = Number(configDraft?.baseBitePrice ?? 1.99);
+          // bbp is price per 100 Bites; eurPerBite = bbp / 100
+          const eurPerBite = bbp / 100;
           const bundleAmt = Number(bundleForm.bitesAmount) || 0;
           const bundleDisc = Number(bundleForm.discountPercent ?? 0);
-          const baseValue = parseFloat((bundleAmt * bbp).toFixed(2));
+          const baseValue = parseFloat((bundleAmt * eurPerBite).toFixed(2));
           const suggestedPrice = bundleAmt > 0 ? parseFloat((baseValue * (1 - bundleDisc / 100)).toFixed(2)) : 0;
           const finalPrice = Number(bundleForm.price) || 0;
-          const perBite = bundleAmt > 0 ? (finalPrice / bundleAmt).toFixed(2) : "—";
+          const perBite = bundleAmt > 0 ? (finalPrice / bundleAmt).toFixed(4) : "—";
+          const per100Bites = bundleAmt > 0 ? (finalPrice / bundleAmt * 100).toFixed(2) : "—";
           const actualDiscount = baseValue > 0 ? Math.round((1 - finalPrice / baseValue) * 100) : 0;
 
           const handleBundleBitesChange = (e) => {
             const newAmt = Number(e.target.value);
             setBundleForm((f) => {
               if (f._priceManuallySet) return { ...f, bitesAmount: newAmt };
-              const newPrice = parseFloat((newAmt * bbp * (1 - (f.discountPercent ?? 0) / 100)).toFixed(2));
+              const newPrice = parseFloat((newAmt * eurPerBite * (1 - (f.discountPercent ?? 0) / 100)).toFixed(2));
               return { ...f, bitesAmount: newAmt, price: newPrice };
             });
           };
@@ -2866,7 +2872,7 @@ function BitesEconomySection() {
             const newDisc = Number(e.target.value);
             setBundleForm((f) => {
               if (f._priceManuallySet) return { ...f, discountPercent: newDisc };
-              const newPrice = parseFloat((Number(f.bitesAmount) * bbp * (1 - newDisc / 100)).toFixed(2));
+              const newPrice = parseFloat((Number(f.bitesAmount) * eurPerBite * (1 - newDisc / 100)).toFixed(2));
               return { ...f, discountPercent: newDisc, price: newPrice };
             });
           };
@@ -2997,7 +3003,7 @@ function BitesEconomySection() {
                     <span><strong>{bundleAmt} Bites</strong></span>
                     <span>Valor base: <strong>{baseValue.toFixed(2).replace(".", ",")} €</strong></span>
                     <span>Precio final: <strong>{finalPrice.toFixed(2).replace(".", ",")} €</strong></span>
-                    <span>€/Bite: <strong>{perBite.replace(".", ",")} €</strong></span>
+                    <span>€/100 Bites: <strong>{per100Bites.replace(".", ",")} €</strong></span>
                     {actualDiscount > 0 && <span style={{ color: "#16a34a", fontWeight: 700 }}>Ahorra {actualDiscount}%</span>}
                   </div>
                 )}
@@ -3018,7 +3024,7 @@ function BitesEconomySection() {
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Nombre</th>
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}><BitesIcon size={13} decorative /> Bites</th>
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Precio</th>
-              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>€/Bite</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>€/100 Bites</th>
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Descuento</th>
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Badge</th>
               <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Activo</th>
@@ -3028,7 +3034,8 @@ function BitesEconomySection() {
           <tbody>
             {bundles.map((b) => {
               const bbp = Number(configDraft?.baseBitePrice ?? 1.99);
-              const baseVal = Number(b.bitesAmount) * bbp;
+              // bbp is price per 100 Bites
+              const baseVal = Number(b.bitesAmount) * (bbp / 100);
               const discPct = Number(b.discountPercent ?? 0);
               const actualSaving = baseVal > 0 ? Math.round((1 - Number(b.price) / baseVal) * 100) : 0;
               return (
@@ -3039,7 +3046,7 @@ function BitesEconomySection() {
                     <div>{Number(b.price).toFixed(2).replace(".", ",")} €</div>
                     {baseVal > 0 && <div style={{ fontSize: 11, color: "#9ca3af" }}>base {baseVal.toFixed(2).replace(".", ",")} €</div>}
                   </td>
-                  <td style={{ padding: "6px 8px", color: "#6b7280" }}>{Number(b.bitesAmount) > 0 ? (b.price / b.bitesAmount).toFixed(2).replace(".", ",") : "—"} €</td>
+                  <td style={{ padding: "6px 8px", color: "#6b7280" }}>{Number(b.bitesAmount) > 0 ? (b.price / b.bitesAmount * 100).toFixed(2).replace(".", ",") : "—"} €</td>
                   <td style={{ padding: "6px 8px" }}>
                     {discPct > 0 && <span style={{ fontSize: 11, background: "#dcfce7", color: "#166534", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>-{discPct}%</span>}
                     {actualSaving > 0 && actualSaving !== discPct && <span style={{ fontSize: 11, color: "#16a34a", marginLeft: 4 }}>({actualSaving}% real)</span>}

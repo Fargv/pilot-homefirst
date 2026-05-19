@@ -27,7 +27,7 @@ const CatalogPackSchema = new mongoose.Schema(
     featured: { type: Boolean, default: false },
     priceBasic: { type: Number, default: 1.99 },
     includedPlans: { type: [String], default: ["pro", "premium"] },
-    monthlyCreditCost: { type: Number, default: 1 },
+    monthlyCreditCost: { type: Number, default: 100 },
     dishes: { type: mongoose.Schema.Types.Mixed, default: [] },
     releaseDate: { type: Date, default: null },
     freeUntil: { type: Date, default: null },
@@ -96,7 +96,7 @@ async function upsertPack(data) {
   result.dishes = Array.isArray(data.dishes) ? data.dishes : [];
   result.priceBasic = typeof data.priceBasic === "number" ? data.priceBasic : 1.99;
   result.includedPlans = Array.isArray(data.includedPlans) ? data.includedPlans : ["pro", "premium"];
-  result.monthlyCreditCost = typeof data.monthlyCreditCost === "number" ? data.monthlyCreditCost : 1;
+  result.monthlyCreditCost = typeof data.monthlyCreditCost === "number" ? data.monthlyCreditCost : 100;
   result.defaultSpecial = Boolean(data.defaultSpecial);
   result.defaultAllowRandom = data.defaultAllowRandom !== false;
   result.sortOrder = typeof data.sortOrder === "number" ? data.sortOrder : 0;
