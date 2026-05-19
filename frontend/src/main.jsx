@@ -17,10 +17,6 @@ const app = (
       signUpForceRedirectUrl={clerkAfterSignUpUrl}
       signUpFallbackRedirectUrl={clerkAfterSignUpUrl}
     >
-      {/*
-        TODO: Configure Clerk application URLs and allowed redirect origins in the
-        Clerk dashboard before enabling Clerk sign-in in production.
-      */}
       <App />
     </ClerkProvider>
   ) : (

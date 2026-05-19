@@ -392,12 +392,16 @@ export default function ClerkOnboardingPage() {
           <header className="kitchen-auth-header">
             <span className="kitchen-auth-kicker">Registro seguro</span>
             <h2 className="kitchen-login-title">{PHASE_TITLE[phase]}</h2>
-            <p className="kitchen-login-subtitle">{PHASE_SUBTITLE[phase]}</p>
+            <p className="kitchen-login-subtitle">
+              {isInviteFlow && phase === "household"
+                ? "Confirma que quieres unirte a este hogar."
+                : PHASE_SUBTITLE[phase]}
+            </p>
           </header>
 
-          <StepIndicator currentStep={currentStep} skipHousehold={false} />
+          <StepIndicator currentStep={currentStep} skipHousehold={isInviteFlow} />
 
-          {isInviteFlow && inviteDetails?.householdName ? (
+          {isInviteFlow && inviteDetails?.householdName && phase !== "household" ? (
             <div className="kitchen-alert info">
               Te estás uniendo a <strong>{inviteDetails.householdName}</strong>.
             </div>
@@ -408,66 +412,112 @@ export default function ClerkOnboardingPage() {
           {/* ── HOUSEHOLD ──────────────────────────────────────────────── */}
           {phase === "household" ? (
             <div className="kitchen-onboarding-panel">
-              <div className="kitchen-onboarding-choice-grid">
-                <button
-                  type="button"
-                  className={`kitchen-onboarding-choice-card${isCreateMode ? " is-selected" : ""}`}
-                  onClick={() => updateField("householdMode", "create")}
-                >
-                  <span className="kitchen-onboarding-choice-kicker">Opción A</span>
-                  <strong>Crear un hogar nuevo</strong>
-                  <p>Empezarás con tu propio hogar y el plan Basic.</p>
-                </button>
-                <button
-                  type="button"
-                  className={`kitchen-onboarding-choice-card${isJoinMode ? " is-selected" : ""}`}
-                  onClick={() => updateField("householdMode", "join")}
-                >
-                  <span className="kitchen-onboarding-choice-kicker">Opción B</span>
-                  <strong>Unirme a un hogar existente</strong>
-                  <p>Entra con el código de 6 dígitos que te compartió tu hogar.</p>
-                </button>
-              </div>
 
-              {isJoinMode ? (
-                <div className="kitchen-onboarding-substep">
-                  <h3 className="kitchen-onboarding-section-title">Código del hogar</h3>
-                  <label className="kitchen-ui-input-group" htmlFor="su-hcode">
-                    <span className="kitchen-login-label">CÓDIGO DE 6 DÍGITOS</span>
-                    <input
-                      id="su-hcode"
-                      className="kitchen-ui-input"
-                      inputMode="numeric"
-                      placeholder="123456"
-                      maxLength={6}
-                      value={normalizedInviteCode}
-                      onChange={(e) => updateField("inviteCode", e.target.value)}
-                    />
-                  </label>
-                  <div className="kitchen-onboarding-inline-actions">
+              {isInviteFlow ? (
+                // ── Invite flow: no create/join choice ──────────────────────
+                !inviteLoaded ? (
+                  <p className="kitchen-muted" style={{ textAlign: "center", padding: "16px 0" }}>
+                    Cargando tu invitación...
+                  </p>
+                ) : inviteInvalid ? (
+                  // Token invalid/expired: show error then fallback to normal choice
+                  <>
+                    <div className="kitchen-alert error">
+                      La invitación no es válida o ha expirado. Elige cómo continuar:
+                    </div>
+                    <div className="kitchen-onboarding-choice-grid">
+                      <button
+                        type="button"
+                        className={`kitchen-onboarding-choice-card${isCreateMode ? " is-selected" : ""}`}
+                        onClick={() => updateField("householdMode", "create")}
+                      >
+                        <span className="kitchen-onboarding-choice-kicker">Opción A</span>
+                        <strong>Crear un hogar nuevo</strong>
+                        <p>Empezarás con tu propio hogar y el plan Basic.</p>
+                      </button>
+                      <button
+                        type="button"
+                        className={`kitchen-onboarding-choice-card${isJoinMode ? " is-selected" : ""}`}
+                        onClick={() => updateField("householdMode", "join")}
+                      >
+                        <span className="kitchen-onboarding-choice-kicker">Opción B</span>
+                        <strong>Unirme a un hogar existente</strong>
+                        <p>Entra con el código de 6 dígitos que te compartió tu hogar.</p>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  // Valid invite: confirmed household, no manual selection needed
+                  <div className="kitchen-onboarding-resolved-card">
+                    <strong>{inviteDetails.householdName}</strong>
+                    <p>Invitación válida. Pulsa Continuar para seguir.</p>
+                  </div>
+                )
+              ) : (
+                // ── Normal flow: create or join choice ──────────────────────
+                <>
+                  <div className="kitchen-onboarding-choice-grid">
                     <button
                       type="button"
-                      className="kitchen-button secondary"
-                      disabled={codeValidating || normalizedInviteCode.length !== 6}
-                      onClick={validateHouseholdCode}
+                      className={`kitchen-onboarding-choice-card${isCreateMode ? " is-selected" : ""}`}
+                      onClick={() => updateField("householdMode", "create")}
                     >
-                      {codeValidating ? "Validando..." : "Validar código"}
+                      <span className="kitchen-onboarding-choice-kicker">Opción A</span>
+                      <strong>Crear un hogar nuevo</strong>
+                      <p>Empezarás con tu propio hogar y el plan Basic.</p>
+                    </button>
+                    <button
+                      type="button"
+                      className={`kitchen-onboarding-choice-card${isJoinMode ? " is-selected" : ""}`}
+                      onClick={() => updateField("householdMode", "join")}
+                    >
+                      <span className="kitchen-onboarding-choice-kicker">Opción B</span>
+                      <strong>Unirme a un hogar existente</strong>
+                      <p>Entra con el código de 6 dígitos que te compartió tu hogar.</p>
                     </button>
                   </div>
-                  {validatedHousehold?.name ? (
-                    <div className="kitchen-onboarding-resolved-card">
-                      <strong>{validatedHousehold.name}</strong>
-                      <p>Código correcto. Puedes continuar.</p>
+
+                  {isJoinMode ? (
+                    <div className="kitchen-onboarding-substep">
+                      <h3 className="kitchen-onboarding-section-title">Código del hogar</h3>
+                      <label className="kitchen-ui-input-group" htmlFor="su-hcode">
+                        <span className="kitchen-login-label">CÓDIGO DE 6 DÍGITOS</span>
+                        <input
+                          id="su-hcode"
+                          className="kitchen-ui-input"
+                          inputMode="numeric"
+                          placeholder="123456"
+                          maxLength={6}
+                          value={normalizedInviteCode}
+                          onChange={(e) => updateField("inviteCode", e.target.value)}
+                        />
+                      </label>
+                      <div className="kitchen-onboarding-inline-actions">
+                        <button
+                          type="button"
+                          className="kitchen-button secondary"
+                          disabled={codeValidating || normalizedInviteCode.length !== 6}
+                          onClick={validateHouseholdCode}
+                        >
+                          {codeValidating ? "Validando..." : "Validar código"}
+                        </button>
+                      </div>
+                      {validatedHousehold?.name ? (
+                        <div className="kitchen-onboarding-resolved-card">
+                          <strong>{validatedHousehold.name}</strong>
+                          <p>Código correcto. Puedes continuar.</p>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
-                </div>
-              ) : null}
 
-              {isCreateMode ? (
-                <p className="kitchen-auth-hint">
-                  Empezarás con el plan Basic. Podrás invitar a miembros de tu hogar después de entrar.
-                </p>
-              ) : null}
+                  {isCreateMode ? (
+                    <p className="kitchen-auth-hint">
+                      Empezarás con el plan Basic. Podrás invitar a miembros de tu hogar después de entrar.
+                    </p>
+                  ) : null}
+                </>
+              )}
 
               <div className="kitchen-onboarding-footer">
                 <div />
@@ -630,7 +680,7 @@ export default function ClerkOnboardingPage() {
             <button
               type="button"
               className="kitchen-login-link"
-              onClick={() => navigate(LOGIN_PATH)}
+              onClick={() => navigate(`${LOGIN_PATH}?next=%2Fkitchen%2Fsemana`)}
             >
               Ya tengo cuenta
             </button>
