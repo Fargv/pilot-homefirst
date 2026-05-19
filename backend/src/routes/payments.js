@@ -11,7 +11,6 @@ import { BitesConfig } from "../kitchen/models/BitesConfig.js";
 import { getPlansConfig } from "../kitchen/models/PlansConfig.js";
 import { getEffectiveHouseholdId, handleHouseholdError } from "../kitchen/householdScope.js";
 import {
-  applyDevSubscriptionPlanToHousehold,
   applyPackEntitlementFromAttempt,
   applyBitesBundleEntitlementFromAttempt
 } from "../kitchen/paymentEntitlementService.js";
@@ -127,7 +126,7 @@ router.post("/checkout-session", requireAuth, async (req, res) => {
 
     if (type === "bites") {
       if (!targetId || !mongoose.isValidObjectId(targetId)) {
-        return res.status(400).json({ ok: false, error: "targetId debe ser un ObjectId vÃ¡lido para tipo 'bites'." });
+        return res.status(400).json({ ok: false, error: "targetId debe ser un ObjectId válido para tipo 'bites'." });
       }
 
       const bitesConfig = await BitesConfig.findOne({ key: "bitesEconomy" });
@@ -541,7 +540,7 @@ router.post("/dev/apply-latest-subscription", requireDevTestEntitlements, requir
     }
 
     // If the webhook never fired, the attempt is still "created". Mark it completed
-    // here so applyDevSubscriptionPlanToHousehold's gate passes.
+    // so the subsequent entitlement logic treats it as a valid completed purchase.
     if (attempt.status !== "completed") {
       console.log("[payments][dev] apply-latest-subscription: attempt not completed — marking completed now (webhook likely missed)", {
         attemptId: attempt._id.toString(),
@@ -847,15 +846,32 @@ async function handleSubscriptionEvent(subscription, eventType) {
   // created or updated — resolve plan from price IDs (env vars + DB PlansConfig)
   const items = subscription.items?.data || [];
   const priceId = items[0]?.price?.id || "";
-  const planKey = await resolvePlanFromPriceId(priceId);
+  let planKey = await resolvePlanFromPriceId(priceId);
 
   if (!planKey) {
-    console.warn("[payments][webhook] Could not resolve planKey from subscription price", {
-      priceId,
-      subscriptionId: subscription.id,
-      eventType
-    });
-    return;
+    // For renewals (subscription.updated, same sub ID, already on a paid plan), fall back
+    // to the household's current plan so subscriptionEndsAt is still refreshed even when
+    // STRIPE_PRO_PRICE_ID / STRIPE_PREMIUM_PRICE_ID are not configured.
+    const isRenewal =
+      eventType === "customer.subscription.updated" &&
+      household.stripeSubscriptionId === subscription.id &&
+      (household.subscriptionPlan === "pro" || household.subscriptionPlan === "premium");
+
+    if (isRenewal) {
+      planKey = household.subscriptionPlan;
+      console.warn("[payments][webhook] resolvePlanFromPriceId returned null — using existing plan for renewal (configure price IDs to remove this warning)", {
+        priceId,
+        subscriptionId: subscription.id,
+        fallbackPlan: planKey
+      });
+    } else {
+      console.warn("[payments][webhook] Could not resolve planKey from subscription price — configure STRIPE_PRO_PRICE_ID / STRIPE_PREMIUM_PRICE_ID or add price IDs in PlansConfig", {
+        priceId,
+        subscriptionId: subscription.id,
+        eventType
+      });
+      return;
+    }
   }
 
   const status = subscription.status;
