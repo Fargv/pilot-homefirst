@@ -96,11 +96,31 @@ function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan 
     }
   };
 
+  const downgradeDate = household.pendingDowngradeAt
+    ? new Date(household.pendingDowngradeAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })
+    : null;
+
   return (
     <tr style={{ background: isActive ? "rgba(99,102,241,0.06)" : undefined }}>
       <td style={{ fontWeight: isActive ? 700 : 400 }}>
-        {household.name}
-        {isActive ? <span style={{ marginLeft: 6, fontSize: 11, color: "#6366f1" }}>● activo</span> : null}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          {household.name}
+          {isActive ? <span style={{ fontSize: 11, color: "#6366f1" }}>● activo</span> : null}
+          {downgradeDate ? (
+            <span title={household.pendingDowngradeReason || "Sin motivo"} style={{
+              fontSize: 10, padding: "1px 6px", borderRadius: 999,
+              background: "#fef9c3", border: "1px solid #fbbf24", color: "#92400e",
+              cursor: "help", fontWeight: 600, whiteSpace: "nowrap"
+            }}>
+              ↓ cancela {downgradeDate}
+            </span>
+          ) : null}
+        </div>
+        {household.pendingDowngradeReason ? (
+          <div style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic", marginTop: 2, maxWidth: 260 }}>
+            "{household.pendingDowngradeReason}"
+          </div>
+        ) : null}
       </td>
       <td style={{ textAlign: "center" }}><PlanBadge plan={localPlan} /></td>
       <td style={{ textAlign: "center" }}><StatusBadge status={household.subscriptionStatus} /></td>

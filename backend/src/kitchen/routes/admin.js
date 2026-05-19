@@ -39,7 +39,7 @@ router.get("/households", requireAuth, requireDiod, async (req, res) => {
   try {
     const households = await Household.find(
       {},
-      { name: 1, subscriptionPlan: 1, subscriptionStatus: 1, isPro: 1, ownerUserId: 1, createdAt: 1, inviteCode: 1 }
+      { name: 1, subscriptionPlan: 1, subscriptionStatus: 1, subscriptionEndsAt: 1, pendingDowngradeAt: 1, pendingDowngradeReason: 1, isPro: 1, ownerUserId: 1, createdAt: 1, inviteCode: 1 }
     ).sort({ createdAt: 1 }).lean();
 
     const householdIds = households.map((h) => h._id);
@@ -56,6 +56,9 @@ router.get("/households", requireAuth, requireDiod, async (req, res) => {
         name: household.name,
         subscriptionPlan: household.subscriptionPlan || "basic",
         subscriptionStatus: household.subscriptionStatus || "inactive",
+        subscriptionEndsAt: household.subscriptionEndsAt || null,
+        pendingDowngradeAt: household.pendingDowngradeAt || null,
+        pendingDowngradeReason: household.pendingDowngradeReason || "",
         isPro: Boolean(household.isPro),
         memberCount: memberCountMap[String(household._id)] || 0,
         inviteCode: household.inviteCode || null,
