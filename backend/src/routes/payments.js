@@ -469,6 +469,20 @@ router.post("/session-activate", requireAuth, async (req, res) => {
 
         if (["pro", "premium"].includes(expectedPlan) && currentPlan !== expectedPlan) {
           applyAdminSubscriptionActivation(household, expectedPlan);
+          // Override mock 30-day offset with Stripe's actual billing period end
+          if (attempt.stripeSubscriptionId) {
+            try {
+              const sub = await stripe.subscriptions.retrieve(attempt.stripeSubscriptionId);
+              if (sub.current_period_end) {
+                household.subscriptionEndsAt = new Date(sub.current_period_end * 1000);
+              }
+            } catch (subErr) {
+              console.warn("[payments] session-activate: could not retrieve subscription for period end", {
+                stripeSubscriptionId: attempt.stripeSubscriptionId,
+                error: subErr.message
+              });
+            }
+          }
           household.stripeCustomerId = attempt.stripeCustomerId || household.stripeCustomerId || "";
           household.stripeSubscriptionId = attempt.stripeSubscriptionId || household.stripeSubscriptionId || "";
           household.paymentProvider = attempt.mode === "test" ? "stripe-test" : "stripe";
@@ -480,7 +494,8 @@ router.post("/session-activate", requireAuth, async (req, res) => {
             householdId: effectiveHouseholdId,
             expectedPlan,
             sessionId,
-            mode: attempt.mode
+            mode: attempt.mode,
+            subscriptionEndsAt: household.subscriptionEndsAt
           });
           const reloaded = await Household.findById(effectiveHouseholdId);
           return res.json({
@@ -499,9 +514,12 @@ router.post("/session-activate", requireAuth, async (req, res) => {
       });
     }
 
-    // Verify payment directly with Stripe (this is the proof of payment)
+    // Verify payment directly with Stripe (this is the proof of payment).
+    // Expand subscription so we get current_period_end without a second API call.
     console.log("[payments] session-activate: retrieving from Stripe", { sessionId });
-    const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
+    const stripeSession = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription"]
+    });
     if (stripeSession.payment_status !== "paid") {
       return res.status(400).json({
         ok: false,
@@ -510,12 +528,17 @@ router.post("/session-activate", requireAuth, async (req, res) => {
       });
     }
 
+    // subscription may be an expanded object or a bare string ID
+    const stripeSubscriptionId = typeof stripeSession.subscription === "string"
+      ? stripeSession.subscription
+      : stripeSession.subscription?.id || "";
+
     // Mark attempt completed with Stripe data
     attempt.status = "completed";
     attempt.amountTotal = stripeSession.amount_total ?? null;
     attempt.currency = stripeSession.currency || "";
     attempt.stripeCustomerId = stripeSession.customer || "";
-    if (stripeSession.subscription) attempt.stripeSubscriptionId = stripeSession.subscription;
+    if (stripeSubscriptionId) attempt.stripeSubscriptionId = stripeSubscriptionId;
     await attempt.save();
 
     // Store stripeCustomerId on household so future subscription events can find it
@@ -536,7 +559,12 @@ router.post("/session-activate", requireAuth, async (req, res) => {
         return res.status(422).json({ ok: false, error: `planKey "${attempt.planKey}" no es válido.` });
       }
       applyAdminSubscriptionActivation(household, planKey);
-      household.stripeSubscriptionId = attempt.stripeSubscriptionId || household.stripeSubscriptionId || "";
+      // Override the mock 30-day offset with Stripe's actual billing period end
+      const periodEnd = typeof stripeSession.subscription === "object"
+        ? stripeSession.subscription?.current_period_end
+        : null;
+      if (periodEnd) household.subscriptionEndsAt = new Date(periodEnd * 1000);
+      household.stripeSubscriptionId = stripeSubscriptionId || household.stripeSubscriptionId || "";
       household.paymentProvider = attempt.mode === "test" ? "stripe-test" : "stripe";
       household.paymentMode = attempt.mode;
       household.planUpdatedAt = new Date();
@@ -546,7 +574,8 @@ router.post("/session-activate", requireAuth, async (req, res) => {
         householdId: effectiveHouseholdId,
         planKey,
         mode: attempt.mode,
-        sessionId
+        sessionId,
+        subscriptionEndsAt: household.subscriptionEndsAt
       });
     } else if (attempt.type === "pack") {
       await applyPackEntitlementFromAttempt(attempt, stripeSession);

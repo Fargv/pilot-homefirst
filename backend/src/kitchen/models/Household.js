@@ -57,4 +57,6 @@ HouseholdSchema.index(
   }
 );
 
+HouseholdSchema.index({ stripeCustomerId: 1 });
+
 export const Household = mongoose.model("Household", HouseholdSchema);
