@@ -138,7 +138,7 @@ router.post("/checkout-session", requireAuth, async (req, res) => {
         return res.status(400).json({
           ok: false,
           code: "BUNDLE_NOT_FOR_SALE",
-          error: "Este bundle no estÃ¡ disponible para compra directa."
+          error: "Este bundle no está disponible para compra directa."
         });
       }
 
@@ -411,6 +411,116 @@ router.post("/dev/reset-plan", requireDevEnv, requireAuth, requireDiod, async (r
       stack: error?.stack
     });
     return res.status(500).json({ ok: false, error: "No se pudo resetear el plan." });
+  }
+});
+
+// ─── POST /api/payments/session-activate ─────────────────────────────────────
+// Called from the success page to activate an entitlement without relying on
+// webhook delivery. Verifies the Stripe session directly via the Stripe API,
+// so it works in any environment without ALLOW_TEST_PAYMENT_ENTITLEMENTS.
+
+router.post("/session-activate", requireAuth, async (req, res) => {
+  if (!paymentsEnabledGuard(res)) return;
+  const stripe = stripeClientGuard(res);
+  if (!stripe) return;
+
+  const { sessionId } = req.body || {};
+  if (!sessionId || typeof sessionId !== "string") {
+    return res.status(400).json({ ok: false, error: "sessionId requerido." });
+  }
+
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+
+    const attempt = await PurchaseAttempt.findOne({
+      stripeCheckoutSessionId: sessionId,
+      householdId: effectiveHouseholdId
+    });
+
+    if (!attempt) {
+      return res.status(404).json({
+        ok: false,
+        code: "ATTEMPT_NOT_FOUND",
+        error: "No se encontró el intento de pago para esta sesión."
+      });
+    }
+
+    // Webhook already fired and completed the entitlement — return current plan
+    if (attempt.status === "completed") {
+      const household = await Household.findById(effectiveHouseholdId);
+      return res.json({
+        ok: true,
+        applied: false,
+        reason: "already_completed",
+        household: { id: household._id.toString(), ...buildHouseholdSubscriptionResponse(household) }
+      });
+    }
+
+    // Verify payment directly with Stripe (this is the proof of payment)
+    const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
+    if (stripeSession.payment_status !== "paid") {
+      return res.status(400).json({
+        ok: false,
+        code: "NOT_PAID",
+        error: `El pago no está completado (estado: ${stripeSession.payment_status}).`
+      });
+    }
+
+    // Mark attempt completed with Stripe data
+    attempt.status = "completed";
+    attempt.amountTotal = stripeSession.amount_total ?? null;
+    attempt.currency = stripeSession.currency || "";
+    attempt.stripeCustomerId = stripeSession.customer || "";
+    if (stripeSession.subscription) attempt.stripeSubscriptionId = stripeSession.subscription;
+    await attempt.save();
+
+    // Store stripeCustomerId on household so future subscription events can find it
+    if (attempt.stripeCustomerId && mongoose.isValidObjectId(String(effectiveHouseholdId))) {
+      await Household.findByIdAndUpdate(effectiveHouseholdId, {
+        $set: { stripeCustomerId: attempt.stripeCustomerId }
+      });
+    }
+
+    const household = await Household.findById(effectiveHouseholdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "Household no encontrado." });
+    }
+
+    if (attempt.type === "subscription") {
+      const planKey = normalizeSubscriptionPlan(attempt.planKey);
+      if (!["pro", "premium"].includes(planKey)) {
+        return res.status(422).json({ ok: false, error: `planKey "${attempt.planKey}" no es válido.` });
+      }
+      applyAdminSubscriptionActivation(household, planKey);
+      household.stripeSubscriptionId = attempt.stripeSubscriptionId || household.stripeSubscriptionId || "";
+      household.paymentProvider = attempt.mode === "test" ? "stripe-test" : "stripe";
+      household.paymentMode = attempt.mode;
+      household.planUpdatedAt = new Date();
+      household.planUpdatedByPaymentAttemptId = attempt._id.toString();
+      await household.save();
+      console.log("[payments] session-activate: subscription activated", {
+        householdId: effectiveHouseholdId,
+        planKey,
+        mode: attempt.mode,
+        sessionId
+      });
+    } else if (attempt.type === "pack") {
+      await applyPackEntitlementFromAttempt(attempt, stripeSession);
+    } else if (attempt.type === "bites") {
+      await applyBitesBundleEntitlementFromAttempt(attempt, stripeSession);
+    }
+
+    const reloaded = await Household.findById(effectiveHouseholdId);
+    return res.json({
+      ok: true,
+      applied: true,
+      household: { id: reloaded._id.toString(), ...buildHouseholdSubscriptionResponse(reloaded) }
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    console.error("[payments] session-activate error", { error: error?.message, stack: error?.stack });
+    return res.status(500).json({ ok: false, error: "No se pudo activar el pago." });
   }
 });
 

@@ -1,16 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
-import { apiRequest, devApplyLatestSubscription } from "../api.js";
+import { activatePaymentSession } from "../api.js";
 import { useAuth } from "../auth.jsx";
 
 const isTestMode = import.meta.env.VITE_PAYMENTS_MODE === "test";
 const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
 
 const PAID_PLANS = new Set(["pro", "premium"]);
-const POLL_DELAY_MS = 1500;
-const POLL_INTERVAL_MS = 2500;
-const POLL_MAX_ATTEMPTS = 3;
 
 function PlanLabel({ plan }) {
   if (plan === "pro") return <strong>Pro</strong>;
@@ -29,84 +26,44 @@ export default function PaymentSuccessPage() {
   const [checking, setChecking] = useState(!isPack);
   const [activePlan, setActivePlan] = useState(null);
   const [planUpdated, setPlanUpdated] = useState(false);
-  const [devFallbackError, setDevFallbackError] = useState("");
-  // Use refs for poll state so mutations never re-trigger the effect
-  const pollCountRef = useRef(0);
-  const devFallbackUsedRef = useRef(false);
-  const timerRef = useRef(null);
+  const [activateError, setActivateError] = useState("");
 
   useEffect(() => {
-    if (isPack) return;
+    if (isPack || !sessionId || !STRIPE_ENABLED) {
+      setChecking(false);
+      return;
+    }
 
-    // Reset poll state on each mount (handles StrictMode double-invoke safely)
-    pollCountRef.current = 0;
-    devFallbackUsedRef.current = false;
     let cancelled = false;
 
-    const checkPlan = async () => {
+    const activate = async () => {
       try {
-        const data = await apiRequest("/api/kitchen/household/summary");
+        const data = await activatePaymentSession(sessionId);
         if (cancelled) return;
         const plan = String(data?.household?.subscriptionPlan || "basic").toLowerCase();
         setActivePlan(plan);
-
         if (PAID_PLANS.has(plan)) {
           setPlanUpdated(true);
-          setChecking(false);
           refreshUser().catch(() => {});
-          return;
         }
-
-        pollCountRef.current += 1;
-
-        if (pollCountRef.current < POLL_MAX_ATTEMPTS) {
-          timerRef.current = setTimeout(checkPlan, POLL_INTERVAL_MS);
-          return;
-        }
-
-        // Polls exhausted. In DEV test mode, try the fallback endpoint once.
-        // Works even if the Stripe webhook never reached the server — the
-        // fallback marks the attempt completed and applies the entitlement.
-        if (isTestMode && STRIPE_ENABLED && !devFallbackUsedRef.current) {
-          devFallbackUsedRef.current = true;
-          try {
-            console.log("[PaymentSuccess] Polls exhausted — calling DEV apply-latest-subscription");
-            const fallbackData = await devApplyLatestSubscription();
-            if (cancelled) return;
-            const fallbackPlan = String(fallbackData?.household?.subscriptionPlan || "basic").toLowerCase();
-            setActivePlan(fallbackPlan);
-            if (PAID_PLANS.has(fallbackPlan)) {
-              setPlanUpdated(true);
-              setChecking(false);
-              refreshUser().catch(() => {});
-              return;
-            }
-          } catch (fallbackErr) {
-            if (!cancelled) {
-              const msg = fallbackErr?.body?.code === "NO_COMPLETED_SUBSCRIPTION_ATTEMPT"
-                ? "No se encontró intento de suscripción. ¿Completaste el checkout de Stripe?"
-                : fallbackErr?.message || "Error en fallback DEV.";
-              setDevFallbackError(msg);
-              console.warn("[PaymentSuccess] DEV fallback failed", fallbackErr?.message, fallbackErr?.body);
-            }
-          }
-        }
-
-        // Stop checking — do NOT call refreshUser() here as it triggers a
-        // loading flash in the layout when no upgrade happened.
-        if (!cancelled) setChecking(false);
-      } catch {
+      } catch (err) {
+        if (cancelled) return;
+        const msg = err?.body?.code === "ATTEMPT_NOT_FOUND"
+          ? "No se encontró el intento de pago. Si completaste el checkout, el plan se actualizará en breve."
+          : err?.body?.code === "NOT_PAID"
+          ? "El pago no se completó en Stripe. Inténtalo de nuevo."
+          : err?.message || "No se pudo activar el plan automáticamente.";
+        setActivateError(msg);
+        console.warn("[PaymentSuccess] session-activate failed", err?.body?.code, err?.message);
+      } finally {
         if (!cancelled) setChecking(false);
       }
     };
 
-    timerRef.current = setTimeout(checkPlan, POLL_DELAY_MS);
+    activate();
 
-    return () => {
-      cancelled = true;
-      clearTimeout(timerRef.current);
-    };
-  }, [isPack, refreshUser]);
+    return () => { cancelled = true; };
+  }, [isPack, sessionId, refreshUser]);
 
   const title = isTestMode ? "Pago de prueba completado" : "Pago completado";
 
@@ -119,8 +76,8 @@ export default function PaymentSuccessPage() {
     bodyText = "Verificando tu plan… un momento.";
   } else if (planUpdated && activePlan) {
     bodyText = null; // rendered inline with PlanLabel
-  } else if (devFallbackError) {
-    bodyText = `Pago registrado, pero no se pudo activar la licencia automáticamente. ${devFallbackError}`;
+  } else if (activateError) {
+    bodyText = `Pago registrado, pero no se pudo activar la licencia automáticamente. ${activateError}`;
   } else {
     bodyText = "Pago registrado. La licencia puede tardar unos segundos en actualizarse. Vuelve a la configuración para comprobar el estado.";
   }

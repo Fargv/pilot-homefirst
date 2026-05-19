@@ -184,6 +184,10 @@ export function devChangePlan(planKey) {
   });
 }
 
+export function activatePaymentSession(sessionId) {
+  return apiRequest("/api/payments/session-activate", { method: "POST", body: JSON.stringify({ sessionId }) });
+}
+
 /**
  * DEV/test only — re-apply the latest completed subscription PurchaseAttempt for
  * the current household. Call this from PaymentSuccessPage if polling fails.
