@@ -2198,6 +2198,21 @@ function GrantModal({ pack, households, onGrant, onClose }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Ownerships / revoke state
+  const [ownerships, setOwnerships] = useState([]);
+  const [ownershipsLoading, setOwnershipsLoading] = useState(false);
+  const [revokingId, setRevokingId] = useState("");
+  const [revokeNotice, setRevokeNotice] = useState("");
+
+  useEffect(() => {
+    if (!pack?.id) return;
+    setOwnershipsLoading(true);
+    apiRequest(`/api/kitchen/catalog/packs/${pack.id}/admin-ownerships`)
+      .then((d) => setOwnerships(d.ownerships || []))
+      .catch(() => {})
+      .finally(() => setOwnershipsLoading(false));
+  }, [pack?.id]);
+
   const handle = async () => {
     if (!householdId.trim()) { setError("Selecciona o introduce un household ID."); return; }
     setSaving(true); setError(""); setSuccess("");
@@ -2205,15 +2220,113 @@ function GrantModal({ pack, households, onGrant, onClose }) {
       await onGrant(String(pack.id), householdId.trim());
       setSuccess("Pack concedido correctamente.");
       setHouseholdId("");
+      // Refresh ownership list
+      apiRequest(`/api/kitchen/catalog/packs/${pack.id}/admin-ownerships`)
+        .then((d) => setOwnerships(d.ownerships || []))
+        .catch(() => {});
     } catch (err) { setError(err.message || "Error al conceder."); }
     finally { setSaving(false); }
   };
 
+  const handleRevoke = async (ownership) => {
+    const confirmMsg = ownership.isPaid
+      ? `"${ownership.householdName}" pagó por este pack pero no lo tiene instalado. Al revocar tendrá que volver a comprarlo. ¿Continuar?`
+      : ownership.isInstalled
+        ? `Se eliminarán los platos de este pack en "${ownership.householdName}" (los modificados se conservan). ¿Continuar?`
+        : `¿Revocar el acceso de "${ownership.householdName}" a este pack?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setRevokingId(String(ownership.householdId));
+    setRevokeNotice("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/admin-revoke`, {
+        method: "POST",
+        body: JSON.stringify({ targetHouseholdId: String(ownership.householdId) })
+      });
+      setOwnerships((prev) => prev.filter((o) => String(o.householdId) !== String(ownership.householdId)));
+      setRevokeNotice(data.message || "Pack revocado.");
+    } catch (err) {
+      setRevokeNotice(`Error: ${err.message || "No se pudo revocar."}`);
+    } finally {
+      setRevokingId("");
+    }
+  };
+
+  const ACQVIA_LABEL = { purchase: "comprado", subscription: "suscripción", admin_grant: "concedido", free: "gratis" };
+
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: 420, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-        <h3 style={{ margin: "0 0 6px", fontSize: 16 }}>Conceder pack a un hogar</h3>
-        <p style={{ margin: "0 0 16px", fontSize: 13, color: "#64748b" }}>Pack: <strong>{pack.title}</strong></p>
+      <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: 520, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "85vh", overflowY: "auto" }}>
+        <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>Gestionar acceso al pack</h3>
+        <p style={{ margin: "0 0 18px", fontSize: 13, color: "#64748b" }}>Pack: <strong>{pack.title}</strong></p>
+
+        {/* ── Asignaciones actuales ── */}
+        <h4 style={{ margin: "0 0 8px", fontSize: 13, color: "#374151", fontWeight: 600 }}>Asignaciones actuales</h4>
+        {ownershipsLoading ? (
+          <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 16 }}>Cargando...</p>
+        ) : ownerships.length === 0 ? (
+          <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 16 }}>Ningún hogar tiene este pack.</p>
+        ) : (
+          <div style={{ marginBottom: 12, overflowX: "auto" }}>
+            <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #e5e7eb", color: "#6b7280" }}>
+                  <th style={{ textAlign: "left", padding: "3px 6px", fontWeight: 600 }}>Hogar</th>
+                  <th style={{ textAlign: "center", padding: "3px 6px", fontWeight: 600 }}>Tipo</th>
+                  <th style={{ textAlign: "center", padding: "3px 6px", fontWeight: 600 }}>Instalado</th>
+                  <th style={{ padding: "3px 6px" }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {ownerships.map((o) => (
+                  <tr key={String(o.householdId)} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <td style={{ padding: "5px 6px", fontWeight: 500 }}>{o.householdName}</td>
+                    <td style={{ padding: "5px 6px", textAlign: "center" }}>
+                      <span style={{
+                        fontSize: 10, padding: "1px 7px", borderRadius: 999, fontWeight: 700,
+                        background: o.isPaid ? "#dbeafe" : "#d1fae5",
+                        color: o.isPaid ? "#1d4ed8" : "#065f46"
+                      }}>
+                        {ACQVIA_LABEL[o.acquiredVia] || o.acquiredVia}
+                      </span>
+                    </td>
+                    <td style={{ padding: "5px 6px", textAlign: "center", color: o.isInstalled ? "#16a34a" : "#9ca3af", fontWeight: o.isInstalled ? 600 : 400 }}>
+                      {o.isInstalled ? "✓ sí" : "— no"}
+                    </td>
+                    <td style={{ padding: "5px 6px" }}>
+                      {o.isPaid && o.isInstalled ? (
+                        <span style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic" }} title="Pagado e instalado — protegido">
+                          protegido
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          style={{ ...ABT.del, fontSize: 11, padding: "2px 8px", opacity: revokingId === String(o.householdId) ? 0.6 : 1 }}
+                          disabled={Boolean(revokingId)}
+                          onClick={() => handleRevoke(o)}
+                        >
+                          {revokingId === String(o.householdId) ? "..." : "Revocar"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {revokeNotice ? (
+          <div style={{ fontSize: 12, padding: "7px 10px", borderRadius: 6, marginBottom: 12, background: "#f0fdf4", border: "1px solid #86efac", color: "#166534" }}>
+            {revokeNotice}
+          </div>
+        ) : null}
+
+        <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
+
+        {/* ── Conceder a un hogar ── */}
+        <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "#374151", fontWeight: 600 }}>Conceder a un hogar</h4>
 
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, marginBottom: 10 }}>
           Seleccionar household

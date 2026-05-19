@@ -15,6 +15,7 @@ import { Category } from "../models/Category.js";
 import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { CatalogPack } from "../models/CatalogPack.js";
 import { HouseholdCatalogPack } from "../models/HouseholdCatalogPack.js";
+import { PackEntitlement } from "../models/PackEntitlement.js";
 import { normalizeSubscriptionPlan } from "../subscriptionService.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import {
@@ -907,6 +908,126 @@ router.post("/packs/:packId/admin-grant", requireAuth, requireDiod, async (req, 
     return res.json({ ok: true, ownership: { id: ownership._id, status: ownership.status } });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Error al conceder el pack." });
+  }
+});
+
+// ─── GET /packs/:packId/admin-ownerships ─────────────────────────────────────
+// Returns all households that own this pack with payment and installation status.
+
+router.get("/packs/:packId/admin-ownerships", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+
+    const ownerships = await HouseholdCatalogPack.find({ packId: req.params.packId }).lean();
+
+    const householdIds = ownerships.map((o) => o.householdId);
+    const households = await Household.find(
+      { _id: { $in: householdIds } },
+      { name: 1 }
+    ).lean();
+    const nameMap = Object.fromEntries(households.map((h) => [String(h._id), h.name]));
+
+    const result = ownerships.map((o) => {
+      const isPaid = ["purchase", "subscription"].includes(o.acquiredVia) || o.paymentStatus === "paid";
+      const isInstalled = o.status === "installed";
+      return {
+        householdId: o.householdId,
+        householdName: nameMap[String(o.householdId)] || String(o.householdId),
+        acquiredVia: o.acquiredVia || "unknown",
+        isPaid,
+        isInstalled,
+        canRevoke: !(isPaid && isInstalled),
+        acquiredAt: o.acquiredAt || null
+      };
+    });
+
+    return res.json({ ok: true, ownerships: result });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudieron cargar las asignaciones." });
+  }
+});
+
+// ─── POST /packs/:packId/admin-revoke ─────────────────────────────────────────
+// Revokes pack access for a household.
+// Rules:
+//   paid + installed   → rejected (would be theft — user paid and is actively using it)
+//   paid + not installed → revoked with warning (user will need to repurchase)
+//   free + installed   → revoked + non-customised dishes removed
+//   free + not installed → revoked silently
+
+router.post("/packs/:packId/admin-revoke", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const { targetHouseholdId } = req.body;
+    if (!targetHouseholdId || !mongoose.isValidObjectId(targetHouseholdId)) {
+      return res.status(400).json({ ok: false, error: "householdId de destino inválido." });
+    }
+    if (!mongoose.isValidObjectId(req.params.packId)) {
+      return res.status(404).json({ ok: false, error: "Pack no encontrado." });
+    }
+
+    const ownership = await HouseholdCatalogPack.findOne({
+      householdId: targetHouseholdId,
+      packId: req.params.packId
+    });
+
+    if (!ownership) {
+      return res.status(404).json({ ok: false, error: "Este hogar no tiene acceso a este pack." });
+    }
+
+    const isPaid = ["purchase", "subscription"].includes(ownership.acquiredVia) || ownership.paymentStatus === "paid";
+    const isInstalled = ownership.status === "installed";
+
+    // Hard block: paid + installed — do not touch, would amount to theft
+    if (isPaid && isInstalled) {
+      return res.status(403).json({
+        ok: false,
+        code: "PAID_AND_INSTALLED",
+        error: "No se puede revocar: el hogar pagó por este pack y lo tiene instalado activamente."
+      });
+    }
+
+    let dishesRemoved = 0;
+
+    // If installed (free grant): remove non-customised dishes before deleting ownership
+    if (isInstalled) {
+      const result = await KitchenDish.deleteMany({
+        householdId: targetHouseholdId,
+        sourcePackId: new mongoose.Types.ObjectId(req.params.packId),
+        source: "catalog",
+        userModified: { $ne: true }
+      });
+      dishesRemoved = result.deletedCount;
+    }
+
+    // Mark PackEntitlement as revoked if one exists (paid purchases have it, free grants don't)
+    await PackEntitlement.updateOne(
+      { householdId: String(targetHouseholdId), packId: req.params.packId, status: "active" },
+      { $set: { status: "revoked" } }
+    );
+
+    // Delete the ownership record entirely so the pack reappears as purchasable in the catalog
+    await ownership.deleteOne();
+
+    const message = isPaid
+      ? `Pack revocado. El hogar deberá volver a comprarlo para tener acceso. Contacta con el hogar si fue un error.`
+      : isInstalled
+        ? `Pack revocado y ${dishesRemoved} plato(s) eliminado(s) de la cocina del hogar (los modificados se conservan).`
+        : `Pack revocado. El hogar no lo tenía instalado.`;
+
+    console.log("[catalog][admin] Pack revoked", {
+      packId: req.params.packId,
+      householdId: targetHouseholdId,
+      revokedBy: req.user?.id || null,
+      isPaid,
+      isInstalled,
+      dishesRemoved
+    });
+
+    return res.json({ ok: true, revoked: true, isPaid, wasInstalled: isInstalled, dishesRemoved, message });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message || "Error al revocar el pack." });
   }
 });
 
