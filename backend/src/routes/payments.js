@@ -437,6 +437,15 @@ router.post("/session-activate", requireAuth, async (req, res) => {
       householdId: effectiveHouseholdId
     });
 
+    console.log("[payments] session-activate: attempt lookup", {
+      sessionId,
+      householdId: effectiveHouseholdId,
+      found: Boolean(attempt),
+      status: attempt?.status,
+      type: attempt?.type,
+      planKey: attempt?.planKey
+    });
+
     if (!attempt) {
       return res.status(404).json({
         ok: false,
@@ -491,6 +500,7 @@ router.post("/session-activate", requireAuth, async (req, res) => {
     }
 
     // Verify payment directly with Stripe (this is the proof of payment)
+    console.log("[payments] session-activate: retrieving from Stripe", { sessionId });
     const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
     if (stripeSession.payment_status !== "paid") {
       return res.status(400).json({
