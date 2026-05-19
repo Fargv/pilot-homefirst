@@ -1,7 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
-import { apiRequest, createCheckoutSession, createCustomerPortalSession, devChangePlan } from "../api.js";
+import {
+  apiRequest,
+  cancelSubscription,
+  createCheckoutSession,
+  createCustomerPortalSession,
+  devChangePlan,
+  undoCancelSubscription
+} from "../api.js";
 import { getPlanLimits, isUnlimitedLicenseLimit } from "../subscription.js";
 
 const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
@@ -56,6 +63,34 @@ const PLANS = [
   }
 ];
 
+const CANCEL_REASONS = [
+  { id: "too-expensive", label: "Me resulta demasiado caro" },
+  { id: "not-using", label: "Ya no uso estas funciones" },
+  { id: "missing-feature", label: "Me falta alguna función que esperaba" },
+  { id: "pause", label: "Solo quiero hacer una pausa" },
+  { id: "other", label: "Otro motivo" }
+];
+
+const FEATURES_BY_PLAN = {
+  pro: [
+    "Randomización de semana completa",
+    "Presupuesto y control de gasto",
+    "Filtro de dieta en randomización"
+  ],
+  premium: [
+    "Usuarios y comensales ilimitados",
+    "Randomización de semana completa",
+    "Presupuesto y control de gasto",
+    "Filtro de dieta en randomización",
+    "Acceso prioritario a nuevas funciones"
+  ]
+};
+
+function formatDate(date) {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+}
+
 function CheckIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -85,9 +120,19 @@ export default function UpgradeToProPage() {
   const [success, setSuccess] = useState("");
   const [requestedPlan, setRequestedPlan] = useState("");
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
+  const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
+  const [subscriptionEndsAt, setSubscriptionEndsAt] = useState(null);
+  const [pendingDowngradeAt, setPendingDowngradeAt] = useState(null);
   const [hasActiveStripeSubscription, setHasActiveStripeSubscription] = useState(false);
   const [paymentMeta, setPaymentMeta] = useState(null);
   const [householdLicense, setHouseholdLicense] = useState(null);
+
+  // Cancel modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelDetails, setCancelDetails] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [undoLoading, setUndoLoading] = useState(false);
 
   const from = searchParams.get("from") || "";
   const backPath = from || "/kitchen/configuracion";
@@ -105,6 +150,9 @@ export default function UpgradeToProPage() {
         const data = await apiRequest("/api/kitchen/household/summary");
         if (!active) return;
         setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
+        setSubscriptionStatus(String(data?.household?.subscriptionStatus || "inactive").toLowerCase());
+        setSubscriptionEndsAt(data?.household?.subscriptionEndsAt || null);
+        setPendingDowngradeAt(data?.household?.pendingDowngradeAt || null);
         setRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
         setHasActiveStripeSubscription(Boolean(data?.household?.hasActiveStripeSubscription));
         setPaymentMeta(data?.household?.paymentMeta || null);
@@ -126,10 +174,6 @@ export default function UpgradeToProPage() {
     setError("");
     setSuccess("");
 
-    // ── Stripe Checkout path ────────────────────────────────────────────────
-    // Send planKey so the backend can resolve the price ID from DB (PlansConfig)
-    // even when VITE_STRIPE_*_PRICE_ID env vars are not set. stripePriceId from
-    // env is passed as a hint; the backend prefers DB-stored IDs when planKey is set.
     if (STRIPE_ENABLED) {
       try {
         const { url } = await createCheckoutSession({
@@ -151,7 +195,6 @@ export default function UpgradeToProPage() {
       return;
     }
 
-    // ── Fallback: legacy "request" flow (beta / payments disabled) ──────────
     try {
       await apiRequest("/api/subscription/request", {
         method: "POST",
@@ -189,13 +232,49 @@ export default function UpgradeToProPage() {
     try {
       const data = await devChangePlan(planKey);
       setSubscriptionPlan(data?.household?.subscriptionPlan || planKey);
+      setSubscriptionStatus(data?.household?.subscriptionStatus || "inactive");
       setHasActiveStripeSubscription(false);
       setPaymentMeta(null);
+      setPendingDowngradeAt(null);
       setSuccess(`Plan cambiado a ${planKey} (DEV override).`);
     } catch (err) {
       setError(err.message || "No se pudo cambiar el plan.");
     } finally {
       setDevChangePlanLoading("");
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!cancelReason) return;
+    setCancelLoading(true);
+    setError("");
+    try {
+      const data = await cancelSubscription({ reason: cancelReason, details: cancelDetails.trim() });
+      setPendingDowngradeAt(data?.household?.pendingDowngradeAt || null);
+      setSubscriptionEndsAt(data?.household?.subscriptionEndsAt || null);
+      setShowCancelModal(false);
+      setCancelReason("");
+      setCancelDetails("");
+    } catch (err) {
+      setError(err.message || "No se pudo programar la cancelación.");
+      setShowCancelModal(false);
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const handleUndoCancel = async () => {
+    setUndoLoading(true);
+    setError("");
+    try {
+      const data = await undoCancelSubscription();
+      setPendingDowngradeAt(null);
+      setSubscriptionEndsAt(data?.household?.subscriptionEndsAt || subscriptionEndsAt);
+      setSuccess("¡De vuelta al equipo! Tu suscripción sigue activa sin cambios.");
+    } catch (err) {
+      setError(err.message || "No se pudo reactivar la suscripción.");
+    } finally {
+      setUndoLoading(false);
     }
   };
 
@@ -212,6 +291,9 @@ export default function UpgradeToProPage() {
     if (requestedPlan === id) return "✓ Solicitud enviada";
     return `Solicitar ${plan.name}`;
   };
+
+  const isOnPaidActivePlan = ["pro", "premium"].includes(subscriptionPlan) && subscriptionStatus === "active";
+  const featuresToLose = FEATURES_BY_PLAN[subscriptionPlan] || [];
 
   return (
     <KitchenLayout>
@@ -248,6 +330,41 @@ export default function UpgradeToProPage() {
             ) : null}
           </div>
         </div>
+
+        {/* Pending downgrade banner */}
+        {!summaryLoading && pendingDowngradeAt && (
+          <div style={{
+            background: "#fffbeb",
+            border: "1px solid #f59e0b",
+            borderRadius: 12,
+            padding: "14px 18px",
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12
+          }}>
+            <span style={{ fontSize: 20, lineHeight: 1.2, flexShrink: 0 }}>⏳</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: "0 0 4px", fontWeight: 600, fontSize: "0.92rem", color: "#92400e" }}>
+                Tu plan {subscriptionPlan === "premium" ? "Premium" : "Pro"} vuelve a Basic el {formatDate(pendingDowngradeAt)}
+              </p>
+              {featuresToLose.length > 0 && (
+                <p style={{ margin: "0 0 10px", fontSize: "0.82rem", color: "#b45309" }}>
+                  Perderás: {featuresToLose.join(", ").toLowerCase()}
+                </p>
+              )}
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                style={{ fontSize: "0.82rem", padding: "5px 12px" }}
+                onClick={handleUndoCancel}
+                disabled={undoLoading}
+              >
+                {undoLoading ? "Reactivando..." : "Reactivar suscripción →"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}
@@ -334,6 +451,28 @@ export default function UpgradeToProPage() {
           </div>
         ) : null}
 
+        {/* Cancel subscription link — only for active paid plans with no pending downgrade */}
+        {!summaryLoading && isOnPaidActivePlan && !pendingDowngradeAt && (
+          <div style={{ textAlign: "center", marginTop: 28 }}>
+            <button
+              type="button"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#9ca3af",
+                fontSize: "0.82rem",
+                cursor: "pointer",
+                textDecoration: "underline",
+                textDecorationStyle: "dotted",
+                padding: "4px 8px"
+              }}
+              onClick={() => { setError(""); setSuccess(""); setShowCancelModal(true); }}
+            >
+              Cancelar suscripción
+            </button>
+          </div>
+        )}
+
         <div style={{ textAlign: "center", marginTop: 16 }}>
           <button
             type="button"
@@ -351,9 +490,11 @@ export default function UpgradeToProPage() {
             </summary>
             <div style={{ marginTop: 12, display: "grid", gap: 6, fontSize: 12, fontFamily: "monospace" }}>
               <div><strong>plan actual:</strong> {subscriptionPlan}</div>
-              <div><strong>subscriptionStatus:</strong> {householdLicense?.subscriptionStatus || "—"}</div>
+              <div><strong>subscriptionStatus:</strong> {subscriptionStatus}</div>
               <div><strong>isPro:</strong> {String(householdLicense?.isPro ?? "—")}</div>
               <div><strong>hasActiveStripeSubscription:</strong> {String(hasActiveStripeSubscription)}</div>
+              <div><strong>pendingDowngradeAt:</strong> {pendingDowngradeAt ? new Date(pendingDowngradeAt).toLocaleString() : "—"}</div>
+              <div><strong>subscriptionEndsAt:</strong> {subscriptionEndsAt ? new Date(subscriptionEndsAt).toLocaleString() : "—"}</div>
               <div><strong>stripeCustomerId:</strong> {paymentMeta?.stripeCustomerId || "—"}</div>
               <div><strong>stripeSubscriptionId:</strong> {paymentMeta?.stripeSubscriptionId || "—"}</div>
               <div><strong>paymentProvider:</strong> {paymentMeta?.paymentProvider || "—"}</div>
@@ -391,6 +532,133 @@ export default function UpgradeToProPage() {
           </details>
         )}
       </div>
+
+      {/* Cancel subscription modal */}
+      {showCancelModal && (
+        <div className="kitchen-modal-backdrop" onClick={() => !cancelLoading && setShowCancelModal(false)}>
+          <div className="kitchen-modal-overlay">
+            <div
+              className="kitchen-modal"
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: 480 }}
+            >
+              <div className="kitchen-modal-header" style={{ paddingBottom: 8 }}>
+                <h3 style={{ fontSize: "1.15rem" }}>¿Nos vamos? 👋</h3>
+                {subscriptionEndsAt ? (
+                  <p className="kitchen-muted" style={{ marginTop: 4, fontSize: "0.88rem" }}>
+                    Tu plan {subscriptionPlan === "premium" ? "Premium" : "Pro"} seguirá activo hasta el{" "}
+                    <strong style={{ color: "inherit" }}>{formatDate(subscriptionEndsAt)}</strong>.
+                    Después volverás al plan Basic sin cargo adicional.
+                  </p>
+                ) : (
+                  <p className="kitchen-muted" style={{ marginTop: 4, fontSize: "0.88rem" }}>
+                    Tu suscripción se cancelará al final del período actual.
+                  </p>
+                )}
+              </div>
+
+              {featuresToLose.length > 0 && (
+                <div style={{ padding: "0 24px 16px", borderBottom: "1px solid var(--border, #e5e7eb)" }}>
+                  <p style={{ fontSize: "0.82rem", color: "#6b7280", marginBottom: 8, fontWeight: 600 }}>
+                    Perderás acceso a:
+                  </p>
+                  <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 5 }}>
+                    {featuresToLose.map((f) => (
+                      <li key={f} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.84rem", color: "#374151" }}>
+                        <CrossIcon />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div style={{ padding: "16px 24px 8px" }}>
+                <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "#374151", marginBottom: 10 }}>
+                  ¿Por qué cancelas? <span style={{ fontWeight: 400, color: "#9ca3af" }}>(nos ayuda a mejorar)</span>
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {CANCEL_REASONS.map((r) => (
+                    <label
+                      key={r.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        cursor: "pointer",
+                        fontSize: "0.88rem",
+                        color: "#374151",
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        border: `1px solid ${cancelReason === r.id ? "var(--color-primary, #3b82f6)" : "#e5e7eb"}`,
+                        background: cancelReason === r.id ? "var(--color-primary-bg, #eff6ff)" : "#fff",
+                        transition: "border-color 0.15s, background 0.15s"
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="cancelReason"
+                        value={r.id}
+                        checked={cancelReason === r.id}
+                        onChange={() => setCancelReason(r.id)}
+                        style={{ accentColor: "var(--color-primary, #3b82f6)", flexShrink: 0 }}
+                      />
+                      {r.label}
+                    </label>
+                  ))}
+                </div>
+
+                <textarea
+                  placeholder="Cuéntanos más (opcional) — tu feedback nos importa"
+                  value={cancelDetails}
+                  onChange={(e) => setCancelDetails(e.target.value)}
+                  maxLength={300}
+                  rows={2}
+                  style={{
+                    width: "100%",
+                    marginTop: 12,
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "1px solid #e5e7eb",
+                    fontSize: "0.84rem",
+                    resize: "vertical",
+                    fontFamily: "inherit",
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+
+              <div className="kitchen-modal-actions" style={{ flexDirection: "column-reverse", gap: 8 }}>
+                <button
+                  type="button"
+                  className="kitchen-button secondary"
+                  onClick={() => setShowCancelModal(false)}
+                  disabled={cancelLoading}
+                  style={{ width: "100%", justifyContent: "center" }}
+                >
+                  Mejor me quedo — seguir con {subscriptionPlan === "premium" ? "Premium" : "Pro"}
+                </button>
+                <button
+                  type="button"
+                  className="kitchen-button"
+                  onClick={handleCancelSubscription}
+                  disabled={!cancelReason || cancelLoading}
+                  style={{
+                    width: "100%",
+                    justifyContent: "center",
+                    background: "#dc2626",
+                    borderColor: "#dc2626",
+                    color: "#fff",
+                    opacity: !cancelReason ? 0.5 : 1
+                  }}
+                >
+                  {cancelLoading ? "Cancelando..." : "Sí, cancelar al final del período"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </KitchenLayout>
   );
 }

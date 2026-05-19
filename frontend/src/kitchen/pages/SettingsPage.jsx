@@ -2,7 +2,7 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
-import { apiRequest } from "../api.js";
+import { apiRequest, undoCancelSubscription } from "../api.js";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import SettingsSharePanel from "../components/SettingsSharePanel.jsx";
 import PushNotificationsPanel from "../components/PushNotificationsPanel.jsx";
@@ -150,6 +150,9 @@ export default function SettingsPage() {
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
   const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
   const [subscriptionRequestedPlan, setSubscriptionRequestedPlan] = useState("");
+  const [subscriptionEndsAt, setSubscriptionEndsAt] = useState(null);
+  const [pendingDowngradeAt, setPendingDowngradeAt] = useState(null);
+  const [undoCancelLoading, setUndoCancelLoading] = useState(false);
   const [avoidRepeatsInfoOpen, setAvoidRepeatsInfoOpen] = useState(false);
   const [householdPrefsSaving, setHouseholdPrefsSaving] = useState(false);
   const [dietFilterEnabled, setDietFilterEnabled] = useState(false);
@@ -275,6 +278,24 @@ export default function SettingsPage() {
     if (normalizedStatus === "trial") return "TRIAL";
     if (normalizedStatus === "pending") return "PENDING";
     return "INACTIVE";
+  };
+
+  const formatDowngradeDate = (date) => {
+    if (!date) return "";
+    return new Date(date).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+  };
+
+  const handleUndoCancelFromSettings = async () => {
+    setUndoCancelLoading(true);
+    try {
+      const data = await undoCancelSubscription();
+      setPendingDowngradeAt(null);
+      setSubscriptionEndsAt(data?.household?.subscriptionEndsAt || subscriptionEndsAt);
+    } catch (err) {
+      setError(err.message || "No se pudo reactivar la suscripción.");
+    } finally {
+      setUndoCancelLoading(false);
+    }
   };
 
   const subscriptionBadgeClassName = (plan) => {
@@ -424,6 +445,8 @@ export default function SettingsPage() {
       setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
       setSubscriptionStatus(String(householdData?.household?.subscriptionStatus || "inactive").toLowerCase());
       setSubscriptionRequestedPlan(String(householdData?.household?.subscriptionRequestedPlan || "").toLowerCase());
+      setSubscriptionEndsAt(householdData?.household?.subscriptionEndsAt || null);
+      setPendingDowngradeAt(householdData?.household?.pendingDowngradeAt || null);
       setDietFilterEnabled(Boolean(householdData?.household?.randomizationUseDietFilter));
       setDietDefaultPackIds(Array.isArray(householdData?.household?.randomizationDefaultDietPackIds) ? householdData.household.randomizationDefaultDietPackIds : []);
       setMembers(memberData.users || []);
@@ -1158,6 +1181,50 @@ export default function SettingsPage() {
         <p className="kitchen-muted">{formatLicenseLimit(licenseState.limits.maxUsers, "user", "users")}</p>
         <p className="kitchen-muted">{formatLicenseLimit(licenseState.limits.maxNonUserDiners, "non-user diner", "non-user diners")}</p>
       </div>
+
+      {/* Pending downgrade banner */}
+      {pendingDowngradeAt && (
+        <div style={{
+          margin: "0 0 4px",
+          padding: "12px 16px",
+          background: "#fffbeb",
+          border: "1px solid #f59e0b",
+          borderRadius: 10,
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 10
+        }}>
+          <span style={{ fontSize: 18, lineHeight: 1.3, flexShrink: 0 }}>⏳</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: "0 0 4px", fontWeight: 600, fontSize: "0.86rem", color: "#92400e" }}>
+              Tu plan vuelve a Basic el {formatDowngradeDate(pendingDowngradeAt)}
+            </p>
+            <p style={{ margin: "0 0 10px", fontSize: "0.79rem", color: "#b45309" }}>
+              Hasta entonces sigues disfrutando de todas las funciones.
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                style={{ fontSize: "0.79rem", padding: "4px 10px" }}
+                onClick={handleUndoCancelFromSettings}
+                disabled={undoCancelLoading}
+              >
+                {undoCancelLoading ? "Reactivando..." : "Reactivar suscripción"}
+              </button>
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                style={{ fontSize: "0.79rem", padding: "4px 10px" }}
+                onClick={() => navigate("/kitchen/upgrade")}
+              >
+                Ver planes →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="settings-block">
         <div className="settings-inline-heading">
           <h3 className="settings-subtitle">Presupuesto semanal</h3>

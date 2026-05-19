@@ -27,6 +27,8 @@ const HouseholdSchema = new mongoose.Schema(
     },
     trialEndsAt: { type: Date, default: null },
     subscriptionEndsAt: { type: Date, default: null },
+    pendingDowngradeAt: { type: Date, default: null },
+    pendingDowngradeReason: { type: String, default: "" },
     isPro: { type: Boolean, default: false },
     assignedByAdmin: { type: Boolean, default: false },
     randomizationUseDietFilter: { type: Boolean, default: false },

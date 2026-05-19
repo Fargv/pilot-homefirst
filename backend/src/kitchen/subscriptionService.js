@@ -64,6 +64,8 @@ export function buildHouseholdSubscriptionResponse(household) {
     subscriptionRequestedPlan,
     trialEndsAt: household?.trialEndsAt || null,
     subscriptionEndsAt: household?.subscriptionEndsAt || null,
+    pendingDowngradeAt: household?.pendingDowngradeAt || null,
+    pendingDowngradeReason: household?.pendingDowngradeReason || "",
     isPro: Boolean(household?.isPro),
     assignedByAdmin: Boolean(household?.assignedByAdmin)
   };
@@ -110,6 +112,8 @@ export function applyAdminSubscriptionDeactivation(household) {
   household.subscriptionRequestedPlan = null;
   household.trialEndsAt = null;
   household.subscriptionEndsAt = null;
+  household.pendingDowngradeAt = null;
+  household.pendingDowngradeReason = "";
   household.isPro = false;
   household.assignedByAdmin = false;
   return household;

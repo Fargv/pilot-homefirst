@@ -814,6 +814,147 @@ router.post("/dev/apply-latest-subscription", requireDevTestEntitlements, requir
   }
 });
 
+// ─── POST /api/payments/cancel-subscription ──────────────────────────────────
+// Schedules a downgrade to Basic at end of the current billing period.
+// Optionally sets cancel_at_period_end on Stripe to prevent auto-renewal.
+
+router.post("/cancel-subscription", requireAuth, async (req, res) => {
+  try {
+    const { reason = "", details = "" } = req.body || {};
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+
+    const household = await Household.findById(effectiveHouseholdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "Hogar no encontrado." });
+    }
+
+    const planKey = normalizeSubscriptionPlan(household.subscriptionPlan);
+    if (!["pro", "premium"].includes(planKey) || household.subscriptionStatus !== "active") {
+      return res.status(400).json({
+        ok: false,
+        code: "NOT_ON_PAID_PLAN",
+        error: "Solo puedes cancelar una suscripción de pago activa."
+      });
+    }
+
+    if (household.pendingDowngradeAt) {
+      return res.status(409).json({
+        ok: false,
+        code: "DOWNGRADE_ALREADY_PENDING",
+        error: "Ya tienes una cancelación programada."
+      });
+    }
+
+    // Schedule at end of billing period, or 24 h from now as a safe fallback
+    const downgradeAt = household.subscriptionEndsAt
+      ? new Date(household.subscriptionEndsAt)
+      : new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    household.pendingDowngradeAt = downgradeAt;
+    household.pendingDowngradeReason = `${String(reason || "").slice(0, 100)}${details ? ` — ${String(details).slice(0, 200)}` : ""}`.trim();
+
+    // Try to set cancel_at_period_end on Stripe — non-fatal if it fails
+    if (household.stripeSubscriptionId) {
+      const stripe = buildStripeClient();
+      if (stripe) {
+        try {
+          await stripe.subscriptions.update(household.stripeSubscriptionId, {
+            cancel_at_period_end: true
+          });
+          console.log("[payments] cancel-subscription: Stripe cancel_at_period_end=true", {
+            householdId: effectiveHouseholdId,
+            stripeSubscriptionId: household.stripeSubscriptionId
+          });
+        } catch (stripeErr) {
+          console.warn("[payments] cancel-subscription: Stripe update failed (non-fatal)", {
+            error: stripeErr.message,
+            stripeSubscriptionId: household.stripeSubscriptionId
+          });
+        }
+      }
+    }
+
+    await household.save({ validateBeforeSave: false });
+
+    console.log("[payments] cancel-subscription: downgrade scheduled", {
+      householdId: effectiveHouseholdId,
+      plan: planKey,
+      downgradeAt,
+      reason: household.pendingDowngradeReason
+    });
+
+    return res.json({
+      ok: true,
+      household: { id: household._id.toString(), ...buildHouseholdSubscriptionResponse(household) }
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    console.error("[payments] cancel-subscription error", { error: error?.message });
+    return res.status(500).json({ ok: false, error: "No se pudo programar la cancelación." });
+  }
+});
+
+// ─── POST /api/payments/undo-cancel-subscription ─────────────────────────────
+// Reverts a pending downgrade. Clears cancel_at_period_end on Stripe if set.
+
+router.post("/undo-cancel-subscription", requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+
+    const household = await Household.findById(effectiveHouseholdId);
+    if (!household) {
+      return res.status(404).json({ ok: false, error: "Hogar no encontrado." });
+    }
+
+    if (!household.pendingDowngradeAt) {
+      return res.status(400).json({
+        ok: false,
+        code: "NO_PENDING_DOWNGRADE",
+        error: "No tienes ninguna cancelación programada."
+      });
+    }
+
+    if (household.stripeSubscriptionId) {
+      const stripe = buildStripeClient();
+      if (stripe) {
+        try {
+          await stripe.subscriptions.update(household.stripeSubscriptionId, {
+            cancel_at_period_end: false
+          });
+          console.log("[payments] undo-cancel-subscription: Stripe cancel_at_period_end=false", {
+            householdId: effectiveHouseholdId,
+            stripeSubscriptionId: household.stripeSubscriptionId
+          });
+        } catch (stripeErr) {
+          console.warn("[payments] undo-cancel-subscription: Stripe update failed (non-fatal)", {
+            error: stripeErr.message,
+            stripeSubscriptionId: household.stripeSubscriptionId
+          });
+        }
+      }
+    }
+
+    household.pendingDowngradeAt = null;
+    household.pendingDowngradeReason = "";
+    await household.save({ validateBeforeSave: false });
+
+    console.log("[payments] undo-cancel-subscription: downgrade cancelled", {
+      householdId: effectiveHouseholdId
+    });
+
+    return res.json({
+      ok: true,
+      household: { id: household._id.toString(), ...buildHouseholdSubscriptionResponse(household) }
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    console.error("[payments] undo-cancel-subscription error", { error: error?.message });
+    return res.status(500).json({ ok: false, error: "No se pudo revertir la cancelación." });
+  }
+});
+
 // ─── Webhook handler ──────────────────────────────────────────────────────────
 // Exported separately — needs raw body, registered in index.js before express.json()
 

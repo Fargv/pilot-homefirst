@@ -197,6 +197,17 @@ export function devApplyLatestSubscription() {
   return apiRequest("/api/payments/dev/apply-latest-subscription", { method: "POST" });
 }
 
+export function cancelSubscription(payload) {
+  return apiRequest("/api/payments/cancel-subscription", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function undoCancelSubscription() {
+  return apiRequest("/api/payments/undo-cancel-subscription", { method: "POST" });
+}
+
 export function getPlansAdminConfig() {
   return apiRequest("/api/kitchen/plans/admin/config");
 }
