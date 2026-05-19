@@ -21,7 +21,7 @@ export default function PaymentSuccessPage() {
   const sessionId = searchParams.get("session_id");
   const purchaseType = searchParams.get("type") || "subscription";
   const isPack = purchaseType === "pack";
-  const { refreshUser } = useAuth();
+  const { setUser } = useAuth();
 
   const [checking, setChecking] = useState(!isPack);
   const [activePlan, setActivePlan] = useState(null);
@@ -49,7 +49,15 @@ export default function PaymentSuccessPage() {
         setActivePlan(plan);
         if (PAID_PLANS.has(plan)) {
           setPlanUpdated(true);
-          refreshUser().catch(() => {});
+          // Update the plan in auth context without triggering loading=true.
+          // refreshUser() sets loading=true which unmounts this component via
+          // RequireAuth, causing an infinite remount + re-activation loop.
+          setUser(prev => prev ? {
+            ...prev,
+            subscriptionPlan: plan,
+            subscriptionStatus: "active",
+            isPro: true
+          } : prev);
         }
       } catch (err) {
         if (cancelled) return;
@@ -68,7 +76,7 @@ export default function PaymentSuccessPage() {
     activate();
 
     return () => { cancelled = true; };
-  }, [isPack, sessionId, refreshUser]);
+  }, [isPack, sessionId, setUser]);
 
   const title = isTestMode ? "Pago de prueba completado" : "Pago completado";
 
