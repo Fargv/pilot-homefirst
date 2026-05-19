@@ -29,7 +29,7 @@ export default function PaymentSuccessPage() {
   const [activateError, setActivateError] = useState("");
 
   useEffect(() => {
-    if (isPack || !sessionId || !STRIPE_ENABLED) {
+    if (isPack || !sessionId) {
       setChecking(false);
       return;
     }
@@ -40,7 +40,12 @@ export default function PaymentSuccessPage() {
       try {
         const data = await activatePaymentSession(sessionId);
         if (cancelled) return;
-        const plan = String(data?.household?.subscriptionPlan || "basic").toLowerCase();
+        if (!data?.household) {
+          setActivateError("Respuesta inesperada del servidor. Comprueba que VITE_API_URL apunta al backend correcto.");
+          console.warn("[PaymentSuccess] session-activate returned no household", data);
+          return;
+        }
+        const plan = String(data.household.subscriptionPlan || "basic").toLowerCase();
         setActivePlan(plan);
         if (PAID_PLANS.has(plan)) {
           setPlanUpdated(true);
