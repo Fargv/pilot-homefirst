@@ -1673,6 +1673,48 @@ export default function SettingsPage() {
         {success ? <div className="kitchen-alert success">{success}</div> : null}
         {loading ? <p className="kitchen-muted">Cargando configuracion...</p> : null}
 
+        {!loading && pendingDowngradeAt && (
+          <div style={{
+            background: "#fffbeb",
+            border: "1px solid #f59e0b",
+            borderRadius: 12,
+            padding: "14px 18px",
+            marginBottom: 20,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12
+          }}>
+            <span style={{ fontSize: 20, lineHeight: 1.3, flexShrink: 0 }}>⏳</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: "0 0 3px", fontWeight: 700, fontSize: "0.9rem", color: "#92400e" }}>
+                Tu suscripción vuelve a Basic el {formatDowngradeDate(pendingDowngradeAt)}
+              </p>
+              <p style={{ margin: "0 0 10px", fontSize: "0.82rem", color: "#b45309" }}>
+                Hasta entonces sigues disfrutando de todas las funciones. Puedes revertirlo cuando quieras.
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="kitchen-button secondary"
+                  style={{ fontSize: "0.82rem", padding: "5px 12px" }}
+                  onClick={handleUndoCancelFromSettings}
+                  disabled={undoCancelLoading}
+                >
+                  {undoCancelLoading ? "Reactivando..." : "Reactivar suscripción"}
+                </button>
+                <button
+                  type="button"
+                  className="kitchen-button secondary"
+                  style={{ fontSize: "0.82rem", padding: "5px 12px" }}
+                  onClick={() => navigate("/kitchen/upgrade")}
+                >
+                  Ver planes →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {!loading && isHub ? (
           <div className="settings-hub-grid">
             <CardButton title="Perfil" subtitle="Informacion personal, password y color." onClick={() => setPanel("perfil")} />
