@@ -875,6 +875,10 @@ async function handleSubscriptionEvent(subscription, eventType) {
       return;
     }
     applyAdminSubscriptionActivation(household, planKey);
+    // Override the mock 30-day offset with Stripe's actual billing period end
+    if (subscription.current_period_end) {
+      household.subscriptionEndsAt = new Date(subscription.current_period_end * 1000);
+    }
     household.stripeSubscriptionId = subscription.id;
     household.stripeCustomerId = customerId;
     household.paymentProvider = "stripe";
@@ -886,7 +890,8 @@ async function handleSubscriptionEvent(subscription, eventType) {
       planKey,
       subscriptionId: subscription.id,
       status,
-      eventType
+      eventType,
+      subscriptionEndsAt: household.subscriptionEndsAt
     });
   } else if (status === "past_due" || status === "unpaid" || status === "canceled") {
     applyAdminSubscriptionDeactivation(household);
@@ -900,6 +905,31 @@ async function handleSubscriptionEvent(subscription, eventType) {
       eventType
     });
   }
+}
+
+async function handleInvoicePaymentSucceeded(invoice) {
+  // Safety net for subscription renewals: refreshes subscriptionEndsAt using
+  // the invoice period end in case customer.subscription.updated didn't fire.
+  if (!invoice.subscription || invoice.billing_reason !== "subscription_cycle") return;
+
+  const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+  if (!customerId) return;
+
+  const periodEnd = invoice.lines?.data?.[0]?.period?.end;
+  if (!periodEnd) return;
+
+  const household = await Household.findOne({ stripeCustomerId: customerId });
+  if (!household || household.subscriptionStatus !== "active") return;
+
+  household.subscriptionEndsAt = new Date(periodEnd * 1000);
+  household.planUpdatedAt = new Date();
+  await household.save();
+
+  console.log("[payments][webhook] subscriptionEndsAt refreshed via invoice.payment_succeeded", {
+    householdId: household._id.toString(),
+    customerId,
+    subscriptionEndsAt: household.subscriptionEndsAt
+  });
 }
 
 async function handleInvoicePaymentFailed(invoice) {
@@ -999,7 +1029,7 @@ export async function stripeWebhookHandler(req, res) {
         await handleSubscriptionEvent(event.data.object, event.type);
         break;
       case "invoice.payment_succeeded":
-        // Subscription activation is handled via customer.subscription events
+        await handleInvoicePaymentSucceeded(event.data.object);
         break;
       case "invoice.payment_failed":
         await handleInvoicePaymentFailed(event.data.object);
