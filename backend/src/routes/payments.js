@@ -475,7 +475,7 @@ router.post("/session-activate", requireAuth, async (req, res) => {
           household.paymentMode = attempt.mode;
           household.planUpdatedAt = new Date();
           household.planUpdatedByPaymentAttemptId = attempt._id.toString();
-          await household.save();
+          await household.save({ validateBeforeSave: false });
           console.log("[payments] session-activate: applied plan from completed-but-unactivated attempt", {
             householdId: effectiveHouseholdId,
             expectedPlan,
@@ -541,7 +541,7 @@ router.post("/session-activate", requireAuth, async (req, res) => {
       household.paymentMode = attempt.mode;
       household.planUpdatedAt = new Date();
       household.planUpdatedByPaymentAttemptId = attempt._id.toString();
-      await household.save();
+      await household.save({ validateBeforeSave: false });
       console.log("[payments] session-activate: subscription activated", {
         householdId: effectiveHouseholdId,
         planKey,
