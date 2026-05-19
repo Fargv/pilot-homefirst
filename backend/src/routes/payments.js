@@ -528,6 +528,23 @@ router.post("/session-activate", requireAuth, async (req, res) => {
       });
     }
 
+    // B-4: Confirm the Stripe session was created for this household.
+    // If metadata.householdId is absent (old sessions), log and continue.
+    // If it is present but doesn't match, reject — prevents cross-household activation.
+    const sessionMetaHouseholdId = stripeSession.metadata?.householdId || "";
+    if (sessionMetaHouseholdId && sessionMetaHouseholdId !== String(effectiveHouseholdId)) {
+      console.error("[payments] session-activate: householdId mismatch", {
+        sessionMetaHouseholdId,
+        effectiveHouseholdId,
+        sessionId
+      });
+      return res.status(403).json({
+        ok: false,
+        code: "HOUSEHOLD_MISMATCH",
+        error: "Esta sesión de pago no pertenece a tu cuenta."
+      });
+    }
+
     // subscription may be an expanded object or a bare string ID
     const stripeSubscriptionId = typeof stripeSession.subscription === "string"
       ? stripeSession.subscription
