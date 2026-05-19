@@ -154,11 +154,10 @@ export async function grantPurchasedBites(householdId, amount, reason, metadata 
 
   const newPurchased = (household.purchasedBitesBalance ?? 0) + Number(amount);
 
-  await Household.updateOne(
-    { _id: household._id },
-    { $set: { purchasedBitesBalance: newPurchased } }
-  );
-
+  // Transaction record is created first: the idempotency check in
+  // applyBitesBundleEntitlementFromAttempt queries this collection, so creating
+  // it before updating the balance ensures webhook replays are blocked even if
+  // the balance update below fails.
   const transaction = await BitesTransaction.create({
     householdId: household._id,
     type: "purchase",
@@ -168,6 +167,11 @@ export async function grantPurchasedBites(householdId, amount, reason, metadata 
     reason,
     metadata
   });
+
+  await Household.updateOne(
+    { _id: household._id },
+    { $set: { purchasedBitesBalance: newPurchased } }
+  );
 
   return {
     wallet: getWalletFromHousehold({ ...household, purchasedBitesBalance: newPurchased }),

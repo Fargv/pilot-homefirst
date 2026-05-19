@@ -860,6 +860,20 @@ async function handleSubscriptionEvent(subscription, eventType) {
 
   const status = subscription.status;
   if (status === "active" || status === "trialing") {
+    // checkout.session.completed already activates the plan for new subscriptions.
+    // Skip re-activation on subscription.created to avoid the dual-write race.
+    if (
+      eventType === "customer.subscription.created" &&
+      household.subscriptionStatus === "active" &&
+      household.stripeSubscriptionId === subscription.id
+    ) {
+      console.log("[payments][webhook] Subscription already activated by checkout.session.completed — skipping duplicate", {
+        householdId: household._id.toString(),
+        subscriptionId: subscription.id,
+        eventType
+      });
+      return;
+    }
     applyAdminSubscriptionActivation(household, planKey);
     household.stripeSubscriptionId = subscription.id;
     household.stripeCustomerId = customerId;
