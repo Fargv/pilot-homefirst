@@ -1182,6 +1182,22 @@ export async function stripeWebhookHandler(req, res) {
     allowTestEntitlements: config.stripe.allowTestEntitlements
   });
 
+  // Reject if the event's live/test mode doesn't match the configured STRIPE_MODE.
+  // Prevents test webhooks from activating live entitlements and vice-versa.
+  const expectedLivemode = config.stripe.mode === "live";
+  if (event.livemode !== expectedLivemode) {
+    console.error("[payments][webhook] REJECTED — event.livemode mismatch", {
+      eventLivemode: event.livemode,
+      expectedLivemode,
+      configuredMode: config.stripe.mode,
+      eventId: event.id,
+      eventType: event.type
+    });
+    return res.status(400).json({
+      error: `Webhook mode mismatch: event is ${event.livemode ? "live" : "test"} but server is configured for ${config.stripe.mode} mode.`
+    });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed":
