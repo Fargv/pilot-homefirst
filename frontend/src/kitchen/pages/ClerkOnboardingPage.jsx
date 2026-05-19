@@ -17,27 +17,69 @@ const LOGIN_PATH = "/login";
 // This page starts at step Hogar (household).
 const STEP_LABELS = [
   { step: 1, label: "Hogar", short: "Hogar" },
-  { step: 2, label: "Perfil", short: "Perfil" },
-  { step: 3, label: "Preferencias", short: "Prefs." },
+  { step: 2, label: "Plan", short: "Plan" },
+  { step: 3, label: "Perfil", short: "Perfil" },
+  { step: 4, label: "Preferencias", short: "Prefs." },
 ];
 
 const PHASE_STEP = {
   household: 1,
-  profile: 2,
-  preferences: 3,
+  plan: 2,
+  profile: 3,
+  preferences: 4,
 };
 
 const PHASE_TITLE = {
   household: "Tu hogar",
+  plan: "Elige tu plan",
   profile: "Tu perfil",
   preferences: "Tus preferencias",
 };
 
 const PHASE_SUBTITLE = {
   household: "Elige si creas tu propio hogar o te unes a uno existente.",
+  plan: "Empieza gratis y amplía cuando lo necesites.",
   profile: "¿Cómo quieres que te vea tu hogar?",
   preferences: "Ajusta tus preferencias antes de entrar.",
 };
+
+const PLANS = [
+  {
+    id: "basic",
+    name: "Basic",
+    price: "Gratis",
+    features: [
+      "Hasta 3 miembros del hogar",
+      "Hasta 4 comensales sin cuenta",
+      "Planificación semanal completa",
+      "Lista de la compra",
+    ],
+    available: true,
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: "Próximamente",
+    features: [
+      "Hasta 8 miembros",
+      "Hasta 12 comensales",
+      "Presupuesto de compra",
+      "Aleatorización avanzada del menú",
+    ],
+    available: false,
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    price: "Próximamente",
+    features: [
+      "Miembros y comensales ilimitados",
+      "Todo lo de Pro",
+      "Paquetes de recetas del catálogo",
+    ],
+    available: false,
+  },
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -52,12 +94,13 @@ function buildDefaultHouseholdName(name) {
 
 // ─── Stable sub-components ───────────────────────────────────────────────────
 
-function StepIndicator({ currentStep, skipHousehold }) {
+function StepIndicator({ currentStep, skipHousehold, skipPlan }) {
   return (
     <div className="kitchen-onboarding-stepper" aria-label="Progreso del registro">
       {STEP_LABELS.map(({ step, label, short }) => {
+        const isSkipped = (skipHousehold && step === 1) || (skipPlan && step === 2);
         const isCurrent = currentStep === step;
-        const isDone = currentStep > step;
+        const isDone = currentStep > step && !isSkipped;
         return (
           <div
             key={step}
@@ -65,7 +108,7 @@ function StepIndicator({ currentStep, skipHousehold }) {
               "kitchen-onboarding-step",
               isCurrent ? "is-current" : "",
               isDone ? "is-complete" : "",
-              skipHousehold && step === 1 ? "is-disabled" : "",
+              isSkipped ? "is-disabled" : "",
             ].filter(Boolean).join(" ")}
             aria-label={label}
           >
@@ -125,6 +168,7 @@ export default function ClerkOnboardingPage() {
     inviteCode: "",
     householdMode: "",
     householdName: "",
+    selectedPlan: BASIC_PLAN,
     displayName: "",
     dinnersEnabled: false,
     avoidRepeatsEnabled: false,
@@ -158,6 +202,7 @@ export default function ClerkOnboardingPage() {
   const inviteInvalid = isInviteFlow && inviteLoaded && !inviteDetails?.householdName;
   const isCreateMode = form.householdMode === "create";
   const isJoinMode = form.householdMode === "join";
+  const skipPlan = !isCreateMode;
   const currentStep = PHASE_STEP[phase] ?? 1;
 
   // ─── Effects ──────────────────────────────────────────────────────────────
@@ -291,10 +336,17 @@ export default function ClerkOnboardingPage() {
   const submitHousehold = () => {
     if (!canContinueHousehold) return;
     setError("");
+    setPhase(isCreateMode ? "plan" : "profile");
+  };
+
+  // ── Step 2: Plan (create mode only) ──────────────────────────────────────
+
+  const submitPlan = () => {
+    setError("");
     setPhase("profile");
   };
 
-  // ── Step 2: Profile ───────────────────────────────────────────────────────
+  // ── Step 3: Profile ───────────────────────────────────────────────────────
 
   const canContinueProfile = Boolean(String(form.displayName || "").trim());
 
@@ -308,7 +360,7 @@ export default function ClerkOnboardingPage() {
     setPhase("preferences");
   };
 
-  // ── Step 3: Preferences + finalize ───────────────────────────────────────
+  // ── Step 4: Preferences + finalize ───────────────────────────────────────
 
   const canSubmitFinal = useMemo(() => {
     if (!canContinueProfile) return false;
@@ -335,7 +387,7 @@ export default function ClerkOnboardingPage() {
         body: JSON.stringify({
           displayName: String(form.displayName || "").trim(),
           householdName: isCreateMode ? String(form.householdName || "").trim() : undefined,
-          selectedPlan: isCreateMode ? BASIC_PLAN : undefined,
+          selectedPlan: isCreateMode ? (form.selectedPlan || BASIC_PLAN) : undefined,
           dinnersEnabled: isCreateMode ? Boolean(form.dinnersEnabled) : undefined,
           avoidRepeatsEnabled: isCreateMode ? Boolean(form.avoidRepeatsEnabled) : undefined,
           avoidRepeatsWeeks: isCreateMode ? Number(form.avoidRepeatsWeeks || 1) : undefined,
@@ -365,11 +417,12 @@ export default function ClerkOnboardingPage() {
 
   const goBack = () => {
     setError("");
-    if (phase === "profile") { setPhase("household"); return; }
+    if (phase === "plan") { setPhase("household"); return; }
+    if (phase === "profile") { setPhase(isCreateMode ? "plan" : "household"); return; }
     if (phase === "preferences") { setPhase("profile"); }
   };
 
-  const canGoBack = phase === "preferences" || phase === "profile";
+  const canGoBack = phase === "plan" || phase === "profile" || phase === "preferences";
 
   // ─── Loading / redirecting states ─────────────────────────────────────────
 
@@ -399,7 +452,7 @@ export default function ClerkOnboardingPage() {
             </p>
           </header>
 
-          <StepIndicator currentStep={currentStep} skipHousehold={isInviteFlow} />
+          <StepIndicator currentStep={currentStep} skipHousehold={isInviteFlow} skipPlan={skipPlan} />
 
           {isInviteFlow && inviteDetails?.householdName && phase !== "household" ? (
             <div className="kitchen-alert info">
@@ -464,7 +517,7 @@ export default function ClerkOnboardingPage() {
                     >
                       <span className="kitchen-onboarding-choice-kicker">Opción A</span>
                       <strong>Crear un hogar nuevo</strong>
-                      <p>Empezarás con tu propio hogar y el plan Basic.</p>
+                      <p>Empezarás con tu propio hogar. Elegirás el plan en el siguiente paso.</p>
                     </button>
                     <button
                       type="button"
@@ -513,7 +566,7 @@ export default function ClerkOnboardingPage() {
 
                   {isCreateMode ? (
                     <p className="kitchen-auth-hint">
-                      Empezarás con el plan Basic. Podrás invitar a miembros de tu hogar después de entrar.
+                      Podrás invitar a miembros de tu hogar después de entrar.
                     </p>
                   ) : null}
                 </>
@@ -526,6 +579,59 @@ export default function ClerkOnboardingPage() {
                   className="kitchen-ui-button kitchen-login-submit"
                   disabled={!canContinueHousehold}
                   onClick={submitHousehold}
+                >
+                  Continuar
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {/* ── PLAN ───────────────────────────────────────────────────── */}
+          {phase === "plan" ? (
+            <div className="kitchen-onboarding-panel">
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {PLANS.map((plan) => {
+                  const isSelected = form.selectedPlan === plan.id;
+                  return (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      className={`kitchen-onboarding-choice-card${isSelected ? " is-selected" : ""}`}
+                      disabled={!plan.available}
+                      onClick={() => plan.available && updateField("selectedPlan", plan.id)}
+                      style={{
+                        textAlign: "left",
+                        opacity: plan.available ? 1 : 0.52,
+                        cursor: plan.available ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                        <strong style={{ fontSize: 15 }}>{plan.name}</strong>
+                        {plan.available ? (
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#16a34a" }}>{plan.price}</span>
+                        ) : (
+                          <span style={{ fontSize: 10, fontWeight: 700, background: "#f3f4f6", color: "#6b7280", padding: "2px 9px", borderRadius: 999 }}>
+                            Próximamente
+                          </span>
+                        )}
+                      </div>
+                      <ul style={{ margin: 0, padding: "0 0 0 16px", fontSize: 12, color: "#4b5563", lineHeight: 1.7 }}>
+                        {plan.features.map((f) => <li key={f}>{f}</li>)}
+                      </ul>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="kitchen-onboarding-footer">
+                <button type="button" className="kitchen-button secondary" onClick={goBack}>
+                  Volver
+                </button>
+                <button
+                  type="button"
+                  className="kitchen-ui-button kitchen-login-submit"
+                  disabled={!form.selectedPlan}
+                  onClick={submitPlan}
                 >
                   Continuar
                 </button>

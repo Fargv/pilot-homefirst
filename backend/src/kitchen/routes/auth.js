@@ -54,7 +54,8 @@ function normalizeAvoidRepeatsWeeks(value) {
 
 function normalizeRequestedOnboardingPlan(value) {
   const normalizedPlan = normalizeSubscriptionPlan(value);
-  return normalizedPlan === "basic" ? "basic" : null;
+  const allowed = ["basic", "pro", "premium"];
+  return allowed.includes(normalizedPlan) ? normalizedPlan : "basic";
 }
 
 function getBearerToken(req) {
@@ -712,8 +713,8 @@ router.post("/clerk/onboarding", async (req, res) => {
     if (onboardingTarget.mode === "create" && !requestedPlan) {
       return res.status(400).json({
         ok: false,
-        code: "SUBSCRIPTION_PLAN_INVALID",
-        error: "Ahora mismo solo puedes empezar con el plan Basic."
+        code: "SUBSCRIPTION_PLAN_MISSING",
+        error: "Debes seleccionar un plan para crear un hogar."
       });
     }
 
