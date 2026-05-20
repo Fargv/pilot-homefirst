@@ -15,6 +15,7 @@ import { findActiveInvitationByToken, atomicClaimInvitation } from "../invitatio
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
 import { isEmailRegisteredInClerk, resolveClerkIdentityFromToken } from "../clerkAuth.js";
 import { normalizeSubscriptionPlan } from "../subscriptionService.js";
+import { initOnboarding } from "../onboardingEngine.js";
 
 const DIOD_EMAIL = "admin@admin.com";
 
@@ -466,6 +467,9 @@ router.post("/register", async (req, res) => {
       } catch (error) {
         console.error("No se pudo crear automáticamente el plan semanal durante el registro:", error?.message || error);
       }
+      initOnboarding(household._id.toString()).catch((e) =>
+        console.error("[onboarding] init failed on register:", e.message)
+      );
     }
 
     const token = createToken(user);
@@ -795,6 +799,9 @@ router.post("/clerk/onboarding", async (req, res) => {
         } catch (error) {
           console.error("[clerk/onboarding] No se pudo crear el plan semanal:", error?.message || error);
         }
+        initOnboarding(household._id.toString()).catch((e) =>
+          console.error("[onboarding] init failed on clerk register:", e.message)
+        );
       } catch (householdError) {
         if (userCreatedNow) {
           await KitchenUser.findByIdAndDelete(user._id).catch(() => {});

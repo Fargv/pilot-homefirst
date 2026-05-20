@@ -4248,6 +4248,229 @@ function IngredientCategoriesSection() {
   );
 }
 
+// ─── Admin: Onboarding section ────────────────────────────────────────────────
+
+function OnboardingSection() {
+  const [challenges, setChallenges] = useState([]);
+  const [households, setHouseholds] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [editingChallenge, setEditingChallenge] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [householdSearch, setHouseholdSearch] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [cData, hData, aData] = await Promise.all([
+        apiRequest("/api/kitchen/onboarding/admin/challenges"),
+        apiRequest("/api/kitchen/onboarding/admin/households"),
+        apiRequest("/api/kitchen/onboarding/admin/analytics")
+      ]);
+      setChallenges(cData.challenges || []);
+      setHouseholds(hData.records || []);
+      setAnalytics(aData.analytics || null);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const startEdit = (c) => {
+    setEditingChallenge(c._id);
+    setEditForm({ title: c.title, description: c.description, howTo: c.howTo, rewardBites: c.rewardBites, order: c.order, active: c.active });
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    try {
+      await apiRequest(`/api/kitchen/onboarding/admin/challenges/${editingChallenge}`, {
+        method: "PUT", body: JSON.stringify(editForm)
+      });
+      setEditingChallenge(null);
+      await load();
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const householdAction = async (householdId, action, body = {}) => {
+    try {
+      if (action === "reset") {
+        const reason = window.prompt("Razón del reset (opcional):") || "";
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/reset`, { method: "POST", body: JSON.stringify({ reason }) });
+      } else if (action === "complete") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/status`, { method: "POST", body: JSON.stringify({ status: "completed" }) });
+      } else if (action === "enable") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/status`, { method: "POST", body: JSON.stringify({ status: "active" }) });
+      } else if (action === "disable") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/status`, { method: "POST", body: JSON.stringify({ status: "disabled" }) });
+      } else if (action === "init") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/init`, { method: "POST" });
+      }
+      await load();
+    } catch (e) { setError(e.message); }
+  };
+
+  const th = { padding: "6px 10px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #e5e7eb" };
+  const td = { padding: "7px 10px", fontSize: 12, borderBottom: "1px solid #f3f4f6", verticalAlign: "middle" };
+  const fieldStyle = { width: "100%", boxSizing: "border-box", padding: "5px 8px", fontSize: 12, borderRadius: 5, border: "1px solid #d1d5db" };
+
+  if (loading) return <div style={{ padding: 24, color: "#6b7280" }}>Cargando onboarding...</div>;
+
+  const filteredHouseholds = households.filter((h) =>
+    !householdSearch || String(h.householdId).toLowerCase().includes(householdSearch.toLowerCase()) || (h.status || "").includes(householdSearch)
+  );
+
+  return (
+    <div>
+      {error && <div style={{ background: "#fee2e2", color: "#b42318", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
+
+      {/* Analytics */}
+      {analytics && (
+        <Card style={{ marginBottom: 20, padding: 16 }}>
+          <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Analíticas de onboarding</h4>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            {[
+              { label: "Total hogares", value: analytics.total },
+              { label: "Activos", value: analytics.byStatus?.active || 0 },
+              { label: "Completados", value: analytics.byStatus?.completed || 0 },
+              { label: "Desactivados", value: analytics.byStatus?.disabled || 0 },
+              { label: "Bites promedio", value: Math.round(analytics.avgBitesEarned || 0) },
+              { label: "Bites máximo", value: analytics.maxBitesEarned || 0 }
+            ].map(({ label, value }) => (
+              <div key={label} style={{ background: "#f8fafc", borderRadius: 8, padding: "10px 16px", minWidth: 100 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#4338ca" }}>{value}</div>
+                <div style={{ fontSize: 11, color: "#6b7280" }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Challenges editor */}
+      <Card style={{ marginBottom: 20 }}>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>
+          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Retos de onboarding</h4>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["#", "Clave", "Título", "Bites", "Fase", "Activo", ""].map((h) => <th key={h} style={th}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {challenges.map((c) => (
+                <React.Fragment key={c._id}>
+                  <tr style={{ background: editingChallenge === c._id ? "#f8fafc" : "transparent" }}>
+                    <td style={td}>{c.order}</td>
+                    <td style={{ ...td, fontFamily: "monospace", color: "#6366f1" }}>{c.key}</td>
+                    <td style={td}>{editingChallenge === c._id
+                      ? <input style={fieldStyle} value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))} />
+                      : c.title}
+                    </td>
+                    <td style={td}>{editingChallenge === c._id
+                      ? <input style={{ ...fieldStyle, width: 60 }} type="number" value={editForm.rewardBites} onChange={(e) => setEditForm((p) => ({ ...p, rewardBites: Number(e.target.value) }))} />
+                      : <strong>+{c.rewardBites}</strong>}
+                    </td>
+                    <td style={td}>{c.phase} — {c.phaseLabel}</td>
+                    <td style={td}>
+                      {editingChallenge === c._id
+                        ? <input type="checkbox" checked={editForm.active} onChange={(e) => setEditForm((p) => ({ ...p, active: e.target.checked }))} />
+                        : <span style={{ color: c.active ? "#16a34a" : "#9ca3af" }}>{c.active ? "✓" : "✗"}</span>}
+                    </td>
+                    <td style={td}>
+                      {editingChallenge === c._id ? (
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button type="button" style={ABT.save} onClick={saveEdit} disabled={saving}>{saving ? "..." : "Guardar"}</button>
+                          <button type="button" style={ABT.cancel} onClick={() => setEditingChallenge(null)}>×</button>
+                        </div>
+                      ) : (
+                        <button type="button" style={ABT.edit} onClick={() => startEdit(c)}>Editar</button>
+                      )}
+                    </td>
+                  </tr>
+                  {editingChallenge === c._id && (
+                    <tr>
+                      <td colSpan={7} style={{ ...td, background: "#f8fafc" }}>
+                        <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, marginBottom: 6 }}>
+                          Descripción
+                          <textarea style={{ ...fieldStyle, minHeight: 50 }} value={editForm.description} onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))} />
+                        </label>
+                        <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12 }}>
+                          Cómo hacerlo
+                          <textarea style={{ ...fieldStyle, minHeight: 40 }} value={editForm.howTo} onChange={(e) => setEditForm((p) => ({ ...p, howTo: e.target.value }))} />
+                        </label>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Household states */}
+      <Card>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12 }}>
+          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b", flex: 1 }}>Estado por hogar</h4>
+          <input
+            style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 12, width: 200 }}
+            placeholder="Buscar por ID o estado..."
+            value={householdSearch}
+            onChange={(e) => setHouseholdSearch(e.target.value)}
+          />
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["Household ID", "Estado", "Completados", "Bites", "Iniciado", "Acciones"].map((h) => <th key={h} style={th}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredHouseholds.slice(0, 30).map((h) => (
+                <tr key={h._id}>
+                  <td style={{ ...td, fontFamily: "monospace", fontSize: 11 }}>{String(h.householdId).slice(-8)}</td>
+                  <td style={td}>
+                    <span style={{
+                      display: "inline-block", padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 600,
+                      background: h.status === "completed" ? "#dcfce7" : h.status === "active" ? "#e0e7ff" : h.status === "disabled" ? "#f3f4f6" : "#fef9c3",
+                      color: h.status === "completed" ? "#15803d" : h.status === "active" ? "#4338ca" : h.status === "disabled" ? "#9ca3af" : "#713f12"
+                    }}>
+                      {h.status}
+                    </span>
+                  </td>
+                  <td style={td}>{(h.completedChallenges || []).length}</td>
+                  <td style={td}>{h.totalBitesEarned || 0}</td>
+                  <td style={td}>{h.startedAt ? new Date(h.startedAt).toLocaleDateString("es-ES") : "—"}</td>
+                  <td style={td}>
+                    <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                      <button type="button" style={ABT.edit} onClick={() => householdAction(h.householdId, "reset")}>Reset</button>
+                      {h.status !== "completed" && <button type="button" style={ABT.green} onClick={() => householdAction(h.householdId, "complete")}>Completar</button>}
+                      {h.status !== "active" && <button type="button" style={ABT.edit} onClick={() => householdAction(h.householdId, "enable")}>Activar</button>}
+                      {h.status !== "disabled" && <button type="button" style={ABT.del} onClick={() => householdAction(h.householdId, "disable")}>Desactivar</button>}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredHouseholds.length === 0 && (
+                <tr><td colSpan={6} style={{ ...td, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>Sin registros.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function AdminPanelPage() {
@@ -4322,7 +4545,8 @@ export default function AdminPanelPage() {
             { key: "catalog_packs", label: "Catálogo" },
             { key: "bites_economy", label: "Bites" },
             { key: "plans", label: "Planes" },
-            { key: "categories", label: "Categorías" }
+            { key: "categories", label: "Categorías" },
+            { key: "onboarding", label: "Onboarding" }
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -4366,6 +4590,8 @@ export default function AdminPanelPage() {
             <DishCategoriesSection />
             <IngredientCategoriesSection />
           </>
+        ) : tab === "onboarding" ? (
+          <OnboardingSection />
         ) : (
           <QuickSubscriptionPanel />
         )}

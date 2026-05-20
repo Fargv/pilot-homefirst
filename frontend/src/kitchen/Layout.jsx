@@ -8,6 +8,7 @@ import { getUserColorById } from "./utils/userColors.js";
 import { getUserInitialsFromProfile } from "./utils/userInitials.js";
 import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
 import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
+import OnboardingBanner from "./components/onboarding/OnboardingBanner.jsx";
 
 function CalendarIcon(props) {
   return (
@@ -377,7 +378,10 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
           <div className="kitchen-user-placeholder" />
         )}
       />
-      <div className={`kitchen-container ${containerClassName}`.trim()}>{children}</div>
+      <div className={`kitchen-container ${containerClassName}`.trim()}>
+        <OnboardingBanner />
+        {children}
+      </div>
       <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
     </div>
   );

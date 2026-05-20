@@ -18,6 +18,7 @@ import internalPushRouter from "./routes/internalPush.js";
 import subscriptionRouter from "./routes/subscription.js";
 import paymentsRouter, { stripeWebhookHandler } from "./routes/payments.js";
 import { deactivateExpiredSubscriptions } from "./kitchen/subscriptionCron.js";
+import { seedOnboardingChallenges } from "./kitchen/onboardingEngine.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -91,6 +92,8 @@ connectDb()
 app.listen(PORT, () => {
   console.log(`🚀 API escuchando en :${PORT}`);
 });
+
+    seedOnboardingChallenges().catch((e) => console.error("[onboarding] Seed failed:", e.message));
 
     // O-6: Deactivate expired subscriptions hourly
     deactivateExpiredSubscriptions();

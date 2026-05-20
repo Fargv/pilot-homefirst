@@ -10,6 +10,7 @@ import { isBudgetFeatureUnavailableError } from "../subscription.js";
 import { useActiveWeek } from "../weekContext.jsx";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
+import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 
 function RefreshIcon(props) {
   return (
@@ -214,6 +215,9 @@ export default function ShoppingPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { notify: notifyOnboarding } = useOnboarding();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { notifyOnboarding("visit_shopping"); }, []);
   const navigationContext = React.useContext(NavigationContext);
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [tab, setTab] = useState("pending");
@@ -778,8 +782,11 @@ export default function ShoppingPage() {
         })
       });
       applyPayload(data);
-      if (status === "purchased" && (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id)) {
-        setHasMarkedPurchaseInViewSession(true);
+      if (status === "purchased") {
+        notifyOnboarding("mark_purchased");
+        if (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id) {
+          setHasMarkedPurchaseInViewSession(true);
+        }
       }
       setRecentlyMovedItemKey(key);
     } catch (err) {

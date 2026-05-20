@@ -17,6 +17,7 @@ import { getUserInitialsFromProfile } from "../utils/userInitials.js";
 import { useActiveWeek } from "../weekContext.jsx";
 import { canRandomizeFullWeek, isWeekRandomizationUnavailableError } from "../subscription.js";
 import { ProGateButton } from "../components/ui/ProBadge.jsx";
+import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 
 const DAY_CARD_STYLES = [
   { background: "#eef2ff", color: "#1f2a60" },
@@ -230,6 +231,7 @@ function isOptionalWeekendDayKey(dayKey, weekStart) {
 export default function WeekPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { notify: notifyOnboarding } = useOnboarding();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [plan, setPlan] = useState(null);
@@ -240,6 +242,8 @@ export default function WeekPage() {
   const [dishCategories, setDishCategories] = useState([]);
   const [dinnersEnabled, setDinnersEnabled] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { notifyOnboarding("visit_week"); }, []);
   const [mealTab, setMealTab] = useState(() => {
     if (typeof window === "undefined") return "lunch";
     return normalizeMealType(window.localStorage.getItem(WEEK_MEAL_TAB_KEY) || "lunch");
@@ -906,6 +910,16 @@ export default function WeekPage() {
       saveTimers.current[dayKey] = window.setTimeout(() => {
         setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
       }, 2000);
+      // Onboarding: trigger plan_meal when dishes are present in updates
+      if (requestUpdates.lunches || requestUpdates.dinners) {
+        notifyOnboarding("plan_meal");
+        const allDays = data.plan?.days || [];
+        const filledWeekdays = allDays.filter((d) => {
+          const mt = dayMealType(d);
+          return mt === "lunch" && (d.lunches?.length > 0 || (d.dishes?.length > 0));
+        });
+        if (filledWeekdays.length >= 5) notifyOnboarding("plan_full_week");
+      }
       if (options.returnErrorObject) {
         return { plan: data.plan, error: null };
       }

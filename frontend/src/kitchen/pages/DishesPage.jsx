@@ -9,6 +9,7 @@ import RecipeModal from "../components/RecipeModal.jsx";
 import CategoryIcon from "../components/CategoryIcon.jsx";
 import { resolveCategoryCode } from "../components/categoryIconMap.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
+import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 
 const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
 
@@ -78,6 +79,9 @@ export default function DishesPage() {
   };
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { notify: notifyOnboarding } = useOnboarding();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { notifyOnboarding("visit_dishes"); }, []);
   const [dishes, setDishes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [dishCategories, setDishCategories] = useState([]);
@@ -1363,7 +1367,7 @@ export default function DishesPage() {
       <DishModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        onSaved={async () => { await loadDishes(); }}
+        onSaved={async (isNew) => { await loadDishes(); if (isNew !== false && !activeDish) notifyOnboarding("create_dish"); }}
         onRecipeSaved={async () => { await loadDishes(); }}
         categories={categories}
         dishCategories={dishCategories}
@@ -1378,6 +1382,7 @@ export default function DishesPage() {
         onClose={closeIngredientModal}
         onSaved={async () => {
           await loadIngredients(ingredientSearchTerm);
+          if (!activeIngredient) notifyOnboarding("create_ingredient");
         }}
         categories={categories}
         onCategoryCreated={onCategoryCreated}

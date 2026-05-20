@@ -8,6 +8,7 @@ import { useAuth } from "../auth.jsx";
 import { canUseDietRandomization } from "../subscription.js";
 import { resolvePackCoverImageUrl } from "../utils/packImages.js";
 import BitesIcon from "../components/BitesIcon.jsx";
+import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 
 const TABS = [
   { id: "all", label: "Todos" },
@@ -531,6 +532,9 @@ function DietPackInstallModal({ pack, onUseAsDefault, onDecline }) {
 
 export default function CatalogPage() {
   const { user } = useAuth();
+  const { notify: notifyOnboarding } = useOnboarding();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { notifyOnboarding("visit_catalog"); }, []);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [packs, setPacks] = useState([]);
@@ -687,6 +691,7 @@ export default function CatalogPage() {
         showToast("Este pack ya estaba instalado.", "info");
       } else {
         showToast(`¡Pack instalado! ${result.dishesCreated} platos añadidos a tu biblioteca.`, "success");
+        notifyOnboarding("install_pack");
         if (result.isDietPack && canUseDietRandomization(plan) && !isDietPackModalDismissed(String(pack.id))) {
           const isOwnerOrAdmin = String(user?.role || "").toLowerCase() === "owner"
             || String(user?.globalRole || "").toLowerCase() === "diod";
