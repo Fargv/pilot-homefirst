@@ -115,6 +115,21 @@ function InfoIcon() {
   );
 }
 
+function getBitesLabel(tx) {
+  if (tx.metadata?.source === "welcome_bonus") return "Bienvenida a Lunchfy";
+  if (tx.metadata?.source === "onboarding_challenge" && tx.reason) return tx.reason;
+  switch (tx.type) {
+    case "monthly_grant": return "Bites mensuales";
+    case "purchase": return "Compra de Bites";
+    case "pack_unlock": return tx.reason || "Pack desbloqueado";
+    case "admin_grant": return tx.reason || "Ajuste";
+    case "admin_remove": return tx.reason || "Deducción";
+    case "refund": return tx.reason || "Reembolso";
+    case "adjustment": return tx.reason || "Ajuste";
+    default: return tx.reason || "Movimiento";
+  }
+}
+
 function clampAvoidRepeatWeeks(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 1;
@@ -239,6 +254,9 @@ export default function SettingsPage() {
     confirmDeleteHousehold: false
   });
   const [copiedField, setCopiedField] = useState("");
+  const [bitesHistory, setBitesHistory] = useState([]);
+  const [bitesHistoryLoading, setBitesHistoryLoading] = useState(false);
+  const [bitesSummary, setBitesSummary] = useState({ free: 0, purchased: 0 });
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
@@ -528,6 +546,24 @@ export default function SettingsPage() {
     if (activePanel !== "eliminados") return;
     void loadDeletedItems();
   }, [activePanel, canManageDeleted, isDiod, user?.activeHouseholdId]);
+
+  const loadBitesHistory = async () => {
+    setBitesHistoryLoading(true);
+    try {
+      const data = await apiRequest("/api/kitchen/household/bites-history");
+      setBitesHistory(data?.transactions || []);
+      setBitesSummary({ free: data?.freeBitesBalance ?? 0, purchased: data?.purchasedBitesBalance ?? 0 });
+    } catch (err) {
+      setError(err.message || "No se pudo cargar el historial de Bites.");
+    } finally {
+      setBitesHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activePanel !== "bites") return;
+    void loadBitesHistory();
+  }, [activePanel, user?.activeHouseholdId]);
 
   const saveProfile = async () => {
     const safeDisplayName = displayName.trim();
@@ -1260,36 +1296,39 @@ export default function SettingsPage() {
       {canManageHousehold && (
         <div className="settings-block">
           {householdNameEditing ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label className="kitchen-label" style={{ fontWeight: 600 }}>Nombre del hogar</label>
+            <>
               <input
                 className="kitchen-input"
                 value={householdNameDraft}
-                onChange={(event) => setHouseholdNameDraft(event.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") saveHouseholdName(); if (e.key === "Escape") setHouseholdNameEditing(false); }}
+                onChange={(e) => setHouseholdNameDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveHouseholdName();
+                  if (e.key === "Escape") { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(false); }
+                }}
                 autoFocus
+                style={{ marginBottom: 8 }}
               />
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button type="button" className="kitchen-button" onClick={saveHouseholdName}>
-                  <SaveIcon style={{ width: 16, height: 16, marginRight: 4 }} /> Guardar nombre
-                </button>
-                <button type="button" className="kitchen-button secondary" onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(false); }}>
-                  Cancelar
-                </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" className="settings-mini-button" onClick={saveHouseholdName}>Guardar</button>
+                <button type="button" className="settings-mini-button" onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(false); }}>Cancelar</button>
               </div>
-            </div>
+            </>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontWeight: 500 }}>{householdName || "Sin nombre"}</span>
-              <button type="button" className="kitchen-button secondary" style={{ padding: "4px 12px" }} onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(true); }}>
-                <PencilIcon style={{ width: 14, height: 14, marginRight: 4 }} /> Editar nombre
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ flex: 1, fontWeight: 500 }}>{householdName || "Mi household"}</span>
+              <button
+                type="button"
+                className="settings-icon-only"
+                onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(true); }}
+                aria-label="Editar nombre del hogar"
+              >
+                <PencilIcon />
               </button>
             </div>
           )}
         </div>
       )}
       <div className="settings-block">
-        {null /* householdNameEditing input moved above */}
         <p className="settings-counter">Miembros ({members.length})</p>
         {canManageHousehold ? (
           <div className="settings-members-actions">
@@ -1537,6 +1576,73 @@ export default function SettingsPage() {
     </div>
   );
 
+  const BitesPanel = (
+    <div className="settings-panel">
+      <div className="settings-panel-header">
+        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
+        <h2>Bites</h2>
+      </div>
+      <div className="settings-block">
+        <div className="settings-inline-heading">
+          <h3 className="settings-subtitle">Saldo actual</h3>
+        </div>
+        <div className="settings-subscription-row">
+          <span className="kitchen-muted">Gratuitos</span>
+          <strong>{bitesSummary.free}</strong>
+        </div>
+        <div className="settings-subscription-row">
+          <span className="kitchen-muted">De compra</span>
+          <strong>{bitesSummary.purchased}</strong>
+        </div>
+      </div>
+      <div className="settings-block">
+        <div className="settings-inline-heading">
+          <h3 className="settings-subtitle">Historial de movimientos</h3>
+        </div>
+        {bitesHistoryLoading ? (
+          <p className="kitchen-muted">Cargando...</p>
+        ) : !bitesHistory.length ? (
+          <p className="kitchen-muted">Aún no hay movimientos de Bites.</p>
+        ) : (
+          <>
+            {bitesHistory.map((tx) => {
+              const isSpend = tx.amount < 0 || tx.type === "pack_unlock" || tx.type === "admin_remove";
+              const label = getBitesLabel(tx);
+              const dateStr = new Date(tx.createdAt).toLocaleDateString("es-ES", {
+                day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+              });
+              return (
+                <div
+                  key={tx._id}
+                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid #f1f5f9" }}
+                >
+                  <div style={{
+                    width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: isSpend ? "#fee2e2" : "#dcfce7",
+                    color: isSpend ? "#b91c1c" : "#15803d",
+                    fontWeight: 700, fontSize: 16
+                  }}>
+                    {isSpend ? "−" : "+"}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {label}
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: 2 }}>{dateStr}</div>
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: "0.9rem", color: isSpend ? "#b91c1c" : "#16a34a", flexShrink: 0 }}>
+                    {isSpend ? "" : "+"}{tx.amount}
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   const HouseholdInvitesPanel = (
     <SettingsSharePanel
       isDiod={isDiod}
@@ -1751,6 +1857,7 @@ export default function SettingsPage() {
               className={!budgetFeatureEnabled ? "is-pro-locked" : ""}
             />
             {canViewHousehold ? <CardButton title="Household" subtitle="Miembros y ajustes del hogar." onClick={() => setPanel("household-members")} /> : null}
+            <CardButton title="Bites" subtitle="Saldo y movimientos de tus Bites." onClick={() => setPanel("bites")} />
             {canAccessShare ? <CardButton title="Compartir" subtitle="Invitaciones por email y código de acceso." onClick={() => setPanel("share")} /> : null}
             {canManageCategories ? <CardButton title="Categorias" subtitle="Gestion de categorias." onClick={() => setPanel("categorias")} /> : null}
             {canManageDeleted ? <CardButton title="Eliminados" subtitle="Recupera platos, guarniciones e ingredientes." onClick={() => setPanel("eliminados")} /> : null}
@@ -1773,6 +1880,7 @@ export default function SettingsPage() {
         {!loading && activePanel === "share" && canAccessShare ? HouseholdInvitesPanel : null}
         {!loading && activePanel === "categorias" && canManageCategories ? CategoriesPanel : null}
         {!loading && activePanel === "eliminados" && canManageDeleted ? DeletedPanel : null}
+        {!loading && activePanel === "bites" ? BitesPanel : null}
       </div>
 
       <ModalSheet open={passwordModalOpen} title="Cambiar contrasena" onClose={() => setPasswordModalOpen(false)} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(false)}>Cancelar</button><button type="button" className="kitchen-button" onClick={savePassword}>Guardar</button></>}>

@@ -16,6 +16,7 @@ import {
 import { Household } from "../models/Household.js";
 import { HouseholdCatalogPack } from "../models/HouseholdCatalogPack.js";
 import { CatalogPack } from "../models/CatalogPack.js";
+import { BitesTransaction } from "../models/BitesTransaction.js";
 import { ensureHouseholdInviteCode } from "../householdInviteCode.js";
 import { sendEmail } from "../../services/emailService.js";
 import { buildHouseholdInvitationEmail } from "../householdInvitationEmail.js";
@@ -283,6 +284,28 @@ router.patch("/name", requireAuth, requireRole("owner"), async (req, res) => {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el nombre del household." });
+  }
+});
+
+router.get("/bites-history", requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || "30"), 10) || 30));
+    const [transactions, household] = await Promise.all([
+      BitesTransaction.find({ householdId: effectiveHouseholdId })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean(),
+      Household.findById(effectiveHouseholdId).select("freeBitesBalance purchasedBitesBalance").lean()
+    ]);
+    return res.json({
+      ok: true,
+      transactions,
+      freeBitesBalance: household?.freeBitesBalance ?? 0,
+      purchasedBitesBalance: household?.purchasedBitesBalance ?? 0
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudo cargar el historial de Bites." });
   }
 });
 

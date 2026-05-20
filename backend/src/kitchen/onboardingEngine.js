@@ -3,6 +3,7 @@ import { OnboardingChallenge } from "./models/OnboardingChallenge.js";
 import { OnboardingSuggestion } from "./models/OnboardingSuggestion.js";
 import { Household } from "./models/Household.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
+import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { normalizeSubscriptionPlan } from "./subscriptionService.js";
 
 const WELCOME_BITES = 20;
@@ -128,9 +129,12 @@ const LEGACY_CHALLENGE_KEYS = [
   "visit_shopping", "visit_catalog"
 ];
 
-// NOTE: expense/register challenge (after mark_3_purchases) is intentionally absent.
-// The purchase-session / budget UI is gated behind Pro/Premium (BUDGET_ENABLED_PLANS).
-// Basic users cannot register expenses, so no such challenge is defined here.
+// NOTE: complete_purchase_with_store challenge (after mark_3_purchases) is intentionally absent.
+// The purchase-session complete route (POST /purchase-sessions/:id/complete) gates behind
+// budgetFeatureEnabled (Pro/Premium). Store selection also lives inside that flow.
+// Basic users have no "complete purchase" action — only item-level mark_purchased.
+// Adding this challenge would silently fail for Basic users; it cannot be made Basic-compatible
+// without redesigning the shopping flow. If a future Basic checkout action is added, wire it here.
 export async function seedOnboardingChallenges() {
   for (const c of DEFAULT_CHALLENGES) {
     // Always keep structural fields (order, phase, phaseLabel, triggerType, triggerCount)
@@ -178,7 +182,7 @@ export async function seedOnboardingSuggestions() {
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
-async function _grantBites(householdId, amount, reason) {
+async function _grantBites(householdId, amount, reason, metadata = { source: "onboarding" }) {
   const household = await Household.findById(householdId).lean();
   if (!household) return;
 
@@ -196,7 +200,7 @@ async function _grantBites(householdId, amount, reason) {
     balanceAfterFree: newFree,
     balanceAfterPurchased: household.purchasedBitesBalance ?? 0,
     reason,
-    metadata: { source: "onboarding" }
+    metadata
   });
 }
 
@@ -213,7 +217,7 @@ export async function initOnboarding(householdId) {
   });
 
   try {
-    await _grantBites(String(householdId), WELCOME_BITES, "Bienvenida a Lunchfy");
+    await _grantBites(String(householdId), WELCOME_BITES, "Bienvenida a Lunchfy", { source: "welcome_bonus" });
     await HouseholdOnboarding.updateOne({ _id: onboarding._id }, { $set: { welcomeBitesGranted: true } });
     console.log(`[onboarding] Welcome bites granted (+${WELCOME_BITES}) household=${householdId}`);
   } catch (err) {
@@ -305,9 +309,18 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
     const challenges = await OnboardingChallenge.find({ active: true }).sort({ order: 1 }).lean();
     const completedKeys = new Set((onboarding.completedChallenges || []).map((c) => c.challengeKey));
 
-    // Increment persistent counters
+    // Update persistent counters
     const counterUpdates = {};
-    if (triggerType === "plan_meal") counterUpdates.mealsPlanCount = (onboarding.mealsPlanCount || 0) + 1;
+    if (triggerType === "plan_meal") {
+      // Count actual unique lunch meals planned across all weeks — prevents double-counting
+      // from re-saves, autosave, or repeated triggers on the same slot.
+      const weeks = await KitchenWeekPlan.find({ householdId }).select("days").lean();
+      const actualCount = weeks.reduce(
+        (sum, w) => sum + (w.days || []).filter((d) => d.mainDishId && d.mealType !== "dinner").length,
+        0
+      );
+      counterUpdates.mealsPlanCount = actualCount;
+    }
     if (triggerType === "mark_purchased") counterUpdates.purchasesMarkedCount = (onboarding.purchasesMarkedCount || 0) + 1;
     if (triggerType === "create_ingredient") counterUpdates.ingredientsCreatedCount = (onboarding.ingredientsCreatedCount || 0) + 1;
 
@@ -378,7 +391,8 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
       await _grantBites(
         String(householdId),
         nextChallenge.rewardBites,
-        `Reto completado: ${nextChallenge.title}`
+        `Reto completado: ${nextChallenge.title}`,
+        { source: "onboarding_challenge", challengeKey: nextChallenge.key }
       );
     }
 
