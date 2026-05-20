@@ -910,14 +910,11 @@ export default function WeekPage() {
       saveTimers.current[dayKey] = window.setTimeout(() => {
         setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
       }, 2000);
-      // Onboarding: trigger plan_meal when dishes are present in updates
-      if (requestUpdates.lunches || requestUpdates.dinners) {
+      // Onboarding: trigger plan_meal when a lunch dish is assigned (meals only, not dinners)
+      if ("mainDishId" in requestUpdates && requestUpdates.mainDishId && mealType === "lunch") {
         notifyOnboarding("plan_meal");
         const allDays = data.plan?.days || [];
-        const filledWeekdays = allDays.filter((d) => {
-          const mt = dayMealType(d);
-          return mt === "lunch" && (d.lunches?.length > 0 || (d.dishes?.length > 0));
-        });
+        const filledWeekdays = allDays.filter((d) => dayMealType(d) === "lunch" && d.mainDishId);
         if (filledWeekdays.length >= 5) notifyOnboarding("plan_full_week");
       }
       if (options.returnErrorObject) {

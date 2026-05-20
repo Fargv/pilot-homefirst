@@ -18,8 +18,8 @@ const DEFAULT_CHALLENGES = [
   {
     key: "explore_app",
     title: "Explora Lunchfy",
-    description: "Antes de empezar a crear y planificar, dedica un minuto a conocer la app. Este recorrido rápido te ayudará a entender cómo funciona Lunchfy.",
-    howTo: "Visita estas 5 secciones: Semana · Platos · Lista de la compra · Catálogo · Ajustes. Puedes hacerlo desde la barra de navegación inferior.",
+    description: "Antes de empezar a crear y planificar, dedica un minuto a conocer la app. Visita las 5 secciones principales desde la barra de navegación inferior.",
+    howTo: "Visita: Semana · Platos (y la pestaña Ingredientes) · Lista de la compra · Catálogo · Ajustes.",
     rewardBites: 5, order: 1, phase: 1, phaseLabel: "Conoce la app",
     triggerType: "explore_app", triggerCount: 5
   },
@@ -119,7 +119,14 @@ const DEFAULT_DISH_SUGGESTIONS = [
   "Salmon teriyaki", "Shakshuka", "Ramen de miso"
 ];
 
-// ─── Seed ────────────────────────────────────────────────────────────────────
+// ─── Seed & cleanup ──────────────────────────────────────────────────────────
+
+// Legacy keys from older seeds that should no longer exist as standalone challenges.
+// These trigger events still work as inputs to explore_app tracking.
+const LEGACY_CHALLENGE_KEYS = [
+  "visit_week", "visit_dishes", "visit_ingredients",
+  "visit_shopping", "visit_catalog"
+];
 
 export async function seedOnboardingChallenges() {
   for (const c of DEFAULT_CHALLENGES) {
@@ -130,6 +137,19 @@ export async function seedOnboardingChallenges() {
     );
   }
   console.log("[onboarding] Challenges seeded.");
+}
+
+export async function cleanupOldChallenges() {
+  const validKeys = new Set(DEFAULT_CHALLENGES.map((c) => c.key));
+  const keysToDeactivate = LEGACY_CHALLENGE_KEYS.filter((k) => !validKeys.has(k));
+  if (keysToDeactivate.length === 0) return;
+  const result = await OnboardingChallenge.updateMany(
+    { key: { $in: keysToDeactivate }, active: true },
+    { $set: { active: false } }
+  );
+  if (result.modifiedCount > 0) {
+    console.log(`[onboarding] Deactivated ${result.modifiedCount} legacy challenge(s): ${keysToDeactivate.join(", ")}`);
+  }
 }
 
 export async function seedOnboardingSuggestions() {
