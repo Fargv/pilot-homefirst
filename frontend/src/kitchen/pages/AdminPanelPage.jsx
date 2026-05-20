@@ -1450,7 +1450,7 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
   );
 }
 
-function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99, formRef, onDirty }) {
+function PackForm({ item, onSave, onCancel, onPaymentSaved, onSaved, baseBitePrice = 1.99, formRef, onDirty }) {
   const isEdit = Boolean(item.id || item._id);
   const dirtyFired = useRef(false);
   const isPublished = item.status === "published";
@@ -1631,6 +1631,9 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
           }));
         }
         if (onPaymentSaved) onPaymentSaved();
+        onSaved?.(paymentRes?.stripeError || null);
+      } else {
+        onSaved?.(null);
       }
     } catch (err) { setError(err.message || "Error al guardar."); }
     finally { setSaving(false); }
@@ -2691,8 +2694,8 @@ function CatalogPacksSection() {
         body: JSON.stringify(form)
       });
     }
-    closePanel();
     await load();
+    // closePanel is called by PackForm.handleSubmit after PATCH (Stripe sync) completes
   };
 
   const handleToggle = async (pack, field) => {
@@ -3034,6 +3037,10 @@ function CatalogPacksSection() {
               onSave={handleSave}
               onCancel={() => isDirty ? setCloseConfirm(true) : closePanel()}
               onPaymentSaved={() => load()}
+              onSaved={(stripeErr) => {
+                if (stripeErr) setSaveNotice((prev) => (prev ? `${prev} ⚠ Stripe: ${stripeErr}` : `⚠ Stripe: ${stripeErr}`));
+                closePanel();
+              }}
               baseBitePrice={baseBitePrice}
               formRef={packFormRef}
               onDirty={() => setIsDirty(true)}
