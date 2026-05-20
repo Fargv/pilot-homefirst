@@ -1450,8 +1450,9 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
   );
 }
 
-function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99 }) {
+function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99, formRef, onDirty }) {
   const isEdit = Boolean(item.id || item._id);
+  const dirtyFired = useRef(false);
   const isPublished = item.status === "published";
 
   const freeUntilDefault = item.freeUntil ? new Date(item.freeUntil).toISOString().split("T")[0] : "";
@@ -1636,7 +1637,11 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
       <h4 style={{ margin: "0 0 16px", fontSize: 15, color: "#1e293b", fontWeight: 700 }}>
         {isEdit ? `✏️ Editar: ${item.title}` : "➕ Nuevo pack de catálogo"}
       </h4>
-      <form onSubmit={handleSubmit}>
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        onChange={() => { if (!dirtyFired.current) { dirtyFired.current = true; onDirty?.(); } }}
+      >
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 14 }}>
           <label style={labelStyle}>
             Slug (único)
@@ -2552,7 +2557,6 @@ function CatalogPacksSection() {
   const [packs, setPacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [editItem, setEditItem] = useState(null);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState(() => ({
     packType: window.localStorage.getItem("lunchfy.admin.catalog.packType") === "diet" ? "diet" : "all"
@@ -2562,9 +2566,61 @@ function CatalogPacksSection() {
   const [grantModal, setGrantModal] = useState(null);
   const [deleteConfirmPack, setDeleteConfirmPack] = useState(null);
   const [households, setHouseholds] = useState([]);
-  const [reviewPack, setReviewPack] = useState(null);
   const [saveNotice, setSaveNotice] = useState("");
   const [baseBitePrice, setBaseBitePrice] = useState(1.99);
+
+  // ── Panel state (edit / review — mutually exclusive full-screen overlays) ──
+  const [panelState, setPanelState] = useState(null); // { mode: "edit"|"review", pack }
+  const [isDirty, setIsDirty] = useState(false);
+  const [closeConfirm, setCloseConfirm] = useState(false);
+  const pendingPanelRef = useRef(null);
+  const packFormRef = useRef(null);
+
+  const closePanel = useCallback(() => {
+    setPanelState(null);
+    setIsDirty(false);
+    setCloseConfirm(false);
+  }, []);
+
+  const openPanel = useCallback((mode, pack) => {
+    setPanelState((cur) => {
+      if (cur?.mode === "edit" && isDirty) {
+        pendingPanelRef.current = { mode, pack };
+        setCloseConfirm(true);
+        return cur;
+      }
+      setIsDirty(false);
+      return { mode, pack };
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty]);
+
+  const handleConfirmDiscard = useCallback(() => {
+    const pending = pendingPanelRef.current;
+    pendingPanelRef.current = null;
+    setPanelState(pending || null);
+    setIsDirty(false);
+    setCloseConfirm(false);
+  }, []);
+
+  const syncPanelPack = useCallback((updatedPack) => {
+    setPanelState((prev) =>
+      prev && String(prev.pack?.id) === String(updatedPack.id)
+        ? { ...prev, pack: updatedPack }
+        : prev
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!panelState) return;
+    const handle = (e) => {
+      if (e.key !== "Escape") return;
+      if (panelState.mode === "edit" && isDirty) setCloseConfirm(true);
+      else closePanel();
+    };
+    window.addEventListener("keydown", handle);
+    return () => window.removeEventListener("keydown", handle);
+  }, [panelState, isDirty, closePanel]);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -2601,7 +2657,7 @@ function CatalogPacksSection() {
   const onlyDiets = filters.packType === "diet";
 
   const handleSave = async (form) => {
-    const packId = editItem?.id;
+    const packId = panelState?.pack?.id;
     setSaveNotice("");
     if (packId) {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${packId}`, {
@@ -2618,7 +2674,7 @@ function CatalogPacksSection() {
         body: JSON.stringify(form)
       });
     }
-    setEditItem(null);
+    closePanel();
     await load();
   };
 
@@ -2678,7 +2734,7 @@ function CatalogPacksSection() {
     try {
       const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/publish`, { method: "POST" });
       setPacks((prev) => prev.map((item) => String(item.id) === String(data.pack.id) ? data.pack : item));
-      if (reviewPack && String(reviewPack.id) === String(data.pack.id)) setReviewPack(data.pack);
+      syncPanelPack(data.pack);
     } catch (err) {
       setError(err.message || "No se pudo publicar el pack.");
     } finally {
@@ -2696,7 +2752,7 @@ function CatalogPacksSection() {
         body: JSON.stringify({ status })
       });
       setPacks((prev) => prev.map((item) => String(item.id) === String(data.pack.id) ? data.pack : item));
-      if (reviewPack && String(reviewPack.id) === String(data.pack.id)) setReviewPack(data.pack);
+      syncPanelPack(data.pack);
     } catch (err) {
       setError(err.message || "No se pudo cambiar el estado del pack.");
     } finally {
@@ -2706,10 +2762,10 @@ function CatalogPacksSection() {
 
   const replacePack = (nextPack) => {
     setPacks((prev) => prev.map((pack) => String(pack.id) === String(nextPack.id) ? nextPack : pack));
-    setReviewPack(nextPack);
+    syncPanelPack(nextPack);
   };
 
-  return (
+  return (<>
     <Card className="kitchen-block-gap">
       <div style={{ marginBottom: 16 }}>
         <h2 className="kitchen-title-no-margin">Catálogo de packs</h2>
@@ -2723,7 +2779,7 @@ function CatalogPacksSection() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button type="button" style={{ ...ABT.save, padding: "7px 16px" }} onClick={() => setEditItem({})}>
+        <button type="button" style={{ ...ABT.save, padding: "7px 16px" }} onClick={() => openPanel("edit", {})}>
           + Nuevo pack
         </button>
         <button type="button" style={ABT.edit} onClick={load} disabled={loading}>
@@ -2748,24 +2804,6 @@ function CatalogPacksSection() {
           {filtered.length}{search.trim() ? ` de ${packs.length}` : ""} packs{onlyDiets ? " de dieta" : " en total"}
         </span>
       </div>
-
-      {reviewPack && (
-        <PackReviewPanel
-          pack={reviewPack}
-          onClose={() => setReviewPack(null)}
-          onPackUpdated={replacePack}
-        />
-      )}
-
-      {editItem !== null && (
-        <PackForm
-          item={editItem}
-          onSave={handleSave}
-          onCancel={() => setEditItem(null)}
-          onPaymentSaved={() => load()}
-          baseBitePrice={baseBitePrice}
-        />
-      )}
 
       {error ? <div className="kitchen-alert error">{error}</div> : null}
       {saveNotice ? <div className="kitchen-alert success">{saveNotice}</div> : null}
@@ -2794,7 +2832,7 @@ function CatalogPacksSection() {
                 const unresolved = Number(pack.validationSummary?.unresolvedIssues || 0);
                 const canPublishPack = pack.status !== "published" && unresolved === 0;
                 return (
-                  <tr key={pack.id} style={{ opacity: pack.active !== false ? 1 : 0.45 }}>
+                  <tr key={pack.id} style={{ opacity: pack.active !== false ? 1 : 0.45, background: panelState && String(panelState.pack?.id) === String(pack.id) ? "rgba(99,102,241,0.07)" : undefined }}>
                     <td>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>
                         {pack.featured ? <span style={{ color: "#f59e0b", marginRight: 4 }}>★</span> : null}
@@ -2846,8 +2884,20 @@ function CatalogPacksSection() {
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                        <button type="button" style={ABT.edit} onClick={() => setEditItem(pack)}>Editar</button>
-                        <button type="button" style={{ ...ABT.edit, color: "#4338ca", borderColor: "#c7d2fe" }} onClick={() => setReviewPack(pack)}>Revisar</button>
+                        <button
+                          type="button"
+                          style={{ ...ABT.edit, ...(panelState?.mode === "edit" && String(panelState.pack?.id) === String(pack.id) ? { background: "#4338ca", color: "#fff", borderColor: "#4338ca" } : {}) }}
+                          onClick={() => openPanel("edit", pack)}
+                        >
+                          {panelState?.mode === "edit" && String(panelState.pack?.id) === String(pack.id) ? "✏️ Editando" : "Editar"}
+                        </button>
+                        <button
+                          type="button"
+                          style={{ ...ABT.edit, color: "#4338ca", borderColor: "#c7d2fe", ...(panelState?.mode === "review" && String(panelState.pack?.id) === String(pack.id) ? { background: "#4338ca", color: "#fff", borderColor: "#4338ca" } : {}) }}
+                          onClick={() => openPanel("review", pack)}
+                        >
+                          {panelState?.mode === "review" && String(panelState.pack?.id) === String(pack.id) ? "🔍 Revisando" : "Revisar"}
+                        </button>
                         <ActionsMenu
                           disabled={Boolean(togId)}
                           items={[
@@ -2928,7 +2978,96 @@ function CatalogPacksSection() {
         />
       )}
     </Card>
-  );
+
+    {/* ── Edit overlay ────────────────────────────────────────────────────── */}
+    {panelState?.mode === "edit" && (
+      <div style={{ position: "fixed", inset: 0, zIndex: 800, display: "flex", flexDirection: "column", background: "#f8fafc" }}>
+        <div style={{ background: "#1e1b4b", color: "#e0e7ff", padding: "0 20px", height: 50, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
+            <span style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {panelState.pack?.id ? `✏️ ${panelState.pack.title || "Pack"}` : "➕ Nuevo pack"}
+            </span>
+            {isDirty && (
+              <span style={{ fontSize: 11, background: "#f59e0b", color: "#1c1917", padding: "2px 8px", borderRadius: 4, fontWeight: 700, flexShrink: 0 }}>
+                Sin guardar
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={() => packFormRef.current?.requestSubmit()}
+              style={{ background: "#4338ca", color: "#fff", border: "none", padding: "6px 18px", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 13 }}
+            >
+              💾 Guardar
+            </button>
+            <button
+              type="button"
+              onClick={() => isDirty ? setCloseConfirm(true) : closePanel()}
+              style={{ background: "rgba(255,255,255,0.1)", color: "#e0e7ff", border: "1px solid rgba(255,255,255,0.2)", padding: "5px 14px", borderRadius: 6, cursor: "pointer", fontSize: 13 }}
+            >
+              ✕ Cerrar
+            </button>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ maxWidth: 960, margin: "0 auto", padding: "20px" }}>
+            <PackForm
+              item={panelState.pack || {}}
+              onSave={handleSave}
+              onCancel={() => isDirty ? setCloseConfirm(true) : closePanel()}
+              onPaymentSaved={() => load()}
+              baseBitePrice={baseBitePrice}
+              formRef={packFormRef}
+              onDirty={() => setIsDirty(true)}
+            />
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── Review overlay ───────────────────────────────────────────────────── */}
+    {panelState?.mode === "review" && (
+      <div style={{ position: "fixed", inset: 0, zIndex: 800, display: "flex", flexDirection: "column", background: "#f8fafc" }}>
+        <div style={{ background: "#312e81", color: "#c7d2fe", padding: "0 20px", height: 38, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ opacity: 0.6 }}>Catálogo</span>
+            <span style={{ opacity: 0.4 }}>›</span>
+            <span style={{ fontWeight: 600, color: "#e0e7ff" }}>{panelState.pack?.title}</span>
+            <PackStatusBadge status={panelState.pack?.status} />
+          </div>
+          <button
+            type="button"
+            onClick={closePanel}
+            style={{ background: "rgba(255,255,255,0.1)", color: "#e0e7ff", border: "none", padding: "3px 12px", borderRadius: 5, cursor: "pointer", fontSize: 12 }}
+          >
+            ✕ Volver al catálogo
+          </button>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ maxWidth: 960, margin: "0 auto", padding: "20px 20px 60px" }}>
+            <PackReviewPanel
+              pack={panelState.pack}
+              onClose={closePanel}
+              onPackUpdated={replacePack}
+            />
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── Discard-changes confirmation ─────────────────────────────────────── */}
+    {closeConfirm && (
+      <ConfirmModal
+        title="¿Cerrar sin guardar?"
+        body="Tienes cambios sin guardar en este pack. Si cierras ahora se perderán."
+        confirmLabel="Cerrar sin guardar"
+        danger
+        onConfirm={handleConfirmDiscard}
+        onCancel={() => { pendingPanelRef.current = null; setCloseConfirm(false); }}
+      />
+    )}
+  </>);
 }
 
 // ─── Bites Economy section ───────────────────────────────────────────────────
