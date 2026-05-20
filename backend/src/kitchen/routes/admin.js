@@ -12,6 +12,7 @@ import { KitchenIngredient } from "../models/KitchenIngredient.js";
 import { HouseholdCatalogPack } from "../models/HouseholdCatalogPack.js";
 import { CatalogPack } from "../models/CatalogPack.js";
 import { Category } from "../models/Category.js";
+import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
 import { KitchenSwap } from "../models/KitchenSwap.js";
 import { ShoppingTrip } from "../models/ShoppingTrip.js";
@@ -456,6 +457,34 @@ router.get("/payments/entitlements", requireAuth, requireDiod, async (req, res) 
   } catch (error) {
     console.error("[admin] payments/entitlements error", { error: error?.message });
     return res.status(500).json({ ok: false, error: "No se pudieron cargar los entitlements de pago." });
+  }
+});
+
+// ─── Categories ──────────────────────────────────────────────────────────────
+
+router.get("/dish-categories", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const categories = await KitchenDishCategory.find({})
+      .select("_id name slug code colorBg colorText active")
+      .sort({ name: 1 })
+      .lean();
+    return res.json({ ok: true, categories });
+  } catch (err) {
+    console.error("[admin] dish-categories error", err?.message);
+    return res.status(500).json({ ok: false, error: "Error al cargar categorías de plato." });
+  }
+});
+
+router.get("/ingredient-categories", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const categories = await Category.find({ scope: "master", isArchived: { $ne: true } })
+      .select("_id name slug colorBg colorText order forRecipes active")
+      .sort({ order: 1, name: 1 })
+      .lean();
+    return res.json({ ok: true, categories });
+  } catch (err) {
+    console.error("[admin] ingredient-categories error", err?.message);
+    return res.status(500).json({ ok: false, error: "Error al cargar categorías de ingrediente." });
   }
 });
 

@@ -3637,6 +3637,436 @@ function PlansSection() {
   );
 }
 
+// ─── Category helpers ─────────────────────────────────────────────────────────
+
+function ColorPill({ bg, text, label }) {
+  return (
+    <span style={{
+      display: "inline-block", padding: "2px 10px", borderRadius: 999,
+      background: bg || "#E8F1FF", color: text || "#1D4ED8",
+      fontSize: 12, fontWeight: 600, whiteSpace: "nowrap"
+    }}>
+      {label}
+    </span>
+  );
+}
+
+function ColorField({ label, value, onChange }) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, minWidth: 140 }}>
+      <span className="kitchen-label">{label}</span>
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <input
+          type="color"
+          value={value || "#000000"}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ width: 30, height: 28, padding: 2, border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer", flexShrink: 0 }}
+        />
+        <input
+          type="text"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ flex: 1, padding: "5px 8px", fontSize: 12, borderRadius: 6, border: "1px solid #d1d5db", outline: "none", fontFamily: "monospace", minWidth: 0 }}
+          placeholder="#rrggbb"
+          maxLength={7}
+        />
+      </div>
+    </label>
+  );
+}
+
+// ─── Dish Categories ──────────────────────────────────────────────────────────
+
+function DishCategoryForm({ item, onSave, onCancel }) {
+  const isNew = !item._id;
+  const [form, setForm] = useState({
+    name: item.name || "",
+    code: item.code || "",
+    colorBg: item.colorBg || "#E8F1FF",
+    colorText: item.colorText || "#1D4ED8",
+    active: item.active !== false
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (key) => (val) => setForm((p) => ({ ...p, [key]: val }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
+    setSaving(true); setError("");
+    try {
+      await onSave({ ...form, _id: item._id });
+    } catch (err) {
+      setError(err.message || "Error al guardar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 18, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 14px", fontSize: 14, color: "#1e293b", fontWeight: 700 }}>
+        {isNew ? "Nueva categoría de plato" : `Editar: ${item.name}`}
+      </h4>
+      <form onSubmit={handleSubmit}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+          <div style={{ flex: "2 1 180px" }}>
+            <Input id="dc-name" label="Nombre" value={form.name} onChange={(e) => set("name")(e.target.value)} required />
+          </div>
+          <div style={{ flex: "1 1 140px" }}>
+            <Input
+              id="dc-code"
+              label="Código (auto si vacío)"
+              value={form.code}
+              onChange={(e) => set("code")(e.target.value)}
+              placeholder="pollo, carne_roja..."
+              style={{ fontFamily: "monospace", fontSize: 13 }}
+            />
+          </div>
+          <ColorField label="Color fondo" value={form.colorBg} onChange={set("colorBg")} />
+          <ColorField label="Color texto" value={form.colorText} onChange={set("colorText")} />
+        </div>
+        <div style={{ display: "flex", gap: 20, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+            <input type="checkbox" checked={form.active} onChange={(e) => set("active")(e.target.checked)} />
+            Activa
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#6b7280" }}>
+            Previsualización:
+            <ColorPill bg={form.colorBg} text={form.colorText} label={form.name || "Ejemplo"} />
+          </div>
+        </div>
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 8 }}>{error}</div> : null}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="submit" style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }} disabled={saving}>
+            {saving ? "Guardando..." : "Guardar"}
+          </button>
+          <button type="button" style={ABT.cancel} onClick={onCancel}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function DishCategoriesSection() {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [editItem, setEditItem] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const data = await apiRequest("/api/admin/dish-categories");
+      setCategories(data.categories || []);
+    } catch (err) {
+      setError(err.message || "Error al cargar categorías de plato.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSave = async (form) => {
+    const body = JSON.stringify({
+      name: form.name,
+      ...(form.code ? { code: form.code } : {}),
+      colorBg: form.colorBg,
+      colorText: form.colorText,
+      active: form.active
+    });
+    if (form._id) {
+      const data = await apiRequest(`/api/kitchen/dish-categories/${form._id}`, { method: "PUT", body });
+      setCategories((prev) => prev.map((c) => String(c._id) === String(data.category._id) ? data.category : c));
+    } else {
+      const data = await apiRequest("/api/kitchen/dish-categories", { method: "POST", body });
+      setCategories((prev) => [...prev, data.category]);
+    }
+    setEditItem(null);
+  };
+
+  const handleToggle = async (cat) => {
+    const data = await apiRequest(`/api/kitchen/dish-categories/${cat._id}`, {
+      method: "PUT",
+      body: JSON.stringify({ name: cat.name, code: cat.code, colorBg: cat.colorBg, colorText: cat.colorText, active: !cat.active })
+    });
+    setCategories((prev) => prev.map((c) => String(c._id) === String(data.category._id) ? data.category : c));
+  };
+
+  return (
+    <Card className="kitchen-block-gap">
+      <div style={{ background: "#eef2ff", border: "1px solid #c7d2fe", borderRadius: 8, padding: "10px 14px", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#4338ca", marginBottom: 3 }}>¿Qué son las categorías de plato?</div>
+        <div style={{ fontSize: 12, color: "#3730a3", lineHeight: 1.6 }}>
+          Clasifican el plato según su ingrediente o tipo principal: <strong>Pollo</strong>, <strong>Carne roja</strong>, <strong>Pasta</strong>, <strong>Pescado</strong>, <strong>Legumbres</strong>...
+          Se muestran como etiquetas y filtros visuales en el plan semanal. Al editar el nombre o color, el cambio se refleja
+          automáticamente en todos los platos que la usan (no hace falta migrar nada).
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+        <h2 className="kitchen-title-no-margin">Categorías de plato</h2>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" style={ABT.edit} onClick={load} disabled={loading}>{loading ? "..." : "↺ Recargar"}</button>
+          <button type="button" style={{ ...ABT.save, padding: "5px 14px" }} onClick={() => setEditItem({})}>+ Nueva</button>
+        </div>
+      </div>
+
+      {editItem !== null && (
+        <DishCategoryForm item={editItem} onSave={handleSave} onCancel={() => setEditItem(null)} />
+      )}
+
+      {error ? <div className="kitchen-alert error">{error}</div> : null}
+
+      {loading ? <p className="kitchen-muted">Cargando...</p> : categories.length === 0 ? (
+        <p className="kitchen-muted">No hay categorías. Crea la primera.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="kitchen-table">
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th style={{ textAlign: "center" }}>Código</th>
+                <th style={{ textAlign: "center" }}>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((cat) => (
+                <tr key={cat._id} style={{ opacity: cat.active !== false ? 1 : 0.45 }}>
+                  <td><ColorPill bg={cat.colorBg} text={cat.colorText} label={cat.name} /></td>
+                  <td style={{ textAlign: "center", fontFamily: "monospace", fontSize: 12, color: "#6b7280" }}>{cat.code || "—"}</td>
+                  <td style={{ textAlign: "center" }}>
+                    {cat.active !== false
+                      ? <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>● Activa</span>
+                      : <span style={{ fontSize: 11, color: "#94a3b8" }}>○ Inactiva</span>}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" style={ABT.edit} onClick={() => setEditItem(cat)}>Editar</button>
+                      <button
+                        type="button"
+                        style={{ ...ABT.edit, color: cat.active !== false ? "#b45309" : "#166534", borderColor: cat.active !== false ? "#fcd34d" : "#86efac" }}
+                        onClick={() => handleToggle(cat)}
+                      >
+                        {cat.active !== false ? "Desactivar" : "Activar"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ─── Ingredient Categories ────────────────────────────────────────────────────
+
+function IngredientCategoryForm({ item, onSave, onCancel }) {
+  const isNew = !item._id;
+  const [form, setForm] = useState({
+    name: item.name || "",
+    colorBg: item.colorBg || "#E8F1FF",
+    colorText: item.colorText || "#1D4ED8",
+    order: item.order ?? 0,
+    forRecipes: item.forRecipes !== false,
+    active: item.active !== false
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (key) => (val) => setForm((p) => ({ ...p, [key]: val }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
+    setSaving(true); setError("");
+    try {
+      await onSave({ ...form, _id: item._id });
+    } catch (err) {
+      setError(err.message || "Error al guardar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 18, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 14px", fontSize: 14, color: "#1e293b", fontWeight: 700 }}>
+        {isNew ? "Nueva categoría de ingrediente" : `Editar: ${item.name}`}
+      </h4>
+      <form onSubmit={handleSubmit}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+          <div style={{ flex: "2 1 180px" }}>
+            <Input id="ic-name" label="Nombre" value={form.name} onChange={(e) => set("name")(e.target.value)} required />
+          </div>
+          <div style={{ flex: "0 0 100px" }}>
+            <Input
+              id="ic-order"
+              label="Orden"
+              type="number"
+              value={String(form.order)}
+              onChange={(e) => set("order")(Number(e.target.value))}
+              style={{ fontFamily: "monospace" }}
+            />
+          </div>
+          <ColorField label="Color fondo" value={form.colorBg} onChange={set("colorBg")} />
+          <ColorField label="Color texto" value={form.colorText} onChange={set("colorText")} />
+        </div>
+        <div style={{ display: "flex", gap: 20, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+            <input type="checkbox" checked={form.active} onChange={(e) => set("active")(e.target.checked)} />
+            Activa
+          </label>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+            <input type="checkbox" checked={form.forRecipes} onChange={(e) => set("forRecipes")(e.target.checked)} />
+            Usar en recetas
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#6b7280" }}>
+            Previsualización:
+            <ColorPill bg={form.colorBg} text={form.colorText} label={form.name || "Ejemplo"} />
+          </div>
+        </div>
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 8 }}>{error}</div> : null}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="submit" style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }} disabled={saving}>
+            {saving ? "Guardando..." : "Guardar"}
+          </button>
+          <button type="button" style={ABT.cancel} onClick={onCancel}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function IngredientCategoriesSection() {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [editItem, setEditItem] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const data = await apiRequest("/api/admin/ingredient-categories");
+      setCategories(data.categories || []);
+    } catch (err) {
+      setError(err.message || "Error al cargar categorías de ingrediente.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSave = async (form) => {
+    const body = JSON.stringify({
+      name: form.name,
+      colorBg: form.colorBg,
+      colorText: form.colorText,
+      order: form.order,
+      forRecipes: form.forRecipes,
+      active: form.active,
+      scope: "master"
+    });
+    if (form._id) {
+      const data = await apiRequest(`/api/categories/${form._id}`, { method: "PUT", body });
+      setCategories((prev) => prev.map((c) => String(c._id) === String(data.category._id) ? data.category : c));
+    } else {
+      const data = await apiRequest("/api/categories", { method: "POST", body });
+      setCategories((prev) => [...prev, data.category]);
+    }
+    setEditItem(null);
+  };
+
+  const handleToggle = async (cat) => {
+    const data = await apiRequest(`/api/categories/${cat._id}`, {
+      method: "PUT",
+      body: JSON.stringify({ name: cat.name, colorBg: cat.colorBg, colorText: cat.colorText, order: cat.order, forRecipes: cat.forRecipes, active: !cat.active })
+    });
+    setCategories((prev) => prev.map((c) => String(c._id) === String(data.category._id) ? data.category : c));
+  };
+
+  return (
+    <Card className="kitchen-block-gap">
+      <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#065f46", marginBottom: 3 }}>¿Qué son las categorías de ingrediente?</div>
+        <div style={{ fontSize: 12, color: "#047857", lineHeight: 1.6 }}>
+          Representan la <strong>sección del supermercado</strong> donde se encuentra el producto: <strong>Frutas y verduras</strong>,
+          <strong> Carnes y pollos</strong>, <strong>Congelados</strong>, <strong>Lácteos</strong>...
+          Se usan para agrupar la lista de la compra por pasillo. Son categorías <strong>master</strong> (globales para todos los hogares).
+          Al editar nombre o color, el cambio se propaga automáticamente a todos los ingredientes que la referencian.
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+        <h2 className="kitchen-title-no-margin">Categorías de ingrediente</h2>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" style={ABT.edit} onClick={load} disabled={loading}>{loading ? "..." : "↺ Recargar"}</button>
+          <button type="button" style={{ ...ABT.save, padding: "5px 14px" }} onClick={() => setEditItem({})}>+ Nueva</button>
+        </div>
+      </div>
+
+      {editItem !== null && (
+        <IngredientCategoryForm item={editItem} onSave={handleSave} onCancel={() => setEditItem(null)} />
+      )}
+
+      {error ? <div className="kitchen-alert error">{error}</div> : null}
+
+      {loading ? <p className="kitchen-muted">Cargando...</p> : categories.length === 0 ? (
+        <p className="kitchen-muted">No hay categorías de ingrediente. Crea la primera.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="kitchen-table">
+            <thead>
+              <tr>
+                <th style={{ textAlign: "center" }}>Orden</th>
+                <th>Categoría</th>
+                <th style={{ textAlign: "center" }}>Recetas</th>
+                <th style={{ textAlign: "center" }}>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((cat) => (
+                <tr key={cat._id} style={{ opacity: cat.active !== false ? 1 : 0.45 }}>
+                  <td style={{ textAlign: "center", fontFamily: "monospace", fontSize: 12, color: "#6b7280" }}>{cat.order ?? 0}</td>
+                  <td><ColorPill bg={cat.colorBg} text={cat.colorText} label={cat.name} /></td>
+                  <td style={{ textAlign: "center", fontSize: 12 }}>
+                    {cat.forRecipes !== false ? <span style={{ color: "#16a34a" }}>✓</span> : <span style={{ color: "#9ca3af" }}>—</span>}
+                  </td>
+                  <td style={{ textAlign: "center" }}>
+                    {cat.active !== false
+                      ? <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>● Activa</span>
+                      : <span style={{ fontSize: 11, color: "#94a3b8" }}>○ Inactiva</span>}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" style={ABT.edit} onClick={() => setEditItem(cat)}>Editar</button>
+                      <button
+                        type="button"
+                        style={{ ...ABT.edit, color: cat.active !== false ? "#b45309" : "#166534", borderColor: cat.active !== false ? "#fcd34d" : "#86efac" }}
+                        onClick={() => handleToggle(cat)}
+                      >
+                        {cat.active !== false ? "Desactivar" : "Activar"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function AdminPanelPage() {
@@ -3710,7 +4140,8 @@ export default function AdminPanelPage() {
             { key: "master", label: "Master" },
             { key: "catalog_packs", label: "Catálogo" },
             { key: "bites_economy", label: "Bites" },
-            { key: "plans", label: "Planes" }
+            { key: "plans", label: "Planes" },
+            { key: "categories", label: "Categorías" }
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -3749,6 +4180,11 @@ export default function AdminPanelPage() {
           <BitesEconomySection />
         ) : tab === "plans" ? (
           <PlansSection />
+        ) : tab === "categories" ? (
+          <>
+            <DishCategoriesSection />
+            <IngredientCategoriesSection />
+          </>
         ) : (
           <QuickSubscriptionPanel />
         )}
