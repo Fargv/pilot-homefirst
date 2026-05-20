@@ -20,6 +20,7 @@ import {
 import { getColorPalette, getUserColorById, getUserColorPreference, setUserColorPreference } from "../utils/userColors.js";
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 import { ProBadge } from "../components/ui/ProBadge.jsx";
+import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 
 function initialsFromName(name = "") {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
@@ -132,6 +133,9 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { activeWeek } = useActiveWeek();
   const { user, setUser, refreshUser, logout } = useAuth();
+  const { notify: notifyOnboarding } = useOnboarding();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { notifyOnboarding("visit_settings"); }, []);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const palette = getColorPalette();
@@ -593,6 +597,7 @@ export default function SettingsPage() {
       setHouseholdName(data?.household?.name || safeName);
       setHouseholdNameEditing(false);
       updateSuccess("Nombre del household actualizado.");
+      notifyOnboarding("update_household");
       await refreshUser();
     } catch (err) {
       setError(err.message || "No se pudo actualizar el household.");

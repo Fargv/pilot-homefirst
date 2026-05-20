@@ -79,9 +79,27 @@ export default function DishesPage() {
   };
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { notify: notifyOnboarding } = useOnboarding();
+  const { notify: notifyOnboarding, state: onboardingState } = useOnboarding();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { notifyOnboarding("visit_dishes"); }, []);
+
+  const [ingredientSuggestions, setIngredientSuggestions] = useState([]);
+  const [dishSuggestions, setDishSuggestions] = useState([]);
+  const [ingredientSuggestionName, setIngredientSuggestionName] = useState("");
+  const [dishSuggestionName, setDishSuggestionName] = useState("");
+
+  useEffect(() => {
+    const key = onboardingState?.nextChallenge?.key;
+    if (key === "create_ingredient" || key === "create_second_ingredient") {
+      apiRequest("/api/kitchen/onboarding/suggestions?type=ingredient")
+        .then((d) => setIngredientSuggestions(d.suggestions || []))
+        .catch(() => {});
+    } else if (key === "create_dish") {
+      apiRequest("/api/kitchen/onboarding/suggestions?type=dish")
+        .then((d) => setDishSuggestions(d.suggestions || []))
+        .catch(() => {});
+    }
+  }, [onboardingState?.nextChallenge?.key]);
   const [dishes, setDishes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [dishCategories, setDishCategories] = useState([]);
@@ -213,13 +231,23 @@ export default function DishesPage() {
   const startCreate = () => {
     setActiveDish(null);
     setDishError("");
+    setDishSuggestionName("");
     setInitialSidedish(activeTab === "side");
+    setIsModalOpen(true);
+  };
+
+  const openDishWithSuggestion = (name) => {
+    setActiveDish(null);
+    setDishError("");
+    setDishSuggestionName(name);
+    setInitialSidedish(false);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setActiveDish(null);
+    setDishSuggestionName("");
   };
 
   const persistDishUpdate = useCallback(
@@ -449,6 +477,14 @@ export default function DishesPage() {
 
   const startIngredientCreate = () => {
     setActiveIngredient(null);
+    setIngredientSuggestionName("");
+    setIngredientsError("");
+    setIsIngredientModalOpen(true);
+  };
+
+  const openIngredientWithSuggestion = (name) => {
+    setActiveIngredient(null);
+    setIngredientSuggestionName(name);
     setIngredientsError("");
     setIsIngredientModalOpen(true);
   };
@@ -485,6 +521,7 @@ export default function DishesPage() {
   const closeIngredientModal = () => {
     setIsIngredientModalOpen(false);
     setActiveIngredient(null);
+    setIngredientSuggestionName("");
   };
 
   const assignDays = useMemo(() => {
@@ -800,6 +837,19 @@ export default function DishesPage() {
     return "";
   }, [ingredientSearchTerm, ingredients.length, selectedIngredientCategoryId]);
 
+  const nextChallengeKey = onboardingState?.nextChallenge?.key;
+  const filteredIngredientSuggestions = useMemo(() => {
+    if (nextChallengeKey !== "create_ingredient" && nextChallengeKey !== "create_second_ingredient") return [];
+    const existing = new Set(ingredients.map((i) => normalizeIngredientName(i.name || "").toLowerCase()));
+    return ingredientSuggestions.filter((s) => !existing.has(normalizeIngredientName(s.text || "").toLowerCase()));
+  }, [nextChallengeKey, ingredientSuggestions, ingredients]);
+
+  const filteredDishSuggestions = useMemo(() => {
+    if (nextChallengeKey !== "create_dish") return [];
+    const existing = new Set(dishes.map((d) => normalizeIngredientName(d.name || "").toLowerCase()));
+    return dishSuggestions.filter((s) => !existing.has(normalizeIngredientName(s.text || "").toLowerCase()));
+  }, [nextChallengeKey, dishSuggestions, dishes]);
+
   const isIngredientsTab = activeTab === "ingredients";
   const headerTitle = isIngredientsTab ? "Ingredientes" : "Platos";
   const headerDescription = isIngredientsTab
@@ -876,6 +926,30 @@ export default function DishesPage() {
             + {headerActionLabel}
           </button>
         </div>
+        {(isIngredientsTab ? filteredIngredientSuggestions : (activeTab === "main" ? filteredDishSuggestions : [])).length > 0 && (
+          <div style={{ padding: "4px 16px 8px" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#6366f1", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Sugerencias para ti
+            </p>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {(isIngredientsTab ? filteredIngredientSuggestions : filteredDishSuggestions).map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => isIngredientsTab ? openIngredientWithSuggestion(s.text) : openDishWithSuggestion(s.text)}
+                  style={{
+                    fontSize: 12, padding: "4px 12px", borderRadius: 999,
+                    background: "#eef2ff", border: "1.5px solid #c7d2fe",
+                    color: "#4338ca", cursor: "pointer", fontWeight: 600,
+                    transition: "background 0.15s"
+                  }}
+                >
+                  + {s.text}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {!isIngredientsTab ? (
           <>
             <div className="kitchen-dishes-tabs kitchen-dishes-subtabs" role="tablist" aria-label="Filtrar por tipo de comida">
@@ -1367,12 +1441,22 @@ export default function DishesPage() {
       <DishModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        onSaved={async (isNew) => { await loadDishes(); if (isNew !== false && !activeDish) notifyOnboarding("create_dish"); }}
+        onSaved={async (savedDish) => {
+          await loadDishes();
+          if (!activeDish) {
+            notifyOnboarding("create_dish");
+            if ((savedDish?.ingredients?.length ?? 0) > 0) notifyOnboarding("add_ingredient_to_dish");
+          } else if ((savedDish?.ingredients?.length ?? 0) > 0) {
+            notifyOnboarding("add_ingredient_to_dish");
+          }
+          setDishSuggestionName("");
+        }}
         onRecipeSaved={async () => { await loadDishes(); }}
         categories={categories}
         dishCategories={dishCategories}
         onCategoryCreated={onCategoryCreated}
         initialDish={activeDish}
+        initialName={dishSuggestionName}
         initialSidedish={initialSidedish}
         initialIsDinner={Boolean(activeDish?.isDinner)}
         scope={isDiodGlobalMode ? "master" : undefined}
@@ -1383,10 +1467,11 @@ export default function DishesPage() {
         onSaved={async () => {
           await loadIngredients(ingredientSearchTerm);
           if (!activeIngredient) notifyOnboarding("create_ingredient");
+          setIngredientSuggestionName("");
         }}
         categories={categories}
         onCategoryCreated={onCategoryCreated}
-        initialIngredient={activeIngredient}
+        initialIngredient={ingredientSuggestionName ? { name: ingredientSuggestionName } : activeIngredient}
         scope={isDiodGlobalMode ? "master" : undefined}
       />
       {isInfoMobile && (activeInfoDish || activeInfoIngredient) ? (

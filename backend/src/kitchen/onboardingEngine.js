@@ -1,102 +1,122 @@
 import { HouseholdOnboarding } from "./models/HouseholdOnboarding.js";
 import { OnboardingChallenge } from "./models/OnboardingChallenge.js";
+import { OnboardingSuggestion } from "./models/OnboardingSuggestion.js";
 import { Household } from "./models/Household.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 import { normalizeSubscriptionPlan } from "./subscriptionService.js";
 
 const WELCOME_BITES = 20;
 
+// Screens required for explore_app challenge (in trigger-event format)
+const EXPLORE_REQUIRED = ["visit_week", "visit_dishes", "visit_shopping", "visit_catalog", "visit_settings"];
+
 // ─── Default challenge definitions ───────────────────────────────────────────
+// Total challenge reward: 80 bites. Welcome: +20. Grand total: 100.
+// Onboarding pack costs 80 bites → user ends with 20 bites remaining.
 
 const DEFAULT_CHALLENGES = [
   {
-    key: "visit_week",
-    title: "Explora la pantalla de semana",
-    description: "Aquí es donde ocurre toda la magia. La pantalla de semana es el corazón de Lunchfy: organizas tus comidas por días y todo empieza aquí.",
-    howTo: "Toca 'Semana' en la navegación inferior. Ya estás aquí, así que este reto se completa automáticamente.",
-    rewardBites: 10, order: 1, phase: 1, phaseLabel: "Descubre la app",
-    triggerType: "visit_week", triggerCount: 1
-  },
-  {
-    key: "visit_dishes",
-    title: "Abre la sección de platos",
-    description: "Los platos son las recetas que asignas a los días de tu semana. También aquí encontrarás los ingredientes, que son la base de la lista de la compra automática.",
-    howTo: "Toca 'Platos' en la navegación inferior.",
-    rewardBites: 10, order: 2, phase: 1, phaseLabel: "Descubre la app",
-    triggerType: "visit_dishes", triggerCount: 1
+    key: "explore_app",
+    title: "Explora Lunchfy",
+    description: "Antes de empezar a crear y planificar, dedica un minuto a conocer la app. Este recorrido rápido te ayudará a entender cómo funciona Lunchfy.",
+    howTo: "Visita estas 5 secciones: Semana · Platos · Lista de la compra · Catálogo · Ajustes. Puedes hacerlo desde la barra de navegación inferior.",
+    rewardBites: 5, order: 1, phase: 1, phaseLabel: "Conoce la app",
+    triggerType: "explore_app", triggerCount: 5
   },
   {
     key: "create_ingredient",
     title: "Crea tu primer ingrediente",
-    description: "Los ingredientes que añadas aquí aparecerán automáticamente en tu lista de la compra cuando planifiques platos que los usen. Sin escribir nada manualmente.",
-    howTo: "En Platos → toca la pestaña 'Ingredientes' → toca el botón + → escribe un ingrediente que compras habitualmente → guarda.",
-    rewardBites: 20, order: 3, phase: 1, phaseLabel: "Descubre la app",
+    description: "Los ingredientes son la base de todo. Cuando los añadas a un plato, Lunchfy los incluirá automáticamente en tu lista de la compra. Sin escribir nada a mano.",
+    howTo: "Ve a Platos → pestaña Ingredientes → toca + → escribe el nombre de un ingrediente que usas habitualmente → guarda.",
+    rewardBites: 10, order: 2, phase: 2, phaseLabel: "Ingredientes",
     triggerType: "create_ingredient", triggerCount: 1
+  },
+  {
+    key: "create_second_ingredient",
+    title: "Añade un segundo ingrediente",
+    description: "Cuantos más ingredientes tengas, más completa y útil será tu lista de la compra. Añade al menos un ingrediente más para empezar a construir tu despensa.",
+    howTo: "Ve a Platos → pestaña Ingredientes → toca + → crea otro ingrediente diferente.",
+    rewardBites: 5, order: 3, phase: 2, phaseLabel: "Ingredientes",
+    triggerType: "create_ingredient", triggerCount: 2
   },
   {
     key: "create_dish",
     title: "Crea tu primer plato",
-    description: "Este es el momento clave. Cuando creas un plato y le añades ingredientes, Lunchfy puede generar tu lista de la compra de forma completamente automática.",
-    howTo: "En Platos → toca + → ponle un nombre al plato → añade ingredientes → guarda.",
-    rewardBites: 40, order: 4, phase: 2, phaseLabel: "Aprende los platos",
+    description: "Un plato es una receta que asignarás a los días de tu semana. Los platos con ingredientes generan automáticamente tu lista de la compra.",
+    howTo: "Ve a Platos → toca + → escribe el nombre de un plato que cocinas habitualmente → guarda.",
+    rewardBites: 10, order: 4, phase: 3, phaseLabel: "Platos",
     triggerType: "create_dish", triggerCount: 1
+  },
+  {
+    key: "add_ingredient_to_dish",
+    title: "Añade ingredientes a un plato",
+    description: "Este es el paso que activa la magia. Al vincular ingredientes a un plato, Lunchfy sabrá qué comprar automáticamente cuando planifiques esa comida.",
+    howTo: "Abre un plato existente o crea uno nuevo → en el formulario del plato, busca y añade los ingredientes que necesita → guarda.",
+    rewardBites: 5, order: 5, phase: 3, phaseLabel: "Platos",
+    triggerType: "add_ingredient_to_dish", triggerCount: 1
   },
   {
     key: "plan_first_meal",
     title: "Planifica tu primera comida",
-    description: "Es hora de asignar un plato a un día de la semana. Así construyes tu menú semanal, y tu lista de la compra se actualiza automáticamente.",
+    description: "Es el momento de asignar un plato a un día de la semana. Así construyes tu menú semanal y tu lista de la compra se actualiza automáticamente.",
     howTo: "Ve a Semana → elige un día → toca el espacio de comida → selecciona el plato que creaste.",
-    rewardBites: 25, order: 5, phase: 3, phaseLabel: "Planifica tu semana",
+    rewardBites: 10, order: 6, phase: 4, phaseLabel: "Planificación",
     triggerType: "plan_meal", triggerCount: 1
   },
   {
     key: "plan_3_meals",
-    title: "Planifica 3 comidas en la misma semana",
-    description: "Con más platos planificados, tu lista de la compra empieza a tener sentido real. Cuantas más comidas planifiques, más completa será tu lista.",
-    howTo: "Sigue añadiendo platos a los días de la semana actual. Necesitas un total de 3 comidas.",
-    rewardBites: 50, order: 6, phase: 3, phaseLabel: "Planifica tu semana",
+    title: "Planifica 3 comidas en la semana",
+    description: "Con más platos planificados tu lista de la compra empieza a tener sentido real. Cuantas más comidas planifiques, más completa y útil será tu lista.",
+    howTo: "Sigue añadiendo platos a los días de la semana actual hasta tener un total de 3 comidas.",
+    rewardBites: 5, order: 7, phase: 4, phaseLabel: "Planificación",
     triggerType: "plan_meal", triggerCount: 3
   },
   {
     key: "plan_full_week",
     title: "Completa una semana entera",
-    description: "Una semana completa significa tener comida planificada para todos los días. Este es tu primer plan semanal completo — un logro importante.",
-    howTo: "Planifica el resto de los días de la semana hasta tener los 5 días con al menos una comida.",
-    rewardBites: 100, order: 7, phase: 3, phaseLabel: "Planifica tu semana",
+    description: "Una semana completa significa tener comida planificada de lunes a viernes. Este es tu primer plan semanal completo.",
+    howTo: "Planifica el resto de los días hasta tener los 5 días laborables con al menos una comida.",
+    rewardBites: 10, order: 8, phase: 4, phaseLabel: "Planificación",
     triggerType: "plan_full_week", triggerCount: 1
-  },
-  {
-    key: "visit_shopping",
-    title: "Abre la lista de la compra",
-    description: "Tu lista de la compra se genera automáticamente a partir de los platos que has planificado. No tienes que escribir nada manualmente — Lunchfy lo hace por ti.",
-    howTo: "Toca 'Lista' en la navegación inferior.",
-    rewardBites: 15, order: 8, phase: 4, phaseLabel: "La compra",
-    triggerType: "visit_shopping", triggerCount: 1
   },
   {
     key: "mark_3_purchases",
     title: "Marca 3 productos como comprados",
-    description: "Cuando compras algo en el supermercado, márcalo en la lista. Así llevas el control de tu compra en tiempo real y sabes exactamente qué te falta.",
-    howTo: "En Lista → toca el círculo al lado de un producto para marcarlo como comprado. Hazlo con 3 productos.",
-    rewardBites: 40, order: 9, phase: 4, phaseLabel: "La compra",
+    description: "Cuando compres algo en el supermercado, márcalo en la lista. Así llevas el control en tiempo real y sabes exactamente qué te falta.",
+    howTo: "Ve a Lista de la compra → toca el círculo al lado de un producto para marcarlo como comprado. Hazlo con 3 productos.",
+    rewardBites: 10, order: 9, phase: 5, phaseLabel: "Lista de la compra",
     triggerType: "mark_purchased", triggerCount: 3
   },
   {
-    key: "visit_catalog",
-    title: "Visita el catálogo de packs",
-    description: "El catálogo contiene packs de platos creados especialmente para ti. Un pack puede añadir decenas de platos a tu hogar al instante, con ingredientes ya configurados.",
-    howTo: "Toca 'Catálogo' en la navegación inferior.",
-    rewardBites: 15, order: 10, phase: 5, phaseLabel: "Descubre el catálogo",
-    triggerType: "visit_catalog", triggerCount: 1
+    key: "update_household",
+    title: "Personaliza tu hogar",
+    description: "Cada household es único. Personalizar el nombre de tu hogar hace que la app sea tuya y facilita la colaboración si invitas a otras personas.",
+    howTo: "Ve a Ajustes → toca el icono de editar junto al nombre del household → escribe un nombre → guarda.",
+    rewardBites: 5, order: 10, phase: 6, phaseLabel: "Tu hogar",
+    triggerType: "update_household", triggerCount: 1
   },
   {
     key: "install_pack",
     title: "Instala tu primer pack del catálogo",
-    description: "¡Hora de usar los Bites que has ganado! Encuentra un pack y úsalos para instalarlo. Los platos del pack se añadirán directamente a tu biblioteca.",
-    howTo: "En Catálogo → elige un pack con precio en Bites → toca 'Instalar' → confirma.",
-    rewardBites: 100, order: 11, phase: 5, phaseLabel: "Descubre el catálogo",
+    description: "El catálogo contiene packs de platos listos para usar. Instala el pack de bienvenida con los Bites que has ganado y descubre lo fácil que es ampliar tu biblioteca.",
+    howTo: "Ve a Catálogo → busca el pack de bienvenida → toca Instalar → confirma con tus Bites.",
+    rewardBites: 5, order: 11, phase: 7, phaseLabel: "Catálogo",
     triggerType: "install_pack", triggerCount: 1
   }
+];
+
+const DEFAULT_INGREDIENT_SUGGESTIONS = [
+  "Burrata", "Kimchi", "Tahini", "Halloumi", "Panko", "Edamame",
+  "Leche de coco", "Mango chutney", "Ñoquis", "Aguacate",
+  "Miso", "Sriracha", "Tofu firme", "Queso feta", "Rúcula",
+  "Pesto", "Hummus", "Tempeh", "Chucrut", "Parmesano"
+];
+
+const DEFAULT_DISH_SUGGESTIONS = [
+  "Pollo crujiente con panko", "Tacos de halloumi", "Noodles al curry de coco",
+  "Arroz frito con kimchi", "Ñoquis con burrata y pesto", "Tostada de aguacate mediterránea",
+  "Bowl de edamame y tofu", "Pasta con tahini y limón", "Ensalada de rúcula y feta",
+  "Salmon teriyaki", "Shakshuka", "Ramen de miso"
 ];
 
 // ─── Seed ────────────────────────────────────────────────────────────────────
@@ -110,6 +130,19 @@ export async function seedOnboardingChallenges() {
     );
   }
   console.log("[onboarding] Challenges seeded.");
+}
+
+export async function seedOnboardingSuggestions() {
+  const existing = await OnboardingSuggestion.countDocuments();
+  if (existing > 0) return; // only seed if empty
+  const ingredientDocs = DEFAULT_INGREDIENT_SUGGESTIONS.map((text, i) => ({
+    type: "ingredient", text, active: true, order: i
+  }));
+  const dishDocs = DEFAULT_DISH_SUGGESTIONS.map((text, i) => ({
+    type: "dish", text, active: true, order: i
+  }));
+  await OnboardingSuggestion.insertMany([...ingredientDocs, ...dishDocs]);
+  console.log("[onboarding] Suggestions seeded.");
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
@@ -149,7 +182,7 @@ export async function initOnboarding(householdId) {
   });
 
   try {
-    await _grantBites(String(householdId), WELCOME_BITES, "Bienvenida a Lunchfy 🎉");
+    await _grantBites(String(householdId), WELCOME_BITES, "Bienvenida a Lunchfy");
     await HouseholdOnboarding.updateOne({ _id: onboarding._id }, { $set: { welcomeBitesGranted: true } });
     console.log(`[onboarding] Welcome bites granted (+${WELCOME_BITES}) household=${householdId}`);
   } catch (err) {
@@ -187,6 +220,14 @@ export async function getOnboardingState(householdId) {
   const progressPercent = challenges.length > 0 ? Math.round((completedKeys.size / challenges.length) * 100) : 0;
   const nextChallenge = enriched.find((c) => !c.completed) ?? null;
 
+  const screensVisited = onboarding.screensVisited || [];
+  const exploreProgress = {
+    visited: screensVisited,
+    required: EXPLORE_REQUIRED,
+    count: screensVisited.filter((s) => EXPLORE_REQUIRED.includes(s)).length,
+    total: EXPLORE_REQUIRED.length
+  };
+
   return {
     status: onboarding.status,
     welcomeBitesGranted: onboarding.welcomeBitesGranted,
@@ -197,6 +238,8 @@ export async function getOnboardingState(householdId) {
     totalBitesAvailable,
     mealsPlanCount: onboarding.mealsPlanCount ?? 0,
     purchasesMarkedCount: onboarding.purchasesMarkedCount ?? 0,
+    ingredientsCreatedCount: onboarding.ingredientsCreatedCount ?? 0,
+    exploreProgress,
     challenges: enriched,
     nextChallenge,
     startedAt: onboarding.startedAt,
@@ -208,7 +251,6 @@ export async function getOnboardingState(householdId) {
 
 export async function triggerOnboarding(householdId, triggerType, _context = {}) {
   try {
-    // Only for basic/free plan users
     const household = await Household.findById(householdId).select("subscriptionPlan").lean();
     if (!household) return null;
     const plan = normalizeSubscriptionPlan(household.subscriptionPlan);
@@ -224,14 +266,24 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
     const challenges = await OnboardingChallenge.find({ active: true }).sort({ order: 1 }).lean();
     const completedKeys = new Set((onboarding.completedChallenges || []).map((c) => c.challengeKey));
 
-    // Increment counters
+    // Increment persistent counters
     const counterUpdates = {};
     if (triggerType === "plan_meal") counterUpdates.mealsPlanCount = (onboarding.mealsPlanCount || 0) + 1;
     if (triggerType === "mark_purchased") counterUpdates.purchasesMarkedCount = (onboarding.purchasesMarkedCount || 0) + 1;
+    if (triggerType === "create_ingredient") counterUpdates.ingredientsCreatedCount = (onboarding.ingredientsCreatedCount || 0) + 1;
 
     if (Object.keys(counterUpdates).length > 0) {
       await HouseholdOnboarding.updateOne({ _id: onboarding._id }, { $set: counterUpdates });
       Object.assign(onboarding, counterUpdates);
+    }
+
+    // Track visited screens for explore_app challenge
+    if (triggerType.startsWith("visit_") && EXPLORE_REQUIRED.includes(triggerType)) {
+      const current = onboarding.screensVisited || [];
+      if (!current.includes(triggerType)) {
+        await HouseholdOnboarding.updateOne({ _id: onboarding._id }, { $addToSet: { screensVisited: triggerType } });
+        onboarding.screensVisited = [...new Set([...current, triggerType])];
+      }
     }
 
     // Find the next incomplete challenge
@@ -241,12 +293,17 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
     // Check if this trigger completes the next challenge
     let canComplete = false;
 
-    if (nextChallenge.triggerType === triggerType) {
+    if (nextChallenge.key === "explore_app" && triggerType.startsWith("visit_")) {
+      // Special: completes when all required screens have been visited
+      const visited = onboarding.screensVisited || [];
+      canComplete = EXPLORE_REQUIRED.every((s) => visited.includes(s));
+    } else if (nextChallenge.triggerType === triggerType) {
       if (triggerType === "plan_meal") {
-        // "plan_first_meal" needs count >= 1; "plan_3_meals" needs count >= 3
         canComplete = (onboarding.mealsPlanCount || 0) >= (nextChallenge.triggerCount || 1);
       } else if (triggerType === "mark_purchased") {
         canComplete = (onboarding.purchasesMarkedCount || 0) >= (nextChallenge.triggerCount || 1);
+      } else if (triggerType === "create_ingredient") {
+        canComplete = (onboarding.ingredientsCreatedCount || 0) >= (nextChallenge.triggerCount || 1);
       } else {
         canComplete = true;
       }
@@ -314,6 +371,8 @@ export async function resetOnboarding(householdId, adminUserId, reason = "") {
         completedChallenges: [],
         mealsPlanCount: 0,
         purchasesMarkedCount: 0,
+        ingredientsCreatedCount: 0,
+        screensVisited: [],
         totalBitesEarned: 0,
         startedAt: new Date(),
         completedAt: null
@@ -321,6 +380,19 @@ export async function resetOnboarding(householdId, adminUserId, reason = "") {
       $push: { resetHistory: { resetAt: new Date(), resetBy: adminUserId || null, reason } }
     },
     { upsert: true }
+  );
+}
+
+export async function assignOnboarding(householdId) {
+  await HouseholdOnboarding.deleteOne({ householdId });
+  return initOnboarding(householdId);
+}
+
+export async function removeOnboarding(householdId) {
+  await HouseholdOnboarding.updateOne(
+    { householdId },
+    { $set: { status: "disabled" } },
+    { upsert: false }
   );
 }
 

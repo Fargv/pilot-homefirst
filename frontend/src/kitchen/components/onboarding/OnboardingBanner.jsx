@@ -150,11 +150,24 @@ export default function OnboardingBanner() {
                 +{next.rewardBites}
               </span>
             </div>
-            {next.howTo && (
+            {next.key === "explore_app" && state.exploreProgress ? (
+              <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ flex: 1, height: 4, background: "#ddd6fe", borderRadius: 999 }}>
+                  <div style={{
+                    height: "100%", borderRadius: 999, background: "#6366f1",
+                    width: `${(state.exploreProgress.count / state.exploreProgress.total) * 100}%`,
+                    transition: "width 0.4s ease"
+                  }} />
+                </div>
+                <span style={{ fontSize: 11, color: "#6366f1", fontWeight: 700, flexShrink: 0 }}>
+                  {state.exploreProgress.count}/{state.exploreProgress.total} pantallas
+                </span>
+              </div>
+            ) : next.howTo ? (
               <p style={{ margin: "5px 0 0", fontSize: 11, color: "#4b5563", lineHeight: 1.5, fontStyle: "italic" }}>
                 {next.howTo}
               </p>
-            )}
+            ) : null}
           </div>
         ) : (
           <p style={{ margin: 0, fontSize: 13, color: "#374151" }}>¡Todos los retos completados!</p>

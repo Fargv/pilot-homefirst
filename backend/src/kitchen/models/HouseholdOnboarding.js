@@ -33,8 +33,12 @@ const HouseholdOnboardingSchema = new mongoose.Schema(
       default: "not_started"
     },
     completedChallenges: { type: [CompletedChallengeSchema], default: [] },
+    // counters for multi-trigger challenges
     mealsPlanCount: { type: Number, default: 0 },
     purchasesMarkedCount: { type: Number, default: 0 },
+    ingredientsCreatedCount: { type: Number, default: 0 },
+    // explore_app multi-screen tracking
+    screensVisited: { type: [String], default: [] },
     totalBitesEarned: { type: Number, default: 0 },
     welcomeBitesGranted: { type: Boolean, default: false },
     startedAt: { type: Date, default: null },

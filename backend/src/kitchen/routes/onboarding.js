@@ -3,11 +3,14 @@ import mongoose from "mongoose";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { getEffectiveHouseholdId } from "../householdScope.js";
 import { OnboardingChallenge } from "../models/OnboardingChallenge.js";
+import { OnboardingSuggestion } from "../models/OnboardingSuggestion.js";
 import { HouseholdOnboarding } from "../models/HouseholdOnboarding.js";
 import {
   getOnboardingState,
   triggerOnboarding,
   resetOnboarding,
+  assignOnboarding,
+  removeOnboarding,
   setOnboardingStatus,
   initOnboarding
 } from "../onboardingEngine.js";
@@ -38,6 +41,24 @@ router.post("/trigger", requireAuth, async (req, res) => {
     const state = await getOnboardingState(householdId);
 
     return res.json({ ok: true, event: result, onboarding: state });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── User: get suggestions ────────────────────────────────────────────────────
+
+router.get("/suggestions", requireAuth, async (req, res) => {
+  try {
+    const { type } = req.query;
+    if (!type || !["ingredient", "dish"].includes(type)) {
+      return res.status(400).json({ ok: false, error: "type debe ser ingredient o dish." });
+    }
+    const suggestions = await OnboardingSuggestion.find({ type, active: true })
+      .sort({ order: 1, createdAt: 1 })
+      .select("text")
+      .lean();
+    return res.json({ ok: true, suggestions: suggestions.map((s) => ({ id: s._id, text: s.text })) });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
   }
@@ -77,6 +98,66 @@ router.put("/admin/challenges/:id", requireAuth, requireDiod, async (req, res) =
 
     await challenge.save();
     return res.json({ ok: true, challenge: challenge.toObject() });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── Admin: suggestions CRUD ──────────────────────────────────────────────────
+
+router.get("/admin/suggestions", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const { type } = req.query;
+    const filter = type ? { type } : {};
+    const suggestions = await OnboardingSuggestion.find(filter).sort({ type: 1, order: 1 }).lean();
+    return res.json({ ok: true, suggestions });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+router.post("/admin/suggestions", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const { type, text, order } = req.body || {};
+    if (!type || !["ingredient", "dish"].includes(type)) {
+      return res.status(400).json({ ok: false, error: "type debe ser ingredient o dish." });
+    }
+    if (!text?.trim()) return res.status(400).json({ ok: false, error: "text requerido." });
+
+    const count = await OnboardingSuggestion.countDocuments({ type });
+    const suggestion = await OnboardingSuggestion.create({
+      type,
+      text: String(text).trim(),
+      active: true,
+      order: order ?? count
+    });
+    return res.json({ ok: true, suggestion });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+router.put("/admin/suggestions/:id", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const suggestion = await OnboardingSuggestion.findById(req.params.id);
+    if (!suggestion) return res.status(404).json({ ok: false, error: "Sugerencia no encontrada." });
+
+    const { text, active, order } = req.body || {};
+    if (text !== undefined) suggestion.text = String(text).trim();
+    if (active !== undefined) suggestion.active = Boolean(active);
+    if (order !== undefined) suggestion.order = Number(order);
+
+    await suggestion.save();
+    return res.json({ ok: true, suggestion: suggestion.toObject() });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+router.delete("/admin/suggestions/:id", requireAuth, requireDiod, async (req, res) => {
+  try {
+    await OnboardingSuggestion.findByIdAndDelete(req.params.id);
+    return res.json({ ok: true });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
   }
@@ -123,6 +204,35 @@ router.post("/admin/households/:householdId/reset", requireAuth, requireDiod, as
     await resetOnboarding(req.params.householdId, req.kitchenUser._id, reason || "");
     const state = await getOnboardingState(req.params.householdId);
     return res.json({ ok: true, onboarding: state });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── Admin: assign onboarding (fresh init) ────────────────────────────────────
+
+router.post("/admin/households/:householdId/assign", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.householdId)) {
+      return res.status(400).json({ ok: false, error: "householdId inválido." });
+    }
+    await assignOnboarding(req.params.householdId);
+    const state = await getOnboardingState(req.params.householdId);
+    return res.json({ ok: true, onboarding: state });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── Admin: remove onboarding ─────────────────────────────────────────────────
+
+router.post("/admin/households/:householdId/remove", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.householdId)) {
+      return res.status(400).json({ ok: false, error: "householdId inválido." });
+    }
+    await removeOnboarding(req.params.householdId);
+    return res.json({ ok: true });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
   }
@@ -180,6 +290,9 @@ router.get("/admin/analytics", requireAuth, requireDiod, async (req, res) => {
       { $sort: { count: -1 } }
     ]);
 
+    const challenges = await OnboardingChallenge.find({ active: true }).sort({ order: 1 }).lean();
+    const totalRewardBites = challenges.reduce((s, c) => s + (c.rewardBites || 0), 0);
+
     return res.json({
       ok: true,
       analytics: {
@@ -187,7 +300,9 @@ router.get("/admin/analytics", requireAuth, requireDiod, async (req, res) => {
         byStatus: Object.fromEntries(byStatus.map((x) => [x._id, x.count])),
         avgBitesEarned: avgBites[0]?.avg ?? 0,
         maxBitesEarned: avgBites[0]?.max ?? 0,
-        challengeCompletions: challengeCounts
+        challengeCompletions: challengeCounts,
+        totalRewardBites,
+        welcomeBites: 20
       }
     });
   } catch (err) {

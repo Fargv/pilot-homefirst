@@ -319,6 +319,7 @@ function UsersSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [onboardingMsg, setOnboardingMsg] = useState("");
 
   useEffect(() => {
     apiRequest("/api/admin/users")
@@ -336,6 +337,25 @@ function UsersSection() {
     );
   }, [users, query]);
 
+  const onboardingAction = async (householdId, action) => {
+    if (!householdId) { setOnboardingMsg("Este usuario no tiene household asignado."); return; }
+    try {
+      if (action === "assign") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/assign`, { method: "POST" });
+        setOnboardingMsg("Onboarding asignado correctamente.");
+      } else if (action === "reset") {
+        const reason = window.prompt("Razón del reset (opcional):") || "";
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/reset`, { method: "POST", body: JSON.stringify({ reason }) });
+        setOnboardingMsg("Onboarding reseteado.");
+      } else if (action === "remove") {
+        if (!window.confirm("¿Desactivar onboarding para este usuario?")) return;
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/remove`, { method: "POST" });
+        setOnboardingMsg("Onboarding desactivado.");
+      }
+      setTimeout(() => setOnboardingMsg(""), 3000);
+    } catch (e) { setOnboardingMsg(`Error: ${e.message}`); }
+  };
+
   return (
     <Card className="kitchen-block-gap">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
@@ -352,6 +372,11 @@ function UsersSection() {
         />
       </div>
       {error ? <div className="kitchen-alert error">{error}</div> : null}
+      {onboardingMsg && (
+        <div style={{ padding: "6px 12px", background: "#f0fdf4", borderRadius: 6, fontSize: 12, color: "#15803d", marginBottom: 8 }}>
+          {onboardingMsg}
+        </div>
+      )}
       {loading ? (
         <p className="kitchen-muted">Cargando...</p>
       ) : filtered.length === 0 ? (
@@ -365,6 +390,7 @@ function UsersSection() {
                 <th>Email</th>
                 <th>Rol</th>
                 <th>Global</th>
+                <th>Onboarding</th>
               </tr>
             </thead>
             <tbody>
@@ -374,6 +400,13 @@ function UsersSection() {
                   <td style={{ fontSize: 13, color: "#6b7280" }}>{u.email || "—"}</td>
                   <td>{u.role || "member"}</td>
                   <td>{u.globalRole || "—"}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" style={ABT.green} onClick={() => onboardingAction(u.householdId, "assign")} title="Asignar onboarding (fresh start)">Asignar</button>
+                      <button type="button" style={ABT.edit} onClick={() => onboardingAction(u.householdId, "reset")} title="Resetear progreso">Reset</button>
+                      <button type="button" style={ABT.del} onClick={() => onboardingAction(u.householdId, "remove")} title="Desactivar onboarding">Quitar</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -4250,28 +4283,36 @@ function IngredientCategoriesSection() {
 
 // ─── Admin: Onboarding section ────────────────────────────────────────────────
 
+const ONBOARDING_ECONOMY_TARGET = 100; // welcome(20) + challenges(80) = 100
+
 function OnboardingSection() {
   const [challenges, setChallenges] = useState([]);
   const [households, setHouseholds] = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingChallenge, setEditingChallenge] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [householdSearch, setHouseholdSearch] = useState("");
+  const [suggTab, setSuggTab] = useState("ingredient");
+  const [newSuggText, setNewSuggText] = useState("");
+  const [addingSugg, setAddingSugg] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [cData, hData, aData] = await Promise.all([
+      const [cData, hData, aData, sData] = await Promise.all([
         apiRequest("/api/kitchen/onboarding/admin/challenges"),
         apiRequest("/api/kitchen/onboarding/admin/households"),
-        apiRequest("/api/kitchen/onboarding/admin/analytics")
+        apiRequest("/api/kitchen/onboarding/admin/analytics"),
+        apiRequest("/api/kitchen/onboarding/admin/suggestions")
       ]);
       setChallenges(cData.challenges || []);
       setHouseholds(hData.records || []);
       setAnalytics(aData.analytics || null);
+      setSuggestions(sData.suggestions || []);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -4298,22 +4339,55 @@ function OnboardingSection() {
     finally { setSaving(false); }
   };
 
-  const householdAction = async (householdId, action, body = {}) => {
+  const householdAction = async (householdId, action) => {
     try {
       if (action === "reset") {
         const reason = window.prompt("Razón del reset (opcional):") || "";
         await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/reset`, { method: "POST", body: JSON.stringify({ reason }) });
+      } else if (action === "assign") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/assign`, { method: "POST" });
+      } else if (action === "remove") {
+        if (!window.confirm("¿Desactivar onboarding para este hogar?")) return;
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/remove`, { method: "POST" });
       } else if (action === "complete") {
         await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/status`, { method: "POST", body: JSON.stringify({ status: "completed" }) });
       } else if (action === "enable") {
         await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/status`, { method: "POST", body: JSON.stringify({ status: "active" }) });
       } else if (action === "disable") {
         await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/status`, { method: "POST", body: JSON.stringify({ status: "disabled" }) });
-      } else if (action === "init") {
-        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/init`, { method: "POST" });
       }
       await load();
     } catch (e) { setError(e.message); }
+  };
+
+  const toggleSuggActive = async (s) => {
+    try {
+      await apiRequest(`/api/kitchen/onboarding/admin/suggestions/${s._id}`, {
+        method: "PUT", body: JSON.stringify({ active: !s.active })
+      });
+      setSuggestions((prev) => prev.map((x) => x._id === s._id ? { ...x, active: !s.active } : x));
+    } catch (e) { setError(e.message); }
+  };
+
+  const deleteSugg = async (id) => {
+    if (!window.confirm("¿Eliminar sugerencia?")) return;
+    try {
+      await apiRequest(`/api/kitchen/onboarding/admin/suggestions/${id}`, { method: "DELETE" });
+      setSuggestions((prev) => prev.filter((x) => x._id !== id));
+    } catch (e) { setError(e.message); }
+  };
+
+  const addSugg = async () => {
+    if (!newSuggText.trim()) return;
+    setAddingSugg(true);
+    try {
+      const data = await apiRequest("/api/kitchen/onboarding/admin/suggestions", {
+        method: "POST", body: JSON.stringify({ type: suggTab, text: newSuggText.trim() })
+      });
+      setSuggestions((prev) => [...prev, data.suggestion]);
+      setNewSuggText("");
+    } catch (e) { setError(e.message); }
+    finally { setAddingSugg(false); }
   };
 
   const th = { padding: "6px 10px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #e5e7eb" };
@@ -4326,14 +4400,46 @@ function OnboardingSection() {
     !householdSearch || String(h.householdId).toLowerCase().includes(householdSearch.toLowerCase()) || (h.status || "").includes(householdSearch)
   );
 
+  const activeChallenges = challenges.filter((c) => c.active);
+  const totalChallengeBites = activeChallenges.reduce((s, c) => s + (c.rewardBites || 0), 0);
+  const welcomeBites = analytics?.welcomeBites ?? 20;
+  const grandTotal = totalChallengeBites + welcomeBites;
+  const economyOk = grandTotal === ONBOARDING_ECONOMY_TARGET;
+
+  const filteredSuggestions = suggestions.filter((s) => s.type === suggTab);
+
   return (
     <div>
       {error && <div style={{ background: "#fee2e2", color: "#b42318", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
 
+      {/* Economy balance card */}
+      <Card style={{ marginBottom: 20, padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Balance de Bites</h4>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>Bienvenida: <strong>+{welcomeBites}</strong></span>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>Retos: <strong>+{totalChallengeBites}</strong></span>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 999, fontSize: 13, fontWeight: 700,
+              background: economyOk ? "#dcfce7" : "#fee2e2",
+              color: economyOk ? "#15803d" : "#b42318"
+            }}>
+              {economyOk ? "✓" : "⚠"} Total: {grandTotal} / {ONBOARDING_ECONOMY_TARGET} bites
+            </span>
+          </div>
+        </div>
+        {!economyOk && (
+          <div style={{ marginTop: 10, padding: "8px 12px", background: "#fef9c3", borderRadius: 7, fontSize: 12, color: "#713f12" }}>
+            El total de bites ({grandTotal}) no coincide con el objetivo ({ONBOARDING_ECONOMY_TARGET}).
+            El pack de bienvenida cuesta 80 bites → usuario debe quedar con 20 bites al finalizar.
+          </div>
+        )}
+      </Card>
+
       {/* Analytics */}
       {analytics && (
         <Card style={{ marginBottom: 20, padding: 16 }}>
-          <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Analíticas de onboarding</h4>
+          <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Analíticas</h4>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             {[
               { label: "Total hogares", value: analytics.total },
@@ -4369,14 +4475,14 @@ function OnboardingSection() {
                 <React.Fragment key={c._id}>
                   <tr style={{ background: editingChallenge === c._id ? "#f8fafc" : "transparent" }}>
                     <td style={td}>{c.order}</td>
-                    <td style={{ ...td, fontFamily: "monospace", color: "#6366f1" }}>{c.key}</td>
+                    <td style={{ ...td, fontFamily: "monospace", color: "#6366f1", fontSize: 11 }}>{c.key}</td>
                     <td style={td}>{editingChallenge === c._id
                       ? <input style={fieldStyle} value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))} />
                       : c.title}
                     </td>
                     <td style={td}>{editingChallenge === c._id
                       ? <input style={{ ...fieldStyle, width: 60 }} type="number" value={editForm.rewardBites} onChange={(e) => setEditForm((p) => ({ ...p, rewardBites: Number(e.target.value) }))} />
-                      : <strong>+{c.rewardBites}</strong>}
+                      : <strong style={{ color: "#4338ca" }}>+{c.rewardBites}</strong>}
                     </td>
                     <td style={td}>{c.phase} — {c.phaseLabel}</td>
                     <td style={td}>
@@ -4413,6 +4519,58 @@ function OnboardingSection() {
               ))}
             </tbody>
           </table>
+        </div>
+      </Card>
+
+      {/* Suggestions editor */}
+      <Card style={{ marginBottom: 20 }}>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12 }}>
+          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b", flex: 1 }}>Sugerencias</h4>
+          <div style={{ display: "flex", gap: 4 }}>
+            {["ingredient", "dish"].map((t) => (
+              <button key={t} type="button" style={{
+                padding: "3px 12px", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 600,
+                background: suggTab === t ? "#4338ca" : "#f1f5f9",
+                color: suggTab === t ? "#fff" : "#374151",
+                border: "none"
+              }} onClick={() => setSuggTab(t)}>
+                {t === "ingredient" ? "Ingredientes" : "Platos"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding: 16 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <input
+              style={{ flex: 1, ...fieldStyle }}
+              placeholder={`Nueva sugerencia de ${suggTab === "ingredient" ? "ingrediente" : "plato"}...`}
+              value={newSuggText}
+              onChange={(e) => setNewSuggText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addSugg()}
+            />
+            <button type="button" style={ABT.save} onClick={addSugg} disabled={addingSugg || !newSuggText.trim()}>
+              {addingSugg ? "..." : "+ Añadir"}
+            </button>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {filteredSuggestions.map((s) => (
+              <div key={s._id} style={{
+                display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999,
+                background: s.active ? "#eef2ff" : "#f3f4f6", border: `1px solid ${s.active ? "#c7d2fe" : "#d1d5db"}`
+              }}>
+                <span style={{ fontSize: 12, color: s.active ? "#4338ca" : "#9ca3af" }}>{s.text}</span>
+                <button type="button" onClick={() => toggleSuggActive(s)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#6b7280", padding: 0, lineHeight: 1 }}>
+                  {s.active ? "●" : "○"}
+                </button>
+                <button type="button" onClick={() => deleteSugg(s._id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#ef4444", padding: 0, lineHeight: 1 }}>
+                  ×
+                </button>
+              </div>
+            ))}
+            {filteredSuggestions.length === 0 && (
+              <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>Sin sugerencias aún.</p>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -4453,6 +4611,7 @@ function OnboardingSection() {
                   <td style={td}>
                     <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
                       <button type="button" style={ABT.edit} onClick={() => householdAction(h.householdId, "reset")}>Reset</button>
+                      <button type="button" style={ABT.green} onClick={() => householdAction(h.householdId, "assign")}>Asignar</button>
                       {h.status !== "completed" && <button type="button" style={ABT.green} onClick={() => householdAction(h.householdId, "complete")}>Completar</button>}
                       {h.status !== "active" && <button type="button" style={ABT.edit} onClick={() => householdAction(h.householdId, "enable")}>Activar</button>}
                       {h.status !== "disabled" && <button type="button" style={ABT.del} onClick={() => householdAction(h.householdId, "disable")}>Desactivar</button>}
