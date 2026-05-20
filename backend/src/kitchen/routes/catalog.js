@@ -37,7 +37,7 @@ import {
   daysUntilNextGrant,
   spendBites
 } from "../bitesService.js";
-import { syncPackToStripe, updateStripeProduct, isStripeSyncAvailable } from "../stripeSync.js";
+import { syncPackToStripe, isStripeSyncAvailable } from "../stripeSync.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1129,10 +1129,6 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
     const syncSummary = isPublished && hasIncomingDishes && req.body.propagateCatalogUpdates !== false
       ? await propagatePublishedPackUpdates(packDoc, previousDishes)
       : null;
-
-    if (packDoc.stripeProductId && Object.prototype.hasOwnProperty.call(req.body, "title")) {
-      updateStripeProduct(packDoc.stripeProductId, { title: packDoc.title, description: packDoc.description });
-    }
 
     const pack = serializeAdminPack(packDoc.toObject());
 

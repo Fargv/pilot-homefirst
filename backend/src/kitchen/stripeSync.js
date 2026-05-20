@@ -66,8 +66,8 @@ async function _syncToStripe({ name, description, stripeProductId, stripePriceId
  */
 export async function syncPackToStripe(pack) {
   return _syncToStripe({
-    name: pack.title,
-    description: pack.description,
+    name: String(pack.slug || pack.title || "pack").trim(),
+    description: pack.title || pack.description,
     stripeProductId: pack.stripeProductId,
     stripePriceId: pack.stripePriceId,
     unitAmountCents: Number(pack.priceAmount),
