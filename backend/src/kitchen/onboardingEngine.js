@@ -128,11 +128,22 @@ const LEGACY_CHALLENGE_KEYS = [
   "visit_shopping", "visit_catalog"
 ];
 
+// NOTE: expense/register challenge (after mark_3_purchases) is intentionally absent.
+// The purchase-session / budget UI is gated behind Pro/Premium (BUDGET_ENABLED_PLANS).
+// Basic users cannot register expenses, so no such challenge is defined here.
 export async function seedOnboardingChallenges() {
   for (const c of DEFAULT_CHALLENGES) {
+    // Always keep structural fields (order, phase, phaseLabel, triggerType, triggerCount)
+    // in sync with DEFAULT_CHALLENGES so DB order matches code even after schema changes.
+    // Content fields (title, description, howTo, rewardBites) are only set on first insert
+    // to preserve any admin customisations.
+    const { key, order, phase, phaseLabel, triggerType, triggerCount, ...content } = c;
     await OnboardingChallenge.updateOne(
-      { key: c.key },
-      { $setOnInsert: c },
+      { key },
+      {
+        $set: { order, phase, phaseLabel, triggerType, triggerCount },
+        $setOnInsert: { key, ...content }
+      },
       { upsert: true }
     );
   }

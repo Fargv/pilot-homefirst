@@ -269,13 +269,14 @@ router.patch("/name", requireAuth, requireRole("owner"), async (req, res) => {
       return res.status(400).json({ ok: false, error: "El nombre del household es obligatorio." });
     }
 
-    const household = await Household.findById(effectiveHouseholdId);
+    const household = await Household.findByIdAndUpdate(
+      effectiveHouseholdId,
+      { $set: { name: nextName } },
+      { new: true }
+    ).lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-
-    household.name = nextName;
-    await household.save();
 
     return res.json({ ok: true, household: buildHouseholdResponse(household) });
   } catch (error) {

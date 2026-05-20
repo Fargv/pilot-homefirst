@@ -1256,20 +1256,40 @@ export default function SettingsPage() {
       <div className="settings-panel-header">
         <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
         <h2>Miembros del {householdName || "household"}</h2>
-        {canManageHousehold && householdNameEditing ? (
-          <button type="button" className="settings-icon-only" onClick={saveHouseholdName} aria-label="Guardar nombre del household">
-            <SaveIcon />
-          </button>
-        ) : canManageHousehold ? (
-          <button type="button" className="settings-icon-only" onClick={() => setHouseholdNameEditing(true)} aria-label="Editar nombre del household">
-            <PencilIcon />
-          </button>
-        ) : null}
       </div>
+      {canManageHousehold && (
+        <div className="settings-block">
+          {householdNameEditing ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label className="kitchen-label" style={{ fontWeight: 600 }}>Nombre del hogar</label>
+              <input
+                className="kitchen-input"
+                value={householdNameDraft}
+                onChange={(event) => setHouseholdNameDraft(event.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") saveHouseholdName(); if (e.key === "Escape") setHouseholdNameEditing(false); }}
+                autoFocus
+              />
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button type="button" className="kitchen-button" onClick={saveHouseholdName}>
+                  <SaveIcon style={{ width: 16, height: 16, marginRight: 4 }} /> Guardar nombre
+                </button>
+                <button type="button" className="kitchen-button secondary" onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(false); }}>
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontWeight: 500 }}>{householdName || "Sin nombre"}</span>
+              <button type="button" className="kitchen-button secondary" style={{ padding: "4px 12px" }} onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(true); }}>
+                <PencilIcon style={{ width: 14, height: 14, marginRight: 4 }} /> Editar nombre
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       <div className="settings-block">
-        {householdNameEditing ? (
-          <input className="kitchen-input" value={householdNameDraft} onChange={(event) => setHouseholdNameDraft(event.target.value)} />
-        ) : null}
+        {null /* householdNameEditing input moved above */}
         <p className="settings-counter">Miembros ({members.length})</p>
         {canManageHousehold ? (
           <div className="settings-members-actions">
