@@ -3146,6 +3146,7 @@ function BitesEconomySection() {
   const [grantForm, setGrantForm] = useState({ householdId: "", amount: 1, bucket: "free", reason: "" });
   const [savingGrant, setSavingGrant] = useState(false);
   const [grantMsg, setGrantMsg] = useState("");
+  const [resettingFree, setResettingFree] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -3255,12 +3256,35 @@ function BitesEconomySection() {
           reason: grantForm.reason
         })
       });
-      setGrantMsg(`OK — libre: ${res.wallet?.freeBitesBalance ?? "?"}, comprados: ${res.wallet?.purchasedBitesBalance ?? "?"}`);
+      const w = res.wallet;
+      setGrantMsg(`OK — gratuitos: ${w?.freeBitesBalance ?? "?"} | de compra: ${w?.purchasedBitesBalance ?? "?"}`);
       await load();
     } catch (err) {
       setGrantMsg(`Error: ${err.message}`);
     } finally {
       setSavingGrant(false);
+    }
+  };
+
+  const resetFreeBites = async (householdId) => {
+    const hh = households.find((h) => String(h.id) === String(householdId));
+    const current = hh?.freeBitesBalance ?? 0;
+    if (current === 0) { setGrantMsg("Ese hogar ya tiene 0 bites gratuitos."); return; }
+    if (!window.confirm(`¿Vaciar ${current} bites gratuitos de "${hh?.name}"? Esta acción no se puede deshacer.`)) return;
+    setResettingFree(true);
+    setGrantMsg("");
+    try {
+      const res = await apiRequest("/api/kitchen/bites/admin/grant", {
+        method: "POST",
+        body: JSON.stringify({ householdId, amount: -current, bucket: "free", reason: "Reset bites gratuitos (admin)" })
+      });
+      const w = res.wallet;
+      setGrantMsg(`Vaciado — gratuitos: ${w?.freeBitesBalance ?? 0} | de compra: ${w?.purchasedBitesBalance ?? "?"}`);
+      await load();
+    } catch (err) {
+      setGrantMsg(`Error: ${err.message}`);
+    } finally {
+      setResettingFree(false);
     }
   };
 
@@ -3592,9 +3616,39 @@ function BitesEconomySection() {
 
       {/* ── Manual grant ── */}
       <section style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
           <BitesIcon size={16} decorative /> Conceder / quitar Bites manualmente
         </h3>
+        <p style={{ fontSize: 11, color: "#9ca3af", marginBottom: 12 }}>
+          <strong>Bites gratuitos</strong> = ganados (onboarding, recompensas, recarga mensual del plan). &nbsp;
+          <strong>Bites de compra</strong> = adquiridos con dinero real.
+        </p>
+
+        {/* Balance preview for selected household */}
+        {grantForm.householdId && (() => {
+          const hh = households.find((h) => String(h.id) === String(grantForm.householdId));
+          if (!hh) return null;
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 10, padding: "8px 12px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+              <span style={{ fontSize: 12, color: "#374151" }}><strong>{hh.name}</strong> — saldo actual:</span>
+              <span style={{ fontSize: 12, color: "#4f46e5", fontWeight: 600 }}>
+                <BitesIcon size={12} decorative /> {hh.freeBitesBalance ?? 0} gratuitos
+              </span>
+              <span style={{ fontSize: 12, color: "#0284c7", fontWeight: 600 }}>
+                <BitesIcon size={12} decorative /> {hh.purchasedBitesBalance ?? 0} de compra
+              </span>
+              <button
+                type="button"
+                style={{ ...ABT.del, marginLeft: "auto", fontSize: 11 }}
+                disabled={resettingFree || (hh.freeBitesBalance ?? 0) === 0}
+                onClick={() => resetFreeBites(hh.id)}
+              >
+                {resettingFree ? "..." : "Vaciar gratuitos"}
+              </button>
+            </div>
+          );
+        })()}
+
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 2fr", gap: 10, marginBottom: 10 }}>
           <div>
             <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Hogar</label>
@@ -3606,21 +3660,21 @@ function BitesEconomySection() {
             >
               <option value="">Seleccionar hogar...</option>
               {households.map((h) => (
-                <option key={h.id} value={h.id}>{h.name} ({h.subscriptionPlan})</option>
+                <option key={h.id} value={h.id}>{h.name} ({h.subscriptionPlan}) — {h.freeBitesBalance ?? 0}g / {h.purchasedBitesBalance ?? 0}c</option>
               ))}
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Amount (+/-)</label>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Cantidad (+/-)</label>
             <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
               value={grantForm.amount} onChange={(e) => setGrantForm((f) => ({ ...f, amount: Number(e.target.value) }))} />
           </div>
           <div>
-            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Bolsillo</label>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Tipo de bites</label>
             <select className="kitchen-select" style={{ fontSize: 13, padding: "4px 6px", width: "100%" }}
               value={grantForm.bucket} onChange={(e) => setGrantForm((f) => ({ ...f, bucket: e.target.value }))}>
-              <option value="free">Incluidos (plan)</option>
-              <option value="purchased">Comprados</option>
+              <option value="free">Gratuitos (onboarding/plan)</option>
+              <option value="purchased">De compra (dinero real)</option>
             </select>
           </div>
           <div>
@@ -3645,9 +3699,9 @@ function BitesEconomySection() {
         <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
-              {["Fecha", "Hogar", "Tipo", "Amount", "Libre tras", "Comprado tras", "Razón"].map((h) => (
+              {["Fecha", "Hogar", "Tipo", "Cantidad", "Gratuitos tras", "Compra tras", "Razón"].map((h) => (
                 <th key={h} style={{ padding: "5px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 11 }}>
-                  {["Amount", "Libre tras", "Comprado tras"].includes(h) ? <BitesIcon size={12} decorative /> : null} {h}
+                  {["Cantidad", "Gratuitos tras", "Compra tras"].includes(h) ? <BitesIcon size={12} decorative /> : null} {h}
                 </th>
               ))}
             </tr>

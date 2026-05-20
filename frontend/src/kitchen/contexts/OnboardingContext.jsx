@@ -13,6 +13,8 @@ export function OnboardingProvider({ children }) {
   const triggeringRef = useRef(false);
   const stateReadyRef = useRef(false);
 
+  // isEligible by plan — kept for callers that want to hint UI, but NOT used to gate loading.
+  // Backend decides eligibility; a record may exist for any plan if admin-assigned.
   const isEligible = Boolean(user && ["basic", "free"].includes(String(user.subscriptionPlan || "").toLowerCase()));
 
   const _processTriggerQueue = useCallback(async () => {
@@ -34,38 +36,47 @@ export function OnboardingProvider({ children }) {
     } finally {
       triggeringRef.current = false;
       if (triggerQueueRef.current.length > 0) {
-        // process next queued trigger
         setTimeout(_processTriggerQueue, 300);
       }
     }
-  }, []); // stable ref — refs don't need deps
+  }, []);
 
   const loadState = useCallback(async () => {
-    if (!isEligible) return;
+    if (!user) return;
     try {
       const data = await apiRequest("/api/kitchen/onboarding/state");
       if (data?.onboarding) {
         const s = data.onboarding;
         setState(s);
         stateReadyRef.current = true;
-        // If any triggers were queued before state loaded, and onboarding is still active, process them now
         if (s.status !== "completed" && s.status !== "disabled" && triggerQueueRef.current.length > 0) {
           _processTriggerQueue();
         }
+      } else {
+        // Backend returned null — no record for this user
+        setState(null);
+        stateReadyRef.current = true;
       }
     } catch (_) {}
-  }, [isEligible, _processTriggerQueue]);
+  }, [user, _processTriggerQueue]);
 
   useEffect(() => {
-    if (!isEligible || loadedRef.current) return;
+    if (!user || loadedRef.current) return;
     loadedRef.current = true;
     loadState();
-  }, [isEligible, loadState]);
+  }, [user, loadState]);
+
+  // Reset loadedRef when user changes (logout/login) so we reload for the new user
+  useEffect(() => {
+    if (!user) {
+      loadedRef.current = false;
+      stateReadyRef.current = false;
+      setState(null);
+    }
+  }, [user]);
 
   const notify = useCallback((type) => {
-    if (!isEligible) return;
-    // Enqueue even during loading — will flush once state arrives
-    // But drop if state is known-complete or disabled
+    if (!user) return;
     if (stateReadyRef.current) {
       const s = state;
       if (!s || s.status === "completed" || s.status === "disabled") return;
@@ -74,10 +85,13 @@ export function OnboardingProvider({ children }) {
     if (stateReadyRef.current) {
       _processTriggerQueue();
     }
-    // If state not ready yet, queue is held until loadState flushes it
-  }, [isEligible, state, _processTriggerQueue]);
+  }, [user, state, _processTriggerQueue]);
 
-  const refresh = useCallback(() => loadState(), [loadState]);
+  const refresh = useCallback(() => {
+    loadedRef.current = false;
+    stateReadyRef.current = false;
+    loadState();
+  }, [loadState]);
   const dismissReward = useCallback(() => setRewardEvent(null), []);
 
   return (

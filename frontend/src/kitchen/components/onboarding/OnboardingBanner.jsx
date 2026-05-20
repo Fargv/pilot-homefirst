@@ -58,8 +58,8 @@ export default function OnboardingBanner() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
-  if (!isEligible || !state) return null;
-  if (state.status === "completed" || state.status === "disabled") return (
+  if (!state || state.status === "disabled") return null;
+  if (state.status === "completed") return (
     <>
       {rewardEvent && <RewardToast event={rewardEvent} onDismiss={dismissReward} />}
     </>

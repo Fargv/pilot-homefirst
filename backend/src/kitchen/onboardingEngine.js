@@ -197,8 +197,14 @@ export async function initOnboarding(householdId) {
 export async function getOnboardingState(householdId) {
   let onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
   if (!onboarding) {
-    await initOnboarding(householdId);
-    onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
+    // Auto-init only for plan-eligible users; admin-assigned users already have a record
+    const household = await Household.findById(householdId).select("subscriptionPlan").lean();
+    const plan = normalizeSubscriptionPlan(household?.subscriptionPlan);
+    if (["basic", "free"].includes(plan)) {
+      await initOnboarding(householdId);
+      onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
+    }
+    if (!onboarding) return null;
   }
 
   const challenges = await OnboardingChallenge.find({ active: true }).sort({ order: 1 }).lean();
@@ -251,16 +257,18 @@ export async function getOnboardingState(householdId) {
 
 export async function triggerOnboarding(householdId, triggerType, _context = {}) {
   try {
-    const household = await Household.findById(householdId).select("subscriptionPlan").lean();
-    if (!household) return null;
-    const plan = normalizeSubscriptionPlan(household.subscriptionPlan);
-    if (!["basic", "free"].includes(plan)) return null;
-
     let onboarding = await HouseholdOnboarding.findOne({ householdId });
+
     if (!onboarding) {
+      // Auto-init only for plan-eligible users; others only get onboarding via admin assign
+      const household = await Household.findById(householdId).select("subscriptionPlan").lean();
+      if (!household) return null;
+      const plan = normalizeSubscriptionPlan(household.subscriptionPlan);
+      if (!["basic", "free"].includes(plan)) return null;
       await initOnboarding(householdId);
       onboarding = await HouseholdOnboarding.findOne({ householdId });
     }
+
     if (!onboarding || ["completed", "disabled"].includes(onboarding.status)) return null;
 
     const challenges = await OnboardingChallenge.find({ active: true }).sort({ order: 1 }).lean();
