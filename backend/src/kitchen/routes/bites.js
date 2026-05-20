@@ -15,6 +15,7 @@ import {
   adminGrantBites
 } from "../bitesService.js";
 import { normalizeSubscriptionPlan } from "../subscriptionService.js";
+import { syncBundleToStripe, isStripeSyncAvailable } from "../stripeSync.js";
 
 const router = express.Router();
 
@@ -116,7 +117,7 @@ router.get("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
 
 router.post("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
   try {
-    const { name, bitesAmount, price, discountPercent, badge, highlighted, active, sortOrder, isPaid, paymentMode, currency, stripePriceId } = req.body;
+    const { name, bitesAmount, price, discountPercent, badge, highlighted, active, sortOrder, isPaid, paymentMode, currency } = req.body;
     if (!name || !bitesAmount || price == null) {
       return res.status(400).json({ ok: false, error: "name, bitesAmount y price son obligatorios." });
     }
@@ -132,23 +133,13 @@ router.post("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
     if (!Number.isFinite(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 95) {
       return res.status(400).json({ ok: false, error: "discountPercent debe estar entre 0 y 95." });
     }
-    const priceIdTrimmed = stripePriceId ? String(stripePriceId).trim() : "";
-    if (priceIdTrimmed && !priceIdTrimmed.startsWith("price_")) {
-      return res.status(400).json({ ok: false, error: "stripePriceId debe comenzar con 'price_'." });
-    }
-    const resolvedPaymentMode = paymentMode || (priceIdTrimmed ? "stripe" : "none");
-    if (!["none", "stripe"].includes(resolvedPaymentMode)) {
-      return res.status(400).json({ ok: false, error: "paymentMode debe ser 'none' o 'stripe'." });
-    }
-    const resolvedIsPaid = priceIdTrimmed ? true : Boolean(isPaid);
-    if (resolvedIsPaid && resolvedPaymentMode === "stripe" && !priceIdTrimmed) {
-      return res.status(400).json({ ok: false, error: "stripePriceId es obligatorio para vender este bundle con Stripe." });
-    }
+    const resolvedPaymentMode = ["none", "stripe"].includes(paymentMode) ? paymentMode : "none";
+    const resolvedIsPaid = Boolean(isPaid) || resolvedPaymentMode === "stripe";
 
-    const config = await BitesConfig.findOne({ key: "bitesEconomy" });
-    if (!config) return res.status(500).json({ ok: false, error: "Config no inicializada." });
+    const cfg = await BitesConfig.findOne({ key: "bitesEconomy" });
+    if (!cfg) return res.status(500).json({ ok: false, error: "Config no inicializada." });
 
-    config.bundles.push({
+    cfg.bundles.push({
       name: String(name).trim(),
       bitesAmount: parsedBites,
       price: parsedPrice,
@@ -159,14 +150,37 @@ router.post("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
       sortOrder: sortOrder ?? 0,
       isPaid: resolvedIsPaid,
       paymentMode: resolvedPaymentMode,
-      currency: String(currency || "eur").trim().toLowerCase(),
-      stripePriceId: priceIdTrimmed
+      currency: String(currency || "eur").trim().toLowerCase()
     });
-    config.updatedBy = req.kitchenUser._id;
-    await config.save();
+    cfg.updatedBy = req.kitchenUser._id;
+    await cfg.save();
 
-    const newBundle = config.bundles[config.bundles.length - 1];
-    return res.status(201).json({ ok: true, bundle: newBundle.toObject ? newBundle.toObject() : newBundle });
+    const newBundle = cfg.bundles[cfg.bundles.length - 1];
+
+    let stripeError = null;
+    if (resolvedPaymentMode === "stripe" && parsedPrice > 0) {
+      if (isStripeSyncAvailable()) {
+        try {
+          const { stripeProductId, stripePriceId } = await syncBundleToStripe(newBundle);
+          newBundle.stripeProductId = stripeProductId;
+          newBundle.stripePriceId = stripePriceId;
+          newBundle.isPaid = true;
+          cfg.updatedBy = req.kitchenUser._id;
+          await cfg.save();
+        } catch (err) {
+          stripeError = err.message;
+          console.error("[bites] Stripe sync failed (new bundle):", err.message);
+        }
+      } else {
+        stripeError = "STRIPE_SECRET_KEY no configurada en el servidor.";
+      }
+    }
+
+    return res.status(201).json({
+      ok: true,
+      ...(stripeError ? { stripeError } : {}),
+      bundle: newBundle.toObject ? newBundle.toObject() : newBundle
+    });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Error." });
   }
@@ -174,13 +188,13 @@ router.post("/admin/bundles", requireAuth, requireDiod, async (req, res) => {
 
 router.put("/admin/bundles/:bundleId", requireAuth, requireDiod, async (req, res) => {
   try {
-    const config = await BitesConfig.findOne({ key: "bitesEconomy" });
-    if (!config) return res.status(500).json({ ok: false, error: "Config no inicializada." });
+    const cfg = await BitesConfig.findOne({ key: "bitesEconomy" });
+    if (!cfg) return res.status(500).json({ ok: false, error: "Config no inicializada." });
 
-    const bundle = config.bundles.id(req.params.bundleId);
+    const bundle = cfg.bundles.id(req.params.bundleId);
     if (!bundle) return res.status(404).json({ ok: false, error: "Bundle no encontrado." });
 
-    const { name, bitesAmount, price, discountPercent, badge, highlighted, active, sortOrder, isPaid, paymentMode, currency, stripePriceId } = req.body;
+    const { name, bitesAmount, price, discountPercent, badge, highlighted, active, sortOrder, isPaid, paymentMode, currency } = req.body;
     if (name !== undefined) bundle.name = String(name).trim();
     if (bitesAmount !== undefined) {
       const v = Number(bitesAmount);
@@ -207,24 +221,34 @@ router.put("/admin/bundles/:bundleId", requireAuth, requireDiod, async (req, res
       bundle.paymentMode = paymentMode;
     }
     if (currency !== undefined) bundle.currency = String(currency || "eur").trim().toLowerCase();
-    if (stripePriceId !== undefined) {
-      const pid = String(stripePriceId || "").trim();
-      if (pid && !pid.startsWith("price_")) return res.status(400).json({ ok: false, error: "stripePriceId debe comenzar con 'price_'." });
-      bundle.stripePriceId = pid;
-      if (pid) {
-        bundle.isPaid = true;
-        bundle.paymentMode = "stripe";
-        bundle.currency = bundle.currency || "eur";
+
+    let stripeError = null;
+    if (bundle.paymentMode === "stripe" && Number(bundle.price) > 0) {
+      if (isStripeSyncAvailable()) {
+        try {
+          const { stripeProductId, stripePriceId } = await syncBundleToStripe(bundle);
+          bundle.stripeProductId = stripeProductId;
+          bundle.stripePriceId = stripePriceId;
+          bundle.isPaid = true;
+        } catch (err) {
+          stripeError = err.message;
+          console.error("[bites] Stripe sync failed (update bundle):", err.message);
+        }
+      } else {
+        stripeError = "STRIPE_SECRET_KEY no configurada en el servidor.";
       }
     }
-    if (bundle.isPaid && bundle.paymentMode === "stripe" && !bundle.stripePriceId) {
-      return res.status(400).json({ ok: false, error: "stripePriceId es obligatorio para vender este bundle con Stripe." });
-    }
 
-    config.updatedBy = req.kitchenUser._id;
-    await config.save();
+    if (bundle.paymentMode === "none") bundle.isPaid = false;
 
-    return res.json({ ok: true, bundle: bundle.toObject ? bundle.toObject() : bundle });
+    cfg.updatedBy = req.kitchenUser._id;
+    await cfg.save();
+
+    return res.json({
+      ok: true,
+      ...(stripeError ? { stripeError } : {}),
+      bundle: bundle.toObject ? bundle.toObject() : bundle
+    });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Error." });
   }

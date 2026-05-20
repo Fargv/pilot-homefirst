@@ -37,6 +37,7 @@ import {
   daysUntilNextGrant,
   spendBites
 } from "../bitesService.js";
+import { syncPackToStripe, updateStripeProduct, isStripeSyncAvailable } from "../stripeSync.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -284,6 +285,7 @@ function serializeAdminPack(p, ownedByCount = 0) {
     isPaid: Boolean(p.isPaid),
     priceAmount: p.priceAmount ?? null,
     currency: p.currency || "eur",
+    stripeProductId: p.stripeProductId || null,
     stripePriceId: p.stripePriceId || null,
     paymentMode: p.paymentMode || "none",
     purchasedCount: p.purchasedCount || 0,
@@ -1127,6 +1129,11 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
     const syncSummary = isPublished && hasIncomingDishes && req.body.propagateCatalogUpdates !== false
       ? await propagatePublishedPackUpdates(packDoc, previousDishes)
       : null;
+
+    if (packDoc.stripeProductId && Object.prototype.hasOwnProperty.call(req.body, "title")) {
+      updateStripeProduct(packDoc.stripeProductId, { title: packDoc.title, description: packDoc.description });
+    }
+
     const pack = serializeAdminPack(packDoc.toObject());
 
     return res.json({ ok: true, pack, ...(syncSummary ? { syncSummary } : {}) });
@@ -1144,30 +1151,37 @@ router.patch("/packs/:packId/payment", requireAuth, requireDiod, async (req, res
     const pack = await CatalogPack.findById(req.params.packId);
     if (!pack) return res.status(404).json({ ok: false, error: "Pack no encontrado." });
 
-    const { isPaid, priceAmount, currency, stripePriceId, paymentMode } = req.body || {};
+    const { isPaid, priceAmount, currency, paymentMode } = req.body || {};
 
     if (isPaid !== undefined) pack.isPaid = Boolean(isPaid);
     if (priceAmount !== undefined) pack.priceAmount = priceAmount === null ? null : Number(priceAmount);
     if (currency !== undefined) pack.currency = String(currency).toLowerCase().trim() || "eur";
-    if (stripePriceId !== undefined) {
-      if (stripePriceId !== null && stripePriceId !== "" && !String(stripePriceId).startsWith("price_")) {
-        return res.status(400).json({ ok: false, error: "stripePriceId debe comenzar con 'price_' o ser null." });
-      }
-      pack.stripePriceId = stripePriceId || null;
-      if (pack.stripePriceId) {
-        pack.isPaid = true;
-        pack.paymentMode = "stripe";
-        pack.currency = pack.currency || "eur";
-      }
-    }
     if (paymentMode !== undefined) {
       if (!["none", "stripe"].includes(paymentMode)) {
         return res.status(400).json({ ok: false, error: "paymentMode debe ser 'none' o 'stripe'." });
       }
       pack.paymentMode = paymentMode;
     }
-    if (pack.isPaid && pack.paymentMode === "stripe" && !hasValidStripePriceId(pack.stripePriceId)) {
-      return res.status(400).json({ ok: false, error: "stripePriceId es obligatorio para vender este pack con Stripe." });
+
+    let stripeError = null;
+    if (pack.paymentMode === "stripe" && Number(pack.priceAmount) > 0) {
+      if (isStripeSyncAvailable()) {
+        try {
+          const { stripeProductId, stripePriceId } = await syncPackToStripe(pack);
+          pack.stripeProductId = stripeProductId;
+          pack.stripePriceId = stripePriceId;
+          pack.isPaid = true;
+        } catch (err) {
+          stripeError = err.message;
+          console.error("[catalog] Stripe sync failed:", err.message);
+        }
+      } else {
+        stripeError = "STRIPE_SECRET_KEY no configurada en el servidor.";
+      }
+    }
+
+    if (pack.paymentMode === "none") {
+      pack.isPaid = false;
     }
 
     await pack.save();
@@ -1178,18 +1192,22 @@ router.patch("/packs/:packId/payment", requireAuth, requireDiod, async (req, res
       isPaid: pack.isPaid,
       priceAmount: pack.priceAmount,
       currency: pack.currency,
+      stripeProductId: pack.stripeProductId,
       stripePriceId: pack.stripePriceId,
       paymentMode: pack.paymentMode,
+      stripeError,
       updatedBy: req.user?.id || null
     });
 
     return res.json({
       ok: true,
+      ...(stripeError ? { stripeError } : {}),
       payment: {
         isPaid: pack.isPaid,
         priceAmount: pack.priceAmount,
         currency: pack.currency,
-        stripePriceId: pack.stripePriceId,
+        stripeProductId: pack.stripeProductId || null,
+        stripePriceId: pack.stripePriceId || null,
         paymentMode: pack.paymentMode,
         purchasedCount: pack.purchasedCount,
         lastPurchasedAt: pack.lastPurchasedAt

@@ -90,6 +90,7 @@ const CatalogPackSchema = new mongoose.Schema(
     isPaid: { type: Boolean, default: false },
     priceAmount: { type: Number, default: null },
     currency: { type: String, default: "eur", trim: true, lowercase: true },
+    stripeProductId: { type: String, default: null, trim: true },
     stripePriceId: { type: String, default: null, trim: true },
     paymentMode: { type: String, enum: ["none", "stripe"], default: "none" },
     purchasedCount: { type: Number, default: 0 },

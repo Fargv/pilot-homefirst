@@ -1514,9 +1514,11 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
     isPaid: Boolean(item.isPaid),
     priceAmount: item.priceAmount != null ? String(item.priceAmount) : "",
     currency: item.currency || "eur",
+    stripeProductId: item.stripeProductId || "",
     stripePriceId: item.stripePriceId || "",
     paymentMode: item.paymentMode || "none",
-    purchasedCount: item.purchasedCount || 0
+    purchasedCount: item.purchasedCount || 0,
+    stripeError: null
   });
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState("");
@@ -1611,17 +1613,23 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
         propagateCatalogUpdates
       });
       if (isEdit) {
-        const priceIdTrimmed = paymentForm.stripePriceId.trim();
-        await apiRequest(`/api/kitchen/catalog/packs/${packId}/payment`, {
+        const paymentRes = await apiRequest(`/api/kitchen/catalog/packs/${packId}/payment`, {
           method: "PATCH",
           body: JSON.stringify({
             isPaid: paymentForm.isPaid,
             priceAmount: Math.round((parseFloat(form.priceBasic) || 0) * 100),
             currency: paymentForm.currency || "eur",
-            stripePriceId: priceIdTrimmed || null,
             paymentMode: paymentForm.paymentMode
           })
         });
+        if (paymentRes?.payment) {
+          setPaymentForm((p) => ({
+            ...p,
+            stripeProductId: paymentRes.payment.stripeProductId || p.stripeProductId,
+            stripePriceId: paymentRes.payment.stripePriceId || p.stripePriceId,
+            stripeError: paymentRes.stripeError || null
+          }));
+        }
         if (onPaymentSaved) onPaymentSaved();
       }
     } catch (err) { setError(err.message || "Error al guardar."); }
@@ -1725,29 +1733,38 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, baseBitePrice = 1.99
                   <option value="stripe">Stripe</option>
                 </select>
               </label>
-              <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>
-                <span style={{ fontWeight: 600 }}>Stripe Price ID</span>
-                <input
-                  style={{ ...fieldStyle, fontFamily: "monospace", borderColor: paymentForm.stripePriceId && !paymentForm.stripePriceId.startsWith("price_") ? "#ef4444" : "#d1d5db" }}
-                  value={paymentForm.stripePriceId}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setPaymentForm((p) => ({
-                      ...p,
-                      stripePriceId: value,
-                      ...(value.trim().startsWith("price_") ? { isPaid: true, paymentMode: "stripe", currency: p.currency || "eur" } : {})
-                    }));
-                  }}
-                  placeholder="price_1abc..."
-                />
-                {paymentForm.paymentMode === "stripe" && !paymentForm.stripePriceId && (
-                  <span style={{ fontSize: 11, color: "#dc2626" }}>Obligatorio cuando modo=stripe.</span>
-                )}
-                {paymentForm.stripePriceId && !paymentForm.stripePriceId.startsWith("price_") && (
-                  <span style={{ fontSize: 11, color: "#dc2626" }}>Debe comenzar con price_</span>
-                )}
-                <span style={{ fontSize: 11, color: "#6b7280" }}>Crea el producto/precio en Stripe y pega aquí el ID.</span>
-              </label>
+              {paymentForm.paymentMode === "stripe" && (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  {paymentForm.stripeError && (
+                    <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, padding: "8px 12px", marginBottom: 8, fontSize: 12, color: "#b91c1c" }}>
+                      ⚠ Error al sincronizar con Stripe: {paymentForm.stripeError}
+                    </div>
+                  )}
+                  {paymentForm.stripeProductId ? (
+                    <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "10px 14px" }}>
+                      <div style={{ fontWeight: 700, color: "#15803d", marginBottom: 6, fontSize: 13 }}>✓ Sincronizado con Stripe</div>
+                      <div style={{ fontSize: 11, fontFamily: "monospace", color: "#374151", lineHeight: 1.7 }}>
+                        <span style={{ color: "#6b7280" }}>Producto: </span>{paymentForm.stripeProductId}
+                      </div>
+                      {paymentForm.stripePriceId && (
+                        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#374151", lineHeight: 1.7 }}>
+                          <span style={{ color: "#6b7280" }}>Precio: </span>{paymentForm.stripePriceId}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6 }}>
+                        Se resincroniza automáticamente al guardar si cambias el precio.
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ background: "#fffbeb", border: "1px solid #fbbf24", borderRadius: 6, padding: "10px 14px" }}>
+                      <div style={{ fontWeight: 600, color: "#92400e", fontSize: 13 }}>⏳ Pendiente de sincronización</div>
+                      <div style={{ fontSize: 11, color: "#78350f", marginTop: 4 }}>
+                        Al guardar se creará automáticamente el producto y el precio en Stripe.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -3144,19 +3161,30 @@ function BitesEconomySection() {
   const saveBundle = async () => {
     setSavingBundle(true);
     try {
+      let res;
       if (bundleForm._id) {
-        await apiRequest(`/api/kitchen/bites/admin/bundles/${bundleForm._id}`, {
+        res = await apiRequest(`/api/kitchen/bites/admin/bundles/${bundleForm._id}`, {
           method: "PUT",
           body: JSON.stringify(bundleForm)
         });
       } else {
-        await apiRequest("/api/kitchen/bites/admin/bundles", {
+        res = await apiRequest("/api/kitchen/bites/admin/bundles", {
           method: "POST",
           body: JSON.stringify(bundleForm)
         });
       }
-      setBundleForm(null);
-      await load();
+      if (res?.stripeError) {
+        setBundleForm((f) => ({
+          ...f,
+          stripeProductId: res.bundle?.stripeProductId || f.stripeProductId,
+          stripePriceId: res.bundle?.stripePriceId || f.stripePriceId,
+          stripeError: res.stripeError
+        }));
+        await load();
+      } else {
+        setBundleForm(null);
+        await load();
+      }
     } catch (err) {
       setError(err.message || "Error al guardar el bundle.");
     } finally {
@@ -3286,7 +3314,7 @@ function BitesEconomySection() {
               const disc = 25;
               // bbp is price per 100 Bites; divide by 100 to get EUR/Bite
               const suggestedPrice = parseFloat((amt * (bbp / 100) * (1 - disc / 100)).toFixed(2));
-              setBundleForm({ name: "", bitesAmount: amt, price: suggestedPrice, discountPercent: disc, badge: "", highlighted: false, active: true, sortOrder: 0, isPaid: false, paymentMode: "none", currency: "eur", stripePriceId: "", _priceManuallySet: false });
+              setBundleForm({ name: "", bitesAmount: amt, price: suggestedPrice, discountPercent: disc, badge: "", highlighted: false, active: true, sortOrder: 0, isPaid: false, paymentMode: "none", currency: "eur", stripeProductId: "", stripePriceId: "", stripeError: null, _priceManuallySet: false });
             }}
           >
             + Nuevo bundle
@@ -3420,31 +3448,34 @@ function BitesEconomySection() {
                     </div>
                   )}
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3, fontWeight: 600 }}>
-                    💳 Stripe Price ID
-                  </label>
-                  <input
-                    className="kitchen-input"
-                    style={{
-                      fontSize: 13, padding: "4px 8px", width: "100%", fontFamily: "monospace",
-                      borderColor: bundleForm.stripePriceId && !bundleForm.stripePriceId.startsWith("price_") ? "#ef4444" : undefined
-                    }}
-                    value={bundleForm.stripePriceId || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setBundleForm((f) => ({
-                        ...f,
-                        stripePriceId: value,
-                        ...(value.trim().startsWith("price_") ? { isPaid: true, paymentMode: "stripe", currency: f.currency || "eur" } : {})
-                      }));
-                    }}
-                    placeholder="price_1abc... (opcional)"
-                  />
-                  {bundleForm.stripePriceId && !bundleForm.stripePriceId.startsWith("price_") && (
-                    <span style={{ fontSize: 11, color: "#dc2626" }}>Debe comenzar con price_</span>
-                  )}
-                </div>
+                {bundleForm.paymentMode === "stripe" && (
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    {bundleForm.stripeError && (
+                      <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, padding: "8px 12px", marginBottom: 6, fontSize: 12, color: "#b91c1c" }}>
+                        ⚠ Error al sincronizar con Stripe: {bundleForm.stripeError}
+                      </div>
+                    )}
+                    {bundleForm.stripeProductId ? (
+                      <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "10px 14px" }}>
+                        <div style={{ fontWeight: 700, color: "#15803d", marginBottom: 4, fontSize: 13 }}>✓ Sincronizado con Stripe</div>
+                        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#374151", lineHeight: 1.7 }}>
+                          <span style={{ color: "#6b7280" }}>Producto: </span>{bundleForm.stripeProductId}
+                        </div>
+                        {bundleForm.stripePriceId && (
+                          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#374151", lineHeight: 1.7 }}>
+                            <span style={{ color: "#6b7280" }}>Precio: </span>{bundleForm.stripePriceId}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>Se resincroniza automáticamente al guardar.</div>
+                      </div>
+                    ) : (
+                      <div style={{ background: "#fffbeb", border: "1px solid #fbbf24", borderRadius: 6, padding: "10px 14px" }}>
+                        <div style={{ fontWeight: 600, color: "#92400e", fontSize: 13 }}>⏳ Se sincronizará con Stripe al guardar</div>
+                        <div style={{ fontSize: 11, color: "#78350f", marginTop: 4 }}>Al guardar se creará automáticamente el producto y precio en Stripe.</div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {bundleAmt > 0 && (
                   <div style={{ gridColumn: "1 / -1", background: "#fff", border: "1px solid #e0e7ff", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#374151", display: "flex", gap: 16, flexWrap: "wrap" }}>
                     <span><strong>{bundleAmt} Bites</strong></span>
@@ -3685,7 +3716,7 @@ function PlansSection() {
     <div>
       <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Planes de suscripción</h2>
       <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}>
-        Configura el precio, plataforma de pago y Price ID de Stripe para cada plan.
+        Configura el precio y plataforma de pago para cada plan. Los Price IDs de suscripción se configuran con variables de entorno en Render (<code>STRIPE_PRO_PRICE_ID</code>, <code>STRIPE_PREMIUM_PRICE_ID</code>).
       </p>
 
       {env && (
@@ -3741,21 +3772,25 @@ function PlansSection() {
                 </select>
               </label>
 
-              <label style={{ display: "block" }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 3 }}>
-                  Stripe Price ID
-                  {envPriceId && <span style={{ marginLeft: 6, fontWeight: 400, color: "#9ca3af", fontFamily: "monospace", fontSize: 11 }}>env: {envPriceId}</span>}
-                </div>
-                <input
-                  style={{ ...fieldStyle, fontFamily: "monospace", borderColor: entry.stripePriceId && !entry.stripePriceId.startsWith("price_") ? "#ef4444" : "#e2e8f0" }}
-                  value={entry.stripePriceId}
-                  onChange={(e) => setField(planKey, "stripePriceId", e.target.value)}
-                  placeholder="price_1abc..."
-                />
-                {entry.stripePriceId && !entry.stripePriceId.startsWith("price_") && (
-                  <div style={{ color: "#ef4444", fontSize: 11, marginTop: 2 }}>Debe comenzar con "price_"</div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Price ID activo</div>
+                {(envPriceId || entry.stripePriceId) ? (
+                  <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "8px 10px" }}>
+                    <div style={{ fontSize: 11, color: "#15803d", fontWeight: 700, marginBottom: 2 }}>✓ Configurado</div>
+                    <div style={{ fontSize: 11, fontFamily: "monospace", color: "#374151", wordBreak: "break-all" }}>
+                      {envPriceId || entry.stripePriceId}
+                    </div>
+                    {envPriceId && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>Desde variable de entorno</div>}
+                  </div>
+                ) : (
+                  <div style={{ background: "#fef9c3", border: "1px solid #fbbf24", borderRadius: 6, padding: "8px 10px" }}>
+                    <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600 }}>⚠ Sin configurar</div>
+                    <div style={{ fontSize: 11, color: "#78350f", marginTop: 2 }}>
+                      Añade <code>STRIPE_{planKey.toUpperCase()}_PRICE_ID</code> en las variables de entorno de Render.
+                    </div>
+                  </div>
                 )}
-              </label>
+              </div>
             </div>
           );
         })}
