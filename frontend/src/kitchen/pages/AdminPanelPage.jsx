@@ -72,7 +72,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan }) {
+function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan, onOpenPacks }) {
   const [localPlan, setLocalPlan] = useState(household.subscriptionPlan || "basic");
   const [saving, setSaving] = useState(false);
   const [rowError, setRowError] = useState("");
@@ -88,7 +88,7 @@ function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan 
     setRowError("");
     try {
       await onChangePlan(household.id, plan);
-      setLocalPlan(plan);
+      if (plan !== "off") setLocalPlan(plan);
     } catch (err) {
       setRowError(err.message || "Error al cambiar plan");
     } finally {
@@ -99,6 +99,31 @@ function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan 
   const downgradeDate = household.pendingDowngradeAt
     ? new Date(household.pendingDowngradeAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })
     : null;
+
+  const planContent = (
+    <div style={{ padding: "10px 14px 12px" }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Cambiar plan</div>
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <select
+          className="kitchen-select"
+          style={{ fontSize: 12, padding: "3px 6px", flex: 1 }}
+          value={localPlan}
+          disabled={saving}
+          onChange={(e) => setLocalPlan(e.target.value)}
+        >
+          {PLANS.map((p) => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <button
+          type="button"
+          style={{ ...ABT.save, fontSize: 11, padding: "4px 10px", opacity: (saving || localPlan === (household.subscriptionPlan || "basic")) ? 0.55 : 1 }}
+          disabled={saving || localPlan === (household.subscriptionPlan || "basic")}
+          onClick={() => applyPlan(localPlan)}
+        >
+          {saving ? "..." : "Aplicar"}
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <tr style={{ background: isActive ? "rgba(99,102,241,0.06)" : undefined }}>
@@ -116,6 +141,11 @@ function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan 
             </span>
           ) : null}
         </div>
+        {household.inviteCode ? (
+          <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: "monospace", marginTop: 2 }}>
+            invite: {household.inviteCode}
+          </div>
+        ) : null}
         {household.pendingDowngradeReason ? (
           <div style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic", marginTop: 2, maxWidth: 260 }}>
             "{household.pendingDowngradeReason}"
@@ -126,43 +156,32 @@ function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan 
       <td style={{ textAlign: "center" }}><StatusBadge status={household.subscriptionStatus} /></td>
       <td style={{ textAlign: "center" }}>{household.memberCount || 0}</td>
       <td>
-        <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
-          <select
-            className="kitchen-select"
-            style={{ fontSize: 13, padding: "2px 6px" }}
-            value={localPlan}
-            disabled={saving}
-            onChange={(e) => setLocalPlan(e.target.value)}
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            style={{ fontSize: 12, padding: "4px 13px", borderRadius: 6, border: "none", background: "#4338ca", color: "#fff", cursor: "pointer", fontWeight: 600 }}
+            onClick={() => onOpenPacks(household)}
           >
-            {PLANS.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-          <Button
-            variant="primary"
-            style={{ fontSize: 12, padding: "4px 10px" }}
-            disabled={saving || localPlan === household.subscriptionPlan}
-            onClick={() => applyPlan(localPlan)}
-          >
-            {saving ? "..." : "Aplicar"}
-          </Button>
-          <Button
-            variant="secondary"
-            style={{ fontSize: 12, padding: "4px 10px" }}
-            disabled={saving}
-            onClick={() => applyPlan("off")}
-            title="Desactivar suscripción"
-          >
-            Off
-          </Button>
-          <Button
-            variant="secondary"
-            style={{ fontSize: 12, padding: "4px 10px" }}
-            disabled={saving}
-            onClick={() => onSetActive(isActive ? null : household.id)}
-          >
-            {isActive ? "Deselect" : "Usar"}
-          </Button>
+            Packs
+          </button>
+          <ActionsMenu
+            items={[
+              {
+                label: isActive ? "Deseleccionar activo" : "Usar como activo",
+                highlight: !isActive,
+                onClick: () => onSetActive(isActive ? null : household.id)
+              },
+              { divider: true },
+              { key: "plan-change", content: planContent },
+              { divider: true },
+              {
+                label: "Desactivar suscripción",
+                danger: true,
+                disabled: saving,
+                onClick: () => applyPlan("off")
+              }
+            ]}
+          />
         </div>
         {rowError ? <div style={{ color: "red", fontSize: 12, marginTop: 2 }}>{rowError}</div> : null}
       </td>
@@ -175,6 +194,7 @@ function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [packsModalHousehold, setPacksModalHousehold] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -229,7 +249,7 @@ function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange }) {
     onActiveHouseholdChange(householdId || null);
   };
 
-  return (
+  return (<>
     <Card className="kitchen-block-gap">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <div>
@@ -276,6 +296,7 @@ function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange }) {
                   activeHouseholdId={activeHouseholdId}
                   onSetActive={onSetActive}
                   onChangePlan={onChangePlan}
+                  onOpenPacks={setPacksModalHousehold}
                 />
               ))}
             </tbody>
@@ -283,6 +304,13 @@ function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange }) {
         </div>
       )}
     </Card>
+    {packsModalHousehold && (
+      <HouseholdPacksModal
+        household={packsModalHousehold}
+        onClose={() => setPacksModalHousehold(null)}
+      />
+    )}
+  </>
   );
 }
 
@@ -2192,26 +2220,279 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
   );
 }
 
+// ─── ActionsMenu ─────────────────────────────────────────────────────────────
+// items: [{ label, onClick, disabled?, danger?, highlight?, divider?, key?, content? }]
+
+function ActionsMenu({ label = "Acciones", items = [], disabled = false }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        type="button"
+        style={{ ...ABT.edit, paddingRight: 9 }}
+        disabled={disabled}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {label} <span style={{ fontSize: 9, marginLeft: 3, opacity: 0.7 }}>▾</span>
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", right: 0, top: "calc(100% + 4px)",
+          background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8,
+          boxShadow: "0 8px 28px rgba(0,0,0,0.13)", minWidth: 200, zIndex: 200, overflow: "hidden"
+        }}>
+          {items.map((item, i) =>
+            item.divider ? (
+              <div key={`div-${i}`} style={{ borderTop: "1px solid #f1f5f9", margin: "2px 0" }} />
+            ) : item.content ? (
+              <div key={item.key || `content-${i}`}>{item.content}</div>
+            ) : (
+              <button
+                key={item.label || i}
+                type="button"
+                disabled={item.disabled}
+                onClick={() => { item.onClick(); setOpen(false); }}
+                style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  padding: "9px 14px", fontSize: 13,
+                  fontWeight: item.danger ? 600 : 400,
+                  color: item.disabled ? "#9ca3af" : item.danger ? "#b42318" : item.highlight ? "#4338ca" : "#374151",
+                  background: "none", border: "none",
+                  cursor: item.disabled ? "not-allowed" : "pointer",
+                }}
+                onMouseEnter={(e) => { if (!item.disabled) e.currentTarget.style.background = "#f8fafc"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+              >
+                {item.label}
+              </button>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ConfirmModal ─────────────────────────────────────────────────────────────
+
+function ConfirmModal({ title, body, confirmLabel = "Confirmar", danger = false, onConfirm, onCancel }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: 380, maxWidth: "95vw", boxShadow: "0 16px 48px rgba(0,0,0,0.18)" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 15 }}>{title}</h3>
+        {body ? <p style={{ margin: "0 0 20px", fontSize: 13, color: "#6b7280", lineHeight: 1.5 }}>{body}</p> : null}
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button type="button" style={ABT.cancel} onClick={onCancel}>Cancelar</button>
+          <button
+            type="button"
+            style={danger ? { ...ABT.del, fontSize: 13, padding: "7px 16px" } : { ...ABT.save }}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── HouseholdPacksModal ──────────────────────────────────────────────────────
+
+const ACQVIA_LABEL = { purchase: "comprado", subscription: "suscripción", admin_grant: "concedido", free: "gratis" };
+
+function HouseholdPacksModal({ household, onClose }) {
+  const [packs, setPacks] = useState([]);
+  const [allPacks, setAllPacks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [confirmRevokeId, setConfirmRevokeId] = useState(null);
+  const [revokingId, setRevokingId] = useState(null);
+  const [notice, setNotice] = useState({ type: "", msg: "" });
+  const [grantPackId, setGrantPackId] = useState("");
+  const [granting, setGranting] = useState(false);
+
+  const reloadPacks = useCallback(async () => {
+    const data = await apiRequest(`/api/admin/households/${household.id}/packs`);
+    setPacks(data.packs || []);
+  }, [household.id]);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      apiRequest(`/api/admin/households/${household.id}/packs`),
+      apiRequest("/api/kitchen/catalog/packs/admin-all")
+    ]).then(([hhData, allData]) => {
+      setPacks(hhData.packs || []);
+      setAllPacks(allData.packs || []);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [household.id]);
+
+  const handleRevoke = async (pack) => {
+    setRevokingId(pack.packId);
+    setNotice({ type: "", msg: "" });
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.packId}/admin-revoke`, {
+        method: "POST",
+        body: JSON.stringify({ targetHouseholdId: String(household.id) })
+      });
+      setPacks((prev) => prev.filter((p) => p.packId !== pack.packId));
+      setNotice({ type: "success", msg: data.message || "Pack revocado." });
+    } catch (err) {
+      setNotice({ type: "error", msg: err.message || "No se pudo revocar." });
+    } finally {
+      setRevokingId(null);
+      setConfirmRevokeId(null);
+    }
+  };
+
+  const handleGrant = async () => {
+    if (!grantPackId) return;
+    setGranting(true);
+    setNotice({ type: "", msg: "" });
+    try {
+      await apiRequest(`/api/kitchen/catalog/packs/${grantPackId}/admin-grant`, {
+        method: "POST",
+        body: JSON.stringify({ targetHouseholdId: String(household.id) })
+      });
+      await reloadPacks();
+      setGrantPackId("");
+      setNotice({ type: "success", msg: "Pack concedido." });
+    } catch (err) {
+      setNotice({ type: "error", msg: err.message || "No se pudo conceder." });
+    } finally {
+      setGranting(false);
+    }
+  };
+
+  const ownedIds = new Set(packs.map((p) => p.packId));
+  const grantableOptions = allPacks.filter((p) => !ownedIds.has(String(p.id)));
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#fff", borderRadius: 12, width: 620, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "88vh", display: "flex", flexDirection: "column" }}>
+
+        <div style={{ padding: "20px 24px 14px", borderBottom: "1px solid #e5e7eb", flexShrink: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 16 }}>Packs — {household.name}</h3>
+              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280", display: "flex", alignItems: "center", gap: 6 }}>
+                <PlanBadge plan={household.subscriptionPlan} />
+                <span>{household.memberCount || 0} miembros</span>
+                <span>·</span>
+                <span style={{ fontWeight: 600, color: "#374151" }}>{packs.length} packs asignados</span>
+              </p>
+            </div>
+            <button type="button" onClick={onClose} style={{ ...ABT.cancel, padding: "5px 13px", fontSize: 13 }}>✕ Cerrar</button>
+          </div>
+        </div>
+
+        <div style={{ overflowY: "auto", padding: "16px 24px 24px", flex: 1 }}>
+          {notice.msg ? (
+            <div className={`kitchen-alert ${notice.type}`} style={{ marginBottom: 12 }}>{notice.msg}</div>
+          ) : null}
+
+          <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "#374151", fontWeight: 600 }}>Packs asignados</h4>
+
+          {loading ? (
+            <p style={{ fontSize: 12, color: "#9ca3af" }}>Cargando...</p>
+          ) : packs.length === 0 ? (
+            <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 20 }}>Este hogar no tiene ningún pack asignado.</p>
+          ) : (
+            <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse", marginBottom: 20 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
+                  <th style={{ textAlign: "left", padding: "4px 8px", fontWeight: 600, color: "#6b7280" }}>Pack</th>
+                  <th style={{ textAlign: "center", padding: "4px 8px", fontWeight: 600, color: "#6b7280" }}>Tipo</th>
+                  <th style={{ textAlign: "center", padding: "4px 8px", fontWeight: 600, color: "#6b7280" }}>Instalado</th>
+                  <th style={{ padding: "4px 8px" }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {packs.map((p) => (
+                  <tr key={p.packId} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <td style={{ padding: "8px 8px" }}>
+                      <div style={{ fontWeight: 600 }}>{p.packTitle}</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: "monospace" }}>{p.packSlug}</div>
+                    </td>
+                    <td style={{ padding: "8px 8px", textAlign: "center" }}>
+                      <span style={{
+                        fontSize: 10, padding: "2px 7px", borderRadius: 999, fontWeight: 700,
+                        background: p.isPaid ? "#dbeafe" : "#d1fae5",
+                        color: p.isPaid ? "#1d4ed8" : "#065f46"
+                      }}>
+                        {ACQVIA_LABEL[p.acquiredVia] || p.acquiredVia}
+                      </span>
+                    </td>
+                    <td style={{ padding: "8px 8px", textAlign: "center", color: p.isInstalled ? "#16a34a" : "#9ca3af", fontWeight: p.isInstalled ? 600 : 400 }}>
+                      {p.isInstalled ? "✓ sí" : "— no"}
+                    </td>
+                    <td style={{ padding: "8px 8px", textAlign: "right", minWidth: 170 }}>
+                      {p.isPaid && p.isInstalled ? (
+                        <span style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic" }} title="Pagado e instalado — no se puede revocar">🔒 protegido</span>
+                      ) : confirmRevokeId === p.packId ? (
+                        <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "flex-end" }}>
+                          <span style={{ fontSize: 10, color: "#92400e", fontWeight: 600 }}>
+                            {p.isPaid ? "¿Pagado. Confirmar?" : p.isInstalled ? "¿Eliminar platos?" : "¿Confirmar?"}
+                          </span>
+                          <button type="button" style={{ ...ABT.del, fontSize: 11, padding: "2px 8px" }} disabled={Boolean(revokingId)} onClick={() => handleRevoke(p)}>
+                            {revokingId === p.packId ? "..." : "Sí, revocar"}
+                          </button>
+                          <button type="button" style={{ ...ABT.cancel, fontSize: 11, padding: "2px 8px" }} onClick={() => setConfirmRevokeId(null)}>No</button>
+                        </div>
+                      ) : (
+                        <button type="button" style={{ ...ABT.del, fontSize: 11, padding: "2px 8px" }} disabled={Boolean(revokingId)} onClick={() => setConfirmRevokeId(p.packId)}>
+                          Revocar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
+
+          <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "#374151", fontWeight: 600 }}>Conceder pack a este hogar</h4>
+          {loading ? null : grantableOptions.length === 0 ? (
+            <p style={{ fontSize: 12, color: "#9ca3af" }}>Este hogar ya tiene todos los packs disponibles.</p>
+          ) : (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <select
+                className="kitchen-select"
+                value={grantPackId}
+                onChange={(e) => setGrantPackId(e.target.value)}
+                style={{ flex: 1, fontSize: 13 }}
+              >
+                <option value="">— Selecciona un pack —</option>
+                {grantableOptions.map((p) => (
+                  <option key={p.id} value={p.id}>{p.title}</option>
+                ))}
+              </select>
+              <button type="button" style={{ ...ABT.save, opacity: grantPackId && !granting ? 1 : 0.55 }} disabled={!grantPackId || granting} onClick={handleGrant}>
+                {granting ? "Concediendo..." : "Conceder"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GrantModal({ pack, households, onGrant, onClose }) {
   const [householdId, setHouseholdId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
-  // Ownerships / revoke state
-  const [ownerships, setOwnerships] = useState([]);
-  const [ownershipsLoading, setOwnershipsLoading] = useState(false);
-  const [revokingId, setRevokingId] = useState("");
-  const [revokeNotice, setRevokeNotice] = useState("");
-
-  useEffect(() => {
-    if (!pack?.id) return;
-    setOwnershipsLoading(true);
-    apiRequest(`/api/kitchen/catalog/packs/${pack.id}/admin-ownerships`)
-      .then((d) => setOwnerships(d.ownerships || []))
-      .catch(() => {})
-      .finally(() => setOwnershipsLoading(false));
-  }, [pack?.id]);
 
   const handle = async () => {
     if (!householdId.trim()) { setError("Selecciona o introduce un household ID."); return; }
@@ -2220,113 +2501,15 @@ function GrantModal({ pack, households, onGrant, onClose }) {
       await onGrant(String(pack.id), householdId.trim());
       setSuccess("Pack concedido correctamente.");
       setHouseholdId("");
-      // Refresh ownership list
-      apiRequest(`/api/kitchen/catalog/packs/${pack.id}/admin-ownerships`)
-        .then((d) => setOwnerships(d.ownerships || []))
-        .catch(() => {});
     } catch (err) { setError(err.message || "Error al conceder."); }
     finally { setSaving(false); }
   };
 
-  const handleRevoke = async (ownership) => {
-    const confirmMsg = ownership.isPaid
-      ? `"${ownership.householdName}" pagó por este pack pero no lo tiene instalado. Al revocar tendrá que volver a comprarlo. ¿Continuar?`
-      : ownership.isInstalled
-        ? `Se eliminarán los platos de este pack en "${ownership.householdName}" (los modificados se conservan). ¿Continuar?`
-        : `¿Revocar el acceso de "${ownership.householdName}" a este pack?`;
-
-    if (!window.confirm(confirmMsg)) return;
-
-    setRevokingId(String(ownership.householdId));
-    setRevokeNotice("");
-    try {
-      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/admin-revoke`, {
-        method: "POST",
-        body: JSON.stringify({ targetHouseholdId: String(ownership.householdId) })
-      });
-      setOwnerships((prev) => prev.filter((o) => String(o.householdId) !== String(ownership.householdId)));
-      setRevokeNotice(data.message || "Pack revocado.");
-    } catch (err) {
-      setRevokeNotice(`Error: ${err.message || "No se pudo revocar."}`);
-    } finally {
-      setRevokingId("");
-    }
-  };
-
-  const ACQVIA_LABEL = { purchase: "comprado", subscription: "suscripción", admin_grant: "concedido", free: "gratis" };
-
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: 520, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "85vh", overflowY: "auto" }}>
-        <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>Gestionar acceso al pack</h3>
+      <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: 420, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>Conceder acceso al pack</h3>
         <p style={{ margin: "0 0 18px", fontSize: 13, color: "#64748b" }}>Pack: <strong>{pack.title}</strong></p>
-
-        {/* ── Asignaciones actuales ── */}
-        <h4 style={{ margin: "0 0 8px", fontSize: 13, color: "#374151", fontWeight: 600 }}>Asignaciones actuales</h4>
-        {ownershipsLoading ? (
-          <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 16 }}>Cargando...</p>
-        ) : ownerships.length === 0 ? (
-          <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 16 }}>Ningún hogar tiene este pack.</p>
-        ) : (
-          <div style={{ marginBottom: 12, overflowX: "auto" }}>
-            <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid #e5e7eb", color: "#6b7280" }}>
-                  <th style={{ textAlign: "left", padding: "3px 6px", fontWeight: 600 }}>Hogar</th>
-                  <th style={{ textAlign: "center", padding: "3px 6px", fontWeight: 600 }}>Tipo</th>
-                  <th style={{ textAlign: "center", padding: "3px 6px", fontWeight: 600 }}>Instalado</th>
-                  <th style={{ padding: "3px 6px" }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {ownerships.map((o) => (
-                  <tr key={String(o.householdId)} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                    <td style={{ padding: "5px 6px", fontWeight: 500 }}>{o.householdName}</td>
-                    <td style={{ padding: "5px 6px", textAlign: "center" }}>
-                      <span style={{
-                        fontSize: 10, padding: "1px 7px", borderRadius: 999, fontWeight: 700,
-                        background: o.isPaid ? "#dbeafe" : "#d1fae5",
-                        color: o.isPaid ? "#1d4ed8" : "#065f46"
-                      }}>
-                        {ACQVIA_LABEL[o.acquiredVia] || o.acquiredVia}
-                      </span>
-                    </td>
-                    <td style={{ padding: "5px 6px", textAlign: "center", color: o.isInstalled ? "#16a34a" : "#9ca3af", fontWeight: o.isInstalled ? 600 : 400 }}>
-                      {o.isInstalled ? "✓ sí" : "— no"}
-                    </td>
-                    <td style={{ padding: "5px 6px" }}>
-                      {o.isPaid && o.isInstalled ? (
-                        <span style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic" }} title="Pagado e instalado — protegido">
-                          protegido
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          style={{ ...ABT.del, fontSize: 11, padding: "2px 8px", opacity: revokingId === String(o.householdId) ? 0.6 : 1 }}
-                          disabled={Boolean(revokingId)}
-                          onClick={() => handleRevoke(o)}
-                        >
-                          {revokingId === String(o.householdId) ? "..." : "Revocar"}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {revokeNotice ? (
-          <div style={{ fontSize: 12, padding: "7px 10px", borderRadius: 6, marginBottom: 12, background: "#f0fdf4", border: "1px solid #86efac", color: "#166534" }}>
-            {revokeNotice}
-          </div>
-        ) : null}
-
-        <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
-
-        {/* ── Conceder a un hogar ── */}
-        <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "#374151", fontWeight: 600 }}>Conceder a un hogar</h4>
 
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, marginBottom: 10 }}>
           Seleccionar household
@@ -2377,6 +2560,7 @@ function CatalogPacksSection() {
   const [deletingId, setDeletingId] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
   const [grantModal, setGrantModal] = useState(null);
+  const [deleteConfirmPack, setDeleteConfirmPack] = useState(null);
   const [households, setHouseholds] = useState([]);
   const [reviewPack, setReviewPack] = useState(null);
   const [saveNotice, setSaveNotice] = useState("");
@@ -2466,7 +2650,12 @@ function CatalogPacksSection() {
   };
 
   const handleDelete = async (pack) => {
-    if (!window.confirm(`¿Eliminar el pack "${pack.title}"? Esta acción no se puede deshacer.`)) return;
+    setDeleteConfirmPack(pack);
+  };
+
+  const confirmDelete = async () => {
+    const pack = deleteConfirmPack;
+    setDeleteConfirmPack(null);
     setDeletingId(pack.id);
     try {
       await apiRequest(`/api/kitchen/catalog/packs/${pack.id}`, { method: "DELETE" });
@@ -2656,84 +2845,60 @@ function CatalogPacksSection() {
                         : "—"}
                     </td>
                     <td>
-                      <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                         <button type="button" style={ABT.edit} onClick={() => setEditItem(pack)}>Editar</button>
-                        <button
-                          type="button"
-                          style={{ ...ABT.edit, color: pack.active !== false ? "#b45309" : "#166534", borderColor: pack.active !== false ? "#fcd34d" : "#86efac" }}
-                          disabled={togId === `${pack.id}-active`}
-                          onClick={() => handleToggle(pack, "active")}
-                        >
-                          {pack.active !== false ? "Desactivar" : "Activar"}
-                        </button>
-                        <button
-                          type="button"
-                          style={{ ...ABT.edit, color: pack.featured ? "#6b7280" : "#d97706", borderColor: pack.featured ? "#e5e7eb" : "#fcd34d" }}
-                          disabled={togId === `${pack.id}-featured`}
-                          onClick={() => handleToggle(pack, "featured")}
-                        >
-                          {pack.featured ? "Quitar destaque" : "Destacar"}
-                        </button>
-                        <button
-                          type="button"
-                          style={{ ...ABT.edit, color: isFree ? "#7c3aed" : "#166534", borderColor: isFree ? "#ddd6fe" : "#86efac" }}
-                          disabled={togId === `${pack.id}-price`}
-                          onClick={() => handleSetFree(pack)}
-                        >
-                          {isFree ? "Poner precio" : "Poner gratis"}
-                        </button>
-                        <button
-                          type="button"
-                          style={{ ...ABT.edit, color: "#4338ca", borderColor: "#c7d2fe" }}
-                          onClick={() => setReviewPack(pack)}
-                        >
-                          Revisar
-                        </button>
-                        {pack.status === "published" ? (
-                          <button
-                            type="button"
-                            style={{ ...ABT.edit, color: "#7c2d12", borderColor: "#fed7aa" }}
-                            disabled={togId === `${pack.id}-status-ready`}
-                            onClick={() => handleSetStatus(pack, "ready")}
-                          >
-                            Despublicar
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            title={!canPublishPack ? "Resuelve la revision antes de publicar" : "Publicar pack"}
-                            style={{ ...ABT.green, opacity: canPublishPack ? 1 : 0.45 }}
-                            disabled={!canPublishPack || togId === `${pack.id}-publish`}
-                            onClick={() => handlePublish(pack)}
-                          >
-                            {togId === `${pack.id}-publish` ? "..." : "Publicar"}
-                          </button>
-                        )}
-                        {pack.status !== "needs_review" ? (
-                          <button
-                            type="button"
-                            style={{ ...ABT.edit, color: "#c2410c", borderColor: "#fed7aa" }}
-                            disabled={togId === `${pack.id}-status-needs_review`}
-                            onClick={() => handleSetStatus(pack, "needs_review")}
-                          >
-                            Mandar a revision
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          style={{ ...ABT.green }}
-                          onClick={() => setGrantModal(pack)}
-                        >
-                          Conceder
-                        </button>
-                        <button
-                          type="button"
-                          style={{ ...ABT.del, opacity: deletingId === pack.id ? 0.6 : 1 }}
-                          disabled={deletingId === pack.id}
-                          onClick={() => handleDelete(pack)}
-                        >
-                          {deletingId === pack.id ? "..." : "Eliminar"}
-                        </button>
+                        <button type="button" style={{ ...ABT.edit, color: "#4338ca", borderColor: "#c7d2fe" }} onClick={() => setReviewPack(pack)}>Revisar</button>
+                        <ActionsMenu
+                          disabled={Boolean(togId)}
+                          items={[
+                            {
+                              label: pack.active !== false ? "Desactivar" : "Activar",
+                              disabled: togId === `${pack.id}-active`,
+                              onClick: () => handleToggle(pack, "active")
+                            },
+                            {
+                              label: pack.featured ? "Quitar destaque" : "Destacar",
+                              disabled: togId === `${pack.id}-featured`,
+                              onClick: () => handleToggle(pack, "featured")
+                            },
+                            {
+                              label: isFree ? "Poner precio" : "Poner gratis",
+                              disabled: togId === `${pack.id}-price`,
+                              onClick: () => handleSetFree(pack)
+                            },
+                            { divider: true },
+                            pack.status === "published"
+                              ? {
+                                  label: "Despublicar",
+                                  disabled: togId === `${pack.id}-status-ready`,
+                                  onClick: () => handleSetStatus(pack, "ready")
+                                }
+                              : {
+                                  label: canPublishPack ? "Publicar" : "Publicar (revisar antes)",
+                                  disabled: !canPublishPack || togId === `${pack.id}-publish`,
+                                  highlight: canPublishPack,
+                                  onClick: () => handlePublish(pack)
+                                },
+                            ...(pack.status !== "needs_review" ? [{
+                              label: "Mandar a revisión",
+                              disabled: togId === `${pack.id}-status-needs_review`,
+                              onClick: () => handleSetStatus(pack, "needs_review")
+                            }] : []),
+                            { divider: true },
+                            {
+                              label: "Conceder a hogar",
+                              highlight: true,
+                              onClick: () => setGrantModal(pack)
+                            },
+                            { divider: true },
+                            {
+                              label: deletingId === pack.id ? "Eliminando..." : "Eliminar",
+                              danger: true,
+                              disabled: Boolean(deletingId),
+                              onClick: () => handleDelete(pack)
+                            }
+                          ]}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -2750,6 +2915,16 @@ function CatalogPacksSection() {
           households={households}
           onGrant={handleGrant}
           onClose={() => setGrantModal(null)}
+        />
+      )}
+      {deleteConfirmPack && (
+        <ConfirmModal
+          title={`¿Eliminar "${deleteConfirmPack.title}"?`}
+          body="Esta acción no se puede deshacer. El pack y toda su configuración serán eliminados permanentemente."
+          confirmLabel="Eliminar"
+          danger
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteConfirmPack(null)}
         />
       )}
     </Card>

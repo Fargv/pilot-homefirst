@@ -9,6 +9,8 @@ import { Invitation } from "../models/Invitation.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { KitchenIngredient } from "../models/KitchenIngredient.js";
+import { HouseholdCatalogPack } from "../models/HouseholdCatalogPack.js";
+import { CatalogPack } from "../models/CatalogPack.js";
 import { Category } from "../models/Category.js";
 import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
 import { KitchenSwap } from "../models/KitchenSwap.js";
@@ -69,6 +71,46 @@ router.get("/households", requireAuth, requireDiod, async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudieron cargar los hogares." });
+  }
+});
+
+// Returns all catalog packs owned by a specific household (for admin pack management).
+router.get("/households/:householdId/packs", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const { householdId } = req.params;
+    if (!mongoose.isValidObjectId(householdId)) {
+      return res.status(400).json({ ok: false, error: "householdId inválido." });
+    }
+
+    const ownerships = await HouseholdCatalogPack.find({ householdId }).lean();
+    if (ownerships.length === 0) return res.json({ ok: true, packs: [] });
+
+    const packIds = ownerships.map((o) => o.packId);
+    const catalogPacks = await CatalogPack.find(
+      { _id: { $in: packIds } },
+      { title: 1, slug: 1, priceBasic: 1 }
+    ).lean();
+    const packMap = Object.fromEntries(catalogPacks.map((p) => [String(p._id), p]));
+
+    const result = ownerships.map((o) => {
+      const cp = packMap[String(o.packId)] || {};
+      const isPaid = ["purchase", "subscription"].includes(o.acquiredVia) || o.paymentStatus === "paid";
+      const isInstalled = o.status === "installed";
+      return {
+        packId: String(o.packId),
+        packTitle: cp.title || String(o.packId),
+        packSlug: cp.slug || "",
+        acquiredVia: o.acquiredVia || "unknown",
+        isPaid,
+        isInstalled,
+        canRevoke: !(isPaid && isInstalled),
+        acquiredAt: o.acquiredAt || null
+      };
+    });
+
+    return res.json({ ok: true, packs: result });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudieron cargar los packs del hogar." });
   }
 });
 
