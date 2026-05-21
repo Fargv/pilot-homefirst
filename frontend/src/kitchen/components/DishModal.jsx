@@ -6,7 +6,7 @@ import RecipeEditor from "./RecipeEditor.jsx";
 import { ProBadge } from "./ui/ProBadge.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { useAuth } from "../auth.jsx";
-import { canRandomizeFullWeek } from "../subscription.js";
+import { canRandomizeFullWeek, canUseDinnersFeature } from "../subscription.js";
 
 const EMPTY_FORM = {
   name: "",
@@ -48,6 +48,7 @@ export default function DishModal({
 
   const isDiod = user?.globalRole === "diod";
   const isPro = isDiod || canRandomizeFullWeek(user?.subscriptionPlan);
+  const canDinnerDishes = isDiod || canUseDinnersFeature(user?.subscriptionPlan);
 
   const dishIngredientNames = useMemo(
     () => (form.ingredients || []).map((ing) => (ing.displayName || ing.canonicalName || "").toLowerCase().trim()),
@@ -402,20 +403,44 @@ export default function DishModal({
           </label>
           <div className="kitchen-field kitchen-toggle-field">
             <div className="kitchen-toggle-row">
-              <span className="kitchen-label">Plato de cena</span>
-              <label className="kitchen-toggle" htmlFor="dish-dinnerswitch">
-                <input
-                  id="dish-dinnerswitch"
-                  type="checkbox"
-                  className="kitchen-toggle-input"
-                  checked={form.isDinner}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, isDinner: event.target.checked }))
-                  }
-                />
-                <span className="kitchen-toggle-track" aria-hidden="true" />
-              </label>
+              <span className="kitchen-label">
+                Plato de cena
+                {!canDinnerDishes ? (
+                  <span className="dinner-gate-pro-badge dinner-gate-pro-badge-inline">PRO</span>
+                ) : null}
+              </span>
+              {canDinnerDishes ? (
+                <label className="kitchen-toggle" htmlFor="dish-dinnerswitch">
+                  <input
+                    id="dish-dinnerswitch"
+                    type="checkbox"
+                    className="kitchen-toggle-input"
+                    checked={form.isDinner}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, isDinner: event.target.checked }))
+                    }
+                  />
+                  <span className="kitchen-toggle-track" aria-hidden="true" />
+                </label>
+              ) : (
+                <label
+                  className="kitchen-toggle kitchen-toggle-locked"
+                  title="La creación de platos de cena requiere un plan Pro o Premium"
+                >
+                  <input
+                    type="checkbox"
+                    className="kitchen-toggle-input"
+                    checked={false}
+                    disabled
+                    readOnly
+                  />
+                  <span className="kitchen-toggle-track" aria-hidden="true" />
+                </label>
+              )}
             </div>
+            {!canDinnerDishes ? (
+              <p className="dinner-gate-field-hint">Disponible en Pro y Premium</p>
+            ) : null}
           </div>
           <div className="kitchen-field kitchen-toggle-field">
             <div className="kitchen-toggle-row">

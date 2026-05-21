@@ -48,6 +48,11 @@ export function canUseDietRandomization(plan) {
   return normalizedPlan === "pro" || normalizedPlan === "premium";
 }
 
+export function canUseDinnersFeature(plan) {
+  const normalizedPlan = normalizeSubscriptionPlan(plan);
+  return normalizedPlan === "pro" || normalizedPlan === "premium";
+}
+
 export function canAddUser(plan, currentUsersCount) {
   const { maxUsers } = getPlanLimits(plan);
   return maxUsers === LICENSE_LIMIT_UNLIMITED || Number(currentUsersCount || 0) < maxUsers;

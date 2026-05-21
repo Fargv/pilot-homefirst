@@ -7842,6 +7842,196 @@ body {
   margin-right: 2px;
 }
 
+/* ─── Dinner Feature Gating ──────────────────────────────────────────────── */
+
+/* Lock icon inside gated tabs/chips */
+.dinner-gate-lock {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* PRO badge used inline inside tabs and chips */
+.dinner-gate-pro-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border-radius: 4px;
+  padding: 2px 5px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.dinner-gate-pro-badge-inline {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* Locked Cenas tab in WeekPage */
+.kitchen-meal-tab.dinner-gate-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  opacity: 0.65;
+  cursor: pointer;
+  color: var(--hf-muted, #64748b);
+  position: relative;
+}
+
+.kitchen-meal-tab.dinner-gate-tab:hover {
+  opacity: 0.9;
+  color: #4f46e5;
+}
+
+.kitchen-meal-tab.dinner-gate-tab:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* Locked Cenas chip in DishesPage */
+.kitchen-filter-chip.dinner-gate-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  opacity: 0.6;
+  cursor: pointer;
+  color: var(--hf-muted, #64748b);
+}
+
+.kitchen-filter-chip.dinner-gate-chip:hover {
+  opacity: 0.88;
+  color: #4f46e5;
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+/* Locked toggle in DishModal */
+.kitchen-toggle.kitchen-toggle-locked {
+  cursor: not-allowed;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* "Disponible en Pro y Premium" hint below toggle */
+.dinner-gate-field-hint {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  color: var(--hf-muted, #94a3b8);
+  font-style: italic;
+}
+
+/* Upgrade banner shared base */
+.dinner-upgrade-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.07) 0%, rgba(124, 58, 237, 0.05) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  border-radius: 14px;
+  padding: 14px 16px;
+  animation: dinner-banner-in 0.2s ease;
+}
+
+@keyframes dinner-banner-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dinner-upgrade-banner-icon {
+  color: #6366f1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.dinner-upgrade-banner-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dinner-upgrade-banner-title {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e1b4b;
+  line-height: 1.3;
+}
+
+.dinner-upgrade-banner-desc {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--hf-muted, #64748b);
+  line-height: 1.4;
+}
+
+.dinner-upgrade-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dinner-upgrade-banner-cta {
+  font-size: 13px;
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
+.dinner-upgrade-banner-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--hf-muted, #94a3b8);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dinner-upgrade-banner-close:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+
+/* Week-page banner positioning */
+.dinner-upgrade-banner-week {
+  margin: 0 0 2px;
+  border-radius: 12px;
+}
+
+/* Dishes-page banner positioning */
+.dinner-upgrade-banner-dishes {
+  margin: 2px 0 4px;
+}
+
+@media (max-width: 600px) {
+  .dinner-upgrade-banner {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .dinner-upgrade-banner-icon {
+    display: none;
+  }
+
+  .dinner-upgrade-banner-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dinner-upgrade-banner-cta {
+    flex: 1;
+    text-align: center;
+  }
+}
+
 /* Card de settings con feature PRO */
 .settings-hub-card.is-pro-locked .settings-hub-card-main h3 {
   display: flex;

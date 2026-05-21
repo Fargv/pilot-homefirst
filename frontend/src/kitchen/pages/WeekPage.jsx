@@ -15,8 +15,9 @@ import { normalizeIngredientName } from "../utils/normalize.js";
 import { getUserColorById } from "../utils/userColors";
 import { getUserInitialsFromProfile } from "../utils/userInitials.js";
 import { useActiveWeek } from "../weekContext.jsx";
-import { canRandomizeFullWeek, isWeekRandomizationUnavailableError } from "../subscription.js";
+import { canRandomizeFullWeek, canUseDinnersFeature, isWeekRandomizationUnavailableError } from "../subscription.js";
 import { ProGateButton } from "../components/ui/ProBadge.jsx";
+import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 
 const DAY_CARD_STYLES = [
@@ -319,8 +320,9 @@ export default function WeekPage() {
   const visibleDaysRef = useRef([]);
   const shoppingChoiceResolverRef = useRef(null);
   const [missingWeekPromptOpen, setMissingWeekPromptOpen] = useState(false);
+  const [dinnerUpgradeOpen, setDinnerUpgradeOpen] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
-  const selectedMealType = dinnersEnabled ? normalizeMealType(mealTab) : "lunch";
+  const selectedMealType = (dinnersEnabled && canUseDinners) ? normalizeMealType(mealTab) : "lunch";
   const visibleDays = useMemo(
     () => safeDays.filter((day) => dayMealType(day) === selectedMealType),
     [safeDays, selectedMealType]
@@ -336,6 +338,7 @@ export default function WeekPage() {
   const hasIncompleteVisibleDays = visibleDays.some((day) => !day?.mainDishId && !day?.isLeftovers);
   const canShowWeekRandomize = Boolean(plan && visibleDays.length && hasIncompleteVisibleDays);
   const canUseFullWeekRandomization = canRandomizeFullWeek(subscriptionPlan);
+  const canUseDinners = canUseDinnersFeature(subscriptionPlan);
   const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
   const currentHouseholdKey = currentHouseholdId ? String(currentHouseholdId) : "__no_household__";
   const dishesReadyForCurrentHousehold = !dishesLoading && dishesLoadedForHouseholdKey === currentHouseholdKey;
@@ -2016,7 +2019,8 @@ export default function WeekPage() {
                   </div>
                 </div>
 
-                {dinnersEnabled ? (
+                {(dinnersEnabled && canUseDinners) || !canUseDinners ? (
+                  <>
                   <div className="kitchen-week-header-row kitchen-week-header-row-tabs">
                     <div className="kitchen-tab-share-row">
                       <div className="kitchen-meal-tabs kitchen-meal-tabs-with-link" role="group" aria-label="Navegación semanal">
@@ -2028,14 +2032,31 @@ export default function WeekPage() {
                       >
                         Comidas
                       </button>
-                      <button
-                        type="button"
-                        className={`kitchen-meal-tab ${selectedMealType === "dinner" ? "is-active" : ""}`}
-                        aria-pressed={selectedMealType === "dinner"}
-                        onClick={() => setMealTab("dinner")}
-                      >
-                        Cenas
-                      </button>
+                      {canUseDinners ? (
+                        <button
+                          type="button"
+                          className={`kitchen-meal-tab ${selectedMealType === "dinner" ? "is-active" : ""}`}
+                          aria-pressed={selectedMealType === "dinner"}
+                          onClick={() => setMealTab("dinner")}
+                        >
+                          Cenas
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="kitchen-meal-tab dinner-gate-tab"
+                          aria-disabled="true"
+                          title="Las cenas están disponibles en Pro y Premium"
+                          onClick={() => setDinnerUpgradeOpen((v) => !v)}
+                        >
+                          <svg className="dinner-gate-lock" viewBox="0 0 12 14" width="10" height="12" fill="none" aria-hidden="true">
+                            <rect x="1.5" y="6" width="9" height="7.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                            <path d="M4 6V4.5a2 2 0 014 0V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                          </svg>
+                          Cenas
+                          <span className="dinner-gate-pro-badge">PRO</span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="kitchen-meal-tab kitchen-meal-tab-link"
@@ -2062,6 +2083,13 @@ export default function WeekPage() {
                       />
                     </div>
                   </div>
+                  {!canUseDinners && dinnerUpgradeOpen ? (
+                    <DinnerUpgradeBanner
+                      className="dinner-upgrade-banner-week"
+                      onClose={() => setDinnerUpgradeOpen(false)}
+                    />
+                  ) : null}
+                  </>
                 ) : null}
 
                 {/* Desktop-only: action buttons grouped at the right of the bar */}

@@ -10,6 +10,8 @@ import CategoryIcon from "../components/CategoryIcon.jsx";
 import { resolveCategoryCode } from "../components/categoryIconMap.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { canUseDinnersFeature } from "../subscription.js";
+import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 
 const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
 
@@ -136,6 +138,7 @@ export default function DishesPage() {
   const ingredientInfoButtonRefs = useRef(new Map());
   const panelHeadingRef = useRef(null);
   const [showStickyAction, setShowStickyAction] = useState(false);
+  const [dinnerGateOpen, setDinnerGateOpen] = useState(false);
   const todayKey = new Date().toISOString().slice(0, 10);
   const currentWeekStart = useMemo(
     () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
@@ -148,6 +151,7 @@ export default function DishesPage() {
     dishNames: {}
   });
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
+  const canUseDinners = isDiodGlobalMode || canUseDinnersFeature(user?.subscriptionPlan);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
@@ -935,13 +939,30 @@ export default function DishesPage() {
                 >
                   Comidas
                 </button>
-                <button
-                  className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.DINNER && !showOnlyCatalog ? "is-active" : ""}`}
-                  type="button"
-                  onClick={() => { setSelectedMealFilter(MEAL_FILTERS.DINNER); setShowOnlyCatalog(false); }}
-                >
-                  Cenas
-                </button>
+                {canUseDinners ? (
+                  <button
+                    className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.DINNER && !showOnlyCatalog ? "is-active" : ""}`}
+                    type="button"
+                    onClick={() => { setSelectedMealFilter(MEAL_FILTERS.DINNER); setShowOnlyCatalog(false); }}
+                  >
+                    Cenas
+                  </button>
+                ) : (
+                  <button
+                    className="kitchen-filter-chip dishes-meal-chip dinner-gate-chip"
+                    type="button"
+                    aria-disabled="true"
+                    title="Las cenas están disponibles en Pro y Premium"
+                    onClick={() => setDinnerGateOpen((v) => !v)}
+                  >
+                    <svg className="dinner-gate-lock" viewBox="0 0 12 14" width="9" height="11" fill="none" aria-hidden="true">
+                      <rect x="1.5" y="6" width="9" height="7.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M4 6V4.5a2 2 0 014 0V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                    Cenas
+                    <span className="dinner-gate-pro-badge">PRO</span>
+                  </button>
+                )}
                 <button
                   className={`kitchen-filter-chip dishes-meal-chip kitchen-tab-catalog ${showOnlyCatalog ? "is-active" : ""}`}
                   type="button"
@@ -955,6 +976,12 @@ export default function DishesPage() {
                   Del catálogo
                 </button>
               </div>
+              {!canUseDinners && dinnerGateOpen ? (
+                <DinnerUpgradeBanner
+                  className="dinner-upgrade-banner-dishes"
+                  onClose={() => setDinnerGateOpen(false)}
+                />
+              ) : null}
               <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar por categoría">
                 <button
                   type="button"

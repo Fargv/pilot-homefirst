@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { Household } from "../models/Household.js";
-import { canRandomizeFullWeek } from "../subscriptionService.js";
+import { canRandomizeFullWeek, canUseDinnersFeature } from "../subscriptionService.js";
 import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { normalizeIngredientList } from "../utils/normalize.js";
 import { combineDayIngredients } from "../utils/ingredients.js";
@@ -279,6 +279,16 @@ router.post("/", requireAuth, async (req, res) => {
 
     if (isMasterWrite && !isDiod) {
       return res.status(403).json({ ok: false, error: "Solo DIOD puede crear platos master." });
+    }
+    if (dinnerDish && !isDiod) {
+      const household = await Household.findById(effectiveHouseholdId).lean();
+      if (!canUseDinnersFeature(household?.subscriptionPlan)) {
+        return res.status(403).json({
+          ok: false,
+          error: "La creación de platos de cena requiere un plan Pro o Premium.",
+          code: "DINNER_FEATURE_NOT_AVAILABLE"
+        });
+      }
     }
     const resolvedDishCategoryId = dishCategoryId
       ? await resolveDishCategoryId(dishCategoryId)

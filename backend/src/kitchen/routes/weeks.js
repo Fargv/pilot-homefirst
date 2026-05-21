@@ -16,7 +16,7 @@ import { rebuildShoppingList } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import { buildManualPlanningDishFilter, buildRandomizableMainDishFilter, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 import { notifyCookAssignments } from "../assignmentPushService.js";
-import { canRandomizeFullWeek, canUseDietRandomization } from "../subscriptionService.js";
+import { canRandomizeFullWeek, canUseDietRandomization, canUseDinnersFeature } from "../subscriptionService.js";
 
 const router = express.Router();
 
@@ -493,6 +493,17 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     const monday = getWeekStart(weekStart);
     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
     const mealType = normalizeMealType(req.query?.mealType || req.body?.mealType || "lunch");
+
+    if (isDinnerMeal(mealType)) {
+      const household = await Household.findById(effectiveHouseholdId).lean();
+      if (!canUseDinnersFeature(household?.subscriptionPlan)) {
+        return res.status(403).json({
+          ok: false,
+          error: "La planificación de cenas requiere un plan Pro o Premium.",
+          code: "DINNER_FEATURE_NOT_AVAILABLE"
+        });
+      }
+    }
 
     const day = findDayByDateAndMeal(plan, date, mealType);
     if (!day) return res.status(404).json({ ok: false, error: "Dia fuera de la semana." });
