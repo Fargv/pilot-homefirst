@@ -66,7 +66,27 @@
       "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Force)",
       "Bash(Select-Object Name, FullName)",
       "Bash(xargs grep -l \"admin\\\\|Admin\\\\|pack.*edit\\\\|catalog.*admin\\\\|packs.*admin\")",
-      "Bash(node --input-type=module --eval \"import\\('./src/routes/payments.js'\\).then\\(\\(\\) => console.log\\('payments.js OK'\\)\\).catch\\(e => console.error\\('ERROR', e.message\\)\\)\")"
+      "Bash(node --input-type=module --eval \"import\\('./src/routes/payments.js'\\).then\\(\\(\\) => console.log\\('payments.js OK'\\)\\).catch\\(e => console.error\\('ERROR', e.message\\)\\)\")",
+      "Bash(powershell -Command \"\\(Get-Content SettingsPage.jsx\\) | Select-String -Pattern 'return.*isHub|SettingsHubPanel|PreferencesPanel' -Context 0,5 | head -50\")",
+      "Bash(powershell -Command \"\\(Get-Content SettingsPage.jsx\\) | Select-String -Pattern 'SettingsHubPanel|CardButton.*Subscription|upgrade' -Context 2,2 | head -60\")",
+      "Bash(powershell -Command \"\\(Get-Content SettingsPage.jsx\\) | Select-String -Pattern 'SettingsHubPanel|isHub' -Context 0,3 | head -40\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Recurse -Directory -ErrorAction SilentlyContinue)",
+      "Bash(find C:\\\\\\\\APPS\\\\\\\\pilot-homefirst\\\\\\\\frontend\\\\\\\\src -type f -name \"*Auth*\" -o -name \"*Clerk*\")",
+      "Bash(find C:\\\\\\\\APPS\\\\\\\\pilot-homefirst\\\\\\\\backend\\\\\\\\src\\\\\\\\kitchen\\\\\\\\routes -type f -name \"*.js\")",
+      "PowerShell(New-Item *)",
+      "Bash(git commit *)",
+      "Bash(npx --yes acorn --ecma2022 --module src/kitchen/pages/AdminPanelPage.jsx)",
+      "Bash(node --input-type=module)",
+      "Bash(findstr /I category)",
+      "Bash(xargs grep -l \"stripe\")",
+      "Bash(gh repo *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(git --version)",
+      "Bash(git clone *)",
+      "Bash(node *)",
+      "Bash(git *)"
     ]
   }
 }

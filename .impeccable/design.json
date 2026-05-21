@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-21T00:00:00Z",
+  "title": "Design System: HomeFirst",
+  "extensions": {
+    "colorMeta": {
+      "brand":         { "role": "primary",  "displayName": "Índigo Activo",    "canonical": "#4f46e5", "tonalRamp": ["#1e1b6e","#2d29a0","#3730a3","#4338ca","#4f46e5","#6366f1","#818cf8","#a5b4fc","#c7d2fe","#e0e7ff"] },
+      "brand-dark":    { "role": "primary",  "displayName": "Índigo Profundo",  "canonical": "#4338ca", "tonalRamp": ["#1e1b6e","#2d29a0","#3730a3","#4338ca","#4f46e5","#6366f1","#818cf8","#a5b4fc","#c7d2fe","#e0e7ff"] },
+      "surface":       { "role": "neutral",  "displayName": "Blanco Superficie","canonical": "#ffffff", "tonalRamp": ["#e2e8f0","#f1f5f9","#f8fafc","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"] },
+      "surface-bg":    { "role": "neutral",  "displayName": "Blanco Página",    "canonical": "#f8fafc", "tonalRamp": ["#cbd5e1","#e2e8f0","#f1f5f9","#f8fafc","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"] },
+      "surface-soft":  { "role": "secondary","displayName": "Índigo Suave",     "canonical": "#eef2ff", "tonalRamp": ["#c7d2fe","#d4daff","#dde4ff","#e6ecff","#eef2ff","#f4f6ff","#f8f9ff","#fafbff","#fcfcff","#ffffff"] },
+      "surface-mint":  { "role": "tertiary", "displayName": "Verde Menta",      "canonical": "#f0fdf4", "tonalRamp": ["#a7f3d0","#bbf7d0","#d1fae5","#ecfdf5","#f0fdf4","#f5fdf8","#f9fefc","#fbfffe","#fdfffe","#ffffff"] },
+      "text":          { "role": "neutral",  "displayName": "Texto Principal",  "canonical": "#1e293b", "tonalRamp": ["#0f172a","#1e293b","#334155","#475569","#64748b","#94a3b8","#cbd5e1","#e2e8f0","#f1f5f9","#f8fafc"] },
+      "text-muted":    { "role": "neutral",  "displayName": "Texto Atenuado",   "canonical": "#667085", "tonalRamp": ["#1a1f2e","#2e3444","#475467","#667085","#98a2b3","#c0c9d8","#d8dfe8","#e8edf5","#f2f5f9","#f8fafc"] },
+      "border":        { "role": "neutral",  "displayName": "Borde Estructural","canonical": "#e4e7ec", "tonalRamp": ["#9aa3b1","#b0b8c6","#c9d1da","#d8dfe8","#e4e7ec","#edf0f4","#f3f5f8","#f8f9fb","#fbfcfd","#ffffff"] },
+      "danger":        { "role": "danger",   "displayName": "Rojo Peligro",     "canonical": "#b42318", "tonalRamp": ["#7f1d1d","#991b1b","#b42318","#dc2626","#ef4444","#f87171","#fca5a5","#fecaca","#fee2e2","#fef2f2"] }
+    },
+    "shadows": [
+      { "name": "ambient-surface", "value": "0 10px 25px -5px rgba(0, 0, 0, 0.05)",    "purpose": "Cards y panels en reposo. Eleva sin llamar atención." },
+      { "name": "card-lift",       "value": "0 10px 30px rgba(15, 23, 42, 0.08)",       "purpose": "Cards de semana y de platos." },
+      { "name": "overlay-deep",    "value": "0 24px 60px rgba(15, 23, 42, 0.20)",       "purpose": "Modales y drawers. Máxima elevación del sistema." },
+      { "name": "glass",           "value": "0 10px 30px rgba(31, 41, 55, 0.10)",       "purpose": "Header y bottom-nav con glassmorphismo." },
+      { "name": "focus-brand",     "value": "outline: 2px solid color-mix(in srgb, #4f46e5 40%, transparent); outline-offset: 2px", "purpose": "Focus ring WCAG AA en botones UI." }
+    ],
+    "motion": [
+      { "name": "ease-standard",  "value": "0.2s ease",                     "purpose": "Transiciones de estado por defecto (hover, active, color)." },
+      { "name": "ease-fast",      "value": "0.15s ease",                    "purpose": "Microinteracciones rápidas (toolbar, chips)." },
+      { "name": "ease-spring",    "value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "purpose": "Solo en .btn-spring — escaso y justificado." }
+    ],
+    "breakpoints": [
+      { "name": "mobile",  "value": "0px",   "purpose": "Bottom nav, single-column, touch targets 44px." },
+      { "name": "tablet",  "value": "768px", "purpose": "Top nav aparece, grid auto-fit activo." },
+      { "name": "desktop", "value": "1100px","purpose": "Ancho máximo del contenedor principal." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón Primario",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal de pantalla. Color brand, forma píldora. Solo uno por vista.",
+      "html": "<button class=\"ds-btn-primary\">Añadir plato</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #4f46e5; color: #fff; border: none; border-radius: 999px; padding: 12px 16px; font-family: Montserrat, system-ui, sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; min-height: 44px; transition: background 0.2s ease, transform 0.2s ease; } .ds-btn-primary:hover { background: #4338ca; } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 2px solid color-mix(in srgb, #4f46e5 40%, transparent); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.65; cursor: not-allowed; }"
+    },
+    {
+      "name": "Botón Secundario",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción alternativa. Fondo soft-índigo, sin relleno de color fuerte.",
+      "html": "<button class=\"ds-btn-secondary\">Cancelar</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #eef2ff; color: #1e293b; border: 1px solid #e4e7ec; border-radius: 999px; padding: 12px 16px; font-family: Montserrat, system-ui, sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; min-height: 44px; transition: background 0.2s ease; } .ds-btn-secondary:hover { background: #e0e7ff; } .ds-btn-secondary:focus-visible { outline: 2px solid color-mix(in srgb, #4f46e5 40%, transparent); outline-offset: 2px; } .ds-btn-secondary:disabled { opacity: 0.65; cursor: not-allowed; }"
+    },
+    {
+      "name": "Input de Texto",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de texto estándar. Bordes suaves, focus con ring brand.",
+      "html": "<label class=\"ds-input-group\"><span class=\"ds-input-label\">Nombre del plato</span><input class=\"ds-input\" type=\"text\" placeholder=\"Ej: Pasta boloñesa\" /></label>",
+      "css": ".ds-input-group { display: grid; gap: 6px; } .ds-input-label { font-family: Montserrat, system-ui, sans-serif; font-weight: 600; font-size: 13px; color: #344054; } .ds-input { border: 1px solid #e4e7ec; border-radius: 24px; padding: 11px 12px; font-size: 14px; font-family: Montserrat, system-ui, sans-serif; font-weight: 600; background: #fff; color: #1e293b; width: 100%; box-sizing: border-box; transition: border-color 0.2s, outline 0.2s; } .ds-input:focus-visible { outline: 2px solid color-mix(in srgb, #4f46e5 35%, white); outline-offset: 1px; border-color: #a5b4fc; } .ds-input::placeholder { color: #98a2b3; } .ds-input.is-error { border-color: #b42318; } .ds-input.is-error:focus-visible { outline-color: color-mix(in srgb, #b42318 35%, transparent); }"
+    },
+    {
+      "name": "Card de Plato",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Unidad de contenido para un plato del recetario. Fondo blanco, bordes suaves.",
+      "html": "<div class=\"ds-dish-card\"><div class=\"ds-dish-main\"><p class=\"ds-dish-name\">Pasta boloñesa</p><p class=\"ds-dish-meta\">Ternera, tomate, cebolla</p></div><div class=\"ds-dish-badge\">Principal</div></div>",
+      "css": ".ds-dish-card { background: #fff; border-radius: 14px; padding: 16px 20px 16px 16px; box-shadow: 0 6px 20px rgba(15,23,42,0.08); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; min-height: 96px; font-family: Montserrat, system-ui, sans-serif; } .ds-dish-main { flex: 1 1 auto; min-width: 0; } .ds-dish-name { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: #1e293b; } .ds-dish-meta { margin: 0; font-size: 13px; color: #667085; font-weight: 600; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; } .ds-dish-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #1d4ed8; background: #dbeafe; white-space: nowrap; flex-shrink: 0; }"
+    },
+    {
+      "name": "Chip de Categoría",
+      "kind": "chip",
+      "refersTo": "button-secondary",
+      "description": "Filtro de categoría con punto de color. Pill, fondo neutro, activo con tinte índigo.",
+      "html": "<button class=\"ds-filter-chip ds-filter-chip-active\"><span class=\"ds-chip-dot\" style=\"background:#4f46e5\"></span>Principal</button>",
+      "css": ".ds-filter-chip { border: 1px solid #dbe2f0; background: #f8fafc; color: #334155; border-radius: 999px; min-height: 34px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: Montserrat, system-ui, sans-serif; transition: background 0.2s, border-color 0.2s, color 0.2s; } .ds-filter-chip:hover { background: #eef2ff; } .ds-filter-chip.ds-filter-chip-active { border-color: #7c8ac9; color: #1f2a5c; background: #eef2ff; } .ds-chip-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; flex-shrink: 0; }"
+    },
+    {
+      "name": "Bottom Nav (móvil)",
+      "kind": "nav",
+      "description": "Navegación fija inferior en dispositivos táctiles. Glassmorphismo con blur.",
+      "html": "<nav class=\"ds-bottom-nav\" aria-label=\"Navegación principal\"><a class=\"ds-bottom-nav-item ds-active\" href=\"#\"><svg class=\"ds-bottom-nav-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><polyline points=\"9 22 9 12 15 12 15 22\"/></svg><span>Semana</span></a><a class=\"ds-bottom-nav-item\" href=\"#\"><svg class=\"ds-bottom-nav-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2\"/><rect x=\"9\" y=\"3\" width=\"6\" height=\"4\" rx=\"2\"/></svg><span>Platos</span></a></nav>",
+      "css": ".ds-bottom-nav { display: flex; background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.9); padding: 10px 12px 12px; gap: 8px; font-family: Montserrat, system-ui, sans-serif; } .ds-bottom-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border-radius: 14px; text-decoration: none; color: #667085; font-weight: 600; font-size: 12px; flex: 1; transition: background 0.2s, color 0.2s; } .ds-bottom-nav-item.ds-active { background: #eef2ff; color: #4f46e5; } .ds-bottom-nav-icon { width: 22px; height: 22px; stroke: currentColor; fill: none; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Cocina Organizada",
+    "overview": "HomeFirst es la herramienta que hace desaparecer el caos doméstico del menú semanal. Su diseño sigue la misma lógica: cada elemento en su lugar, nada sobrando. Como una cocina bien organizada donde los utensilios están exactamente donde los esperas, la UI no sorprende — libera.\n\nLa paleta extrae su personalidad del delantal del chef: el índigo (#4f46e5) es preciso y confiable, nunca decorativo. Los fondos son claros casi hasta el blanco, con gradientes sutiles que dan profundidad sin llamar atención. Los bordes redondeados (24-32px) aportan calidez doméstica sin infantilizar. La sombra es ambiental y discreta.\n\nEste sistema rechaza expresamente la formalidad institucional de las apps bancarias y corporativas: sin grises planos, sin tablas densas, sin botones rectangulares apagados. La referencia es Calm (espacio en blanco que respira) cruzada con Airbnb (calidez controlada, jerarquía visual impecable).",
+    "keyCharacteristics": [
+      "Índigo como único color de acción — raro, por eso importa",
+      "Superficies en blanco puro o muy cercano al blanco",
+      "Tipografía Montserrat con pesos 600/700 — no hay texto normal",
+      "Esquinas muy redondeadas (24px+) en contenedores, píldoras (999px) en controles",
+      "Sombra ambiental y funcional; nunca decorativa"
+    ],
+    "rules": [
+      { "name": "La Regla del Color Único",    "body": "El Índigo Activo (#4f46e5) se usa en estados de acción e interacción únicamente. Nunca decorativo, nunca en texto largo. Su escasez es el punto.", "section": "colors" },
+      { "name": "La Regla del Gradiente de Página", "body": "El fondo de app usa un gradiente índigo→menta→blanco. Solo en el canvas raíz. Prohibido en cards o superficies internas.", "section": "colors" },
+      { "name": "La Regla del Semi-Bold Mínimo","body": "Este sistema no usa font-weight: 400 en ningún elemento visible. El mínimo es 600.", "section": "typography" },
+      { "name": "La Regla del Flat en Reposo",  "body": "Las superficies están planas en reposo. La sombra es una respuesta a estado (hover, z-index, modal), no decoración.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar --hf-brand (#4f46e5) exclusivamente para acciones, estados activos y foco.",
+      "Do mantener border-radius: 999px en todos los botones y controles pequeños.",
+      "Do usar font-weight: 600 o 700 en todo texto visible.",
+      "Do usar min-height: 44px en todos los targets táctiles en móvil.",
+      "Do respetar prefers-reduced-motion en toda animación nueva."
+    ],
+    "donts": [
+      "Don't usar apps bancarias o corporativas como referencia visual.",
+      "Don't añadir un segundo color de acción — el índigo es el único.",
+      "Don't usar color: #98a2b3 ni nada más claro que #667085 para texto sobre fondo claro.",
+      "Don't usar font-weight: 400 en ningún texto del producto.",
+      "Don't añadir gradientes de texto (background-clip: text).",
+      "Don't usar glassmorphismo más allá del header/bottom-nav ya existente.",
+      "Don't aplicar el gradiente de página en superficies internas.",
+      "Don't usar clamp() para tipografía en pantallas de producto."
+    ]
+  }
+}
