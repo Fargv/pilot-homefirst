@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../api.js";
 import CategoryChip from "./CategoryChip.jsx";
+import SearchableSelect from "./ui/SearchableSelect.jsx";
 import { emptyCategory, PASTEL_PALETTE, resolveCategoryColors } from "./categoryUtils.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
@@ -21,7 +22,7 @@ export default function IngredientPicker({
   const [createName, setCreateName] = useState("");
   const [createError, setCreateError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [categoryQuery, setCategoryQuery] = useState("");
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [lastUsedCategory, setLastUsedCategory] = useState(null);
   const [creatingCategory, setCreatingCategory] = useState(false);
@@ -32,6 +33,7 @@ export default function IngredientPicker({
   const searchInputRef = useRef(null);
   const createInputRef = useRef(null);
   const categoryNameInputRef = useRef(null);
+  const dupCheckTimer = useRef(null);
 
   useEffect(() => {
     if (onCreateStateChange) {
@@ -91,26 +93,12 @@ export default function IngredientPicker({
 
   const normalizedQuery = useMemo(() => normalizeIngredientName(query), [query]);
 
-  const filteredCategories = useMemo(() => {
-    if (!categoryQuery) return categories;
-    const lower = categoryQuery.toLowerCase();
-    return categories.filter((category) => category.name.toLowerCase().includes(lower));
-  }, [categories, categoryQuery]);
-
-  const normalizedCategoryQuery = useMemo(
-    () => normalizeIngredientName(categoryQuery),
-    [categoryQuery]
-  );
-
-  const hasExactCategory = useMemo(
-    () =>
-      Boolean(
-        normalizedCategoryQuery &&
-          categories.some(
-            (category) => normalizeIngredientName(category.name) === normalizedCategoryQuery
-          )
-      ),
-    [categories, normalizedCategoryQuery]
+  const categoryOptions = useMemo(
+    () => categories.map((c) => {
+      const colors = resolveCategoryColors(c);
+      return { value: c._id, label: c.name, dotColor: colors.colorText || "#344054" };
+    }),
+    [categories]
   );
 
   const visibleSuggestions = useMemo(() => {
@@ -156,7 +144,7 @@ export default function IngredientPicker({
     setCreateError("");
     setShowCreate(true);
     setSelectedCategory(lastUsedCategory);
-    setCategoryQuery("");
+    setDuplicateWarning(null);
     setShowCategoryModal(false);
     setCategoryDraftName("");
     setCategoryColor(null);
@@ -167,7 +155,7 @@ export default function IngredientPicker({
     setShowCreate(false);
     setCreateName("");
     setCreateError("");
-    setCategoryQuery("");
+    setDuplicateWarning(null);
     setSelectedCategory(null);
     setShowCategoryModal(false);
     setCategoryDraftName("");
@@ -209,6 +197,24 @@ export default function IngredientPicker({
     }
   };
 
+  const onCreateNameChange = (event) => {
+    const nextName = event.target.value;
+    setCreateName(nextName);
+    setDuplicateWarning(null);
+    clearTimeout(dupCheckTimer.current);
+    if (nextName.trim()) {
+      const canonical = normalizeIngredientName(nextName);
+      dupCheckTimer.current = setTimeout(() => {
+        apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(canonical)}`)
+          .then((data) => {
+            const match = (data.ingredients || []).find((i) => i.canonicalName === canonical);
+            if (match) setDuplicateWarning(match.name);
+          })
+          .catch(() => {});
+      }, 450);
+    }
+  };
+
   const handleCreateCategory = async () => {
     if (!onCategoryCreated) return;
     if (!categoryDraftName.trim()) return;
@@ -216,7 +222,6 @@ export default function IngredientPicker({
     try {
       const category = await onCategoryCreated(categoryDraftName.trim(), categoryColor);
       setSelectedCategory(category);
-      setCategoryQuery("");
       setShowCategoryModal(false);
       setCategoryDraftName("");
       setCategoryColor(null);
@@ -226,6 +231,8 @@ export default function IngredientPicker({
       setCreatingCategory(false);
     }
   };
+
+  useEffect(() => () => clearTimeout(dupCheckTimer.current), []);
 
   return (
     <div className="kitchen-ingredient-picker">
@@ -323,62 +330,38 @@ export default function IngredientPicker({
               </button>
             </div>
             <div className="kitchen-context-modal-body">
-              <label className="kitchen-field">
-                <span className="kitchen-label">Nombre del ingrediente</span>
+              <label className=”kitchen-field”>
+                <span className=”kitchen-label”>Nombre del ingrediente</span>
                 <input
-                  className="kitchen-input"
+                  className=”kitchen-input”
                   value={createName}
                   ref={createInputRef}
-                  onChange={(event) => setCreateName(event.target.value)}
+                  onChange={onCreateNameChange}
                 />
+                {duplicateWarning ? (
+                  <div className=”ingredient-duplicate-warning”>
+                    <svg viewBox=”0 0 16 16” width=”13” height=”13” fill=”none” aria-hidden=”true”>
+                      <circle cx=”8” cy=”8” r=”6.5” stroke=”currentColor” strokeWidth=”1.4” />
+                      <path d=”M8 5v3.5” stroke=”currentColor” strokeWidth=”1.5” strokeLinecap=”round” />
+                      <circle cx=”8” cy=”11” r=”0.8” fill=”currentColor” />
+                    </svg>
+                    El ingrediente <strong>{duplicateWarning}</strong> ya existe en el catálogo.
+                  </div>
+                ) : null}
               </label>
-              <div className="kitchen-field">
-                <span className="kitchen-label">Categoría</span>
-                <input
-                  className="kitchen-input"
-                  placeholder="Busca una categoría…"
-                  value={categoryQuery}
-                  onChange={(event) => setCategoryQuery(event.target.value)}
+              <div className=”kitchen-field”>
+                <span className=”kitchen-label”>Sección del supermercado</span>
+                <p className=”ingredient-category-hint”>
+                  Indica dónde encuentras normalmente este ingrediente en el supermercado.
+                </p>
+                <SearchableSelect
+                  options={categoryOptions}
+                  value={selectedCategory?._id || “”}
+                  onChange={(val) => setSelectedCategory(categories.find((c) => c._id === val) || null)}
+                  emptyLabel=”Seleccionar sección...”
+                  placeholder=”Buscar sección...”
+                  onCreate={onCategoryCreated ? (q) => { setCategoryDraftName(q); setShowCategoryModal(true); } : undefined}
                 />
-                <div className="kitchen-category-list">
-                  {filteredCategories.map((category) => {
-                    const colors = resolveCategoryColors(category);
-                    return (
-                      <button
-                        key={category._id}
-                        className={`kitchen-category-option ${
-                          selectedCategory?._id === category._id ? "selected" : ""
-                        }`}
-                        type="button"
-                        onClick={() => setSelectedCategory(category)}
-                      >
-                        <CategoryChip
-                          label={category.name}
-                          colorBg={colors.colorBg}
-                          colorText={colors.colorText}
-                        />
-                        {selectedCategory?._id === category._id ? (
-                          <span className="kitchen-category-check" aria-hidden="true">
-                            ✓
-                          </span>
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                  {!hasExactCategory && categoryQuery ? (
-                    <button
-                      className="kitchen-button ghost"
-                      type="button"
-                      onClick={() => {
-                        setCategoryDraftName(categoryQuery.trim());
-                        setCreateError("");
-                        setShowCategoryModal(true);
-                      }}
-                    >
-                      Crear categoría “{categoryQuery}”
-                    </button>
-                  ) : null}
-                </div>
               </div>
               {createError ? <div className="kitchen-inline-error">{createError}</div> : null}
             </div>
@@ -404,12 +387,12 @@ export default function IngredientPicker({
                 className="kitchen-context-modal small"
                 role="dialog"
                 aria-modal="true"
-                aria-label="Crear categoría"
+                aria-label="Nueva sección"
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="kitchen-context-modal-header">
                   <div>
-                    <h4>Crear categoría</h4>
+                    <h4>Nueva sección</h4>
                     <p className="kitchen-muted">Define el nombre y elige un color si quieres.</p>
                   </div>
                   <button
@@ -431,7 +414,7 @@ export default function IngredientPicker({
                 </div>
                 <div className="kitchen-context-modal-body">
                   <label className="kitchen-field">
-                    <span className="kitchen-label">Nombre de categoría</span>
+                    <span className="kitchen-label">Nombre de sección</span>
                     <input
                       className="kitchen-input"
                       value={categoryDraftName}
@@ -477,7 +460,7 @@ export default function IngredientPicker({
                     onClick={handleCreateCategory}
                     disabled={creatingCategory}
                   >
-                    {creatingCategory ? "Guardando..." : "Guardar categoría"}
+                    {creatingCategory ? "Guardando..." : "Guardar sección"}
                   </button>
                   <button
                     className="kitchen-button secondary"
