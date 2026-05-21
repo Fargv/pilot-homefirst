@@ -12747,3 +12747,194 @@ body {
   color: var(--hf-brand-darker) !important;
 }
 
+/* Dark contrast hardening: these selectors intentionally sit last so legacy
+   light-mode gradients and card-specific CSS cannot leak into dark mode. */
+[data-theme="dark"] .kitchen-week-arrow,
+[data-theme="dark"] .kitchen-week-now-button,
+[data-theme="dark"] .shopping-week-nav .kitchen-week-picker .kitchen-input,
+[data-theme="dark"] .shopping-week-header-navigator .kitchen-week-picker .kitchen-input,
+[data-theme="dark"] .kitchen-week-picker .kitchen-input,
+[data-theme="dark"] .shopping-store-select,
+[data-theme="dark"] .shopping-store-select-compact,
+[data-theme="dark"] .shopping-refresh-icon {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+}
+
+[data-theme="dark"] .kitchen-week-arrow:hover,
+[data-theme="dark"] .kitchen-week-now-button:hover,
+[data-theme="dark"] .shopping-refresh-icon:hover,
+[data-theme="dark"] .shopping-store-select:hover,
+[data-theme="dark"] .shopping-store-select-compact:hover {
+  background: var(--input-focus-bg);
+  border-color: var(--input-focus-border);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--border-focus) 18%, transparent);
+}
+
+@media (min-width: 901px) {
+  [data-theme="dark"] .shopping-controls-bar {
+    background: var(--surface-elevated);
+    border-color: var(--border-soft);
+    box-shadow: var(--card-shadow), inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+  }
+
+  [data-theme="dark"] .shopping-controls-divider {
+    background: var(--border-soft);
+  }
+}
+
+[data-theme="dark"] .shopping-main-card,
+[data-theme="dark"] .shopping-header-card,
+[data-theme="dark"] .shopping-categories {
+  background: transparent;
+}
+
+[data-theme="dark"] .shopping-category-card {
+  background: color-mix(in srgb, var(--category-bg, var(--surface-elevated)) 10%, var(--surface-elevated));
+  border-color: color-mix(in srgb, var(--category-text, var(--border-strong)) 28%, var(--border-soft));
+}
+
+[data-theme="dark"] .shopping-item {
+  background: var(--surface);
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .shopping-item-text,
+[data-theme="dark"] .shopping-category-head h4,
+[data-theme="dark"] .shopping-trip-date {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .shopping-item-amount,
+[data-theme="dark"] .shopping-qty-button,
+[data-theme="dark"] .shopping-remove-item {
+  background: var(--surface-elevated);
+  border-color: var(--border-soft);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .shopping-qty-button:hover,
+[data-theme="dark"] .shopping-remove-item:hover {
+  background: var(--dropdown-hover-bg);
+  border-color: var(--hf-brand);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .shopping-check {
+  border-color: color-mix(in srgb, var(--category-text, var(--hf-brand)) 42%, var(--border-soft));
+}
+
+[data-theme="dark"] .shopping-check-dot {
+  color: var(--button-primary-text);
+}
+
+[data-theme="dark"] .kitchen-day-card {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-day-title,
+[data-theme="dark"] .kitchen-day-title-primary,
+[data-theme="dark"] .kitchen-day-title-secondary,
+[data-theme="dark"] .kitchen-day-cook-name,
+[data-theme="dark"] .kitchen-day-dish-display {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-day-subtitle,
+[data-theme="dark"] .kitchen-day-meta,
+[data-theme="dark"] .kitchen-day-cook-attendees {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .kitchen-day-attendees-action,
+[data-theme="dark"] .kitchen-day-title-info-action,
+[data-theme="dark"] .kitchen-day-icon-action {
+  background: var(--button-secondary-bg);
+  border-color: var(--border-soft);
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .kitchen-day-attendees-action:hover,
+[data-theme="dark"] .kitchen-day-title-info-action:hover,
+[data-theme="dark"] .kitchen-day-icon-action:hover {
+  background: var(--dropdown-hover-bg);
+  border-color: var(--hf-brand);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-day-title-info-action.has-recipe {
+  background: var(--premium-bg);
+  border-color: var(--premium-border);
+  color: var(--premium-text);
+}
+
+[data-theme="dark"] .kitchen-day-info-popover {
+  background: var(--dropdown-bg);
+  border-color: var(--border-soft);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+[data-theme="dark"] .kitchen-day-info-popover strong,
+[data-theme="dark"] .kitchen-day-info-popover li {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-day-footer {
+  border-top-color: var(--border-soft);
+}
+
+[data-theme="dark"] .kitchen-day-attendance-toggle {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+}
+
+[data-theme="dark"] .kitchen-day-attendance-toggle-label {
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .kitchen-day-attendance-toggle-track {
+  background: color-mix(in srgb, var(--hf-brand) 24%, var(--surface-muted));
+  border-color: color-mix(in srgb, var(--hf-brand) 36%, var(--border-soft));
+}
+
+[data-theme="dark"] .kitchen-day-attendance-toggle-thumb {
+  background: var(--text-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .kitchen-day-attendance-toggle input:checked + .kitchen-day-attendance-toggle-track {
+  background: var(--button-primary-bg);
+  border-color: var(--button-primary-bg);
+}
+
+[data-theme="dark"] .kitchen-filter-chip,
+[data-theme="dark"] .kitchen-meal-tab,
+[data-theme="dark"] .kitchen-tab-button,
+[data-theme="dark"] .shopping-tab,
+[data-theme="dark"] .catalog-tab {
+  background: var(--chip-bg);
+  border-color: var(--chip-border);
+  color: var(--chip-text);
+}
+
+[data-theme="dark"] .kitchen-filter-chip.is-active,
+[data-theme="dark"] .kitchen-filter-chip.is-all,
+[data-theme="dark"] .kitchen-meal-tab.is-active,
+[data-theme="dark"] .kitchen-tab-button.is-active,
+[data-theme="dark"] .shopping-tab.active,
+[data-theme="dark"] .catalog-tab.active {
+  background: var(--chip-active-bg);
+  border-color: var(--hf-brand);
+  color: var(--chip-active-text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hf-brand) 22%, transparent);
+}
+
