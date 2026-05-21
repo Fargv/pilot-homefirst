@@ -8865,6 +8865,272 @@ body {
   margin-top: 12px;
 }
 
+/* Recipe indicator dot on tab */
+.dish-modal-recipe-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hf-brand, #4f46e5);
+  margin-left: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Recipe lock bar (Basic — has recipe, can't edit) */
+.dish-recipe-lock-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f9ff;
+  border: 1px solid #e0e7ff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+/* Dish modal advanced options section */
+.dish-modal-advanced {
+  margin-top: 4px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 14px;
+}
+
+.dish-modal-advanced-label {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--hf-muted, #94a3b8);
+}
+
+.dish-modal-flag-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.dish-modal-flag-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dish-modal-flag-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.dish-modal-flag-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dish-modal-flag-hint {
+  font-size: 12px;
+  color: var(--hf-muted, #94a3b8);
+}
+
+/* ─── SearchableSelect ───────────────────────────────────────────── */
+
+.ss-container {
+  position: relative;
+  width: 100%;
+}
+
+.ss-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--hf-border, #e2e8f0);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  text-align: left;
+  color: #0f172a;
+  transition: border-color 0.15s;
+}
+
+.ss-trigger:hover:not(:disabled) {
+  border-color: #c7d2fe;
+}
+
+.ss-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ss-container.is-open .ss-trigger {
+  border-color: var(--hf-brand, #4f46e5);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.ss-trigger-empty {
+  color: var(--hf-muted, #94a3b8);
+}
+
+.ss-trigger-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ss-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ss-chevron {
+  color: var(--hf-muted, #94a3b8);
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.ss-container.is-open .ss-chevron {
+  transform: rotate(180deg);
+}
+
+.ss-panel {
+  border: 1.5px solid var(--hf-brand, #4f46e5);
+  border-top: none;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.ss-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafbff;
+  color: var(--hf-muted, #94a3b8);
+}
+
+.ss-search {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 13.5px;
+  font-family: inherit;
+  outline: none;
+  color: #0f172a;
+}
+
+.ss-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ss-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-bottom: 1px solid #f9fafc;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-family: inherit;
+  text-align: left;
+  color: #334155;
+  transition: background 0.1s;
+}
+
+.ss-option:last-child {
+  border-bottom: none;
+}
+
+.ss-option:hover {
+  background: #f8f9ff;
+}
+
+.ss-option-selected {
+  background: #eff2ff;
+  color: #4338ca;
+  font-weight: 600;
+}
+
+.ss-option-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ss-check {
+  margin-left: auto;
+  color: #4f46e5;
+  flex-shrink: 0;
+}
+
+.ss-empty {
+  padding: 14px 12px;
+  font-size: 13px;
+  color: var(--hf-muted, #94a3b8);
+  text-align: center;
+  margin: 0;
+}
+
+.ss-option-create {
+  color: #4f46e5;
+  font-weight: 600;
+  gap: 6px;
+}
+
+/* ─── Ingredient modal extras ────────────────────────────────────── */
+
+.ingredient-category-hint {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  color: var(--hf-muted, #94a3b8);
+  line-height: 1.45;
+}
+
+.ingredient-duplicate-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+.ingredient-duplicate-warning svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #d97706;
+}
+
 /* ── Ingredient pill row: no "add to dish" button ──────── */
 .recipe-ingredient-row--pill {
   grid-template-columns: 1fr 110px 32px;
