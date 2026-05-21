@@ -12623,6 +12623,747 @@ body {
   border-color: color-mix(in srgb, var(--hf-brand) 24%, var(--border-soft));
 }
 
+/* Gamified onboarding and rewards */
+.onboarding-reward-toast-wrap {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1200;
+  pointer-events: auto;
+}
+
+.onboarding-reward-toast {
+  min-width: 240px;
+  max-width: 340px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  color: #fff;
+  background: #1e1b4b;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  animation: onboardingToastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.onboarding-reward-toast-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #312e81;
+  border-radius: 10px;
+}
+
+.onboarding-reward-toast-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.onboarding-reward-toast-subtitle {
+  margin: 2px 0 0;
+  color: #a5b4fc;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.onboarding-reward-toast-bites,
+.onboarding-reward-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #4338ca;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.onboarding-reward-toast-bites {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: #fbbf24;
+  font-size: 15px;
+}
+
+.onboarding-guide-pill {
+  position: fixed;
+  right: 16px;
+  bottom: 74px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #4338ca, #6d28d9);
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 4px 18px rgba(67, 56, 202, 0.4);
+  cursor: pointer;
+}
+
+.onboarding-guide-card {
+  margin: 0 16px 12px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+  border: 1.5px solid #c7d2fe;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.08);
+}
+
+.onboarding-guide-top,
+.onboarding-guide-heading,
+.onboarding-guide-actions,
+.onboarding-guide-next-row,
+.onboarding-guide-subprogress,
+.onboarding-panel-title-row,
+.onboarding-panel-progress-row,
+.onboarding-panel-bites,
+.onboarding-challenge-summary,
+.onboarding-challenge-title-row,
+.onboarding-screen-check {
+  display: flex;
+  align-items: center;
+}
+
+.onboarding-guide-top,
+.onboarding-guide-next-row,
+.onboarding-panel-title-row,
+.onboarding-challenge-title-row {
+  justify-content: space-between;
+}
+
+.onboarding-guide-top {
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.onboarding-guide-heading,
+.onboarding-guide-actions {
+  gap: 6px;
+}
+
+.onboarding-guide-heading span {
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.onboarding-guide-actions span {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.onboarding-guide-minimize {
+  padding: 2px;
+  color: #9ca3af;
+  font-size: 16px;
+  line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.onboarding-progress {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  background: #e5e7eb;
+  border-radius: 999px;
+}
+
+.onboarding-progress-compact {
+  height: 5px;
+  margin-bottom: 10px;
+  background: #ddd6fe;
+}
+
+.onboarding-progress-mini {
+  height: 4px;
+  background: #ddd6fe;
+}
+
+.onboarding-progress > div {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: inherit;
+  transition: width 0.5s ease;
+}
+
+.onboarding-progress.is-completed > div {
+  background: #16a34a;
+}
+
+.onboarding-guide-next {
+  cursor: pointer;
+}
+
+.onboarding-guide-kicker {
+  margin: 0 0 3px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.onboarding-guide-next-title {
+  flex: 1;
+  margin: 0;
+  color: #1e1b4b;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.onboarding-guide-next-row {
+  gap: 8px;
+}
+
+.onboarding-guide-subprogress {
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.onboarding-guide-subprogress span {
+  flex-shrink: 0;
+  color: #6366f1;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.onboarding-guide-howto {
+  margin: 5px 0 0;
+  color: #4b5563;
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.onboarding-guide-complete {
+  margin: 0;
+  color: #374151;
+  font-size: 13px;
+}
+
+.onboarding-guide-view-all {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #4338ca, #6d28d9);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.onboarding-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(15, 15, 35, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.onboarding-panel-sheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.18);
+}
+
+.onboarding-panel-header {
+  flex-shrink: 0;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.onboarding-panel-title-row {
+  margin-bottom: 8px;
+}
+
+.onboarding-panel-title-row h3 {
+  margin: 0;
+  color: #1e1b4b;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.onboarding-panel-title-row p {
+  margin: 2px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.onboarding-panel-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 18px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.onboarding-panel-progress-row {
+  gap: 10px;
+}
+
+.onboarding-panel-progress-row > span {
+  flex-shrink: 0;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.onboarding-panel-bites {
+  gap: 6px;
+  margin-top: 8px;
+  color: #374151;
+  font-size: 13px;
+}
+
+.onboarding-panel-bites span span {
+  color: #9ca3af;
+}
+
+.onboarding-panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 32px;
+}
+
+.onboarding-phase-group {
+  margin-bottom: 20px;
+}
+
+.onboarding-phase-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 5px 10px;
+  background: var(--onboarding-phase-bg);
+  border: 1px solid var(--onboarding-phase-border);
+  border-radius: 8px;
+}
+
+.onboarding-phase-header span {
+  color: var(--onboarding-phase-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.onboarding-challenge-row {
+  margin-bottom: 6px;
+  padding: 10px 14px;
+  background: #fafafa;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.onboarding-challenge-row.is-active {
+  background: #f8faff;
+  border-color: #c7d2fe;
+}
+
+.onboarding-challenge-row.is-completed {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.onboarding-challenge-row.is-locked {
+  opacity: 0.5;
+}
+
+.onboarding-challenge-summary {
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.onboarding-challenge-row.is-completed .onboarding-challenge-summary,
+.onboarding-challenge-row.is-locked .onboarding-challenge-summary {
+  cursor: default;
+}
+
+.onboarding-challenge-status {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #d1d5db;
+}
+
+.onboarding-challenge-status > span {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+}
+
+.onboarding-challenge-row.is-active .onboarding-challenge-status > span {
+  background: #eef2ff;
+  border-color: #4338ca;
+  border-width: 2.5px;
+}
+
+.onboarding-challenge-row.is-completed .onboarding-challenge-status {
+  color: #16a34a;
+}
+
+.onboarding-challenge-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.onboarding-challenge-title-row {
+  gap: 8px;
+}
+
+.onboarding-challenge-title {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.onboarding-challenge-row.is-active .onboarding-challenge-title {
+  color: #1e1b4b;
+  font-weight: 700;
+}
+
+.onboarding-challenge-row.is-completed .onboarding-challenge-title {
+  color: #6b7280;
+  text-decoration: line-through;
+}
+
+.onboarding-challenge-row.is-locked .onboarding-challenge-title {
+  color: #9ca3af;
+}
+
+.onboarding-challenge-reward {
+  flex-shrink: 0;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.onboarding-challenge-row.is-active .onboarding-challenge-reward {
+  color: #4338ca;
+}
+
+.onboarding-challenge-row.is-completed .onboarding-challenge-reward {
+  color: #6b7280;
+}
+
+.onboarding-challenge-description,
+.onboarding-challenge-locked-copy {
+  margin: 4px 0 0;
+  color: #4b5563;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.onboarding-challenge-locked-copy {
+  margin-top: 3px;
+  color: #9ca3af;
+  font-size: 11px;
+  font-style: italic;
+}
+
+.onboarding-challenge-detail {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.onboarding-challenge-detail > .onboarding-challenge-description {
+  margin: 0 0 6px;
+  line-height: 1.6;
+}
+
+.onboarding-challenge-note,
+.onboarding-challenge-hint {
+  padding: 10px 12px;
+  margin: 8px 0;
+  background: #eef2ff;
+  border-radius: 8px;
+}
+
+.onboarding-challenge-hint {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 7px;
+}
+
+.onboarding-challenge-note-title,
+.onboarding-challenge-hint p {
+  margin: 0;
+  color: #4338ca;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.onboarding-challenge-note-title {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.onboarding-screen-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.onboarding-screen-check {
+  gap: 6px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.onboarding-screen-check.is-visited {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.onboarding-completed-state {
+  padding: 24px 0;
+  text-align: center;
+}
+
+.onboarding-completed-icon {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #16a34a, #065f46);
+  border-radius: 50%;
+}
+
+.onboarding-completed-state h4 {
+  margin: 0 0 8px;
+  color: #1e1b4b;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.onboarding-completed-state p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+[data-theme="dark"] .onboarding-guide-card {
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--hf-brand) 18%, transparent) 0%, transparent 42%),
+    linear-gradient(135deg, var(--surface-elevated) 0%, var(--card-bg) 100%);
+  border-color: color-mix(in srgb, var(--hf-brand) 28%, var(--border-soft));
+  box-shadow: var(--card-shadow), inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+[data-theme="dark"] .onboarding-guide-heading span,
+[data-theme="dark"] .onboarding-guide-subprogress span,
+[data-theme="dark"] .onboarding-panel-progress-row > span,
+[data-theme="dark"] .onboarding-reward-badge {
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .onboarding-guide-actions span,
+[data-theme="dark"] .onboarding-guide-kicker,
+[data-theme="dark"] .onboarding-guide-howto,
+[data-theme="dark"] .onboarding-panel-title-row p,
+[data-theme="dark"] .onboarding-panel-bites span span,
+[data-theme="dark"] .onboarding-challenge-description,
+[data-theme="dark"] .onboarding-completed-state p {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .onboarding-guide-minimize,
+[data-theme="dark"] .onboarding-panel-close {
+  color: var(--text-secondary);
+  background: var(--button-secondary-bg);
+  border: 1px solid var(--border-soft);
+}
+
+[data-theme="dark"] .onboarding-guide-next-title,
+[data-theme="dark"] .onboarding-guide-complete,
+[data-theme="dark"] .onboarding-panel-title-row h3,
+[data-theme="dark"] .onboarding-panel-bites,
+[data-theme="dark"] .onboarding-completed-state h4 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .onboarding-progress {
+  background: color-mix(in srgb, var(--hf-brand) 16%, var(--surface-muted));
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 18%, var(--border-soft));
+}
+
+[data-theme="dark"] .onboarding-progress > div {
+  background: linear-gradient(90deg, var(--hf-brand), var(--hf-brand-darker));
+}
+
+[data-theme="dark"] .onboarding-progress.is-completed > div {
+  background: linear-gradient(90deg, var(--success-text), #22c55e);
+}
+
+[data-theme="dark"] .onboarding-panel-backdrop {
+  background: rgba(7, 10, 20, 0.72);
+}
+
+[data-theme="dark"] .onboarding-panel-sheet {
+  color: var(--text-primary);
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.48);
+}
+
+[data-theme="dark"] .onboarding-panel-header {
+  border-bottom-color: var(--border-soft);
+}
+
+[data-theme="dark"] .onboarding-panel-scroll {
+  scrollbar-color: color-mix(in srgb, var(--hf-brand) 40%, var(--surface-muted)) transparent;
+}
+
+[data-theme="dark"] .onboarding-phase-header {
+  background: color-mix(in srgb, var(--onboarding-phase-accent) 13%, var(--surface-elevated));
+  border-color: color-mix(in srgb, var(--onboarding-phase-accent) 36%, var(--border-soft));
+}
+
+[data-theme="dark"] .onboarding-phase-header span {
+  color: color-mix(in srgb, var(--onboarding-phase-accent) 62%, var(--text-primary));
+}
+
+[data-theme="dark"] .onboarding-challenge-row {
+  background: var(--surface-elevated);
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .onboarding-challenge-row.is-active {
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--hf-brand) 16%, transparent) 0%, transparent 44%),
+    var(--surface-elevated);
+  border-color: color-mix(in srgb, var(--hf-brand) 48%, var(--border-soft));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hf-brand) 16%, transparent);
+}
+
+[data-theme="dark"] .onboarding-challenge-row.is-completed {
+  background: color-mix(in srgb, var(--success-text) 12%, var(--surface-elevated));
+  border-color: color-mix(in srgb, var(--success-text) 34%, var(--border-soft));
+}
+
+[data-theme="dark"] .onboarding-challenge-row.is-locked {
+  opacity: 1;
+  background: color-mix(in srgb, var(--surface-muted) 62%, var(--surface-elevated));
+  border-color: color-mix(in srgb, var(--border-soft) 74%, transparent);
+}
+
+[data-theme="dark"] .onboarding-challenge-status {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .onboarding-challenge-status > span {
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+
+[data-theme="dark"] .onboarding-challenge-row.is-active .onboarding-challenge-status > span {
+  background: color-mix(in srgb, var(--hf-brand) 18%, var(--surface));
+  border-color: var(--hf-brand-darker);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hf-brand) 16%, transparent);
+}
+
+[data-theme="dark"] .onboarding-challenge-row.is-completed .onboarding-challenge-status,
+[data-theme="dark"] .onboarding-screen-check.is-visited {
+  color: var(--success-text);
+}
+
+[data-theme="dark"] .onboarding-challenge-title,
+[data-theme="dark"] .onboarding-challenge-row.is-active .onboarding-challenge-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .onboarding-challenge-row.is-completed .onboarding-challenge-title {
+  color: var(--success-text);
+}
+
+[data-theme="dark"] .onboarding-challenge-row.is-locked .onboarding-challenge-title,
+[data-theme="dark"] .onboarding-challenge-locked-copy,
+[data-theme="dark"] .onboarding-screen-check,
+[data-theme="dark"] .onboarding-challenge-reward {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .onboarding-challenge-row.is-active .onboarding-challenge-reward {
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .onboarding-challenge-row.is-completed .onboarding-challenge-reward {
+  color: var(--success-text);
+}
+
+[data-theme="dark"] .onboarding-challenge-detail {
+  border-top-color: var(--border-soft);
+}
+
+[data-theme="dark"] .onboarding-challenge-note,
+[data-theme="dark"] .onboarding-challenge-hint {
+  background: color-mix(in srgb, var(--hf-brand) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 22%, var(--border-soft));
+}
+
+[data-theme="dark"] .onboarding-challenge-note-title,
+[data-theme="dark"] .onboarding-challenge-hint p {
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .onboarding-reward-toast {
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 34%, var(--border-soft));
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.46);
+}
+
+[data-theme="dark"] .onboarding-reward-toast-icon {
+  background: color-mix(in srgb, var(--warning-text) 16%, var(--surface-muted));
+  border: 1px solid color-mix(in srgb, var(--warning-text) 28%, var(--border-soft));
+}
+
+[data-theme="dark"] .onboarding-reward-toast-subtitle {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .onboarding-reward-toast-bites {
+  color: var(--warning-text);
+}
+
 [data-theme="dark"] .recipe-editor-wrap .ProseMirror {
   color: var(--text-primary);
 }
