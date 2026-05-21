@@ -13728,3 +13728,191 @@ body {
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent);
 }
 
+/* Dark mode polish: targeted contrast and surface hierarchy fixes. */
+[data-theme="dark"] .kitchen-week-nav-row,
+[data-theme="dark"] .shopping-controls-bar,
+[data-theme="dark"] .shopping-week-nav-row {
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--hf-brand) 16%, transparent) 0%, transparent 38%),
+    var(--surface-elevated);
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 30%, var(--border-soft));
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--hf-brand) 10%, transparent),
+    0 14px 34px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+[data-theme="dark"] .kitchen-week-nav-row .kitchen-week-arrow,
+[data-theme="dark"] .kitchen-week-nav-row .kitchen-week-now-button,
+[data-theme="dark"] .kitchen-week-nav-row .kitchen-week-picker .kitchen-input,
+[data-theme="dark"] .shopping-week-nav-row .kitchen-week-arrow,
+[data-theme="dark"] .shopping-week-nav-row .kitchen-week-now-button,
+[data-theme="dark"] .shopping-week-nav-row .kitchen-week-picker .kitchen-input {
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--hf-brand) 24%, var(--border-soft));
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+[data-theme="dark"] .kitchen-week-nav-row .kitchen-week-arrow:hover,
+[data-theme="dark"] .kitchen-week-nav-row .kitchen-week-now-button:hover,
+[data-theme="dark"] .shopping-week-nav-row .kitchen-week-arrow:hover,
+[data-theme="dark"] .shopping-week-nav-row .kitchen-week-now-button:hover {
+  background: var(--input-focus-bg);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--border-focus) 18%, transparent);
+}
+
+[data-theme="dark"] .dinner-gate-pro-badge {
+  color: var(--text-primary);
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--hf-brand) 78%, var(--surface-elevated)) 0%,
+      color-mix(in srgb, #a78bfa 72%, var(--surface-elevated)) 100%);
+  border: 1px solid color-mix(in srgb, var(--hf-brand-darker) 42%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hf-brand) 16%, transparent);
+}
+
+[data-theme="dark"] .kitchen-day-cook-block.is-editing .kitchen-assignee-button {
+  background: var(--surface-elevated);
+  border-color: color-mix(in srgb, var(--hf-brand) 24%, var(--border-soft));
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+[data-theme="dark"] .kitchen-day-cook-block.is-editing .kitchen-assignee-button:hover,
+[data-theme="dark"] .kitchen-day-cook-block.is-editing .kitchen-assignee-button:focus-visible {
+  background: var(--input-focus-bg);
+  border-color: var(--border-focus);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-day-cook-block.is-editing .kitchen-assignee-name,
+[data-theme="dark"] .kitchen-day-cook-block.is-editing .kitchen-assignee-button span {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-link-add-ingredient {
+  color: var(--hf-brand-darker);
+  font-weight: 700;
+}
+
+[data-theme="dark"] .kitchen-link-add-ingredient:hover,
+[data-theme="dark"] .kitchen-link-add-ingredient:focus-visible {
+  color: var(--text-primary);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--hf-brand) 34%, transparent);
+}
+
+[data-theme="dark"] .shopping-category-card {
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--category-text, var(--hf-brand)) 13%, transparent) 0%, transparent 34%),
+    color-mix(in srgb, var(--category-bg, var(--surface-elevated)) 8%, var(--surface-elevated));
+  border-color: color-mix(in srgb, var(--category-text, var(--hf-brand)) 46%, var(--border-soft));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--category-text, var(--hf-brand)) 14%, transparent),
+    0 14px 32px rgba(0, 0, 0, 0.24);
+}
+
+[data-theme="dark"] .shopping-category-card:hover {
+  border-color: color-mix(in srgb, var(--category-text, var(--hf-brand)) 60%, var(--border-focus));
+}
+
+[data-theme="dark"] .shopping-check {
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  border-color: color-mix(in srgb, var(--category-text, var(--hf-brand-darker)) 66%, var(--border-focus));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--category-text, var(--hf-brand)) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+[data-theme="dark"] .shopping-check:hover {
+  border-color: color-mix(in srgb, var(--category-text, var(--hf-brand-darker)) 78%, var(--text-primary));
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--category-text, var(--hf-brand)) 18%, transparent),
+    0 0 16px color-mix(in srgb, var(--category-text, var(--hf-brand)) 16%, transparent);
+}
+
+[data-theme="dark"] .shopping-check.is-checked {
+  background: color-mix(in srgb, var(--category-text, var(--hf-brand)) 62%, var(--button-primary-bg));
+  border-color: color-mix(in srgb, var(--category-text, var(--hf-brand-darker)) 72%, var(--text-primary));
+}
+
+[data-theme="dark"] .kitchen-dishes-tabs,
+[data-theme="dark"] .dishes-explorer-nav {
+  background: var(--surface-elevated);
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 28%, var(--border-soft));
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--hf-brand) 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+[data-theme="dark"] .kitchen-dishes-tabs .kitchen-tab-button,
+[data-theme="dark"] .dishes-explorer-nav .kitchen-tab-button,
+[data-theme="dark"] .shopping-tabs-inline .kitchen-tab-button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .kitchen-dishes-tabs .kitchen-tab-button.is-active,
+[data-theme="dark"] .dishes-explorer-nav .kitchen-tab-button.is-active,
+[data-theme="dark"] .shopping-tabs-inline .kitchen-tab-button.is-active {
+  background: var(--nav-active-bg);
+  border-color: color-mix(in srgb, var(--hf-brand) 38%, var(--border-soft));
+  color: var(--nav-active-text);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 color-mix(in srgb, var(--text-primary) 7%, transparent);
+}
+
+[data-theme="dark"] .catalog-pack-dish-preview {
+  background: color-mix(in srgb, var(--surface-elevated) 72%, var(--surface));
+  border-color: color-mix(in srgb, var(--hf-brand) 18%, var(--border-soft));
+}
+
+[data-theme="dark"] .catalog-pack-dish-preview-item,
+[data-theme="dark"] .catalog-pack-dish-preview-name {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .catalog-pack-dish-preview-name {
+  font-weight: 700;
+}
+
+[data-theme="dark"] .catalog-pack-dish-preview-teaser {
+  color: color-mix(in srgb, var(--text-secondary) 78%, var(--text-muted));
+}
+
+[data-theme="dark"] .catalog-pack-dish-preview-dot {
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .kitchen-user-menu {
+  background: var(--dropdown-bg);
+  border-color: color-mix(in srgb, var(--hf-brand) 24%, var(--border-soft));
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.46);
+}
+
+[data-theme="dark"] .kitchen-user-menu button {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .kitchen-user-menu button .kitchen-user-menu-icon {
+  color: var(--text-muted);
+  stroke: currentColor;
+}
+
+[data-theme="dark"] .kitchen-user-menu button:hover,
+[data-theme="dark"] .kitchen-user-menu button:focus-visible {
+  background: var(--dropdown-hover-bg);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-user-menu button:hover .kitchen-user-menu-icon,
+[data-theme="dark"] .kitchen-user-menu button:focus-visible .kitchen-user-menu-icon {
+  color: var(--hf-brand-darker);
+}
+
