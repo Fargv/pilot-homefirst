@@ -2,13 +2,12 @@ import { HiddenMaster } from "../models/HiddenMaster.js";
 import { CATALOG_SCOPES } from "./catalogScopes.js";
 
 export const DISH_HIDDEN_MASTER_TYPES = {
-  MAIN: "dish",
-  SIDE: "side"
+  MAIN: "dish"
 };
 
-export function buildManualPlanningDishFilter({ sidedish = false, isDinner = null } = {}) {
+export function buildManualPlanningDishFilter({ isDinner = null } = {}) {
   return {
-    sidedish: sidedish ? true : { $ne: true },
+    sidedish: { $ne: true },
     active: { $ne: false },
     isArchived: { $ne: true },
     deletedAt: null,
@@ -62,7 +61,7 @@ function normalizeIds(ids = []) {
 
 function hiddenMasterKey(dishLike) {
   if (!dishLike?._id) return "";
-  return `${getDishHiddenMasterType(dishLike)}:${String(dishLike._id)}`;
+  return `${getDishHiddenMasterType()}:${String(dishLike._id)}`;
 }
 
 function dedupeById(entries = []) {
@@ -79,8 +78,8 @@ function dedupeById(entries = []) {
   return result;
 }
 
-export function getDishHiddenMasterType(dishLike) {
-  return dishLike?.sidedish ? DISH_HIDDEN_MASTER_TYPES.SIDE : DISH_HIDDEN_MASTER_TYPES.MAIN;
+export function getDishHiddenMasterType() {
+  return DISH_HIDDEN_MASTER_TYPES.MAIN;
 }
 
 export async function resolveDishCatalogForHousehold({

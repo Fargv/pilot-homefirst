@@ -525,14 +525,13 @@ export default function SettingsPage() {
     }
     setDeletedLoading(true);
     try {
-      const [dishesData, sidesData, ingredientsData] = await Promise.all([
+      const [dishesData, ingredientsData] = await Promise.all([
         apiRequest("/api/kitchen/dishes?includeInactive=true"),
-        apiRequest("/api/kitchen/dishes?sidedish=true&includeInactive=true"),
         apiRequest("/api/kitchenIngredients?includeInactive=true&limit=0")
       ]);
       setDeletedItems({
         dishes: (dishesData?.dishes || []).filter((item) => item?.active === false),
-        sides: (sidesData?.dishes || []).filter((item) => item?.active === false),
+        sides: [],
         ingredients: (ingredientsData?.ingredients || []).filter((item) => item?.active === false)
       });
     } catch (err) {
@@ -1744,7 +1743,6 @@ export default function SettingsPage() {
       <div className="settings-block">
         <div className="kitchen-dishes-tabs" role="tablist" aria-label="Secciones eliminadas">
           <button type="button" className={`kitchen-tab-button ${deletedTab === "dishes" ? "is-active" : ""}`} onClick={() => setDeletedTab("dishes")}>Platos eliminados</button>
-          <button type="button" className={`kitchen-tab-button ${deletedTab === "sides" ? "is-active" : ""}`} onClick={() => setDeletedTab("sides")}>Guarniciones eliminadas</button>
           <button type="button" className={`kitchen-tab-button ${deletedTab === "ingredients" ? "is-active" : ""}`} onClick={() => setDeletedTab("ingredients")}>Ingredientes eliminados</button>
         </div>
       </div>
@@ -1761,17 +1759,6 @@ export default function SettingsPage() {
             </div>
           </div>
         ))}
-        {!deletedLoading && deletedTab === "sides" && deletedItems.sides.map((dish) => (
-          <div key={dish._id} className="settings-row-card">
-            <div>
-              <strong>{dish.name}</strong>
-              <p className="kitchen-muted">Guarnicion eliminada</p>
-            </div>
-            <div className="settings-row-actions">
-              <button type="button" className="settings-mini-button" onClick={() => restoreDeletedItem("side", dish._id)}>Recuperar</button>
-            </div>
-          </div>
-        ))}
         {!deletedLoading && deletedTab === "ingredients" && deletedItems.ingredients.map((ingredient) => (
           <div key={ingredient._id} className="settings-row-card">
             <div>
@@ -1784,7 +1771,6 @@ export default function SettingsPage() {
           </div>
         ))}
         {!deletedLoading && deletedTab === "dishes" && !deletedItems.dishes.length ? <p className="kitchen-muted">No hay platos eliminados.</p> : null}
-        {!deletedLoading && deletedTab === "sides" && !deletedItems.sides.length ? <p className="kitchen-muted">No hay guarniciones eliminadas.</p> : null}
         {!deletedLoading && deletedTab === "ingredients" && !deletedItems.ingredients.length ? <p className="kitchen-muted">No hay ingredientes eliminados.</p> : null}
       </div>
     </div>
@@ -1860,7 +1846,7 @@ export default function SettingsPage() {
             <CardButton title="Bites" subtitle="Saldo y movimientos de tus Bites." onClick={() => setPanel("bites")} />
             {canAccessShare ? <CardButton title="Compartir" subtitle="Invitaciones por email y código de acceso." onClick={() => setPanel("share")} /> : null}
             {canManageCategories ? <CardButton title="Categorias" subtitle="Gestion de categorias." onClick={() => setPanel("categorias")} /> : null}
-            {canManageDeleted ? <CardButton title="Eliminados" subtitle="Recupera platos, guarniciones e ingredientes." onClick={() => setPanel("eliminados")} /> : null}
+            {canManageDeleted ? <CardButton title="Eliminados" subtitle="Recupera platos e ingredientes eliminados." onClick={() => setPanel("eliminados")} /> : null}
             <div className="settings-upgrade-card">
               <h3>{licenseActionLabel}</h3>
               <p className="kitchen-muted">Solicita un plan para tu hogar y deja la activación lista para la beta.</p>

@@ -12,14 +12,12 @@ const EMPTY_FORM = {
   name: "",
   ingredients: [],
   dishCategoryId: "",
-  sidedish: false,
   isDinner: false,
   special: false,
   allowRandom: true,
   active: true,
   isArchived: false
 };
-const GUARNICIONES_CATEGORY_ID = "69ac7016c0755cd97c6a9b63";
 
 export default function DishModal({
   isOpen,
@@ -31,7 +29,6 @@ export default function DishModal({
   onCategoryCreated,
   initialDish = null,
   initialName = "",
-  initialSidedish = false,
   initialIsDinner = false,
   scope = undefined
 }) {
@@ -95,11 +92,6 @@ export default function DishModal({
     },
     [fetchIngredientMatch]
   );
-  const guarnicionesCategoryId = useMemo(
-    () => dishCategories.find((category) => String(category?.code || "").toLowerCase() === "guarniciones")?._id || GUARNICIONES_CATEGORY_ID,
-    [dishCategories]
-  );
-
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
@@ -114,10 +106,7 @@ export default function DishModal({
         setForm({
           name: initialDish.name || "",
           ingredients,
-          dishCategoryId: Boolean(initialDish.sidedish)
-            ? guarnicionesCategoryId
-            : (initialDish.dishCategoryId?._id || initialDish.dishCategoryId || ""),
-          sidedish: Boolean(initialDish.sidedish),
+          dishCategoryId: initialDish.dishCategoryId?._id || initialDish.dishCategoryId || "",
           isDinner: Boolean(initialDish.isDinner),
           special: Boolean(initialDish.special),
           allowRandom: initialDish.allowRandom !== false,
@@ -142,8 +131,7 @@ export default function DishModal({
         setForm({
           name: initialName || "",
           ingredients: [],
-          dishCategoryId: initialSidedish ? guarnicionesCategoryId : "",
-          sidedish: Boolean(initialSidedish),
+          dishCategoryId: "",
           isDinner: Boolean(initialIsDinner),
           special: false,
           allowRandom: true,
@@ -158,7 +146,7 @@ export default function DishModal({
     return () => {
       active = false;
     };
-  }, [guarnicionesCategoryId, initialDish, initialName, initialSidedish, initialIsDinner, isOpen, resolveIngredients]);
+  }, [initialDish, initialName, initialIsDinner, isOpen, resolveIngredients]);
 
   const pendingCount = useMemo(
     () => (form.ingredients || []).filter((item) => item.status === "pending").length,
@@ -191,8 +179,7 @@ export default function DishModal({
         scope: scope || initialDish?.scope || "household",
         active: Boolean(form.active),
         isArchived: Boolean(form.isArchived),
-        dishCategoryId: form.sidedish ? guarnicionesCategoryId : (form.dishCategoryId || null),
-        sidedish: form.sidedish,
+        dishCategoryId: form.dishCategoryId || null,
         isDinner: form.isDinner,
         special: form.special,
         allowRandom: form.allowRandom,
@@ -237,7 +224,6 @@ export default function DishModal({
         body: JSON.stringify({
           name: form.name,
           ingredients: updatedIngredients,
-          sidedish: form.sidedish,
           isDinner: form.isDinner,
           special: form.special,
           active: form.active,
@@ -393,52 +379,27 @@ export default function DishModal({
               placeholder="Ej. Pollo al horno"
             />
           </label>
-          <div className="kitchen-field kitchen-toggle-field">
-            <div className="kitchen-toggle-row">
-              <span className="kitchen-label">Guarnición</span>
-              <label className="kitchen-toggle" htmlFor="dish-sideswitch">
-                <input
-                  id="dish-sideswitch"
-                  type="checkbox"
-                  className="kitchen-toggle-input"
-                  checked={form.sidedish}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      sidedish: event.target.checked,
-                      dishCategoryId: event.target.checked
-                        ? guarnicionesCategoryId
-                        : (String(prev.dishCategoryId || "") === String(guarnicionesCategoryId) ? "" : prev.dishCategoryId)
-                    }))
-                  }
-                />
-                <span className="kitchen-toggle-track" aria-hidden="true" />
-              </label>
-            </div>
-          </div>
-          {!form.sidedish ? (
-            <label className="kitchen-field">
-              <span className="kitchen-label">Categoría del plato</span>
-              <select
-                className="kitchen-select kitchen-category-select"
-                value={form.dishCategoryId || ""}
-                onChange={(event) => setForm((prev) => ({ ...prev, dishCategoryId: event.target.value }))}
-              >
-                <option value="">Sin categoría</option>
-                {dishCategories.map((category) => (
-                  <option key={category._id} value={category._id}>
-                    {`● ${category.name}`}
-                  </option>
-                ))}
-              </select>
-              {selectedDishCategory ? (
-                <span className="kitchen-category-preview">
-                  <span className="kitchen-category-preview-dot" style={{ background: selectedDishCategory.colorText || "#344054" }} />
-                  {selectedDishCategory.name}
-                </span>
-              ) : null}
-            </label>
-          ) : null}
+          <label className="kitchen-field">
+            <span className="kitchen-label">Categoría del plato</span>
+            <select
+              className="kitchen-select kitchen-category-select"
+              value={form.dishCategoryId || ""}
+              onChange={(event) => setForm((prev) => ({ ...prev, dishCategoryId: event.target.value }))}
+            >
+              <option value="">Sin categoría</option>
+              {dishCategories.map((category) => (
+                <option key={category._id} value={category._id}>
+                  {`● ${category.name}`}
+                </option>
+              ))}
+            </select>
+            {selectedDishCategory ? (
+              <span className="kitchen-category-preview">
+                <span className="kitchen-category-preview-dot" style={{ background: selectedDishCategory.colorText || "#344054" }} />
+                {selectedDishCategory.name}
+              </span>
+            ) : null}
+          </label>
           <div className="kitchen-field kitchen-toggle-field">
             <div className="kitchen-toggle-row">
               <span className="kitchen-label">Plato de cena</span>

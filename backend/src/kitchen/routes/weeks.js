@@ -1,7 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
 import { KitchenDish } from "../models/KitchenDish.js";
-import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { Household } from "../models/Household.js";
@@ -152,22 +151,6 @@ function buildDefaultAttendeeIds(members = [], mealType = "lunch") {
 function dishCategoryKey(dish) {
   if (!dish?.dishCategoryId) return "";
   return String(dish.dishCategoryId);
-}
-
-async function resolveExcludedGuarnicionesCategoryIds(dishes = []) {
-  const categoryIds = dedupeIds(
-    dishes
-      .map((dish) => dishCategoryKey(dish))
-      .filter(Boolean)
-  );
-  if (!categoryIds.length) return new Set();
-  const categories = await KitchenDishCategory.find({
-    _id: { $in: categoryIds },
-    code: "guarniciones"
-  })
-    .select("_id")
-    .lean();
-  return new Set(categories.map((category) => String(category._id)));
 }
 
 function resolveDayAttendeeIds(day, defaultAttendeeIds = [], mealType = "lunch") {
@@ -583,24 +566,13 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
         Model: KitchenDish,
         householdId: effectiveHouseholdId,
         ids: [mainDishId],
-        filter: buildManualPlanningDishFilter({ sidedish: false, isDinner: isDinnerMeal(mealType) })
+        filter: buildManualPlanningDishFilter({ isDinner: isDinnerMeal(mealType) })
       });
       if (!mainDish) {
         return res.status(400).json({ ok: false, error: "El plato principal no pertenece a este hogar." });
       }
     }
 
-    if (sideDishId) {
-      const [sideDish] = await resolveDishCatalogForHousehold({
-        Model: KitchenDish,
-        householdId: effectiveHouseholdId,
-        ids: [sideDishId],
-        filter: buildManualPlanningDishFilter({ sidedish: true, isDinner: isDinnerMeal(mealType) })
-      });
-      if (!sideDish) {
-        return res.status(400).json({ ok: false, error: "La guarnicion no pertenece a este hogar." });
-      }
-    }
 
     const members = await loadHouseholdMembers(effectiveHouseholdId);
     const validMemberIdSet = new Set(dedupeIds(members.map((member) => member._id)));
@@ -809,11 +781,7 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       householdId: effectiveHouseholdId,
       filter: buildRandomizableMainDishFilter({ isDinner: isDinnerMeal(mealType) })
     });
-    const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(allEligibleRaw);
-    const allEligible = allEligibleRaw.filter((dish) => {
-      const categoryId = dishCategoryKey(dish);
-      return !categoryId || !excludedGuarnicionesCategoryIds.has(categoryId);
-    });
+    const allEligible = allEligibleRaw;
     if (!allEligible.length) {
       const allVisible = await resolveDishCatalogForHousehold({
         Model: KitchenDish,
@@ -980,11 +948,7 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       householdId: effectiveHouseholdId,
       filter: buildRandomizableMainDishFilter({ isDinner: isDinnerMeal(mealType) })
     });
-    const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(candidatesRaw);
-    const candidatesAll = candidatesRaw.filter((dish) => {
-      const categoryId = dishCategoryKey(dish);
-      return !categoryId || !excludedGuarnicionesCategoryIds.has(categoryId);
-    });
+    const candidatesAll = candidatesRaw;
 
     if (!candidatesAll.length) {
       const allVisible = await resolveDishCatalogForHousehold({

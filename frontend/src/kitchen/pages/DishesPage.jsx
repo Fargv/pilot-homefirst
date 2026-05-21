@@ -113,7 +113,6 @@ export default function DishesPage() {
   const [selectedMealFilter, setSelectedMealFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("main");
   const [showOnlyCatalog, setShowOnlyCatalog] = useState(false);
-  const [initialSidedish, setInitialSidedish] = useState(false);
   const [ingredients, setIngredients] = useState([]);
   const [ingredientsLoading, setIngredientsLoading] = useState(false);
   const [ingredientsError, setIngredientsError] = useState("");
@@ -167,15 +166,8 @@ export default function DishesPage() {
     setLoading(true);
     setDishError("");
     try {
-      const [mainData, sideData] = await Promise.all([
-        apiRequest("/api/kitchen/dishes"),
-        apiRequest("/api/kitchen/dishes?sidedish=true")
-      ]);
-      const merged = new Map();
-      [...(mainData.dishes || []), ...(sideData.dishes || [])].forEach((dish) => {
-        if (dish?._id) merged.set(dish._id, dish);
-      });
-      setDishes(Array.from(merged.values()));
+      const data = await apiRequest("/api/kitchen/dishes");
+      setDishes(data.dishes || []);
     } catch (err) {
       setDishError(err.message || "No se pudieron cargar los platos.");
     } finally {
@@ -232,7 +224,6 @@ export default function DishesPage() {
     setActiveDish(null);
     setDishError("");
     setDishSuggestionName("");
-    setInitialSidedish(activeTab === "side");
     setIsModalOpen(true);
   };
 
@@ -240,7 +231,6 @@ export default function DishesPage() {
     setActiveDish(null);
     setDishError("");
     setDishSuggestionName(name);
-    setInitialSidedish(false);
     setIsModalOpen(true);
   };
 
@@ -258,8 +248,7 @@ export default function DishesPage() {
         scope: dish.scope || "household",
         active: dish.active !== false,
         isArchived: Boolean(dish.isArchived),
-        dishCategoryId: dish.sidedish ? null : (dish?.dishCategoryId?._id || dish?.dishCategoryId || null),
-        sidedish: Boolean(dish.sidedish),
+        dishCategoryId: dish?.dishCategoryId?._id || dish?.dishCategoryId || null,
         isDinner: Boolean(dish.isDinner),
         special: Boolean(dish.special),
         allowRandom: dish.allowRandom !== false,
@@ -337,10 +326,7 @@ export default function DishesPage() {
     () => normalizeIngredientName(dishSearchTerm),
     [dishSearchTerm]
   );
-  const tabFilteredDishes = useMemo(() => {
-    const shouldShowSide = activeTab === "side";
-    return dishes.filter((dish) => Boolean(dish.sidedish) === shouldShowSide);
-  }, [activeTab, dishes]);
+  const tabFilteredDishes = useMemo(() => dishes, [dishes]);
   const mealFilteredDishes = useMemo(() => {
     if (selectedMealFilter === MEAL_FILTERS.ALL) return tabFilteredDishes;
     if (selectedMealFilter === MEAL_FILTERS.DINNER) {
@@ -420,9 +406,7 @@ export default function DishesPage() {
           ? "No hay cenas disponibles con este filtro."
           : "No hay comidas disponibles con este filtro.";
       }
-      return activeTab === "side"
-        ? "No hay guarniciones aún. Crea la primera."
-        : "No hay platos principales aún. Crea el primero.";
+      return "No hay platos aún. Crea el primero.";
     }
     return "";
   }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, activeTab, dishSearchTerm, dishes.length, selectedDishCategoryId, selectedMealFilter, showOnlyCatalog, visibleDishes.length]);
@@ -861,9 +845,7 @@ export default function DishesPage() {
       : "Administra tus platos y sus ingredientes en un solo lugar.";
   const headerActionLabel = isIngredientsTab
     ? isDiodGlobalMode ? "Nuevo ingrediente master" : "Nuevo ingrediente"
-    : activeTab === "side"
-      ? isDiodGlobalMode ? "Nueva guarnición master" : "Nueva guarnición"
-      : isDiodGlobalMode ? "Nuevo plato master" : "Nuevo plato";
+    : isDiodGlobalMode ? "Nuevo plato master" : "Nuevo plato";
   const headerActionHandler = isIngredientsTab ? startIngredientCreate : startCreate;
 
   return (
@@ -889,15 +871,6 @@ export default function DishesPage() {
               onClick={() => setActiveTab("main")}
             >
               Platos
-            </button>
-            <button
-              className={`kitchen-tab-button ${activeTab === "side" ? "is-active" : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "side"}
-              onClick={() => setActiveTab("side")}
-            >
-              Guarniciones
             </button>
             <button
               className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
@@ -1222,14 +1195,14 @@ export default function DishesPage() {
               const categoryKey = dish?.dishCategoryId?._id || dish?.dishCategoryId || "";
               const dishCategory = categoryKey ? dishCategoryMap.get(String(categoryKey)) : null;
               const dishCategoryCode = resolveCategoryCode(dishCategory);
-              const showCategoryIcon = !dish.sidedish && Boolean(dishCategoryCode);
+              const showCategoryIcon = Boolean(dishCategoryCode);
               const randomEnabled = dish.allowRandom !== false;
               const toggleDisabled = dishTogglePendingId === dish._id;
               const isCatalogDish = dish.source === "catalog";
               const packColor = isCatalogDish && dish.sourcePackColor ? dish.sourcePackColor : null;
               return (
                 <article
-                  className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""} ${isCatalogDish ? "is-catalog" : ""}`}
+                  className={`kitchen-dish-card ${isCatalogDish ? "is-catalog" : ""}`}
                   key={dish._id}
                   style={packColor ? { borderLeftColor: packColor, background: `linear-gradient(100deg, ${packColor}14 0%, #fff 60%)` } : undefined}
                 >
@@ -1248,18 +1221,16 @@ export default function DishesPage() {
                         ) : null}
                       </div>
                     </div>
-                    {!dish.sidedish ? (
-                      <div className="kitchen-dish-category-meta">
-                        {showCategoryIcon ? (
-                          <CategoryIcon
-                            categoryCode={dishCategoryCode}
-                            className="kitchen-dish-category-icon"
-                            title={dishCategory?.name || dishCategoryCode}
-                          />
-                        ) : null}
-                        <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
-                      </div>
-                    ) : null}
+                    <div className="kitchen-dish-category-meta">
+                      {showCategoryIcon ? (
+                        <CategoryIcon
+                          categoryCode={dishCategoryCode}
+                          className="kitchen-dish-category-icon"
+                          title={dishCategory?.name || dishCategoryCode}
+                        />
+                      ) : null}
+                      <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
+                    </div>
                     {isCatalogDish && dish.sourcePackTitle ? (
                       <div className="kitchen-dish-catalog-origin">
                         <svg viewBox="0 0 14 14" aria-hidden="true" style={{ width: 11, height: 11, flexShrink: 0 }}>
@@ -1394,7 +1365,7 @@ export default function DishesPage() {
                           </svg>
                         </button>
                       ) : null}
-                      {dish.sidedish || user?.role === "admin" || user?.role === "owner" || user?.globalRole === "diod" ? (
+                      {user?.role === "admin" || user?.role === "owner" || user?.globalRole === "diod" ? (
                         <button
                           className="kitchen-icon-button danger"
                           type="button"
@@ -1457,7 +1428,6 @@ export default function DishesPage() {
         onCategoryCreated={onCategoryCreated}
         initialDish={activeDish}
         initialName={dishSuggestionName}
-        initialSidedish={initialSidedish}
         initialIsDinner={Boolean(activeDish?.isDinner)}
         scope={isDiodGlobalMode ? "master" : undefined}
       />

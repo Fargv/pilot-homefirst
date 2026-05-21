@@ -104,7 +104,6 @@ function normalizeDishTemplateForHash(template = {}) {
   return {
     name: String(template.name || "").trim(),
     teaser: String(template.teaser || "").trim(),
-    sidedish: Boolean(template.sidedish),
     isDinner: Boolean(template.isDinner),
     special: Boolean(template.special),
     allowRandom: template.allowRandom !== false,
@@ -137,7 +136,6 @@ function catalogContentHash(template) {
 function dishFieldsFromTemplate(template) {
   return {
     name: template.name,
-    sidedish: Boolean(template.sidedish),
     isDinner: Boolean(template.isDinner),
     special: Boolean(template.special),
     allowRandom: template.allowRandom !== false,

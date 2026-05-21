@@ -23,7 +23,6 @@ const DishTemplateSchema = new mongoose.Schema(
     dishTemplateId: { type: String, default: null, trim: true },
     name: { type: String, required: true, trim: true },
     teaser: { type: String, default: "", trim: true },
-    sidedish: { type: Boolean, default: false },
     isDinner: { type: Boolean, default: false },
     special: { type: Boolean, default: false },
     allowRandom: { type: Boolean, default: true },

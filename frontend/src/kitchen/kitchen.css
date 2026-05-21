@@ -949,11 +949,6 @@ body {
   min-width: 0;
 }
 
-.kitchen-dish-card.is-sidedish {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-}
-
 .kitchen-dish-title-row {
   display: flex;
   flex-wrap: wrap;
@@ -3813,7 +3808,6 @@ body {
 }
 
 .kitchen-day-card.is-empty,
-.kitchen-dish-card.is-sidedish,
 .kitchen-ui-button-secondary,
 .kitchen-button.secondary,
 .kitchen-status-pill.planned,

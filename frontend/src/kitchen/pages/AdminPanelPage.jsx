@@ -492,7 +492,7 @@ function QuickSubscriptionPanel() {
 
 // ─── Master Catalog ──────────────────────────────────────────────────────────
 
-function DishForm({ item, sidedish, dishCategories, onSave, onCancel }) {
+function DishForm({ item, dishCategories, onSave, onCancel }) {
   const isEdit = Boolean(item._id);
 
   // ── Basic fields ────────────────────────────────────────────────────────────
@@ -600,7 +600,7 @@ function DishForm({ item, sidedish, dishCategories, onSave, onCancel }) {
   return (
     <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 20, marginBottom: 16 }}>
       <h4 style={{ margin: "0 0 14px", fontSize: 15, color: "#1e293b", fontWeight: 700 }}>
-        {isEdit ? `✏️ Editar: ${item.name}` : `➕ Nuevo ${sidedish ? "guarnición" : "plato"} master`}
+        {isEdit ? `✏️ Editar: ${item.name}` : "➕ Nuevo plato master"}
       </h4>
       <form onSubmit={handleSubmit}>
 
@@ -611,22 +611,20 @@ function DishForm({ item, sidedish, dishCategories, onSave, onCancel }) {
             <div style={{ flex: "1 1 200px" }}>
               <Input id="df-name" label="Nombre" value={form.name} onChange={set("name")} required />
             </div>
-            {!sidedish && (
-              <div style={{ flex: "1 1 160px" }}>
-                <label style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                  <span className="kitchen-label">Categoría de plato</span>
-                  <select className="kitchen-select" value={form.dishCategoryId} onChange={set("dishCategoryId")}>
-                    <option value="">Sin categoría</option>
-                    {dishCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-                  </select>
-                </label>
-              </div>
-            )}
+            <div style={{ flex: "1 1 160px" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <span className="kitchen-label">Categoría de plato</span>
+                <select className="kitchen-select" value={form.dishCategoryId} onChange={set("dishCategoryId")}>
+                  <option value="">Sin categoría</option>
+                  {dishCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+                </select>
+              </label>
+            </div>
           </div>
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 13 }}>
             {[
               ["active", "Activo"],
-              ...(!sidedish ? [["isDinner", "Es cena"]] : []),
+              ["isDinner", "Es cena"],
               ["special", "Especial (no random)"],
               ["allowRandom", "Permitir random"]
             ].map(([key, label]) => (
@@ -790,7 +788,7 @@ function DishForm({ item, sidedish, dishCategories, onSave, onCancel }) {
   );
 }
 
-function MasterDishesPanel({ sidedish, dishCategories }) {
+function MasterDishesPanel({ dishCategories }) {
   const [dishes, setDishes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -802,15 +800,14 @@ function MasterDishesPanel({ sidedish, dishCategories }) {
     setLoading(true);
     setError("");
     try {
-      const url = `/api/kitchen/dishes?global=1&includeInactive=true${sidedish ? "&sidedish=true" : ""}`;
-      const data = await apiRequest(url);
+      const data = await apiRequest("/api/kitchen/dishes?global=1&includeInactive=true");
       setDishes(data.dishes || []);
     } catch (err) {
       setError(err.message || "Error al cargar.");
     } finally {
       setLoading(false);
     }
-  }, [sidedish]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -823,7 +820,6 @@ function MasterDishesPanel({ sidedish, dishCategories }) {
     const body = {
       name: form.name,
       scope: "master",
-      sidedish,
       active: form.active,
       isDinner: form.isDinner,
       special: form.special,
@@ -881,7 +877,7 @@ function MasterDishesPanel({ sidedish, dishCategories }) {
           style={{ width: 200, fontSize: 13 }}
         />
         <button type="button" style={{ ...ABT.save, padding: "6px 14px", fontSize: 13 }} onClick={() => setEditItem({})}>
-          + Nuevo {sidedish ? "guarnición" : "plato"}
+          + Nuevo plato
         </button>
         <button type="button" style={ABT.edit} onClick={load} disabled={loading}>
           {loading ? "..." : "↺ Recargar"}
@@ -891,7 +887,6 @@ function MasterDishesPanel({ sidedish, dishCategories }) {
       {editItem !== null && (
         <DishForm
           item={editItem}
-          sidedish={sidedish}
           dishCategories={dishCategories}
           onSave={handleSave}
           onCancel={() => setEditItem(null)}
@@ -901,16 +896,16 @@ function MasterDishesPanel({ sidedish, dishCategories }) {
       {error ? <div className="kitchen-alert error">{error}</div> : null}
 
       {loading ? <p className="kitchen-muted">Cargando...</p> : filtered.length === 0 ? (
-        <p className="kitchen-muted">No hay {sidedish ? "guarniciones" : "platos"} master.</p>
+        <p className="kitchen-muted">No hay platos master.</p>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <table className="kitchen-table">
             <thead>
               <tr>
                 <th>Nombre</th>
-                {!sidedish && <th>Categoría</th>}
+                <th>Categoría</th>
                 <th style={{ textAlign: "center" }}>Activo</th>
-                {!sidedish && <th style={{ textAlign: "center" }}>Cena</th>}
+                <th style={{ textAlign: "center" }}>Cena</th>
                 <th style={{ textAlign: "center" }}>Special</th>
                 <th>Acciones</th>
               </tr>
@@ -919,9 +914,9 @@ function MasterDishesPanel({ sidedish, dishCategories }) {
               {filtered.map((dish) => (
                 <tr key={dish._id} style={{ opacity: dish.active === false ? 0.5 : 1 }}>
                   <td style={{ fontWeight: 500 }}>{dish.name}</td>
-                  {!sidedish && <td style={{ fontSize: 12, color: "#6b7280" }}>{dish.dishCategoryId?.name || "—"}</td>}
+                  <td style={{ fontSize: 12, color: "#6b7280" }}>{dish.dishCategoryId?.name || "—"}</td>
                   <td style={{ textAlign: "center" }}>{dish.active !== false ? "✓" : "✗"}</td>
-                  {!sidedish && <td style={{ textAlign: "center" }}>{dish.isDinner ? "✓" : "—"}</td>}
+                  <td style={{ textAlign: "center" }}>{dish.isDinner ? "✓" : "—"}</td>
                   <td style={{ textAlign: "center" }}>{dish.special ? "★" : "—"}</td>
                   <td>
                     <div style={{ display: "flex", gap: 4 }}>
@@ -1148,7 +1143,6 @@ function MasterCatalogSection() {
 
   const subTabs = [
     { key: "dishes", label: "Platos" },
-    { key: "sides", label: "Guarniciones" },
     { key: "ingredients", label: "Ingredientes" }
   ];
 
@@ -1156,7 +1150,7 @@ function MasterCatalogSection() {
     <Card className="kitchen-block-gap">
       <div style={{ marginBottom: 16 }}>
         <h2 className="kitchen-title-no-margin">Catálogo Master</h2>
-        <p className="kitchen-muted">Platos, guarniciones e ingredientes que aparecen en todos los hogares. Los cambios aquí afectan a todo el mundo.</p>
+        <p className="kitchen-muted">Platos e ingredientes que aparecen en todos los hogares. Los cambios aquí afectan a todo el mundo.</p>
       </div>
 
       <div style={{
@@ -1179,8 +1173,7 @@ function MasterCatalogSection() {
         ))}
       </div>
 
-      {subTab === "dishes" && <MasterDishesPanel sidedish={false} dishCategories={dishCategories} />}
-      {subTab === "sides" && <MasterDishesPanel sidedish={true} dishCategories={dishCategories} />}
+      {subTab === "dishes" && <MasterDishesPanel dishCategories={dishCategories} />}
       {subTab === "ingredients" && <MasterIngredientsPanel ingredientCategories={ingredientCategories} />}
     </Card>
   );
@@ -1350,7 +1343,7 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
 
   const addDish = () => {
     const next = [...dishes, {
-      name: "", teaser: "", sidedish: false, isDinner: false,
+      name: "", teaser: "", isDinner: false,
       special: Boolean(defaults.defaultSpecial),
       allowRandom: defaults.defaultAllowRandom !== false,
       dishCategoryId: null, ingredients: [],
@@ -1440,7 +1433,7 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
                 <span style={{ fontSize: 10, color: "#9ca3af" }}>Máx. 120 caracteres. Se muestra como preview comercial — no reveles la receta completa.</span>
               </label>
               <div style={{ display: "flex", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
-                {[["sidedish", "Acompañamiento"], ["isDinner", "Cena"], ["special", "Especial"], ["allowRandom", "Aleatorio"]].map(([key, label]) => (
+                {[["isDinner", "Cena"], ["special", "Especial"], ["allowRandom", "Aleatorio"]].map(([key, label]) => (
                   <label key={key} style={{ display: "flex", gap: 4, alignItems: "center", fontSize: 12, cursor: "pointer" }}>
                     <input type="checkbox" checked={Boolean(dish[key])} onChange={(e) => updateDish(i, { [key]: e.target.checked })} />
                     {label}
@@ -1496,7 +1489,6 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, onSaved, baseBitePri
     dishTemplateId: d.dishTemplateId || null,
     name: d.name || "",
     teaser: d.teaser || "",
-    sidedish: Boolean(d.sidedish),
     isDinner: Boolean(d.isDinner),
     special: Boolean(d.special),
     allowRandom: d.allowRandom !== false,
@@ -1609,7 +1601,6 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, onSaved, baseBitePri
     dishTemplateId: d.dishTemplateId || null,
     name: d.name.trim(),
     teaser: d.teaser?.trim() || "",
-    sidedish: d.sidedish,
     isDinner: d.isDinner,
     special: d.special,
     allowRandom: d.allowRandom,

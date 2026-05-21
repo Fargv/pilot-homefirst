@@ -22,7 +22,6 @@ const KitchenDishSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     dishCategoryId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDishCategory", default: null, index: true },
     ingredients: { type: [IngredientSchema], default: [] },
-    sidedish: { type: Boolean, default: false },
     isDinner: { type: Boolean, default: false },
     special: { type: Boolean, default: false },
     allowRandom: { type: Boolean, default: true },

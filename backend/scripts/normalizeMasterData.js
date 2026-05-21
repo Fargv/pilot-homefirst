@@ -214,11 +214,6 @@ function inferDishCategory(dish, { dishCategoryLookup, overrides }) {
     }
   }
 
-  if (dish?.sidedish) {
-    const category = findCategoryByName("Guarniciones", dishCategoryLookup);
-    if (category) return { category, reason: "sidedish fallback" };
-  }
-
   return { category: null, reason: "no safe dish category inference" };
 }
 

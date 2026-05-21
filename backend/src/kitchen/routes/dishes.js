@@ -20,8 +20,6 @@ import {
 import { buildManualPlanningDishFilter, getDishHiddenMasterType, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 
 const router = express.Router();
-// Fallback ObjectId for the "Guarniciones" dish category when it cannot be found by its code.
-const GUARNICIONES_FALLBACK_ID = "69ac7016c0755cd97c6a9b63";
 
 function parseBooleanField(value, fallback = false) {
   if (typeof value === "boolean") return value;
@@ -48,20 +46,6 @@ async function resolveDishCategoryId(rawValue) {
     throw new Error("La categoría de plato seleccionada no existe.");
   }
   return category._id;
-}
-
-async function resolveGuarnicionesCategoryId() {
-  const byCode = await KitchenDishCategory.findOne({ code: "guarniciones", active: { $ne: false } })
-    .select("_id")
-    .lean();
-  if (byCode?._id) return byCode._id;
-  if (mongoose.isValidObjectId(GUARNICIONES_FALLBACK_ID)) {
-    const byFallbackId = await KitchenDishCategory.findOne({ _id: GUARNICIONES_FALLBACK_ID, active: { $ne: false } })
-      .select("_id")
-      .lean();
-    if (byFallbackId?._id) return byFallbackId._id;
-  }
-  throw new Error("La categoría 'Guarniciones' no existe o está inactiva.");
 }
 
 function shouldIncludeMainInShopping(day) {
@@ -239,7 +223,7 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
 
 router.get("/", requireAuth, async (req, res) => {
   try {
-    const { sidedish, includeInactive, isDinner } = req.query;
+    const { includeInactive, isDinner } = req.query;
     // ?global=1 forces master-only results (DIOD admin catalog view)
     const forceMaster = isDiodUser(req.kitchenUser) && req.query.global === "1";
     const optionalHouseholdId = forceMaster ? null : getOptionalHouseholdId(req.user);
@@ -247,25 +231,14 @@ router.get("/", requireAuth, async (req, res) => {
     const hasIsDinnerFilter = isDinner === "true" || isDinner === "false";
     const listFilter = shouldIncludeInactive
       ? {
-          sidedish: sidedish === "true" ? true : { $ne: true },
+          sidedish: { $ne: true },
           isArchived: { $ne: true },
           deletedAt: null,
           ...(hasIsDinnerFilter ? { isDinner: isDinner === "true" } : {})
         }
       : buildManualPlanningDishFilter({
-          sidedish: sidedish === "true",
           isDinner: hasIsDinnerFilter ? isDinner === "true" : null
         });
-
-    if (sidedish === "true") {
-      const dishes = await resolveDishCatalogForHousehold({
-        Model: KitchenDish,
-        householdId: optionalHouseholdId,
-        filter: listFilter,
-        sort: { createdAt: -1 }
-      });
-      return res.json({ ok: true, dishes });
-    }
 
     const dishes = optionalHouseholdId
       ? await resolveDishCatalogForHousehold({
@@ -290,12 +263,11 @@ router.get("/", requireAuth, async (req, res) => {
 router.post("/", requireAuth, async (req, res) => {
   try {
     const body = req.body || {};
-    const { name, ingredients, sidedish, special, isDinner, scope, active, isArchived, allowRandom } = body;
+    const { name, ingredients, special, isDinner, scope, active, isArchived, allowRandom } = body;
     const dishCategoryId = body?.dishCategoryId ?? null;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
 
     const normalizedIngredients = normalizeIngredientList(ingredients || []);
-    const isSideDish = parseBooleanField(sidedish, false);
     const isSpecial = parseBooleanField(special, false);
     const dinnerDish = parseBooleanField(isDinner, false);
     const randomAllowed = parseBooleanField(allowRandom, true);
@@ -311,13 +283,11 @@ router.post("/", requireAuth, async (req, res) => {
     const resolvedDishCategoryId = dishCategoryId
       ? await resolveDishCategoryId(dishCategoryId)
       : null;
-    const guarnicionesCategoryId = isSideDish ? await resolveGuarnicionesCategoryId() : null;
 
     const dish = await KitchenDish.create({
       name: String(name).trim(),
       ingredients: normalizedIngredients,
-      dishCategoryId: isSideDish ? guarnicionesCategoryId : (resolvedDishCategoryId ?? null),
-      sidedish: isSideDish,
+      dishCategoryId: resolvedDishCategoryId ?? null,
       isDinner: dinnerDish,
       special: isSpecial,
       allowRandom: randomAllowed,
@@ -329,16 +299,11 @@ router.post("/", requireAuth, async (req, res) => {
       householdId: isMasterWrite ? undefined : effectiveHouseholdId
     });
 
-    if (!isMasterWrite && isSideDish) {
-      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
-    }
-
     return res.status(201).json({ ok: true, dish });
   } catch (error) {
     if (
       error?.message === "Categoría de plato no válida."
       || error?.message === "La categoría de plato seleccionada no existe."
-      || error?.message === "La categoría 'Guarniciones' no existe o está inactiva."
     ) {
       return res.status(400).json({ ok: false, error: error.message });
     }
@@ -351,7 +316,7 @@ router.post("/", requireAuth, async (req, res) => {
 router.put("/:id", requireAuth, async (req, res) => {
   try {
     const body = req.body || {};
-    const { name, ingredients, sidedish, special, isDinner, active, isArchived, allowRandom } = body;
+    const { name, ingredients, special, isDinner, active, isArchived, allowRandom } = body;
     const hasDishCategoryInput = Object.prototype.hasOwnProperty.call(body, "dishCategoryId");
     const dishCategoryId = hasDishCategoryInput ? body.dishCategoryId : undefined;
     const optionalHouseholdId = getOptionalHouseholdId(req.user);
@@ -364,7 +329,6 @@ router.put("/:id", requireAuth, async (req, res) => {
       active: parseBooleanField(active, dish.active !== false),
       special: parseBooleanField(special, Boolean(dish.special)),
       isDinner: parseBooleanField(isDinner, Boolean(dish.isDinner)),
-      sidedish: parseBooleanField(sidedish, Boolean(dish.sidedish)),
       allowRandom: parseBooleanField(allowRandom, dish.allowRandom !== false),
       isArchived: parseBooleanField(isArchived, Boolean(dish.isArchived))
     };
@@ -375,12 +339,8 @@ router.put("/:id", requireAuth, async (req, res) => {
     else nextData.name = dish.name;
     if (Array.isArray(ingredients)) nextData.ingredients = normalizeIngredientList(ingredients);
     else nextData.ingredients = dish.ingredients;
-    if (nextData.sidedish) {
-      nextData.dishCategoryId = await resolveGuarnicionesCategoryId();
-    } else if (resolvedDishCategoryId !== undefined) {
+    if (resolvedDishCategoryId !== undefined) {
       nextData.dishCategoryId = resolvedDishCategoryId;
-    } else if (dish.sidedish && !nextData.sidedish) {
-      nextData.dishCategoryId = null;
     } else {
       nextData.dishCategoryId = dish.dishCategoryId || null;
     }
@@ -403,7 +363,6 @@ router.put("/:id", requireAuth, async (req, res) => {
         scope: CATALOG_SCOPES.OVERRIDE,
         masterId: dish._id,
         householdId: requiredHouseholdId,
-        sidedish: nextData.sidedish,
         isDinner: nextData.isDinner,
         dishCategoryId: nextData.dishCategoryId,
         active: nextData.active,
@@ -457,7 +416,6 @@ router.put("/:id", requireAuth, async (req, res) => {
     if (
       error?.message === "Categoría de plato no válida."
       || error?.message === "La categoría de plato seleccionada no existe."
-      || error?.message === "La categoría 'Guarniciones' no existe o está inactiva."
     ) {
       return res.status(400).json({ ok: false, error: error.message });
     }
@@ -614,7 +572,6 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
         override = new KitchenDish({
           name: dish.name,
           ingredients: dish.ingredients,
-          sidedish: dish.sidedish,
           isDinner: dish.isDinner,
           dishCategoryId: dish.dishCategoryId,
           active: dish.active !== false,
