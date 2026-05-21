@@ -322,6 +322,7 @@ export default function WeekPage() {
   const [missingWeekPromptOpen, setMissingWeekPromptOpen] = useState(false);
   const [dinnerUpgradeOpen, setDinnerUpgradeOpen] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
+  const canUseDinners = canUseDinnersFeature(subscriptionPlan);
   const selectedMealType = (dinnersEnabled && canUseDinners) ? normalizeMealType(mealTab) : "lunch";
   const visibleDays = useMemo(
     () => safeDays.filter((day) => dayMealType(day) === selectedMealType),
@@ -338,7 +339,6 @@ export default function WeekPage() {
   const hasIncompleteVisibleDays = visibleDays.some((day) => !day?.mainDishId && !day?.isLeftovers);
   const canShowWeekRandomize = Boolean(plan && visibleDays.length && hasIncompleteVisibleDays);
   const canUseFullWeekRandomization = canRandomizeFullWeek(subscriptionPlan);
-  const canUseDinners = canUseDinnersFeature(subscriptionPlan);
   const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
   const currentHouseholdKey = currentHouseholdId ? String(currentHouseholdId) : "__no_household__";
   const dishesReadyForCurrentHousehold = !dishesLoading && dishesLoadedForHouseholdKey === currentHouseholdKey;
