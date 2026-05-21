@@ -2615,7 +2615,7 @@ export default function WeekPage() {
                                     openDishModal(dayKey, trimmedMainDishQuery);
                                   }}
                                 >
-                                  Crear nuevo plato “{trimmedMainDishQuery}”
+                                  Crear nuevo plato "{trimmedMainDishQuery}"
                                 </button>
                               ) : (
                                 <div className="kitchen-muted kitchen-suggestion-empty">Sin coincidencias.</div>
@@ -2643,7 +2643,7 @@ export default function WeekPage() {
                     </label>
                   ) : null}
 
-                  {!(currentMealType === “dinner” && leftoversState.enabled) ? (
+                  {!(currentMealType === "dinner" && leftoversState.enabled) ? (
                     <>
                   <div className="kitchen-day-ingredients">
                     <span className="kitchen-label">Ingredientes</span>
