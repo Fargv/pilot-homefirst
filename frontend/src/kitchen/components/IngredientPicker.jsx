@@ -253,7 +253,7 @@ export default function IngredientPicker({
             {searching ? <div className="kitchen-muted">Buscando...</div> : null}
             {!searching && visibleSuggestions.length === 0 ? (
               <button className="kitchen-button ghost" type="button" onClick={() => openCreateFlow(query)}>
-                Crear “{query}”
+                Crear "{query}"
               </button>
             ) : (
               visibleSuggestions.map((item) => (
@@ -330,36 +330,36 @@ export default function IngredientPicker({
               </button>
             </div>
             <div className="kitchen-context-modal-body">
-              <label className=”kitchen-field”>
-                <span className=”kitchen-label”>Nombre del ingrediente</span>
+              <label className="kitchen-field">
+                <span className="kitchen-label">Nombre del ingrediente</span>
                 <input
-                  className=”kitchen-input”
+                  className="kitchen-input"
                   value={createName}
                   ref={createInputRef}
                   onChange={onCreateNameChange}
                 />
                 {duplicateWarning ? (
-                  <div className=”ingredient-duplicate-warning”>
-                    <svg viewBox=”0 0 16 16” width=”13” height=”13” fill=”none” aria-hidden=”true”>
-                      <circle cx=”8” cy=”8” r=”6.5” stroke=”currentColor” strokeWidth=”1.4” />
-                      <path d=”M8 5v3.5” stroke=”currentColor” strokeWidth=”1.5” strokeLinecap=”round” />
-                      <circle cx=”8” cy=”11” r=”0.8” fill=”currentColor” />
+                  <div className="ingredient-duplicate-warning">
+                    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden="true">
+                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M8 5v3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      <circle cx="8" cy="11" r="0.8" fill="currentColor" />
                     </svg>
                     El ingrediente <strong>{duplicateWarning}</strong> ya existe en el catálogo.
                   </div>
                 ) : null}
               </label>
-              <div className=”kitchen-field”>
-                <span className=”kitchen-label”>Sección del supermercado</span>
-                <p className=”ingredient-category-hint”>
+              <div className="kitchen-field">
+                <span className="kitchen-label">Sección del supermercado</span>
+                <p className="ingredient-category-hint">
                   Indica dónde encuentras normalmente este ingrediente en el supermercado.
                 </p>
                 <SearchableSelect
                   options={categoryOptions}
-                  value={selectedCategory?._id || “”}
+                  value={selectedCategory?._id || ""}
                   onChange={(val) => setSelectedCategory(categories.find((c) => c._id === val) || null)}
-                  emptyLabel=”Seleccionar sección...”
-                  placeholder=”Buscar sección...”
+                  emptyLabel="Seleccionar sección..."
+                  placeholder="Buscar sección..."
                   onCreate={onCategoryCreated ? (q) => { setCategoryDraftName(q); setShowCategoryModal(true); } : undefined}
                 />
               </div>
