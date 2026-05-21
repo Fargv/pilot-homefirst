@@ -1253,7 +1253,7 @@ export default function DishesPage() {
                 <article
                   className={`kitchen-dish-card ${isCatalogDish ? "is-catalog" : ""}`}
                   key={dish._id}
-                  style={packColor ? { borderLeftColor: packColor, background: `linear-gradient(100deg, ${packColor}14 0%, #fff 60%)` } : undefined}
+                  style={packColor ? { "--dish-pack-color": packColor } : undefined}
                 >
                   <div className="kitchen-dish-main">
                     <div className="kitchen-dish-title-row">
