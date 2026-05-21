@@ -8292,6 +8292,257 @@ body {
   opacity: 1;
 }
 
+/* ─── Household panel — summary card ─────────────────────────────── */
+
+.hh-summary-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--hf-surface, #ffffff);
+  border: 1px solid var(--hf-border, #e8edf4);
+  border-radius: 18px;
+  padding: 18px 16px;
+  margin-bottom: 4px;
+}
+
+.hh-summary-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #eff2ff;
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hh-summary-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.hh-summary-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hh-summary-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hh-summary-edit-btn {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  color: var(--hf-muted, #94a3b8);
+}
+
+.hh-summary-meta {
+  margin: 4px 0 2px;
+  font-size: 13px;
+  color: var(--hf-muted, #94a3b8);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.hh-summary-owner {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--hf-muted, #94a3b8);
+}
+
+.hh-summary-owner strong {
+  color: #334155;
+}
+
+.hh-summary-edit {
+  padding: 2px 0;
+}
+
+/* ─── Household panel — actions ──────────────────────────────────── */
+
+.hh-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.hh-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--hf-surface, #ffffff);
+  border: 1px solid var(--hf-border, #e8edf4);
+  border-radius: 14px;
+  padding: 14px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.hh-action-btn:hover:not(:disabled) {
+  border-color: #c7d2fe;
+  background: #f8f9ff;
+}
+
+.hh-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hh-action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #eff2ff;
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hh-action-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* ─── Household panel — plan limit notice ────────────────────────── */
+
+.hh-plan-status {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 14px;
+  padding: 13px 15px;
+  margin-bottom: 4px;
+}
+
+.hh-plan-status-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.hh-plan-status-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.hh-plan-status-msg {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #b45309;
+}
+
+/* ─── Household panel — member rows ──────────────────────────────── */
+
+.hh-member-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 2px;
+  border-bottom: 1px solid #f1f5f9;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.hh-member-row:last-child {
+  border-bottom: none;
+}
+
+.hh-member-row:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.hh-member-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.hh-member-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hh-member-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hh-member-self {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hf-muted, #94a3b8);
+}
+
+.hh-member-role-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #6366f1;
+  text-transform: uppercase;
+}
+
+.hh-member-caps {
+  font-size: 12px;
+  color: var(--hf-muted, #94a3b8);
+  margin-top: 1px;
+}
+
+.hh-member-chevron {
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .hh-actions-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .hh-action-btn {
+    padding: 12px 8px;
+  }
+
+  .hh-summary-name {
+    font-size: 16px;
+  }
+}
+
 /* ─── Upgrade Page – feature list & current badge ─────────────────────────── */
 
 .upgrade-feature-list {

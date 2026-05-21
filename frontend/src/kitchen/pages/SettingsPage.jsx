@@ -1274,10 +1274,17 @@ export default function SettingsPage() {
         <h2 className="settings-panel-title">{householdName || "Mi hogar"}</h2>
         <p className="settings-panel-sub">Miembros, comensales y ajustes del hogar</p>
       </div>
-      {canManageHousehold && (
-        <div className="settings-block">
+      {/* 1 · Household summary card */}
+      <div className="hh-summary-card">
+        <div className="hh-summary-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+            <path d="M3 12.5L12 4l9 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M6 11v7a1 1 0 001 1h4v-4h2v4h4a1 1 0 001-1v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        <div className="hh-summary-body">
           {householdNameEditing ? (
-            <>
+            <div className="hh-summary-edit">
               <input
                 className="kitchen-input"
                 value={householdNameDraft}
@@ -1293,62 +1300,136 @@ export default function SettingsPage() {
                 <button type="button" className="settings-mini-button" onClick={saveHouseholdName}>Guardar</button>
                 <button type="button" className="settings-mini-button" onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(false); }}>Cancelar</button>
               </div>
-            </>
+            </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ flex: 1, fontWeight: 500 }}>{householdName || "Mi household"}</span>
-              <button
-                type="button"
-                className="settings-icon-only"
-                onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(true); }}
-                aria-label="Editar nombre del hogar"
-              >
-                <PencilIcon />
-              </button>
+            <div className="hh-summary-name-row">
+              <span className="hh-summary-name">{householdName || "Mi hogar"}</span>
+              {canManageHousehold ? (
+                <button
+                  type="button"
+                  className="settings-icon-only hh-summary-edit-btn"
+                  onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(true); }}
+                  aria-label="Editar nombre del hogar"
+                >
+                  <PencilIcon />
+                </button>
+              ) : null}
             </div>
           )}
+          <p className="hh-summary-meta">
+            {members.length} {members.length === 1 ? "miembro" : "miembros"}
+            {" · "}
+            <span className={subscriptionBadgeClassName(subscriptionPlan)}>{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+          </p>
+          {(() => {
+            const owner = members.find((m) => !m.isPlaceholder && (m.role === "owner" || m.role === "admin"));
+            if (!owner) return null;
+            const isSelf = String(owner.id) === String(user?.id);
+            return <p className="hh-summary-owner">Owner: <strong>{isSelf ? "Tú" : owner.displayName}</strong></p>;
+          })()}
         </div>
-      )}
-      <div className="settings-block">
-        <p className="settings-section-label" style={{ marginBottom: 12 }}>Miembros del hogar</p>
-        <p className="settings-counter">Miembros ({members.length})</p>
-        {canManageHousehold ? (
-          <div className="settings-members-actions">
-            <button type="button" className="kitchen-button" onClick={openInvitesPanel} disabled={!canAddMoreUsers}>Invitar</button>
-            <button type="button" className="kitchen-button secondary" onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })} disabled={!canAddMoreNonUserDiners}>Crear comensal</button>
-          </div>
-        ) : null}
-        {canManageHousehold && !canAddMoreUsers ? (
-          <div className="settings-budget-locked-card">
-            <p className="kitchen-muted">{userLimitMessage}</p>
-            <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Upgrade your license</button>
-          </div>
-        ) : null}
-        {canManageHousehold && !canAddMoreNonUserDiners ? (
-          <div className="settings-budget-locked-card">
-            <p className="kitchen-muted">{nonUserDinerLimitMessage}</p>
-            <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Upgrade your license</button>
-          </div>
-        ) : null}
       </div>
-      <div className="settings-block">
-        {members.map((member) => {
+
+      {/* 2 · Acciones del hogar */}
+      {canManageHousehold ? (
+        <div className="settings-block">
+          <p className="settings-section-label" style={{ marginBottom: 12 }}>Acciones del hogar</p>
+          <div className="hh-actions-row">
+            <button type="button" className="hh-action-btn" onClick={openInvitesPanel} disabled={!canAddMoreUsers}>
+              <span className="hh-action-icon">
+                <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                  <circle cx="8" cy="7" r="3" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M2 16c0-2.761 2.686-5 6-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M15 11v6M12 14h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              </span>
+              <span className="hh-action-label">Invitar miembro</span>
+            </button>
+            <button
+              type="button"
+              className="hh-action-btn"
+              onClick={() => setDinerModal({ open: true, form: { displayName: "", initials: "", colorId: "lavender", active: true, canCook: false, dinnerActive: true, dinnerCanCook: false } })}
+              disabled={!canAddMoreNonUserDiners}
+            >
+              <span className="hh-action-icon">
+                <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                  <circle cx="10" cy="7" r="3" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M4 16c0-2.761 2.686-5 6-5s6 2.239 6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </span>
+              <span className="hh-action-label">Crear comensal</span>
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 3 · Plan limit notice */}
+      {canManageHousehold && (!canAddMoreUsers || !canAddMoreNonUserDiners) ? (
+        <div className="hh-plan-status">
+          <div className="hh-plan-status-head">
+            <svg viewBox="0 0 20 20" width="15" height="15" fill="none" aria-hidden="true">
+              <path d="M10 2l2.5 5h5l-4 3 1.5 5.5L10 12.5 5 15.5 6.5 10l-4-3h5L10 2z" stroke="#d97706" strokeWidth="1.4" strokeLinejoin="round"/>
+            </svg>
+            <span className="hh-plan-status-title">Plan {formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+            <button type="button" className="kitchen-button secondary" style={{ marginLeft: "auto", fontSize: "0.79rem", padding: "5px 12px" }} onClick={() => navigate("/kitchen/upgrade")}>Mejorar plan</button>
+          </div>
+          {!canAddMoreUsers ? <p className="hh-plan-status-msg">Has alcanzado el límite de usuarios de tu plan.</p> : null}
+          {!canAddMoreNonUserDiners ? <p className="hh-plan-status-msg">Has alcanzado el límite de comensales de tu plan.</p> : null}
+        </div>
+      ) : null}
+
+      {/* 4 · Members grouped */}
+      {(() => {
+        const owners = members.filter((m) => !m.isPlaceholder && (m.role === "owner" || m.role === "admin"));
+        const otherMembers = members.filter((m) => m.isPlaceholder || (m.role !== "owner" && m.role !== "admin"));
+        const renderMember = (member) => {
           const colors = getUserColorById(member.colorId, member.id);
           const initials = (member.initials || initialsFromName(member.displayName || "")).slice(0, 3);
           const isSelf = String(member.id) === String(user?.id);
+          const caps = [];
+          if (member.active !== false) caps.push("Incluido por defecto");
+          if (member.canCook !== false) caps.push("Puede cocinar");
           return (
-            <button type="button" key={member.id} className="settings-member-row" onClick={() => openMemberModal(member)} disabled={!canManageHousehold && !isSelf}>
-              <span className="settings-member-avatar" style={{ background: colors.background, color: colors.text }}>{initials}</span>
-              <span className="settings-member-text">
-                <strong>{member.displayName}{isSelf ? " (Tu)" : ""}</strong>
-                <span>{memberRoleLabel(member)} · {member.active === false ? "No incluido por defecto" : "Incluido por defecto"} · {member.canCook === false ? "No cocina" : "Puede cocinar"}</span>
+            <button
+              type="button"
+              key={member.id}
+              className="hh-member-row"
+              onClick={() => openMemberModal(member)}
+              disabled={!canManageHousehold && !isSelf}
+            >
+              <span className="hh-member-avatar" style={{ background: colors.background, color: colors.text }}>{initials}</span>
+              <span className="hh-member-info">
+                <span className="hh-member-name">
+                  {member.displayName}
+                  {isSelf ? <span className="hh-member-self"> · Tú</span> : null}
+                </span>
+                <span className="hh-member-role-badge">{memberRoleLabel(member)}</span>
+                {caps.length > 0 ? <span className="hh-member-caps">{caps.join(" · ")}</span> : null}
               </span>
-              <span className="settings-member-arrow">{">"}</span>
+              <svg className="hh-member-chevron" viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+                <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
           );
-        })}
-        {!members.length ? <p className="kitchen-muted">No hay miembros.</p> : null}
-      </div>
+        };
+        return (
+          <>
+            {owners.length > 0 ? (
+              <div className="settings-block">
+                <p className="settings-section-label" style={{ marginBottom: 10 }}>Owner</p>
+                {owners.map(renderMember)}
+              </div>
+            ) : null}
+            {otherMembers.length > 0 ? (
+              <div className="settings-block">
+                <p className="settings-section-label" style={{ marginBottom: 10 }}>Miembros ({otherMembers.length})</p>
+                {otherMembers.map(renderMember)}
+              </div>
+            ) : null}
+            {!members.length ? <p className="kitchen-muted" style={{ padding: "0 4px" }}>No hay miembros.</p> : null}
+          </>
+        );
+      })()}
       {canManageHousehold ? (
         <div className="settings-block">
         <p className="settings-section-label" style={{ marginBottom: 12 }}>Preferencias de planificación</p>
