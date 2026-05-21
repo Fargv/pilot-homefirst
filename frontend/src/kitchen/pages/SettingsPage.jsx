@@ -1781,7 +1781,7 @@ export default function SettingsPage() {
       <div className="kitchen-card kitchen-block-gap">
         <div className="settings-header">
           <div className="settings-header-avatar" style={{ background: selectedColor.background, color: selectedColor.text }}>{userInitials}</div>
-          <h1>Settings</h1>
+          <h1>Configuración</h1>
           <p className="settings-header-name">{user?.displayName || "Usuario"}</p>
           <p className="settings-header-meta">{roleLabel(user, isOwner, householdName || user?.householdName || "Mi household")}</p>
         </div>
@@ -1791,72 +1791,207 @@ export default function SettingsPage() {
         {loading ? <p className="kitchen-muted">Cargando configuracion...</p> : null}
 
         {!loading && pendingDowngradeAt && (
-          <div style={{
-            background: "#fffbeb",
-            border: "1px solid #f59e0b",
-            borderRadius: 12,
-            padding: "14px 18px",
-            marginBottom: 20,
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 12
-          }}>
-            <span style={{ fontSize: 20, lineHeight: 1.3, flexShrink: 0 }}>⏳</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: "0 0 3px", fontWeight: 700, fontSize: "0.9rem", color: "#92400e" }}>
-                Tu suscripción vuelve a Basic el {formatDowngradeDate(pendingDowngradeAt)}
-              </p>
-              <p style={{ margin: "0 0 10px", fontSize: "0.82rem", color: "#b45309" }}>
-                Hasta entonces sigues disfrutando de todas las funciones. Puedes revertirlo cuando quieras.
-              </p>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  className="kitchen-button secondary"
-                  style={{ fontSize: "0.82rem", padding: "5px 12px" }}
-                  onClick={handleUndoCancelFromSettings}
-                  disabled={undoCancelLoading}
-                >
+          <div className="settings-downgrade-banner">
+            <span className="settings-downgrade-banner-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M10 6v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </span>
+            <div className="settings-downgrade-banner-body">
+              <p className="settings-downgrade-banner-title">Tu plan vuelve a Basic el {formatDowngradeDate(pendingDowngradeAt)}</p>
+              <p className="settings-downgrade-banner-desc">Hasta entonces sigues disfrutando de todas las funciones.</p>
+              <div className="settings-downgrade-banner-actions">
+                <button type="button" className="kitchen-button secondary" onClick={handleUndoCancelFromSettings} disabled={undoCancelLoading}>
                   {undoCancelLoading ? "Reactivando..." : "Reactivar suscripción"}
                 </button>
-                <button
-                  type="button"
-                  className="kitchen-button secondary"
-                  style={{ fontSize: "0.82rem", padding: "5px 12px" }}
-                  onClick={() => navigate("/kitchen/upgrade")}
-                >
-                  Ver planes →
-                </button>
+                <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Ver planes</button>
               </div>
             </div>
           </div>
         )}
 
         {!loading && isHub ? (
-          <div className="settings-hub-grid">
-            <CardButton title="Perfil" subtitle="Informacion personal, password y color." onClick={() => setPanel("perfil")} />
-            <CardButton title="Preferencias" subtitle="Idioma, dark mode y notificaciones." onClick={() => setPanel("preferencias")} />
-            <CardButton
-              title={budgetFeatureEnabled ? "Presupuesto" : <span style={{ display: "flex", alignItems: "center" }}>Presupuesto<ProBadge /></span>}
-              subtitle={budgetFeatureEnabled ? "Resumen e historico semanal de compras." : "Lleva el control de lo que gastas cada semana."}
-              onClick={budgetFeatureEnabled ? openBudgetPanel : () => navigate("/kitchen/upgrade?from=%2Fkitchen%2Fconfiguracion")}
-              className={!budgetFeatureEnabled ? "is-pro-locked" : ""}
-            />
-            {canViewHousehold ? <CardButton title="Household" subtitle="Miembros y ajustes del hogar." onClick={() => setPanel("household-members")} /> : null}
-            <CardButton title="Bites" subtitle="Saldo y movimientos de tus Bites." onClick={() => setPanel("bites")} />
-            {canAccessShare ? <CardButton title="Compartir" subtitle="Invitaciones por email y código de acceso." onClick={() => setPanel("share")} /> : null}
-            {canManageCategories ? <CardButton title="Categorias" subtitle="Gestion de categorias." onClick={() => setPanel("categorias")} /> : null}
-            {canManageDeleted ? <CardButton title="Eliminados" subtitle="Recupera platos e ingredientes eliminados." onClick={() => setPanel("eliminados")} /> : null}
-            <div className="settings-upgrade-card">
-              <h3>{licenseActionLabel}</h3>
-              <p className="kitchen-muted">Solicita un plan para tu hogar y deja la activación lista para la beta.</p>
-              <ul className="kitchen-list">
-                <li>Basic gratis como licencia base</li>
-                <li>Pro recomendado para hogares activos</li>
-                <li>Premium preparado para futuras integraciones</li>
-              </ul>
-              <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Ver planes</button>
+          <div className="settings-hub">
+
+            {/* ── Sección 1: Tu cuenta ─────────────────────────── */}
+            <div className="settings-section">
+              <p className="settings-section-label">Tu cuenta</p>
+              <div className="settings-section-group">
+                <button type="button" className="settings-nav-row" onClick={() => setPanel("perfil")}>
+                  <span className="settings-nav-row-icon settings-nav-icon-account" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                      <circle cx="10" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <span className="settings-nav-row-main">
+                    <span className="settings-nav-row-title">Perfil</span>
+                    <span className="settings-nav-row-sub">Nombre, color e iniciales</span>
+                  </span>
+                  <span className="settings-nav-row-end">
+                    <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                </button>
+                <button type="button" className="settings-nav-row" onClick={() => setPanel("preferencias")}>
+                  <span className="settings-nav-row-icon settings-nav-icon-prefs" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                      <path d="M4 5h12M4 10h12M4 15h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      <circle cx="7" cy="5" r="1.5" fill="currentColor" />
+                      <circle cx="13" cy="10" r="1.5" fill="currentColor" />
+                      <circle cx="7" cy="15" r="1.5" fill="currentColor" />
+                    </svg>
+                  </span>
+                  <span className="settings-nav-row-main">
+                    <span className="settings-nav-row-title">Preferencias</span>
+                    <span className="settings-nav-row-sub">Notificaciones, idioma y más</span>
+                  </span>
+                  <span className="settings-nav-row-end">
+                    <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                </button>
+              </div>
             </div>
+
+            {/* ── Sección 2: Tu hogar ──────────────────────────── */}
+            {(canViewHousehold || canManageCategories) ? (
+              <div className="settings-section">
+                <p className="settings-section-label">Tu hogar</p>
+                <div className="settings-section-group">
+                  {canViewHousehold ? (
+                    <button type="button" className="settings-nav-row" onClick={() => setPanel("household-members")}>
+                      <span className="settings-nav-row-icon settings-nav-icon-household" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                          <path d="M3 10.5L10 3l7 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M5 9v7a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                      <span className="settings-nav-row-main">
+                        <span className="settings-nav-row-title">{householdName || "Hogar"}</span>
+                        <span className="settings-nav-row-sub">Miembros y ajustes del hogar</span>
+                      </span>
+                      <span className="settings-nav-row-end">
+                        <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </span>
+                    </button>
+                  ) : null}
+                  {canAccessShare ? (
+                    <button type="button" className="settings-nav-row" onClick={() => setPanel("share")}>
+                      <span className="settings-nav-row-icon settings-nav-icon-share" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                          <circle cx="5" cy="10" r="2" stroke="currentColor" strokeWidth="1.4" />
+                          <circle cx="15" cy="5" r="2" stroke="currentColor" strokeWidth="1.4" />
+                          <circle cx="15" cy="15" r="2" stroke="currentColor" strokeWidth="1.4" />
+                          <path d="M7 9l6-3M7 11l6 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                      <span className="settings-nav-row-main">
+                        <span className="settings-nav-row-title">Compartir</span>
+                        <span className="settings-nav-row-sub">Invitaciones y código de acceso</span>
+                      </span>
+                      <span className="settings-nav-row-end">
+                        <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </span>
+                    </button>
+                  ) : null}
+                  {canManageCategories ? (
+                    <button type="button" className="settings-nav-row" onClick={() => setPanel("categorias")}>
+                      <span className="settings-nav-row-icon settings-nav-icon-cats" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                          <path d="M3 6h4.5l1.5-2.5H17" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M3 10.5h14M3 15h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                      <span className="settings-nav-row-main">
+                        <span className="settings-nav-row-title">Categorías</span>
+                        <span className="settings-nav-row-sub">Platos e ingredientes</span>
+                      </span>
+                      <span className="settings-nav-row-end">
+                        <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </span>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {/* ── Sección 3: Plan y beneficios ─────────────────── */}
+            <div className="settings-section">
+              <p className="settings-section-label">Plan y beneficios</p>
+              <div className="settings-section-group">
+                <button type="button" className={`settings-nav-row${!budgetFeatureEnabled ? " settings-nav-row-locked" : ""}`} onClick={openBudgetPanel}>
+                  <span className="settings-nav-row-icon settings-nav-icon-budget" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                      <rect x="2" y="5" width="16" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M2 9h16" stroke="currentColor" strokeWidth="1.4" />
+                      <circle cx="6" cy="13" r="1.2" fill="currentColor" />
+                    </svg>
+                  </span>
+                  <span className="settings-nav-row-main">
+                    <span className="settings-nav-row-title">Presupuesto</span>
+                    <span className="settings-nav-row-sub">{budgetFeatureEnabled ? "Resumen e historial semanal" : "Disponible en Pro y Premium"}</span>
+                  </span>
+                  <span className="settings-nav-row-end">
+                    {!budgetFeatureEnabled ? <ProBadge /> : null}
+                    <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                </button>
+                <button type="button" className="settings-nav-row" onClick={() => setPanel("bites")}>
+                  <span className="settings-nav-row-icon settings-nav-icon-bites" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                      <path d="M10 2l2.1 4.3 4.7.7-3.4 3.3.8 4.7L10 12.5l-4.2 2.5.8-4.7L3.2 7l4.7-.7L10 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <span className="settings-nav-row-main">
+                    <span className="settings-nav-row-title">Bites</span>
+                    <span className="settings-nav-row-sub">Saldo y movimientos</span>
+                  </span>
+                  <span className="settings-nav-row-end">
+                    <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                </button>
+                <button type="button" className="settings-nav-row settings-nav-row-upgrade" onClick={() => navigate("/kitchen/upgrade")}>
+                  <span className="settings-nav-row-icon settings-nav-icon-upgrade" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                      <path d="M10 3l2.5 5h5l-4 3 1.5 5.5L10 13.5 5 16.5 6.5 11l-4-3h5L10 3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <span className="settings-nav-row-main">
+                    <span className="settings-nav-row-title">{licenseActionLabel}</span>
+                    <span className="settings-nav-row-sub">Plan actual: <strong>{formatSubscriptionPlanLabel(subscriptionPlan)}</strong></span>
+                  </span>
+                  <span className="settings-nav-row-end">
+                    <span className={subscriptionBadgeClassName(subscriptionPlan)}>{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+                    <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* ── Sección 4: Sistema ───────────────────────────── */}
+            {canManageDeleted ? (
+              <div className="settings-section">
+                <p className="settings-section-label">Sistema</p>
+                <div className="settings-section-group">
+                  <button type="button" className="settings-nav-row" onClick={() => setPanel("eliminados")}>
+                    <span className="settings-nav-row-icon settings-nav-icon-deleted" aria-hidden="true">
+                      <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                        <path d="M4 7h12M10 11v4m-2-4v4m4-4v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                        <path d="M8 4h4l1 2H7L8 4zM5 7l1 10h8l1-10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                    <span className="settings-nav-row-main">
+                      <span className="settings-nav-row-title">Eliminados</span>
+                      <span className="settings-nav-row-sub">Recupera platos e ingredientes</span>
+                    </span>
+                    <span className="settings-nav-row-end">
+                      <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
           </div>
         ) : null}
 
