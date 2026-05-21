@@ -328,7 +328,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                       type="button"
                       role="menuitem"
                       onClick={() => { navigate("/admin"); onNavigate(); }}
-                      style={{ fontWeight: 700, color: "#4338ca" }}
+                      className="kitchen-user-menu-admin"
                     >
                       🛠 Panel de administrador
                     </button>

@@ -1187,7 +1187,7 @@ export default function SettingsPage() {
         <button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(true)}>Cambiar contraseña</button>
       </div>
       <div className="settings-block danger">
-        <p className="settings-section-label" style={{ marginBottom: 8, color: "#ef4444" }}>Zona de peligro</p>
+        <p className="settings-section-label" style={{ marginBottom: 8, color: "var(--danger-text)" }}>Zona de peligro</p>
         <p className="settings-danger-text">Esta accion puede eliminar tu cuenta o todo el household si eres el ultimo owner.</p>
         <button type="button" className="kitchen-button secondary danger" onClick={openDeleteProfileFlow}>Eliminar mi perfil</button>
       </div>
@@ -1576,8 +1576,8 @@ export default function SettingsPage() {
           </div>
         ) : null}
 
-        <div style={{ marginTop: 8, padding: "14px 0 4px", borderTop: "1px solid #f1f5f9" }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 2 }}>Aleatorización por dieta</div>
+        <div style={{ marginTop: 8, padding: "14px 0 4px", borderTop: "1px solid var(--border-soft)" }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", marginBottom: 2 }}>Aleatorización por dieta</div>
           <p className="kitchen-muted" style={{ marginBottom: 10 }}>Usa por defecto platos de las dietas descargadas al aleatorizar días o semanas.</p>
           {canUseDietRandomization(subscriptionPlan) ? (
             <>
@@ -1609,7 +1609,7 @@ export default function SettingsPage() {
                   </p>
                 ) : (
                   <div style={{ marginTop: 8 }}>
-                    <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6 }}>Selecciona las dietas para la aleatorización:</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>Selecciona las dietas para la aleatorización:</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {installedDietPacks.map((pack) => {
                         const isSelected = dietDefaultPackIds.includes(String(pack.id));
@@ -1691,24 +1691,24 @@ export default function SettingsPage() {
               return (
                 <div
                   key={tx._id}
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid #f1f5f9" }}
+                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--border-soft)" }}
                 >
                   <div style={{
                     width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    background: isSpend ? "#fee2e2" : "#dcfce7",
-                    color: isSpend ? "#b91c1c" : "#15803d",
+                    background: isSpend ? "var(--danger-bg)" : "var(--success-bg)",
+                    color: isSpend ? "var(--danger-text)" : "var(--success-text)",
                     fontWeight: 700, fontSize: 16
                   }}>
                     {isSpend ? "−" : "+"}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {label}
                     </div>
-                    <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: 2 }}>{dateStr}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 2 }}>{dateStr}</div>
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: "0.9rem", color: isSpend ? "#b91c1c" : "#16a34a", flexShrink: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: "0.9rem", color: isSpend ? "var(--danger-text)" : "var(--success-text)", flexShrink: 0 }}>
                     {isSpend ? "" : "+"}{tx.amount}
                   </div>
                 </div>

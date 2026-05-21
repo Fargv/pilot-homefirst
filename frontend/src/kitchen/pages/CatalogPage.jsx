@@ -452,13 +452,13 @@ function PackCard({ pack, onAction, onBuyBites, onUninstall }) {
           })()}
 
           {IS_DEV && (entitlement.isPaid || entitlement.stripePriceId) && (
-            <details style={{ marginTop: 8, fontSize: 11, color: "#6b7280", borderTop: "1px dashed #e0e7ff", paddingTop: 6 }}>
-              <summary style={{ cursor: "pointer", fontWeight: 600, color: "#7c3aed" }}>💳 DEV: payment config</summary>
+            <details style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)", borderTop: "1px dashed var(--border-soft)", paddingTop: 6 }}>
+              <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--hf-brand-darker)" }}>💳 DEV: payment config</summary>
               <div style={{ marginTop: 4, display: "grid", gap: 2 }}>
                 <div>isPaid: <strong>{String(entitlement.isPaid)}</strong></div>
                 <div>paymentMode: <strong>{entitlement.paymentMode || "none"}</strong></div>
                 <div>stripePriceId: <strong>{entitlement.stripePriceId ? "✓ set" : "✗ missing"}</strong></div>
-                <div>canBuyWithStripe: <strong style={{ color: entitlement.canBuyWithStripe ? "#16a34a" : "#b91c1c" }}>{String(entitlement.canBuyWithStripe)}</strong></div>
+                <div>canBuyWithStripe: <strong style={{ color: entitlement.canBuyWithStripe ? "var(--success-text)" : "var(--danger-text)" }}>{String(entitlement.canBuyWithStripe)}</strong></div>
                 <div>VITE_STRIPE_ENABLED: <strong>{String(STRIPE_ENABLED)}</strong></div>
               </div>
             </details>
@@ -520,7 +520,7 @@ function DietPackInstallModal({ pack, onUseAsDefault, onDecline }) {
           <button type="button" className="kitchen-btn primary" onClick={onUseAsDefault}>Usar por defecto</button>
           <button type="button" className="kitchen-btn" onClick={onDecline}>Ahora no</button>
         </div>
-        <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 8, textAlign: "center" }}>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8, textAlign: "center" }}>
           Puedes cambiar esto más tarde en Configuración &rsaquo; Aleatorización por dieta.
         </p>
       </div>

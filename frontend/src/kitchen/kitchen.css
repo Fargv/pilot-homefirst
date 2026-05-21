@@ -49,19 +49,93 @@ body {
 
 :root {
   color-scheme: light;
-  --hf-bg: #f8fafc;
+  /*
+    Theme contract: new UI must consume semantic tokens first.
+    Keep hardcoded colors for intentional illustrations only; reusable surfaces,
+    text, controls, cards, modals, badges and state feedback should use tokens.
+  */
+  --app-bg: #f8fafc;
   --hf-bg-gradient: linear-gradient(
     180deg,
     rgba(238, 242, 255, 0.72) 0%,
     rgba(240, 253, 244, 0.5) 42%,
     rgba(248, 250, 252, 0.96) 100%
   );
-  --hf-surface: #ffffff;
-  --hf-surface-soft: #eef2ff;
+  --app-bg-soft: #f1f5ff;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-muted: #f8fafc;
+  --surface-glass: rgba(255, 255, 255, 0.74);
+
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #667085;
+  --text-inverse: #ffffff;
+  --text-disabled: #98a2b3;
+
+  --border-soft: #e4e7ec;
+  --border-strong: #cbd5e1;
+  --border-focus: #818cf8;
+
+  --input-bg: #ffffff;
+  --input-border: #d8deef;
+  --input-text: #1e293b;
+  --input-placeholder: #8a95a6;
+  --input-focus-bg: #ffffff;
+  --input-focus-border: #818cf8;
+
+  --card-bg: #ffffff;
+  --card-border: #e4e7ec;
+  --card-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05);
+
+  --button-primary-bg: #4f46e5;
+  --button-primary-text: #ffffff;
+  --button-secondary-bg: #eef2ff;
+  --button-secondary-text: #1e293b;
+  --button-ghost-bg: transparent;
+  --button-disabled-bg: #eef2f7;
+  --button-disabled-text: #98a2b3;
+
+  --nav-bg: rgba(255, 255, 255, 0.78);
+  --nav-active-bg: #eef2ff;
+  --nav-active-text: #3730a3;
+  --nav-muted-text: #667085;
+
+  --chip-bg: #f8fafc;
+  --chip-text: #334155;
+  --chip-active-bg: #eef2ff;
+  --chip-active-text: #3730a3;
+  --chip-border: #dbe2f0;
+
+  --modal-bg: #ffffff;
+  --modal-border: #e4e7ec;
+  --dropdown-bg: #ffffff;
+  --dropdown-hover-bg: #f5f7ff;
+  --dropdown-selected-bg: #eef2ff;
+
+  --success-bg: #f0fdf4;
+  --success-text: #166534;
+  --success-border: #bbf7d0;
+  --warning-bg: #fffbeb;
+  --warning-text: #92400e;
+  --warning-border: #fde68a;
+  --danger-bg: #fef2f2;
+  --danger-text: #991b1b;
+  --danger-border: #fecaca;
+  --info-bg: #eff6ff;
+  --info-text: #1e40af;
+  --info-border: #bfdbfe;
+  --premium-bg: #f5f3ff;
+  --premium-text: #5b21b6;
+  --premium-border: #ddd6fe;
+
+  --hf-bg: var(--app-bg);
+  --hf-surface: var(--surface);
+  --hf-surface-soft: var(--app-bg-soft);
   --hf-surface-mint: #f0fdf4;
   --hf-surface-peach: #fff7ed;
-  --hf-text: #1e293b;
-  --hf-muted: #667085;
+  --hf-text: var(--text-primary);
+  --hf-muted: var(--text-muted);
   --hf-brand: #4f46e5;
   --hf-brand-dark: #4338ca;
   --hf-brand-darker: #3730a3;
@@ -69,14 +143,14 @@ body {
   --hf-brand-strong: #4338ca;
   --hf-primary: #4f46e5;
   --hf-primary-strong: #4338ca;
-  --hf-border: #e4e7ec;
+  --hf-border: var(--border-soft);
   --hf-danger: #b42318;
   --hf-radius-md: 24px;
   --hf-radius-lg: 28px;
   --hf-radius-xl: 32px;
-  --hf-shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  --hf-shadow-soft: var(--card-shadow);
   --hf-shadow-glass: 0 10px 30px rgba(31, 41, 55, 0.1);
-  --hf-glass: rgba(255, 255, 255, 0.7);
+  --hf-glass: var(--surface-glass);
   --hf-glass-border: rgba(255, 255, 255, 0.9);
 }
 
@@ -2961,10 +3035,11 @@ body {
 
 
 .kitchen-ui-card {
-  background: var(--hf-surface);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: var(--hf-radius-lg);
   padding: 24px;
-  box-shadow: var(--hf-shadow-soft);
+  box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -2973,8 +3048,8 @@ body {
 .kitchen-ui-button {
   border: none;
   border-radius: 999px;
-  background: var(--hf-brand);
-  color: #fff;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
   padding: 12px 16px;
   font-weight: 700;
   cursor: pointer;
@@ -2986,20 +3061,22 @@ body {
 }
 
 .kitchen-ui-button:disabled {
-  opacity: 0.65;
+  background: var(--button-disabled-bg);
+  color: var(--button-disabled-text);
+  opacity: 1;
   cursor: not-allowed;
 }
 
 .kitchen-ui-button-secondary {
-  background: var(--hf-surface-soft);
-  color: var(--hf-text);
-  border: 1px solid var(--hf-border);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border: 1px solid var(--border-soft);
 }
 
 .kitchen-ui-button-ghost {
-  background: transparent;
-  border: 1px solid var(--hf-border);
-  color: var(--hf-text);
+  background: var(--button-ghost-bg);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
 }
 
 .kitchen-ui-input-group {
@@ -3008,15 +3085,22 @@ body {
 }
 
 .kitchen-ui-input {
-  border: 1px solid var(--hf-border);
+  border: 1px solid var(--input-border);
   border-radius: var(--hf-radius-md);
   padding: 11px 12px;
   font-size: 14px;
-  background: #fff;
+  background: var(--input-bg);
+  color: var(--input-text);
+}
+
+.kitchen-ui-input::placeholder {
+  color: var(--input-placeholder);
 }
 
 .kitchen-ui-input:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--hf-brand) 35%, white);
+  background: var(--input-focus-bg);
+  border-color: var(--input-focus-border);
+  outline: 2px solid color-mix(in srgb, var(--border-focus) 35%, transparent);
   outline-offset: 1px;
 }
 
@@ -3027,9 +3111,9 @@ body {
   font-weight: 600;
 }
 
-.kitchen-ui-badge-default { background: #eef2ff; color: var(--hf-brand-darker); }
-.kitchen-ui-badge-success { background: var(--hf-surface-mint); color: #0f7a3d; }
-.kitchen-ui-badge-warning { background: var(--hf-surface-peach); color: #9a580a; }
+.kitchen-ui-badge-default { background: var(--premium-bg); color: var(--premium-text); border: 1px solid var(--premium-border); }
+.kitchen-ui-badge-success { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border); }
+.kitchen-ui-badge-warning { background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); }
 
 .kitchen-ui-header,
 .kitchen-ui-bottom-nav {
@@ -11129,21 +11213,97 @@ body {
   color-scheme: dark;
 
   /* Core surfaces */
-  --hf-bg: #0f1117;
+  --app-bg: #0c1019;
   --hf-bg-gradient: linear-gradient(
     180deg,
-    rgba(60, 40, 120, 0.28) 0%,
-    rgba(20, 60, 40, 0.18) 42%,
-    rgba(15, 17, 23, 0.97) 100%
+    rgba(66, 55, 136, 0.22) 0%,
+    rgba(21, 52, 74, 0.18) 42%,
+    rgba(12, 16, 25, 0.98) 100%
   );
-  --hf-surface: #1a1d2e;
-  --hf-surface-soft: #232742;
-  --hf-surface-mint: #162b1e;
-  --hf-surface-peach: #2a1c12;
+  --app-bg-soft: #151b2b;
+  --surface: #171c2c;
+  --surface-elevated: #20263a;
+  --surface-muted: #121827;
+  --surface-glass: rgba(23, 28, 44, 0.86);
 
   /* Text */
-  --hf-text: #e2e8f0;
-  --hf-muted: #8896a5;
+  --text-primary: #edf3ff;
+  --text-secondary: #c1cbe0;
+  --text-muted: #9aa8c0;
+  --text-inverse: #0f172a;
+  --text-disabled: #6f7b91;
+
+  /* Borders */
+  --border-soft: #30384f;
+  --border-strong: #46516d;
+  --border-focus: #9aa6ff;
+
+  /* Inputs */
+  --input-bg: #1f2538;
+  --input-border: #384158;
+  --input-text: #edf3ff;
+  --input-placeholder: #8d9bb4;
+  --input-focus-bg: #232a40;
+  --input-focus-border: #9aa6ff;
+
+  /* Cards */
+  --card-bg: #171c2c;
+  --card-border: #30384f;
+  --card-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+
+  /* Buttons */
+  --button-primary-bg: #818cf8;
+  --button-primary-text: #ffffff;
+  --button-secondary-bg: #252c43;
+  --button-secondary-text: #edf3ff;
+  --button-ghost-bg: rgba(37, 44, 67, 0.42);
+  --button-disabled-bg: #202638;
+  --button-disabled-text: #758198;
+
+  /* Navigation */
+  --nav-bg: rgba(23, 28, 44, 0.86);
+  --nav-active-bg: #252c43;
+  --nav-active-text: #d8ddff;
+  --nav-muted-text: #a7b3ca;
+
+  /* Chips and tabs */
+  --chip-bg: #1c2234;
+  --chip-text: #bdc8dc;
+  --chip-active-bg: #283051;
+  --chip-active-text: #dbe0ff;
+  --chip-border: #333c55;
+
+  /* Modals and dropdowns */
+  --modal-bg: #171c2c;
+  --modal-border: #30384f;
+  --dropdown-bg: #20263a;
+  --dropdown-hover-bg: #29314a;
+  --dropdown-selected-bg: #2e3658;
+
+  /* States */
+  --success-bg: rgba(22, 101, 52, 0.2);
+  --success-text: #86efac;
+  --success-border: rgba(74, 222, 128, 0.36);
+  --warning-bg: rgba(146, 64, 14, 0.22);
+  --warning-text: #facc15;
+  --warning-border: rgba(250, 204, 21, 0.34);
+  --danger-bg: rgba(127, 29, 29, 0.24);
+  --danger-text: #fca5a5;
+  --danger-border: rgba(248, 113, 113, 0.38);
+  --info-bg: rgba(30, 64, 175, 0.24);
+  --info-text: #bfdbfe;
+  --info-border: rgba(96, 165, 250, 0.34);
+  --premium-bg: rgba(91, 33, 182, 0.26);
+  --premium-text: #d8b4fe;
+  --premium-border: rgba(196, 181, 253, 0.36);
+
+  --hf-bg: var(--app-bg);
+  --hf-surface: var(--surface);
+  --hf-surface-soft: var(--surface-elevated);
+  --hf-surface-mint: var(--success-bg);
+  --hf-surface-peach: var(--warning-bg);
+  --hf-text: var(--text-primary);
+  --hf-muted: var(--text-muted);
 
   /* Brand (softened indigo for dark) */
   --hf-brand: #818cf8;
@@ -11155,16 +11315,16 @@ body {
   --hf-primary-strong: #6d77f0;
 
   /* Borders & utility */
-  --hf-border: #2d3348;
-  --hf-danger: #f87171;
+  --hf-border: var(--border-soft);
+  --hf-danger: var(--danger-text);
 
   /* Shadows */
-  --hf-shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.45);
+  --hf-shadow-soft: var(--card-shadow);
   --hf-shadow-glass: 0 10px 30px rgba(0, 0, 0, 0.35);
 
   /* Glass */
-  --hf-glass: rgba(26, 29, 46, 0.88);
-  --hf-glass-border: rgba(45, 51, 72, 0.9);
+  --hf-glass: var(--surface-glass);
+  --hf-glass-border: rgba(48, 56, 79, 0.9);
 }
 
 /* ─── Responsive bg-gradient overrides for dark ─────────────── */
@@ -11925,5 +12085,665 @@ body {
 [data-theme="dark"] .checkout-card {
   background: var(--hf-surface);
   border-color: var(--hf-border);
+}
+
+/* Dark mode semantic consolidation. Keep this broad and component-oriented:
+   it catches old light-only literals while preserving the existing layout. */
+[data-theme="dark"] body {
+  background: var(--app-bg);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-app {
+  background-color: var(--app-bg);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-ui-header,
+[data-theme="dark"] .kitchen-ui-bottom-nav,
+[data-theme="dark"] .kitchen-topbar,
+[data-theme="dark"] .kitchen-bottom-nav {
+  background: var(--nav-bg);
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .kitchen-nav-desktop a,
+[data-theme="dark"] .kitchen-nav-mobile a,
+[data-theme="dark"] .kitchen-ui-bottom-nav-item,
+[data-theme="dark"] .kitchen-bottom-nav-item {
+  color: var(--nav-muted-text);
+}
+
+[data-theme="dark"] .kitchen-nav-desktop a.active,
+[data-theme="dark"] .kitchen-nav-mobile a.active,
+[data-theme="dark"] .kitchen-ui-bottom-nav-item.active,
+[data-theme="dark"] .kitchen-bottom-nav-item.active {
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
+}
+
+[data-theme="dark"] .kitchen-card,
+[data-theme="dark"] .kitchen-ui-card,
+[data-theme="dark"] .kitchen-dish-card,
+[data-theme="dark"] .kitchen-day-card,
+[data-theme="dark"] .shopping-session-card,
+[data-theme="dark"] .settings-section-group,
+[data-theme="dark"] .settings-hub-card,
+[data-theme="dark"] .settings-row-card,
+[data-theme="dark"] .settings-accordion,
+[data-theme="dark"] .settings-member-row,
+[data-theme="dark"] .settings-budget-locked-card,
+[data-theme="dark"] .upgrade-plan-card,
+[data-theme="dark"] .shopping-budget-card,
+[data-theme="dark"] .shopping-budget-summary-card,
+[data-theme="dark"] .shopping-budget-history-card,
+[data-theme="dark"] .shopping-budget-purchase-item,
+[data-theme="dark"] .payment-result-card,
+[data-theme="dark"] .checkout-card {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+  color: var(--text-primary);
+  box-shadow: var(--card-shadow);
+}
+
+[data-theme="dark"] .kitchen-day-card.is-empty,
+[data-theme="dark"] .settings-block,
+[data-theme="dark"] .settings-coming-row,
+[data-theme="dark"] .shopping-category-card,
+[data-theme="dark"] .shopping-quick-add,
+[data-theme="dark"] .shopping-empty-state,
+[data-theme="dark"] .catalog-pack-dish-preview,
+[data-theme="dark"] .catalog-credits-panel,
+[data-theme="dark"] .catalog-bites-wallet,
+[data-theme="dark"] .recipe-editor-section,
+[data-theme="dark"] .recipe-editor-wrap,
+[data-theme="dark"] .recipe-toolbar,
+[data-theme="dark"] .recipe-save-bar,
+[data-theme="dark"] .upgrade-footnote {
+  background: var(--surface-elevated);
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .kitchen-day-card.is-selected,
+[data-theme="dark"] .catalog-pack-featured,
+[data-theme="dark"] .upgrade-plan-card.is-recommended,
+[data-theme="dark"] .upgrade-plan-card.is-current {
+  border-color: color-mix(in srgb, var(--hf-brand) 62%, var(--border-soft));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hf-brand) 18%, transparent), var(--card-shadow);
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] .kitchen-dishes-header h2,
+[data-theme="dark"] .shopping-header-row h1,
+[data-theme="dark"] .settings-header h1,
+[data-theme="dark"] .settings-header-name,
+[data-theme="dark"] .settings-nav-row-title,
+[data-theme="dark"] .settings-panel-title,
+[data-theme="dark"] .settings-hub-card h3,
+[data-theme="dark"] .settings-member-text strong,
+[data-theme="dark"] .settings-counter,
+[data-theme="dark"] .settings-household-pref-title,
+[data-theme="dark"] .upgrade-plan-head h2,
+[data-theme="dark"] .upgrade-plan-head strong,
+[data-theme="dark"] .catalog-title,
+[data-theme="dark"] .catalog-pack-title,
+[data-theme="dark"] .catalog-bites-store-title,
+[data-theme="dark"] .catalog-bites-bundle-name,
+[data-theme="dark"] .catalog-bites-bundle-price,
+[data-theme="dark"] .catalog-purchase-modal-title,
+[data-theme="dark"] .shopping-item-text,
+[data-theme="dark"] .shopping-session-card-title,
+[data-theme="dark"] .shopping-trip-date,
+[data-theme="dark"] .shopping-confirm-banner-title,
+[data-theme="dark"] .kitchen-day-title,
+[data-theme="dark"] .kitchen-day-title-primary,
+[data-theme="dark"] .kitchen-day-title-secondary,
+[data-theme="dark"] .kitchen-day-cook-name,
+[data-theme="dark"] .kitchen-day-info-value,
+[data-theme="dark"] .recipe-section-title,
+[data-theme="dark"] .recipe-link-dialog-title,
+[data-theme="dark"] .payment-result-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] p,
+[data-theme="dark"] .kitchen-muted,
+[data-theme="dark"] .settings-nav-row-sub,
+[data-theme="dark"] .settings-panel-sub,
+[data-theme="dark"] .settings-header-meta,
+[data-theme="dark"] .settings-hub-card p,
+[data-theme="dark"] .settings-member-text span,
+[data-theme="dark"] .settings-household-pref-popover p,
+[data-theme="dark"] .catalog-subtitle,
+[data-theme="dark"] .catalog-pack-description,
+[data-theme="dark"] .catalog-pack-price-line,
+[data-theme="dark"] .catalog-pack-dish-preview-teaser,
+[data-theme="dark"] .catalog-bites-wallet-breakdown,
+[data-theme="dark"] .catalog-bites-store-subtitle,
+[data-theme="dark"] .catalog-bites-store-note,
+[data-theme="dark"] .shopping-purchased-card-meta,
+[data-theme="dark"] .shopping-purchased-by,
+[data-theme="dark"] .shopping-session-card-sub,
+[data-theme="dark"] .shopping-confirm-banner-sub,
+[data-theme="dark"] .shopping-budget-purchase-meta,
+[data-theme="dark"] .shopping-budget-label,
+[data-theme="dark"] .kitchen-day-meta,
+[data-theme="dark"] .kitchen-day-subtitle,
+[data-theme="dark"] .kitchen-day-cook-attendees,
+[data-theme="dark"] .kitchen-day-info-label,
+[data-theme="dark"] .recipe-servings-label,
+[data-theme="dark"] .recipe-ingredients-table td:last-child,
+[data-theme="dark"] .recipe-link-dialog-field,
+[data-theme="dark"] .payment-result-body,
+[data-theme="dark"] .payment-result-note,
+[data-theme="dark"] .payment-result-session {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .kitchen-input,
+[data-theme="dark"] .kitchen-select,
+[data-theme="dark"] .kitchen-textarea,
+[data-theme="dark"] .kitchen-ui-input,
+[data-theme="dark"] .shopping-store-select,
+[data-theme="dark"] .shopping-store-select-compact,
+[data-theme="dark"] .shopping-quick-add-input,
+[data-theme="dark"] .shopping-trip-amount-input,
+[data-theme="dark"] .recipe-servings-input,
+[data-theme="dark"] .recipe-ingredient-input,
+[data-theme="dark"] .recipe-link-dialog-input,
+[data-theme="dark"] .settings-email-input,
+[data-theme="dark"] .ss-trigger,
+[data-theme="dark"] .ss-search {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .kitchen-input::placeholder,
+[data-theme="dark"] .kitchen-textarea::placeholder,
+[data-theme="dark"] .kitchen-ui-input::placeholder,
+[data-theme="dark"] .shopping-quick-add-input::placeholder,
+[data-theme="dark"] .recipe-ingredient-input::placeholder,
+[data-theme="dark"] .recipe-link-dialog-input::placeholder,
+[data-theme="dark"] .settings-email-input::placeholder,
+[data-theme="dark"] .ss-search::placeholder {
+  color: var(--input-placeholder);
+}
+
+[data-theme="dark"] .kitchen-input:focus,
+[data-theme="dark"] .kitchen-input:focus-visible,
+[data-theme="dark"] .kitchen-select:focus,
+[data-theme="dark"] .kitchen-textarea:focus,
+[data-theme="dark"] .kitchen-ui-input:focus-visible,
+[data-theme="dark"] .shopping-store-select:focus-visible,
+[data-theme="dark"] .shopping-store-select-compact:focus-visible,
+[data-theme="dark"] .recipe-servings-input:focus,
+[data-theme="dark"] .recipe-ingredient-input:focus,
+[data-theme="dark"] .recipe-link-dialog-input:focus,
+[data-theme="dark"] .ss-container.is-open .ss-trigger {
+  background: var(--input-focus-bg);
+  border-color: var(--input-focus-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--border-focus) 22%, transparent);
+  outline: none;
+}
+
+[data-theme="dark"] .kitchen-button,
+[data-theme="dark"] .kitchen-ui-button,
+[data-theme="dark"] .catalog-bites-buy-cta,
+[data-theme="dark"] .catalog-pack-action.primary,
+[data-theme="dark"] .catalog-pack-action.bites,
+[data-theme="dark"] .catalog-bites-bundle-btn.primary,
+[data-theme="dark"] .shopping-bulk-gradient,
+[data-theme="dark"] .shopping-trip-amount-save,
+[data-theme="dark"] .recipe-add-to-dish-btn,
+[data-theme="dark"] .recipe-link-dialog-btn.primary {
+  background: var(--button-primary-bg);
+  border-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+}
+
+[data-theme="dark"] .kitchen-button.secondary,
+[data-theme="dark"] .kitchen-button.ghost,
+[data-theme="dark"] .kitchen-ui-button-secondary,
+[data-theme="dark"] .kitchen-ui-button-ghost,
+[data-theme="dark"] .kitchen-icon-button,
+[data-theme="dark"] .kitchen-day-icon-action,
+[data-theme="dark"] .kitchen-day-title-info-action,
+[data-theme="dark"] .kitchen-day-attendees-action,
+[data-theme="dark"] .settings-mini-button,
+[data-theme="dark"] .settings-mini-icon,
+[data-theme="dark"] .settings-icon-only,
+[data-theme="dark"] .shopping-qty-button,
+[data-theme="dark"] .shopping-remove-item,
+[data-theme="dark"] .shopping-refresh-icon,
+[data-theme="dark"] .shopping-trip-amount-cancel,
+[data-theme="dark"] .recipe-toolbar-btn,
+[data-theme="dark"] .recipe-link-dialog-btn,
+[data-theme="dark"] .recipe-color-reset,
+[data-theme="dark"] .catalog-pack-action.secondary,
+[data-theme="dark"] .catalog-pack-action-direct,
+[data-theme="dark"] .catalog-bites-bundle-btn,
+[data-theme="dark"] .catalog-credits-upgrade,
+[data-theme="dark"] .theme-selector-option {
+  background: var(--button-secondary-bg);
+  border-color: var(--border-soft);
+  color: var(--button-secondary-text);
+  box-shadow: none;
+}
+
+[data-theme="dark"] button:disabled,
+[data-theme="dark"] .kitchen-button:disabled,
+[data-theme="dark"] .catalog-pack-action.disabled,
+[data-theme="dark"] .ss-trigger:disabled {
+  background: var(--button-disabled-bg);
+  color: var(--button-disabled-text);
+  border-color: var(--border-soft);
+  opacity: 1;
+}
+
+[data-theme="dark"] .kitchen-meal-tabs,
+[data-theme="dark"] .kitchen-dishes-tabs,
+[data-theme="dark"] .shopping-tabs,
+[data-theme="dark"] .shopping-tabs-inline,
+[data-theme="dark"] .catalog-tabs,
+[data-theme="dark"] .recipe-tabs {
+  background: var(--surface-muted);
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .kitchen-meal-tab,
+[data-theme="dark"] .kitchen-tab-button,
+[data-theme="dark"] .shopping-tab,
+[data-theme="dark"] .catalog-tab,
+[data-theme="dark"] .recipe-tabs button,
+[data-theme="dark"] .kitchen-filter-chip {
+  background: var(--chip-bg);
+  border-color: var(--chip-border);
+  color: var(--chip-text);
+}
+
+[data-theme="dark"] .kitchen-meal-tab.is-active,
+[data-theme="dark"] .kitchen-tab-button.is-active,
+[data-theme="dark"] .shopping-tab.active,
+[data-theme="dark"] .catalog-tab.active,
+[data-theme="dark"] .recipe-tabs button.is-active,
+[data-theme="dark"] .kitchen-filter-chip.is-active,
+[data-theme="dark"] .kitchen-filter-chip.is-all,
+[data-theme="dark"] .theme-selector-option.is-active,
+[data-theme="dark"] .recipe-toolbar-btn.is-active {
+  background: var(--chip-active-bg);
+  border-color: var(--hf-brand);
+  color: var(--chip-active-text);
+}
+
+[data-theme="dark"] .kitchen-modal,
+[data-theme="dark"] .kitchen-context-modal,
+[data-theme="dark"] .kitchen-ui-sheet,
+[data-theme="dark"] .modal-sheet,
+[data-theme="dark"] .catalog-bites-store-modal,
+[data-theme="dark"] .catalog-purchase-modal,
+[data-theme="dark"] .shopping-ingredient-create-modal {
+  background: var(--modal-bg);
+  border-color: var(--modal-border);
+  color: var(--text-primary);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.56);
+}
+
+[data-theme="dark"] .kitchen-modal-overlay,
+[data-theme="dark"] .kitchen-modal-backdrop,
+[data-theme="dark"] .kitchen-ui-sheet-backdrop {
+  background: rgba(5, 8, 14, 0.68);
+}
+
+[data-theme="dark"] .kitchen-user-chip,
+[data-theme="dark"] .kitchen-user-menu,
+[data-theme="dark"] .kitchen-drawer,
+[data-theme="dark"] .kitchen-suggestion-list,
+[data-theme="dark"] .shopping-quick-suggestions,
+[data-theme="dark"] .shopping-modal-category-menu,
+[data-theme="dark"] .ss-panel,
+[data-theme="dark"] .recipe-ingredient-dropdown,
+[data-theme="dark"] .recipe-link-dialog,
+[data-theme="dark"] .recipe-color-picker {
+  background: var(--dropdown-bg);
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+[data-theme="dark"] .kitchen-user-chip:hover,
+[data-theme="dark"] .kitchen-user-menu button:hover,
+[data-theme="dark"] .kitchen-suggestion:hover,
+[data-theme="dark"] .shopping-modal-category-option:hover,
+[data-theme="dark"] .shopping-modal-category-option:focus-visible,
+[data-theme="dark"] .ss-option:hover,
+[data-theme="dark"] .recipe-ingredient-dropdown-item:hover,
+[data-theme="dark"] .recipe-toolbar-btn:hover,
+[data-theme="dark"] .recipe-link-dialog-btn:hover,
+[data-theme="dark"] .recipe-color-reset:hover {
+  background: var(--dropdown-hover-bg);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .shopping-modal-category-option.is-selected,
+[data-theme="dark"] .ss-option-selected {
+  background: var(--dropdown-selected-bg);
+  border-color: var(--hf-brand);
+  color: var(--nav-active-text);
+}
+
+[data-theme="dark"] .shopping-category-card {
+  background: color-mix(in srgb, var(--category-bg, var(--surface-elevated)) 18%, var(--surface-elevated));
+  border-color: color-mix(in srgb, var(--category-text, var(--border-strong)) 36%, var(--border-soft));
+}
+
+[data-theme="dark"] .shopping-item {
+  background: var(--surface);
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .shopping-item:not(.is-leaving):hover {
+  background: var(--surface-elevated);
+}
+
+[data-theme="dark"] .shopping-item.purchased,
+[data-theme="dark"] .shopping-item.is-checked {
+  background: var(--surface-muted);
+  opacity: 1;
+}
+
+[data-theme="dark"] .shopping-item.purchased .shopping-item-text {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .shopping-item-amount,
+[data-theme="dark"] .shopping-session-item-chip,
+[data-theme="dark"] .catalog-pack-dish-count,
+[data-theme="dark"] .catalog-pack-tag,
+[data-theme="dark"] .catalog-badge-bites,
+[data-theme="dark"] .catalog-badge-included,
+[data-theme="dark"] .upgrade-current-plan-chip,
+[data-theme="dark"] .kitchen-pill,
+[data-theme="dark"] .kitchen-status-pill,
+[data-theme="dark"] .kitchen-ingredient-pill,
+[data-theme="dark"] .recipe-ingredient-row--pill .recipe-ingredient-pill {
+  background: var(--chip-bg);
+  border-color: var(--chip-border);
+  color: var(--chip-text);
+}
+
+[data-theme="dark"] .catalog-pack-card {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+}
+
+[data-theme="dark"] .catalog-pack-cover {
+  background: linear-gradient(135deg, #242b44 0%, #1b2836 100%);
+}
+
+[data-theme="dark"] .catalog-pack-featured-badge,
+[data-theme="dark"] .catalog-badge-free-until,
+[data-theme="dark"] .catalog-badge-price,
+[data-theme="dark"] .catalog-pack-free-countdown {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+
+[data-theme="dark"] .catalog-badge-installed,
+[data-theme="dark"] .catalog-badge-owned,
+[data-theme="dark"] .catalog-badge-free,
+[data-theme="dark"] .catalog-pack-action.installed,
+[data-theme="dark"] .settings-subscription-badge.basic,
+[data-theme="dark"] .shopping-trip-amount,
+[data-theme="dark"] .catalog-toast-success {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+
+[data-theme="dark"] .catalog-toast-error,
+[data-theme="dark"] .kitchen-alert.error,
+[data-theme="dark"] .settings-block.danger,
+[data-theme="dark"] .settings-delete-disclaimer {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+[data-theme="dark"] .catalog-toast-info {
+  background: var(--info-bg);
+  border-color: var(--info-border);
+  color: var(--info-text);
+}
+
+[data-theme="dark"] .settings-subscription-badge.pro,
+[data-theme="dark"] .settings-subscription-badge.premium,
+[data-theme="dark"] .upgrade-badge,
+[data-theme="dark"] .catalog-credits-plan,
+[data-theme="dark"] .kitchen-ui-badge-default,
+[data-theme="dark"] .kitchen-user-plan-badge,
+[data-theme="dark"] .ProBadge,
+[data-theme="dark"] .pro-badge {
+  background: var(--premium-bg);
+  border-color: var(--premium-border);
+  color: var(--premium-text);
+}
+
+.kitchen-user-menu .kitchen-user-menu-admin {
+  font-weight: 700;
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .settings-downgrade-banner,
+[data-theme="dark"] .shopping-confirm-banner,
+[data-theme="dark"] .ingredient-duplicate-warning {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+
+[data-theme="dark"] .settings-nav-row {
+  border-bottom-color: var(--border-soft);
+}
+
+[data-theme="dark"] .settings-nav-row:hover,
+[data-theme="dark"] .settings-nav-row:active {
+  background: var(--surface-elevated);
+}
+
+[data-theme="dark"] .settings-nav-row-chevron,
+[data-theme="dark"] .settings-member-arrow,
+[data-theme="dark"] .ss-chevron {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .settings-nav-row-locked .settings-nav-row-title {
+  color: var(--text-disabled);
+}
+
+[data-theme="dark"] .settings-nav-row-upgrade .settings-nav-row-title,
+[data-theme="dark"] .settings-nav-row-upgrade .settings-nav-row-chevron,
+[data-theme="dark"] .settings-back-btn,
+[data-theme="dark"] .settings-hub-card-arrow,
+[data-theme="dark"] .catalog-pack-subtitle,
+[data-theme="dark"] .catalog-pack-dish-preview-more,
+[data-theme="dark"] .catalog-credits-reset,
+[data-theme="dark"] .catalog-bites-wallet-eyebrow,
+[data-theme="dark"] .catalog-bites-wallet-hero-count,
+[data-theme="dark"] .catalog-bites-wallet-recharge,
+[data-theme="dark"] .recipe-ingredient-dropdown-item.is-linked,
+[data-theme="dark"] .recipe-add-ingredient-btn {
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .settings-nav-icon-account,
+[data-theme="dark"] .settings-nav-icon-prefs,
+[data-theme="dark"] .settings-nav-icon-household,
+[data-theme="dark"] .settings-nav-icon-share,
+[data-theme="dark"] .settings-nav-icon-cats,
+[data-theme="dark"] .settings-nav-icon-budget,
+[data-theme="dark"] .settings-nav-icon-bites,
+[data-theme="dark"] .settings-nav-icon-upgrade,
+[data-theme="dark"] .settings-nav-icon-deleted {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-soft);
+}
+
+[data-theme="dark"] .settings-nav-icon-prefs,
+[data-theme="dark"] .settings-nav-icon-budget { color: var(--success-text); }
+[data-theme="dark"] .settings-nav-icon-household,
+[data-theme="dark"] .settings-nav-icon-bites { color: var(--warning-text); }
+[data-theme="dark"] .settings-nav-icon-deleted,
+[data-theme="dark"] .settings-mini-icon.danger,
+[data-theme="dark"] .kitchen-day-icon-action.is-danger,
+[data-theme="dark"] .recipe-remove-btn,
+[data-theme="dark"] .settings-danger-text { color: var(--danger-text); }
+
+[data-theme="dark"] .settings-share-hero,
+[data-theme="dark"] .upgrade-hero,
+[data-theme="dark"] .settings-upgrade-card,
+[data-theme="dark"] .catalog-bites-wallet {
+  background:
+    radial-gradient(circle at top right, rgba(129, 140, 248, 0.14), transparent 36%),
+    linear-gradient(135deg, var(--surface-elevated) 0%, var(--surface) 100%);
+  border-color: color-mix(in srgb, var(--hf-brand) 24%, var(--border-soft));
+}
+
+[data-theme="dark"] .recipe-editor-wrap .ProseMirror {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .recipe-editor-wrap .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--input-placeholder);
+}
+
+[data-theme="dark"] .recipe-ingredients-table td:first-child {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .recipe-toolbar-sep,
+[data-theme="dark"] .catalog-pack-dish-preview-more,
+[data-theme="dark"] .settings-panel-heading,
+[data-theme="dark"] .settings-accordion-content,
+[data-theme="dark"] .kitchen-day-footer {
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .kitchen-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(40, 48, 70, 0.95) 0%,
+    rgba(54, 63, 88, 0.98) 42%,
+    rgba(40, 48, 70, 0.92) 100%
+  );
+}
+
+[data-theme="dark"] .kitchen-skeleton-panel,
+[data-theme="dark"] .kitchen-skeleton-day-card {
+  background: var(--surface);
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .kitchen-auth-card,
+[data-theme="dark"] .kitchen-login-card,
+[data-theme="dark"] .kitchen-onboarding-card {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-auth-kicker {
+  background: var(--premium-bg);
+  color: var(--premium-text);
+}
+
+[data-theme="dark"] .kitchen-login-title,
+[data-theme="dark"] .kitchen-auth-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-login-subtitle,
+[data-theme="dark"] .kitchen-auth-subtitle,
+[data-theme="dark"] .kitchen-auth-hint {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-card,
+[data-theme="dark"] .kitchen-clerk-mount .cl-cardBox {
+  background: var(--surface-elevated) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-soft) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-main,
+[data-theme="dark"] .kitchen-clerk-mount .cl-form,
+[data-theme="dark"] .kitchen-clerk-mount .cl-footer,
+[data-theme="dark"] .kitchen-clerk-mount .cl-footerPages,
+[data-theme="dark"] .kitchen-clerk-mount .cl-socialButtons,
+[data-theme="dark"] .kitchen-clerk-mount .cl-formFieldRow,
+[data-theme="dark"] .kitchen-clerk-mount .cl-internal-b3fm6y {
+  background: transparent !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-headerTitle,
+[data-theme="dark"] .kitchen-clerk-mount .cl-formFieldLabel,
+[data-theme="dark"] .kitchen-clerk-mount .cl-footerActionText,
+[data-theme="dark"] .kitchen-clerk-mount .cl-socialButtonsBlockButtonText,
+[data-theme="dark"] .kitchen-clerk-mount .cl-identityPreviewText {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-headerSubtitle,
+[data-theme="dark"] .kitchen-clerk-mount .cl-dividerText,
+[data-theme="dark"] .kitchen-clerk-mount .cl-formFieldHintText,
+[data-theme="dark"] .kitchen-clerk-mount .cl-footer,
+[data-theme="dark"] .kitchen-clerk-mount .cl-footerAction {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-formFieldInput,
+[data-theme="dark"] .kitchen-clerk-mount input {
+  background: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--input-text) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-formFieldInput::placeholder,
+[data-theme="dark"] .kitchen-clerk-mount input::placeholder {
+  color: var(--input-placeholder) !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-formFieldInput:focus,
+[data-theme="dark"] .kitchen-clerk-mount input:focus {
+  background: var(--input-focus-bg) !important;
+  border-color: var(--input-focus-border) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--border-focus) 22%, transparent) !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-socialButtonsBlockButton,
+[data-theme="dark"] .kitchen-clerk-mount .cl-identityPreview {
+  background: var(--button-secondary-bg) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--button-secondary-text) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-dividerLine {
+  background: var(--border-soft) !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-footerActionLink,
+[data-theme="dark"] .kitchen-clerk-mount .cl-formResendCodeLink {
+  color: var(--hf-brand-darker) !important;
 }
 

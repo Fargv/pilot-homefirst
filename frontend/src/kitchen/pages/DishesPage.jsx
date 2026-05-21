@@ -1053,7 +1053,7 @@ export default function DishesPage() {
         {/* Onboarding suggestions (outside panel, above grid) */}
         {(isIngredientsTab ? filteredIngredientSuggestions : (activeTab === "main" ? filteredDishSuggestions : [])).length > 0 && (
           <div style={{ padding: "4px 4px 0" }}>
-            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#6366f1", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "var(--hf-brand-darker)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
               Sugerencias para ti
             </p>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
