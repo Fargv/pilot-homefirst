@@ -134,6 +134,8 @@ export default function DishesPage() {
   const ingredientInfoPopoverRef = useRef(null);
   const infoButtonRefs = useRef(new Map());
   const ingredientInfoButtonRefs = useRef(new Map());
+  const panelHeadingRef = useRef(null);
+  const [showStickyAction, setShowStickyAction] = useState(false);
   const todayKey = new Date().toISOString().slice(0, 10);
   const currentWeekStart = useMemo(
     () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
@@ -160,6 +162,17 @@ export default function DishesPage() {
     }
     mediaQuery.addListener(updateMediaState);
     return () => mediaQuery.removeListener(updateMediaState);
+  }, []);
+
+  useEffect(() => {
+    const el = panelHeadingRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyAction(!entry.isIntersecting),
+      { threshold: 0, rootMargin: "-72px 0px 0px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   const loadDishes = async () => {
@@ -863,7 +876,7 @@ export default function DishesPage() {
         {/* ── Unified Explorer Panel ──────────────────────────────────── */}
         <div className="dishes-explorer-panel">
           {/* Heading: title + subtitle + desktop new-dish button */}
-          <div className="dishes-explorer-heading">
+          <div className="dishes-explorer-heading" ref={panelHeadingRef}>
             <div className="dishes-explorer-text">
               <h2 className="dishes-explorer-title">{headerTitle}</h2>
               <p className="dishes-explorer-subtitle">{headerDescription}</p>
@@ -1035,7 +1048,6 @@ export default function DishesPage() {
             </div>
           </div>
         )}
-        ) : null}
         {isIngredientsTab ? (
           <>
             {ingredientsLoading ? (
@@ -1425,6 +1437,14 @@ export default function DishesPage() {
           <div className="kitchen-alert error">{ingredientsError}</div>
         ) : null}
       </div>
+
+      {showStickyAction && (
+        <div className="dishes-sticky-action">
+          <button className="kitchen-button dishes-sticky-action-btn" type="button" onClick={headerActionHandler}>
+            + {headerActionLabel}
+          </button>
+        </div>
+      )}
 
       {recipeModalDish ? (
         <RecipeModal dish={recipeModalDish} onClose={() => setRecipeModalDish(null)} />

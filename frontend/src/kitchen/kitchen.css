@@ -6437,11 +6437,12 @@ body {
 .kitchen-dish-card:not(.kitchen-ingredient-card) .kitchen-dish-actions-bar {
   padding: 12px 6px 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .kitchen-dish-card:not(.kitchen-ingredient-card) .kitchen-dish-actions {
-  justify-content: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 
@@ -6472,7 +6473,7 @@ body {
   }
 
   .kitchen-dish-card:not(.kitchen-ingredient-card) .kitchen-dish-actions {
-    justify-content: center;
+    justify-content: flex-end;
     gap: 10px;
   }
 
@@ -6605,19 +6606,26 @@ body {
   padding: 12px 6px 0;
   border-top: 1px solid var(--hf-border);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kitchen-dish-card:not(.kitchen-ingredient-card) .kitchen-dish-actions-bar {
+  gap: 10px;
 }
 
 .kitchen-dish-card .kitchen-dish-actions {
-  width: auto;
+  width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
   gap: 10px;
-  margin-left: auto;
+}
+
+.kitchen-ingredient-card .kitchen-dish-actions-bar {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button {
@@ -9840,6 +9848,41 @@ body {
   .dishes-fab:active {
     transform: scale(0.96);
     box-shadow: 0 4px 14px rgba(79, 70, 229, 0.38);
+  }
+}
+
+/* Scroll fade affordance on chip rows (mobile) */
+@media (max-width: 900px) {
+  .dishes-meal-filter-row,
+  .dishes-explorer-panel .kitchen-dish-category-filters {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 24px), transparent 100%);
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+}
+
+/* Sticky "Nuevo Plato" CTA — appears on desktop when the panel heading scrolls out of view */
+.dishes-sticky-action {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  z-index: 30;
+  animation: dishes-sticky-fade-in 0.18s ease;
+}
+
+@keyframes dishes-sticky-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dishes-sticky-action-btn {
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.28);
+}
+
+@media (max-width: 900px) {
+  .dishes-sticky-action {
+    display: none;
   }
 }
 
