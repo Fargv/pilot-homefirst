@@ -12,6 +12,7 @@ import {
   buildLicenseState,
   canUseBudgetFeature,
   canUseDietRandomization,
+  canUseDinnersFeature,
   countLicenseUsage,
   isNonUserDinerLimitReachedError,
   isUnlimitedLicenseLimit,
@@ -276,6 +277,7 @@ export default function SettingsPage() {
     [palette, selectedColorId]
   );
   const budgetFeatureEnabled = canUseBudgetFeature(subscriptionPlan);
+  const canUseDinners = canUseDinnersFeature(subscriptionPlan);
   const licenseActionLabel = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
   const memberUsage = useMemo(() => countLicenseUsage(members), [members]);
   const licenseState = useMemo(
@@ -1061,13 +1063,18 @@ export default function SettingsPage() {
 
   const ProfilePanel = (
     <div className="settings-panel">
-      <div className="settings-panel-header">
-        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
-        <h2>Perfil</h2>
+      <div className="settings-panel-heading">
+        <button type="button" className="settings-back-btn" onClick={() => setPanel("")}>
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Volver
+        </button>
+        <h2 className="settings-panel-title">Tu perfil</h2>
+        <p className="settings-panel-sub">Identidad visual y disponibilidad de cocinero</p>
       </div>
       <div className="settings-block">
+        <p className="settings-section-label" style={{ marginBottom: 12 }}>Información personal</p>
         <div className="settings-inline-heading">
-          <h3 className="settings-subtitle">Profile details</h3>
+          <h3 className="settings-subtitle">Nombre y color</h3>
           {!profileEditingMain ? (
             <button type="button" className="settings-icon-only" onClick={enterProfileEdit} aria-label="Editar perfil">
               <PencilIcon />
@@ -1174,10 +1181,11 @@ export default function SettingsPage() {
         <p className="kitchen-muted">Email: {user?.email || "Sin email"}</p>
       </div>
       <div className="settings-block">
-        <button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(true)}>Cambiar contrasena</button>
+        <p className="settings-section-label" style={{ marginBottom: 12 }}>Seguridad</p>
+        <button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(true)}>Cambiar contraseña</button>
       </div>
       <div className="settings-block danger">
-        <h3 className="settings-subtitle">Zona de peligro</h3>
+        <p className="settings-section-label" style={{ marginBottom: 8, color: "#ef4444" }}>Zona de peligro</p>
         <p className="settings-danger-text">Esta accion puede eliminar tu cuenta o todo el household si eres el ultimo owner.</p>
         <button type="button" className="kitchen-button secondary danger" onClick={openDeleteProfileFlow}>Eliminar mi perfil</button>
       </div>
@@ -1186,111 +1194,85 @@ export default function SettingsPage() {
 
   const PreferencesPanel = (
     <div className="settings-panel">
-      <div className="settings-panel-header">
-        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
-        <h2>Preferencias</h2>
-      </div>
-      <div className="settings-block">
-        <div className="settings-coming-row"><span>Idioma</span><span className="kitchen-pill">Coming soon</span></div>
-        <div className="settings-coming-row"><span>Dark mode</span><span className="kitchen-pill">Coming soon</span></div>
-      </div>
-      <div className="settings-block">
-        <div className="settings-inline-heading">
-          <h3 className="settings-subtitle">Subscription</h3>
-          <span className={subscriptionBadgeClassName(subscriptionPlan)}>{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
-        </div>
-        <div className="settings-subscription-row">
-          <span className="kitchen-muted">Current Plan</span>
-          <strong>{formatSubscriptionPlanLabel(subscriptionPlan)}</strong>
-        </div>
-        <div className="settings-subscription-row">
-          <span className="kitchen-muted">Status</span>
-          <strong>{formatSubscriptionStatusLabel(subscriptionStatus)}</strong>
-        </div>
-        {subscriptionRequestedPlan && subscriptionStatus === "pending" ? (
-          <p className="kitchen-muted">Pending request: {formatSubscriptionPlanLabel(subscriptionRequestedPlan)}</p>
-        ) : null}
-        <div className="settings-subscription-row">
-          <span className="kitchen-muted">Users</span>
-          <strong>{licenseState.usage.users} / {isUnlimitedLicenseLimit(licenseState.limits.maxUsers) ? "Unlimited" : licenseState.limits.maxUsers}</strong>
-        </div>
-        <div className="settings-subscription-row">
-          <span className="kitchen-muted">Non-user diners</span>
-          <strong>{licenseState.usage.nonUserDiners} / {isUnlimitedLicenseLimit(licenseState.limits.maxNonUserDiners) ? "Unlimited" : licenseState.limits.maxNonUserDiners}</strong>
-        </div>
-        <p className="kitchen-muted">{formatLicenseLimit(licenseState.limits.maxUsers, "user", "users")}</p>
-        <p className="kitchen-muted">{formatLicenseLimit(licenseState.limits.maxNonUserDiners, "non-user diner", "non-user diners")}</p>
+      <div className="settings-panel-heading">
+        <button type="button" className="settings-back-btn" onClick={() => setPanel("")}>
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Volver
+        </button>
+        <h2 className="settings-panel-title">Preferencias</h2>
+        <p className="settings-panel-sub">Planificación semanal, notificaciones y app</p>
       </div>
 
-      {/* Pending downgrade banner */}
-      {pendingDowngradeAt && (
-        <div style={{
-          margin: "0 0 4px",
-          padding: "12px 16px",
-          background: "#fffbeb",
-          border: "1px solid #f59e0b",
-          borderRadius: 10,
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 10
-        }}>
-          <span style={{ fontSize: 18, lineHeight: 1.3, flexShrink: 0 }}>⏳</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: "0 0 4px", fontWeight: 600, fontSize: "0.86rem", color: "#92400e" }}>
-              Tu plan vuelve a Basic el {formatDowngradeDate(pendingDowngradeAt)}
-            </p>
-            <p style={{ margin: "0 0 10px", fontSize: "0.79rem", color: "#b45309" }}>
-              Hasta entonces sigues disfrutando de todas las funciones.
-            </p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button
-                type="button"
-                className="kitchen-button secondary"
-                style={{ fontSize: "0.79rem", padding: "4px 10px" }}
-                onClick={handleUndoCancelFromSettings}
-                disabled={undoCancelLoading}
-              >
-                {undoCancelLoading ? "Reactivando..." : "Reactivar suscripción"}
-              </button>
-              <button
-                type="button"
-                className="kitchen-button secondary"
-                style={{ fontSize: "0.79rem", padding: "4px 10px" }}
-                onClick={() => navigate("/kitchen/upgrade")}
-              >
-                Ver planes →
-              </button>
+      {/* Planificación semanal */}
+      <div className="settings-block">
+        <p className="settings-section-label" style={{ marginBottom: 12 }}>Planificación semanal</p>
+        <div className="settings-household-pref-row">
+          <div className="settings-household-pref-main">
+            <div className="settings-household-pref-title">
+              <span>Planificar también cenas</span>
+              {!canUseDinners ? (
+                <span className="dinner-gate-pro-badge">PRO</span>
+              ) : null}
             </div>
+            <p className="kitchen-muted">
+              {canUseDinners
+                ? "Si está activado, cada semana incluirá también planificación de cenas."
+                : "Disponible en los planes Pro y Premium."}
+            </p>
           </div>
+          {canUseDinners ? (
+            <label className="kitchen-toggle" aria-label="Planificar cenas">
+              <input
+                type="checkbox"
+                className="kitchen-toggle-input"
+                checked={dinnersEnabled}
+                disabled={householdPrefsSaving || !canManageHousehold}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  setDinnersEnabled(checked);
+                  void saveHouseholdPreferences({ dinnersEnabled: checked });
+                }}
+              />
+              <span className="kitchen-toggle-track" />
+            </label>
+          ) : (
+            <button
+              type="button"
+              className="kitchen-button secondary"
+              style={{ fontSize: "0.79rem", padding: "5px 10px", flexShrink: 0 }}
+              onClick={() => navigate("/kitchen/upgrade?from=dinner-prefs")}
+            >
+              Mejorar plan
+            </button>
+          )}
         </div>
-      )}
-
-      <div className="settings-block">
-        <div className="settings-inline-heading">
-          <h3 className="settings-subtitle">Presupuesto semanal</h3>
-        </div>
-        {budgetFeatureEnabled ? (
-          <>
-            <p className="kitchen-muted">Consulta el presupuesto, el gasto y el histórico de compras por semana.</p>
-            <button type="button" className="kitchen-button secondary" onClick={openBudgetPanel}>Abrir panel de presupuesto</button>
-          </>
-        ) : (
-          <>
-            <p className="kitchen-muted">Upgrade your license to enable budgets.</p>
-            <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/upgrade")}>Upgrade your license</button>
-          </>
-        )}
       </div>
-      <PushNotificationsPanel refreshKey={user?.id || ""} />
-      <PwaInstallSettingsBlock />
+
+      {/* App */}
+      <div className="settings-block">
+        <p className="settings-section-label" style={{ marginBottom: 12 }}>App</p>
+        <div className="settings-coming-row"><span>Idioma</span><span className="kitchen-pill">Próximamente</span></div>
+        <div className="settings-coming-row"><span>Modo oscuro</span><span className="kitchen-pill">Próximamente</span></div>
+      </div>
+
+      {/* Notificaciones */}
+      <div className="settings-block">
+        <p className="settings-section-label" style={{ marginBottom: 12 }}>Notificaciones e instalación</p>
+        <PushNotificationsPanel refreshKey={user?.id || ""} />
+        <PwaInstallSettingsBlock />
+      </div>
     </div>
   );
 
   const HouseholdMembersPanel = (
     <div className="settings-panel">
-      <div className="settings-panel-header">
-        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
-        <h2>Miembros del {householdName || "household"}</h2>
+      <div className="settings-panel-heading">
+        <button type="button" className="settings-back-btn" onClick={() => setPanel("")}>
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Volver
+        </button>
+        <h2 className="settings-panel-title">{householdName || "Mi hogar"}</h2>
+        <p className="settings-panel-sub">Miembros, comensales y ajustes del hogar</p>
       </div>
       {canManageHousehold && (
         <div className="settings-block">
@@ -1328,6 +1310,7 @@ export default function SettingsPage() {
         </div>
       )}
       <div className="settings-block">
+        <p className="settings-section-label" style={{ marginBottom: 12 }}>Miembros del hogar</p>
         <p className="settings-counter">Miembros ({members.length})</p>
         {canManageHousehold ? (
           <div className="settings-members-actions">
@@ -1368,31 +1351,7 @@ export default function SettingsPage() {
       </div>
       {canManageHousehold ? (
         <div className="settings-block">
-        <div className="settings-inline-heading">
-          <h3 className="settings-subtitle">Preferencias del household</h3>
-        </div>
-        <div className="settings-household-pref-row">
-          <div className="settings-household-pref-main">
-            <div className="settings-household-pref-title">
-              <span>Planificar tambien cenas</span>
-            </div>
-            <p className="kitchen-muted">Si esta activado, cada semana incluira tambien planificacion de cenas.</p>
-          </div>
-          <label className="kitchen-toggle" aria-label="Planificar cenas">
-            <input
-              type="checkbox"
-              className="kitchen-toggle-input"
-              checked={dinnersEnabled}
-              disabled={householdPrefsSaving}
-              onChange={(event) => {
-                const checked = event.target.checked;
-                setDinnersEnabled(checked);
-                void saveHouseholdPreferences({ dinnersEnabled: checked });
-              }}
-            />
-            <span className="kitchen-toggle-track" />
-          </label>
-        </div>
+        <p className="settings-section-label" style={{ marginBottom: 12 }}>Preferencias de planificación</p>
         <div className="settings-household-pref-input-row">
           {budgetFeatureEnabled ? (
             <>
@@ -1577,14 +1536,16 @@ export default function SettingsPage() {
 
   const BitesPanel = (
     <div className="settings-panel">
-      <div className="settings-panel-header">
-        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
-        <h2>Bites</h2>
+      <div className="settings-panel-heading">
+        <button type="button" className="settings-back-btn" onClick={() => setPanel("")}>
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Volver
+        </button>
+        <h2 className="settings-panel-title">Bites</h2>
+        <p className="settings-panel-sub">Saldo y movimientos de tu moneda interna</p>
       </div>
       <div className="settings-block">
-        <div className="settings-inline-heading">
-          <h3 className="settings-subtitle">Saldo actual</h3>
-        </div>
+        <p className="settings-section-label" style={{ marginBottom: 12 }}>Saldo actual</p>
         <div className="settings-subscription-row">
           <span className="kitchen-muted">Gratuitos</span>
           <strong>{bitesSummary.free}</strong>
@@ -1595,9 +1556,7 @@ export default function SettingsPage() {
         </div>
       </div>
       <div className="settings-block">
-        <div className="settings-inline-heading">
-          <h3 className="settings-subtitle">Historial de movimientos</h3>
-        </div>
+        <p className="settings-section-label" style={{ marginBottom: 12 }}>Historial de movimientos</p>
         {bitesHistoryLoading ? (
           <p className="kitchen-muted">Cargando...</p>
         ) : !bitesHistory.length ? (
@@ -1656,9 +1615,13 @@ export default function SettingsPage() {
 
   const CategoriesPanel = (
     <div className="settings-panel">
-      <div className="settings-panel-header">
-        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
-        <h2>Categorias</h2>
+      <div className="settings-panel-heading">
+        <button type="button" className="settings-back-btn" onClick={() => setPanel("")}>
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Volver
+        </button>
+        <h2 className="settings-panel-title">Categorías</h2>
+        <p className="settings-panel-sub">Organiza platos e ingredientes por tipo</p>
       </div>
       <div className="settings-block settings-accordion-stack">
         <div className={`settings-accordion ${categoriesAccordion.dishes ? "is-open" : ""}`}>
@@ -1736,9 +1699,13 @@ export default function SettingsPage() {
 
   const DeletedPanel = (
     <div className="settings-panel">
-      <div className="settings-panel-header">
-        <button type="button" className="kitchen-button secondary" onClick={() => setPanel("")}>Volver</button>
-        <h2>Eliminados</h2>
+      <div className="settings-panel-heading">
+        <button type="button" className="settings-back-btn" onClick={() => setPanel("")}>
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Volver
+        </button>
+        <h2 className="settings-panel-title">Eliminados</h2>
+        <p className="settings-panel-sub">Recupera platos e ingredientes eliminados</p>
       </div>
       <div className="settings-block">
         <div className="kitchen-dishes-tabs" role="tablist" aria-label="Secciones eliminadas">

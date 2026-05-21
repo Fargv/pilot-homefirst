@@ -5767,6 +5767,50 @@ body {
   margin: 0;
 }
 
+/* ─── Settings Panel Heading (new unified style) ─────────────────── */
+
+.settings-panel-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hf-border, #e8edf4);
+  margin-bottom: 4px;
+}
+
+.settings-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hf-brand, #4f46e5);
+  padding: 0 0 6px;
+  margin: 0;
+  width: fit-content;
+}
+
+.settings-back-btn:hover {
+  color: #3730a3;
+}
+
+.settings-panel-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.settings-panel-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--hf-muted, #94a3b8);
+}
+
 .settings-block {
   border: 1px solid #e8ebf8;
   border-radius: 18px;
