@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
+import { useTheme } from "../../context/ThemeContext.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
@@ -149,6 +150,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { activeWeek } = useActiveWeek();
   const { user, setUser, refreshUser, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const { notify: notifyOnboarding } = useOnboarding();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { notifyOnboarding("visit_settings"); }, []);
@@ -1252,7 +1254,43 @@ export default function SettingsPage() {
       <div className="settings-block">
         <p className="settings-section-label" style={{ marginBottom: 12 }}>App</p>
         <div className="settings-coming-row"><span>Idioma</span><span className="kitchen-pill">Próximamente</span></div>
-        <div className="settings-coming-row"><span>Modo oscuro</span><span className="kitchen-pill">Próximamente</span></div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hf-text)" }}>Apariencia</span>
+          <div className="theme-selector">
+            <button
+              type="button"
+              className={`theme-selector-option${theme === "system" ? " is-active" : ""}`}
+              onClick={() => setTheme("system")}
+            >
+              <svg className="theme-selector-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+              </svg>
+              Sistema
+            </button>
+            <button
+              type="button"
+              className={`theme-selector-option${theme === "light" ? " is-active" : ""}`}
+              onClick={() => setTheme("light")}
+            >
+              <svg className="theme-selector-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="5" />
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+              Claro
+            </button>
+            <button
+              type="button"
+              className={`theme-selector-option${theme === "dark" ? " is-active" : ""}`}
+              onClick={() => setTheme("dark")}
+            >
+              <svg className="theme-selector-icon" viewBox="0 0 24 24" aria-hidden="true" style={{ strokeWidth: 1.6 }}>
+                <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" />
+              </svg>
+              Oscuro
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Notificaciones */}

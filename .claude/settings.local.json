@@ -86,7 +86,15 @@
       "Bash(git --version)",
       "Bash(git clone *)",
       "Bash(node *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\APPS\\\\pilot-homefirst\" -Directory -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(python *)",
+      "Bash(Remove-Item *)",
+      "Bash(npx tsc *)",
+      "PowerShell(git *)",
+      "PowerShell(git -C \"C:\\\\APPS\\\\pilot-homefirst\\\\frontend\" commit -m $msg)",
+      "PowerShell($msg = \"Unify IngredientPicker quick-create modal with new ingredient modal UX`n`nReplace category chip list with SearchableSelect, add debounced duplicate`ndetection, hide canonicalName, add supermarket-section hint, update sub-modal`ncopy to Nueva seccion. Post-creation flow preserved.`n`nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\")"
     ]
   }
 }

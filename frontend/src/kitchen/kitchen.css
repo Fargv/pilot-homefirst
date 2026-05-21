@@ -11119,3 +11119,811 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE  —  [data-theme="dark"]
+   All token overrides + targeted hardcoded-color overrides
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Core surfaces */
+  --hf-bg: #0f1117;
+  --hf-bg-gradient: linear-gradient(
+    180deg,
+    rgba(60, 40, 120, 0.28) 0%,
+    rgba(20, 60, 40, 0.18) 42%,
+    rgba(15, 17, 23, 0.97) 100%
+  );
+  --hf-surface: #1a1d2e;
+  --hf-surface-soft: #232742;
+  --hf-surface-mint: #162b1e;
+  --hf-surface-peach: #2a1c12;
+
+  /* Text */
+  --hf-text: #e2e8f0;
+  --hf-muted: #8896a5;
+
+  /* Brand (softened indigo for dark) */
+  --hf-brand: #818cf8;
+  --hf-brand-dark: #6d77f0;
+  --hf-brand-darker: #a5b0fd;
+  --hf-brand-light: #a5b4fc;
+  --hf-brand-strong: #818cf8;
+  --hf-primary: #818cf8;
+  --hf-primary-strong: #6d77f0;
+
+  /* Borders & utility */
+  --hf-border: #2d3348;
+  --hf-danger: #f87171;
+
+  /* Shadows */
+  --hf-shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.45);
+  --hf-shadow-glass: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  /* Glass */
+  --hf-glass: rgba(26, 29, 46, 0.88);
+  --hf-glass-border: rgba(45, 51, 72, 0.9);
+}
+
+/* ─── Responsive bg-gradient overrides for dark ─────────────── */
+@media (min-width: 768px) {
+  [data-theme="dark"] {
+    --hf-bg-gradient: linear-gradient(
+      180deg,
+      rgba(60, 40, 120, 0.22) 0%,
+      rgba(20, 60, 40, 0.14) 46%,
+      rgba(15, 17, 23, 0.99) 100%
+    );
+  }
+}
+@media (min-width: 1200px) {
+  [data-theme="dark"] {
+    --hf-bg-gradient: linear-gradient(
+      180deg,
+      rgba(60, 40, 120, 0.18) 0%,
+      rgba(20, 60, 40, 0.10) 50%,
+      rgba(15, 17, 23, 1) 100%
+    );
+  }
+}
+
+/* ─── Smooth theme transitions ───────────────────────────────── */
+[data-theme] .kitchen-app,
+[data-theme] .kitchen-topbar,
+[data-theme] .kitchen-bottom-nav,
+[data-theme] .kitchen-drawer,
+[data-theme] .kitchen-card,
+[data-theme] .kitchen-modal,
+[data-theme] .kitchen-context-modal,
+[data-theme] .settings-block,
+[data-theme] .settings-coming-row {
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+/* ─── Layout chrome ──────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-topbar {
+  background: var(--hf-surface);
+  border-bottom-color: var(--hf-border);
+}
+
+[data-theme="dark"] .kitchen-bottom-nav {
+  background: var(--hf-surface);
+  border-top-color: var(--hf-border);
+}
+
+[data-theme="dark"] .kitchen-bottom-nav-item {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-bottom-nav-item.active {
+  background: var(--hf-surface-soft);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .kitchen-drawer {
+  background: var(--hf-surface);
+}
+
+[data-theme="dark"] .kitchen-drawer-close {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .kitchen-nav-toggle {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+}
+
+[data-theme="dark"] .kitchen-nav-toggle span {
+  background: var(--hf-text);
+}
+
+/* ─── Brand / nav ────────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-brand-link {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .kitchen-nav-desktop a,
+[data-theme="dark"] .kitchen-nav-mobile a {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-nav-desktop a.active,
+[data-theme="dark"] .kitchen-nav-mobile a.active {
+  background: var(--hf-surface-soft);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .kitchen-user-name {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .kitchen-logout-button {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-logout-button:hover {
+  background: var(--hf-surface-soft);
+  color: var(--hf-text);
+}
+
+/* ─── Cards ──────────────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-card {
+  background: var(--hf-surface);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* ─── Tabs ───────────────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-meal-tabs {
+  background: rgba(35, 39, 66, 0.72);
+  border-color: rgba(45, 51, 72, 0.6);
+}
+
+[data-theme="dark"] .kitchen-meal-tab {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-meal-tab.is-active {
+  background: var(--hf-surface);
+  color: var(--hf-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .kitchen-meal-tab-link {
+  color: var(--hf-muted);
+  background: rgba(45, 51, 72, 0.35);
+}
+
+[data-theme="dark"] .kitchen-meal-tab-link:hover {
+  background: rgba(45, 51, 72, 0.7);
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .kitchen-dishes-tabs {
+  background: var(--hf-surface-soft);
+}
+
+[data-theme="dark"] .kitchen-tab-button {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-tab-button.is-active {
+  background: var(--hf-surface);
+  color: var(--hf-text);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* ─── Week carousel arrows ───────────────────────────────────── */
+[data-theme="dark"] .kitchen-week-carousel-arrow {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+  color: var(--hf-text);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .kitchen-week-carousel-dot {
+  background: var(--hf-border);
+}
+
+/* ─── Filter chips ───────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-filter-chip {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-filter-chip:hover {
+  background: var(--hf-surface-soft);
+}
+
+[data-theme="dark"] .kitchen-filter-chip.is-active {
+  border-color: var(--hf-brand);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .kitchen-filter-chip.is-all {
+  background: var(--hf-surface-soft);
+}
+
+/* ─── Inputs & forms ─────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-input,
+[data-theme="dark"] .kitchen-select,
+[data-theme="dark"] .kitchen-textarea {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .kitchen-input::placeholder,
+[data-theme="dark"] .kitchen-select::placeholder,
+[data-theme="dark"] .kitchen-textarea::placeholder {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-label {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-toggle-track {
+  background: #3d4358;
+}
+
+[data-theme="dark"] .kitchen-pill {
+  background: var(--hf-surface-soft);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .kitchen-empty {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-muted {
+  color: var(--hf-muted);
+}
+
+/* ─── Buttons ────────────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-button {
+  background: var(--hf-brand);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+[data-theme="dark"] .kitchen-button:hover:not(:disabled) {
+  background: var(--hf-brand-dark);
+}
+
+[data-theme="dark"] .kitchen-button.secondary,
+[data-theme="dark"] .kitchen-button.ghost {
+  background: var(--hf-surface-soft);
+  color: var(--hf-text);
+  border-color: var(--hf-border);
+}
+
+[data-theme="dark"] .kitchen-button.secondary:hover:not(:disabled),
+[data-theme="dark"] .kitchen-button.ghost:hover:not(:disabled) {
+  background: var(--hf-surface);
+}
+
+[data-theme="dark"] .kitchen-icon-button {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-icon-button:hover {
+  background: var(--hf-surface-soft);
+  color: var(--hf-text);
+}
+
+/* ─── Assignee button / menu ─────────────────────────────────── */
+[data-theme="dark"] .kitchen-assignee-button {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .kitchen-assignee-button:hover {
+  border-color: var(--hf-brand);
+}
+
+/* ─── Week nav ───────────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-assign-week-nav {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-assign-week-label {
+  color: var(--hf-text);
+}
+
+/* ─── Modals ─────────────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-modal {
+  background: var(--hf-surface);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .kitchen-context-modal {
+  background: var(--hf-surface);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .kitchen-color-option {
+  background: var(--hf-surface-soft);
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .kitchen-color-option.selected {
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Suggestions ────────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-suggestion-list {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .kitchen-suggestion {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .kitchen-suggestion:hover {
+  background: var(--hf-surface-soft);
+}
+
+/* ─── Skeleton loaders ───────────────────────────────────────── */
+[data-theme="dark"] .kitchen-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(45, 51, 72, 0.9) 0%,
+    rgba(60, 67, 92, 0.96) 42%,
+    rgba(45, 51, 72, 0.88) 100%
+  );
+}
+
+[data-theme="dark"] .kitchen-skeleton::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+[data-theme="dark"] .kitchen-skeleton-panel {
+  background: linear-gradient(180deg, rgba(26, 29, 46, 0.98) 0%, rgba(15, 17, 23, 0.99) 100%);
+}
+
+[data-theme="dark"] .kitchen-skeleton-day-card {
+  background: linear-gradient(180deg, rgba(26, 29, 46, 0.98) 0%, rgba(20, 22, 36, 0.98) 100%);
+  border-color: rgba(45, 51, 72, 0.94);
+}
+
+[data-theme="dark"] .kitchen-skeleton-day-footer {
+  border-top-color: rgba(45, 51, 72, 0.92);
+}
+
+[data-theme="dark"] .kitchen-loading-inline {
+  background: rgba(26, 29, 46, 0.82);
+  border-color: rgba(45, 51, 72, 0.8);
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .kitchen-loading-copy-text h2 {
+  color: var(--hf-text);
+}
+
+/* ─── Settings ───────────────────────────────────────────────── */
+[data-theme="dark"] .settings-block {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+}
+
+[data-theme="dark"] .settings-block.danger {
+  background: rgba(185, 28, 28, 0.12);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+[data-theme="dark"] .settings-panel-title {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .settings-back-btn:hover {
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .settings-coming-row {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .settings-mini-button,
+[data-theme="dark"] .settings-mini-icon,
+[data-theme="dark"] .settings-icon-only {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .settings-mini-icon.danger {
+  border-color: rgba(248, 113, 113, 0.3);
+  color: var(--hf-danger);
+}
+
+[data-theme="dark"] .settings-mini-icon.is-copied {
+  border-color: rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+}
+
+[data-theme="dark"] .settings-copy-box {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+}
+
+[data-theme="dark"] .settings-share-hero {
+  background:
+    radial-gradient(circle at top right, rgba(129, 140, 248, 0.16), transparent 34%),
+    linear-gradient(135deg, var(--hf-surface) 0%, var(--hf-surface-soft) 100%);
+  border-color: rgba(129, 140, 248, 0.2);
+}
+
+[data-theme="dark"] .settings-share-eyebrow {
+  background: rgba(129, 140, 248, 0.15);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .settings-share-hero p {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .settings-email-composer {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+}
+
+[data-theme="dark"] .settings-email-chip {
+  background: var(--hf-surface-soft);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .settings-email-input {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .settings-share-code-card {
+  background: linear-gradient(180deg, var(--hf-surface) 0%, var(--hf-surface-soft) 100%);
+  border-color: var(--hf-border);
+}
+
+[data-theme="dark"] .settings-share-code-card strong {
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .settings-share-activity li,
+[data-theme="dark"] .settings-share-results li {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+}
+
+[data-theme="dark"] .settings-share-activity li span,
+[data-theme="dark"] .settings-share-results li span {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .settings-share-results li.is-success {
+  background: rgba(22, 101, 52, 0.18);
+  border-color: rgba(74, 222, 128, 0.25);
+}
+
+[data-theme="dark"] .settings-share-results li.is-error {
+  background: rgba(127, 29, 29, 0.18);
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+[data-theme="dark"] .settings-readonly-grid.is-view-mode .is-readonly-field {
+  background: var(--hf-surface-soft);
+  color: var(--hf-muted);
+  border-color: var(--hf-border);
+}
+
+[data-theme="dark"] .settings-counter {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .settings-household-pref-title {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .settings-household-pref-popover {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Shopping list ──────────────────────────────────────────── */
+[data-theme="dark"] .shopping-list-page,
+[data-theme="dark"] .shopping-category-group {
+  background: transparent;
+}
+
+[data-theme="dark"] .shopping-item {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+}
+
+[data-theme="dark"] .shopping-item.is-checked {
+  background: var(--hf-surface-soft);
+  opacity: 0.6;
+}
+
+[data-theme="dark"] .shopping-category-title {
+  color: var(--hf-muted);
+}
+
+/* ─── Ingredient duplicate warning ──────────────────────────── */
+[data-theme="dark"] .ingredient-duplicate-warning {
+  background: rgba(120, 90, 0, 0.2);
+  border-color: rgba(234, 179, 8, 0.3);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .ingredient-duplicate-warning svg {
+  color: #f59e0b;
+}
+
+/* ─── Recipe editor ──────────────────────────────────────────── */
+[data-theme="dark"] .recipe-link-dialog,
+[data-theme="dark"] .recipe-color-picker {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .recipe-link-dialog-title {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .recipe-link-dialog-field {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .recipe-link-dialog-input {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .recipe-link-dialog-btn {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .recipe-link-dialog-btn:hover {
+  background: var(--hf-surface);
+}
+
+[data-theme="dark"] .recipe-link-dialog-btn.primary {
+  background: var(--hf-brand);
+  color: #fff;
+  border-color: var(--hf-brand);
+}
+
+[data-theme="dark"] .recipe-link-dialog-btn.danger {
+  background: transparent;
+  color: var(--hf-danger);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+[data-theme="dark"] .recipe-link-dialog-btn.danger:hover {
+  background: rgba(127, 29, 29, 0.15);
+}
+
+[data-theme="dark"] .recipe-color-reset {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .recipe-color-reset:hover {
+  background: var(--hf-surface);
+}
+
+[data-theme="dark"] .recipe-color-swatch.is-active {
+  border-color: var(--hf-text);
+  box-shadow: 0 0 0 2px var(--hf-surface) inset;
+}
+
+/* ─── Ingredient pill (recipe) ───────────────────────────────── */
+[data-theme="dark"] .recipe-ingredient-row--pill .recipe-ingredient-pill {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .recipe-ingredient-pill-dot {
+  background: var(--hf-brand);
+}
+
+/* ─── Catalog page ───────────────────────────────────────────── */
+[data-theme="dark"] .catalog-title {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .catalog-subtitle {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .catalog-bites-wallet {
+  background: linear-gradient(145deg, var(--hf-surface-soft) 0%, rgba(35, 39, 66, 0.9) 100%);
+  border-color: rgba(129, 140, 248, 0.2);
+}
+
+[data-theme="dark"] .catalog-bites-wallet-breakdown {
+  color: var(--hf-muted);
+}
+
+/* ─── SearchableSelect (ss-*) dark overrides ─────────────────── */
+[data-theme="dark"] .ss-trigger {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .ss-trigger:hover:not(:disabled) {
+  border-color: var(--hf-brand);
+}
+
+[data-theme="dark"] .ss-container.is-open .ss-trigger {
+  border-color: var(--hf-brand);
+}
+
+[data-theme="dark"] .ss-panel {
+  background: var(--hf-surface);
+  border-color: var(--hf-brand);
+}
+
+[data-theme="dark"] .ss-search-wrapper {
+  background: var(--hf-surface-soft);
+  border-bottom-color: var(--hf-border);
+}
+
+[data-theme="dark"] .ss-search {
+  color: var(--hf-text);
+}
+
+[data-theme="dark"] .ss-search::placeholder {
+  color: var(--hf-muted);
+}
+
+[data-theme="dark"] .ss-option {
+  color: var(--hf-text);
+  border-bottom-color: var(--hf-border);
+}
+
+[data-theme="dark"] .ss-option:hover {
+  background: var(--hf-surface-soft);
+}
+
+[data-theme="dark"] .ss-option-selected {
+  background: var(--hf-surface-soft);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .ss-option-create {
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .ss-option-create:hover {
+  background: var(--hf-surface-soft);
+}
+
+/* ─── Theme selector (Settings > Preferences) ───────────────── */
+.theme-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.theme-selector-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  border: 1.5px solid var(--hf-border);
+  background: var(--hf-surface);
+  color: var(--hf-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.theme-selector-option.is-active {
+  border-color: var(--hf-brand);
+  background: var(--hf-surface-soft);
+  color: var(--hf-brand-darker);
+}
+
+.theme-selector-icon {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.theme-selector-option.is-active .theme-selector-icon {
+  stroke: var(--hf-brand);
+}
+
+/* ─── Alerts ─────────────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-alert.error {
+  background: rgba(127, 29, 29, 0.18);
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .kitchen-inline-error {
+  color: var(--hf-danger);
+}
+
+/* ─── Day cards ──────────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-day-card {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+}
+
+[data-theme="dark"] .kitchen-day-card .kitchen-day-header {
+  color: var(--hf-text);
+}
+
+/* ─── Premium / upgrade banners ──────────────────────────────── */
+[data-theme="dark"] .kitchen-upgrade-banner,
+[data-theme="dark"] .upgrade-banner {
+  background: linear-gradient(135deg, var(--hf-surface-soft) 0%, rgba(60, 40, 100, 0.4) 100%);
+  border-color: rgba(129, 140, 248, 0.25);
+}
+
+/* ─── FAB buttons ────────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-fab,
+[data-theme="dark"] .fab-button {
+  background: var(--hf-brand);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Empty states ───────────────────────────────────────────── */
+[data-theme="dark"] .kitchen-empty-state {
+  color: var(--hf-muted);
+}
+
+/* ─── Onboarding ─────────────────────────────────────────────── */
+[data-theme="dark"] .onboarding-card,
+[data-theme="dark"] .challenge-card {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+}
+
+/* ─── Modal sheet (ModalSheet component) ─────────────────────── */
+[data-theme="dark"] .modal-sheet {
+  background: var(--hf-surface);
+}
+
+[data-theme="dark"] .modal-sheet-handle {
+  background: var(--hf-border);
+}
+
+/* ─── Payment / Stripe pages ─────────────────────────────────── */
+[data-theme="dark"] .payment-result-card,
+[data-theme="dark"] .checkout-card {
+  background: var(--hf-surface);
+  border-color: var(--hf-border);
+}
+
