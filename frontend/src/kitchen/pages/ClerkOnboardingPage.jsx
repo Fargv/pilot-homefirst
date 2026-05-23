@@ -217,13 +217,22 @@ export default function ClerkOnboardingPage() {
     }
   }, [navigate, user]);
 
-  // If Clerk is loaded but no active session, send the user back to sign-in.
+  // If Clerk is loaded but no active session, redirect to sign-up or sign-in.
+  // Users arriving with a beta invite are new accounts → send to sign-up.
   useEffect(() => {
     if (!clerkIsLoaded) return;
     if (!isSignedIn) {
-      clerk.redirectToSignIn({ redirectUrl: CLERK_AFTER_SIGN_UP_PATH });
+      const hasBetaInvite = Boolean(
+        searchParams.get("betaInvite")
+        || window.sessionStorage.getItem(CLERK_STORAGE_BETA_INVITE_KEY)
+      );
+      if (hasBetaInvite) {
+        clerk.redirectToSignUp({ redirectUrl: CLERK_AFTER_SIGN_UP_PATH });
+      } else {
+        clerk.redirectToSignIn({ redirectUrl: CLERK_AFTER_SIGN_UP_PATH });
+      }
     }
-  }, [clerkIsLoaded, isSignedIn, clerk]);
+  }, [clerkIsLoaded, isSignedIn, clerk, searchParams]);
 
   // One-time phase initialization: this page always lands on "household".
   useEffect(() => {

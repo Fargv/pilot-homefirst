@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { SignIn, SignUp, useAuth as useClerkAuth, useClerk } from "@clerk/react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { fetchInviteDetails } from "../api.js";
-import { CLERK_AFTER_SIGN_UP_PATH, CLERK_STORAGE_INVITE_CODE_KEY, CLERK_STORAGE_INVITE_TOKEN_KEY } from "../clerk-shared.js";
+import { CLERK_AFTER_SIGN_UP_PATH, CLERK_STORAGE_BETA_INVITE_KEY, CLERK_STORAGE_INVITE_CODE_KEY, CLERK_STORAGE_INVITE_TOKEN_KEY } from "../clerk-shared.js";
 import { useAuth } from "../auth";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 import Card from "../components/ui/Card";
@@ -98,6 +98,12 @@ function ClerkAuthContent({ mode }) {
     || searchParams.get("invite")
     || ""
   ).replace(/\D/g, "").slice(0, 6);
+  const betaInviteToken = String(
+    searchParams.get("betaInvite")
+    || window.sessionStorage.getItem(CLERK_STORAGE_BETA_INVITE_KEY)
+    || ""
+  ).trim();
+  const [betaInviteEmail, setBetaInviteEmail] = useState("");
   const inviteSearch = useMemo(
     () => ({
       inviteToken: inviteToken || undefined,
@@ -154,6 +160,16 @@ function ClerkAuthContent({ mode }) {
       window.sessionStorage.setItem(CLERK_STORAGE_INVITE_CODE_KEY, inviteCode);
     }
   }, [inviteCode, inviteToken]);
+
+  // Persist beta invite token and resolve email for pre-fill
+  useEffect(() => {
+    if (!betaInviteToken) return;
+    window.sessionStorage.setItem(CLERK_STORAGE_BETA_INVITE_KEY, betaInviteToken);
+    fetch(`/api/kitchen/beta/validate?token=${encodeURIComponent(betaInviteToken)}`)
+      .then((r) => r.json())
+      .then((data) => { if (data.valid && data.email) setBetaInviteEmail(data.email); })
+      .catch(() => {});
+  }, [betaInviteToken]);
 
   useEffect(() => {
     if (!inviteToken) {
@@ -322,6 +338,14 @@ function ClerkAuthContent({ mode }) {
         </div>
       ) : null}
 
+      {betaInviteToken && mode === "sign-up" ? (
+        <div className="kitchen-alert success" style={{ marginBottom: 8 }}>
+          {betaInviteEmail
+            ? `Invitación confirmada. Crea tu cuenta con ${betaInviteEmail}.`
+            : "Tienes una invitación para la beta privada. Crea tu cuenta para continuar."}
+        </div>
+      ) : null}
+
       <ClerkWidgetMount>
         {mode === "sign-up" ? (
           <SignUp
@@ -330,6 +354,7 @@ function ClerkAuthContent({ mode }) {
             signInUrl={loginRoute}
             forceRedirectUrl={onboardingRoute}
             fallbackRedirectUrl={onboardingRoute}
+            initialValues={betaInviteEmail ? { emailAddress: betaInviteEmail } : undefined}
           />
         ) : (
           <SignIn

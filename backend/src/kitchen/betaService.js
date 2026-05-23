@@ -13,7 +13,9 @@ export function createBetaToken() {
 
 export function buildBetaInviteLink(token) {
   const base = String(config.frontendUrl || "").replace(/\/$/, "");
-  return `${base}/onboarding/clerk?betaInvite=${encodeURIComponent(token)}`;
+  // Point to the Clerk sign-up page so new users land directly on registration.
+  // betaInvite is stored in sessionStorage there and picked up by ClerkOnboardingPage.
+  return `${base}/signup?betaInvite=${encodeURIComponent(token)}`;
 }
 
 export async function checkBetaAccess(email, betaToken) {
