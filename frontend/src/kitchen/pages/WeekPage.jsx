@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import { useAuth } from "../auth";
-import WeekDaysStrip from "../components/WeekDaysStrip.jsx";
+import WeekDayTabs from "../components/WeekDayTabs.jsx";
 import IngredientPicker from "../components/IngredientPicker.jsx";
 import DishModal from "../components/DishModal.jsx";
 import RecipeModal from "../components/RecipeModal.jsx";
@@ -1956,41 +1956,6 @@ export default function WeekPage() {
   return (
     <KitchenLayout containerClassName={`kitchen-week-canvas ${selectedMealType === "dinner" ? "kitchen-dinner-canvas" : ""}`}>
       <div className={["kitchen-week-controls", contentSlideClass, isNavLoading ? "is-nav-loading" : ""].filter(Boolean).join(" ")}>
-        <WeekDaysStrip
-          days={visibleDays}
-          userMap={userMap}
-          selectedDay={selectedDay}
-          onSelectDay={handleSelectDay}
-          onCreateDish={handleCreateDishFromStrip}
-          utilityAction={canShowWeekRandomize ? (
-            canUseFullWeekRandomization ? (
-              <button
-                type="button"
-                className="kitchen-button secondary is-small kitchen-week-randomize-button"
-                onClick={() => setWeekRandomizeConfirmOpen(true)}
-                disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
-              >
-                <DiceIcon /> Randomizar libres
-              </button>
-            ) : (
-              <ProGateButton className="kitchen-button secondary is-small kitchen-week-randomize-button">
-                <DiceIcon /> Randomizar semana
-              </ProGateButton>
-            )
-          ) : null}
-          weekendAction={{
-            disabled: weekendOptionState.availableDays.length === 0,
-            label: "FINDE",
-            title: weekendOptionState.availableDays.length
-              ? "Anadir sabado o domingo"
-              : "Sabado y domingo ya estan anadidos en esta semana",
-            ariaLabel: weekendOptionState.availableDays.length
-              ? "Anadir fin de semana a esta semana visible"
-              : "Fin de semana ya anadido para esta semana visible",
-            onClick: () => setWeekendDialogOpen(true)
-          }}
-        />
         <div className="kitchen-week-mobile-frame">
           {isNavLoading ? <div className="kitchen-week-nav-progress" aria-hidden="true" /> : null}
           <section className="kitchen-week-header">
@@ -2016,8 +1981,41 @@ export default function WeekPage() {
                         <span>Hoy</span>
                       </button>
                     ) : null}
+                    {canShowWeekRandomize ? (
+                      canUseFullWeekRandomization ? (
+                        <button
+                          type="button"
+                          className="kitchen-week-randomize-mobile"
+                          onClick={() => setWeekRandomizeConfirmOpen(true)}
+                          disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+                          title={!dishesReadyForCurrentHousehold ? "Actualizando platos..." : "Randomizar libres"}
+                          aria-label="Randomizar semana"
+                        >
+                          <DiceIcon />
+                        </button>
+                      ) : (
+                        <ProGateButton className="kitchen-week-randomize-mobile" aria-label="Randomizar semana">
+                          <DiceIcon />
+                        </ProGateButton>
+                      )
+                    ) : null}
                   </div>
                 </div>
+                <WeekDayTabs
+                  days={visibleDays}
+                  selectedDay={selectedDay}
+                  onSelectDay={handleSelectDay}
+                  weekendAction={{
+                    disabled: weekendOptionState.availableDays.length === 0,
+                    title: weekendOptionState.availableDays.length
+                      ? "Añadir sábado o domingo"
+                      : "Sábado y domingo ya añadidos esta semana",
+                    ariaLabel: weekendOptionState.availableDays.length
+                      ? "Añadir fin de semana a esta semana"
+                      : "Fin de semana ya añadido para esta semana",
+                    onClick: () => setWeekendDialogOpen(true)
+                  }}
+                />
 
                 {(dinnersEnabled && canUseDinners) || !canUseDinners ? (
                   <>

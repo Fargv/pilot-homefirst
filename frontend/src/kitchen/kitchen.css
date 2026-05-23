@@ -14503,3 +14503,174 @@ body {
 [data-theme="dark"] .kitchen-weekdays-label.is-assigned {
   color: color-mix(in srgb, var(--weekday-text) 70%, var(--text-primary));
 }
+
+/* ============================================================
+   COMPACT WEEKDAY TABS  (WeekDayTabs — replaces WeekDaysStrip)
+   Mobile-only: hidden at ≥ 901 px, visible at ≤ 900 px.
+   Sits inside kitchen-week-header-panel, between the nav row
+   and the Comidas/Cenas segmented tabs.
+   ============================================================ */
+
+/* Hidden on desktop — panel uses the full-width grid instead */
+.kitchen-weekday-tabs {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .kitchen-weekday-tabs {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 3px;
+    width: 100%;
+    padding: 1px 0;
+  }
+
+  .kitchen-weekday-tab {
+    flex: 1;
+    min-width: 0;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: oklch(52% 0.025 258);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition:
+      background 0.14s ease,
+      border-color 0.14s ease,
+      color 0.12s ease;
+    padding: 0;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .kitchen-weekday-tab:hover {
+    background: rgba(99, 102, 241, 0.07);
+    color: oklch(40% 0.05 258);
+  }
+
+  .kitchen-weekday-tab.is-active {
+    background: rgba(99, 102, 241, 0.11);
+    border-color: rgba(99, 102, 241, 0.24);
+    color: oklch(46% 0.19 266);
+    font-weight: 700;
+  }
+
+  /* FINDE ( + ) — fixed width, icon-only */
+  .kitchen-weekday-tab-finde {
+    flex: 0 0 30px;
+    color: oklch(54% 0.02 258);
+  }
+
+  .kitchen-weekday-tab-finde:hover {
+    background: rgba(99, 102, 241, 0.07);
+    color: oklch(42% 0.05 258);
+  }
+
+  .kitchen-weekday-tab-finde.is-disabled {
+    opacity: 0.32;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .kitchen-weekday-tab-finde-icon {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+}
+
+/* ============================================================
+   MOBILE RANDOMIZE ICON — sits in the nav row (right of Hoy)
+   Hidden on desktop; desktop already has .kitchen-week-randomize-desktop
+   ============================================================ */
+
+.kitchen-week-randomize-mobile {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .kitchen-week-randomize-mobile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(99, 102, 241, 0.20);
+    background: rgba(99, 102, 241, 0.07);
+    color: oklch(46% 0.19 266);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .kitchen-week-randomize-mobile svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .kitchen-week-randomize-mobile:hover {
+    background: rgba(99, 102, 241, 0.13);
+    border-color: rgba(99, 102, 241, 0.30);
+  }
+
+  .kitchen-week-randomize-mobile:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+/* ============================================================
+   DARK MODE — compact weekday tabs
+   ============================================================ */
+
+[data-theme="dark"] .kitchen-weekday-tab {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .kitchen-weekday-tab:hover {
+  background: rgba(129, 140, 248, 0.09);
+  border-color: rgba(129, 140, 248, 0.13);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-weekday-tab.is-active {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(129, 140, 248, 0.36);
+  color: var(--hf-brand-darker);
+  font-weight: 700;
+}
+
+[data-theme="dark"] .kitchen-weekday-tab-finde {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .kitchen-weekday-tab-finde:hover {
+  background: rgba(129, 140, 248, 0.09);
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   DARK MODE — mobile randomize icon
+   ============================================================ */
+
+[data-theme="dark"] .kitchen-week-randomize-mobile {
+  border-color: rgba(129, 140, 248, 0.22);
+  background: rgba(99, 102, 241, 0.10);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .kitchen-week-randomize-mobile:hover {
+  background: rgba(99, 102, 241, 0.17);
+  border-color: rgba(129, 140, 248, 0.32);
+}
