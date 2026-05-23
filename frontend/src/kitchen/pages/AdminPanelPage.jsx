@@ -4975,6 +4975,251 @@ function WeeklySection() {
   );
 }
 
+// ─── Beta Invites ─────────────────────────────────────────────────────────────
+
+function BetaInvitesSection() {
+  const [subTab, setSubTab] = useState("list");
+  const [invites, setInvites] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [betaEnabled, setBetaEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
+
+  const [createMode, setCreateMode] = useState("single");
+  const [singleEmail, setSingleEmail] = useState("");
+  const [bulkEmails, setBulkEmails] = useState("");
+  const [expiresInDays, setExpiresInDays] = useState("30");
+  const [note, setNote] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [lastCreatedResults, setLastCreatedResults] = useState([]);
+
+  const loadInvites = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest("/api/kitchen/beta/admin/invites");
+      setInvites(data.invites || []);
+      setTotal(data.total || 0);
+      setBetaEnabled(data.betaEnabled || false);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { if (subTab === "list") loadInvites(); }, [subTab]);
+
+  const handleCreate = async () => {
+    setCreating(true); setError(""); setLastCreatedResults([]);
+    try {
+      const body = createMode === "bulk"
+        ? { emails: bulkEmails, expiresInDays: Number(expiresInDays) || 30, note }
+        : { email: singleEmail, expiresInDays: Number(expiresInDays) || 30, note };
+      const data = await apiRequest("/api/kitchen/beta/admin/invites", { method: "POST", body: JSON.stringify(body) });
+      setLastCreatedResults(data.results || []);
+      setMsg("Invitación(es) creada(s)");
+      setTimeout(() => setMsg(""), 5000);
+      setSingleEmail(""); setBulkEmails(""); setNote("");
+    } catch (e) { setError(e.message); }
+    finally { setCreating(false); }
+  };
+
+  const handleRevoke = async (id) => {
+    if (!window.confirm("¿Revocar esta invitación?")) return;
+    try {
+      await apiRequest(`/api/kitchen/beta/admin/invites/${id}/revoke`, { method: "POST" });
+      setMsg("Invitación revocada");
+      setTimeout(() => setMsg(""), 3000);
+      loadInvites();
+    } catch (e) { setError(e.message); }
+  };
+
+  const handleResend = async (id) => {
+    try {
+      const data = await apiRequest(`/api/kitchen/beta/admin/invites/${id}/resend`, { method: "POST" });
+      setMsg(data.sent ? "Email reenviado" : "No hay email configurado — copia el enlace manualmente");
+      setTimeout(() => setMsg(""), 4000);
+      loadInvites();
+    } catch (e) { setError(e.message); }
+  };
+
+  const copyLink = (link) => {
+    navigator.clipboard.writeText(link).then(
+      () => { setMsg("Enlace copiado"); setTimeout(() => setMsg(""), 2000); },
+      () => { setMsg("No se pudo copiar — copia manualmente: " + link); }
+    );
+  };
+
+  const STATUS_COLOR = {
+    pending: "#6b7280",
+    sent: "#0891b2",
+    used: "#16a34a",
+    revoked: "#dc2626",
+    expired: "#d97706",
+  };
+
+  const fStyle = { width: "100%", boxSizing: "border-box", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db" };
+  const sectionStyle = { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 };
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Beta Invites</h2>
+        <span style={{
+          padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700,
+          background: betaEnabled ? "#dcfce7" : "#fef2f2",
+          color: betaEnabled ? "#15803d" : "#b91c1c",
+          border: `1px solid ${betaEnabled ? "#86efac" : "#fca5a5"}`
+        }}>
+          {betaEnabled ? "BETA ACTIVA" : "BETA INACTIVA"}
+        </span>
+        {!betaEnabled && (
+          <span style={{ fontSize: 12, color: "#6b7280" }}>
+            (Activa PRIVATE_BETA_ENABLED=true para restringir el registro)
+          </span>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+        {[["list", "Invitaciones"], ["create", "Crear invitación"]].map(([key, label]) => (
+          <button key={key} type="button" onClick={() => setSubTab(key)} style={{
+            padding: "6px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: subTab === key ? 700 : 400,
+            background: subTab === key ? "#4338ca" : "#f1f5f9",
+            color: subTab === key ? "#fff" : "#374151",
+            border: "none"
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {error && <div style={{ padding: "8px 12px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, color: "#b91c1c", fontSize: 13, marginBottom: 12 }}>{error}</div>}
+      {msg && <div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, color: "#15803d", fontSize: 13, marginBottom: 12 }}>{msg}</div>}
+
+      {subTab === "list" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+            <span style={{ fontSize: 13, color: "#6b7280" }}>{total} invitaciones</span>
+            <button type="button" onClick={loadInvites} style={{ ...ABT.edit }}>Recargar</button>
+          </div>
+          {loading ? <p style={{ color: "#6b7280", fontSize: 13 }}>Cargando...</p> : (
+            invites.length === 0 ? <p style={{ color: "#6b7280", fontSize: 13 }}>No hay invitaciones.</p> : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
+                      {["Email", "Estado", "Expira", "Usado el", "Acciones"].map((h) => (
+                        <th key={h} style={{ padding: "8px 12px", fontWeight: 700, color: "#374151", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invites.map((inv) => (
+                      <tr key={inv._id} style={{ borderTop: "1px solid #e2e8f0" }}>
+                        <td style={{ padding: "8px 12px" }}>{inv.email}</td>
+                        <td style={{ padding: "8px 12px" }}>
+                          <span style={{
+                            padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 700,
+                            background: `${STATUS_COLOR[inv.computedStatus]}22`,
+                            color: STATUS_COLOR[inv.computedStatus]
+                          }}>
+                            {(inv.computedStatus || inv.status || "").toUpperCase()}
+                          </span>
+                        </td>
+                        <td style={{ padding: "8px 12px", color: "#6b7280" }}>
+                          {inv.expiresAt ? new Date(inv.expiresAt).toLocaleDateString("es-ES") : "—"}
+                        </td>
+                        <td style={{ padding: "8px 12px", color: "#6b7280" }}>
+                          {inv.usedAt ? new Date(inv.usedAt).toLocaleDateString("es-ES") : "—"}
+                        </td>
+                        <td style={{ padding: "8px 12px" }}>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {inv.link && inv.computedStatus !== "used" && inv.computedStatus !== "revoked" && (
+                              <button type="button" onClick={() => copyLink(inv.link)} style={{ ...ABT.edit }}>Copiar enlace</button>
+                            )}
+                            {(inv.computedStatus === "pending" || inv.computedStatus === "sent") && (
+                              <button type="button" onClick={() => handleResend(inv._id)} style={{ ...ABT.green }}>Reenviar</button>
+                            )}
+                            {inv.computedStatus !== "used" && inv.computedStatus !== "revoked" && (
+                              <button type="button" onClick={() => handleRevoke(inv._id)} style={{ ...ABT.del }}>Revocar</button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
+        </div>
+      )}
+
+      {subTab === "create" && (
+        <div style={sectionStyle}>
+          <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700 }}>Crear invitación beta</h3>
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <button type="button" onClick={() => setCreateMode("single")} style={{
+              padding: "6px 14px", borderRadius: 6, border: "1px solid #d1d5db", cursor: "pointer", fontSize: 13,
+              background: createMode === "single" ? "#e0e7ff" : "#fff", fontWeight: createMode === "single" ? 700 : 400, color: createMode === "single" ? "#4338ca" : "#374151"
+            }}>Email único</button>
+            <button type="button" onClick={() => setCreateMode("bulk")} style={{
+              padding: "6px 14px", borderRadius: 6, border: "1px solid #d1d5db", cursor: "pointer", fontSize: 13,
+              background: createMode === "bulk" ? "#e0e7ff" : "#fff", fontWeight: createMode === "bulk" ? 700 : 400, color: createMode === "bulk" ? "#4338ca" : "#374151"
+            }}>Múltiples emails</button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+            {createMode === "single" ? (
+              <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
+                Email
+                <input type="email" style={fStyle} value={singleEmail} onChange={(e) => setSingleEmail(e.target.value)} placeholder="user@example.com" />
+              </label>
+            ) : (
+              <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500, gridColumn: "1 / -1" }}>
+                Emails (uno por línea)
+                <textarea style={{ ...fStyle, minHeight: 100, resize: "vertical" }} value={bulkEmails} onChange={(e) => setBulkEmails(e.target.value)} placeholder={"user1@example.com\nuser2@example.com\nuser3@example.com"} />
+              </label>
+            )}
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
+              Expira en (días)
+              <input type="number" style={fStyle} value={expiresInDays} onChange={(e) => setExpiresInDays(e.target.value)} min="1" max="365" />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
+              Nota (opcional)
+              <input style={fStyle} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota interna" />
+            </label>
+          </div>
+
+          <button type="button" onClick={handleCreate} disabled={creating || (createMode === "single" ? !singleEmail.trim() : !bulkEmails.trim())} style={{ ...ABT.save }}>
+            {creating ? "Creando..." : "Crear invitación"}
+          </button>
+
+          {lastCreatedResults.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Resultados:</p>
+              {lastCreatedResults.map((r, i) => (
+                <div key={i} style={{ marginBottom: 8, padding: "10px 12px", background: r.error ? "#fef2f2" : "#f0fdf4", borderRadius: 6, border: `1px solid ${r.error ? "#fca5a5" : "#86efac"}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>{r.email}</span>
+                    {r.sent && <span style={{ fontSize: 12, color: "#15803d" }}>Email enviado</span>}
+                    {!r.sent && !r.error && <span style={{ fontSize: 12, color: "#d97706" }}>Email no enviado — copia el enlace</span>}
+                    {r.error && <span style={{ fontSize: 12, color: "#b91c1c" }}>{r.error}</span>}
+                  </div>
+                  {r.link && !r.error && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                      <span style={{ fontSize: 11, color: "#6b7280", wordBreak: "break-all", flex: 1 }}>{r.link}</span>
+                      <button type="button" onClick={() => copyLink(r.link)} style={{ ...ABT.edit, flexShrink: 0 }}>Copiar</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function AdminPanelPage() {
@@ -5060,7 +5305,8 @@ export default function AdminPanelPage() {
             { key: "plans", label: "Planes" },
             { key: "categories", label: "Categorías" },
             { key: "onboarding", label: "Onboarding" },
-            { key: "weekly", label: "Retos Semanales" }
+            { key: "weekly", label: "Retos Semanales" },
+            { key: "beta", label: "Beta Invites" }
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -5108,6 +5354,8 @@ export default function AdminPanelPage() {
           <OnboardingSection />
         ) : tab === "weekly" ? (
           <WeeklySection />
+        ) : tab === "beta" ? (
+          <BetaInvitesSection />
         ) : (
           <QuickSubscriptionPanel />
         )}

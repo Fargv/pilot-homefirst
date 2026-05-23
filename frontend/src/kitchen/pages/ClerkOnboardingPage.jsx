@@ -3,7 +3,7 @@ import { useClerk, useUser } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Card from "../components/ui/Card";
 import { apiRequest, fetchInviteDetails } from "../api.js";
-import { CLERK_AFTER_SIGN_UP_PATH, CLERK_STORAGE_INVITE_CODE_KEY, CLERK_STORAGE_INVITE_TOKEN_KEY } from "../clerk-shared.js";
+import { CLERK_AFTER_SIGN_UP_PATH, CLERK_STORAGE_INVITE_CODE_KEY, CLERK_STORAGE_INVITE_TOKEN_KEY, CLERK_STORAGE_BETA_INVITE_KEY } from "../clerk-shared.js";
 import { useAuth } from "../auth";
 import { isUserLimitReachedError } from "../subscription.js";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
@@ -177,11 +177,14 @@ export default function ClerkOnboardingPage() {
     canCook: true,
     dinnerActive: true,
     dinnerCanCook: true,
+    betaToken: "",
   });
 
   // ── Status ───────────────────────────────────────────────────────────
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [betaError, setBetaError] = useState("");
+  const [betaInviteEmail, setBetaInviteEmail] = useState("");
 
   // ── Invite details ────────────────────────────────────────────────────
   const [inviteDetails, setInviteDetails] = useState(null);
@@ -258,6 +261,19 @@ export default function ClerkOnboardingPage() {
     if (code) window.sessionStorage.setItem(CLERK_STORAGE_INVITE_CODE_KEY, code);
   }, [searchParams]);
 
+  // Read beta invite token from URL or sessionStorage
+  useEffect(() => {
+    const token = String(
+      searchParams.get("betaInvite")
+      || window.sessionStorage.getItem(CLERK_STORAGE_BETA_INVITE_KEY)
+      || ""
+    ).trim();
+    if (token) {
+      setForm((prev) => ({ ...prev, betaToken: prev.betaToken || token }));
+      window.sessionStorage.setItem(CLERK_STORAGE_BETA_INVITE_KEY, token);
+    }
+  }, [searchParams]);
+
   // Fetch invite details from API when inviteToken is known
   useEffect(() => {
     if (!form.inviteToken) {
@@ -276,6 +292,19 @@ export default function ClerkOnboardingPage() {
 
     return () => { active = false; };
   }, [form.inviteToken]);
+
+  // Validate beta invite token and prefill confirmed email
+  useEffect(() => {
+    if (!form.betaToken) return;
+    fetch(`/api/kitchen/beta/validate?token=${encodeURIComponent(form.betaToken)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.valid && data.email) {
+          setBetaInviteEmail(data.email);
+        }
+      })
+      .catch(() => {});
+  }, [form.betaToken]);
 
   // Auto-fill displayName and householdName from Clerk user profile
   useEffect(() => {
@@ -397,17 +426,29 @@ export default function ClerkOnboardingPage() {
           dinnerCanCook: Boolean(form.dinnerCanCook),
           inviteCode: isJoinMode && !form.inviteToken ? normalizedInviteCode : undefined,
           inviteToken: form.inviteToken || undefined,
+          betaToken: isCreateMode ? (form.betaToken || undefined) : undefined,
         }),
       });
       window.sessionStorage.removeItem(CLERK_STORAGE_INVITE_TOKEN_KEY);
       window.sessionStorage.removeItem(CLERK_STORAGE_INVITE_CODE_KEY);
+      window.sessionStorage.removeItem(CLERK_STORAGE_BETA_INVITE_KEY);
       setUser(data.user);
       setOnboardingRequired(false);
       await refreshUser({ authMode: "clerk" });
       navigate("/kitchen/semana", { replace: true });
     } catch (err) {
       finalStartedRef.current = false;
-      setError(err.message || "No pudimos terminar tu registro. Inténtalo de nuevo.");
+      const isBetaError = err.message && (
+        err.message.includes("beta privada") ||
+        err.message.includes("invitación") ||
+        err.message.includes("invitacion")
+      );
+      if (isBetaError) {
+        setBetaError(err.message);
+        setError("");
+      } else {
+        setError(err.message || "No pudimos terminar tu registro. Inténtalo de nuevo.");
+      }
     } finally {
       setLoading(false);
     }
@@ -457,6 +498,14 @@ export default function ClerkOnboardingPage() {
           {isInviteFlow && inviteDetails?.householdName && phase !== "household" ? (
             <div className="kitchen-alert info">
               Te estás uniendo a <strong>{inviteDetails.householdName}</strong>.
+            </div>
+          ) : null}
+
+          {betaError ? (
+            <div className="kitchen-alert error" role="alert" style={{ marginBottom: 12 }}>
+              <strong>Beta privada</strong>
+              <br />
+              {betaError}
             </div>
           ) : null}
 
@@ -561,6 +610,13 @@ export default function ClerkOnboardingPage() {
                           <p>Código correcto. Puedes continuar.</p>
                         </div>
                       ) : null}
+                    </div>
+                  ) : null}
+
+                  {isCreateMode && form.betaToken ? (
+                    <div className="kitchen-alert success" style={{ marginBottom: 12 }}>
+                      Tienes una invitación para la beta privada
+                      {betaInviteEmail ? ` (${betaInviteEmail})` : ""}
                     </div>
                   ) : null}
 

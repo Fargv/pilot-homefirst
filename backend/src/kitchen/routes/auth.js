@@ -16,8 +16,21 @@ import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../house
 import { isEmailRegisteredInClerk, resolveClerkIdentityFromToken } from "../clerkAuth.js";
 import { normalizeSubscriptionPlan } from "../subscriptionService.js";
 import { initOnboarding } from "../onboardingEngine.js";
+import { checkBetaAccess, markBetaInviteUsed } from "../betaService.js";
 
 const DIOD_EMAIL = "admin@admin.com";
+
+function _betaErrorMessage(code) {
+  const messages = {
+    BETA_ACCESS_REQUIRED: "Lunchfy está en beta privada. Necesitas una invitación para registrarte.",
+    BETA_INVITE_INVALID: "La invitación no es válida.",
+    BETA_INVITE_USED: "Esta invitación ya fue utilizada.",
+    BETA_INVITE_REVOKED: "Esta invitación ha sido revocada.",
+    BETA_INVITE_EXPIRED: "Esta invitación ha expirado.",
+    BETA_INVITE_EMAIL_MISMATCH: "Esta invitación no corresponde a tu email.",
+  };
+  return messages[code] || "No tienes acceso a la beta privada.";
+}
 
 const router = express.Router();
 
@@ -419,6 +432,17 @@ router.post("/register", async (req, res) => {
     let household = null;
     let role = "owner";
 
+    // Beta gate — only for new household creation (not joining an existing one)
+    const normalizedBetaToken = String(req.body.betaToken || "").trim();
+    let betaCheckResult = null;
+    if (!normalizedInviteCode) {
+      const betaCheck = await checkBetaAccess(normalizedEmail, normalizedBetaToken);
+      if (!betaCheck.allowed) {
+        return res.status(403).json({ ok: false, code: betaCheck.code, error: _betaErrorMessage(betaCheck.code) });
+      }
+      betaCheckResult = betaCheck;
+    }
+
     if (mode === "join") {
       if (!isValidInviteCodeFormat(normalizedInviteCode)) {
         return res.status(400).json({ ok: false, error: "El código debe tener 6 dígitos numéricos." });
@@ -470,6 +494,9 @@ router.post("/register", async (req, res) => {
       initOnboarding(household._id.toString()).catch((e) =>
         console.error("[onboarding] init failed on register:", e.message)
       );
+      if (betaCheckResult?.invite) {
+        markBetaInviteUsed(betaCheckResult.invite, user._id, household._id).catch(() => {});
+      }
     }
 
     const token = createToken(user);
@@ -775,6 +802,16 @@ router.post("/clerk/onboarding", async (req, res) => {
       user.householdId = onboardingTarget.household._id;
     }
 
+    // Beta gate — only blocks NEW household creation
+    if (!household && onboardingTarget.mode === "create") {
+      const betaToken = String(req.body.betaToken || "").trim();
+      const betaCheck = await checkBetaAccess(identity.email, betaToken);
+      if (!betaCheck.allowed) {
+        return res.status(403).json({ ok: false, code: betaCheck.code, error: _betaErrorMessage(betaCheck.code) });
+      }
+      req._betaInvite = betaCheck.invite || null;
+    }
+
     if (!household) {
       user.role = "owner";
       const finalHouseholdName = String(householdName || "").trim() || `${finalDisplayName} - Hogar`;
@@ -802,6 +839,10 @@ router.post("/clerk/onboarding", async (req, res) => {
         initOnboarding(household._id.toString()).catch((e) =>
           console.error("[onboarding] init failed on clerk register:", e.message)
         );
+        if (req._betaInvite) {
+          markBetaInviteUsed(req._betaInvite, user._id, household._id).catch(() => {});
+          req._betaInvite = null;
+        }
       } catch (householdError) {
         if (userCreatedNow) {
           await KitchenUser.findByIdAndDelete(user._id).catch(() => {});

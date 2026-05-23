@@ -102,7 +102,8 @@
       "Bash(npx @claude-flow/cli@latest hooks pre-edit --file \"frontend/src/kitchen/components/weekly/WeeklyChallengeCard.jsx\")",
       "Bash(npx @claude-flow/cli@latest hooks post-edit --file \"frontend/src/kitchen/components/weekly/WeeklyChallengeCard.jsx\" --success true)",
       "Bash(npx @claude-flow/cli@latest hooks pre-edit --file \"frontend/src/App.jsx\")",
-      "Bash(npx @claude-flow/cli@latest memory store --key \"pattern-weekly-challenge-frontend\" --value \"WeeklyChallengeContext mirrors OnboardingContext but gates on onboardingState.status === completed. Provider placed inside OnboardingProvider in App.jsx. Card rendered in Layout.jsx after OnboardingBanner. Trigger calls accept optional contextData. Admin section uses local wcFieldStyle/wcLabelStyle vars to avoid collision with file-level constants.\" --namespace patterns)"
+      "Bash(npx @claude-flow/cli@latest memory store --key \"pattern-weekly-challenge-frontend\" --value \"WeeklyChallengeContext mirrors OnboardingContext but gates on onboardingState.status === completed. Provider placed inside OnboardingProvider in App.jsx. Card rendered in Layout.jsx after OnboardingBanner. Trigger calls accept optional contextData. Admin section uses local wcFieldStyle/wcLabelStyle vars to avoid collision with file-level constants.\" --namespace patterns)",
+      "Bash(npx @claude-flow/cli@latest hooks pre-edit --file \"backend/src/kitchen/models/BetaInvite.js\")"
     ]
   }
 }

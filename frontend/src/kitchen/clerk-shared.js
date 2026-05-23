@@ -3,4 +3,5 @@
 
 export const CLERK_STORAGE_INVITE_TOKEN_KEY = "clerk_onboarding_invite_token";
 export const CLERK_STORAGE_INVITE_CODE_KEY = "clerk_onboarding_invite_code";
+export const CLERK_STORAGE_BETA_INVITE_KEY = "lunchfy_beta_invite";
 export const CLERK_AFTER_SIGN_UP_PATH = import.meta.env.VITE_CLERK_AFTER_SIGN_UP_URL || "/onboarding/clerk";
