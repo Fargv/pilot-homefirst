@@ -1,18 +1,25 @@
 import React from "react";
 
 const DAY_ABBR = ["D", "L", "M", "X", "J", "V", "S"];
+const DAY_LONG = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
-function getDayAbbr(dateString) {
-  if (!dateString) return "?";
-  const date = new Date(dateString + "T00:00:00");
-  return Number.isNaN(date.getTime()) ? "?" : DAY_ABBR[date.getDay()];
+// Parse a "YYYY-MM-DD" key as a LOCAL date to avoid UTC midnight
+// shifting the weekday in timezones west of UTC.
+function parseDayKey(isoKey) {
+  const [y, m, d] = isoKey.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  const date = new Date(y, m - 1, d);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function getDayLong(dateString) {
-  const LONG = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
-  if (!dateString) return "";
-  const date = new Date(dateString + "T00:00:00");
-  return Number.isNaN(date.getTime()) ? "" : LONG[date.getDay()];
+function getDayAbbr(isoKey) {
+  const date = parseDayKey(isoKey);
+  return date ? DAY_ABBR[date.getDay()] : "?";
+}
+
+function getDayLong(isoKey) {
+  const date = parseDayKey(isoKey);
+  return date ? DAY_LONG[date.getDay()] : "";
 }
 
 function PlusIcon(props) {
@@ -34,8 +41,8 @@ export default function WeekDayTabs({
       {days.map((day) => {
         const dayKey = day?.date?.slice(0, 10);
         if (!dayKey) return null;
-        const abbr = getDayAbbr(day.date);
-        const long = getDayLong(day.date);
+        const abbr = getDayAbbr(dayKey);
+        const long = getDayLong(dayKey);
         const isActive = selectedDay === dayKey;
         return (
           <button
