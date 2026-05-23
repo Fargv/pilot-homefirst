@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom";
 import { apiRequest, buildApiUrl, getToken, getPlansAdminConfig, savePlansAdminConfig } from "../api.js";
 import { useAuth } from "../auth.jsx";
+import { useTheme } from "../../context/ThemeContext.jsx";
 import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
@@ -4978,6 +4979,7 @@ function WeeklySection() {
 
 export default function AdminPanelPage() {
   const { user, loading, logout } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [activeHouseholdId, setActiveHouseholdId] = useState(null);
   const [tab, setTab] = useState("households");
@@ -5020,7 +5022,15 @@ export default function AdminPanelPage() {
             {user?.email || user?.displayName}
           </span>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            title={resolvedTheme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#e0e7ff", padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontSize: 16, lineHeight: 1 }}
+          >
+            {resolvedTheme === "dark" ? "☀️" : "🌙"}
+          </button>
           <button
             type="button"
             onClick={() => navigate("/kitchen/semana")}
