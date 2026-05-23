@@ -14086,3 +14086,249 @@ body {
   background: color-mix(in srgb, var(--hf-brand) 10%, var(--surface-elevated));
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE — Premium toolbar & controls polish
+   Scope: week-nav bar · shopping controls bar · segmented tabs
+   · icon buttons · date navigator · action pill buttons
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Mobile nav row containers — soft dark surface ─────────── */
+/* Replaces the previous harsh gradient+border from line ~13996.   */
+[data-theme="dark"] .kitchen-week-nav-row,
+[data-theme="dark"] .shopping-week-nav-row {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--surface-elevated) 90%, #1e2858) 0%,
+    var(--surface) 100%
+  );
+  border: 1px solid rgba(129, 140, 248, 0.14);
+  border-radius: 18px;
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ── 2. Shopping controls bar — no rogue mobile background ────── */
+/* The global dark rule incorrectly applied a background at all    */
+/* breakpoints. Reset it here; desktop gets its own rule below.   */
+[data-theme="dark"] .shopping-controls-bar {
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ── 3. Desktop unified panels — premium dark glass surface ────── */
+@media (min-width: 901px) {
+  /* Week page toolbar */
+  [data-theme="dark"] .kitchen-week-header-panel {
+    background: linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface-elevated) 90%, #1e2858) 0%,
+      var(--surface) 100%
+    );
+    border: 1px solid rgba(129, 140, 248, 0.14);
+    box-shadow:
+      0 8px 26px rgba(0, 0, 0, 0.30),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* The nav row nested inside the desktop panel blends in —       */
+  /* no own background or border; the panel surface provides that. */
+  [data-theme="dark"] .kitchen-week-header-panel .kitchen-week-nav-row {
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Shopping page unified bar */
+  [data-theme="dark"] .shopping-controls-bar {
+    background: linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface-elevated) 90%, #1e2858) 0%,
+      var(--surface) 100%
+    );
+    border: 1px solid rgba(129, 140, 248, 0.14);
+    border-radius: var(--hf-radius-lg);
+    box-shadow:
+      0 8px 26px rgba(0, 0, 0, 0.30),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* Nav row nested inside shopping bar — same blending logic */
+  [data-theme="dark"] .shopping-controls-bar .shopping-week-nav-row,
+  [data-theme="dark"] .shopping-controls-bar .kitchen-week-nav-row {
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* ── 4. Interior controls — integrated, not boxed ─────────────── */
+/* Arrow buttons, date-picker input, "Hoy" button inside nav rows. */
+/* These have 3-class specificity below to beat the rule ~L14006.  */
+[data-theme="dark"] .kitchen-week-nav-row .kitchen-week-arrow,
+[data-theme="dark"] .kitchen-week-nav-row .kitchen-week-now-button,
+[data-theme="dark"] .kitchen-week-nav-row .kitchen-week-picker .kitchen-input,
+[data-theme="dark"] .shopping-week-nav-row .kitchen-week-arrow,
+[data-theme="dark"] .shopping-week-nav-row .kitchen-week-now-button,
+[data-theme="dark"] .shopping-week-nav-row .kitchen-week-picker .kitchen-input,
+[data-theme="dark"] .kitchen-week-header-panel .kitchen-week-arrow,
+[data-theme="dark"] .kitchen-week-header-panel .kitchen-week-now-button,
+[data-theme="dark"] .kitchen-week-header-panel .kitchen-week-picker .kitchen-input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(129, 140, 248, 0.14);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .kitchen-week-nav-row .kitchen-week-arrow:hover,
+[data-theme="dark"] .kitchen-week-nav-row .kitchen-week-now-button:hover,
+[data-theme="dark"] .shopping-week-nav-row .kitchen-week-arrow:hover,
+[data-theme="dark"] .shopping-week-nav-row .kitchen-week-now-button:hover,
+[data-theme="dark"] .kitchen-week-header-panel .kitchen-week-arrow:hover,
+[data-theme="dark"] .kitchen-week-header-panel .kitchen-week-now-button:hover {
+  background: rgba(129, 140, 248, 0.10);
+  border-color: rgba(129, 140, 248, 0.28);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+/* Standalone (outside any panel container) — fallback */
+[data-theme="dark"] .kitchen-week-arrow {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(129, 140, 248, 0.14);
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .kitchen-week-arrow:hover {
+  background: rgba(129, 140, 248, 0.10);
+  border-color: rgba(129, 140, 248, 0.28);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .kitchen-week-now-button {
+  background: rgba(129, 140, 248, 0.07);
+  border-color: rgba(129, 140, 248, 0.18);
+  color: var(--hf-brand-darker);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .kitchen-week-now-button:hover {
+  background: rgba(129, 140, 248, 0.14);
+  border-color: rgba(129, 140, 248, 0.30);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+/* Date picker inputs also inherit from .kitchen-input dark rule   */
+/* but we need to zero the box-shadow explicitly here.             */
+[data-theme="dark"] .kitchen-week-picker .kitchen-input,
+[data-theme="dark"] .shopping-week-nav .kitchen-week-picker .kitchen-input,
+[data-theme="dark"] .shopping-week-header-navigator .kitchen-week-picker .kitchen-input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(129, 140, 248, 0.14);
+  box-shadow: none;
+}
+
+/* ── 5. Desktop action buttons — Finde & Randomize ─────────────── */
+/* These had NO dark override at all → white gradient in dark mode. */
+[data-theme="dark"] .kitchen-week-finde-desktop,
+[data-theme="dark"] .kitchen-week-randomize-desktop {
+  background: rgba(99, 102, 241, 0.10);
+  border-color: rgba(129, 140, 248, 0.20);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .kitchen-week-finde-desktop:hover,
+[data-theme="dark"] .kitchen-week-randomize-desktop:hover {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(129, 140, 248, 0.34);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .kitchen-week-finde-desktop:disabled,
+[data-theme="dark"] .kitchen-week-randomize-desktop:disabled {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(129, 140, 248, 0.07);
+  color: var(--text-disabled);
+  opacity: 1;
+}
+
+/* ── 6. Vertical dividers inside bars ──────────────────────────── */
+[data-theme="dark"] .kitchen-week-controls-divider,
+[data-theme="dark"] .shopping-controls-divider {
+  background: rgba(129, 140, 248, 0.15);
+}
+
+/* ── 7. Meal tabs container ─────────────────────────────────────── */
+[data-theme="dark"] .kitchen-meal-tabs {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(129, 140, 248, 0.12);
+}
+
+/* Inactive meal tab */
+[data-theme="dark"] .kitchen-meal-tab {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+
+/* Active meal tab */
+[data-theme="dark"] .kitchen-meal-tab.is-active {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: rgba(129, 140, 248, 0.22);
+  color: var(--nav-active-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+/* ── 8. Segmented tabs container (dishes, shopping, catalog) ────── */
+[data-theme="dark"] .kitchen-dishes-tabs,
+[data-theme="dark"] .dishes-explorer-nav,
+[data-theme="dark"] .shopping-tabs-inline {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(129, 140, 248, 0.12);
+  box-shadow: none;
+}
+
+/* Inactive tab button */
+[data-theme="dark"] .kitchen-dishes-tabs .kitchen-tab-button,
+[data-theme="dark"] .dishes-explorer-nav .kitchen-tab-button,
+[data-theme="dark"] .shopping-tabs-inline .kitchen-tab-button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+
+/* Active tab button — clean indigo pill, no chunky ring */
+[data-theme="dark"] .kitchen-dishes-tabs .kitchen-tab-button.is-active,
+[data-theme="dark"] .dishes-explorer-nav .kitchen-tab-button.is-active,
+[data-theme="dark"] .shopping-tabs-inline .kitchen-tab-button.is-active {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: rgba(129, 140, 248, 0.22);
+  color: var(--nav-active-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+/* ── 9. WhatsApp / share icon button in toolbar ─────────────────── */
+[data-theme="dark"] .kitchen-whatsapp-icon-button {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(129, 140, 248, 0.16);
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .kitchen-whatsapp-icon-button:hover {
+  background: rgba(129, 140, 248, 0.12);
+  border-color: rgba(129, 140, 248, 0.30);
+  color: var(--text-primary);
+  box-shadow: none;
+}
