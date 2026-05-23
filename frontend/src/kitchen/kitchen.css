@@ -4093,6 +4093,75 @@ body {
 
 .kitchen-user-menu button:hover { background: #eef2ff; }
 
+/* ─── User menu compact theme selector ──────────────────────── */
+.kitchen-user-menu-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--hf-border);
+  border-bottom: 1px solid var(--hf-border);
+  margin: 2px 0;
+}
+
+.kitchen-user-menu-theme-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hf-text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.kitchen-user-menu-theme-options {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+/* Override the generic .kitchen-user-menu button rule */
+.kitchen-user-menu .kitchen-user-menu-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--hf-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.kitchen-user-menu .kitchen-user-menu-theme-btn:hover {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
+  color: var(--hf-text);
+}
+
+.kitchen-user-menu .kitchen-user-menu-theme-btn.is-active {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-brand);
+  color: var(--hf-brand);
+}
+
+.kitchen-user-menu-theme-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
 .kitchen-weekdays-item {
   min-width: 76px;
   min-height: 96px;

@@ -9,6 +9,7 @@ import { getUserInitialsFromProfile } from "./utils/userInitials.js";
 import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
 import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
 import OnboardingBanner from "./components/onboarding/OnboardingBanner.jsx";
+import { useTheme } from "../context/ThemeContext.jsx";
 
 function CalendarIcon(props) {
   return (
@@ -108,12 +109,49 @@ function ChevronDownIcon(props) {
   );
 }
 
+/* ── Theme row icons ──────────────────────────────────────────── */
+function AppearanceIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </svg>
+  );
+}
+
+function SystemThemeIcon(props) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
+      <circle cx="8" cy="8" r="6.5" />
+      <path d="M8 1.5a6.5 6.5 0 0 1 0 13V1.5z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function SunThemeIcon(props) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
+      <circle cx="8" cy="8" r="3" />
+      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.53 11.53l1.42 1.42M3.05 12.95l1.42-1.42M11.53 4.47l1.42-1.42" />
+    </svg>
+  );
+}
+
+function MoonThemeIcon(props) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
+      <path d="M14 10.58A6 6 0 0 1 5.42 2a7 7 0 1 0 8.58 8.58z" />
+    </svg>
+  );
+}
+
 function getFirstName(displayName = "") {
   return String(displayName).trim().split(/\s+/)[0] || "";
 }
 
 export default function KitchenLayout({ children, containerClassName = "" }) {
   const { user, logout, refreshUser, setUser } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
@@ -367,6 +405,41 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                   <CreditCardIcon className="kitchen-user-menu-icon" />
                   Suscripción / Plan
                 </button>
+                <div className="kitchen-user-menu-theme-row" role="group" aria-label="Apariencia">
+                  <span className="kitchen-user-menu-theme-label">
+                    <AppearanceIcon className="kitchen-user-menu-icon" />
+                    Tema
+                  </span>
+                  <div className="kitchen-user-menu-theme-options">
+                    <button
+                      type="button"
+                      className={`kitchen-user-menu-theme-btn${theme === "system" ? " is-active" : ""}`}
+                      onClick={() => setTheme("system")}
+                      title="Sistema"
+                      aria-pressed={theme === "system"}
+                    >
+                      <SystemThemeIcon className="kitchen-user-menu-theme-icon" />
+                    </button>
+                    <button
+                      type="button"
+                      className={`kitchen-user-menu-theme-btn${theme === "light" ? " is-active" : ""}`}
+                      onClick={() => setTheme("light")}
+                      title="Claro"
+                      aria-pressed={theme === "light"}
+                    >
+                      <SunThemeIcon className="kitchen-user-menu-theme-icon" />
+                    </button>
+                    <button
+                      type="button"
+                      className={`kitchen-user-menu-theme-btn${theme === "dark" ? " is-active" : ""}`}
+                      onClick={() => setTheme("dark")}
+                      title="Oscuro"
+                      aria-pressed={theme === "dark"}
+                    >
+                      <MoonThemeIcon className="kitchen-user-menu-theme-icon" />
+                    </button>
+                  </div>
+                </div>
                 <button type="button" role="menuitem" onClick={onLogout}>
                   <LogoutIcon className="kitchen-user-menu-icon" />
                   Cerrar sesión
