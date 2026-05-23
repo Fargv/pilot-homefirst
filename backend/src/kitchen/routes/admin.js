@@ -42,7 +42,7 @@ router.get("/households", requireAuth, requireDiod, async (req, res) => {
   try {
     const households = await Household.find(
       {},
-      { name: 1, subscriptionPlan: 1, subscriptionStatus: 1, subscriptionEndsAt: 1, pendingDowngradeAt: 1, pendingDowngradeReason: 1, isPro: 1, ownerUserId: 1, createdAt: 1, inviteCode: 1, freeBitesBalance: 1, purchasedBitesBalance: 1 }
+      { name: 1, subscriptionPlan: 1, subscriptionStatus: 1, subscriptionEndsAt: 1, pendingDowngradeAt: 1, pendingDowngradeReason: 1, isPro: 1, planSource: 1, betaPro: 1, ownerUserId: 1, createdAt: 1, inviteCode: 1, freeBitesBalance: 1, purchasedBitesBalance: 1 }
     ).sort({ createdAt: 1 }).lean();
 
     const householdIds = households.map((h) => h._id);
@@ -63,6 +63,16 @@ router.get("/households", requireAuth, requireDiod, async (req, res) => {
         pendingDowngradeAt: household.pendingDowngradeAt || null,
         pendingDowngradeReason: household.pendingDowngradeReason || "",
         isPro: Boolean(household.isPro),
+        planSource: household.planSource || "manual",
+        betaPro: household.betaPro
+          ? {
+            active: household.betaPro.active ?? false,
+            unlockedAt: household.betaPro.unlockedAt ?? null,
+            expiresAt: household.betaPro.expiresAt ?? null,
+            expiredAt: household.betaPro.expiredAt ?? null,
+            expirationReason: household.betaPro.expirationReason ?? ""
+          }
+          : null,
         memberCount: memberCountMap[String(household._id)] || 0,
         inviteCode: household.inviteCode || null,
         createdAt: household.createdAt || null,

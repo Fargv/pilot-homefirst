@@ -153,7 +153,23 @@ function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan,
           </div>
         ) : null}
       </td>
-      <td style={{ textAlign: "center" }}><PlanBadge plan={localPlan} /></td>
+      <td style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+          <PlanBadge plan={localPlan} />
+          {household.planSource === "beta_pro" || household.betaPro?.active ? (
+            <span style={{
+              fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em",
+              padding: "1px 6px", borderRadius: 999,
+              background: household.betaPro?.active ? "#fef3c7" : "#f3f4f6",
+              color: household.betaPro?.active ? "#92400e" : "#9ca3af",
+              border: `1px solid ${household.betaPro?.active ? "#fde68a" : "#e5e7eb"}`,
+              whiteSpace: "nowrap"
+            }}>
+              {household.betaPro?.active ? "⭐ Pro Beta" : "Pro Beta (exp.)"}
+            </span>
+          ) : null}
+        </div>
+      </td>
       <td style={{ textAlign: "center" }}><StatusBadge status={household.subscriptionStatus} /></td>
       <td style={{ textAlign: "center" }}>{household.memberCount || 0}</td>
       <td>

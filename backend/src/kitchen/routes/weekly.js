@@ -15,6 +15,8 @@ import {
   adminForceCompleteChallenge,
   seedWeeklyChallengeDefs
 } from "../weeklyEngine.js";
+import { runLazyExpiryChecks, serializeBetaPro } from "../betaProService.js";
+import { Household } from "../models/Household.js";
 
 const router = express.Router();
 
@@ -27,8 +29,19 @@ const router = express.Router();
 router.get("/state", requireAuth, async (req, res) => {
   try {
     const householdId = getEffectiveHouseholdId(req.user);
+
+    // Lazy expiry checks — runs only when betaPro is active, no-ops otherwise.
+    await runLazyExpiryChecks(householdId);
+
     const weekly = await getWeeklyState(householdId);
-    return res.json({ ok: true, weekly });
+
+    // Include betaPro snapshot so the frontend can show the badge / expiry info.
+    const household = await Household.findById(householdId)
+      .select("betaPro planSource")
+      .lean();
+    const betaPro = serializeBetaPro(household?.betaPro);
+
+    return res.json({ ok: true, weekly, betaPro });
   } catch (err) {
     console.error("[weekly] GET /state error:", err.message);
     return res.status(500).json({ ok: false, error: err.message });
@@ -51,8 +64,9 @@ router.post("/trigger", requireAuth, async (req, res) => {
 
     const event = await triggerWeeklyChallenge(householdId, type, contextData);
     const weekly = await getWeeklyState(householdId);
+    const betaProUnlocked = event?.betaProUnlocked ?? false;
 
-    return res.json({ ok: true, event, weekly });
+    return res.json({ ok: true, event, weekly, betaProUnlocked });
   } catch (err) {
     console.error("[weekly] POST /trigger error:", err.message);
     return res.status(500).json({ ok: false, error: err.message });

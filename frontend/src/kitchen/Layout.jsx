@@ -11,6 +11,7 @@ import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
 import OnboardingBanner from "./components/onboarding/OnboardingBanner.jsx";
 import WeeklyChallengeCard from "./components/weekly/WeeklyChallengeCard.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
+import { useWeeklyChallenge } from "./contexts/WeeklyChallengeContext.jsx";
 
 function CalendarIcon(props) {
   return (
@@ -150,9 +151,30 @@ function getFirstName(displayName = "") {
   return String(displayName).trim().split(/\s+/)[0] || "";
 }
 
+function BetaProUnlockedToast({ onDismiss }) {
+  return (
+    <div className="kitchen-beta-pro-toast" role="status" aria-live="polite">
+      <span className="kitchen-beta-pro-toast-icon">⭐</span>
+      <div className="kitchen-beta-pro-toast-body">
+        <strong>Has desbloqueado Pro Beta</strong>
+        <span>Pro Beta activo mientras participas en la beta.</span>
+      </div>
+      <button
+        type="button"
+        className="kitchen-beta-pro-toast-dismiss"
+        onClick={onDismiss}
+        aria-label="Cerrar"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 export default function KitchenLayout({ children, containerClassName = "" }) {
   const { user, logout, refreshUser, setUser } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { betaProEvent, dismissBetaProEvent } = useWeeklyChallenge();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
@@ -353,8 +375,14 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
               </span>
               <span className="kitchen-user-name">{userName}</span>
               {user?.subscriptionPlan && (
-                <span className={`kitchen-user-plan-badge plan-${String(user.subscriptionPlan).toLowerCase()}`}>
-                  {String(user.subscriptionPlan).toLowerCase() === "premium" ? "Premium" : String(user.subscriptionPlan).toLowerCase() === "pro" ? "Pro" : "Basic"}
+                <span className={`kitchen-user-plan-badge plan-${String(user.subscriptionPlan).toLowerCase()}${user.planSource === "beta_pro" ? " plan-beta-pro" : ""}`}>
+                  {user.planSource === "beta_pro"
+                    ? "Pro Beta"
+                    : String(user.subscriptionPlan).toLowerCase() === "premium"
+                      ? "Premium"
+                      : String(user.subscriptionPlan).toLowerCase() === "pro"
+                        ? "Pro"
+                        : "Basic"}
                 </span>
               )}
               <ChevronDownIcon className="kitchen-user-chevron" />
@@ -452,6 +480,9 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
           <div className="kitchen-user-placeholder" />
         )}
       />
+      {betaProEvent ? (
+        <BetaProUnlockedToast onDismiss={dismissBetaProEvent} />
+      ) : null}
       <div className={`kitchen-container ${containerClassName}`.trim()}>
         <OnboardingBanner />
         <WeeklyChallengeCard />

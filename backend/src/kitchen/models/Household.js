@@ -38,6 +38,30 @@ const HouseholdSchema = new mongoose.Schema(
     totalBitesSpent: { type: Number, default: 0, min: 0 },
     lastMonthlyBitesGrantAt: { type: Date, default: null },
 
+    // Plan source: distinguishes how the current plan was granted.
+    // "manual" = default / admin-assigned without a specific source
+    // "paid" = active Stripe subscription
+    // "admin_grant" = manually granted by admin
+    // "beta_pro" = auto-granted by Beta Pro unlock logic
+    planSource: {
+      type: String,
+      enum: ["manual", "paid", "admin_grant", "beta_pro"],
+      default: "manual"
+    },
+
+    // Last time the user performed a meaningful in-app action (not pings/crons).
+    lastMeaningfulActivityAt: { type: Date, default: null },
+
+    // Beta Pro grant tracking.
+    betaPro: {
+      active: { type: Boolean, default: false },
+      unlockedAt: { type: Date, default: null },
+      expiresAt: { type: Date, default: null },
+      lastRenewedAt: { type: Date, default: null },
+      expiredAt: { type: Date, default: null },
+      expirationReason: { type: String, default: "" }
+    },
+
     // Stripe payment metadata — populated by webhook when a checkout completes.
     // These are intentionally separate from core subscription fields so the
     // subscription logic doesn't depend on them.

@@ -10,6 +10,7 @@ export function WeeklyChallengeProvider({ children }) {
   const { state: onboardingState } = useOnboarding();
   const [state, setState] = useState(null);
   const [rewardEvent, setRewardEvent] = useState(null);
+  const [betaProEvent, setBetaProEvent] = useState(null);
   const loadedRef = useRef(false);
   const triggerQueueRef = useRef([]);
   const triggeringRef = useRef(false);
@@ -26,14 +27,20 @@ export function WeeklyChallengeProvider({ children }) {
         method: "POST",
         body: JSON.stringify({ type, contextData })
       });
-      if (data?.weeklyState) setState(data.weeklyState);
+      if (data?.weekly) setState(data.weekly);
       if (data?.event?.completed && data.event.challenges?.length > 0) {
         setRewardEvent({
           challenges: data.event.challenges,
           bonusCompleted: data.event.bonusCompleted,
-          bonusBites: data.event.bonusBites
+          bonusBites: data.event.bonusBites,
+          betaProUnlocked: data.betaProUnlocked ?? false
         });
         setTimeout(() => setRewardEvent(null), 5000);
+      }
+      // Beta Pro unlocked — fire a separate event so the UI can show a dedicated message.
+      if (data?.betaProUnlocked) {
+        setBetaProEvent({ unlockedAt: new Date().toISOString() });
+        setTimeout(() => setBetaProEvent(null), 8000);
       }
     } catch (_) {
       // non-fatal — never break existing flows
@@ -49,7 +56,7 @@ export function WeeklyChallengeProvider({ children }) {
     if (!user) return;
     try {
       const data = await apiRequest("/api/kitchen/weekly/state");
-      setState(data?.weeklyState || null);
+      setState(data?.weekly || null);
       stateReadyRef.current = true;
       if (triggerQueueRef.current.length > 0) {
         _processTriggerQueue();
@@ -88,9 +95,18 @@ export function WeeklyChallengeProvider({ children }) {
   }, [loadState]);
 
   const dismissReward = useCallback(() => setRewardEvent(null), []);
+  const dismissBetaProEvent = useCallback(() => setBetaProEvent(null), []);
 
   return (
-    <WeeklyChallengeContext.Provider value={{ state, notify, refresh, rewardEvent, dismissReward }}>
+    <WeeklyChallengeContext.Provider value={{
+      state,
+      notify,
+      refresh,
+      rewardEvent,
+      dismissReward,
+      betaProEvent,
+      dismissBetaProEvent
+    }}>
       {children}
     </WeeklyChallengeContext.Provider>
   );
@@ -98,7 +114,12 @@ export function WeeklyChallengeProvider({ children }) {
 
 export function useWeeklyChallenge() {
   return useContext(WeeklyChallengeContext) ?? {
-    state: null, notify: () => {}, refresh: () => {},
-    rewardEvent: null, dismissReward: () => {}
+    state: null,
+    notify: () => {},
+    refresh: () => {},
+    rewardEvent: null,
+    dismissReward: () => {},
+    betaProEvent: null,
+    dismissBetaProEvent: () => {}
   };
 }

@@ -906,15 +906,26 @@ router.get("/me", requireAuth, async (req, res) => {
     let householdName = null;
     let subscriptionPlan = "basic";
     const effectiveHouseholdId = req.user?.activeHouseholdId || req.user?.householdId || null;
+    let planSource = "manual";
+    let betaProActive = false;
     if (effectiveHouseholdId) {
-      const household = await Household.findById(effectiveHouseholdId).select("name subscriptionPlan").lean();
+      const household = await Household.findById(effectiveHouseholdId)
+        .select("name subscriptionPlan planSource betaPro")
+        .lean();
       householdName = household?.name || null;
       subscriptionPlan = normalizeSubscriptionPlan(household?.subscriptionPlan);
+      planSource = household?.planSource || "manual";
+      betaProActive = household?.betaPro?.active ?? false;
     }
 
     res.json({
       ok: true,
-      user: { ...buildSafeUserResponse(req.kitchenUser, householdName), subscriptionPlan },
+      user: {
+        ...buildSafeUserResponse(req.kitchenUser, householdName),
+        subscriptionPlan,
+        planSource,
+        betaProActive
+      },
       auth: req.user
     });
   } catch {

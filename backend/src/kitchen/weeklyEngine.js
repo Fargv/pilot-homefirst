@@ -6,6 +6,7 @@ import { HouseholdWeeklyProgress } from "./models/HouseholdWeeklyProgress.js";
 import { Household } from "./models/Household.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
+import { recordMeaningfulActivity, tryUnlockBetaPro } from "./betaProService.js";
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -510,6 +511,10 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     const onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
     if (!onboarding || onboarding.status !== "completed") return null;
 
+    // Record that the user just did something meaningful (non-fatal — fire and forget).
+    // All triggerWeeklyChallenge calls come from user-initiated actions.
+    recordMeaningfulActivity(householdId).catch(() => {});
+
     const cycleConfig = await getOrCreateCycleConfig();
     if (cycleConfig.paused) return null;
 
@@ -718,6 +723,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     }
 
     // Grant rewards for newly completed challenges
+    let betaProUnlocked = false;
     if (newlyCompletedKeys.length > 0) {
       const freshProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
       for (const key of newlyCompletedKeys) {
@@ -729,9 +735,13 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
       // Check bonus after all completions
       const latestProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
       await checkAndGrantBonus(householdId, latestProgress, challenges, cycleConfig.bonusBites);
+
+      // Try Beta Pro unlock after bonus check (idempotent — safe to call every time).
+      const betaProResult = await tryUnlockBetaPro(householdId);
+      betaProUnlocked = betaProResult.unlocked;
     }
 
-    return { completed: newlyCompletedKeys, newlyCompleted: newlyCompletedKeys.length > 0 };
+    return { completed: newlyCompletedKeys, newlyCompleted: newlyCompletedKeys.length > 0, betaProUnlocked };
   } catch (err) {
     console.error("[weekly] triggerWeeklyChallenge error:", err.message);
     return null;
