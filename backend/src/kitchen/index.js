@@ -13,6 +13,7 @@ import catalogRoutes from "./routes/catalog.js";
 import bitesRoutes from "./routes/bites.js";
 import plansRoutes from "./routes/plans.js";
 import onboardingRoutes from "./routes/onboarding.js";
+import weeklyRoutes from "./routes/weekly.js";
 
 const router = express.Router();
 
@@ -30,5 +31,6 @@ router.use("/catalog", catalogRoutes);
 router.use("/bites", bitesRoutes);
 router.use("/plans", plansRoutes);
 router.use("/onboarding", onboardingRoutes);
+router.use("/weekly", weeklyRoutes);
 
 export default router;

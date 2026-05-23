@@ -28,6 +28,7 @@ import { AppLoadingScreen } from "./kitchen/components/WeekPageSkeleton.jsx";
 import "./kitchen/kitchen.css";
 import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 import { OnboardingProvider } from "./kitchen/contexts/OnboardingContext.jsx";
+import { WeeklyChallengeProvider } from "./kitchen/contexts/WeeklyChallengeContext.jsx";
 
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -84,6 +85,7 @@ function AppRoutes() {
   return (
     <ActiveWeekProvider>
       <OnboardingProvider>
+      <WeeklyChallengeProvider>
       <DevEnvironmentBanner />
       <PwaInstallPrompt />
       <BootstrapRedirect />
@@ -202,6 +204,7 @@ function AppRoutes() {
         />
         <Route path="*" element={<HomeRedirect />} />
       </Routes>
+      </WeeklyChallengeProvider>
       </OnboardingProvider>
     </ActiveWeekProvider>
   );

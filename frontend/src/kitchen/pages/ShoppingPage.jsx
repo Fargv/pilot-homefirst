@@ -11,6 +11,7 @@ import { useActiveWeek } from "../weekContext.jsx";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 
 function RefreshIcon(props) {
   return (
@@ -216,6 +217,7 @@ export default function ShoppingPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { notify: notifyOnboarding } = useOnboarding();
+  const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { notifyOnboarding("visit_shopping"); }, []);
   const navigationContext = React.useContext(NavigationContext);
@@ -734,6 +736,7 @@ export default function ShoppingPage() {
       setQuickCreateOpen(false);
       quickInputRef.current?.focus();
       setSuccess(`Creado y añadido: ${ingredient.name}`);
+      notifyWeekly("manual_item_added");
     } catch (err) {
       setError(err.message || "No se pudo crear y añadir el ingrediente.");
     } finally {
@@ -784,6 +787,11 @@ export default function ShoppingPage() {
       applyPayload(data);
       if (status === "purchased") {
         notifyOnboarding("mark_purchased");
+        notifyWeekly("item_purchased", { itemKey: key });
+        const remaining = data.list?.pendingByCategory
+          ? Object.values(data.list.pendingByCategory).reduce((s, arr) => s + arr.length, 0)
+          : null;
+        if (remaining === 0) notifyWeekly("shopping_list_completed");
         if (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id) {
           setHasMarkedPurchaseInViewSession(true);
         }

@@ -10,6 +10,7 @@ import CategoryIcon from "../components/CategoryIcon.jsx";
 import { resolveCategoryCode } from "../components/categoryIconMap.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { canUseDinnersFeature } from "../subscription.js";
 import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 
@@ -82,6 +83,7 @@ export default function DishesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { notify: notifyOnboarding, state: onboardingState } = useOnboarding();
+  const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { notifyOnboarding("visit_dishes"); }, []);
 
@@ -1483,6 +1485,7 @@ export default function DishesPage() {
           await loadDishes();
           if (!activeDish) {
             notifyOnboarding("create_dish");
+            notifyWeekly("dish_created");
             if ((savedDish?.ingredients?.length ?? 0) > 0) notifyOnboarding("add_ingredient_to_dish");
           } else if ((savedDish?.ingredients?.length ?? 0) > 0) {
             notifyOnboarding("add_ingredient_to_dish");
@@ -1503,7 +1506,10 @@ export default function DishesPage() {
         onClose={closeIngredientModal}
         onSaved={async () => {
           await loadIngredients(ingredientSearchTerm);
-          if (!activeIngredient) notifyOnboarding("create_ingredient");
+          if (!activeIngredient) {
+            notifyOnboarding("create_ingredient");
+            notifyWeekly("ingredient_created");
+          }
           setIngredientSuggestionName("");
         }}
         categories={categories}

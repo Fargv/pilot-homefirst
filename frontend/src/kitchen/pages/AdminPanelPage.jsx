@@ -4675,6 +4675,305 @@ function OnboardingSection() {
   );
 }
 
+// ─── Weekly Challenges Admin Section ────────────────────────────────────────
+
+function WeeklySection() {
+  const wcFieldStyle = { display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 };
+  const wcLabelStyle = { fontSize: 12, fontWeight: 600, color: "#374151" };
+  const [subTab, setSubTab] = useState("config");
+  const [config, setConfig] = useState(null);
+  const [configForm, setConfigForm] = useState({});
+  const [challenges, setChallenges] = useState([]);
+  const [editingChallenge, setEditingChallenge] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [newChallengeForm, setNewChallengeForm] = useState({ key: "", title: "", description: "", guidance: "", rewardBites: 10, triggerType: "", triggerCount: 1, cycleWeek: "", cycleOrder: 0, active: true });
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [householdId, setHouseholdId] = useState("");
+  const [householdProgress, setHouseholdProgress] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
+
+  const loadConfig = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest("/api/kitchen/weekly/admin/config");
+      setConfig(data.config || {});
+      setConfigForm(data.config || {});
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const loadChallenges = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest("/api/kitchen/weekly/admin/challenges");
+      setChallenges(data.challenges || []);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    if (subTab === "config") loadConfig();
+    else if (subTab === "challenges") loadChallenges();
+  }, [subTab]);
+
+  const saveConfig = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const data = await apiRequest("/api/kitchen/weekly/admin/config", {
+        method: "PUT", body: JSON.stringify(configForm)
+      });
+      setConfig(data.config || configForm);
+      setMsg("Configuración guardada");
+      setTimeout(() => setMsg(""), 3000);
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const startEditChallenge = (c) => {
+    setEditingChallenge(c._id);
+    setEditForm({ key: c.key, title: c.title, description: c.description, guidance: c.guidance, rewardBites: c.rewardBites, triggerType: c.triggerType, triggerCount: c.triggerCount, cycleWeek: c.cycleWeek ?? "", cycleOrder: c.cycleOrder ?? 0, active: c.active });
+  };
+
+  const saveEditChallenge = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      await apiRequest(`/api/kitchen/weekly/admin/challenges/${editingChallenge}`, {
+        method: "PUT", body: JSON.stringify({ ...editForm, cycleWeek: editForm.cycleWeek === "" ? null : Number(editForm.cycleWeek) })
+      });
+      setEditingChallenge(null);
+      await loadChallenges();
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const deleteChallenge = async (id) => {
+    if (!window.confirm("¿Eliminar este reto semanal?")) return;
+    try {
+      await apiRequest(`/api/kitchen/weekly/admin/challenges/${id}`, { method: "DELETE" });
+      await loadChallenges();
+    } catch (e) { setError(e.message); }
+  };
+
+  const createChallenge = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      await apiRequest("/api/kitchen/weekly/admin/challenges", {
+        method: "POST", body: JSON.stringify({ ...newChallengeForm, cycleWeek: newChallengeForm.cycleWeek === "" ? null : Number(newChallengeForm.cycleWeek) })
+      });
+      setShowNewForm(false);
+      setNewChallengeForm({ key: "", title: "", description: "", guidance: "", rewardBites: 10, triggerType: "", triggerCount: 1, cycleWeek: "", cycleOrder: 0, active: true });
+      await loadChallenges();
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const seedChallenges = async () => {
+    if (!window.confirm("¿Sembrar retos por defecto? Esto no sobreescribe los existentes.")) return;
+    try {
+      const data = await apiRequest("/api/kitchen/weekly/admin/seed", { method: "POST" });
+      setMsg(`Sembrado: ${data.created || 0} creados`);
+      setTimeout(() => setMsg(""), 4000);
+      await loadChallenges();
+    } catch (e) { setError(e.message); }
+  };
+
+  const loadHouseholdProgress = async () => {
+    if (!householdId.trim()) return;
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/weekly/admin/households/${householdId.trim()}/progress`);
+      setHouseholdProgress(data);
+    } catch (e) { setError(e.message); setHouseholdProgress(null); }
+    finally { setLoading(false); }
+  };
+
+  const householdAction = async (action, extra = {}) => {
+    if (!householdId.trim()) return;
+    try {
+      if (action === "reset") {
+        if (!window.confirm("¿Resetear progreso semanal de este hogar?")) return;
+        await apiRequest(`/api/kitchen/weekly/admin/households/${householdId.trim()}/reset`, { method: "POST" });
+      } else if (action === "complete-challenge") {
+        const key = window.prompt("Clave del reto a completar (challengeKey):");
+        if (!key) return;
+        await apiRequest(`/api/kitchen/weekly/admin/households/${householdId.trim()}/complete-challenge`, {
+          method: "POST", body: JSON.stringify({ challengeKey: key })
+        });
+      }
+      await loadHouseholdProgress();
+      setMsg(`Acción '${action}' ejecutada`);
+      setTimeout(() => setMsg(""), 3000);
+    } catch (e) { setError(e.message); }
+  };
+
+  const inputStyle = { fontSize: 13, padding: "6px 10px", borderRadius: 6, border: "1px solid #e2e8f0", width: "100%", boxSizing: "border-box" };
+  const sectionStyle = { background: "#f8fafc", borderRadius: 8, padding: "14px 16px", border: "1px solid #e2e8f0", marginBottom: 12 };
+
+  const subTabs = [
+    { key: "config", label: "Configuración" },
+    { key: "challenges", label: "Retos" },
+    { key: "households", label: "Hogares" }
+  ];
+
+  const groupedChallenges = [1, 2, 3, 4, null].map((week) => ({
+    week,
+    items: challenges.filter((c) => (c.cycleWeek ?? null) === week)
+  })).filter((g) => g.items.length > 0);
+
+  return (
+    <div style={{ maxWidth: 900 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {subTabs.map(({ key, label }) => (
+          <button key={key} type="button" onClick={() => setSubTab(key)} style={{ ...ABT.edit, background: subTab === key ? "#e0e7ff" : "#f8fafc", color: subTab === key ? "#312e81" : "#374151", fontWeight: subTab === key ? 700 : 500 }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {error && <div style={{ color: "#b42318", background: "#fff8f8", border: "1px solid #fca5a5", borderRadius: 6, padding: "8px 12px", marginBottom: 12 }}>{error}</div>}
+      {msg && <div style={{ color: "#15803d", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "8px 12px", marginBottom: 12 }}>{msg}</div>}
+      {loading && <p style={{ color: "#6b7280", fontSize: 13 }}>Cargando...</p>}
+
+      {subTab === "config" && !loading && config && (
+        <div style={sectionStyle}>
+          <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Configuración del ciclo semanal</p>
+          <div style={wcFieldStyle}>
+            <label style={wcLabelStyle}>Fecha inicio ciclo (cycleStartDate)</label>
+            <input style={inputStyle} type="date" value={configForm.cycleStartDate ? String(configForm.cycleStartDate).slice(0, 10) : ""} onChange={(e) => setConfigForm((p) => ({ ...p, cycleStartDate: e.target.value }))} />
+          </div>
+          <div style={wcFieldStyle}>
+            <label style={wcLabelStyle}>Bonus bites</label>
+            <input style={inputStyle} type="number" value={configForm.bonusBites ?? 5} onChange={(e) => setConfigForm((p) => ({ ...p, bonusBites: Number(e.target.value) }))} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <input type="checkbox" id="wc-paused" checked={!!configForm.paused} onChange={(e) => setConfigForm((p) => ({ ...p, paused: e.target.checked }))} />
+            <label htmlFor="wc-paused" style={wcLabelStyle}>Pausado</label>
+          </div>
+          <button type="button" style={ABT.save} onClick={saveConfig} disabled={saving}>{saving ? "Guardando..." : "Guardar"}</button>
+        </div>
+      )}
+
+      {subTab === "challenges" && !loading && (
+        <div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <button type="button" style={ABT.green} onClick={() => setShowNewForm((v) => !v)}>+ Nuevo reto</button>
+            <button type="button" style={ABT.edit} onClick={seedChallenges}>Sembrar defaults</button>
+          </div>
+
+          {showNewForm && (
+            <div style={{ ...sectionStyle, borderColor: "#86efac" }}>
+              <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Nuevo reto</p>
+              {["key", "title", "description", "guidance", "triggerType"].map((f) => (
+                <div key={f} style={wcFieldStyle}>
+                  <label style={wcLabelStyle}>{f}</label>
+                  <input style={inputStyle} value={newChallengeForm[f] ?? ""} onChange={(e) => setNewChallengeForm((p) => ({ ...p, [f]: e.target.value }))} />
+                </div>
+              ))}
+              {["rewardBites", "triggerCount", "cycleOrder"].map((f) => (
+                <div key={f} style={wcFieldStyle}>
+                  <label style={wcLabelStyle}>{f}</label>
+                  <input style={inputStyle} type="number" value={newChallengeForm[f] ?? 0} onChange={(e) => setNewChallengeForm((p) => ({ ...p, [f]: Number(e.target.value) }))} />
+                </div>
+              ))}
+              <div style={wcFieldStyle}>
+                <label style={wcLabelStyle}>cycleWeek (1-4 o vacío=sin asignar)</label>
+                <input style={inputStyle} type="number" min="1" max="4" value={newChallengeForm.cycleWeek ?? ""} onChange={(e) => setNewChallengeForm((p) => ({ ...p, cycleWeek: e.target.value }))} />
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" style={ABT.save} onClick={createChallenge} disabled={saving}>{saving ? "..." : "Crear"}</button>
+                <button type="button" style={ABT.cancel} onClick={() => setShowNewForm(false)}>Cancelar</button>
+              </div>
+            </div>
+          )}
+
+          {groupedChallenges.map(({ week, items }) => (
+            <div key={week ?? "unassigned"} style={{ marginBottom: 20 }}>
+              <p style={{ fontWeight: 700, fontSize: 13, color: "#374151", marginBottom: 8 }}>
+                {week ? `Semana ${week}` : "Sin semana asignada"}
+              </p>
+              {items.map((c) => (
+                <div key={c._id} style={{ ...sectionStyle, marginBottom: 8 }}>
+                  {editingChallenge === c._id ? (
+                    <div>
+                      {["key", "title", "description", "guidance", "triggerType"].map((f) => (
+                        <div key={f} style={wcFieldStyle}>
+                          <label style={wcLabelStyle}>{f}</label>
+                          <input style={inputStyle} value={editForm[f] ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, [f]: e.target.value }))} />
+                        </div>
+                      ))}
+                      {["rewardBites", "triggerCount", "cycleOrder"].map((f) => (
+                        <div key={f} style={wcFieldStyle}>
+                          <label style={wcLabelStyle}>{f}</label>
+                          <input style={inputStyle} type="number" value={editForm[f] ?? 0} onChange={(e) => setEditForm((p) => ({ ...p, [f]: Number(e.target.value) }))} />
+                        </div>
+                      ))}
+                      <div style={wcFieldStyle}>
+                        <label style={wcLabelStyle}>cycleWeek (1-4 o vacío)</label>
+                        <input style={inputStyle} type="number" min="1" max="4" value={editForm.cycleWeek ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, cycleWeek: e.target.value }))} />
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                        <input type="checkbox" checked={!!editForm.active} onChange={(e) => setEditForm((p) => ({ ...p, active: e.target.checked }))} />
+                        <label style={wcLabelStyle}>Activo</label>
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button type="button" style={ABT.save} onClick={saveEditChallenge} disabled={saving}>{saving ? "..." : "Guardar"}</button>
+                        <button type="button" style={ABT.cancel} onClick={() => setEditingChallenge(null)}>Cancelar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        <span style={{ fontWeight: 600, fontSize: 13 }}>{c.title}</span>
+                        <span style={{ fontSize: 11, color: "#6b7280", marginLeft: 8 }}>({c.key})</span>
+                        {!c.active && <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 6 }}>[inactivo]</span>}
+                        <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>trigger: {c.triggerType} x{c.triggerCount} · +{c.rewardBites} bites</p>
+                      </div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button type="button" style={ABT.edit} onClick={() => startEditChallenge(c)}>Editar</button>
+                        <button type="button" style={ABT.del} onClick={() => deleteChallenge(c._id)}>Eliminar</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {subTab === "households" && (
+        <div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <input style={{ ...inputStyle, width: 260 }} placeholder="Household ID" value={householdId} onChange={(e) => setHouseholdId(e.target.value)} />
+            <button type="button" style={ABT.edit} onClick={loadHouseholdProgress}>Cargar</button>
+          </div>
+          {householdProgress && (
+            <div style={sectionStyle}>
+              <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Progreso: {householdId}</p>
+              <pre style={{ fontSize: 11, background: "#f1f5f9", padding: 10, borderRadius: 6, overflow: "auto", maxHeight: 300 }}>
+                {JSON.stringify(householdProgress, null, 2)}
+              </pre>
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <button type="button" style={ABT.del} onClick={() => householdAction("reset")}>Reset progreso</button>
+                <button type="button" style={ABT.green} onClick={() => householdAction("complete-challenge")}>Completar reto</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function AdminPanelPage() {
@@ -4750,7 +5049,8 @@ export default function AdminPanelPage() {
             { key: "bites_economy", label: "Bites" },
             { key: "plans", label: "Planes" },
             { key: "categories", label: "Categorías" },
-            { key: "onboarding", label: "Onboarding" }
+            { key: "onboarding", label: "Onboarding" },
+            { key: "weekly", label: "Retos Semanales" }
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -4796,6 +5096,8 @@ export default function AdminPanelPage() {
           </>
         ) : tab === "onboarding" ? (
           <OnboardingSection />
+        ) : tab === "weekly" ? (
+          <WeeklySection />
         ) : (
           <QuickSubscriptionPanel />
         )}

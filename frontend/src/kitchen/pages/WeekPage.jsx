@@ -19,6 +19,7 @@ import { canRandomizeFullWeek, canUseDinnersFeature, isWeekRandomizationUnavaila
 import { ProGateButton } from "../components/ui/ProBadge.jsx";
 import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 
 const DAY_CARD_STYLES = [
   { background: "#eef2ff", color: "#1f2a60" },
@@ -233,6 +234,7 @@ export default function WeekPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { notify: notifyOnboarding } = useOnboarding();
+  const { notify: notifyWeekly } = useWeeklyChallenge();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [plan, setPlan] = useState(null);
@@ -244,6 +246,8 @@ export default function WeekPage() {
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { notifyOnboarding("visit_week"); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { notifyWeekly("app_activity"); }, []);
   const [mealTab, setMealTab] = useState(() => {
     if (typeof window === "undefined") return "lunch";
     return normalizeMealType(window.localStorage.getItem(WEEK_MEAL_TAB_KEY) || "lunch");
@@ -901,9 +905,13 @@ export default function WeekPage() {
       // Onboarding: trigger plan_meal when a lunch dish is assigned (meals only, not dinners)
       if ("mainDishId" in requestUpdates && requestUpdates.mainDishId && mealType === "lunch") {
         notifyOnboarding("plan_meal");
+        notifyWeekly("meal_planned", { weekStart, dishId: requestUpdates.mainDishId });
         const allDays = data.plan?.days || [];
         const filledWeekdays = allDays.filter((d) => dayMealType(d) === "lunch" && d.mainDishId);
-        if (filledWeekdays.length >= 5) notifyOnboarding("plan_full_week");
+        if (filledWeekdays.length >= 5) {
+          notifyOnboarding("plan_full_week");
+          notifyWeekly("full_week_planned", { weekStart });
+        }
       }
       if (options.returnErrorObject) {
         return { plan: data.plan, error: null };

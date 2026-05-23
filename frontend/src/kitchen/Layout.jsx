@@ -9,6 +9,7 @@ import { getUserInitialsFromProfile } from "./utils/userInitials.js";
 import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
 import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
 import OnboardingBanner from "./components/onboarding/OnboardingBanner.jsx";
+import WeeklyChallengeCard from "./components/weekly/WeeklyChallengeCard.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 
 function CalendarIcon(props) {
@@ -453,6 +454,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
       />
       <div className={`kitchen-container ${containerClassName}`.trim()}>
         <OnboardingBanner />
+        <WeeklyChallengeCard />
         {children}
       </div>
       <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
