@@ -3,6 +3,7 @@ const BUDGET_ENABLED_PLANS = new Set(["pro", "premium"]);
 const FULL_WEEK_RANDOMIZATION_PLANS = new Set(["pro", "premium"]);
 const DIET_RANDOMIZATION_PLANS = new Set(["pro", "premium"]);
 const DINNER_PLANS = new Set(["pro", "premium"]);
+const BASICS_PLANS = new Set(["pro", "premium"]);
 
 export const SUBSCRIPTION_PLANS = ["free", "basic", "pro", "premium"];
 export const REQUESTABLE_SUBSCRIPTION_PLANS = ["basic", "pro", "premium"];
@@ -43,6 +44,10 @@ export function canUseDietRandomization(plan) {
 
 export function canUseDinnersFeature(plan) {
   return DINNER_PLANS.has(normalizeSubscriptionPlan(plan));
+}
+
+export function canUseBasicsFeature(plan) {
+  return BASICS_PLANS.has(normalizeSubscriptionPlan(plan));
 }
 
 export function buildHouseholdFeatureAvailability(household) {

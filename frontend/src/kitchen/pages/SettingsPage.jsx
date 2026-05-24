@@ -11,6 +11,7 @@ import { PwaInstallSettingsBlock } from "../components/PwaInstallPrompt.jsx";
 import { useActiveWeek } from "../weekContext.jsx";
 import {
   buildLicenseState,
+  canUseBasicsFeature,
   canUseBudgetFeature,
   canUseDietRandomization,
   canUseDinnersFeature,
@@ -260,6 +261,12 @@ export default function SettingsPage() {
   const [bitesHistory, setBitesHistory] = useState([]);
   const [bitesHistoryLoading, setBitesHistoryLoading] = useState(false);
   const [bitesSummary, setBitesSummary] = useState({ free: 0, purchased: 0 });
+  const [basics, setBasics] = useState([]);
+  const [basicsLoading, setBasicsLoading] = useState(false);
+  const [basicsError, setBasicsError] = useState("");
+  const [basicsNewName, setBasicsNewName] = useState("");
+  const [basicsNewEmoji, setBasicsNewEmoji] = useState("");
+  const [basicsSaving, setBasicsSaving] = useState(false);
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
@@ -279,6 +286,7 @@ export default function SettingsPage() {
     [palette, selectedColorId]
   );
   const budgetFeatureEnabled = canUseBudgetFeature(subscriptionPlan);
+  const basicsFeatureEnabled = canUseBasicsFeature(subscriptionPlan);
   const canUseDinners = canUseDinnersFeature(subscriptionPlan);
   const licenseActionLabel = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
   const memberUsage = useMemo(() => countLicenseUsage(members), [members]);
@@ -567,6 +575,67 @@ export default function SettingsPage() {
     if (activePanel !== "bites") return;
     void loadBitesHistory();
   }, [activePanel, user?.activeHouseholdId]);
+
+  const loadBasics = async () => {
+    setBasicsLoading(true);
+    setBasicsError("");
+    try {
+      const data = await apiRequest("/api/kitchen/basics");
+      setBasics(data.basics || []);
+    } catch (err) {
+      setBasicsError(err.message || "No se pudieron cargar los básicos.");
+    } finally {
+      setBasicsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activePanel !== "basicos") return;
+    void loadBasics();
+  }, [activePanel, user?.activeHouseholdId]);
+
+  const createBasic = async () => {
+    const trimmedName = basicsNewName.trim();
+    if (!trimmedName || basicsSaving) return;
+    setBasicsSaving(true);
+    setBasicsError("");
+    try {
+      await apiRequest("/api/kitchen/basics", {
+        method: "POST",
+        body: JSON.stringify({ name: trimmedName, emoji: basicsNewEmoji.trim() || "" })
+      });
+      setBasicsNewName("");
+      setBasicsNewEmoji("");
+      await loadBasics();
+    } catch (err) {
+      setBasicsError(err.message || "No se pudo crear el básico.");
+    } finally {
+      setBasicsSaving(false);
+    }
+  };
+
+  const deleteBasic = async (id) => {
+    setBasicsError("");
+    try {
+      await apiRequest(`/api/kitchen/basics/${id}`, { method: "DELETE" });
+      await loadBasics();
+    } catch (err) {
+      setBasicsError(err.message || "No se pudo eliminar el básico.");
+    }
+  };
+
+  const toggleBasicActive = async (id, currentActive) => {
+    setBasicsError("");
+    try {
+      await apiRequest(`/api/kitchen/basics/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ active: !currentActive })
+      });
+      await loadBasics();
+    } catch (err) {
+      setBasicsError(err.message || "No se pudo actualizar el básico.");
+    }
+  };
 
   const saveProfile = async () => {
     const safeDisplayName = displayName.trim();
@@ -1867,6 +1936,111 @@ export default function SettingsPage() {
     </div>
   );
 
+  const BasicsPanel = (
+    <div className="settings-panel">
+      <div className="settings-panel-heading">
+        <button type="button" className="settings-back-btn" onClick={() => setPanel("")}>
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Volver
+        </button>
+        <h2 className="settings-panel-title">Básicos de compra</h2>
+        <p className="settings-panel-sub">Artículos que añades a la lista semana a semana</p>
+      </div>
+
+      {!basicsFeatureEnabled ? (
+        <div className="settings-block basics-locked-block">
+          <div className="basics-locked-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" width="36" height="36">
+              <rect x="5" y="11" width="14" height="10" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          </div>
+          <p className="basics-locked-title">Disponible en Pro y Premium</p>
+          <p className="basics-locked-desc">Configura tus artículos recurrentes y añádelos a la lista de la compra con un solo toque cada semana.</p>
+          <button type="button" className="kitchen-button basics-upgrade-btn" onClick={() => navigate("/kitchen/upgrade")}>Ver planes</button>
+        </div>
+      ) : (
+        <>
+          <div className="settings-block">
+            <p className="settings-section-label" style={{ marginBottom: "10px" }}>Tus básicos</p>
+            {basicsLoading && <p className="kitchen-muted">Cargando…</p>}
+            {basicsError && <div className="kitchen-alert error">{basicsError}</div>}
+            {!basicsLoading && basics.length === 0 && (
+              <p className="kitchen-muted">No tienes básicos configurados aún. Añade tus primeros.</p>
+            )}
+            {!basicsLoading && basics.map((basic) => (
+              <div key={basic.id} className={`settings-row-card basics-row-card${!basic.active ? " is-inactive" : ""}`}>
+                <div className="basics-row-main">
+                  {basic.emoji ? <span className="basics-row-emoji" aria-hidden="true">{basic.emoji}</span> : null}
+                  <span className="basics-row-name">{basic.name}</span>
+                  {!basic.active && <span className="basics-row-inactive-badge">Inactivo</span>}
+                </div>
+                {canManageHousehold ? (
+                  <div className="settings-row-actions">
+                    <button
+                      type="button"
+                      className="settings-mini-button"
+                      onClick={() => toggleBasicActive(basic.id, basic.active)}
+                      title={basic.active ? "Desactivar" : "Activar"}
+                    >
+                      {basic.active ? "Ocultar" : "Activar"}
+                    </button>
+                    <button
+                      type="button"
+                      className="settings-mini-button settings-mini-button-danger"
+                      onClick={() => {
+                        if (window.confirm(`¿Eliminar "${basic.name}"?`)) void deleteBasic(basic.id);
+                      }}
+                      title="Eliminar"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+
+          {canManageHousehold ? (
+            <div className="settings-block">
+              <p className="settings-section-label" style={{ marginBottom: "10px" }}>Añadir básico</p>
+              <form
+                className="basics-add-form"
+                onSubmit={(e) => { e.preventDefault(); void createBasic(); }}
+              >
+                <input
+                  className="kitchen-input basics-emoji-input"
+                  type="text"
+                  placeholder="🛒"
+                  maxLength={4}
+                  value={basicsNewEmoji}
+                  onChange={(e) => setBasicsNewEmoji(e.target.value)}
+                  aria-label="Emoji (opcional)"
+                />
+                <input
+                  className="kitchen-input basics-name-input"
+                  type="text"
+                  placeholder="Nombre del artículo"
+                  maxLength={120}
+                  value={basicsNewName}
+                  onChange={(e) => setBasicsNewName(e.target.value)}
+                  aria-label="Nombre"
+                />
+                <button
+                  type="submit"
+                  className="kitchen-button basics-add-btn"
+                  disabled={!basicsNewName.trim() || basicsSaving}
+                >
+                  {basicsSaving ? "…" : "Añadir"}
+                </button>
+              </form>
+            </div>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+
   return (
     <KitchenLayout>
       <div className="kitchen-card kitchen-block-gap">
@@ -2002,6 +2176,25 @@ export default function SettingsPage() {
                       </span>
                     </button>
                   ) : null}
+                  {canViewHousehold ? (
+                    <button type="button" className={`settings-nav-row${!basicsFeatureEnabled ? " settings-nav-row-locked" : ""}`} onClick={() => setPanel("basicos")}>
+                      <span className="settings-nav-row-icon settings-nav-icon-basics" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                          <path d="M4 8l1.5-4h9L16 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M3.5 8h13l-1.5 8a1 1 0 0 1-1 .9H6a1 1 0 0 1-1-.9z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                          <path d="M8 12l1 1.5 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                      <span className="settings-nav-row-main">
+                        <span className="settings-nav-row-title">Básicos de compra</span>
+                        <span className="settings-nav-row-sub">{basicsFeatureEnabled ? "Artículos recurrentes de tu lista" : "Disponible en Pro y Premium"}</span>
+                      </span>
+                      <span className="settings-nav-row-end">
+                        {!basicsFeatureEnabled ? <ProBadge /> : null}
+                        <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </span>
+                    </button>
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -2093,6 +2286,7 @@ export default function SettingsPage() {
         {!loading && activePanel === "categorias" && canManageCategories ? CategoriesPanel : null}
         {!loading && activePanel === "eliminados" && canManageDeleted ? DeletedPanel : null}
         {!loading && activePanel === "bites" ? BitesPanel : null}
+        {!loading && activePanel === "basicos" && canViewHousehold ? BasicsPanel : null}
       </div>
 
       <ModalSheet open={passwordModalOpen} title="Cambiar contrasena" onClose={() => setPasswordModalOpen(false)} actions={<><button type="button" className="kitchen-button secondary" onClick={() => setPasswordModalOpen(false)}>Cancelar</button><button type="button" className="kitchen-button" onClick={savePassword}>Guardar</button></>}>

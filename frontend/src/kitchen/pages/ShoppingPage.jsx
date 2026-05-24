@@ -6,12 +6,13 @@ import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
 import ShareWhatsAppButton from "../components/ShareWhatsAppButton.jsx";
 import { buildShoppingShareUrl, normalizeWeekParam } from "../deepLinks.js";
-import { isBudgetFeatureUnavailableError } from "../subscription.js";
+import { canUseBasicsFeature, isBudgetFeatureUnavailableError } from "../subscription.js";
 import { useActiveWeek } from "../weekContext.jsx";
 import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
+import BasicsPopup from "../components/BasicsPopup.jsx";
 
 function RefreshIcon(props) {
   return (
@@ -262,6 +263,7 @@ export default function ShoppingPage() {
   const [editingGroupSessionId, setEditingGroupSessionId] = useState(null);
   const [editingGroupAmount, setEditingGroupAmount] = useState("");
   const [contentSlideClass, setContentSlideClass] = useState("");
+  const [basicsPopupOpen, setBasicsPopupOpen] = useState(false);
   const weekDirRef = useRef(null);
   const [dismissedBannerIds, setDismissedBannerIds] = useState(() => {
     try {
@@ -399,13 +401,23 @@ export default function ShoppingPage() {
     console.error(`[shopping] ${context} failed`, { endpoint, message: err?.message || err });
   };
 
-  const loadList = async ({ silent = false } = {}) => {
+  const loadList = async ({ silent = false, checkBasicsPopup = false } = {}) => {
     if (isDiodGlobalMode) return;
     if (!silent) setIsRefreshing(true);
     setError("");
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
       applyPayload(data);
+      if (checkBasicsPopup) {
+        const householdId = user?.activeHouseholdId || user?.householdId || "";
+        const popupKey = `lunchfy_basics_popup_${householdId}_${weekStart}`;
+        try {
+          if (!localStorage.getItem(popupKey)) {
+            localStorage.setItem(popupKey, "1");
+            setBasicsPopupOpen(true);
+          }
+        } catch { /* ignore */ }
+      }
     } catch (err) {
       if (isBudgetFeatureUnavailableError(err)) {
         handleBudgetFeatureUnavailable();
@@ -426,7 +438,7 @@ export default function ShoppingPage() {
   };
 
   useEffect(() => {
-    void loadList();
+    void loadList({ checkBasicsPopup: true });
   }, [weekStart, isDiodGlobalMode]);
 
   useEffect(() => {
@@ -1016,6 +1028,16 @@ export default function ShoppingPage() {
     return purchasedByStoreDay.reduce((acc, group) => acc + (group.items?.length || 0), 0);
   }, [purchasedByStoreDay]);
   const hasExactSuggestion = Array.isArray(quickSuggestions) && quickSuggestions.some((item) => normalizeQuery(item?.name) === normalizeQuery(quickQuery));
+  const currentPendingCanonicals = useMemo(() => {
+    if (!Array.isArray(pendingByCategory)) return new Set();
+    const set = new Set();
+    for (const group of pendingByCategory) {
+      for (const item of (group.items || [])) {
+        if (item.canonicalName) set.add(String(item.canonicalName).toLowerCase());
+      }
+    }
+    return set;
+  }, [pendingByCategory]);
 
   if (isDiodGlobalMode) {
     return (
@@ -1128,6 +1150,16 @@ export default function ShoppingPage() {
                         onChange={(event) => setQuickQuery(event.target.value)}
                         placeholder="Añadir ingrediente a la lista..."
                       />
+                      <button
+                        type="button"
+                        className="shopping-basics-btn"
+                        onClick={() => setBasicsPopupOpen(true)}
+                        title="Básicos de compra"
+                        aria-label="Añadir básicos de compra"
+                      >
+                        <span className="shopping-basics-btn-icon">🧺</span>
+                        <span className="shopping-basics-btn-label">+Básicos</span>
+                      </button>
                     </div>
                     {quickQuery ? (
                       <div className="shopping-quick-suggestions">
@@ -1601,6 +1633,22 @@ export default function ShoppingPage() {
         </div>,
         document.body
       ) : null}
+
+      {basicsPopupOpen && (
+        <BasicsPopup
+          weekStart={weekStart}
+          plan={String(user?.subscriptionPlan || "basic").toLowerCase()}
+          currentPendingCanonicals={currentPendingCanonicals}
+          onClose={() => setBasicsPopupOpen(false)}
+          onApplied={({ addedCount }) => {
+            setBasicsPopupOpen(false);
+            if (addedCount > 0) {
+              void loadList({ silent: true });
+              setSuccess(`${addedCount} básico${addedCount !== 1 ? "s" : ""} añadido${addedCount !== 1 ? "s" : ""} a la lista.`);
+            }
+          }}
+        />
+      )}
     </KitchenLayout>
   );
 }

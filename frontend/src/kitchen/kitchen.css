@@ -15550,3 +15550,455 @@ body {
     display: block;
   }
 }
+
+/* ─── +Básicos button in ShoppingPage quick-add row ──────────────────────── */
+.shopping-basics-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-border, #e5e7eb);
+  background: var(--color-surface, #fff);
+  color: var(--color-text-secondary, #6b7280);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  letter-spacing: 0.01em;
+}
+.shopping-basics-btn:hover {
+  background: var(--color-surface-raised, #f3f4f6);
+  border-color: var(--color-border-hover, #d1d5db);
+  color: var(--color-text-primary, #111827);
+}
+.shopping-basics-btn-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+.shopping-basics-btn-label {
+  font-size: 12px;
+}
+
+/* Dark mode */
+[data-theme="dark"] .shopping-basics-btn {
+  border-color: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.65);
+}
+[data-theme="dark"] .shopping-basics-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.9);
+}
+
+/* ─── BasicsPopup overlay / modal ────────────────────────────────────────── */
+.basics-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0,0,0,0.35);
+  padding: 16px;
+  animation: basics-backdrop-in 0.18s ease;
+}
+@keyframes basics-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.basics-popup {
+  width: 100%;
+  max-width: 440px;
+  max-height: 82dvh;
+  background: var(--color-surface, #fff);
+  border-radius: 20px 20px 16px 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: basics-popup-in 0.22s cubic-bezier(0.34,1.2,0.64,1);
+}
+@keyframes basics-popup-in {
+  from { transform: translateY(28px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* Header */
+.basics-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  flex-shrink: 0;
+}
+.basics-popup-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-primary, #111827);
+}
+.basics-popup-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.basics-popup-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--color-text-muted, #9ca3af);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.basics-popup-close:hover {
+  background: var(--color-surface-raised, #f3f4f6);
+  color: var(--color-text-primary, #111827);
+}
+
+/* Loading / error / success */
+.basics-popup-loading,
+.basics-popup-error,
+.basics-popup-empty {
+  padding: 28px 20px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--color-text-muted, #6b7280);
+  line-height: 1.5;
+}
+.basics-popup-error { color: #dc2626; }
+.basics-popup-success {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 36px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #059669;
+}
+.basics-popup-success-icon {
+  font-size: 22px;
+}
+
+/* Toggle-all row */
+.basics-popup-toggle-all {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
+}
+.basics-popup-toggle-all-btn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent, #6366f1);
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+.basics-popup-counter {
+  font-size: 12px;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+/* Items list */
+.basics-popup-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.basics-popup-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+  transition: background 0.1s;
+}
+.basics-popup-item:hover {
+  background: var(--color-surface-raised, #f9fafb);
+}
+.basics-popup-item.is-selected {
+  background: var(--color-accent-light, #eef2ff);
+}
+.basics-popup-item.is-already {
+  opacity: 0.55;
+  cursor: default;
+}
+.basics-popup-item-check {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1.8px solid var(--color-border, #d1d5db);
+  background: var(--color-surface, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent, #6366f1);
+  transition: border-color 0.12s, background 0.12s;
+}
+.basics-popup-item.is-selected .basics-popup-item-check {
+  border-color: var(--color-accent, #6366f1);
+  background: var(--color-accent, #6366f1);
+  color: #fff;
+}
+.basics-popup-item-check.is-done {
+  border-color: #10b981;
+  background: #10b981;
+  color: #fff;
+}
+.basics-popup-item-emoji {
+  font-size: 16px;
+  line-height: 1;
+  width: 20px;
+  text-align: center;
+}
+.basics-popup-item-name {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-text-primary, #111827);
+  flex: 1;
+}
+
+/* "Already in list" section */
+.basics-popup-already-section {
+  padding-top: 8px;
+}
+.basics-popup-already-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #9ca3af);
+  padding: 4px 10px 2px;
+}
+
+/* Footer */
+.basics-popup-footer {
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  flex-shrink: 0;
+}
+.basics-popup-footer-error {
+  font-size: 12px;
+  color: #dc2626;
+  margin-bottom: 6px;
+}
+.basics-popup-apply-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: var(--color-accent, #6366f1);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.basics-popup-apply-btn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.basics-popup-apply-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Locked teaser */
+.basics-popup-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 24px 24px;
+  gap: 10px;
+}
+.basics-popup-lock-icon {
+  color: var(--color-text-muted, #9ca3af);
+  margin-bottom: 4px;
+}
+.basics-popup-locked-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+}
+.basics-popup-locked-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.55;
+  margin: 0;
+}
+.basics-popup-upgrade-btn {
+  margin-top: 6px;
+  padding: 9px 24px;
+  border-radius: 10px;
+  border: none;
+  background: var(--color-accent, #6366f1);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.basics-popup-upgrade-btn:hover { opacity: 0.88; }
+
+/* Dark mode – popup */
+[data-theme="dark"] .basics-popup {
+  background: #1e1e2e;
+}
+[data-theme="dark"] .basics-popup-header {
+  border-bottom-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .basics-popup-toggle-all {
+  border-bottom-color: rgba(255,255,255,0.06);
+}
+[data-theme="dark"] .basics-popup-footer {
+  border-top-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .basics-popup-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+[data-theme="dark"] .basics-popup-item.is-selected {
+  background: rgba(99,102,241,0.18);
+}
+[data-theme="dark"] .basics-popup-item-check {
+  border-color: rgba(255,255,255,0.2);
+  background: transparent;
+}
+[data-theme="dark"] .basics-popup-item-name {
+  color: rgba(255,255,255,0.88);
+}
+[data-theme="dark"] .basics-popup-close:hover {
+  background: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .basics-popup-title-row {
+  color: rgba(255,255,255,0.92);
+}
+[data-theme="dark"] .basics-popup-apply-btn {
+  background: #818cf8;
+}
+
+/* ─── SettingsPage — Básicos panel ───────────────────────────────────────── */
+.basics-locked-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px 28px;
+  gap: 12px;
+}
+.basics-locked-icon {
+  color: var(--color-text-muted, #9ca3af);
+}
+.basics-locked-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+}
+.basics-locked-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.6;
+  margin: 0;
+}
+.basics-upgrade-btn {
+  margin-top: 4px;
+}
+
+.basics-row-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.basics-row-card.is-inactive {
+  opacity: 0.55;
+}
+.basics-row-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.basics-row-emoji {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.basics-row-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary, #111827);
+}
+.basics-row-inactive-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--color-text-muted, #9ca3af);
+  background: var(--color-surface-raised, #f3f4f6);
+  border-radius: 4px;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Add basics form */
+.basics-add-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.basics-emoji-input {
+  width: 52px;
+  flex-shrink: 0;
+  text-align: center;
+  padding: 0 6px;
+}
+.basics-name-input {
+  flex: 1;
+  min-width: 0;
+}
+.basics-add-btn {
+  flex-shrink: 0;
+  padding: 0 16px;
+  height: 38px;
+}
+
+/* Dark mode – settings panel */
+[data-theme="dark"] .basics-row-name {
+  color: rgba(255,255,255,0.88);
+}
+[data-theme="dark"] .basics-row-inactive-badge {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.4);
+}

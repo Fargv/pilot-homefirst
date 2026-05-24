@@ -15,6 +15,7 @@ import plansRoutes from "./routes/plans.js";
 import onboardingRoutes from "./routes/onboarding.js";
 import weeklyRoutes from "./routes/weekly.js";
 import betaRoutes from "./routes/beta.js";
+import basicsRoutes from "./routes/basics.js";
 
 const router = express.Router();
 
@@ -34,5 +35,6 @@ router.use("/plans", plansRoutes);
 router.use("/onboarding", onboardingRoutes);
 router.use("/weekly", weeklyRoutes);
 router.use("/beta", betaRoutes);
+router.use("/basics", basicsRoutes);
 
 export default router;
