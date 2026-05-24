@@ -70,8 +70,8 @@ const CYCLE_CHALLENGE_DEFS = [
   {
     key: "weekly_create_new_dish",
     title: "Crea un plato nuevo",
-    description: "Ve a la sección Platos y añade un plato propio con sus ingredientes.",
-    guidance: "Ve a la sección Platos y añade un plato propio con sus ingredientes.",
+    description: "Ve a la sección Cocina y añade un plato propio con sus productos.",
+    guidance: "Ve a la sección Cocina y añade un plato propio con sus productos.",
     rewardBites: 5,
     triggerType: "dish_created",
     triggerCount: 1,
@@ -143,7 +143,7 @@ const CYCLE_CHALLENGE_DEFS = [
   },
   {
     key: "weekly_add_2_ingredients",
-    title: "Añade 2 ingredientes nuevos",
+    title: "Añade 2 productos nuevos",
     description: "",
     guidance: "",
     rewardBites: 10,

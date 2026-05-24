@@ -454,7 +454,7 @@ export default function RecipeEditor({
           </div>
         ) : null}
         {(!recipeIngredients || recipeIngredients.length === 0) && !recipeSteps ? (
-          <p className="kitchen-muted">Este plato no tiene receta todavía.</p>
+          <p className="kitchen-muted">Este plato aún no tiene elaboración.</p>
         ) : null}
       </div>
     );

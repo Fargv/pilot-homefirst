@@ -756,9 +756,9 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
               width: "100%", textAlign: "left"
             }}
           >
-            {showRecipe ? "▲ Ocultar receta" : "▼ Editar receta"}
+            {showRecipe ? "▲ Ocultar elaboración" : "▼ Editar elaboración"}
             {(item.recipe?.steps || (item.recipe?.ingredients?.length > 0)) && (
-              <span style={{ marginLeft: 8, fontSize: 11, background: "#818cf8", color: "#fff", borderRadius: 4, padding: "1px 6px" }}>tiene receta</span>
+              <span style={{ marginLeft: 8, fontSize: 11, background: "#818cf8", color: "#fff", borderRadius: 4, padding: "1px 6px" }}>tiene elaboración</span>
             )}
           </button>
 
@@ -1160,14 +1160,14 @@ function MasterCatalogSection() {
 
   const subTabs = [
     { key: "dishes", label: "Platos" },
-    { key: "ingredients", label: "Ingredientes" }
+    { key: "ingredients", label: "Productos" }
   ];
 
   return (
     <Card className="kitchen-block-gap">
       <div style={{ marginBottom: 16 }}>
         <h2 className="kitchen-title-no-margin">Catálogo Master</h2>
-        <p className="kitchen-muted">Platos e ingredientes que aparecen en todos los hogares. Los cambios aquí afectan a todo el mundo.</p>
+        <p className="kitchen-muted">Platos y productos que aparecen en todos los hogares. Los cambios aquí afectan a todo el mundo.</p>
       </div>
 
       <div style={{
@@ -1447,7 +1447,7 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
               <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500, marginBottom: 8 }}>
                 Teaser (descripción corta visible antes de instalar)
                 <input style={FS} value={dish.teaser || ""} onChange={(e) => updateDish(i, { teaser: e.target.value })} placeholder="Ensalada fresca con tomate, pepino y aceitunas" maxLength={120} />
-                <span style={{ fontSize: 10, color: "#9ca3af" }}>Máx. 120 caracteres. Se muestra como preview comercial — no reveles la receta completa.</span>
+                <span style={{ fontSize: 10, color: "#9ca3af" }}>Máx. 120 caracteres. Se muestra como preview comercial — no reveles la elaboración completa.</span>
               </label>
               <div style={{ display: "flex", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
                 {[["isDinner", "Cena"], ["special", "Especial"], ["allowRandom", "Aleatorio"]].map(([key, label]) => (
@@ -1473,7 +1473,7 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
                 </button>
               </div>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>Receta</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>Elaboración</div>
                 <RecipeEditor
                   recipeIngredients={dish.recipe?.ingredients || []}
                   recipeSteps={dish.recipe?.steps ?? null}
@@ -4303,7 +4303,7 @@ function IngredientCategoriesSection() {
               <tr>
                 <th style={{ textAlign: "center" }}>Orden</th>
                 <th>Categoría</th>
-                <th style={{ textAlign: "center" }}>Recetas</th>
+                <th style={{ textAlign: "center" }}>Elaboraciones</th>
                 <th style={{ textAlign: "center" }}>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -4596,7 +4596,7 @@ function OnboardingSection() {
                 color: suggTab === t ? "#fff" : "#374151",
                 border: "none"
               }} onClick={() => setSuggTab(t)}>
-                {t === "ingredient" ? "Ingredientes" : "Platos"}
+                {t === "ingredient" ? "Productos" : "Platos"}
               </button>
             ))}
           </div>

@@ -20,31 +20,31 @@ const DEFAULT_CHALLENGES = [
     key: "explore_app",
     title: "Explora Lunchfy",
     description: "Antes de empezar a crear y planificar, dedica un minuto a conocer la app. Visita las 5 secciones principales desde la barra de navegación inferior.",
-    howTo: "Visita: Semana · Platos (y la pestaña Ingredientes) · Lista de la compra · Catálogo · Ajustes.",
+    howTo: "Visita: Planificación · Cocina (y la pestaña Productos) · Lista de la compra · Catálogo · Ajustes.",
     rewardBites: 5, order: 1, phase: 1, phaseLabel: "Conoce la app",
     triggerType: "explore_app", triggerCount: 5
   },
   {
     key: "create_ingredient",
-    title: "Crea tu primer ingrediente",
-    description: "Los ingredientes son la base de todo. Cuando los añadas a un plato, Lunchfy los incluirá automáticamente en tu lista de la compra. Sin escribir nada a mano.",
-    howTo: "Ve a Platos → pestaña Ingredientes → toca + → escribe el nombre de un ingrediente que usas habitualmente → guarda.",
-    rewardBites: 10, order: 2, phase: 2, phaseLabel: "Ingredientes",
+    title: "Crea tu primer producto",
+    description: "Los productos son la base de todo. Cuando los añadas a un plato, Lunchfy los incluirá automáticamente en tu lista de la compra. Sin escribir nada a mano.",
+    howTo: "Ve a Cocina → pestaña Productos → toca + → escribe el nombre de un producto que usas habitualmente → guarda.",
+    rewardBites: 10, order: 2, phase: 2, phaseLabel: "Productos",
     triggerType: "create_ingredient", triggerCount: 1
   },
   {
     key: "create_second_ingredient",
-    title: "Añade un segundo ingrediente",
-    description: "Cuantos más ingredientes tengas, más completa y útil será tu lista de la compra. Añade al menos un ingrediente más para empezar a construir tu despensa.",
-    howTo: "Ve a Platos → pestaña Ingredientes → toca + → crea otro ingrediente diferente.",
-    rewardBites: 5, order: 3, phase: 2, phaseLabel: "Ingredientes",
+    title: "Añade un segundo producto",
+    description: "Cuantos más productos tengas, más completa y útil será tu lista de la compra. Añade al menos un producto más para empezar a construir tu despensa.",
+    howTo: "Ve a Cocina → pestaña Productos → toca + → crea otro producto diferente.",
+    rewardBites: 5, order: 3, phase: 2, phaseLabel: "Productos",
     triggerType: "create_ingredient", triggerCount: 2
   },
   {
     key: "create_dish",
     title: "Crea tu primer plato",
     description: "Un plato es una receta que asignarás a los días de tu semana. Los platos con ingredientes generan automáticamente tu lista de la compra.",
-    howTo: "Ve a Platos → toca + → escribe el nombre de un plato que cocinas habitualmente → guarda.",
+    howTo: "Ve a Cocina → toca + → escribe el nombre de un plato que cocinas habitualmente → guarda.",
     rewardBites: 10, order: 4, phase: 3, phaseLabel: "Platos",
     triggerType: "create_dish", triggerCount: 1
   },
@@ -60,7 +60,7 @@ const DEFAULT_CHALLENGES = [
     key: "plan_first_meal",
     title: "Planifica tu primera comida",
     description: "Es el momento de asignar un plato a un día de la semana. Así construyes tu menú semanal y tu lista de la compra se actualiza automáticamente.",
-    howTo: "Ve a Semana → elige un día → toca el espacio de comida → selecciona el plato que creaste.",
+    howTo: "Ve a Planificación → elige un día → toca el espacio de comida → selecciona el plato que creaste.",
     rewardBites: 10, order: 6, phase: 4, phaseLabel: "Planificación",
     triggerType: "plan_meal", triggerCount: 1
   },

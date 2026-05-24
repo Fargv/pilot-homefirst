@@ -854,16 +854,16 @@ export default function DishesPage() {
   }, [nextChallengeKey, dishSuggestions, dishes]);
 
   const isIngredientsTab = activeTab === "ingredients";
-  const headerTitle = isIngredientsTab ? "Ingredientes" : "Platos";
+  const headerTitle = "Cocina";
   const headerDescription = isIngredientsTab
     ? isDiodGlobalMode
-      ? "Catálogo master de ingredientes — visibles en todos los hogares."
-      : "Gestiona el catálogo de ingredientes con sus categorías y estado."
+      ? "Catálogo master de productos — visibles en todos los hogares."
+      : "Gestiona el catálogo de productos: ingredientes, artículos del hogar y todo lo que usas."
     : isDiodGlobalMode
       ? "Catálogo master de platos — visibles en todos los hogares."
-      : "Administra tus platos y sus ingredientes en un solo lugar.";
+      : "Gestiona tu cocina: platos, productos y todo lo que usas para planificar.";
   const headerActionLabel = isIngredientsTab
-    ? isDiodGlobalMode ? "Nuevo ingrediente master" : "Nuevo ingrediente"
+    ? isDiodGlobalMode ? "Nuevo producto master" : "Nuevo producto"
     : isDiodGlobalMode ? "Nuevo plato master" : "Nuevo plato";
   const headerActionHandler = isIngredientsTab ? startIngredientCreate : startCreate;
 
@@ -909,13 +909,13 @@ export default function DishesPage() {
               aria-selected={activeTab === "ingredients"}
               onClick={() => setActiveTab("ingredients")}
             >
-              Ingredientes
+              Productos
             </button>
           </div>
           {/* Search */}
           <input
             className="kitchen-input"
-            placeholder={isIngredientsTab ? "Buscar ingrediente…" : "Buscar por plato o ingrediente…"}
+            placeholder={isIngredientsTab ? "Buscar producto…" : "Buscar por plato o producto…"}
             value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
             onChange={(event) =>
               isIngredientsTab
@@ -1013,7 +1013,7 @@ export default function DishesPage() {
           ) : null}
           {/* Ingredient category chips (ingredients tab) */}
           {isIngredientsTab && !ingredientsLoading && ingredientCategories.length > 0 ? (
-            <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar ingredientes por categoría">
+            <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar productos por categoría">
               <button
                 type="button"
                 className={`kitchen-filter-chip ${!selectedIngredientCategoryId ? "is-active is-all" : ""}`}
@@ -1320,10 +1320,10 @@ export default function DishesPage() {
                                   if (hasRecipe) { setRecipeModalDish(dish); }
                                   else { toggleDishInfo(dish._id); }
                                 }}
-                                aria-label={hasRecipe ? `Ver receta de ${dish.name}` : `Ver ingredientes de ${dish.name}`}
+                                aria-label={hasRecipe ? `Ver elaboración de ${dish.name}` : `Ver ingredientes de ${dish.name}`}
                                 aria-expanded={dishInfoOpenId === dish._id}
                                 aria-controls={`dish-info-${dish._id}`}
-                                title={hasRecipe ? "Ver receta" : "Ingredientes"}
+                                title={hasRecipe ? "Ver elaboración" : "Ingredientes"}
                               >
                                 <svg viewBox="0 0 24 24" aria-hidden="true">
                                   <path

@@ -1814,7 +1814,7 @@ export default function SettingsPage() {
           Volver
         </button>
         <h2 className="settings-panel-title">Categorías</h2>
-        <p className="settings-panel-sub">Organiza platos e ingredientes por tipo</p>
+        <p className="settings-panel-sub">Organiza platos y productos por tipo</p>
       </div>
       <div className="settings-block settings-accordion-stack">
         <div className={`settings-accordion ${categoriesAccordion.dishes ? "is-open" : ""}`}>
@@ -1861,9 +1861,9 @@ export default function SettingsPage() {
               aria-expanded={categoriesAccordion.ingredients}
             >
               <span className="settings-accordion-chevron">{categoriesAccordion.ingredients ? "▾" : "▸"}</span>
-              <span>Categorias de ingredientes</span>
+              <span>Categorías de productos</span>
             </button>
-            <button type="button" className="settings-mini-icon" onClick={() => openCreateCategoryModal("ingredient")} aria-label="Nueva categoria de ingrediente">+</button>
+            <button type="button" className="settings-mini-icon" onClick={() => openCreateCategoryModal("ingredient")} aria-label="Nueva categoría de producto">+</button>
           </div>
           {categoriesAccordion.ingredients ? (
             <div className="settings-accordion-content">
@@ -1877,12 +1877,12 @@ export default function SettingsPage() {
                     <p className="kitchen-muted">{category.scope || "household"} · {category.active === false ? "Inactiva" : "Activa"}</p>
                   </div>
                   <div className="settings-row-actions">
-                    <button type="button" className="settings-mini-icon" onClick={() => openEditCategoryModal("ingredient", category)} aria-label="Editar categoria de ingrediente"><PencilIcon /></button>
-                    <button type="button" className="settings-mini-icon danger" onClick={() => removeCategory("ingredient", category)} aria-label="Eliminar categoria de ingrediente"><TrashIcon /></button>
+                    <button type="button" className="settings-mini-icon" onClick={() => openEditCategoryModal("ingredient", category)} aria-label="Editar categoría de producto"><PencilIcon /></button>
+                    <button type="button" className="settings-mini-icon danger" onClick={() => removeCategory("ingredient", category)} aria-label="Eliminar categoría de producto"><TrashIcon /></button>
                   </div>
                 </div>
               ))}
-              {!categories.length ? <p className="kitchen-muted">No hay categorias de ingredientes.</p> : null}
+              {!categories.length ? <p className="kitchen-muted">No hay categorías de productos.</p> : null}
             </div>
           ) : null}
         </div>
@@ -1898,12 +1898,12 @@ export default function SettingsPage() {
           Volver
         </button>
         <h2 className="settings-panel-title">Eliminados</h2>
-        <p className="settings-panel-sub">Recupera platos e ingredientes eliminados</p>
+        <p className="settings-panel-sub">Recupera platos y productos eliminados</p>
       </div>
       <div className="settings-block">
         <div className="kitchen-dishes-tabs" role="tablist" aria-label="Secciones eliminadas">
           <button type="button" className={`kitchen-tab-button ${deletedTab === "dishes" ? "is-active" : ""}`} onClick={() => setDeletedTab("dishes")}>Platos eliminados</button>
-          <button type="button" className={`kitchen-tab-button ${deletedTab === "ingredients" ? "is-active" : ""}`} onClick={() => setDeletedTab("ingredients")}>Ingredientes eliminados</button>
+          <button type="button" className={`kitchen-tab-button ${deletedTab === "ingredients" ? "is-active" : ""}`} onClick={() => setDeletedTab("ingredients")}>Productos eliminados</button>
         </div>
       </div>
       <div className="settings-block">
@@ -1923,7 +1923,7 @@ export default function SettingsPage() {
           <div key={ingredient._id} className="settings-row-card">
             <div>
               <strong>{ingredient.name}</strong>
-              <p className="kitchen-muted">Ingrediente eliminado</p>
+              <p className="kitchen-muted">Producto eliminado</p>
             </div>
             <div className="settings-row-actions">
               <button type="button" className="settings-mini-button" onClick={() => restoreDeletedItem("ingredient", ingredient._id)}>Recuperar</button>
@@ -1931,7 +1931,7 @@ export default function SettingsPage() {
           </div>
         ))}
         {!deletedLoading && deletedTab === "dishes" && !deletedItems.dishes.length ? <p className="kitchen-muted">No hay platos eliminados.</p> : null}
-        {!deletedLoading && deletedTab === "ingredients" && !deletedItems.ingredients.length ? <p className="kitchen-muted">No hay ingredientes eliminados.</p> : null}
+        {!deletedLoading && deletedTab === "ingredients" && !deletedItems.ingredients.length ? <p className="kitchen-muted">No hay productos eliminados.</p> : null}
       </div>
     </div>
   );
@@ -2152,7 +2152,7 @@ export default function SettingsPage() {
                       </span>
                       <span className="settings-nav-row-main">
                         <span className="settings-nav-row-title">Categorías</span>
-                        <span className="settings-nav-row-sub">Platos e ingredientes</span>
+                        <span className="settings-nav-row-sub">Platos y productos</span>
                       </span>
                       <span className="settings-nav-row-end">
                         <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -2249,7 +2249,7 @@ export default function SettingsPage() {
                     </span>
                     <span className="settings-nav-row-main">
                       <span className="settings-nav-row-title">Eliminados</span>
-                      <span className="settings-nav-row-sub">Recupera platos e ingredientes</span>
+                      <span className="settings-nav-row-sub">Recupera platos y productos</span>
                     </span>
                     <span className="settings-nav-row-end">
                       <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -2455,8 +2455,8 @@ export default function SettingsPage() {
       <ModalSheet
         open={categoryModal.open}
         title={categoryModal.mode === "edit"
-          ? `Editar categoria de ${categoryModal.kind === "dish" ? "plato" : "ingrediente"}`
-          : `Nueva categoria de ${categoryModal.kind === "dish" ? "plato" : "ingrediente"}`}
+          ? `Editar categoría de ${categoryModal.kind === "dish" ? "plato" : "producto"}`
+          : `Nueva categoría de ${categoryModal.kind === "dish" ? "plato" : "producto"}`}
         onClose={() => setCategoryModal(buildClosedCategoryModal())}
         actions={<><button type="button" className="kitchen-button secondary" onClick={() => setCategoryModal(buildClosedCategoryModal())}>Cancelar</button><button type="button" className="kitchen-button" onClick={() => (categoryModal.mode === "edit" ? editCategory(categoryModal.kind, categoryModal.category, categoryModal.name, categoryModal.colorBg, categoryModal.colorText, categoryModal.active) : createCategory(categoryModal.kind, categoryModal.name, categoryModal.colorBg, categoryModal.colorText, categoryModal.active))}>Guardar</button></>}
       >

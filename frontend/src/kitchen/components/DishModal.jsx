@@ -296,12 +296,12 @@ export default function DishModal({
             Datos
           </button>
           <button type="button" className={activeTab === "receta" ? "is-active" : ""} onClick={() => setActiveTab("receta")}>
-            Receta
-            {hasExistingRecipe ? <span className="dish-modal-recipe-dot" aria-label="Tiene receta" /> : null}
+            Elaboración
+            {hasExistingRecipe ? <span className="dish-modal-recipe-dot" aria-label="Tiene elaboración" /> : null}
           </button>
         </div>
 
-        {/* ── RECETA TAB ───────────────────────────────────────────── */}
+        {/* ── ELABORACIÓN TAB ──────────────────────────────────────── */}
         {activeTab === "receta" ? (
           <div className="recipe-tab-content">
             {hasExistingRecipe ? (
@@ -319,19 +319,19 @@ export default function DishModal({
                       readOnly={false}
                     />
                     {recipeError ? <div className="kitchen-alert error" style={{ marginTop: 8 }}>{recipeError}</div> : null}
-                    {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Receta guardada.</div> : null}
+                    {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Elaboración guardada.</div> : null}
                     <div className="recipe-save-bar">
                       {editingId ? (
                         <div style={{ display: "flex", gap: 8 }}>
                           <button type="button" className="kitchen-button" onClick={saveRecipe} disabled={recipeSaving}>
-                            {recipeSaving ? "Guardando..." : "Guardar receta"}
+                            {recipeSaving ? "Guardando..." : "Guardar elaboración"}
                           </button>
                           <button type="button" className="kitchen-button ghost" onClick={() => setRecipeEditing(false)}>
                             Cancelar
                           </button>
                         </div>
                       ) : (
-                        <p className="kitchen-muted">Guarda el plato primero para poder guardar su receta.</p>
+                        <p className="kitchen-muted">Guarda el plato primero para poder añadir su elaboración.</p>
                       )}
                     </div>
                   </>
@@ -346,11 +346,11 @@ export default function DishModal({
                       onChange={setRecipe}
                       readOnly
                     />
-                    {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Receta guardada.</div> : null}
+                    {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Elaboración guardada.</div> : null}
                     <div className="recipe-save-bar">
                       {isPro ? (
                         <button type="button" className="kitchen-button secondary" onClick={() => setRecipeEditing(true)}>
-                          Editar receta
+                          Editar elaboración
                         </button>
                       ) : (
                         <div className="dish-recipe-lock-bar">
@@ -371,7 +371,7 @@ export default function DishModal({
                 )}
               </>
             ) : isPro ? (
-              /* Pro — no recipe yet, empty editor */
+              /* Pro — no elaboración yet, empty editor */
               <>
                 <RecipeEditor
                   recipeIngredients={recipe.ingredients}
@@ -383,21 +383,21 @@ export default function DishModal({
                   readOnly={false}
                 />
                 {recipeError ? <div className="kitchen-alert error" style={{ marginTop: 8 }}>{recipeError}</div> : null}
-                {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Receta guardada.</div> : null}
+                {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Elaboración guardada.</div> : null}
                 <div className="recipe-save-bar">
                   {editingId ? (
                     <button type="button" className="kitchen-button" onClick={saveRecipe} disabled={recipeSaving}>
-                      {recipeSaving ? "Guardando..." : "Guardar receta"}
+                      {recipeSaving ? "Guardando..." : "Guardar elaboración"}
                     </button>
                   ) : (
-                    <p className="kitchen-muted">Guarda el plato primero para poder guardar su receta.</p>
+                    <p className="kitchen-muted">Guarda el plato primero para poder añadir su elaboración.</p>
                   )}
                 </div>
               </>
             ) : (
-              /* Basic — no recipe */
+              /* Basic — no elaboración */
               <div className="pro-gate-message">
-                <p className="kitchen-muted">Añade una receta detallada a este plato con el plan</p>
+                <p className="kitchen-muted">Añade una elaboración detallada a este plato con el plan</p>
                 <button
                   type="button"
                   className="pro-gate-pill"

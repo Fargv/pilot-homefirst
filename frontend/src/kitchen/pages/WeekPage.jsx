@@ -2383,8 +2383,8 @@ export default function WeekPage() {
                                 type="button"
                                 className="kitchen-day-title-info-action has-recipe"
                                 onClick={() => setRecipeModal({ dish: mainDish })}
-                                aria-label="Ver receta"
-                                title="Ver receta"
+                                aria-label="Ver elaboración"
+                                title="Ver elaboración"
                               >
                                 <BookIcon />
                               </button>

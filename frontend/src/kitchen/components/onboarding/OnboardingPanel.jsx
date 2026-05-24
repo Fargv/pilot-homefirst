@@ -13,8 +13,8 @@ const PHASE_COLORS = {
 };
 
 const EXPLORE_SCREEN_LABELS = {
-  visit_week: "Semana",
-  visit_dishes: "Platos",
+  visit_week: "Planificaci\u00f3n",
+  visit_dishes: "Cocina",
   visit_shopping: "Lista de la compra",
   visit_catalog: "Cat\u00e1logo",
   visit_settings: "Ajustes"

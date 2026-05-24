@@ -19,13 +19,13 @@ export default function RecipeModal({ dish, onClose }) {
         className="kitchen-modal recipe-modal"
         role="dialog"
         aria-modal="true"
-        aria-label={`Receta de ${dish.name || "plato"}`}
+        aria-label={`Elaboración de ${dish.name || "plato"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="kitchen-modal-header">
           <div>
             <h3>{dish.name || "Receta"}</h3>
-            <p className="kitchen-muted">Receta del plato</p>
+            <p className="kitchen-muted">Elaboración del plato</p>
           </div>
           <button
             type="button"
@@ -52,7 +52,7 @@ export default function RecipeModal({ dish, onClose }) {
               readOnly={true}
             />
           ) : (
-            <p className="kitchen-muted">Este plato no tiene receta todavía.</p>
+            <p className="kitchen-muted">Este plato aún no tiene elaboración.</p>
           )}
         </div>
       </div>
