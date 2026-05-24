@@ -17,6 +17,9 @@ import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
 import { KitchenSwap } from "../models/KitchenSwap.js";
 import { ShoppingTrip } from "../models/ShoppingTrip.js";
 import { Store } from "../models/Store.js";
+import { HouseholdOnboarding } from "../models/HouseholdOnboarding.js";
+import { HouseholdWeeklyProgress } from "../models/HouseholdWeeklyProgress.js";
+import { BitesTransaction } from "../models/BitesTransaction.js";
 import { HiddenMaster } from "../models/HiddenMaster.js";
 import {
   applyAdminSubscriptionActivation,
@@ -497,6 +500,251 @@ router.get("/ingredient-categories", requireAuth, requireDiod, async (req, res) 
   } catch (err) {
     console.error("[admin] ingredient-categories error", err?.message);
     return res.status(500).json({ ok: false, error: "Error al cargar categorías de ingrediente." });
+  }
+});
+
+// ─── Beta Insights ────────────────────────────────────────────────────────────
+
+router.get("/beta-insights", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const now = new Date();
+    const ms7  = 7  * 24 * 3600 * 1000;
+    const ms14 = 14 * 24 * 3600 * 1000;
+    const ms30 = 30 * 24 * 3600 * 1000;
+    const day7ago  = new Date(now - ms7);
+    const day30ago = new Date(now - ms30);
+    const isoDay7ago  = day7ago.toISOString().slice(0, 10);
+    const isoDay30ago = day30ago.toISOString().slice(0, 10);
+
+    const households = await Household.find({}, {
+      name: 1, ownerUserId: 1, subscriptionPlan: 1, planSource: 1,
+      betaPro: 1, createdAt: 1, lastMeaningfulActivityAt: 1,
+      freeBitesBalance: 1, purchasedBitesBalance: 1, totalBitesSpent: 1
+    }).sort({ createdAt: -1 }).lean();
+
+    if (households.length === 0) return res.json({ ok: true, households: [] });
+
+    const householdIds = households.map((h) => h._id);
+
+    // Owner emails
+    const ownerIdStrs = [...new Set(households.map((h) => String(h.ownerUserId)).filter(Boolean))];
+    const ownerUsers = await KitchenUser.find({ _id: { $in: ownerIdStrs } }, { email: 1 }).lean();
+    const ownerEmailMap = Object.fromEntries(ownerUsers.map((u) => [String(u._id), u.email || ""]));
+
+    // Onboarding status
+    const onboardings = await HouseholdOnboarding.find(
+      { householdId: { $in: householdIds } },
+      { householdId: 1, status: 1, completedAt: 1 }
+    ).lean();
+    const onboardingMap = Object.fromEntries(onboardings.map((o) => [String(o.householdId), o]));
+
+    // Weekly progress — all records, sorted newest-first per household
+    const allWeekly = await HouseholdWeeklyProgress.find(
+      { householdId: { $in: householdIds } },
+      { householdId: 1, weekStart: 1, completedChallenges: 1, appActiveDays: 1 }
+    ).sort({ weekStart: -1 }).lean();
+
+    const weeklyByHousehold = {};
+    for (const wp of allWeekly) {
+      const hid = String(wp.householdId);
+      if (!weeklyByHousehold[hid]) {
+        weeklyByHousehold[hid] = { current: null, totalCompleted: 0, days7: new Set(), days30: new Set() };
+      }
+      const e = weeklyByHousehold[hid];
+      if (!e.current) e.current = wp;
+      e.totalCompleted += (wp.completedChallenges || []).length;
+      for (const d of (wp.appActiveDays || [])) {
+        if (d >= isoDay7ago)  e.days7.add(d);
+        if (d >= isoDay30ago) e.days30.add(d);
+      }
+    }
+
+    // Run all aggregations in parallel
+    const [meals7, dishes30, ing30, shopItems7, shopLists30, packs, bitesEarned] = await Promise.all([
+      KitchenWeekPlan.aggregate([
+        { $match: { householdId: { $in: householdIds }, weekStart: { $gte: new Date(now - ms14) } } },
+        { $unwind: "$days" },
+        { $match: { "days.date": { $gte: day7ago }, "days.mainDishId": { $exists: true, $ne: null } } },
+        { $group: { _id: "$householdId", count: { $sum: 1 } } }
+      ]),
+      KitchenDish.aggregate([
+        { $match: { householdId: { $in: householdIds }, createdAt: { $gte: day30ago } } },
+        { $group: { _id: "$householdId", count: { $sum: 1 } } }
+      ]),
+      KitchenIngredient.aggregate([
+        { $match: { householdId: { $in: householdIds }, createdAt: { $gte: day30ago } } },
+        { $group: { _id: "$householdId", count: { $sum: 1 } } }
+      ]),
+      KitchenShoppingList.aggregate([
+        { $match: { householdId: { $in: householdIds } } },
+        { $unwind: "$items" },
+        { $match: { "items.status": "purchased", "items.purchasedAt": { $gte: day7ago } } },
+        { $group: { _id: "$householdId", count: { $sum: 1 } } }
+      ]),
+      KitchenShoppingList.aggregate([
+        { $match: { householdId: { $in: householdIds }, updatedAt: { $gte: day30ago }, "items.0": { $exists: true } } },
+        { $project: {
+          householdId: 1,
+          total: { $size: "$items" },
+          bought: { $size: { $filter: { input: "$items", as: "i", cond: { $eq: ["$$i.status", "purchased"] } } } }
+        }},
+        { $match: { $expr: { $and: [{ $gt: ["$total", 0] }, { $eq: ["$total", "$bought"] }] } } },
+        { $group: { _id: "$householdId", count: { $sum: 1 } } }
+      ]),
+      HouseholdCatalogPack.aggregate([
+        { $match: { householdId: { $in: householdIds }, status: "installed" } },
+        { $group: { _id: "$householdId", count: { $sum: 1 } } }
+      ]),
+      BitesTransaction.aggregate([
+        { $match: { householdId: { $in: householdIds }, amount: { $gt: 0 } } },
+        { $group: { _id: "$householdId", total: { $sum: "$amount" } } }
+      ])
+    ]);
+
+    const toMap  = (arr, key = "count") => Object.fromEntries(arr.map((r) => [String(r._id), r[key]]));
+    const meals7Map    = toMap(meals7);
+    const dishes30Map  = toMap(dishes30);
+    const ing30Map     = toMap(ing30);
+    const shopItems7Map = toMap(shopItems7);
+    const shopLists30Map = toMap(shopLists30);
+    const packsMap     = toMap(packs);
+    const earnedMap    = toMap(bitesEarned, "total");
+
+    const result = households.map((h) => {
+      const hid = String(h._id);
+      const onb  = onboardingMap[hid];
+      const we   = weeklyByHousehold[hid];
+      const cur  = we?.current;
+
+      const weekCompletedCount    = (cur?.completedChallenges || []).length;
+      const totalChallengesCompleted = we?.totalCompleted || 0;
+      const activeDays7  = we?.days7.size  || 0;
+      const activeDays30 = we?.days30.size || 0;
+      const m7  = meals7Map[hid]    || 0;
+      const d30 = dishes30Map[hid]  || 0;
+      const i30 = ing30Map[hid]     || 0;
+      const si7 = shopItems7Map[hid] || 0;
+      const sl30 = shopLists30Map[hid] || 0;
+      const pi  = packsMap[hid]     || 0;
+      const bitesBalance = (h.freeBitesBalance || 0) + (h.purchasedBitesBalance || 0);
+      const earned = earnedMap[hid] || 0;
+      const spent  = h.totalBitesSpent || 0;
+
+      // Health score (0-100)
+      let score = 0;
+      if (onb?.status === "completed") score += 20;
+      if      (activeDays7 >= 4) score += 20;
+      else if (activeDays7 >= 2) score += 12;
+      else if (activeDays7 >= 1) score += 6;
+      if      (m7 >= 4) score += 15;
+      else if (m7 >= 2) score += 10;
+      else if (m7 >= 1) score += 5;
+      if      (weekCompletedCount >= 3) score += 15;
+      else if (weekCompletedCount >= 1) score += 8;
+      if      (sl30 >= 1) score += 10;
+      else if (si7 >= 3)  score += 6;
+      else if (si7 >= 1)  score += 3;
+      if      (d30 + i30 >= 3) score += 8;
+      else if (d30 + i30 >= 1) score += 4;
+      if      (pi >= 2) score += 7;
+      else if (pi >= 1) score += 4;
+      if (h.lastMeaningfulActivityAt) {
+        const daysSince = (now - new Date(h.lastMeaningfulActivityAt)) / (24 * 3600 * 1000);
+        if      (daysSince < 3)  score += 5;
+        else if (daysSince < 7)  score += 3;
+        else if (daysSince < 30) score += 1;
+      }
+
+      return {
+        id: hid,
+        name: h.name,
+        ownerEmail: ownerEmailMap[String(h.ownerUserId)] || "",
+        plan: h.subscriptionPlan || "basic",
+        planSource: h.planSource || "manual",
+        betaPro: h.betaPro ? {
+          active: h.betaPro.active ?? false,
+          unlockedAt: h.betaPro.unlockedAt ?? null,
+          expiresAt: h.betaPro.expiresAt ?? null,
+          expiredAt: h.betaPro.expiredAt ?? null,
+          expirationReason: h.betaPro.expirationReason ?? ""
+        } : null,
+        createdAt: h.createdAt || null,
+        lastMeaningfulActivityAt: h.lastMeaningfulActivityAt || null,
+        onboardingStatus: onb?.status || "not_started",
+        onboardingCompletedAt: onb?.completedAt || null,
+        weekCompletedCount,
+        totalChallengesCompleted,
+        activeDays7,
+        activeDays30,
+        meals7: m7,
+        dishes30: d30,
+        ingredients30: i30,
+        shoppingItems7: si7,
+        shoppingListsCompleted: sl30,
+        packsInstalled: pi,
+        bitesBalance,
+        bitesEarned: earned,
+        bitesSpent: spent,
+        healthScore: Math.min(100, score)
+      };
+    });
+
+    return res.json({ ok: true, households: result });
+  } catch (error) {
+    console.error("[admin] beta-insights error", { error: error?.message, stack: error?.stack });
+    return res.status(500).json({ ok: false, error: "No se pudieron cargar las métricas Beta." });
+  }
+});
+
+router.post("/beta-insights/:id/grant-beta-pro", requireAuth, requireDiod, async (req, res) => {
+  const { id } = req.params;
+  if (!mongoose.isValidObjectId(id)) return res.status(400).json({ ok: false, error: "ID inválido." });
+  try {
+    const days = Math.min(365, Math.max(1, Number(req.body?.daysFromNow) || 30));
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + days * 24 * 3600 * 1000);
+    const h = await Household.findById(id).lean();
+    if (!h) return res.status(404).json({ ok: false, error: "Hogar no encontrado." });
+    await Household.updateOne({ _id: id }, {
+      $set: {
+        subscriptionPlan: "pro",
+        planSource: "beta_pro",
+        isPro: true,
+        "betaPro.active": true,
+        "betaPro.unlockedAt": h.betaPro?.unlockedAt || now,
+        "betaPro.expiresAt": expiresAt,
+        "betaPro.lastRenewedAt": now,
+        "betaPro.expiredAt": null,
+        "betaPro.expirationReason": ""
+      }
+    });
+    return res.json({ ok: true, expiresAt });
+  } catch (e) {
+    console.error("[admin] grant-beta-pro error", e?.message);
+    return res.status(500).json({ ok: false, error: "Error al conceder Beta Pro." });
+  }
+});
+
+router.post("/beta-insights/:id/revoke-beta-pro", requireAuth, requireDiod, async (req, res) => {
+  const { id } = req.params;
+  if (!mongoose.isValidObjectId(id)) return res.status(400).json({ ok: false, error: "ID inválido." });
+  try {
+    const h = await Household.findById(id).lean();
+    if (!h) return res.status(404).json({ ok: false, error: "Hogar no encontrado." });
+    await Household.updateOne({ _id: id }, {
+      $set: {
+        subscriptionPlan: "basic",
+        planSource: "manual",
+        isPro: false,
+        "betaPro.active": false,
+        "betaPro.expiredAt": new Date(),
+        "betaPro.expirationReason": "admin_revoke"
+      }
+    });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("[admin] revoke-beta-pro error", e?.message);
+    return res.status(500).json({ ok: false, error: "Error al revocar Beta Pro." });
   }
 });
 

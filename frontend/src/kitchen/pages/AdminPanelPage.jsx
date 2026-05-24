@@ -5236,6 +5236,373 @@ function BetaInvitesSection() {
   );
 }
 
+// ─── Beta Insights ───────────────────────────────────────────────────────────
+
+function healthLevel(score) {
+  if (score >= 80) return { label: "Muy activo", color: "#16a34a", bg: "#f0fdf4", border: "#86efac" };
+  if (score >= 50) return { label: "Activo",     color: "#0891b2", bg: "#f0f9ff", border: "#7dd3fc" };
+  if (score >= 20) return { label: "En riesgo",  color: "#d97706", bg: "#fffbeb", border: "#fcd34d" };
+  return               { label: "Inactivo",   color: "#dc2626", bg: "#fff1f2", border: "#fca5a5" };
+}
+
+function fmtDate(date) {
+  if (!date) return "—";
+  return new Date(date).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "2-digit" });
+}
+
+function InsightsDetailModal({ h, onClose, onAction, msg, saving }) {
+  const hl = healthLevel(h.healthScore);
+  const bp = h.betaPro;
+  const rows = [
+    ["📅 Creado", fmtDate(h.createdAt)],
+    ["⚡ Última actividad", fmtDate(h.lastMeaningfulActivityAt)],
+    ["📋 Onboarding", h.onboardingStatus === "completed"
+      ? `✓ completado ${fmtDate(h.onboardingCompletedAt)}`
+      : h.onboardingStatus],
+    ["🏆 Retos semana / total", `${h.weekCompletedCount} / ${h.totalChallengesCompleted} totales`],
+    ["📅 Días activos 7d / 30d", `${h.activeDays7} / ${h.activeDays30}`],
+    ["🍽️ Comidas planif. (7d)", h.meals7],
+    ["🧑‍🍳 Platos creados (30d)", h.dishes30],
+    ["🥦 Ingredientes creados (30d)", h.ingredients30],
+    ["🛒 Items comprados (7d)", h.shoppingItems7],
+    ["✅ Listas completadas (30d)", h.shoppingListsCompleted],
+    ["📦 Packs instalados", h.packsInstalled],
+    ["🍪 Bites balance / ganado / gast.", `${h.bitesBalance} / +${h.bitesEarned} / −${h.bitesSpent}`],
+  ];
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "var(--bg-card, #fff)", borderRadius: 16, width: "100%", maxWidth: 640, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid var(--border-soft, #e2e8f0)", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary, #111)" }}>{h.name}</div>
+            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{h.ownerEmail || "—"}</div>
+            <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <PlanBadge plan={h.plan} />
+              {bp?.active && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 8px", borderRadius: 999, background: "#fef3c7", color: "#92400e", fontSize: 11, fontWeight: 700, border: "1px solid #fcd34d" }}>⭐ Beta Pro</span>
+              )}
+              <span style={{ padding: "2px 8px", borderRadius: 999, background: hl.bg, color: hl.color, fontSize: 11, fontWeight: 600, border: `1px solid ${hl.border}` }}>
+                {hl.label} · {h.healthScore}/100
+              </span>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} style={{ ...ABT.cancel, fontSize: 20, padding: "0 10px", lineHeight: "32px", flexShrink: 0 }}>×</button>
+        </div>
+
+        {/* Metrics grid */}
+        <div style={{ padding: "16px 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {rows.map(([label, value]) => (
+            <div key={label} style={{ background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "10px 12px" }}>
+              <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 3 }}>{label}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary, #111)" }}>{value}</div>
+            </div>
+          ))}
+          {/* Beta Pro full-width row */}
+          {bp && (
+            <div style={{ gridColumn: "span 2", background: bp.active ? "#fffbeb" : "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "10px 12px", border: bp.active ? "1px solid #fcd34d" : "none" }}>
+              <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 3 }}>⭐ Beta Pro</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>
+                {bp.active
+                  ? `Activo · expira ${fmtDate(bp.expiresAt)}`
+                  : bp.expiredAt
+                    ? `Expirado (${bp.expirationReason || "—"}) · ${fmtDate(bp.expiredAt)}`
+                    : "No activo"}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Admin actions */}
+        <div style={{ padding: "0 24px 22px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Acciones Admin</div>
+          {msg && <div style={{ padding: "6px 12px", borderRadius: 6, background: msg.startsWith("Error") ? "#fff1f2" : "#f0fdf4", color: msg.startsWith("Error") ? "#b91c1c" : "#15803d", fontSize: 12, marginBottom: 10 }}>{msg}</div>}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {!bp?.active ? (
+              <>
+                <button type="button" style={ABT.green} disabled={saving} onClick={() => onAction("grant", 30)}>+30d Beta Pro</button>
+                <button type="button" style={ABT.green} disabled={saving} onClick={() => onAction("grant", 60)}>+60d Beta Pro</button>
+                <button type="button" style={ABT.green} disabled={saving} onClick={() => {
+                  const d = parseInt(window.prompt("Días de Beta Pro:", "30") || "", 10);
+                  if (d > 0) onAction("grant", d);
+                }}>Días custom…</button>
+              </>
+            ) : (
+              <>
+                <button type="button" style={ABT.green} disabled={saving} onClick={() => onAction("grant", 30)}>Extender +30d</button>
+                <button type="button" style={ABT.del}   disabled={saving} onClick={() => onAction("revoke")}>Revocar Beta Pro</button>
+              </>
+            )}
+            <button type="button" style={ABT.edit} disabled={saving} onClick={() => onAction("reset_onboarding")}>Reset onboarding</button>
+            <button type="button" style={ABT.edit} disabled={saving} onClick={() => onAction("copy")}>📋 Copiar diagnóstico</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BetaInsightsSection() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [actionMsg, setActionMsg] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const d = await apiRequest("/api/admin/beta-insights");
+      const households = d.households || [];
+      setData(households);
+      setSelected((prev) => prev ? (households.find((h) => h.id === prev.id) || null) : null);
+    } catch (e) {
+      setError(e.message || "Error al cargar métricas.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const stats = useMemo(() => ({
+    total:         data.length,
+    betaPro:       data.filter((h) => h.betaPro?.active).length,
+    veryActive:    data.filter((h) => h.healthScore >= 80).length,
+    active:        data.filter((h) => h.healthScore >= 50 && h.healthScore < 80).length,
+    atRisk:        data.filter((h) => h.healthScore >= 20 && h.healthScore < 50).length,
+    inactive:      data.filter((h) => h.healthScore < 20).length,
+    noOnboarding:  data.filter((h) => h.onboardingStatus !== "completed").length,
+  }), [data]);
+
+  const chips = useMemo(() => [
+    { key: "all",           label: `Todos (${stats.total})`,                color: "#4338ca" },
+    { key: "very_active",   label: `Muy activo (${stats.veryActive})`,      color: "#16a34a" },
+    { key: "active",        label: `Activo (${stats.active})`,              color: "#0891b2" },
+    { key: "at_risk",       label: `En riesgo (${stats.atRisk})`,           color: "#d97706" },
+    { key: "inactive",      label: `Inactivo (${stats.inactive})`,          color: "#dc2626" },
+    { key: "beta_pro",      label: `Beta Pro (${stats.betaPro})`,           color: "#7c3aed" },
+    { key: "no_onboarding", label: `Sin onboarding (${stats.noOnboarding})`,color: "#6b7280" },
+  ], [stats]);
+
+  const filtered = useMemo(() => {
+    let list = data;
+    if (filter === "very_active")   list = list.filter((h) => h.healthScore >= 80);
+    else if (filter === "active")   list = list.filter((h) => h.healthScore >= 50 && h.healthScore < 80);
+    else if (filter === "at_risk")  list = list.filter((h) => h.healthScore >= 20 && h.healthScore < 50);
+    else if (filter === "inactive") list = list.filter((h) => h.healthScore < 20);
+    else if (filter === "beta_pro") list = list.filter((h) => h.betaPro?.active);
+    else if (filter === "no_onboarding") list = list.filter((h) => h.onboardingStatus !== "completed");
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter((h) => h.name.toLowerCase().includes(q) || (h.ownerEmail || "").toLowerCase().includes(q));
+    }
+    return list;
+  }, [data, filter, search]);
+
+  const handleAction = useCallback(async (type, arg) => {
+    if (!selected) return;
+    const id = selected.id;
+
+    if (type === "copy") {
+      try { await navigator.clipboard.writeText(JSON.stringify(selected, null, 2)); } catch { /* ignore */ }
+      setActionMsg("Diagnóstico copiado al portapapeles.");
+      setTimeout(() => setActionMsg(""), 3000);
+      return;
+    }
+
+    setSaving(true);
+    setActionMsg("");
+    try {
+      if (type === "grant") {
+        await apiRequest(`/api/admin/beta-insights/${id}/grant-beta-pro`, {
+          method: "POST",
+          body: JSON.stringify({ daysFromNow: arg })
+        });
+        setActionMsg(`Beta Pro concedido por ${arg} días. ✓`);
+      } else if (type === "revoke") {
+        if (!window.confirm("¿Revocar Beta Pro de este hogar?")) return;
+        await apiRequest(`/api/admin/beta-insights/${id}/revoke-beta-pro`, { method: "POST" });
+        setActionMsg("Beta Pro revocado. ✓");
+      } else if (type === "reset_onboarding") {
+        if (!window.confirm("¿Resetear onboarding de este hogar?")) return;
+        const reason = window.prompt("Razón del reset (opcional):") || "";
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${id}/reset`, {
+          method: "POST",
+          body: JSON.stringify({ reason })
+        });
+        setActionMsg("Onboarding reseteado. ✓");
+      }
+      setTimeout(() => setActionMsg(""), 4000);
+      loadData();
+    } catch (e) {
+      setActionMsg(`Error: ${e.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }, [selected, loadData]);
+
+  return (
+    <div>
+      <Card className="kitchen-block-gap">
+        {/* Section header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+          <div>
+            <h2 className="kitchen-title-no-margin">Beta Insights</h2>
+            <p className="kitchen-muted">Engagement por hogar · {data.length} hogares</p>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <Input
+              id="insights-search"
+              placeholder="Buscar por nombre o email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: 220 }}
+            />
+            <button type="button" style={ABT.edit} onClick={loadData} disabled={loading}>
+              {loading ? "…" : "↻ Actualizar"}
+            </button>
+          </div>
+        </div>
+
+        {/* Filter chips */}
+        <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>
+          {chips.map((chip) => {
+            const active = filter === chip.key;
+            return (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setFilter(chip.key)}
+                style={{
+                  padding: "5px 13px",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: active ? 700 : 500,
+                  cursor: "pointer",
+                  border: `1.5px solid ${active ? chip.color : "#e2e8f0"}`,
+                  background: active ? chip.color : "transparent",
+                  color: active ? "#fff" : chip.color,
+                  transition: "all 0.12s"
+                }}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {error && <div className="kitchen-alert error">{error}</div>}
+
+        {loading ? (
+          <p className="kitchen-muted">Calculando métricas…</p>
+        ) : filtered.length === 0 ? (
+          <p className="kitchen-muted">Sin resultados para este filtro.</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(295px, 1fr))", gap: 12 }}>
+            {filtered.map((h) => {
+              const hl = healthLevel(h.healthScore);
+              return (
+                <div
+                  key={h.id}
+                  onClick={() => { setSelected(h); setActionMsg(""); }}
+                  style={{ background: "var(--bg-card, #fff)", border: "1.5px solid var(--border-soft, #e2e8f0)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", transition: "box-shadow 0.14s, border-color 0.14s" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 18px rgba(0,0,0,0.09)"; e.currentTarget.style.borderColor = hl.border; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "var(--border-soft, #e2e8f0)"; }}
+                >
+                  {/* Card header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary, #111)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.name}</div>
+                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.ownerEmail || "—"}</div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0, marginLeft: 8 }}>
+                      <PlanBadge plan={h.plan} />
+                      {h.betaPro?.active && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#92400e", background: "#fef3c7", padding: "1px 6px", borderRadius: 999, border: "1px solid #fcd34d" }}>⭐ Beta</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Health score ring */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 7 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: hl.bg, border: `2px solid ${hl.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, color: hl.color, flexShrink: 0 }}>
+                      {h.healthScore}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: hl.color, lineHeight: 1.2 }}>{hl.label}</div>
+                      <div style={{ fontSize: 10, color: "#9ca3af" }}>health score</div>
+                    </div>
+                  </div>
+
+                  {/* Score bar */}
+                  <div style={{ height: 4, background: "#f1f5f9", borderRadius: 2, marginBottom: 11, overflow: "hidden" }}>
+                    <div style={{ width: `${h.healthScore}%`, height: "100%", background: hl.color, borderRadius: 2 }} />
+                  </div>
+
+                  {/* Key metrics */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 5 }}>
+                    {[
+                      ["📅", `${h.activeDays7}d`, "activos 7d"],
+                      ["🍽️", h.meals7,          "comidas 7d"],
+                      ["🏆", h.weekCompletedCount, "retos"],
+                      ["🛒", h.shoppingItems7,  "compras 7d"],
+                      ["🧑‍🍳", h.dishes30,        "platos 30d"],
+                      ["🍪", h.bitesBalance,     "bites"],
+                    ].map(([icon, val, lbl]) => (
+                      <div key={lbl} style={{ background: "var(--surface-muted, #f8fafc)", borderRadius: 6, padding: "5px 4px", textAlign: "center" }}>
+                        <div style={{ fontSize: 13 }}>{icon}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary, #111)" }}>{val}</div>
+                        <div style={{ fontSize: 9, color: "#9ca3af", lineHeight: 1.2 }}>{lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Onboarding tag + last activity */}
+                  <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{
+                      fontSize: 10, padding: "2px 7px", borderRadius: 4, fontWeight: 600,
+                      background: h.onboardingStatus === "completed" ? "#f0fdf4" : "#f9fafb",
+                      color: h.onboardingStatus === "completed" ? "#16a34a" : "#6b7280",
+                      border: `1px solid ${h.onboardingStatus === "completed" ? "#86efac" : "#e2e8f0"}`
+                    }}>
+                      {h.onboardingStatus === "completed" ? "✓ Onboarding" : h.onboardingStatus === "not_started" ? "○ Sin onboarding" : `↻ ${h.onboardingStatus}`}
+                    </span>
+                    {h.lastMeaningfulActivityAt && (
+                      <span style={{ fontSize: 10, color: "#9ca3af" }}>act. {fmtDate(h.lastMeaningfulActivityAt)}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      {selected && (
+        <InsightsDetailModal
+          h={selected}
+          onClose={() => setSelected(null)}
+          onAction={handleAction}
+          msg={actionMsg}
+          saving={saving}
+        />
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function AdminPanelPage() {
@@ -5322,7 +5689,8 @@ export default function AdminPanelPage() {
             { key: "categories", label: "Categorías" },
             { key: "onboarding", label: "Onboarding" },
             { key: "weekly", label: "Retos Semanales" },
-            { key: "beta", label: "Beta Invites" }
+            { key: "beta", label: "Beta Invites" },
+            { key: "insights", label: "Beta Insights" }
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -5372,6 +5740,8 @@ export default function AdminPanelPage() {
           <WeeklySection />
         ) : tab === "beta" ? (
           <BetaInvitesSection />
+        ) : tab === "insights" ? (
+          <BetaInsightsSection />
         ) : (
           <QuickSubscriptionPanel />
         )}
