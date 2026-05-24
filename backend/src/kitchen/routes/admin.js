@@ -526,9 +526,16 @@ router.get("/beta-insights", requireAuth, requireDiod, async (req, res) => {
 
     const householdIds = households.map((h) => h._id);
 
-    // Owner emails
-    const ownerIdStrs = [...new Set(households.map((h) => String(h.ownerUserId)).filter(Boolean))];
-    const ownerUsers = await KitchenUser.find({ _id: { $in: ownerIdStrs } }, { email: 1 }).lean();
+    // Owner emails — filter to valid ObjectIds only; String(undefined) === "undefined"
+    // which is truthy and would cause a Mongoose cast error.
+    const ownerIds = [...new Set(
+      households
+        .map((h) => h.ownerUserId)
+        .filter((id) => id && mongoose.isValidObjectId(id))
+    )];
+    const ownerUsers = ownerIds.length
+      ? await KitchenUser.find({ _id: { $in: ownerIds } }, { email: 1 }).lean()
+      : [];
     const ownerEmailMap = Object.fromEntries(ownerUsers.map((u) => [String(u._id), u.email || ""]));
 
     // Onboarding status
