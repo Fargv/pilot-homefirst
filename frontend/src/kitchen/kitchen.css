@@ -3021,7 +3021,7 @@ body {
 
   .kitchen-dish-actions {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: space-evenly;
   }
 
   .kitchen-modal {
@@ -6769,7 +6769,7 @@ body {
 
 .kitchen-dish-actions {
   width: 100%;
-  justify-content: flex-end;
+  justify-content: space-evenly;
   align-items: center;
   gap: 8px;
 }
@@ -6886,7 +6886,7 @@ body {
   }
 
   .kitchen-dish-card:not(.kitchen-ingredient-card) .kitchen-dish-actions {
-    justify-content: space-between;
+    justify-content: space-evenly;
     gap: 10px;
   }
 
@@ -6919,7 +6919,7 @@ body {
 }
 
 .kitchen-dish-card:not(.kitchen-ingredient-card) .kitchen-dish-actions {
-  justify-content: flex-end;
+  justify-content: space-evenly;
   gap: 12px;
 }
 
@@ -6950,7 +6950,7 @@ body {
   }
 
   .kitchen-dish-card:not(.kitchen-ingredient-card) .kitchen-dish-actions {
-    justify-content: flex-end;
+    justify-content: space-evenly;
     gap: 10px;
   }
 
@@ -7094,7 +7094,7 @@ body {
 .kitchen-dish-card .kitchen-dish-actions {
   width: 100%;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-evenly;
   align-items: center;
   gap: 10px;
 }
@@ -7102,11 +7102,26 @@ body {
 .kitchen-ingredient-card .kitchen-dish-actions-bar {
   flex-direction: row;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button {
   flex-shrink: 0;
+}
+
+/* ── Card action icon buttons: light-mode soft surface treatment ── */
+.kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button:not(.has-recipe) {
+  background: #f1f4f9;
+  border-color: #dce4f0;
+  color: #475569;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+/* Dark-mode reset: restore system dark palette, must come after the light rule */
+[data-theme="dark"] .kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button {
+  background: var(--button-secondary-bg);
+  border-color: var(--border-soft);
+  color: var(--button-secondary-text);
+  box-shadow: none;
 }
 
 .kitchen-dish-random-toggle {
