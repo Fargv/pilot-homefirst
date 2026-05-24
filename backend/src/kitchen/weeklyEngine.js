@@ -5,6 +5,7 @@ import { WeeklyCycleConfig } from "./models/WeeklyCycleConfig.js";
 import { HouseholdWeeklyProgress } from "./models/HouseholdWeeklyProgress.js";
 import { Household } from "./models/Household.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
+import { KitchenDish } from "./models/KitchenDish.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 import { recordMeaningfulActivity, tryUnlockBetaPro } from "./betaProService.js";
 
@@ -12,11 +13,13 @@ import { recordMeaningfulActivity, tryUnlockBetaPro } from "./betaProService.js"
 
 const CYCLE_CHALLENGE_DEFS = [
   // WEEK 1 — "Empieza a organizarte"
+  // Goal: planning + shopping list (manual items) + dish creation + catalog usage
+  // Removed: weekly_complete_meal_week (too similar to weekly_plan_5_meals — duplicate planning goal)
   {
     key: "weekly_plan_5_meals",
     title: "Planifica 5 comidas",
     description: "Asigna un plato a 5 días de la semana.",
-    guidance: "",
+    guidance: "Abre la vista semanal y asigna un plato a cada día de lunes a viernes.",
     rewardBites: 10,
     triggerType: "meal_planned",
     triggerCount: 5,
@@ -25,6 +28,9 @@ const CYCLE_CHALLENGE_DEFS = [
     planCompatibility: ["all"]
   },
   {
+    // RETIRED — too similar to weekly_plan_5_meals (both teach planning).
+    // Replaced in Week 1 by weekly_use_catalog_dish.
+    // Kept here with active:false so the seeder deactivates the existing DB record.
     key: "weekly_complete_meal_week",
     title: "Completa una semana de comidas",
     description: "Planifica los 5 días laborables de esta semana.",
@@ -34,13 +40,26 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 1,
     cycleOrder: 2,
+    active: false,
+    planCompatibility: ["all"]
+  },
+  {
+    key: "weekly_add_manual_shopping_item",
+    title: "Añade un producto manual a la lista",
+    description: "Tu lista de Lunchfy también sirve para cosas del hogar. Ve a la lista de la compra y pulsa 'Añadir manualmente' para agregar algo como papel de cocina, friegasuelos o champú.",
+    guidance: "Tu lista de Lunchfy también sirve para cosas del hogar. Ve a la lista de la compra y pulsa 'Añadir manualmente' para agregar algo como papel de cocina, friegasuelos o champú.",
+    rewardBites: 10,
+    triggerType: "manual_item_added",
+    triggerCount: 1,
+    cycleWeek: 1,
+    cycleOrder: 2,
     planCompatibility: ["all"]
   },
   {
     key: "weekly_mark_5_items_purchased",
     title: "Marca 5 ingredientes como comprados",
-    description: "",
-    guidance: "",
+    description: "Ve a la lista de la compra y marca ingredientes conforme los vayas comprando.",
+    guidance: "Ve a la lista de la compra y marca ingredientes conforme los vayas comprando.",
     rewardBites: 5,
     triggerType: "item_purchased",
     triggerCount: 5,
@@ -49,24 +68,24 @@ const CYCLE_CHALLENGE_DEFS = [
     planCompatibility: ["all"]
   },
   {
-    key: "weekly_add_manual_shopping_item",
-    title: "Añade un producto manual a la lista",
-    description: "Tu lista también sirve para cosas del hogar. Añade a la lista algo como papel de cocina, friegasuelos o champú.",
-    guidance: "Tu lista también sirve para cosas del hogar. Añade a la lista algo como papel de cocina, friegasuelos o champú.",
-    rewardBites: 10,
-    triggerType: "manual_item_added",
+    key: "weekly_create_new_dish",
+    title: "Crea un plato nuevo",
+    description: "Ve a la sección Platos y añade un plato propio con sus ingredientes.",
+    guidance: "Ve a la sección Platos y añade un plato propio con sus ingredientes.",
+    rewardBites: 5,
+    triggerType: "dish_created",
     triggerCount: 1,
     cycleWeek: 1,
     cycleOrder: 4,
     planCompatibility: ["all"]
   },
   {
-    key: "weekly_create_new_dish",
-    title: "Crea un plato nuevo",
-    description: "",
-    guidance: "",
+    key: "weekly_use_catalog_dish",
+    title: "Usa un plato del catálogo en tu semana",
+    description: "Instala un pack del catálogo y añade uno de sus platos a tu planificación semanal.",
+    guidance: "Los packs del catálogo incluyen platos listos para usar. Instala uno desde la sección Catálogo y asigna cualquiera de sus platos a un día de la semana.",
     rewardBites: 5,
-    triggerType: "dish_created",
+    triggerType: "catalog_dish_used",
     triggerCount: 1,
     cycleWeek: 1,
     cycleOrder: 5,
@@ -366,6 +385,7 @@ export async function getOrCreateProgress(householdId, weekStart, cycleWeekIndex
         ingredientsCreatedCount: 0,
         manualShoppingItemAdded: false,
         shoppingListCompleted: false,
+        catalogDishUsed: false,
         dishIdsUsedThisWeek: [],
         purchasedItemKeys: [],
         appActiveDays: [],
@@ -614,6 +634,47 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         newlyCompletedKeys.push(check.key);
         completedKeysBefore.add(check.key);
       }
+
+      // Catalog dish detection — check if the dish being planned is from a catalog pack.
+      // Uses contextData.dishId (passed by WeekPage.jsx). Falls back to checking ALL
+      // dishes in the week plan if the specific dish is already a catalog one.
+      if (!completedKeysBefore.has("weekly_use_catalog_dish")) {
+        const catalogChallengeDef = challenges.find((c) => c.key === "weekly_use_catalog_dish");
+        if (catalogChallengeDef) {
+          let isCatalogDish = progress.catalogDishUsed ?? false;
+          if (!isCatalogDish && contextData.dishId) {
+            const dish = await KitchenDish.findById(contextData.dishId)
+              .select("source sourcePackId")
+              .lean();
+            isCatalogDish = dish?.source === "catalog" && dish?.sourcePackId != null;
+          }
+          if (isCatalogDish) {
+            await HouseholdWeeklyProgress.updateOne(
+              { _id: progress._id },
+              { $set: { catalogDishUsed: true } }
+            );
+            progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+            await _markChallengeComplete(progress._id, catalogChallengeDef);
+            newlyCompletedKeys.push("weekly_use_catalog_dish");
+            completedKeysBefore.add("weekly_use_catalog_dish");
+          }
+        }
+      }
+    } else if (eventType === "catalog_dish_used") {
+      // Direct trigger path — fired when a catalog dish is explicitly used.
+      // Also handled via the meal_planned path above, but kept for forward compatibility.
+      await HouseholdWeeklyProgress.updateOne(
+        { _id: progress._id },
+        { $set: { catalogDishUsed: true } }
+      );
+      progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+
+      const def = challenges.find((c) => c.key === "weekly_use_catalog_dish");
+      if (def && !completedKeysBefore.has("weekly_use_catalog_dish")) {
+        await _markChallengeComplete(progress._id, def);
+        newlyCompletedKeys.push("weekly_use_catalog_dish");
+        completedKeysBefore.add("weekly_use_catalog_dish");
+      }
     } else if (eventType === "item_purchased") {
       if (contextData.itemKey) {
         await HouseholdWeeklyProgress.updateOne(
@@ -805,9 +866,10 @@ export async function getWeeklyState(householdId) {
     );
 
     const mainChallenges = challenges.filter((c) => c.triggerType !== "bonus");
-    const bonusChallenge = challenges.find((c) => c.triggerType === "bonus") || null;
+    const bonusDef = challenges.find((c) => c.triggerType === "bonus") || null;
 
-    const enrichedChallenges = challenges.map((c) => {
+    // Only non-bonus challenges are surfaced in the main list.
+    const enrichedChallenges = mainChallenges.map((c) => {
       const completion = completedMap.get(c.key) || null;
       return {
         key: c.key,
@@ -817,7 +879,7 @@ export async function getWeeklyState(householdId) {
         rewardBites: c.rewardBites,
         triggerType: c.triggerType,
         triggerCount: c.triggerCount,
-        isBonus: c.triggerType === "bonus",
+        isBonus: false,
         completed: !!completion,
         completedAt: completion?.completedAt ?? null,
         rewardGranted: completion?.rewardGranted ?? false
@@ -825,6 +887,7 @@ export async function getWeeklyState(householdId) {
     });
 
     const completedCount = mainChallenges.filter((c) => completedMap.has(c.key)).length;
+    const allMainCompleted = completedCount >= mainChallenges.length && mainChallenges.length > 0;
     const totalBitesAvailable = challenges.reduce((s, c) => s + (c.rewardBites || 0), 0);
     const totalBitesEarned = (progressLean.completedChallenges || [])
       .filter((c) => c.rewardGranted)
@@ -835,6 +898,18 @@ export async function getWeeklyState(householdId) {
       ? Math.round((completedCount / totalMainChallengesCount) * 100)
       : 0;
 
+    // `bonus` is the field name the frontend component expects.
+    const bonus = bonusDef
+      ? {
+        key: bonusDef.key,
+        title: bonusDef.title,
+        rewardBites: bonusDef.rewardBites,
+        completed: completedMap.has(bonusDef.key),
+        rewardGranted: completedMap.get(bonusDef.key)?.rewardGranted ?? false,
+        available: allMainCompleted  // unlocked only when all main challenges done
+      }
+      : null;
+
     return {
       available: true,
       cycleWeekIndex,
@@ -844,15 +919,8 @@ export async function getWeeklyState(householdId) {
       totalCount: totalMainChallengesCount,
       totalMainChallenges: totalMainChallengesCount,
       progressPercent,
-      bonusChallenge: bonusChallenge
-        ? {
-          key: bonusChallenge.key,
-          title: bonusChallenge.title,
-          rewardBites: bonusChallenge.rewardBites,
-          completed: completedMap.has(bonusChallenge.key),
-          rewardGranted: completedMap.get(bonusChallenge.key)?.rewardGranted ?? false
-        }
-        : null,
+      bonus,
+      bonusChallenge: bonus,   // keep alias for any callers that use the old name
       bonusGranted: progressLean.bonusGranted ?? false,
       totalBitesAvailable,
       totalBitesEarned,

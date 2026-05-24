@@ -16,6 +16,7 @@ const HouseholdWeeklyProgress = mongoose.model(
       ingredientsCreatedCount: { type: Number, default: 0 },
       manualShoppingItemAdded: { type: Boolean, default: false },
       shoppingListCompleted: { type: Boolean, default: false },
+      catalogDishUsed: { type: Boolean, default: false },  // true once a catalog-sourced dish is used in the week plan
 
       // --- Sets (deduplication) ---
       dishIdsUsedThisWeek: [{ type: mongoose.Schema.Types.ObjectId }], // unique dish IDs used in meal plans

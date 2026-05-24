@@ -114,17 +114,15 @@ function WeeklyRewardToast({ event, onDismiss }) {
 }
 
 function ChallengeRow({ challenge }) {
-  const [expanded, setExpanded] = useState(false);
   const { completed, title, description, guidance, rewardBites, progress, target } = challenge;
 
   const hasProgress = typeof progress === "number" && typeof target === "number" && target > 1;
   const progressPct = hasProgress ? Math.min(100, Math.round((progress / target) * 100)) : 0;
+  // Prefer the richer guidance text; fall back to description.
+  const helpText = (guidance || description || "").trim();
 
   return (
-    <div
-      className={`weekly-challenge-row${completed ? " is-completed" : ""}`}
-      onClick={() => !completed && setExpanded((v) => !v)}
-    >
+    <div className={`weekly-challenge-row${completed ? " is-completed" : ""}`}>
       <div className="weekly-challenge-row-main">
         <div className={`weekly-challenge-status${completed ? " is-done" : ""}`}>
           {completed ? <CheckIcon /> : <span className="weekly-challenge-circle" />}
@@ -145,8 +143,9 @@ function ChallengeRow({ challenge }) {
               <span>{progress}/{target}</span>
             </div>
           )}
-          {expanded && !completed && (guidance || description) && (
-            <p className="weekly-challenge-guidance">{guidance || description}</p>
+          {/* Always show guidance for non-completed challenges — users need to see the hint. */}
+          {!completed && helpText && (
+            <p className="weekly-challenge-guidance weekly-challenge-guidance--visible">{helpText}</p>
           )}
         </div>
       </div>

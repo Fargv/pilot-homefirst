@@ -15327,6 +15327,18 @@ body {
   line-height: 1.45;
 }
 
+/* Always-visible guidance: slightly more prominent than the hidden version */
+.weekly-challenge-guidance--visible {
+  font-size: 12.5px;
+  color: #4b5563;
+  margin-top: 5px;
+  line-height: 1.5;
+  padding: 5px 8px;
+  background: #f8fafc;
+  border-left: 2px solid #c7d2fe;
+  border-radius: 0 4px 4px 0;
+}
+
 .weekly-challenge-locked-copy {
   margin: 3px 0 0;
   font-size: 11px;
@@ -15480,4 +15492,61 @@ body {
   background: var(--surface-elevated);
   border-color: color-mix(in srgb, #16a34a 35%, var(--border-soft));
   color: #4ade80;
+}
+
+[data-theme="dark"] .weekly-challenge-guidance--visible {
+  background: color-mix(in srgb, #4338ca 8%, var(--surface-muted));
+  border-left-color: #6366f1;
+  color: var(--text-secondary);
+}
+
+/* ── Admin panel tab navigation ──────────────────────────────────────────────── */
+
+/* Desktop: horizontal scrollable tabs (existing inline layout) */
+.admin-tabs-desktop {
+  display: flex;
+  gap: 0;
+  padding-left: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.admin-tabs-desktop::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile: compact section selector */
+.admin-tab-selector-mobile {
+  display: none;
+  padding: 8px 16px;
+}
+.admin-tab-selector-mobile select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #e0e7ff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23c7d2fe' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+.admin-tab-selector-mobile select option {
+  background: #312e81;
+  color: #fff;
+}
+
+@media (max-width: 767px) {
+  .admin-tabs-desktop {
+    display: none;
+  }
+  .admin-tab-selector-mobile {
+    display: block;
+  }
 }

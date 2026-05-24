@@ -5731,40 +5731,62 @@ export default function AdminPanelPage() {
       </div>
 
       <div style={{ padding: "0 0 8px", background: "#312e81" }}>
-        <div style={{ display: "flex", gap: 0, paddingLeft: 16 }}>
-          {[
-            { key: "households", label: "Households" },
-            { key: "users", label: "Usuarios" },
-            { key: "quick", label: "Cambio rápido" },
-            { key: "master", label: "Master" },
-            { key: "catalog_packs", label: "Catálogo" },
-            { key: "bites_economy", label: "Bites" },
-            { key: "plans", label: "Planes" },
-            { key: "categories", label: "Categorías" },
-            { key: "onboarding", label: "Onboarding" },
-            { key: "weekly", label: "Retos Semanales" },
-            { key: "beta", label: "Beta Invites" },
-            { key: "insights", label: "Beta Insights" }
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setTab(key)}
-              style={{
-                background: tab === key ? "#fff" : "transparent",
-                color: tab === key ? "#312e81" : "#c7d2fe",
-                border: "none",
-                padding: "8px 18px",
-                cursor: "pointer",
-                fontWeight: tab === key ? 700 : 400,
-                fontSize: 14,
-                borderRadius: "6px 6px 0 0"
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {(() => {
+          const ADMIN_TABS = [
+            { key: "households",   label: "Households" },
+            { key: "users",        label: "Usuarios" },
+            { key: "quick",        label: "Cambio rápido" },
+            { key: "master",       label: "Master" },
+            { key: "catalog_packs",label: "Catálogo" },
+            { key: "bites_economy",label: "Bites" },
+            { key: "plans",        label: "Planes" },
+            { key: "categories",   label: "Categorías" },
+            { key: "onboarding",   label: "Onboarding" },
+            { key: "weekly",       label: "Retos Semanales" },
+            { key: "beta",         label: "Beta Invites" },
+            { key: "insights",     label: "Beta Insights" }
+          ];
+          return (
+            <>
+              {/* Desktop: scrollable tab strip */}
+              <div className="admin-tabs-desktop">
+                {ADMIN_TABS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setTab(key)}
+                    style={{
+                      background: tab === key ? "#fff" : "transparent",
+                      color: tab === key ? "#312e81" : "#c7d2fe",
+                      border: "none",
+                      padding: "8px 18px",
+                      cursor: "pointer",
+                      fontWeight: tab === key ? 700 : 400,
+                      fontSize: 14,
+                      borderRadius: "6px 6px 0 0",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {/* Mobile: compact dropdown selector */}
+              <div className="admin-tab-selector-mobile">
+                <select
+                  value={tab}
+                  onChange={(e) => setTab(e.target.value)}
+                  aria-label="Sección admin"
+                >
+                  {ADMIN_TABS.map(({ key, label }) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       <div className="kitchen-container" style={{ paddingTop: 24 }}>
