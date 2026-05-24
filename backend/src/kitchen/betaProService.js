@@ -1,17 +1,39 @@
 /**
- * betaProService.js
+ * betaProService.js — Automatic Beta Pro plan unlock
  *
- * Manages Beta Pro unlock logic:
- *   - Auto-grant "pro" plan to households that complete onboarding + all main weekly challenges
- *   - Record meaningful user activity to reset the inactivity grace window
- *   - Lazy expiry checks (calendar + inactivity) on state reads
+ * Automatically upgrades a household to "pro" (planSource: "beta_pro") when they
+ * complete BOTH: onboarding + all main weekly challenges for the current cycle week.
  *
- * Controlled by env vars:
- *   BETA_PRO_ENABLED            "true" to enable (default: off)
- *   BETA_PRO_DURATION_DAYS      days until Beta Pro expires from unlock (default: 30)
- *   BETA_INACTIVITY_GRACE_DAYS  days of inactivity before Beta Pro expires early (default: 14)
+ * ── Environment variables ────────────────────────────────────────────────────
  *
- * Never overwrites a paid subscription (planSource === "paid" or active Stripe sub).
+ * BETA_PRO_ENABLED=true
+ *   Enable the auto-unlock. Defaults to off. Safe to flip independently of
+ *   PRIVATE_BETA_ENABLED — Beta Pro can run alongside open registration.
+ *
+ * BETA_PRO_DURATION_DAYS=30
+ *   Calendar days until Beta Pro expires from the unlock date. After expiry the
+ *   household is downgraded back to "basic". Defaults to 30.
+ *
+ * BETA_INACTIVITY_GRACE_DAYS=14
+ *   If the household has no meaningful activity for this many days while Beta Pro
+ *   is active, Beta Pro expires early (reason: "inactivity"). Defaults to 14.
+ *
+ * ── Safety guarantees ────────────────────────────────────────────────────────
+ * • Never overwrites a paid Stripe subscription (planSource === "paid" or
+ *   active stripeSubscriptionId). Admin-granted plans (planSource "admin_grant")
+ *   CAN be overwritten — this is intentional so beta testers can upgrade.
+ * • Expiry only affects Beta Pro; any paid plan set after unlock is left untouched.
+ * • Admin can grant/revoke Beta Pro at any time via Admin → Beta Insights.
+ *
+ * ── Unlock prerequisites ─────────────────────────────────────────────────────
+ *   1. BETA_PRO_ENABLED=true
+ *   2. HouseholdOnboarding.status === "completed"
+ *   3. All main (non-bonus) WeeklyChallengeDef for the current cycleWeek have
+ *      rewardGranted === true in HouseholdWeeklyProgress.
+ *
+ * ── How to disable ───────────────────────────────────────────────────────────
+ *   Set BETA_PRO_ENABLED=false (or remove it). Already-unlocked households keep
+ *   their "pro" plan until their expiresAt date or inactivity grace period.
  */
 
 import { Household } from "./models/Household.js";

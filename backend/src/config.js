@@ -107,3 +107,38 @@ if (process.env.STRIPE_MODE === "live" && process.env.ALLOW_TEST_PAYMENT_ENTITLE
   console.error("[startup] FATAL: ALLOW_TEST_PAYMENT_ENTITLEMENTS=true is not allowed when STRIPE_MODE=live.");
   process.exit(1);
 }
+
+// ── Beta configuration sanity checks ─────────────────────────────────────────
+// These are warnings only — neither prevents the server from starting.
+
+// B-3: Contradictory beta settings.
+// PRIVATE_BETA_ENABLED=true AND PUBLIC_REGISTRATION_ENABLED=true cancel each other
+// out (isBetaModeEnabled returns false). Warn the operator to avoid confusion.
+if (process.env.PRIVATE_BETA_ENABLED === "true" && process.env.PUBLIC_REGISTRATION_ENABLED === "true") {
+  console.warn(
+    "[startup] WARNING: PRIVATE_BETA_ENABLED=true is overridden by PUBLIC_REGISTRATION_ENABLED=true. " +
+    "Beta gate is effectively DISABLED. Set PUBLIC_REGISTRATION_ENABLED=false to enforce the beta gate."
+  );
+}
+
+// B-4: Beta Pro without beta mode — not an error, but worth noting.
+if (process.env.BETA_PRO_ENABLED === "true" && process.env.PRIVATE_BETA_ENABLED !== "true") {
+  console.info(
+    "[startup] INFO: BETA_PRO_ENABLED=true while PRIVATE_BETA_ENABLED is not 'true'. " +
+    "Beta Pro auto-unlock is active for open registration. This is intentional if you want " +
+    "to reward early adopters without restricting new sign-ups."
+  );
+}
+
+// B-5 (log): Print effective beta mode on startup so it's easy to verify in logs.
+{
+  const betaGateActive = process.env.PRIVATE_BETA_ENABLED === "true"
+    && process.env.PUBLIC_REGISTRATION_ENABLED !== "true";
+  const betaProActive = process.env.BETA_PRO_ENABLED === "true";
+  if (betaGateActive || betaProActive) {
+    console.info(
+      `[startup] Beta config — gate:${betaGateActive ? "ON" : "OFF"} ` +
+      `pro:${betaProActive ? `ON (${process.env.BETA_PRO_DURATION_DAYS || 30}d, grace ${process.env.BETA_INACTIVITY_GRACE_DAYS || 14}d)` : "OFF"}`
+    );
+  }
+}

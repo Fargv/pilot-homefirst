@@ -718,6 +718,16 @@ router.post("/beta-insights/:id/grant-beta-pro", requireAuth, requireDiod, async
         "betaPro.expirationReason": ""
       }
     });
+    // Audit log — plan changes are not bites transactions, so we log to console
+    // with enough context to reconstruct who changed what and when.
+    console.log("[admin] Beta Pro GRANTED", {
+      householdId: id,
+      householdName: h.name,
+      daysFromNow: days,
+      expiresAt: expiresAt.toISOString(),
+      grantedByAdminId: String(req.kitchenUser?._id || "unknown"),
+      at: now.toISOString()
+    });
     return res.json({ ok: true, expiresAt });
   } catch (e) {
     console.error("[admin] grant-beta-pro error", e?.message);
@@ -731,15 +741,23 @@ router.post("/beta-insights/:id/revoke-beta-pro", requireAuth, requireDiod, asyn
   try {
     const h = await Household.findById(id).lean();
     if (!h) return res.status(404).json({ ok: false, error: "Hogar no encontrado." });
+    const now = new Date();
     await Household.updateOne({ _id: id }, {
       $set: {
         subscriptionPlan: "basic",
         planSource: "manual",
         isPro: false,
         "betaPro.active": false,
-        "betaPro.expiredAt": new Date(),
+        "betaPro.expiredAt": now,
         "betaPro.expirationReason": "admin_revoke"
       }
+    });
+    // Audit log
+    console.log("[admin] Beta Pro REVOKED", {
+      householdId: id,
+      householdName: h.name,
+      revokedByAdminId: String(req.kitchenUser?._id || "unknown"),
+      at: now.toISOString()
     });
     return res.json({ ok: true });
   } catch (e) {

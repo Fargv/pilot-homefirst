@@ -432,7 +432,13 @@ router.post("/register", async (req, res) => {
     let household = null;
     let role = "owner";
 
-    // Beta gate — only for new household creation (not joining an existing one)
+    // Beta gate — only for new household creation (not joining an existing one).
+    // Household member joins (via 6-digit invite code) intentionally bypass the beta gate:
+    //   • The invite code is private, shared by an existing beta household member.
+    //   • Beta testers should be able to add family members without each needing
+    //     a separate beta invite.
+    //   • The beta gate's purpose is to control WHO CREATES NEW HOUSEHOLDS,
+    //     not who joins existing ones.
     const normalizedBetaToken = String(req.body.betaToken || "").trim();
     let betaCheckResult = null;
     if (!normalizedInviteCode) {
@@ -802,7 +808,9 @@ router.post("/clerk/onboarding", async (req, res) => {
       user.householdId = onboardingTarget.household._id;
     }
 
-    // Beta gate — only blocks NEW household creation
+    // Beta gate — only blocks NEW household creation.
+    // Joining via inviteCode or inviteToken is intentionally excluded: see comment
+    // in the /register route above for the full rationale.
     if (!household && onboardingTarget.mode === "create") {
       const betaToken = String(req.body.betaToken || "").trim();
       const betaCheck = await checkBetaAccess(identity.email, betaToken);

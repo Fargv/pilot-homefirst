@@ -378,7 +378,7 @@ export async function getOrCreateProgress(householdId, weekStart, cycleWeekIndex
   return doc;
 }
 
-// ─── Bites grant (copied from onboardingEngine pattern) ───────────────────────
+// ─── Bites grant ──────────────────────────────────────────────────────────────
 
 async function _grantBites(householdId, amount, reason, metadata) {
   const household = await Household.findById(householdId).lean();
@@ -391,9 +391,11 @@ async function _grantBites(householdId, amount, reason, metadata) {
 
   await Household.updateOne({ _id: household._id }, { $set: { freeBitesBalance: newFree } });
 
+  // Use "challenge_reward" type so admin ledger queries can distinguish automatic
+  // weekly challenge rewards from manual admin grants.
   await BitesTransaction.create({
     householdId: household._id,
-    type: "admin_grant",
+    type: "challenge_reward",
     amount,
     balanceAfterFree: newFree,
     balanceAfterPurchased: household.purchasedBitesBalance ?? 0,

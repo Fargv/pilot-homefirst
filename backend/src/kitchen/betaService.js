@@ -1,3 +1,32 @@
+/**
+ * betaService.js — Private beta invite gate
+ *
+ * Controls who can create a NEW household during private beta. Existing users
+ * and household member joins are NEVER blocked regardless of beta mode.
+ *
+ * ── Environment variables ────────────────────────────────────────────────────
+ *
+ * PRIVATE_BETA_ENABLED=true
+ *   Set to "true" to activate the beta gate. When enabled, new-household
+ *   registrations require a valid beta invite token. Defaults to off.
+ *
+ * PUBLIC_REGISTRATION_ENABLED=true
+ *   When set to "true" the beta gate is bypassed even if PRIVATE_BETA_ENABLED
+ *   is also "true". Use this as a quick override to open registration without
+ *   removing PRIVATE_BETA_ENABLED from your environment.
+ *
+ * ── How to open registration later ──────────────────────────────────────────
+ *   Option A: remove PRIVATE_BETA_ENABLED or set it to "false"
+ *   Option B: set PUBLIC_REGISTRATION_ENABLED=true (faster rollback)
+ *
+ * ── Invite lifecycle ─────────────────────────────────────────────────────────
+ *   pending → (email sent) → sent → (used once) → used
+ *                                 → (admin revoke) → revoked
+ *   expired: expiresAt < now, any status except used/revoked
+ *   Invites are single-use: status is set to "used" on first successful registration.
+ *   Token is a 64-char hex string (32 random bytes → 2^256 space).
+ */
+
 import crypto from "crypto";
 import { BetaInvite } from "./models/BetaInvite.js";
 import { config } from "../config.js";

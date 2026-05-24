@@ -1,20 +1,66 @@
+/**
+ * routes/beta.js — Private beta invite management
+ *
+ * Public endpoints (no auth required):
+ *   GET  /status   — Is private beta mode currently enabled?
+ *   GET  /validate — Is this invite token still valid? Returns the email if so.
+ *
+ * Admin endpoints (requireDiod):
+ *   GET  /admin/invites        — List all invites (paginated, filterable by status)
+ *   POST /admin/invites        — Create one or more invites, optionally send email
+ *   POST /admin/invites/:id/revoke  — Revoke a pending/sent invite
+ *   POST /admin/invites/:id/resend  — Re-send the invite email
+ *
+ * How to enable private beta:
+ *   PRIVATE_BETA_ENABLED=true
+ *   PUBLIC_REGISTRATION_ENABLED must NOT be "true"
+ *
+ * How to open registration later (disable beta gate):
+ *   PRIVATE_BETA_ENABLED=false  (or remove the var entirely)
+ *   Existing users and households are not affected.
+ */
+
 import express from "express";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { BetaInvite } from "../models/BetaInvite.js";
-import { isBetaModeEnabled, checkBetaAccess, createBetaInvite, buildBetaInviteLink, getBetaInviteStatus } from "../betaService.js";
+import { isBetaModeEnabled, createBetaInvite, buildBetaInviteLink, getBetaInviteStatus } from "../betaService.js";
 import { sendEmail } from "../../services/emailService.js";
 import { config } from "../../config.js";
 import { isValidEmail, normalizeEmail } from "../../users/utils.js";
 
 const router = express.Router();
 
+// ── Simple in-process rate limiter (resets on server restart) ─────────────────
+const _rlStore = new Map();
+function _checkRateLimit(key, maxRequests, windowMs) {
+  const now = Date.now();
+  const entry = _rlStore.get(key);
+  if (!entry || now > entry.resetAt) {
+    _rlStore.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (entry.count >= maxRequests) return false;
+  entry.count++;
+  return true;
+}
+function _getClientIp(req) {
+  return String(req.ip || req.socket?.remoteAddress || "unknown");
+}
+
 // ── Public endpoints ─────────────────────────────────────────────────────────
 
 router.get("/status", (_req, res) => {
+  // Safe: exposes only a boolean — no tokens or personal data.
   res.json({ ok: true, betaEnabled: isBetaModeEnabled() });
 });
 
 router.get("/validate", async (req, res) => {
+  // Rate-limit to prevent token enumeration. Tokens are 64-char hex (2^256 space)
+  // so brute-force is impractical, but rate limiting is still good practice.
+  if (!_checkRateLimit(`beta-validate:${_getClientIp(req)}`, 10, 60_000)) {
+    return res.status(429).json({ ok: false, error: "Demasiadas peticiones. Inténtalo más tarde." });
+  }
+
   try {
     const token = String(req.query.token || "").trim();
     if (!token) return res.json({ ok: true, valid: false, betaEnabled: isBetaModeEnabled() });

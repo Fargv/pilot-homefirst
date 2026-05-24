@@ -5001,6 +5001,7 @@ function BetaInvitesSection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [createMode, setCreateMode] = useState("single");
   const [singleEmail, setSingleEmail] = useState("");
@@ -5111,25 +5112,67 @@ function BetaInvitesSection() {
 
       {subTab === "list" && (
         <div>
+          {/* Status filter chips */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+            {[
+              { key: "all",     label: "Todas" },
+              { key: "pending", label: "Pendiente" },
+              { key: "sent",    label: "Enviada" },
+              { key: "used",    label: "Usada" },
+              { key: "revoked", label: "Revocada" },
+              { key: "expired", label: "Expirada" },
+            ].map(({ key, label }) => {
+              const active = statusFilter === key;
+              const chipColor = key === "all" ? "#4338ca" : (STATUS_COLOR[key] || "#4338ca");
+              return (
+                <button key={key} type="button" onClick={() => setStatusFilter(key)} style={{
+                  padding: "4px 12px", borderRadius: 999, cursor: "pointer", fontSize: 12, fontWeight: active ? 700 : 500,
+                  background: active ? chipColor : "#f1f5f9",
+                  color: active ? "#fff" : "#374151",
+                  border: active ? `1px solid ${chipColor}` : "1px solid #e2e8f0",
+                  transition: "all 0.1s"
+                }}>
+                  {label}
+                  {key !== "all" && (
+                    <span style={{ marginLeft: 4, opacity: 0.75 }}>
+                      ({invites.filter(inv => (inv.computedStatus || inv.status) === key).length})
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-            <span style={{ fontSize: 13, color: "#6b7280" }}>{total} invitaciones</span>
+            <span style={{ fontSize: 13, color: "#6b7280" }}>
+              {statusFilter === "all"
+                ? `${total} invitaciones en total`
+                : `${invites.filter(inv => (inv.computedStatus || inv.status) === statusFilter).length} de ${total}`}
+            </span>
             <button type="button" onClick={loadInvites} style={{ ...ABT.edit }}>Recargar</button>
           </div>
-          {loading ? <p style={{ color: "#6b7280", fontSize: 13 }}>Cargando...</p> : (
-            invites.length === 0 ? <p style={{ color: "#6b7280", fontSize: 13 }}>No hay invitaciones.</p> : (
+          {loading ? <p style={{ color: "#6b7280", fontSize: 13 }}>Cargando...</p> : (() => {
+            const filtered = statusFilter === "all"
+              ? invites
+              : invites.filter(inv => (inv.computedStatus || inv.status) === statusFilter);
+            return filtered.length === 0
+              ? <p style={{ color: "#6b7280", fontSize: 13 }}>
+                  {statusFilter === "all" ? "No hay invitaciones." : `No hay invitaciones con estado "${statusFilter}".`}
+                </p>
+              : (
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
-                      {["Email", "Estado", "Expira", "Usado el", "Acciones"].map((h) => (
+                      {["Email", "Estado", "Creada", "Expira", "Usado el", "Nota", "Acciones"].map((h) => (
                         <th key={h} style={{ padding: "8px 12px", fontWeight: 700, color: "#374151", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {invites.map((inv) => (
+                    {filtered.map((inv) => (
                       <tr key={inv._id} style={{ borderTop: "1px solid #e2e8f0" }}>
-                        <td style={{ padding: "8px 12px" }}>{inv.email}</td>
+                        <td style={{ padding: "8px 12px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{inv.email}</td>
                         <td style={{ padding: "8px 12px" }}>
                           <span style={{
                             padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 700,
@@ -5139,11 +5182,17 @@ function BetaInvitesSection() {
                             {(inv.computedStatus || inv.status || "").toUpperCase()}
                           </span>
                         </td>
-                        <td style={{ padding: "8px 12px", color: "#6b7280" }}>
+                        <td style={{ padding: "8px 12px", color: "#6b7280", whiteSpace: "nowrap" }}>
+                          {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("es-ES") : "—"}
+                        </td>
+                        <td style={{ padding: "8px 12px", color: "#6b7280", whiteSpace: "nowrap" }}>
                           {inv.expiresAt ? new Date(inv.expiresAt).toLocaleDateString("es-ES") : "—"}
                         </td>
-                        <td style={{ padding: "8px 12px", color: "#6b7280" }}>
+                        <td style={{ padding: "8px 12px", color: "#6b7280", whiteSpace: "nowrap" }}>
                           {inv.usedAt ? new Date(inv.usedAt).toLocaleDateString("es-ES") : "—"}
+                        </td>
+                        <td style={{ padding: "8px 12px", color: "#6b7280", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={inv.note || ""}>
+                          {inv.note || <span style={{ opacity: 0.4 }}>—</span>}
                         </td>
                         <td style={{ padding: "8px 12px" }}>
                           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -5163,8 +5212,8 @@ function BetaInvitesSection() {
                   </tbody>
                 </table>
               </div>
-            )
-          )}
+            );
+          })()}
         </div>
       )}
 
@@ -5341,6 +5390,7 @@ function InsightsDetailModal({ h, onClose, onAction, msg, saving }) {
               </>
             )}
             <button type="button" style={ABT.edit} disabled={saving} onClick={() => onAction("reset_onboarding")}>Reset onboarding</button>
+            <button type="button" style={ABT.edit} disabled={saving} onClick={() => onAction("reset_weekly")}>Reset retos semanales</button>
             <button type="button" style={ABT.edit} disabled={saving} onClick={() => onAction("copy")}>📋 Copiar diagnóstico</button>
           </div>
         </div>
@@ -5443,6 +5493,10 @@ function BetaInsightsSection() {
           body: JSON.stringify({ reason })
         });
         setActionMsg("Onboarding reseteado. ✓");
+      } else if (type === "reset_weekly") {
+        if (!window.confirm("¿Resetear el progreso de retos semanales de este hogar? Se perderá el progreso actual.")) return;
+        await apiRequest(`/api/kitchen/weekly/admin/households/${id}/reset`, { method: "POST" });
+        setActionMsg("Retos semanales reseteados. ✓");
       }
       setTimeout(() => setActionMsg(""), 4000);
       loadData();
