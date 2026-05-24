@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useWeeklyChallenge } from "../../contexts/WeeklyChallengeContext.jsx";
 import { useOnboarding } from "../../contexts/OnboardingContext.jsx";
 import { useAuth } from "../../auth.jsx";
@@ -38,6 +38,15 @@ function CheckIcon() {
     <svg viewBox="0 0 20 20" fill="none" width={16} height={16}>
       <circle cx="10" cy="10" r="9" fill="currentColor" />
       <path d="M6 10.5l3 3 5-6" stroke="var(--text-inverse, #fff)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" width={15} height={15}>
+      <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M6 10.5l3 3 5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -175,19 +184,31 @@ export default function WeeklyChallengeCard() {
   const { state: onboardingState } = useOnboarding();
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
+  // Separate expansion state for the "all done" view so the chip is always default when complete
+  const [doneExpanded, setDoneExpanded] = useState(false);
+  const prevAllDoneRef = useRef(false);
 
-  const toggleCollapsed = (next) => {
-    writeCollapsedPref(next);
-    setCollapsed(next);
-  };
+  // Compute derived values — safe to derive even before early returns
+  const completedCount = weeklyState ? (weeklyState.completedCount ?? 0) : 0;
+  const totalCount = weeklyState
+    ? (weeklyState.totalCount ?? weeklyState.totalMainChallenges ?? 0)
+    : 0;
+  const weeklyAllDone = completedCount >= totalCount && totalCount > 0;
 
+  // Auto-collapse to done chip when completion is first detected this session.
+  // Must be before any early returns to satisfy React hooks rules.
+  useEffect(() => {
+    if (weeklyAllDone && !prevAllDoneRef.current) {
+      setDoneExpanded(false);
+    }
+    prevAllDoneRef.current = weeklyAllDone;
+  }, [weeklyAllDone]);
+
+  // ── Early renders ──────────────────────────────────────────────────────
   if (!onboardingState || onboardingState.status !== "completed") return null;
   if (!weeklyState) return null;
 
-  // Normalize counters — backend now always sends totalCount + progressPercent,
-  // but compute locally as a safe fallback.
-  const completedCount = weeklyState.completedCount ?? 0;
-  const totalCount = weeklyState.totalCount ?? weeklyState.totalMainChallenges ?? 0;
+  // Normalize progress percent (fallback if backend didn't send it)
   const progressPercent = weeklyState.progressPercent
     ?? (totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0);
 
@@ -195,9 +216,36 @@ export default function WeeklyChallengeCard() {
   const plan = String(user?.subscriptionPlan || "basic").toLowerCase();
   const planSource = user?.planSource || "";
   const showBetaProHint = (plan === "basic") && planSource !== "beta_pro";
-  const weeklyAllDone = completedCount >= totalCount && totalCount > 0;
 
-  if (collapsed) {
+  const toggleCollapsed = (next) => {
+    writeCollapsedPref(next);
+    setCollapsed(next);
+  };
+
+  // ── All done → compact done chip (default state when all challenges complete) ──
+  if (weeklyAllDone && !doneExpanded) {
+    return (
+      <>
+        <div className="weekly-challenge-done-chip" role="region" aria-label="Retos semanales completados">
+          <CheckCircleIcon />
+          <span className="weekly-challenge-done-chip-text">Retos semanales completados</span>
+          <span className="weekly-challenge-done-chip-week">Semana {weeklyState.cycleWeekIndex}/4</span>
+          <button
+            type="button"
+            onClick={() => setDoneExpanded(true)}
+            className="weekly-challenge-done-chip-expand"
+            aria-label="Ver retos completados"
+          >
+            <ChevronDownIcon />
+          </button>
+        </div>
+        {rewardEvent && <WeeklyRewardToast event={rewardEvent} onDismiss={dismissReward} />}
+      </>
+    );
+  }
+
+  // ── Collapsed slim bar (in-progress) ──────────────────────────────────
+  if (collapsed && !weeklyAllDone) {
     return (
       <>
         <div className="weekly-challenge-slim" role="region" aria-label="Retos semanales">
@@ -229,6 +277,7 @@ export default function WeeklyChallengeCard() {
     );
   }
 
+  // ── Full expanded card ─────────────────────────────────────────────────
   return (
     <>
       <div className="weekly-challenge-card">
@@ -241,7 +290,14 @@ export default function WeeklyChallengeCard() {
             <span>{completedCount}/{totalCount}</span>
             <button
               type="button"
-              onClick={() => toggleCollapsed(true)}
+              onClick={() => {
+                if (weeklyAllDone) {
+                  // Collapse back to done chip
+                  setDoneExpanded(false);
+                } else {
+                  toggleCollapsed(true);
+                }
+              }}
               className="onboarding-guide-minimize"
               aria-label="Minimizar"
             >
@@ -250,11 +306,14 @@ export default function WeeklyChallengeCard() {
           </div>
         </div>
 
-        <div className="onboarding-progress onboarding-progress-compact weekly-challenge-progress-bar">
-          <div style={{ width: `${progressPercent}%` }} />
-        </div>
+        {/* Progress bar only while in progress */}
+        {!weeklyAllDone && (
+          <div className="onboarding-progress onboarding-progress-compact weekly-challenge-progress-bar">
+            <div style={{ width: `${progressPercent}%` }} />
+          </div>
+        )}
 
-        {/* Pre-unlock Beta Pro hint (only for basic users before unlock) */}
+        {/* Pre-unlock Beta Pro hint (only for basic users before unlock, only while in-progress) */}
         {showBetaProHint && !weeklyAllDone && (
           <div className="onboarding-beta-pro-hint weekly-beta-pro-hint">
             <span className="onboarding-beta-pro-hint-icon">⭐</span>

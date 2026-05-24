@@ -154,9 +154,9 @@ function getFirstName(displayName = "") {
 function BetaProUnlockedModal({ onDismiss }) {
   const navigate = useNavigate();
 
-  const handleGoSettings = () => {
+  const handleGoHousehold = () => {
     onDismiss();
-    navigate("/kitchen/configuracion");
+    navigate("/kitchen/configuracion?section=household-members");
   };
 
   return (
@@ -170,14 +170,15 @@ function BetaProUnlockedModal({ onDismiss }) {
           Has desbloqueado <strong>Pro Beta</strong>
         </p>
         <p className="kitchen-beta-pro-modal-body">
-          Tu acceso Pro Beta está activo durante el periodo de beta según las reglas vigentes.
-          Si la licencia no aparece de inmediato, recarga la página o contacta con el administrador.
+          Puedes activar funciones Pro como las <strong>cenas</strong> desde{" "}
+          <strong>Configuración → Household</strong>. Tu acceso Pro Beta está
+          activo durante el periodo de beta según las reglas vigentes.
         </p>
 
         <div className="kitchen-beta-pro-modal-features">
           <p className="kitchen-beta-pro-modal-features-title">Con Pro Beta tienes acceso a:</p>
           <ul className="kitchen-beta-pro-modal-features-list">
-            <li>🌙 Planificación de <strong>cenas</strong> (activar en ajustes del hogar)</li>
+            <li>🌙 Planificación de <strong>cenas</strong></li>
             <li>🎲 Aleatorización de toda la semana de una vez</li>
             <li>💰 Presupuesto semanal de la compra</li>
             <li>👨‍👩‍👧‍👦 Hasta 8 miembros y 12 comensales</li>
@@ -189,9 +190,9 @@ function BetaProUnlockedModal({ onDismiss }) {
           <button
             type="button"
             className="kitchen-ui-button kitchen-beta-pro-modal-cta"
-            onClick={handleGoSettings}
+            onClick={handleGoHousehold}
           >
-            Ir a configuración
+            Ir a Household
           </button>
           <button
             type="button"

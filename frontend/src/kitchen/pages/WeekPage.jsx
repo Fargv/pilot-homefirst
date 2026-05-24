@@ -2025,17 +2025,8 @@ export default function WeekPage() {
                   }}
                 />
 
-                {/* Show dinner area when: dinners enabled+pro, OR basic user (upgrade affordance),
-                    OR pro/beta-pro user with dinners disabled (so they can see how to activate) */}
-                {(dinnersEnabled && canUseDinners) || !canUseDinners || (canUseDinners && !dinnersEnabled) ? (
-                  <>
-                  {/* Pro/BetaPro user with dinners disabled — guide them to settings */}
-                  {canUseDinners && !dinnersEnabled && (
-                    <div className="kitchen-week-dinner-activate-hint">
-                      <span>🌙</span>
-                      <span>Tienes acceso a la planificación de cenas. <a href="/kitchen/configuracion" className="kitchen-week-dinner-activate-link">Actívalas en ajustes</a>.</span>
-                    </div>
-                  )}
+                {/* Tab bar with dinner state */}
+                <>
                   <div className="kitchen-week-header-row kitchen-week-header-row-tabs">
                     <div className="kitchen-tab-share-row">
                       <div className="kitchen-meal-tabs kitchen-meal-tabs-with-link" role="group" aria-label="Navegación semanal">
@@ -2056,7 +2047,18 @@ export default function WeekPage() {
                         >
                           Cenas
                         </button>
-                      ) : !canUseDinners ? (
+                      ) : canUseDinners && !dinnersEnabled ? (
+                        /* Pro/Beta Pro with dinners off — subtle tab links to Household Settings */
+                        <button
+                          type="button"
+                          className="kitchen-meal-tab dinner-gate-tab dinner-gate-tab-settings"
+                          title="Activa las cenas en Configuración del hogar"
+                          onClick={() => navigate("/kitchen/configuracion?section=household-members")}
+                        >
+                          🌙 Cenas
+                        </button>
+                      ) : (
+                        /* Basic — locked upgrade prompt */
                         <button
                           type="button"
                           className="kitchen-meal-tab dinner-gate-tab"
@@ -2071,7 +2073,7 @@ export default function WeekPage() {
                           Cenas
                           <span className="dinner-gate-pro-badge">PRO</span>
                         </button>
-                      ) : null /* Pro user with dinners disabled — see hint above */}
+                      )}
                       <button
                         type="button"
                         className="kitchen-meal-tab kitchen-meal-tab-link"
@@ -2104,8 +2106,7 @@ export default function WeekPage() {
                       onClose={() => setDinnerUpgradeOpen(false)}
                     />
                   ) : null}
-                  </>
-                ) : null}
+                </>
 
                 {/* Desktop-only: action buttons grouped at the right of the bar */}
                 <div className="kitchen-week-header-actions-right">

@@ -1148,38 +1148,43 @@ export default function SettingsPage() {
           </div>
           <p className="kitchen-muted">Puede asignarse automaticamente como cocinero en randomizacion.</p>
         </label>
-        <label className="kitchen-field kitchen-toggle-field">
-          <div className="kitchen-toggle-row">
-            <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
-            <label className="kitchen-toggle">
-              <input
-                type="checkbox"
-                className="kitchen-toggle-input"
-                checked={profileDinnerActive}
-                disabled={!profileEditingMain || (!isOwner && !isDiod)}
-                onChange={(event) => setProfileDinnerActive(event.target.checked)}
-              />
-              <span className="kitchen-toggle-track" />
+        {/* Dinner preferences — only visible when household plan supports dinners AND dinners are enabled */}
+        {canUseDinners && dinnersEnabled ? (
+          <>
+            <label className="kitchen-field kitchen-toggle-field">
+              <div className="kitchen-toggle-row">
+                <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
+                <label className="kitchen-toggle">
+                  <input
+                    type="checkbox"
+                    className="kitchen-toggle-input"
+                    checked={profileDinnerActive}
+                    disabled={!profileEditingMain || (!isOwner && !isDiod)}
+                    onChange={(event) => setProfileDinnerActive(event.target.checked)}
+                  />
+                  <span className="kitchen-toggle-track" />
+                </label>
+              </div>
+              <p className="kitchen-muted">Si está activado, aparecerá automáticamente como comensal en cenas.</p>
             </label>
-          </div>
-          <p className="kitchen-muted">Si está activado, aparecerá automáticamente como comensal en cenas.</p>
-        </label>
-        <label className="kitchen-field kitchen-toggle-field">
-          <div className="kitchen-toggle-row">
-            <span className="kitchen-label">Puede cocinar cenas</span>
-            <label className="kitchen-toggle">
-              <input
-                type="checkbox"
-                className="kitchen-toggle-input"
-                checked={profileDinnerCanCook}
-                disabled={!profileEditingMain}
-                onChange={(event) => setProfileDinnerCanCook(event.target.checked)}
-              />
-              <span className="kitchen-toggle-track" />
+            <label className="kitchen-field kitchen-toggle-field">
+              <div className="kitchen-toggle-row">
+                <span className="kitchen-label">Puede cocinar cenas</span>
+                <label className="kitchen-toggle">
+                  <input
+                    type="checkbox"
+                    className="kitchen-toggle-input"
+                    checked={profileDinnerCanCook}
+                    disabled={!profileEditingMain}
+                    onChange={(event) => setProfileDinnerCanCook(event.target.checked)}
+                  />
+                  <span className="kitchen-toggle-track" />
+                </label>
+              </div>
+              <p className="kitchen-muted">Si está activado, podrá asignarse automáticamente para cocinar cenas.</p>
             </label>
-          </div>
-          <p className="kitchen-muted">Si está activado, podrá asignarse automáticamente para cocinar cenas.</p>
-        </label>
+          </>
+        ) : null}
         <p className="kitchen-muted">Email: {user?.email || "Sin email"}</p>
       </div>
       <div className="settings-block">
@@ -1202,52 +1207,7 @@ export default function SettingsPage() {
           Volver
         </button>
         <h2 className="settings-panel-title">Preferencias</h2>
-        <p className="settings-panel-sub">Planificación semanal, notificaciones y app</p>
-      </div>
-
-      {/* Planificación semanal */}
-      <div className="settings-block">
-        <p className="settings-section-label" style={{ marginBottom: 12 }}>Planificación semanal</p>
-        <div className="settings-household-pref-row">
-          <div className="settings-household-pref-main">
-            <div className="settings-household-pref-title">
-              <span>Planificar también cenas</span>
-              {!canUseDinners ? (
-                <span className="dinner-gate-pro-badge">PRO</span>
-              ) : null}
-            </div>
-            <p className="kitchen-muted">
-              {canUseDinners
-                ? "Si está activado, cada semana incluirá también planificación de cenas."
-                : "Disponible en los planes Pro y Premium."}
-            </p>
-          </div>
-          {canUseDinners ? (
-            <label className="kitchen-toggle" aria-label="Planificar cenas">
-              <input
-                type="checkbox"
-                className="kitchen-toggle-input"
-                checked={dinnersEnabled}
-                disabled={householdPrefsSaving || !canManageHousehold}
-                onChange={(event) => {
-                  const checked = event.target.checked;
-                  setDinnersEnabled(checked);
-                  void saveHouseholdPreferences({ dinnersEnabled: checked });
-                }}
-              />
-              <span className="kitchen-toggle-track" />
-            </label>
-          ) : (
-            <button
-              type="button"
-              className="kitchen-button secondary"
-              style={{ fontSize: "0.79rem", padding: "5px 10px", flexShrink: 0 }}
-              onClick={() => navigate("/kitchen/upgrade?from=dinner-prefs")}
-            >
-              Mejorar plan
-            </button>
-          )}
-        </div>
+        <p className="settings-panel-sub">Apariencia, notificaciones y más</p>
       </div>
 
       {/* App */}
@@ -1471,6 +1431,51 @@ export default function SettingsPage() {
       {canManageHousehold ? (
         <div className="settings-block">
         <p className="settings-section-label" style={{ marginBottom: 12 }}>Preferencias de planificación</p>
+
+        {/* ── Dinner activation toggle ────────────────────────────────── */}
+        <div className="settings-household-pref-row settings-dinner-activation-row">
+          <div className="settings-household-pref-main">
+            <div className="settings-household-pref-title">
+              <span>🌙 Planificar cenas</span>
+              {!canUseDinners ? (
+                <span className="dinner-gate-pro-badge">PRO</span>
+              ) : null}
+            </div>
+            <p className="kitchen-muted">
+              {canUseDinners
+                ? (dinnersEnabled
+                    ? "Las cenas están activas. Se muestran en la planificación semanal."
+                    : "Activa las cenas para planificar comidas y cenas en tu semana.")
+                : "Disponible en los planes Pro y Premium."}
+            </p>
+          </div>
+          {canUseDinners ? (
+            <label className="kitchen-toggle" aria-label="Activar cenas">
+              <input
+                type="checkbox"
+                className="kitchen-toggle-input"
+                checked={dinnersEnabled}
+                disabled={householdPrefsSaving}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  setDinnersEnabled(checked);
+                  void saveHouseholdPreferences({ dinnersEnabled: checked });
+                }}
+              />
+              <span className="kitchen-toggle-track" />
+            </label>
+          ) : (
+            <button
+              type="button"
+              className="kitchen-button secondary"
+              style={{ fontSize: "0.79rem", padding: "5px 10px", flexShrink: 0 }}
+              onClick={() => navigate("/kitchen/upgrade?from=dinner-household")}
+            >
+              Mejorar plan
+            </button>
+          )}
+        </div>
+
         <div className="settings-household-pref-input-row">
           {budgetFeatureEnabled ? (
             <>
@@ -2136,38 +2141,43 @@ export default function SettingsPage() {
             </div>
             <p className="kitchen-muted">Puede asignarse automaticamente como cocinero en randomizacion.</p>
           </label>
-          <label className="kitchen-field kitchen-toggle-field">
-            <div className="kitchen-toggle-row">
-              <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
-              <label className="kitchen-toggle">
-                <input
-                  type="checkbox"
-                  className="kitchen-toggle-input"
-                  checked={memberModal.form.dinnerActive}
-                  disabled={!canManageHousehold}
-                  onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, dinnerActive: event.target.checked } }))}
-                />
-                <span className="kitchen-toggle-track" />
+          {/* Dinner fields in member modal — only when dinners enabled */}
+          {canUseDinners && dinnersEnabled ? (
+            <>
+              <label className="kitchen-field kitchen-toggle-field">
+                <div className="kitchen-toggle-row">
+                  <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
+                  <label className="kitchen-toggle">
+                    <input
+                      type="checkbox"
+                      className="kitchen-toggle-input"
+                      checked={memberModal.form.dinnerActive}
+                      disabled={!canManageHousehold}
+                      onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, dinnerActive: event.target.checked } }))}
+                    />
+                    <span className="kitchen-toggle-track" />
+                  </label>
+                </div>
+                <p className="kitchen-muted">Si está activado, esta persona aparecerá automáticamente como comensal en cenas.</p>
               </label>
-            </div>
-            <p className="kitchen-muted">Si está activado, esta persona aparecerá automáticamente como comensal en cenas.</p>
-          </label>
-          <label className="kitchen-field kitchen-toggle-field">
-            <div className="kitchen-toggle-row">
-              <span className="kitchen-label">Puede cocinar cenas</span>
-              <label className="kitchen-toggle">
-                <input
-                  type="checkbox"
-                  className="kitchen-toggle-input"
-                  checked={memberModal.form.dinnerCanCook}
-                  disabled={!canManageHousehold && String(memberModal.member?.id) !== String(user?.id)}
-                  onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, dinnerCanCook: event.target.checked } }))}
-                />
-                <span className="kitchen-toggle-track" />
+              <label className="kitchen-field kitchen-toggle-field">
+                <div className="kitchen-toggle-row">
+                  <span className="kitchen-label">Puede cocinar cenas</span>
+                  <label className="kitchen-toggle">
+                    <input
+                      type="checkbox"
+                      className="kitchen-toggle-input"
+                      checked={memberModal.form.dinnerCanCook}
+                      disabled={!canManageHousehold && String(memberModal.member?.id) !== String(user?.id)}
+                      onChange={(event) => setMemberModal((prev) => ({ ...prev, form: { ...prev.form, dinnerCanCook: event.target.checked } }))}
+                    />
+                    <span className="kitchen-toggle-track" />
+                  </label>
+                </div>
+                <p className="kitchen-muted">Si está activado, podrá asignarse automáticamente para cocinar cenas.</p>
               </label>
-            </div>
-            <p className="kitchen-muted">Si está activado, podrá asignarse automáticamente para cocinar cenas.</p>
-          </label>
+            </>
+          ) : null}
           {!memberModal.member?.isPlaceholder && canManageHousehold && String(memberModal.member?.id) !== String(user?.id) ? <button type="button" className="kitchen-button secondary" onClick={() => askDeleteMember(memberModal.member)}>Eliminar usuario</button> : null}
           {memberModal.member?.isPlaceholder ? (
             <div className="settings-block">
@@ -2227,36 +2237,41 @@ export default function SettingsPage() {
             </div>
             <p className="kitchen-muted">Si está activado, podrá ser asignado automáticamente para cocinar.</p>
           </label>
-          <label className="kitchen-field kitchen-toggle-field">
-            <div className="kitchen-toggle-row">
-              <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
-              <label className="kitchen-toggle">
-                <input
-                  type="checkbox"
-                  className="kitchen-toggle-input"
-                  checked={dinerModal.form.dinnerActive}
-                  onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, dinnerActive: event.target.checked } }))}
-                />
-                <span className="kitchen-toggle-track" />
+          {/* Dinner fields for diner — only when dinners enabled */}
+          {canUseDinners && dinnersEnabled ? (
+            <>
+              <label className="kitchen-field kitchen-toggle-field">
+                <div className="kitchen-toggle-row">
+                  <span className="kitchen-label">Incluir como comensal por defecto en cenas</span>
+                  <label className="kitchen-toggle">
+                    <input
+                      type="checkbox"
+                      className="kitchen-toggle-input"
+                      checked={dinerModal.form.dinnerActive}
+                      onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, dinnerActive: event.target.checked } }))}
+                    />
+                    <span className="kitchen-toggle-track" />
+                  </label>
+                </div>
+                <p className="kitchen-muted">Si está activado, aparecerá automáticamente como comensal en cenas.</p>
               </label>
-            </div>
-            <p className="kitchen-muted">Si está activado, aparecerá automáticamente como comensal en cenas.</p>
-          </label>
-          <label className="kitchen-field kitchen-toggle-field">
-            <div className="kitchen-toggle-row">
-              <span className="kitchen-label">Puede cocinar cenas</span>
-              <label className="kitchen-toggle">
-                <input
-                  type="checkbox"
-                  className="kitchen-toggle-input"
-                  checked={dinerModal.form.dinnerCanCook}
-                  onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, dinnerCanCook: event.target.checked } }))}
-                />
-                <span className="kitchen-toggle-track" />
+              <label className="kitchen-field kitchen-toggle-field">
+                <div className="kitchen-toggle-row">
+                  <span className="kitchen-label">Puede cocinar cenas</span>
+                  <label className="kitchen-toggle">
+                    <input
+                      type="checkbox"
+                      className="kitchen-toggle-input"
+                      checked={dinerModal.form.dinnerCanCook}
+                      onChange={(event) => setDinerModal((prev) => ({ ...prev, form: { ...prev.form, dinnerCanCook: event.target.checked } }))}
+                    />
+                    <span className="kitchen-toggle-track" />
+                  </label>
+                </div>
+                <p className="kitchen-muted">Si está activado, podrá asignarse automáticamente para cocinar cenas.</p>
               </label>
-            </div>
-            <p className="kitchen-muted">Si está activado, podrá asignarse automáticamente para cocinar cenas.</p>
-          </label>
+            </>
+          ) : null}
         </div>
       </ModalSheet>
 
