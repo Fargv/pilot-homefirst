@@ -1,63 +1,33 @@
 /**
  * /api/kitchen/basics
  * Household "Básicos de compra" — recurring shopping items.
+ *
+ * Every Basic MUST be linked to a real KitchenIngredient.
+ * The ingredient provides name, canonicalName, and category;
+ * these are cached on HouseholdBasic for display performance.
+ *
  * Pro / Premium only (Basic users see teaser via frontend gating).
  */
 import express from "express";
 import { requireAuth } from "../middleware.js";
 import { getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { HouseholdBasic } from "../models/HouseholdBasic.js";
-import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
+import { KitchenIngredient } from "../models/KitchenIngredient.js";
 import { Category } from "../models/Category.js";
 import { Household } from "../models/Household.js";
-import { normalizeIngredientName } from "../utils/normalize.js";
 import { canUseBasicsFeature } from "../subscriptionService.js";
 import { ensureShoppingList } from "../shoppingService.js";
 import { getWeekStart, parseISODate } from "../utils/dates.js";
-import {
-  DEFAULT_CATEGORY_COLOR_BG,
-  DEFAULT_CATEGORY_COLOR_TEXT,
-  DEFAULT_CATEGORY_NAME,
-  DEFAULT_CATEGORY_SLUG,
-  ensureDefaultCategory
-} from "../utils/categoryMatching.js";
+import { ensureDefaultCategory } from "../utils/categoryMatching.js";
+import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import mongoose from "mongoose";
 
 const router = express.Router();
-
-// ─── Default seed items ───────────────────────────────────────────────────────
-const DEFAULT_BASICS = [
-  { name: "Huevos", emoji: "🥚", order: 0 },
-  { name: "Leche entera", emoji: "🥛", order: 1 },
-  { name: "Leche semidesnatada", emoji: "🥛", order: 2 },
-  { name: "Pan de molde", emoji: "🍞", order: 3 },
-  { name: "Café", emoji: "☕", order: 4 },
-  { name: "Papel de cocina", emoji: "🧻", order: 5 },
-  { name: "Papel higiénico", emoji: "🧻", order: 6 }
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function isValidObjectId(value) {
   return Boolean(value) && mongoose.isValidObjectId(value);
-}
-
-/**
- * Seed default basics for a household if they have none yet.
- * Safe to call multiple times — uses upsert per canonicalName.
- */
-export async function seedDefaultBasics(householdId) {
-  const existing = await HouseholdBasic.countDocuments({ householdId });
-  if (existing > 0) return;
-  const docs = DEFAULT_BASICS.map((b) => ({
-    householdId,
-    name: b.name,
-    canonicalName: normalizeIngredientName(b.name),
-    emoji: b.emoji || "",
-    active: true,
-    order: b.order
-  }));
-  await HouseholdBasic.insertMany(docs, { ordered: false }).catch(() => {});
 }
 
 async function resolveBasicsAccess(effectiveHouseholdId) {
@@ -70,11 +40,41 @@ async function resolveBasicsAccess(effectiveHouseholdId) {
   };
 }
 
+/**
+ * Build the visibility filter for ingredients visible to a household.
+ */
+function buildIngredientVisibilityFilter(effectiveHouseholdId, extra = {}) {
+  return {
+    ...extra,
+    isArchived: { $ne: true },
+    active: true,
+    $or: [
+      { scope: CATALOG_SCOPES.MASTER, householdId: null },
+      { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
+      { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
+    ]
+  };
+}
+
+function serializeBasic(basic) {
+  return {
+    id: String(basic._id),
+    ingredientId: basic.ingredientId ? String(basic.ingredientId) : null,
+    name: basic.name,
+    canonicalName: basic.canonicalName,
+    categoryId: basic.categoryId ? String(basic.categoryId) : null,
+    emoji: basic.emoji || "",
+    active: basic.active !== false,
+    order: basic.order ?? 0
+  };
+}
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 /**
  * GET /api/kitchen/basics
- * Returns all basics for the current household (ordered by order, name).
+ * Returns all basics for the current household that have a valid ingredientId.
+ * Legacy free-text basics (no ingredientId) are silently excluded.
  * Works for all plans — frontend decides gating/teaser rendering.
  */
 router.get("/", requireAuth, async (req, res) => {
@@ -82,12 +82,11 @@ router.get("/", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const { basicsFeatureEnabled, plan } = await resolveBasicsAccess(effectiveHouseholdId);
 
-    if (basicsFeatureEnabled) {
-      // Auto-seed on first access
-      await seedDefaultBasics(effectiveHouseholdId);
-    }
-
-    const basics = await HouseholdBasic.find({ householdId: effectiveHouseholdId })
+    // Only return basics linked to real ingredients
+    const basics = await HouseholdBasic.find({
+      householdId: effectiveHouseholdId,
+      ingredientId: { $ne: null }
+    })
       .sort({ order: 1, name: 1 })
       .lean();
 
@@ -95,15 +94,7 @@ router.get("/", requireAuth, async (req, res) => {
       ok: true,
       basicsFeatureEnabled,
       plan,
-      basics: basics.map((b) => ({
-        id: String(b._id),
-        name: b.name,
-        canonicalName: b.canonicalName,
-        categoryId: b.categoryId ? String(b.categoryId) : null,
-        emoji: b.emoji || "",
-        active: b.active !== false,
-        order: b.order ?? 0
-      }))
+      basics: basics.map(serializeBasic)
     });
   } catch (err) {
     const handled = handleHouseholdError(res, err);
@@ -114,55 +105,74 @@ router.get("/", requireAuth, async (req, res) => {
 
 /**
  * POST /api/kitchen/basics
- * Create a new basic item.
+ * Create a new basic linked to a real ingredient.
+ * Body: { ingredientId: string, emoji?: string }
  */
 router.post("/", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const { basicsFeatureEnabled } = await resolveBasicsAccess(effectiveHouseholdId);
     if (!basicsFeatureEnabled) {
-      return res.status(403).json({ ok: false, code: "BASICS_NOT_AVAILABLE", error: "Los básicos requieren plan Pro o Premium." });
+      return res.status(403).json({
+        ok: false,
+        code: "BASICS_NOT_AVAILABLE",
+        error: "Los básicos requieren plan Pro o Premium."
+      });
     }
 
-    const { name, emoji, categoryId, order } = req.body || {};
-    const trimmedName = String(name || "").trim();
-    if (!trimmedName || trimmedName.length > 120) {
-      return res.status(400).json({ ok: false, error: "Nombre inválido." });
+    const { ingredientId, emoji, order } = req.body || {};
+
+    if (!isValidObjectId(ingredientId)) {
+      return res.status(400).json({ ok: false, error: "Debes seleccionar un ingrediente válido." });
     }
 
-    const canonicalName = normalizeIngredientName(trimmedName);
-    const existing = await HouseholdBasic.findOne({ householdId: effectiveHouseholdId, canonicalName });
+    // Validate ingredient is visible to this household
+    const ingredient = await KitchenIngredient.findOne(
+      buildIngredientVisibilityFilter(effectiveHouseholdId, { _id: ingredientId })
+    ).select("_id name canonicalName categoryId").lean();
+
+    if (!ingredient) {
+      return res.status(404).json({ ok: false, error: "Ingrediente no encontrado." });
+    }
+
+    // Prevent duplicate basics for the same ingredient
+    const existing = await HouseholdBasic.findOne({
+      householdId: effectiveHouseholdId,
+      ingredientId: ingredient._id
+    }).lean();
     if (existing) {
-      return res.status(409).json({ ok: false, code: "ALREADY_EXISTS", error: "Ya existe un básico con ese nombre." });
+      // Return the existing one (idempotent — useful when user adds from popup)
+      return res.status(200).json({ ok: true, basic: serializeBasic(existing), alreadyExists: true });
     }
 
-    const resolvedCategoryId = isValidObjectId(categoryId) ? categoryId : null;
-    const lastBasic = await HouseholdBasic.findOne({ householdId: effectiveHouseholdId }).sort({ order: -1 }).lean();
+    const lastBasic = await HouseholdBasic.findOne({ householdId: effectiveHouseholdId })
+      .sort({ order: -1 })
+      .lean();
     const nextOrder = typeof order === "number" ? order : ((lastBasic?.order ?? -1) + 1);
 
     const basic = await HouseholdBasic.create({
       householdId: effectiveHouseholdId,
-      name: trimmedName,
-      canonicalName,
+      ingredientId: ingredient._id,
+      name: ingredient.name,
+      canonicalName: ingredient.canonicalName,
+      categoryId: ingredient.categoryId || null,
       emoji: String(emoji || "").slice(0, 8),
-      categoryId: resolvedCategoryId,
       active: true,
       order: nextOrder
     });
 
-    return res.status(201).json({
-      ok: true,
-      basic: {
-        id: String(basic._id),
-        name: basic.name,
-        canonicalName: basic.canonicalName,
-        categoryId: basic.categoryId ? String(basic.categoryId) : null,
-        emoji: basic.emoji || "",
-        active: basic.active,
-        order: basic.order
-      }
-    });
+    return res.status(201).json({ ok: true, basic: serializeBasic(basic) });
   } catch (err) {
+    // Duplicate key (race condition) — treat as already exists
+    if (err?.code === 11000) {
+      try {
+        const existing = await HouseholdBasic.findOne({
+          householdId: getEffectiveHouseholdId(req.user),
+          ingredientId: req.body?.ingredientId
+        }).lean();
+        if (existing) return res.json({ ok: true, basic: serializeBasic(existing), alreadyExists: true });
+      } catch { /* fall through */ }
+    }
     const handled = handleHouseholdError(res, err);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo crear el básico." });
@@ -171,14 +181,19 @@ router.post("/", requireAuth, async (req, res) => {
 
 /**
  * PUT /api/kitchen/basics/:id
- * Update a basic (name, emoji, categoryId, active, order).
+ * Update a basic's display preferences (active, order, emoji).
+ * Name and category are owned by the ingredient and cannot be overridden here.
  */
 router.put("/:id", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const { basicsFeatureEnabled } = await resolveBasicsAccess(effectiveHouseholdId);
     if (!basicsFeatureEnabled) {
-      return res.status(403).json({ ok: false, code: "BASICS_NOT_AVAILABLE", error: "Los básicos requieren plan Pro o Premium." });
+      return res.status(403).json({
+        ok: false,
+        code: "BASICS_NOT_AVAILABLE",
+        error: "Los básicos requieren plan Pro o Premium."
+      });
     }
 
     if (!isValidObjectId(req.params.id)) {
@@ -190,45 +205,13 @@ router.put("/:id", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Básico no encontrado." });
     }
 
-    const { name, emoji, categoryId, active, order } = req.body || {};
-
-    if (name !== undefined) {
-      const trimmedName = String(name || "").trim();
-      if (!trimmedName || trimmedName.length > 120) {
-        return res.status(400).json({ ok: false, error: "Nombre inválido." });
-      }
-      const newCanonical = normalizeIngredientName(trimmedName);
-      // Ensure no duplicate canonical name (excluding current doc)
-      const dup = await HouseholdBasic.findOne({
-        householdId: effectiveHouseholdId,
-        canonicalName: newCanonical,
-        _id: { $ne: basic._id }
-      });
-      if (dup) {
-        return res.status(409).json({ ok: false, code: "ALREADY_EXISTS", error: "Ya existe un básico con ese nombre." });
-      }
-      basic.name = trimmedName;
-      basic.canonicalName = newCanonical;
-    }
+    const { emoji, active, order } = req.body || {};
     if (emoji !== undefined) basic.emoji = String(emoji || "").slice(0, 8);
-    if (categoryId !== undefined) basic.categoryId = isValidObjectId(categoryId) ? categoryId : null;
     if (active !== undefined) basic.active = Boolean(active);
     if (typeof order === "number") basic.order = order;
 
     await basic.save();
-
-    return res.json({
-      ok: true,
-      basic: {
-        id: String(basic._id),
-        name: basic.name,
-        canonicalName: basic.canonicalName,
-        categoryId: basic.categoryId ? String(basic.categoryId) : null,
-        emoji: basic.emoji || "",
-        active: basic.active,
-        order: basic.order
-      }
-    });
+    return res.json({ ok: true, basic: serializeBasic(basic) });
   } catch (err) {
     const handled = handleHouseholdError(res, err);
     if (handled) return handled;
@@ -245,7 +228,11 @@ router.delete("/:id", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const { basicsFeatureEnabled } = await resolveBasicsAccess(effectiveHouseholdId);
     if (!basicsFeatureEnabled) {
-      return res.status(403).json({ ok: false, code: "BASICS_NOT_AVAILABLE", error: "Los básicos requieren plan Pro o Premium." });
+      return res.status(403).json({
+        ok: false,
+        code: "BASICS_NOT_AVAILABLE",
+        error: "Los básicos requieren plan Pro o Premium."
+      });
     }
 
     if (!isValidObjectId(req.params.id)) {
@@ -268,16 +255,21 @@ router.delete("/:id", requireAuth, async (req, res) => {
 /**
  * POST /api/kitchen/basics/apply
  * Add selected basics to the shopping list for a given week.
- * Returns the full updated shopping list payload.
+ * Uses ingredientId for accurate deduplication against the existing list.
  *
- * Body: { weekStart: "YYYY-MM-DD", selectedIds: ["id1", "id2", ...] }
+ * Body: { weekStart: "YYYY-MM-DD", selectedIds: ["basicId1", "basicId2", ...] }
+ * Returns: { ok, addedCount, skippedCount }
  */
 router.post("/apply", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const { basicsFeatureEnabled } = await resolveBasicsAccess(effectiveHouseholdId);
     if (!basicsFeatureEnabled) {
-      return res.status(403).json({ ok: false, code: "BASICS_NOT_AVAILABLE", error: "Los básicos requieren plan Pro o Premium." });
+      return res.status(403).json({
+        ok: false,
+        code: "BASICS_NOT_AVAILABLE",
+        error: "Los básicos requieren plan Pro o Premium."
+      });
     }
 
     const { weekStart: weekStartParam, selectedIds } = req.body || {};
@@ -290,33 +282,39 @@ router.post("/apply", requireAuth, async (req, res) => {
     }
     const monday = getWeekStart(weekStartDate);
 
-    const ids = Array.isArray(selectedIds) ? selectedIds.filter((id) => isValidObjectId(id)) : [];
+    const ids = Array.isArray(selectedIds)
+      ? selectedIds.filter((id) => isValidObjectId(id))
+      : [];
     if (ids.length === 0) {
       return res.json({ ok: true, addedCount: 0, skippedCount: 0 });
     }
 
-    // Fetch selected basics
+    // Fetch selected basics (must have a real ingredientId)
     const basics = await HouseholdBasic.find({
       _id: { $in: ids },
       householdId: effectiveHouseholdId,
-      active: true
+      active: true,
+      ingredientId: { $ne: null }
     }).lean();
 
     if (basics.length === 0) {
       return res.json({ ok: true, addedCount: 0, skippedCount: 0 });
     }
 
-    // Get or create shopping list
     const list = await ensureShoppingList(monday, effectiveHouseholdId);
 
-    // Build set of pending canonical names already in the list
+    // Build fast-lookup sets from the current pending items
+    const pendingIngredientIds = new Set(
+      list.items
+        .filter((item) => item.status === "pending" && item.ingredientId)
+        .map((item) => String(item.ingredientId))
+    );
     const pendingCanonicals = new Set(
       list.items
         .filter((item) => item.status === "pending")
         .map((item) => String(item.canonicalName || "").trim().toLowerCase())
     );
 
-    // Ensure a fallback category exists
     const fallbackCategory = await ensureDefaultCategory({ Category, householdId: effectiveHouseholdId });
     const fallbackCategoryId = fallbackCategory?._id || null;
 
@@ -324,27 +322,30 @@ router.post("/apply", requireAuth, async (req, res) => {
     let skippedCount = 0;
 
     for (const basic of basics) {
+      const ingIdStr = String(basic.ingredientId);
       const canonical = String(basic.canonicalName || "").trim().toLowerCase();
-      if (pendingCanonicals.has(canonical)) {
+
+      // Skip if already pending (by ingredientId or canonicalName)
+      if (pendingIngredientIds.has(ingIdStr) || pendingCanonicals.has(canonical)) {
         skippedCount++;
         continue;
       }
 
-      // Resolve category: use basic's category if set and valid, else fallback
-      let resolvedCategoryId = null;
+      // Resolve best category: from the basic cache (synced from ingredient), else fallback
+      let resolvedCategoryId = fallbackCategoryId;
       if (basic.categoryId) {
         const catExists = await Category.findOne({
           _id: basic.categoryId,
           active: true,
           isArchived: { $ne: true }
-        }).select("_id").lean();
+        })
+          .select("_id")
+          .lean();
         resolvedCategoryId = catExists ? basic.categoryId : fallbackCategoryId;
-      } else {
-        resolvedCategoryId = fallbackCategoryId;
       }
 
       list.items.push({
-        ingredientId: null,
+        ingredientId: basic.ingredientId,
         categoryId: resolvedCategoryId,
         displayName: basic.name,
         canonicalName: canonical,
@@ -353,12 +354,12 @@ router.post("/apply", requireAuth, async (req, res) => {
         fromDishes: []
       });
 
+      pendingIngredientIds.add(ingIdStr);
       pendingCanonicals.add(canonical);
       addedCount++;
     }
 
     await list.save();
-
     return res.json({ ok: true, addedCount, skippedCount });
   } catch (err) {
     const handled = handleHouseholdError(res, err);

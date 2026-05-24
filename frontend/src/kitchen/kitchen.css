@@ -16002,3 +16002,256 @@ body {
   background: rgba(255,255,255,0.06);
   color: rgba(255,255,255,0.4);
 }
+
+/* ─── Shopping list header action row — layout fix ───────────────────────── */
+/* The header quick-add row was overridden to display:block; restore it to flex
+   now that the +Básicos button lives on the same row as the input. */
+.shopping-quick-add-header .shopping-quick-add-row {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.shopping-quick-add-header .shopping-quick-add-input {
+  flex: 1;
+  min-width: 0;
+  width: auto !important; /* override earlier width:100% */
+}
+/* Make the +Básicos button height match the input */
+.shopping-basics-btn {
+  height: 40px;
+  border-radius: 12px;
+}
+
+/* ─── Basics floating success toast ──────────────────────────────────────── */
+.basics-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  background: #111827;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 40px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  animation: basics-toast-in 0.25s cubic-bezier(0.34,1.2,0.64,1);
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+@keyframes basics-toast-in {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+[data-theme="dark"] .basics-toast {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+/* ─── Settings nav icon — Básicos ────────────────────────────────────────── */
+.settings-nav-icon-basics {
+  background: #f0fdfa;
+  color: #0d9488;
+}
+[data-theme="dark"] .settings-nav-icon-basics {
+  background: rgba(13,148,136,0.15);
+  color: #2dd4bf;
+}
+
+/* ─── IngredientSearchAdd component ──────────────────────────────────────── */
+.basics-search-add {
+  width: 100%;
+}
+.basics-search-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+  background: var(--color-surface-raised, #f9fafb);
+  border: 1.5px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.basics-search-row:focus-within {
+  border-color: var(--color-accent, #6366f1);
+}
+.basics-search-icon {
+  flex-shrink: 0;
+  width: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted, #9ca3af);
+}
+.basics-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding-left: 0 !important;
+  font-size: 13.5px;
+}
+.basics-search-input:focus {
+  outline: none;
+}
+.basics-search-spinner {
+  flex-shrink: 0;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted, #9ca3af);
+}
+.basics-search-error {
+  font-size: 12px;
+  color: #dc2626;
+  margin: 4px 0 0;
+}
+
+/* Suggestions dropdown */
+.basics-search-suggestions {
+  background: var(--color-surface, #fff);
+  border: 1.5px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  margin-top: 4px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+.basics-search-suggestion {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 9px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.1s;
+}
+.basics-search-suggestion:hover {
+  background: var(--color-surface-raised, #f3f4f6);
+}
+.basics-search-suggestion-name {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-text-primary, #111827);
+}
+.basics-search-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent, #6366f1);
+  border-top: 1px solid var(--color-border, #f3f4f6);
+  transition: background 0.1s;
+  text-align: left;
+}
+.basics-search-create-btn:hover {
+  background: var(--color-surface-raised, #f3f4f6);
+}
+.basics-search-no-results {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+/* Inline create form */
+.basics-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.basics-create-name-input {
+  width: 100%;
+}
+.basics-create-cat-select {
+  width: 100%;
+}
+.basics-create-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.basics-create-cancel {
+  background: none;
+  border: 1.5px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.basics-create-cancel:hover {
+  background: var(--color-surface-raised, #f3f4f6);
+}
+.basics-create-confirm {
+  padding: 6px 16px;
+  font-size: 13px;
+  min-width: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Popup search section */
+.basics-popup-search-section {
+  padding: 8px 12px 4px;
+  border-bottom: 1px solid var(--color-border, #f0f0f0);
+  flex-shrink: 0;
+}
+
+/* Spinner animation */
+@keyframes basics-spin-anim {
+  to { transform: rotate(360deg); }
+}
+.basics-spin {
+  animation: basics-spin-anim 0.75s linear infinite;
+}
+
+/* Compact variant (inside popup) */
+.basics-search-add.is-compact .basics-search-row {
+  border-radius: 10px;
+}
+.basics-search-add.is-compact .basics-search-input {
+  font-size: 13px;
+}
+
+/* Dark mode – search add */
+[data-theme="dark"] .basics-search-row {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
+}
+[data-theme="dark"] .basics-search-suggestions {
+  background: #1a1a2e;
+  border-color: rgba(255,255,255,0.1);
+}
+[data-theme="dark"] .basics-search-suggestion:hover,
+[data-theme="dark"] .basics-search-create-btn:hover {
+  background: rgba(255,255,255,0.06);
+}
+[data-theme="dark"] .basics-search-suggestion-name {
+  color: rgba(255,255,255,0.88);
+}
+[data-theme="dark"] .basics-popup-search-section {
+  border-bottom-color: rgba(255,255,255,0.07);
+}

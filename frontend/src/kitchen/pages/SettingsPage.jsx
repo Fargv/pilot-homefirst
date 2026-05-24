@@ -24,6 +24,7 @@ import { getColorPalette, getUserColorById, getUserColorPreference, setUserColor
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 import { ProBadge } from "../components/ui/ProBadge.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { IngredientSearchAdd } from "../components/BasicsPopup.jsx";
 
 function initialsFromName(name = "") {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
@@ -264,9 +265,6 @@ export default function SettingsPage() {
   const [basics, setBasics] = useState([]);
   const [basicsLoading, setBasicsLoading] = useState(false);
   const [basicsError, setBasicsError] = useState("");
-  const [basicsNewName, setBasicsNewName] = useState("");
-  const [basicsNewEmoji, setBasicsNewEmoji] = useState("");
-  const [basicsSaving, setBasicsSaving] = useState(false);
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
@@ -594,24 +592,8 @@ export default function SettingsPage() {
     void loadBasics();
   }, [activePanel, user?.activeHouseholdId]);
 
-  const createBasic = async () => {
-    const trimmedName = basicsNewName.trim();
-    if (!trimmedName || basicsSaving) return;
-    setBasicsSaving(true);
-    setBasicsError("");
-    try {
-      await apiRequest("/api/kitchen/basics", {
-        method: "POST",
-        body: JSON.stringify({ name: trimmedName, emoji: basicsNewEmoji.trim() || "" })
-      });
-      setBasicsNewName("");
-      setBasicsNewEmoji("");
-      await loadBasics();
-    } catch (err) {
-      setBasicsError(err.message || "No se pudo crear el básico.");
-    } finally {
-      setBasicsSaving(false);
-    }
+  const handleBasicAdded = async (/* newBasic */) => {
+    await loadBasics();
   };
 
   const deleteBasic = async (id) => {
@@ -1944,7 +1926,7 @@ export default function SettingsPage() {
           Volver
         </button>
         <h2 className="settings-panel-title">Básicos de compra</h2>
-        <p className="settings-panel-sub">Artículos que añades a la lista semana a semana</p>
+        <p className="settings-panel-sub">Artículos que sueles añadir a la lista cada semana</p>
       </div>
 
       {!basicsFeatureEnabled ? (
@@ -1956,17 +1938,32 @@ export default function SettingsPage() {
             </svg>
           </div>
           <p className="basics-locked-title">Disponible en Pro y Premium</p>
-          <p className="basics-locked-desc">Configura tus artículos recurrentes y añádelos a la lista de la compra con un solo toque cada semana.</p>
+          <p className="basics-locked-desc">
+            Guarda los artículos que compras cada semana y añádelos a la lista con un solo toque.
+          </p>
           <button type="button" className="kitchen-button basics-upgrade-btn" onClick={() => navigate("/kitchen/upgrade")}>Ver planes</button>
         </div>
       ) : (
         <>
+          {canManageHousehold ? (
+            <div className="settings-block">
+              <p className="settings-section-label" style={{ marginBottom: "10px" }}>Añadir básico</p>
+              <IngredientSearchAdd
+                placeholder="Buscar ingrediente, producto, limpieza…"
+                onAdded={handleBasicAdded}
+                householdId={user?.activeHouseholdId || user?.householdId}
+              />
+            </div>
+          ) : null}
+
           <div className="settings-block">
             <p className="settings-section-label" style={{ marginBottom: "10px" }}>Tus básicos</p>
             {basicsLoading && <p className="kitchen-muted">Cargando…</p>}
             {basicsError && <div className="kitchen-alert error">{basicsError}</div>}
             {!basicsLoading && basics.length === 0 && (
-              <p className="kitchen-muted">No tienes básicos configurados aún. Añade tus primeros.</p>
+              <p className="kitchen-muted">
+                Todavía no tienes básicos configurados. Usa el buscador de arriba para añadir tus primeros artículos.
+              </p>
             )}
             {!basicsLoading && basics.map((basic) => (
               <div key={basic.id} className={`settings-row-card basics-row-card${!basic.active ? " is-inactive" : ""}`}>
@@ -1981,7 +1978,6 @@ export default function SettingsPage() {
                       type="button"
                       className="settings-mini-button"
                       onClick={() => toggleBasicActive(basic.id, basic.active)}
-                      title={basic.active ? "Desactivar" : "Activar"}
                     >
                       {basic.active ? "Ocultar" : "Activar"}
                     </button>
@@ -1991,7 +1987,6 @@ export default function SettingsPage() {
                       onClick={() => {
                         if (window.confirm(`¿Eliminar "${basic.name}"?`)) void deleteBasic(basic.id);
                       }}
-                      title="Eliminar"
                     >
                       Eliminar
                     </button>
@@ -2000,42 +1995,6 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-
-          {canManageHousehold ? (
-            <div className="settings-block">
-              <p className="settings-section-label" style={{ marginBottom: "10px" }}>Añadir básico</p>
-              <form
-                className="basics-add-form"
-                onSubmit={(e) => { e.preventDefault(); void createBasic(); }}
-              >
-                <input
-                  className="kitchen-input basics-emoji-input"
-                  type="text"
-                  placeholder="🛒"
-                  maxLength={4}
-                  value={basicsNewEmoji}
-                  onChange={(e) => setBasicsNewEmoji(e.target.value)}
-                  aria-label="Emoji (opcional)"
-                />
-                <input
-                  className="kitchen-input basics-name-input"
-                  type="text"
-                  placeholder="Nombre del artículo"
-                  maxLength={120}
-                  value={basicsNewName}
-                  onChange={(e) => setBasicsNewName(e.target.value)}
-                  aria-label="Nombre"
-                />
-                <button
-                  type="submit"
-                  className="kitchen-button basics-add-btn"
-                  disabled={!basicsNewName.trim() || basicsSaving}
-                >
-                  {basicsSaving ? "…" : "Añadir"}
-                </button>
-              </form>
-            </div>
-          ) : null}
         </>
       )}
     </div>

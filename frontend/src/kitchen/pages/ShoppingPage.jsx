@@ -264,6 +264,8 @@ export default function ShoppingPage() {
   const [editingGroupAmount, setEditingGroupAmount] = useState("");
   const [contentSlideClass, setContentSlideClass] = useState("");
   const [basicsPopupOpen, setBasicsPopupOpen] = useState(false);
+  const [basicsToast, setBasicsToast] = useState("");
+  const basicsToastTimerRef = useRef(null);
   const weekDirRef = useRef(null);
   const [dismissedBannerIds, setDismissedBannerIds] = useState(() => {
     try {
@@ -1038,6 +1040,16 @@ export default function ShoppingPage() {
     }
     return set;
   }, [pendingByCategory]);
+  const currentPendingIngredientIds = useMemo(() => {
+    if (!Array.isArray(pendingByCategory)) return new Set();
+    const set = new Set();
+    for (const group of pendingByCategory) {
+      for (const item of (group.items || [])) {
+        if (item.ingredientId) set.add(String(item.ingredientId));
+      }
+    }
+    return set;
+  }, [pendingByCategory]);
 
   if (isDiodGlobalMode) {
     return (
@@ -1148,7 +1160,7 @@ export default function ShoppingPage() {
                         className="kitchen-input shopping-quick-add-input"
                         value={quickQuery}
                         onChange={(event) => setQuickQuery(event.target.value)}
-                        placeholder="Añadir ingrediente a la lista..."
+                        placeholder="Añadir producto, ingrediente u otro artículo…"
                       />
                       <button
                         type="button"
@@ -1639,16 +1651,24 @@ export default function ShoppingPage() {
           weekStart={weekStart}
           plan={String(user?.subscriptionPlan || "basic").toLowerCase()}
           currentPendingCanonicals={currentPendingCanonicals}
+          currentPendingIngredientIds={currentPendingIngredientIds}
           onClose={() => setBasicsPopupOpen(false)}
           onApplied={({ addedCount }) => {
             setBasicsPopupOpen(false);
             if (addedCount > 0) {
               void loadList({ silent: true });
-              setSuccess(`${addedCount} básico${addedCount !== 1 ? "s" : ""} añadido${addedCount !== 1 ? "s" : ""} a la lista.`);
+              clearTimeout(basicsToastTimerRef.current);
+              setBasicsToast(`${addedCount} básico${addedCount !== 1 ? "s" : ""} añadido${addedCount !== 1 ? "s" : ""} a la lista ✓`);
+              basicsToastTimerRef.current = setTimeout(() => setBasicsToast(""), 5000);
             }
           }}
         />
       )}
+      {basicsToast ? (
+        <div className="basics-toast" role="status" aria-live="polite" onClick={() => setBasicsToast("")}>
+          {basicsToast}
+        </div>
+      ) : null}
     </KitchenLayout>
   );
 }
