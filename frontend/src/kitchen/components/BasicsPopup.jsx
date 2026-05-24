@@ -84,10 +84,13 @@ export function IngredientSearchAdd({
   const [createMode, setCreateMode] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createCategoryId, setCreateCategoryId] = useState("");
+  const [catQuery, setCatQuery] = useState("");
+  const [catOpen, setCatOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [saving, setSaving] = useState(false);
   const [localError, setLocalError] = useState("");
   const inputRef = useRef(null);
+  const catInputRef = useRef(null);
   const timer = useRef(null);
 
   // Load categories once for the create flow
@@ -162,6 +165,8 @@ export function IngredientSearchAdd({
       setCreateMode(false);
       setCreateName("");
       setCreateCategoryId("");
+      setCatQuery("");
+      setCatOpen(false);
       setQuery("");
       setSuggestions([]);
       onAdded?.(basicData.basic);
@@ -174,6 +179,10 @@ export function IngredientSearchAdd({
 
   const hasExact = suggestions.some(
     (s) => String(s.name || "").trim().toLowerCase() === query.trim().toLowerCase()
+  );
+
+  const filteredCats = categories.filter(
+    (c) => !catQuery || c.name.toLowerCase().includes(catQuery.toLowerCase())
   );
 
   if (createMode) {
@@ -189,21 +198,71 @@ export function IngredientSearchAdd({
             autoFocus
             maxLength={120}
           />
-          <select
-            className="kitchen-input basics-create-cat-select"
-            value={createCategoryId}
-            onChange={(e) => setCreateCategoryId(e.target.value)}
-          >
-            <option value="">Categoría…</option>
-            {categories.map((c) => (
-              <option key={c._id} value={c._id}>{c.name}</option>
-            ))}
-          </select>
+
+          {/* Searchable category field */}
+          <div className="basics-cat-field">
+            <input
+              ref={catInputRef}
+              className={`kitchen-input basics-cat-input${createCategoryId ? " has-value" : ""}`}
+              type="text"
+              placeholder="Categoría…"
+              value={createCategoryId ? (categories.find((c) => c._id === createCategoryId)?.name ?? catQuery) : catQuery}
+              autoComplete="off"
+              onFocus={() => { if (!createCategoryId) setCatOpen(true); }}
+              onChange={(e) => {
+                setCreateCategoryId("");
+                setCatQuery(e.target.value);
+                setCatOpen(true);
+              }}
+              onClick={() => {
+                if (createCategoryId) {
+                  setCreateCategoryId("");
+                  setCatQuery("");
+                  setCatOpen(true);
+                  setTimeout(() => catInputRef.current?.focus(), 0);
+                } else {
+                  setCatOpen(true);
+                }
+              }}
+              onBlur={() => setTimeout(() => setCatOpen(false), 160)}
+            />
+            {catOpen && (
+              <div className="basics-cat-dropdown">
+                {filteredCats.map((c) => (
+                  <button
+                    key={c._id}
+                    type="button"
+                    className={`basics-cat-option${createCategoryId === c._id ? " is-selected" : ""}`}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setCreateCategoryId(c._id);
+                      setCatQuery(c.name);
+                      setCatOpen(false);
+                    }}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+                {filteredCats.length === 0 && (
+                  <div className="basics-cat-no-results">Sin categorías</div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="basics-create-actions">
             <button
               type="button"
               className="basics-create-cancel"
-              onClick={() => { setCreateMode(false); setCreateName(""); setCreateCategoryId(""); setLocalError(""); inputRef.current?.focus(); }}
+              onClick={() => {
+                setCreateMode(false);
+                setCreateName("");
+                setCreateCategoryId("");
+                setCatQuery("");
+                setCatOpen(false);
+                setLocalError("");
+                inputRef.current?.focus();
+              }}
               disabled={saving}
             >
               Cancelar

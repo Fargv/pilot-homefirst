@@ -119,6 +119,24 @@ function InfoIcon() {
   );
 }
 
+function EyeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function getBitesLabel(tx) {
   if (tx.metadata?.source === "welcome_bonus") return "Bienvenida a Lunchfy";
   if (tx.metadata?.source === "onboarding_challenge" && tx.reason) return tx.reason;
@@ -1973,22 +1991,26 @@ export default function SettingsPage() {
                   {!basic.active && <span className="basics-row-inactive-badge">Inactivo</span>}
                 </div>
                 {canManageHousehold ? (
-                  <div className="settings-row-actions">
+                  <div className="settings-row-actions basics-row-icon-actions">
                     <button
                       type="button"
-                      className="settings-mini-button"
+                      className="settings-icon-only"
                       onClick={() => toggleBasicActive(basic.id, basic.active)}
+                      aria-label={basic.active ? "Ocultar básico" : "Activar básico"}
+                      title={basic.active ? "Ocultar" : "Activar"}
                     >
-                      {basic.active ? "Ocultar" : "Activar"}
+                      {basic.active ? <EyeOffIcon /> : <EyeIcon />}
                     </button>
                     <button
                       type="button"
-                      className="settings-mini-button settings-mini-button-danger"
+                      className="settings-icon-only danger"
                       onClick={() => {
                         if (window.confirm(`¿Eliminar "${basic.name}"?`)) void deleteBasic(basic.id);
                       }}
+                      aria-label={`Eliminar "${basic.name}"`}
+                      title="Eliminar"
                     >
-                      Eliminar
+                      <TrashIcon />
                     </button>
                   </div>
                 ) : null}
@@ -2005,9 +2027,11 @@ export default function SettingsPage() {
       <div className="kitchen-card kitchen-block-gap">
         <div className="settings-header">
           <div className="settings-header-avatar" style={{ background: selectedColor.background, color: selectedColor.text }}>{userInitials}</div>
-          <h1>Configuración</h1>
-          <p className="settings-header-name">{user?.displayName || "Usuario"}</p>
-          <p className="settings-header-meta">{roleLabel(user, isOwner, householdName || user?.householdName || "Mi household")}</p>
+          <div className="settings-header-body">
+            <h1>Configuración</h1>
+            <p className="settings-header-name">{user?.displayName || "Usuario"}</p>
+            <p className="settings-header-meta">{roleLabel(user, isOwner, householdName || user?.householdName || "Mi household")}</p>
+          </div>
         </div>
 
         {error ? <div className="kitchen-alert error">{error}</div> : null}

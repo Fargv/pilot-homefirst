@@ -42,14 +42,23 @@ async function resolveBasicsAccess(effectiveHouseholdId) {
 
 /**
  * Build the visibility filter for ingredients visible to a household.
+ *
+ * Uses `active: { $ne: false }` (not strict `active: true`) so that legacy
+ * MongoDB documents where the `active` field was never set (null/undefined)
+ * are correctly matched. Old documents only get `active: true` stamped on
+ * them when they are explicitly saved through the ingredient editor.
+ *
+ * Master-scope ingredients are matched without a householdId constraint
+ * because master docs may have the field absent (undefined) rather than
+ * stored as `null`.
  */
 function buildIngredientVisibilityFilter(effectiveHouseholdId, extra = {}) {
   return {
     ...extra,
     isArchived: { $ne: true },
-    active: true,
+    active: { $ne: false },
     $or: [
-      { scope: CATALOG_SCOPES.MASTER, householdId: null },
+      { scope: CATALOG_SCOPES.MASTER },
       { scope: CATALOG_SCOPES.HOUSEHOLD, householdId: effectiveHouseholdId },
       { scope: CATALOG_SCOPES.OVERRIDE, householdId: effectiveHouseholdId }
     ]
@@ -82,13 +91,31 @@ router.get("/", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const { basicsFeatureEnabled, plan } = await resolveBasicsAccess(effectiveHouseholdId);
 
-    // Only return basics linked to real ingredients
-    const basics = await HouseholdBasic.find({
+    // Populate ingredientId so we always return the freshest name/canonicalName,
+    // and can silently filter out basics whose underlying ingredient was deleted.
+    const rawBasics = await HouseholdBasic.find({
       householdId: effectiveHouseholdId,
       ingredientId: { $ne: null }
     })
       .sort({ order: 1, name: 1 })
+      .populate({ path: "ingredientId", select: "name canonicalName categoryId active isArchived" })
       .lean();
+
+    const basics = rawBasics
+      .map((b) => {
+        const ing = b.ingredientId && b.ingredientId._id ? b.ingredientId : null;
+        // Skip basics whose ingredient has been soft-deleted or archived
+        if (ing && (ing.active === false || ing.isArchived === true)) return null;
+        if (!ing) return b; // no populated ingredient — keep cached fields
+        return {
+          ...b,
+          ingredientId: ing._id,                    // restore ObjectId for serializeBasic
+          name: ing.name || b.name,
+          canonicalName: ing.canonicalName || b.canonicalName,
+          categoryId: ing.categoryId || b.categoryId
+        };
+      })
+      .filter(Boolean);
 
     return res.json({
       ok: true,

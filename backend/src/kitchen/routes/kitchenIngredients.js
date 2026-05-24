@@ -14,6 +14,7 @@ import {
 import { ensureDefaultCategory } from "../utils/categoryMatching.js";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
+import { HouseholdBasic } from "../models/HouseholdBasic.js";
 import { getWeekStart } from "../utils/dates.js";
 
 const router = express.Router();
@@ -112,6 +113,12 @@ async function syncIngredientReferences({ ingredientId, name, canonicalName, hou
     {
       arrayFilters: [{ "entry.ingredientId": ingredientId }]
     }
+  );
+
+  // Keep HouseholdBasic denormalized cache in sync with the ingredient name
+  await HouseholdBasic.updateMany(
+    { ingredientId },
+    { $set: { name, canonicalName } }
   );
 }
 
