@@ -8,6 +8,8 @@ import { useAuth } from "../auth";
 import { isUserLimitReachedError } from "../subscription.js";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 
+import { canUseDinnersFeature } from "../subscription.js";
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const BASIC_PLAN = "basic";
@@ -758,13 +760,16 @@ export default function ClerkOnboardingPage() {
                     />
                   </label>
 
-                  <Toggle
-                    id="su-dinners"
-                    label="Planificamos cenas"
-                    description="Actívalo si también queréis organizar cenas dentro del hogar."
-                    checked={form.dinnersEnabled}
-                    onChange={(v) => updateField("dinnersEnabled", v)}
-                  />
+                  {/* Dinner household preference — only show for Pro/Premium plans */}
+                  {canUseDinnersFeature(form.selectedPlan) ? (
+                    <Toggle
+                      id="su-dinners"
+                      label="Planificamos cenas"
+                      description="Actívalo si también queréis organizar cenas dentro del hogar."
+                      checked={form.dinnersEnabled}
+                      onChange={(v) => updateField("dinnersEnabled", v)}
+                    />
+                  ) : null}
 
                   <Toggle
                     id="su-avoidrepeats"
@@ -810,21 +815,26 @@ export default function ClerkOnboardingPage() {
                   onChange={(v) => updateField("canCook", v)}
                 />
 
-                <Toggle
-                  id="su-dinneractive"
-                  label="Contarme también en cenas"
-                  description="Si el hogar usa cenas, aparecerás por defecto en esa planificación."
-                  checked={form.dinnerActive}
-                  onChange={(v) => updateField("dinnerActive", v)}
-                />
-
-                <Toggle
-                  id="su-dinnercancook"
-                  label="Puedo cocinar cenas"
-                  description="También podrás ser asignado como cocinero en las cenas."
-                  checked={form.dinnerCanCook}
-                  onChange={(v) => updateField("dinnerCanCook", v)}
-                />
+                {/* Dinner personal prefs — only show when dinners are available for this plan
+                    and for join mode only when the destination household plan could support dinners */}
+                {(isCreateMode && canUseDinnersFeature(form.selectedPlan) && form.dinnersEnabled) || false ? (
+                  <>
+                    <Toggle
+                      id="su-dinneractive"
+                      label="Contarme también en cenas"
+                      description="Si el hogar usa cenas, aparecerás por defecto en esa planificación."
+                      checked={form.dinnerActive}
+                      onChange={(v) => updateField("dinnerActive", v)}
+                    />
+                    <Toggle
+                      id="su-dinnercancook"
+                      label="Puedo cocinar cenas"
+                      description="También podrás ser asignado como cocinero en las cenas."
+                      checked={form.dinnerCanCook}
+                      onChange={(v) => updateField("dinnerCanCook", v)}
+                    />
+                  </>
+                ) : null}
               </section>
 
               <div className="kitchen-onboarding-footer">

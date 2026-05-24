@@ -694,6 +694,8 @@ export default function ShoppingPage() {
       setQuickSuggestions([]);
       setQuickCategoryId("");
       quickInputRef.current?.focus();
+      // Selecting an existing item manually (not from a recipe) also counts as a manual add
+      notifyWeekly("manual_item_added");
     } catch (err) {
       setError(err.message || "No se pudo añadir el ingrediente a la lista.");
     } finally {

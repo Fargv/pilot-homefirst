@@ -1,7 +1,26 @@
 import React, { useState } from "react";
 import { useWeeklyChallenge } from "../../contexts/WeeklyChallengeContext.jsx";
 import { useOnboarding } from "../../contexts/OnboardingContext.jsx";
+import { useAuth } from "../../auth.jsx";
 import BitesIcon from "../BitesIcon.jsx";
+
+const COLLAPSED_KEY = "lunchfy_weekly_card_collapsed";
+
+function readCollapsedPref() {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeCollapsedPref(v) {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, v ? "1" : "0");
+  } catch {
+    // ignore
+  }
+}
 
 function TrophyIcon() {
   return (
@@ -37,6 +56,22 @@ function StarIcon() {
     <svg viewBox="0 0 20 20" fill="none" width={14} height={14}>
       <path d="M10 2l2.09 4.26L17 7.27l-3.5 3.41.83 4.82L10 13.25l-4.33 2.25.83-4.82L3 7.27l4.91-.71L10 2z"
         fill="#f59e0b" stroke="#f59e0b" strokeWidth="1" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={14} height={14}>
+      <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ChevronUpIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={14} height={14}>
+      <path d="m18 15-6-6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -138,19 +173,57 @@ function BonusRow({ bonus }) {
 export default function WeeklyChallengeCard() {
   const { state: weeklyState, rewardEvent, dismissReward } = useWeeklyChallenge();
   const { state: onboardingState } = useOnboarding();
-  const [collapsed, setCollapsed] = useState(false);
+  const { user } = useAuth();
+  const [collapsed, setCollapsed] = useState(readCollapsedPref);
+
+  const toggleCollapsed = (next) => {
+    writeCollapsedPref(next);
+    setCollapsed(next);
+  };
 
   if (!onboardingState || onboardingState.status !== "completed") return null;
   if (!weeklyState) return null;
 
+  // Normalize counters — backend now always sends totalCount + progressPercent,
+  // but compute locally as a safe fallback.
+  const completedCount = weeklyState.completedCount ?? 0;
+  const totalCount = weeklyState.totalCount ?? weeklyState.totalMainChallenges ?? 0;
+  const progressPercent = weeklyState.progressPercent
+    ?? (totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0);
+
+  // Pre-unlock Beta Pro hint: show for Basic users who haven't unlocked it yet
+  const plan = String(user?.subscriptionPlan || "basic").toLowerCase();
+  const planSource = user?.planSource || "";
+  const showBetaProHint = (plan === "basic") && planSource !== "beta_pro";
+  const weeklyAllDone = completedCount >= totalCount && totalCount > 0;
+
   if (collapsed) {
     return (
       <>
-        <button type="button" onClick={() => setCollapsed(false)} className="onboarding-guide-pill weekly-challenge-pill">
-          <TrophyIcon />
-          <span>{weeklyState.completedCount}/{weeklyState.totalCount}</span>
-          <BitesIcon size={12} />
-        </button>
+        <div className="weekly-challenge-slim" role="region" aria-label="Retos semanales">
+          <div className="weekly-challenge-slim-top">
+            <div className="weekly-challenge-slim-heading">
+              <TrophyIcon />
+              <span className="weekly-challenge-slim-title">Retos semanales</span>
+            </div>
+            <div className="weekly-challenge-slim-right">
+              <span className="weekly-challenge-slim-count">
+                {completedCount}/{totalCount} completados
+              </span>
+              <button
+                type="button"
+                onClick={() => toggleCollapsed(false)}
+                className="onboarding-guide-collapse-btn weekly-challenge-collapse-btn"
+                aria-label="Expandir retos semanales"
+              >
+                <ChevronDownIcon />
+              </button>
+            </div>
+          </div>
+          <div className="onboarding-progress onboarding-progress-compact weekly-challenge-progress-bar" style={{ marginBottom: 0 }}>
+            <div style={{ width: `${progressPercent}%` }} />
+          </div>
+        </div>
         {rewardEvent && <WeeklyRewardToast event={rewardEvent} onDismiss={dismissReward} />}
       </>
     );
@@ -165,21 +238,29 @@ export default function WeeklyChallengeCard() {
             <span>RETOS SEMANALES</span>
           </div>
           <div className="onboarding-guide-actions">
-            <span>{weeklyState.completedCount}/{weeklyState.totalCount}</span>
+            <span>{completedCount}/{totalCount}</span>
             <button
               type="button"
-              onClick={() => setCollapsed(true)}
+              onClick={() => toggleCollapsed(true)}
               className="onboarding-guide-minimize"
               aria-label="Minimizar"
             >
-              -
+              <ChevronUpIcon />
             </button>
           </div>
         </div>
 
-        <div className="onboarding-progress onboarding-progress-compact">
-          <div style={{ width: `${weeklyState.progressPercent}%` }} />
+        <div className="onboarding-progress onboarding-progress-compact weekly-challenge-progress-bar">
+          <div style={{ width: `${progressPercent}%` }} />
         </div>
+
+        {/* Pre-unlock Beta Pro hint (only for basic users before unlock) */}
+        {showBetaProHint && !weeklyAllDone && (
+          <div className="onboarding-beta-pro-hint weekly-beta-pro-hint">
+            <span className="onboarding-beta-pro-hint-icon">⭐</span>
+            <span>Completa el onboarding y todos los retos de tu primera semana para desbloquear <strong>Pro Beta</strong>.</span>
+          </div>
+        )}
 
         <div className="weekly-challenge-week-label">
           Semana {weeklyState.cycleWeekIndex} de 4

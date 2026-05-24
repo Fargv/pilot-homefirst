@@ -151,22 +151,57 @@ function getFirstName(displayName = "") {
   return String(displayName).trim().split(/\s+/)[0] || "";
 }
 
-function BetaProUnlockedToast({ onDismiss }) {
+function BetaProUnlockedModal({ onDismiss }) {
+  const navigate = useNavigate();
+
+  const handleGoSettings = () => {
+    onDismiss();
+    navigate("/kitchen/configuracion");
+  };
+
   return (
-    <div className="kitchen-beta-pro-toast" role="status" aria-live="polite">
-      <span className="kitchen-beta-pro-toast-icon">⭐</span>
-      <div className="kitchen-beta-pro-toast-body">
-        <strong>Has desbloqueado Pro Beta</strong>
-        <span>Pro Beta activo mientras participas en la beta.</span>
+    <div className="kitchen-beta-pro-modal-backdrop" onClick={onDismiss} role="dialog" aria-modal="true" aria-labelledby="beta-pro-modal-title">
+      <div className="kitchen-beta-pro-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="kitchen-beta-pro-modal-icon" aria-hidden="true">⭐</div>
+        <h2 className="kitchen-beta-pro-modal-title" id="beta-pro-modal-title">
+          ¡Enhorabuena!
+        </h2>
+        <p className="kitchen-beta-pro-modal-subtitle">
+          Has desbloqueado <strong>Pro Beta</strong>
+        </p>
+        <p className="kitchen-beta-pro-modal-body">
+          Tu acceso Pro Beta está activo durante el periodo de beta según las reglas vigentes.
+          Si la licencia no aparece de inmediato, recarga la página o contacta con el administrador.
+        </p>
+
+        <div className="kitchen-beta-pro-modal-features">
+          <p className="kitchen-beta-pro-modal-features-title">Con Pro Beta tienes acceso a:</p>
+          <ul className="kitchen-beta-pro-modal-features-list">
+            <li>🌙 Planificación de <strong>cenas</strong> (activar en ajustes del hogar)</li>
+            <li>🎲 Aleatorización de toda la semana de una vez</li>
+            <li>💰 Presupuesto semanal de la compra</li>
+            <li>👨‍👩‍👧‍👦 Hasta 8 miembros y 12 comensales</li>
+            <li>🥗 Filtros de dieta avanzados en la aleatorización</li>
+          </ul>
+        </div>
+
+        <div className="kitchen-beta-pro-modal-actions">
+          <button
+            type="button"
+            className="kitchen-ui-button kitchen-beta-pro-modal-cta"
+            onClick={handleGoSettings}
+          >
+            Ir a configuración
+          </button>
+          <button
+            type="button"
+            className="kitchen-button secondary kitchen-beta-pro-modal-close"
+            onClick={onDismiss}
+          >
+            Cerrar
+          </button>
+        </div>
       </div>
-      <button
-        type="button"
-        className="kitchen-beta-pro-toast-dismiss"
-        onClick={onDismiss}
-        aria-label="Cerrar"
-      >
-        ×
-      </button>
     </div>
   );
 }
@@ -481,7 +516,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
         )}
       />
       {betaProEvent ? (
-        <BetaProUnlockedToast onDismiss={dismissBetaProEvent} />
+        <BetaProUnlockedModal onDismiss={dismissBetaProEvent} />
       ) : null}
       <div className={`kitchen-container ${containerClassName}`.trim()}>
         <OnboardingBanner />

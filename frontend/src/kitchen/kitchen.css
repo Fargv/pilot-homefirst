@@ -1858,6 +1858,37 @@ body {
   margin-top: -4px;
 }
 
+/* Dinner activation hint for Pro users with dinners disabled */
+.kitchen-week-dinner-activate-hint {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  margin: 0 0 6px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(139, 92, 246, 0.06) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-secondary, #4b5563);
+  line-height: 1.4;
+}
+
+.kitchen-week-dinner-activate-link {
+  color: var(--hf-primary, #4f46e5);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.kitchen-week-dinner-activate-link:hover {
+  text-decoration: underline;
+}
+
+[data-theme="dark"] .kitchen-week-dinner-activate-hint {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.25);
+  color: var(--text-secondary);
+}
+
 .kitchen-week-header-actions-inline .kitchen-week-randomize-button,
 .kitchen-weekdays-utility-row .kitchen-week-randomize-button {
   min-height: 34px;
@@ -3438,6 +3469,38 @@ body {
 .kitchen-clerk-mount .cl-formResendCodeLink {
   color: var(--hf-primary);
   font-weight: 600;
+}
+
+/* ── Clerk OTP / verification-code digit inputs ──────────────────────────── */
+/* Ensure each digit box is properly sized and centered in both themes */
+.kitchen-clerk-mount .cl-otpCodeFieldInputs {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.kitchen-clerk-mount .cl-otpCodeFieldInput {
+  flex: 0 0 auto !important;
+  width: 44px !important;
+  height: 52px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  line-height: 52px !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+  /* prevent Clerk's internal absolute/relative positioning from misaligning text */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Remove any pseudo-element caret that can overlap the digit */
+.kitchen-clerk-mount .cl-otpCodeFieldInput::before,
+.kitchen-clerk-mount .cl-otpCodeFieldInput::after {
+  display: none !important;
 }
 
 @media (max-width: 520px) {
@@ -10417,6 +10480,125 @@ body {
   border-color: oklch(38% 0.1 58);
 }
 
+/* ── Beta Pro unlock modal ──────────────────────────────────────────────── */
+.kitchen-beta-pro-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(3px);
+  animation: betaProModalIn 0.22s ease-out;
+}
+
+.kitchen-beta-pro-modal {
+  background: var(--surface-elevated, #fff);
+  border-radius: 20px;
+  padding: 28px 24px 24px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.kitchen-beta-pro-modal-icon {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.kitchen-beta-pro-modal-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary, #111827);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.kitchen-beta-pro-modal-subtitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d97706;
+  margin: 0;
+}
+
+.kitchen-beta-pro-modal-body {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #4b5563);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.kitchen-beta-pro-modal-features {
+  width: 100%;
+  background: var(--surface-sunken, #f9fafb);
+  border-radius: 12px;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.kitchen-beta-pro-modal-features-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted, #6b7280);
+  margin: 0 0 8px;
+}
+
+.kitchen-beta-pro-modal-features-list {
+  margin: 0;
+  padding: 0 0 0 4px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.kitchen-beta-pro-modal-features-list li {
+  font-size: 13px;
+  color: var(--text-primary, #111827);
+  line-height: 1.4;
+}
+
+.kitchen-beta-pro-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.kitchen-beta-pro-modal-cta {
+  width: 100%;
+  min-height: 48px;
+  font-size: 1rem;
+}
+
+.kitchen-beta-pro-modal-close {
+  width: 100%;
+}
+
+@keyframes betaProModalIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+[data-theme="dark"] .kitchen-beta-pro-modal {
+  background: var(--surface-elevated, #1e2130);
+  border: 1px solid var(--border-soft, rgba(255,255,255,0.08));
+}
+
+[data-theme="dark"] .kitchen-beta-pro-modal-features {
+  background: var(--surface-sunken, rgba(0,0,0,0.2));
+}
+
 @media (max-width: 600px) {
   .kitchen-user { display: flex !important; }
   .kitchen-user-placeholder { display: none; }
@@ -12842,6 +13024,117 @@ body {
   font-size: 15px;
 }
 
+/* ── Slim collapsed state for onboarding/weekly panels ──────────────────── */
+.onboarding-guide-slim,
+.weekly-challenge-slim {
+  margin: 0 16px 10px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.onboarding-guide-slim {
+  background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+  border: 1.5px solid #c7d2fe;
+}
+
+.weekly-challenge-slim {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1.5px solid #86efac;
+}
+
+.onboarding-guide-slim-top,
+.weekly-challenge-slim-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.onboarding-guide-slim-heading,
+.weekly-challenge-slim-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.onboarding-guide-slim-title {
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.weekly-challenge-slim-title {
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.onboarding-guide-slim-right,
+.weekly-challenge-slim-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.onboarding-guide-slim-count,
+.weekly-challenge-slim-count {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.onboarding-guide-collapse-btn,
+.weekly-challenge-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+}
+
+.onboarding-guide-collapse-btn:hover,
+.weekly-challenge-collapse-btn:hover {
+  color: #6b7280;
+}
+
+/* Progress bar in slim state — override compact margin */
+.weekly-challenge-progress-bar {
+  background: #bbf7d0;
+}
+
+.weekly-challenge-progress-bar > div {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+/* ── Beta Pro hint note ─────────────────────────────────────────────────── */
+.onboarding-beta-pro-hint,
+.weekly-beta-pro-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: var(--text-secondary, #4b5563);
+  line-height: 1.45;
+}
+
+.onboarding-beta-pro-hint-icon {
+  flex-shrink: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .onboarding-guide-pill {
   position: fixed;
   right: 16px;
@@ -13517,6 +13810,57 @@ body {
   color: var(--warning-text);
 }
 
+/* Dark mode — slim collapsed panels */
+[data-theme="dark"] .onboarding-guide-slim {
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--hf-brand) 16%, transparent) 0%, transparent 42%),
+    linear-gradient(135deg, var(--surface-elevated) 0%, var(--card-bg) 100%);
+  border-color: color-mix(in srgb, var(--hf-brand) 28%, var(--border-soft));
+}
+
+[data-theme="dark"] .weekly-challenge-slim {
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--success-text) 14%, transparent) 0%, transparent 42%),
+    linear-gradient(135deg, var(--surface-elevated) 0%, var(--card-bg) 100%);
+  border-color: color-mix(in srgb, var(--success-text) 28%, var(--border-soft));
+}
+
+[data-theme="dark"] .onboarding-guide-slim-title {
+  color: var(--hf-brand-darker);
+}
+
+[data-theme="dark"] .weekly-challenge-slim-title {
+  color: var(--success-text);
+}
+
+[data-theme="dark"] .onboarding-guide-slim-count,
+[data-theme="dark"] .weekly-challenge-slim-count {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .onboarding-guide-collapse-btn,
+[data-theme="dark"] .weekly-challenge-collapse-btn {
+  color: var(--text-muted);
+}
+
+/* Dark mode — weekly challenge progress bar (green variant) */
+[data-theme="dark"] .weekly-challenge-progress-bar {
+  background: color-mix(in srgb, #16a34a 18%, var(--surface-muted));
+  border-color: color-mix(in srgb, #16a34a 22%, var(--border-soft));
+}
+
+[data-theme="dark"] .weekly-challenge-progress-bar > div {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+/* Dark mode — Beta Pro hint */
+[data-theme="dark"] .onboarding-beta-pro-hint,
+[data-theme="dark"] .weekly-beta-pro-hint {
+  background: rgba(251, 191, 36, 0.06);
+  border-color: rgba(251, 191, 36, 0.2);
+  color: var(--text-secondary);
+}
+
 [data-theme="dark"] .recipe-editor-wrap .ProseMirror {
   color: var(--text-primary);
 }
@@ -13616,6 +13960,24 @@ body {
   border-color: var(--input-border) !important;
   color: var(--input-text) !important;
   box-shadow: none !important;
+}
+
+/* Dark mode: OTP digit boxes */
+[data-theme="dark"] .kitchen-clerk-mount .cl-otpCodeFieldInputs {
+  background: transparent !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-otpCodeFieldInput {
+  background: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--input-text) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .kitchen-clerk-mount .cl-otpCodeFieldInput:focus {
+  background: var(--input-focus-bg) !important;
+  border-color: var(--input-focus-border) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--border-focus) 22%, transparent) !important;
 }
 
 [data-theme="dark"] .kitchen-clerk-mount .cl-formFieldInput::placeholder,

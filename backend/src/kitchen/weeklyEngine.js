@@ -51,8 +51,8 @@ const CYCLE_CHALLENGE_DEFS = [
   {
     key: "weekly_add_manual_shopping_item",
     title: "Añade un producto manual a la lista",
-    description: "",
-    guidance: "Tu lista también sirve para cosas del hogar. Ve a la lista de la compra y pulsa 'Añadir manualmente' para agregar algo como papel de cocina, friegasuelos o champú.",
+    description: "Tu lista también sirve para cosas del hogar. Añade a la lista algo como papel de cocina, friegasuelos o champú.",
+    guidance: "Tu lista también sirve para cosas del hogar. Añade a la lista algo como papel de cocina, friegasuelos o champú.",
     rewardBites: 10,
     triggerType: "manual_item_added",
     triggerCount: 1,
@@ -325,12 +325,19 @@ export async function getOrCreateCycleConfig() {
  */
 export async function seedWeeklyChallengeDefs() {
   for (const def of CYCLE_CHALLENGE_DEFS) {
-    const { key, triggerType, triggerCount, cycleWeek, cycleOrder, planCompatibility, active, ...content } = def;
+    const { key, triggerType, triggerCount, cycleWeek, cycleOrder, planCompatibility, active, guidance, description, ...insertOnly } = def;
     await WeeklyChallengeDef.updateOne(
       { key },
       {
-        $set: { triggerType, triggerCount, cycleWeek, cycleOrder, planCompatibility, active: active ?? true },
-        $setOnInsert: { key, ...content }
+        // Structural fields + content that should stay in sync with the code
+        $set: {
+          triggerType, triggerCount, cycleWeek, cycleOrder, planCompatibility,
+          active: active ?? true,
+          ...(guidance !== undefined ? { guidance } : {}),
+          ...(description !== undefined ? { description } : {})
+        },
+        // title, rewardBites only set on first insert
+        $setOnInsert: { key, ...insertOnly }
       },
       { upsert: true }
     );
@@ -821,13 +828,20 @@ export async function getWeeklyState(householdId) {
       .filter((c) => c.rewardGranted)
       .reduce((s, c) => s + (c.rewardBites || 0), 0);
 
+    const totalMainChallengesCount = mainChallenges.length;
+    const progressPercent = totalMainChallengesCount > 0
+      ? Math.round((completedCount / totalMainChallengesCount) * 100)
+      : 0;
+
     return {
       available: true,
       cycleWeekIndex,
       weekStart: weekStartISO,
       challenges: enrichedChallenges,
       completedCount,
-      totalMainChallenges: mainChallenges.length,
+      totalCount: totalMainChallengesCount,
+      totalMainChallenges: totalMainChallengesCount,
+      progressPercent,
       bonusChallenge: bonusChallenge
         ? {
           key: bonusChallenge.key,
