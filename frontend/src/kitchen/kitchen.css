@@ -15940,21 +15940,37 @@ body {
   margin-top: 4px;
 }
 
-.basics-row-card {
+/* ── Basics list row ─────────────────────────────────────────────────────────
+   These rules use extra specificity (.settings-block ancestor + two classes)
+   to override the generic @media(max-width:760px) rule that forces
+   .settings-row-card to flex-direction:column on mobile. Basics rows must
+   ALWAYS stay horizontal.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Compact card sizing — overrides the default settings-row-card 12px padding */
+.settings-row-card.basics-row-card {
+  padding: 8px 10px;
+  border-radius: 10px;
+  gap: 10px;
+}
+
+/* Force horizontal layout at ALL viewport widths (higher specificity than media rule) */
+.settings-block .settings-row-card.basics-row-card {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
 }
-.basics-row-card.is-inactive {
+.settings-block .settings-row-card.basics-row-card.is-inactive {
   opacity: 0.55;
 }
+
 .basics-row-main {
   display: flex;
   align-items: center;
   gap: 8px;
   flex: 1;
-  min-width: 0;
+  min-width: 0; /* lets text truncate instead of pushing icons off-screen */
 }
 .basics-row-emoji {
   font-size: 16px;
@@ -15965,6 +15981,9 @@ body {
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-primary, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .basics-row-inactive-badge {
   font-size: 10.5px;
@@ -15975,26 +15994,35 @@ body {
   padding: 1px 6px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 
-/* Icon-only action buttons in basics list */
+/* Icon-only action buttons — always horizontal, never full-width column */
 .basics-row-icon-actions {
   display: flex;
+  flex-direction: row; /* explicit: overrides .settings-row-actions mobile column rule */
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
+  width: auto;         /* overrides the mobile width:100% on .settings-row-actions */
 }
 .basics-row-icon-actions .settings-icon-only {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   display: grid;
   place-items: center;
-  opacity: 0.65;
+  flex-shrink: 0;
+  opacity: 0.6;
   transition: opacity 0.15s, background 0.15s;
+  border-radius: 8px;
 }
 .basics-row-icon-actions .settings-icon-only:hover {
   opacity: 1;
+}
+.basics-row-icon-actions .settings-icon-only:active {
+  opacity: 1;
+  background: var(--color-surface-raised, #f3f4f6);
 }
 .basics-row-icon-actions .settings-icon-only svg {
   width: 15px;
