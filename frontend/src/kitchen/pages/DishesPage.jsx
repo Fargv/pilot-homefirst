@@ -1291,21 +1291,24 @@ export default function DishesPage() {
                         <span>{dish.sourcePackTitle}</span>
                       </div>
                     ) : null}
+                    <button
+                      type="button"
+                      className={`kitchen-dish-random-chip${randomEnabled ? " is-enabled" : " is-disabled"}${toggleDisabled ? " is-loading" : ""}`}
+                      onClick={() => toggleDishAllowRandom(dish, !randomEnabled)}
+                      aria-label={randomEnabled ? "Excluir de randomización" : "Incluir en randomización"}
+                      title={randomEnabled ? "Excluir de randomización" : "Incluir en randomización"}
+                      disabled={toggleDisabled}
+                    >
+                      <svg viewBox="0 0 14 14" fill="none" width="12" height="12" aria-hidden="true">
+                        <rect x="0.75" y="0.75" width="12.5" height="12.5" rx="2.5" stroke="currentColor" strokeWidth="1.4" />
+                        <circle cx="4" cy="4" r="1.15" fill="currentColor" />
+                        <circle cx="7" cy="7" r="1.15" fill="currentColor" />
+                        <circle cx="10" cy="10" r="1.15" fill="currentColor" />
+                      </svg>
+                      <span>{randomEnabled ? "Randomizable" : "No randomizable"}</span>
+                    </button>
                   </div>
                   <div className="kitchen-dish-actions-bar">
-                    <label className={`kitchen-dish-random-toggle ${toggleDisabled ? "is-loading" : ""}`}>
-                      <span className="kitchen-dish-random-toggle-copy">Permitir en randomización</span>
-                      <span className="kitchen-toggle">
-                        <input
-                          type="checkbox"
-                          className="kitchen-toggle-input"
-                          checked={randomEnabled}
-                          disabled={toggleDisabled}
-                          onChange={(event) => toggleDishAllowRandom(dish, event.target.checked)}
-                        />
-                        <span className="kitchen-toggle-track" aria-hidden="true" />
-                      </span>
-                    </label>
                     <div className="kitchen-dish-actions">
                       <div className="kitchen-dish-info-wrap">
                         {(() => {

@@ -7167,22 +7167,73 @@ body {
   box-shadow: none;
 }
 
-.kitchen-dish-random-toggle {
+/* ── Randomization chip — compact interactive metadata tag ─────────── */
+.kitchen-dish-random-chip {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 26px;
-  color: var(--hf-text);
+  gap: 5px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease,
+              opacity 160ms ease, transform 120ms ease;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
 }
-
-.kitchen-dish-random-toggle-copy {
-  font-size: 12px;
-  font-weight: 700;
+.kitchen-dish-random-chip svg {
+  flex-shrink: 0;
+}
+/* Enabled state — soft violet/lavender */
+.kitchen-dish-random-chip.is-enabled {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #6d28d9;
+}
+/* Disabled state — neutral soft gray, lower emphasis */
+.kitchen-dish-random-chip.is-disabled {
+  background: #f4f7fc;
+  border-color: #dce4f0;
+  color: #94a3b8;
+}
+/* Loading (API in-flight) */
+.kitchen-dish-random-chip.is-loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+/* Tap feedback */
+.kitchen-dish-random-chip:active {
+  transform: scale(0.96);
+}
+@media (hover: hover) and (pointer: fine) {
+  .kitchen-dish-random-chip:hover {
+    transform: scale(1.04);
+  }
+  .kitchen-dish-random-chip.is-enabled:hover {
+    background: #ede9fe;
+    border-color: #c4b5fd;
+    color: #5b21b6;
+  }
+  .kitchen-dish-random-chip.is-disabled:hover {
+    background: #f0effe;
+    border-color: #ddd6fe;
+    color: #7c3aed;
+  }
+}
+/* Dark mode */
+[data-theme="dark"] .kitchen-dish-random-chip.is-enabled {
+  background: rgba(109, 40, 217, 0.12);
+  border-color: rgba(167, 139, 250, 0.3);
+  color: #a78bfa;
+}
+[data-theme="dark"] .kitchen-dish-random-chip.is-disabled {
+  background: var(--hf-surface-soft);
+  border-color: var(--hf-border);
   color: var(--hf-muted);
-}
-
-.kitchen-dish-random-toggle.is-loading {
-  opacity: 0.6;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -7213,11 +7264,6 @@ body {
 
   .kitchen-dish-card .kitchen-dish-actions-bar {
     padding-top: 10px;
-    justify-content: center;
-  }
-
-  .kitchen-dish-random-toggle {
-    width: 100%;
     justify-content: center;
   }
 }
@@ -14380,8 +14426,7 @@ body {
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .kitchen-dish-card.is-catalog .kitchen-card-subtitle,
-[data-theme="dark"] .kitchen-dish-card.is-catalog .kitchen-dish-random-toggle-copy {
+[data-theme="dark"] .kitchen-dish-card.is-catalog .kitchen-card-subtitle {
   color: var(--text-secondary);
 }
 
