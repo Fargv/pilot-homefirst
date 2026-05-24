@@ -1129,6 +1129,20 @@ body {
   box-shadow: 0 6px 12px rgba(180, 35, 24, 0.15);
 }
 
+.kitchen-icon-button.edit:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.15);
+}
+
+.kitchen-icon-button.duplicate:hover {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+  color: #5b21b6;
+  box-shadow: 0 6px 12px rgba(124, 58, 237, 0.15);
+}
+
 .kitchen-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -7109,14 +7123,43 @@ body {
   flex-shrink: 0;
 }
 
-/* ── Card action icon buttons: light-mode soft surface treatment ── */
+/* ── Card action icon buttons: Neo-Soft semantic pastel palette ────────────
+   All rules below have specificity 0-4-0.
+   Cascade order: generic fallback → semantic overrides → dark-mode reset.
+   The dark-mode reset sits LAST so it wins via source order at equal spec.  */
+
+/* Neutral gray fallback — covers info (no recipe) + any unclassified button */
 .kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button:not(.has-recipe) {
-  background: #f1f4f9;
+  background: #f4f7fc;
   border-color: #dce4f0;
-  color: #475569;
+  color: #64748b;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
-/* Dark-mode reset: restore system dark palette, must come after the light rule */
+/* Edit — soft blue */
+.kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button.edit {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+/* Duplicate — soft violet */
+.kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button.duplicate {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #7c3aed;
+}
+/* Assign — soft emerald */
+.kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button.assign {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #059669;
+}
+/* Danger — soft rose */
+.kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button.danger {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #e11d48;
+}
+/* Dark-mode reset — placed LAST, same specificity → wins via source order */
 [data-theme="dark"] .kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button {
   background: var(--button-secondary-bg);
   border-color: var(--border-soft);

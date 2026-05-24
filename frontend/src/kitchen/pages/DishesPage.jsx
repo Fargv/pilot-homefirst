@@ -1144,7 +1144,7 @@ export default function DishesPage() {
                           ) : null}
                         </div>
                         <button
-                          className="kitchen-icon-button"
+                          className="kitchen-icon-button edit"
                           type="button"
                           onClick={() => startIngredientEdit(ingredient)}
                           aria-label={`Editar ${ingredient.name}`}
@@ -1169,7 +1169,7 @@ export default function DishesPage() {
                           </svg>
                         </button>
                         <button
-                          className="kitchen-icon-button"
+                          className="kitchen-icon-button duplicate"
                           type="button"
                           onClick={() => duplicateIngredient(ingredient)}
                           aria-label={`Duplicar ${ingredient.name}`}
@@ -1365,7 +1365,7 @@ export default function DishesPage() {
                         })()}
                       </div>
                       <button
-                        className="kitchen-icon-button"
+                        className="kitchen-icon-button edit"
                         type="button"
                         onClick={() => startEdit(dish)}
                         aria-label={`Editar ${dish.name}`}
