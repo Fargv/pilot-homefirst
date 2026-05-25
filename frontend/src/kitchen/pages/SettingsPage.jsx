@@ -187,6 +187,7 @@ export default function SettingsPage() {
   const [householdNameDraft, setHouseholdNameDraft] = useState("");
   const [householdNameEditing, setHouseholdNameEditing] = useState(false);
   const [dinnersEnabled, setDinnersEnabled] = useState(false);
+  const [dinnersIncludeInShopping, setDinnersIncludeInShopping] = useState(false);
   const [avoidRepeatsEnabled, setAvoidRepeatsEnabled] = useState(false);
   const [avoidRepeatsWeeks, setAvoidRepeatsWeeks] = useState(1);
   const [monthlyBudget, setMonthlyBudget] = useState("");
@@ -490,6 +491,7 @@ export default function SettingsPage() {
       setHouseholdName(householdData?.household?.name || "");
       setHouseholdNameDraft(householdData?.household?.name || "");
       setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
+      setDinnersIncludeInShopping(Boolean(householdData?.household?.dinnersIncludeInShopping));
       setAvoidRepeatsEnabled(Boolean(householdData?.household?.avoidRepeatsEnabled));
       setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(householdData?.household?.avoidRepeatsWeeks));
       setMonthlyBudget(householdData?.household?.monthlyBudget === null || householdData?.household?.monthlyBudget === undefined ? "" : String(householdData.household.monthlyBudget));
@@ -722,6 +724,9 @@ export default function SettingsPage() {
     const nextDinnersEnabled = Object.prototype.hasOwnProperty.call(nextValues, "dinnersEnabled")
       ? Boolean(nextValues.dinnersEnabled)
       : Boolean(dinnersEnabled);
+    const nextDinnersIncludeInShopping = Object.prototype.hasOwnProperty.call(nextValues, "dinnersIncludeInShopping")
+      ? Boolean(nextValues.dinnersIncludeInShopping)
+      : Boolean(dinnersIncludeInShopping);
     const nextWeeks = clampAvoidRepeatWeeks(
       Object.prototype.hasOwnProperty.call(nextValues, "avoidRepeatsWeeks")
         ? nextValues.avoidRepeatsWeeks
@@ -756,6 +761,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           avoidRepeatsEnabled: nextEnabled,
           dinnersEnabled: nextDinnersEnabled,
+          ...(canUseDinners ? { dinnersIncludeInShopping: nextDinnersIncludeInShopping } : {}),
           avoidRepeatsWeeks: Number(nextWeeks),
           ...(budgetFeatureEnabled
             ? {
@@ -772,6 +778,7 @@ export default function SettingsPage() {
         })
       });
       setDinnersEnabled(Boolean(data?.household?.dinnersEnabled));
+      setDinnersIncludeInShopping(Boolean(data?.household?.dinnersIncludeInShopping));
       setAvoidRepeatsEnabled(Boolean(data?.household?.avoidRepeatsEnabled));
       setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(data?.household?.avoidRepeatsWeeks));
       setMonthlyBudget(data?.household?.monthlyBudget === null || data?.household?.monthlyBudget === undefined ? "" : String(data.household.monthlyBudget));
@@ -1550,6 +1557,36 @@ export default function SettingsPage() {
             </button>
           )}
         </div>
+
+        {/* ── Dinner shopping inclusion toggle ─────────────────────────── */}
+        {canUseDinners && dinnersEnabled ? (
+          <div className="settings-household-pref-row">
+            <div className="settings-household-pref-main">
+              <div className="settings-household-pref-title">
+                <span>🛒 Incluir cenas en la lista de la compra</span>
+              </div>
+              <p className="kitchen-muted">
+                {dinnersIncludeInShopping
+                  ? "Los ingredientes de cenas se añaden automáticamente a la lista semanal."
+                  : "Las cenas no generan productos en la lista de la compra."}
+              </p>
+            </div>
+            <label className="kitchen-toggle" aria-label="Incluir cenas en la lista de la compra">
+              <input
+                type="checkbox"
+                className="kitchen-toggle-input"
+                checked={dinnersIncludeInShopping}
+                disabled={householdPrefsSaving}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  setDinnersIncludeInShopping(checked);
+                  void saveHouseholdPreferences({ dinnersIncludeInShopping: checked });
+                }}
+              />
+              <span className="kitchen-toggle-track" />
+            </label>
+          </div>
+        ) : null}
 
         <div className="settings-household-pref-input-row">
           {budgetFeatureEnabled ? (

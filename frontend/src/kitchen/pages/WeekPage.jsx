@@ -243,6 +243,7 @@ export default function WeekPage() {
   const [categories, setCategories] = useState([]);
   const [dishCategories, setDishCategories] = useState([]);
   const [dinnersEnabled, setDinnersEnabled] = useState(false);
+  const [dinnersIncludeInShopping, setDinnersIncludeInShopping] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { notifyOnboarding("visit_week"); }, []);
@@ -486,6 +487,7 @@ export default function WeekPage() {
       setIsNavLoading(false);
       setWeekNotice(null);
       setSubscriptionPlan("basic");
+      setDinnersIncludeInShopping(false);
       setPlan(null);
       setDishes([]);
       setUsers([]);
@@ -529,6 +531,7 @@ export default function WeekPage() {
       if (requestSeq !== loadRequestSeqRef.current) return;
       setUsers(usersData.users || []);
       setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
+      setDinnersIncludeInShopping(Boolean(householdData?.household?.dinnersIncludeInShopping));
       setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
       hasEverLoadedRef.current = true;
       // Trigger slide-in animation for week navigation (not on initial load)
@@ -1173,10 +1176,12 @@ export default function WeekPage() {
     if (!dishId) return { proceed: true, include: false };
     const leftoversEnabled = Boolean(leftoversByDay?.[dayKey]?.enabled || day?.isLeftovers);
     if (leftoversEnabled && !forcePrompt) return { proceed: true, include: false };
+    // If the household has opted in to including dinner in shopping, skip the dialog
+    if (dinnersIncludeInShopping && !leftoversEnabled) return { proceed: true, include: true };
     const choice = await askDinnerShoppingChoice({ dayKey, dishName, target });
     if (choice === null) return { proceed: false, include: undefined };
     return { proceed: true, include: Boolean(choice) };
-  }, [askDinnerShoppingChoice, leftoversByDay]);
+  }, [askDinnerShoppingChoice, dinnersIncludeInShopping, leftoversByDay]);
 
   const applyMainDishSelection = useCallback(async (day, nextMainDishId, nextMainDishName = "") => {
     const dayKey = day?.date?.slice?.(0, 10);

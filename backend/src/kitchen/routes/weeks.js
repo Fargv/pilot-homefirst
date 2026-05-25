@@ -494,8 +494,11 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
     const mealType = normalizeMealType(req.query?.mealType || req.body?.mealType || "lunch");
 
+    let householdDinnersIncludeInShopping = false;
     if (isDinnerMeal(mealType)) {
-      const household = await Household.findById(effectiveHouseholdId).lean();
+      const household = await Household.findById(effectiveHouseholdId)
+        .select("subscriptionPlan dinnersIncludeInShopping")
+        .lean();
       if (!canUseDinnersFeature(household?.subscriptionPlan)) {
         return res.status(403).json({
           ok: false,
@@ -503,6 +506,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
           code: "DINNER_FEATURE_NOT_AVAILABLE"
         });
       }
+      householdDinnersIncludeInShopping = Boolean(household?.dinnersIncludeInShopping);
     }
 
     const day = findDayByDateAndMeal(plan, date, mealType);
@@ -633,11 +637,11 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       day.leftoversSourceDishId = null;
       day.leftoversSourceDishName = null;
       if (isDinnerMeal(mealType) && typeof includeMainIngredients !== "boolean") {
-        day.includeMainIngredients = false;
+        day.includeMainIngredients = householdDinnersIncludeInShopping;
       }
     }
     if (sideDishId && isDinnerMeal(mealType) && typeof includeSideIngredients !== "boolean") {
-      day.includeSideIngredients = false;
+      day.includeSideIngredients = householdDinnersIncludeInShopping;
     }
     if (typeof isLeftovers === "boolean" && isDinnerMeal(mealType)) {
       day.isLeftovers = isLeftovers;
@@ -991,9 +995,10 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     }
 
     const household = await Household.findById(effectiveHouseholdId)
-      .select("avoidRepeatsEnabled avoidRepeatsWeeks randomizationUseDietFilter randomizationDefaultDietPackIds")
+      .select("avoidRepeatsEnabled avoidRepeatsWeeks randomizationUseDietFilter randomizationDefaultDietPackIds dinnersIncludeInShopping")
       .lean();
     const avoidRepeatsEnabled = Boolean(household?.avoidRepeatsEnabled);
+    const dinnerIncludeInShopping = Boolean(household?.dinnersIncludeInShopping);
     const avoidRepeatsWeeks = normalizeAvoidRepeatsWeeks(household?.avoidRepeatsWeeks);
     const recentDishIds = avoidRepeatsEnabled
       ? await getRecentWeeksDishIds(effectiveHouseholdId, monday, avoidRepeatsWeeks, mealType)
@@ -1099,8 +1104,8 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       day.leftoversSourceMealType = null;
       day.leftoversSourceDishId = null;
       day.leftoversSourceDishName = null;
-      day.includeMainIngredients = isDinnerMeal(mealType) ? false : true;
-      day.includeSideIngredients = isDinnerMeal(mealType) ? false : true;
+      day.includeMainIngredients = isDinnerMeal(mealType) ? dinnerIncludeInShopping : true;
+      day.includeSideIngredients = isDinnerMeal(mealType) ? dinnerIncludeInShopping : true;
       applyAttendeesToDay(day, resolveDayAttendeeIds(day, defaultAttendeeIds, mealType));
       usedInCurrentWeek.add(pickedDishId);
       const pickedCategoryId = dishCategoryKey(candidateById.get(pickedDishId));

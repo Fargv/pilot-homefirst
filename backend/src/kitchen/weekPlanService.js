@@ -51,10 +51,11 @@ function hasMealSlot(plan, date, mealType) {
 
 async function ensureDinnerSlotsIfEnabled(plan, effectiveHouseholdId) {
   const household = await Household.findById(effectiveHouseholdId)
-    .select("dinnersEnabled")
+    .select("dinnersEnabled dinnersIncludeInShopping")
     .lean();
   if (!household?.dinnersEnabled) return plan;
 
+  const dinnerIncludeInShopping = Boolean(household?.dinnersIncludeInShopping);
   const members = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}))
     .select("_id active dinnerActive")
     .lean();
@@ -74,8 +75,8 @@ async function ensureDinnerSlotsIfEnabled(plan, effectiveHouseholdId) {
       attendeeCount: dinnerAttendees.length,
       cookTiming: "same_day",
       servings: 4,
-      includeMainIngredients: false,
-      includeSideIngredients: false,
+      includeMainIngredients: dinnerIncludeInShopping,
+      includeSideIngredients: dinnerIncludeInShopping,
       ingredientOverrides: []
     });
     changed = true;
@@ -112,13 +113,18 @@ export async function createOrGetWeekPlan(weekStartDate, effectiveHouseholdId) {
       .filter((member) => isActiveMember(member) && getMemberDinnerActive(member))
       .map((member) => String(member._id))
       .filter(Boolean);
-    const household = await Household.findById(effectiveHouseholdId).select("dinnersEnabled").lean();
+    const household = await Household.findById(effectiveHouseholdId)
+      .select("dinnersEnabled dinnersIncludeInShopping")
+      .lean();
     const dinnersEnabled = Boolean(household?.dinnersEnabled);
+    const dinnerIncludeInShopping = Boolean(household?.dinnersIncludeInShopping);
     const days = [
       ...buildDefaultDays(weekStartDate, lunchAttendeeIds, "lunch"),
       ...(dinnersEnabled ? buildDefaultDays(weekStartDate, dinnerAttendeeIds, "dinner").map((day) => ({
         ...day,
-        cookTiming: "same_day"
+        cookTiming: "same_day",
+        includeMainIngredients: dinnerIncludeInShopping,
+        includeSideIngredients: dinnerIncludeInShopping
       })) : [])
     ];
     const createdPlan = await KitchenWeekPlan.create({

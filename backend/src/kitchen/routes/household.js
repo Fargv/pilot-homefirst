@@ -29,7 +29,8 @@ import {
   buildHouseholdFeatureAvailability,
   buildHouseholdSubscriptionResponse,
   canUseBudgetFeature,
-  canUseDietRandomization
+  canUseDietRandomization,
+  canUseDinnersFeature
 } from "../subscriptionService.js";
 import {
   assertCanAddNonUserDinerToHousehold,
@@ -105,6 +106,7 @@ function buildHouseholdResponse(household, license = null) {
     inviteCode: household.inviteCode || null,
     ownerUserId: household.ownerUserId || null,
     dinnersEnabled: Boolean(household.dinnersEnabled),
+    dinnersIncludeInShopping: Boolean(household.dinnersIncludeInShopping),
     avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
     avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks),
     monthlyBudget: budgetFeatureEnabled && Number.isFinite(Number(household.monthlyBudget))
@@ -245,7 +247,7 @@ router.get("/summary", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin randomizationUseDietFilter randomizationDefaultDietPackIds stripeSubscriptionId stripeCustomerId paymentProvider paymentMode planUpdatedAt")
+      .select("_id name inviteCode ownerUserId dinnersEnabled dinnersIncludeInShopping avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin randomizationUseDietFilter randomizationDefaultDietPackIds stripeSubscriptionId stripeCustomerId paymentProvider paymentMode planUpdatedAt")
       .lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
@@ -338,6 +340,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
 
     const incomingEnabled = req.body?.avoidRepeatsEnabled;
     const incomingDinnersEnabled = req.body?.dinnersEnabled;
+    const incomingDinnersIncludeInShopping = req.body?.dinnersIncludeInShopping;
     const parsedEnabled = incomingEnabled === undefined
       ? { ok: true, value: Boolean(household.avoidRepeatsEnabled) }
       : parseBooleanInput(incomingEnabled);
@@ -349,6 +352,20 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       : parseBooleanInput(incomingDinnersEnabled);
     if (!parsedDinnersEnabled.ok) {
       return res.status(400).json({ ok: false, error: "dinnersEnabled debe ser booleano." });
+    }
+    const dinnersFeatureEnabled = canUseDinnersFeature(household?.subscriptionPlan);
+    const parsedDinnersIncludeInShopping = incomingDinnersIncludeInShopping === undefined
+      ? { ok: true, value: Boolean(household.dinnersIncludeInShopping) }
+      : parseBooleanInput(incomingDinnersIncludeInShopping);
+    if (!parsedDinnersIncludeInShopping.ok) {
+      return res.status(400).json({ ok: false, error: "dinnersIncludeInShopping debe ser booleano." });
+    }
+    if (!dinnersFeatureEnabled && incomingDinnersIncludeInShopping !== undefined) {
+      return res.status(403).json({
+        ok: false,
+        code: "DINNER_FEATURE_NOT_AVAILABLE",
+        message: "La opción de incluir cenas en la lista está disponible solo para planes Pro y Premium."
+      });
     }
 
     const parsedWeeks = parseWeeksInput(req.body?.avoidRepeatsWeeks);
@@ -421,6 +438,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
         $set: {
           avoidRepeatsEnabled: parsedEnabled.value,
           dinnersEnabled: parsedDinnersEnabled.value,
+          dinnersIncludeInShopping: parsedDinnersIncludeInShopping.value,
           avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(nextWeeks),
           monthlyBudget: parsedBudget.value,
           cycleStartDay: parsedCycleStartDay.value,
