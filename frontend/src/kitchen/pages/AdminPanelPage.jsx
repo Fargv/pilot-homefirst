@@ -11,12 +11,12 @@ import { normalizeIngredientName } from "../utils/normalize.js";
 import { resolvePackCoverImageUrl } from "../utils/packImages.js";
 import BitesIcon from "../components/BitesIcon.jsx";
 
-// ── Shared admin-light button styles ─────────────────────────────────────────
+// ── Shared admin button styles — use CSS vars so they adapt to light/dark mode ─
 const ABT = {  // admin button themes
-  edit:   { fontSize: 12, padding: "3px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#f8fafc", color: "#374151", cursor: "pointer", fontWeight: 500 },
+  edit:   { fontSize: 12, padding: "3px 12px", borderRadius: 6, border: "1px solid var(--hf-border, #cbd5e1)", background: "var(--surface-muted, #f8fafc)", color: "var(--input-text, #374151)", cursor: "pointer", fontWeight: 500 },
   del:    { fontSize: 12, padding: "3px 12px", borderRadius: 6, border: "1px solid #fca5a5", background: "#fff8f8", color: "#b42318", cursor: "pointer", fontWeight: 500 },
   save:   { fontSize: 13, padding: "7px 18px", borderRadius: 6, border: "none", background: "#4338ca", color: "#fff", cursor: "pointer", fontWeight: 600 },
-  cancel: { fontSize: 13, padding: "7px 14px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#f1f5f9", color: "#374151", cursor: "pointer" },
+  cancel: { fontSize: 13, padding: "7px 14px", borderRadius: 6, border: "1px solid var(--hf-border, #e2e8f0)", background: "var(--surface-muted, #f1f5f9)", color: "var(--input-text, #374151)", cursor: "pointer" },
   green:  { fontSize: 12, padding: "3px 12px", borderRadius: 6, border: "1px solid #86efac", background: "#f0fdf4", color: "#15803d", cursor: "pointer", fontWeight: 500 }
 };
 
@@ -615,14 +615,14 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
   const dishIngredientNames = dishIngredients.map((i) => (i.displayName || "").toLowerCase());
 
   return (
-    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-      <h4 style={{ margin: "0 0 14px", fontSize: 15, color: "#1e293b", fontWeight: 700 }}>
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 14px", fontSize: 15, color: "var(--input-text, #1e293b)", fontWeight: 700 }}>
         {isEdit ? `✏️ Editar: ${item.name}` : "➕ Nuevo plato master"}
       </h4>
       <form onSubmit={handleSubmit}>
 
         {/* ── Basic info ── */}
-        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 14, marginBottom: 14 }}>
+        <div style={{ background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8, padding: 14, marginBottom: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Información básica</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "flex-end" }}>
             <div style={{ flex: "1 1 200px" }}>
@@ -654,9 +654,9 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
         </div>
 
         {/* ── Dish ingredients ── */}
-        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 14, marginBottom: 14 }}>
+        <div style={{ background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8, padding: 14, marginBottom: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-            Ingredientes del plato <span style={{ fontWeight: 400, color: "#9ca3af", fontSize: 11 }}>(lista de la compra)</span>
+            Ingredientes del plato <span style={{ fontWeight: 400, color: "var(--input-text, #9ca3af)", opacity: 0.55, fontSize: 11 }}>(lista de la compra)</span>
           </div>
 
           {/* Chips */}
@@ -686,12 +686,12 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
               value={ingSearch}
               onChange={(e) => { setIngSearch(e.target.value); setShowCreateIng(false); }}
               placeholder="🔍 Buscar ingrediente para añadir..."
-              style={{ width: "100%", boxSizing: "border-box", padding: "7px 11px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", background: "#fff", outline: "none" }}
+              style={{ width: "100%", boxSizing: "border-box", padding: "7px 11px", fontSize: 13, borderRadius: 6, border: "1px solid var(--input-border, #d1d5db)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)", outline: "none" }}
             />
             {ingSearch.trim() && (
               <div style={{
                 position: "absolute", top: "100%", left: 0, right: 0, marginTop: 2,
-                background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
+                background: "var(--dropdown-bg, #fff)", border: "1px solid var(--hf-border, #e5e7eb)", borderRadius: 8,
                 boxShadow: "0 6px 20px rgba(0,0,0,0.12)", zIndex: 50, maxHeight: 200, overflowY: "auto"
               }}>
                 {ingSearching && <div style={{ padding: "10px 14px", fontSize: 12, color: "#9ca3af" }}>Buscando...</div>}
@@ -763,7 +763,7 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
           </button>
 
           {showRecipe && (
-            <div style={{ background: "#fff", border: "1px solid #c7d2fe", borderRadius: "0 0 8px 8px", padding: 14, borderTop: "none" }}>
+            <div style={{ background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: "0 0 8px 8px", padding: 14, borderTop: "none" }}>
               <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
                 <label style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
                   Raciones:
@@ -986,8 +986,8 @@ function IngredientForm({ item, ingredientCategories, onSave, onCancel }) {
   const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
 
   return (
-    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 8, padding: 16, marginBottom: 16 }}>
-      <h4 style={{ margin: "0 0 12px", fontSize: 14, color: "#1e293b" }}>
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 12px", fontSize: 14, color: "var(--input-text, #1e293b)" }}>
         {isEdit ? `Editar: ${item.name}` : "Nuevo ingrediente master"}
       </h4>
       <form onSubmit={handleSubmit}>
@@ -1200,7 +1200,7 @@ function MasterCatalogSection() {
 
 const INCLUDED_PLANS_OPTIONS = ["basic", "pro", "premium"];
 
-const FS = { width: "100%", boxSizing: "border-box", padding: "5px 8px", fontSize: 12, borderRadius: 4, border: "1px solid #d1d5db" };
+const FS = { width: "100%", boxSizing: "border-box", padding: "5px 8px", fontSize: 12, borderRadius: 4, border: "1px solid var(--input-border, #d1d5db)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)" };
 
 function IngredientSearchInput({ value, onChange }) {
   const [query, setQuery] = useState(value?.displayName || "");
@@ -1282,8 +1282,8 @@ function IngredientSearchInput({ value, onChange }) {
   const isLinked = Boolean(value?.ingredientId);
   const hasName = Boolean(value?.canonicalName);
   const isSelected = isLinked || results.some((ing) => String(ing.id) === String(value?.ingredientId || ""));
-  const borderColor = isLinked ? "#6366f1" : (hasName ? "#f59e0b" : "#d1d5db");
-  const bgColor = isLinked ? "#f5f3ff" : (hasName ? "#fffbeb" : "#fff");
+  const borderColor = isLinked ? "#6366f1" : (hasName ? "#f59e0b" : "var(--input-border, #d1d5db)");
+  const bgColor = isLinked ? "#f5f3ff" : (hasName ? "#fffbeb" : "var(--input-bg, #fff)");
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
@@ -1297,11 +1297,11 @@ function IngredientSearchInput({ value, onChange }) {
       {!isLinked && hasName && <span style={{ fontSize: 10, color: "#b45309", display: "block", marginTop: 1 }}>⚠ sin vincular al master</span>}
       {createSuccess ? <span style={{ fontSize: 10, color: "#047857", display: "block", marginTop: 2 }}>{createSuccess}</span> : null}
       {results.length > 0 && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, zIndex: 20, maxHeight: 160, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--dropdown-bg, #fff)", border: "1px solid var(--hf-border, #d1d5db)", borderRadius: 6, zIndex: 20, maxHeight: 160, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}>
           {results.map((ing) => (
             <div key={String(ing.id)} onMouseDown={() => select(ing)}
-              style={{ padding: "6px 10px", cursor: "pointer", fontSize: 12, borderBottom: "1px solid #f3f4f6" }}>
-              <strong>{ing.name}</strong> <span style={{ color: "#9ca3af", fontSize: 11 }}>{ing.canonicalName}</span>
+              style={{ padding: "6px 10px", cursor: "pointer", fontSize: 12, borderBottom: "1px solid var(--hf-border, #f3f4f6)", color: "var(--input-text, #111827)" }}>
+              <strong>{ing.name}</strong> <span style={{ color: "var(--input-text, #9ca3af)", opacity: 0.55, fontSize: 11 }}>{ing.canonicalName}</span>
             </div>
           ))}
         </div>
@@ -1328,7 +1328,7 @@ function IngredientSearchInput({ value, onChange }) {
           {createError ? <div style={{ color: "#b42318", fontSize: 11, marginBottom: 5 }}>{createError}</div> : null}
           {duplicateIngredient ? (
             <button type="button" onMouseDown={(event) => { event.preventDefault(); select(duplicateIngredient); }}
-              style={{ fontSize: 11, padding: "3px 10px", background: "#fff", color: "#4338ca", border: "1px solid #c7d2fe", borderRadius: 4, cursor: "pointer", marginBottom: 5 }}>
+              style={{ fontSize: 11, padding: "3px 10px", background: "var(--card-bg, #fff)", color: "#4338ca", border: "1px solid #c7d2fe", borderRadius: 4, cursor: "pointer", marginBottom: 5 }}>
               Vincular a {duplicateIngredient.name}
             </button>
           ) : null}
@@ -1415,10 +1415,10 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
         </div>
       )}
       {dishes.map((dish, i) => (
-        <div key={i} style={{ border: "1px solid #e0e7ff", borderRadius: 8, marginBottom: 6, background: "#fafbff" }}>
+        <div key={i} style={{ border: "1px solid var(--hf-border, #e0e7ff)", borderRadius: 8, marginBottom: 6, background: "var(--card-bg, #fafbff)" }}>
           <div style={{ display: "flex", alignItems: "center", padding: "8px 12px", cursor: "pointer", gap: 8 }}
             onClick={() => setExpanded((ex) => ex === i ? null : i)}>
-            <span style={{ flex: 1, fontWeight: 600, fontSize: 13, color: expanded === i ? "#6366f1" : "#1e293b" }}>
+            <span style={{ flex: 1, fontWeight: 600, fontSize: 13, color: expanded === i ? "#6366f1" : "var(--input-text, #1e293b)" }}>
               {dish.name || <em style={{ color: "#9ca3af" }}>Plato sin nombre</em>}
             </span>
             <span style={{ fontSize: 11, color: "#9ca3af" }}>
@@ -1430,7 +1430,7 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
             ) : null}
           </div>
           {expanded === i && (
-            <div style={{ padding: "0 12px 12px", borderTop: "1px solid #e0e7ff" }}>
+            <div style={{ padding: "0 12px 12px", borderTop: "1px solid var(--hf-border, #e0e7ff)" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10, marginBottom: 6 }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500 }}>
                   Nombre del plato *
@@ -1680,13 +1680,13 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, onSaved, baseBitePri
     finally { setSaving(false); }
   };
 
-  const fieldStyle = { width: "100%", boxSizing: "border-box", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", outline: "none" };
-  const labelStyle = { display: "flex", flexDirection: "column", gap: 3, fontSize: 13, color: "#374151", fontWeight: 500 };
+  const fieldStyle = { width: "100%", boxSizing: "border-box", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--input-border, #d1d5db)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)", outline: "none" };
+  const labelStyle = { display: "flex", flexDirection: "column", gap: 3, fontSize: 13, color: "var(--input-text, #374151)", fontWeight: 500 };
   const coverPreviewUrl = resolvePackCoverImageUrl(form.coverImage);
 
   return (
-    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-      <h4 style={{ margin: "0 0 16px", fontSize: 15, color: "#1e293b", fontWeight: 700 }}>
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 16px", fontSize: 15, color: "var(--input-text, #1e293b)", fontWeight: 700 }}>
         {isEdit ? `✏️ Editar: ${item.title}` : "➕ Nuevo pack de catálogo"}
       </h4>
       <form
@@ -2023,17 +2023,19 @@ function IngredientSearchSelector({ onSelect, disabled }) {
       />
       {loading && <span style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: "#94a3b8" }}>...</span>}
       {open && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, zIndex: 20, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--dropdown-bg, #fff)", border: "1px solid var(--hf-border, #d1d5db)", borderRadius: 6, zIndex: 20, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}>
           {results.length === 0
-            ? <div style={{ padding: "8px 10px", fontSize: 12, color: "#94a3b8" }}>Sin resultados</div>
+            ? <div style={{ padding: "8px 10px", fontSize: 12, color: "var(--input-text, #94a3b8)", opacity: 0.6 }}>Sin resultados</div>
             : results.map((ing) => (
               <button
                 key={ing.id}
                 type="button"
-                style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 10px", fontSize: 12, background: "none", border: "none", borderBottom: "1px solid #f3f4f6", cursor: "pointer" }}
+                style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 10px", fontSize: 12, background: "none", border: "none", borderBottom: "1px solid var(--hf-border, #f3f4f6)", cursor: "pointer", color: "var(--input-text, #1e293b)" }}
                 onMouseDown={() => pick(ing)}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--dropdown-hover-bg, #f5f7ff)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
               >
-                {ing.name} <span style={{ color: "#94a3b8", fontSize: 11 }}>{ing.canonicalName}</span>
+                {ing.name} <span style={{ color: "var(--input-text, #94a3b8)", opacity: 0.55, fontSize: 11 }}>{ing.canonicalName}</span>
               </button>
             ))}
         </div>
@@ -2154,12 +2156,12 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
     finally { setRowBusy("publish", false); }
   };
 
-  const metricStyle = { padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff" };
-  const labelStyle = { fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.04em" };
-  const valueStyle = { fontSize: 20, color: "#111827", fontWeight: 800, marginTop: 3 };
+  const metricStyle = { padding: "10px 12px", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8, background: "var(--card-bg, #fff)" };
+  const labelStyle = { fontSize: 11, color: "var(--input-text, #64748b)", opacity: 0.65, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.04em" };
+  const valueStyle = { fontSize: 20, color: "var(--input-text, #111827)", fontWeight: 800, marginTop: 3 };
 
   return (
-    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 18, marginBottom: 16 }}>
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 10, padding: 18, marginBottom: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
         <div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
@@ -2256,7 +2258,7 @@ function PackReviewPanel({ pack, onClose, onPackUpdated }) {
             {dishIssues.map((issue) => {
               const dishBusy = isRowBusy(`dish-${issue.key}`);
               return (
-                <div key={issue.key} style={{ display: "grid", gridTemplateColumns: "1fr minmax(180px, 260px)", gap: 10, alignItems: "center", padding: 10, border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff" }}>
+                <div key={issue.key} style={{ display: "grid", gridTemplateColumns: "1fr minmax(180px, 260px)", gap: 10, alignItems: "center", padding: 10, border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8, background: "var(--card-bg, #fff)" }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 13 }}>{issue.dishName}</div>
                     <div style={{ fontSize: 11, color: "#64748b" }}>Plato #{Number(issue.dishIndex) + 1}</div>
@@ -2313,12 +2315,12 @@ function ActionsMenu({ label = "Acciones", items = [], disabled = false }) {
       {open && (
         <div style={{
           position: "absolute", right: 0, top: "calc(100% + 4px)",
-          background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8,
+          background: "var(--dropdown-bg, #fff)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8,
           boxShadow: "0 8px 28px rgba(0,0,0,0.13)", minWidth: 200, zIndex: 200, overflow: "hidden"
         }}>
           {items.map((item, i) =>
             item.divider ? (
-              <div key={`div-${i}`} style={{ borderTop: "1px solid #f1f5f9", margin: "2px 0" }} />
+              <div key={`div-${i}`} style={{ borderTop: "1px solid var(--hf-border, #f1f5f9)", margin: "2px 0" }} />
             ) : item.content ? (
               <div key={item.key || `content-${i}`}>{item.content}</div>
             ) : (
@@ -2331,11 +2333,12 @@ function ActionsMenu({ label = "Acciones", items = [], disabled = false }) {
                   display: "block", width: "100%", textAlign: "left",
                   padding: "9px 14px", fontSize: 13,
                   fontWeight: item.danger ? 600 : 400,
-                  color: item.disabled ? "#9ca3af" : item.danger ? "#b42318" : item.highlight ? "#4338ca" : "#374151",
+                  color: item.disabled ? "var(--input-text, #9ca3af)" : item.danger ? "#b42318" : item.highlight ? "#4338ca" : "var(--input-text, #374151)",
+                  opacity: item.disabled ? 0.45 : 1,
                   background: "none", border: "none",
                   cursor: item.disabled ? "not-allowed" : "pointer",
                 }}
-                onMouseEnter={(e) => { if (!item.disabled) e.currentTarget.style.background = "#f8fafc"; }}
+                onMouseEnter={(e) => { if (!item.disabled) e.currentTarget.style.background = "var(--dropdown-hover-bg, #f8fafc)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
               >
                 {item.label}
@@ -2353,9 +2356,9 @@ function ActionsMenu({ label = "Acciones", items = [], disabled = false }) {
 function ConfirmModal({ title, body, confirmLabel = "Confirmar", danger = false, onConfirm, onCancel }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: 380, maxWidth: "95vw", boxShadow: "0 16px 48px rgba(0,0,0,0.18)" }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 15 }}>{title}</h3>
-        {body ? <p style={{ margin: "0 0 20px", fontSize: 13, color: "#6b7280", lineHeight: 1.5 }}>{body}</p> : null}
+      <div style={{ background: "var(--modal-bg, #fff)", border: "1px solid var(--modal-border, transparent)", borderRadius: 12, padding: 28, width: 380, maxWidth: "95vw", boxShadow: "0 16px 48px rgba(0,0,0,0.18)" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 15, color: "var(--input-text, #111827)" }}>{title}</h3>
+        {body ? <p style={{ margin: "0 0 20px", fontSize: 13, color: "var(--input-text, #6b7280)", opacity: 0.7, lineHeight: 1.5 }}>{body}</p> : null}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button type="button" style={ABT.cancel} onClick={onCancel}>Cancelar</button>
           <button
@@ -2443,9 +2446,9 @@ function HouseholdPacksModal({ household, onClose }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", borderRadius: 12, width: 620, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "88vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ background: "var(--modal-bg, #fff)", border: "1px solid var(--modal-border, transparent)", borderRadius: 12, width: 620, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "88vh", display: "flex", flexDirection: "column" }}>
 
-        <div style={{ padding: "20px 24px 14px", borderBottom: "1px solid #e5e7eb", flexShrink: 0 }}>
+        <div style={{ padding: "20px 24px 14px", borderBottom: "1px solid var(--hf-border, #e5e7eb)", flexShrink: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <h3 style={{ margin: 0, fontSize: 16 }}>Packs — {household.name}</h3>
@@ -2573,9 +2576,9 @@ function GrantModal({ pack, households, onGrant, onClose }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: 420, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-        <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>Conceder acceso al pack</h3>
-        <p style={{ margin: "0 0 18px", fontSize: 13, color: "#64748b" }}>Pack: <strong>{pack.title}</strong></p>
+      <div style={{ background: "var(--modal-bg, #fff)", border: "1px solid var(--modal-border, transparent)", borderRadius: 12, padding: 28, width: 420, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <h3 style={{ margin: "0 0 4px", fontSize: 16, color: "var(--input-text, #111827)" }}>Conceder acceso al pack</h3>
+        <p style={{ margin: "0 0 18px", fontSize: 13, color: "var(--input-text, #64748b)", opacity: 0.7 }}>Pack: <strong>{pack.title}</strong></p>
 
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, marginBottom: 10 }}>
           Seleccionar household
@@ -2593,7 +2596,7 @@ function GrantModal({ pack, households, onGrant, onClose }) {
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, marginBottom: 14 }}>
           O introduce el ID directamente
           <input
-            style={{ padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", outline: "none" }}
+            style={{ padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--input-border, #d1d5db)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)", outline: "none" }}
             value={householdId}
             onChange={(e) => setHouseholdId(e.target.value)}
             placeholder="MongoDB ObjectId..."
@@ -3042,7 +3045,7 @@ function CatalogPacksSection() {
 
     {/* ── Edit overlay ────────────────────────────────────────────────────── */}
     {panelState?.mode === "edit" && (
-      <div style={{ position: "fixed", inset: 0, zIndex: 800, display: "flex", flexDirection: "column", background: "#f8fafc" }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: 800, display: "flex", flexDirection: "column", background: "var(--surface-muted, #f8fafc)" }}>
         <div style={{ background: "#1e1b4b", color: "#e0e7ff", padding: "0 20px", height: 50, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
             <span style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -3093,7 +3096,7 @@ function CatalogPacksSection() {
 
     {/* ── Review overlay ───────────────────────────────────────────────────── */}
     {panelState?.mode === "review" && (
-      <div style={{ position: "fixed", inset: 0, zIndex: 800, display: "flex", flexDirection: "column", background: "#f8fafc" }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: 800, display: "flex", flexDirection: "column", background: "var(--surface-muted, #f8fafc)" }}>
         <div style={{ background: "#312e81", color: "#c7d2fe", padding: "0 20px", height: 38, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ opacity: 0.6 }}>Catálogo</span>
@@ -3343,7 +3346,7 @@ function BitesEconomySection() {
             { key: "pro", label: "Pro", maxKey: "maxPro" },
             { key: "premium", label: "Premium", maxKey: "maxPremium" }
           ].map(({ key, label, maxKey }) => (
-            <div key={key} style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
+            <div key={key} style={{ background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "12px 14px", border: "1px solid var(--hf-border, #e2e8f0)" }}>
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>{label}</div>
               <label style={{ fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><BitesIcon size={13} decorative /> Bites/mes</label>
               <input
@@ -3484,7 +3487,7 @@ function BitesEconomySection() {
                     Activo
                   </label>
                 </div>
-                <div style={{ gridColumn: "1 / -1", background: "#fff", border: "1px solid #e0e7ff", borderRadius: 6, padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={{ gridColumn: "1 / -1", background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #e0e7ff)", borderRadius: 6, padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700 }}>
                     <input
                       type="checkbox"
@@ -3549,7 +3552,7 @@ function BitesEconomySection() {
                   </div>
                 )}
                 {bundleAmt > 0 && (
-                  <div style={{ gridColumn: "1 / -1", background: "#fff", border: "1px solid #e0e7ff", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#374151", display: "flex", gap: 16, flexWrap: "wrap" }}>
+                  <div style={{ gridColumn: "1 / -1", background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #e0e7ff)", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "var(--input-text, #374151)", display: "flex", gap: 16, flexWrap: "wrap" }}>
                     <span><strong>{bundleAmt} Bites</strong></span>
                     <span>Valor base: <strong>{baseValue.toFixed(2).replace(".", ",")} €</strong></span>
                     <span>Precio final: <strong>{finalPrice.toFixed(2).replace(".", ",")} €</strong></span>
@@ -3637,8 +3640,8 @@ function BitesEconomySection() {
           const hh = households.find((h) => String(h.id) === String(grantForm.householdId));
           if (!hh) return null;
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 10, padding: "8px 12px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8 }}>
-              <span style={{ fontSize: 12, color: "#374151" }}><strong>{hh.name}</strong> — saldo actual:</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 10, padding: "8px 12px", background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8 }}>
+              <span style={{ fontSize: 12, color: "var(--input-text, #374151)" }}><strong>{hh.name}</strong> — saldo actual:</span>
               <span style={{ fontSize: 12, color: "#4f46e5", fontWeight: 600 }}>
                 <BitesIcon size={12} decorative /> {hh.freeBitesBalance ?? 0} gratuitos
               </span>
@@ -3842,7 +3845,7 @@ function PlansSection() {
           const entry = form[planKey];
           const envPriceId = cfg?.[planKey]?.envStripePriceId || "";
           return (
-            <div key={planKey} style={{ border: "1px solid #e2e8f0", borderRadius: 10, padding: 18, background: "#fafafa" }}>
+            <div key={planKey} style={{ border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 10, padding: 18, background: "var(--card-bg, #fafafa)" }}>
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14, color: "#312e81" }}>
                 {PLAN_DISPLAY[planKey]}
               </div>
@@ -3981,8 +3984,8 @@ function DishCategoryForm({ item, onSave, onCancel }) {
   };
 
   return (
-    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 18, marginBottom: 16 }}>
-      <h4 style={{ margin: "0 0 14px", fontSize: 14, color: "#1e293b", fontWeight: 700 }}>
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 10, padding: 18, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 14px", fontSize: 14, color: "var(--input-text, #1e293b)", fontWeight: 700 }}>
         {isNew ? "Nueva categoría de plato" : `Editar: ${item.name}`}
       </h4>
       <form onSubmit={handleSubmit}>
@@ -4172,8 +4175,8 @@ function IngredientCategoryForm({ item, onSave, onCancel }) {
   };
 
   return (
-    <div style={{ background: "#f8fafc", border: "1px solid #c7d2fe", borderRadius: 10, padding: 18, marginBottom: 16 }}>
-      <h4 style={{ margin: "0 0 14px", fontSize: 14, color: "#1e293b", fontWeight: 700 }}>
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 10, padding: 18, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 14px", fontSize: 14, color: "var(--input-text, #1e293b)", fontWeight: 700 }}>
         {isNew ? "Nueva categoría de ingrediente" : `Editar: ${item.name}`}
       </h4>
       <form onSubmit={handleSubmit}>
@@ -4511,9 +4514,9 @@ function OnboardingSection() {
               { label: "Bites promedio", value: Math.round(analytics.avgBitesEarned || 0) },
               { label: "Bites máximo", value: analytics.maxBitesEarned || 0 }
             ].map(({ label, value }) => (
-              <div key={label} style={{ background: "#f8fafc", borderRadius: 8, padding: "10px 16px", minWidth: 100 }}>
+              <div key={label} style={{ background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "10px 16px", minWidth: 100 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#4338ca" }}>{value}</div>
-                <div style={{ fontSize: 11, color: "#6b7280" }}>{label}</div>
+                <div style={{ fontSize: 11, color: "var(--input-text, #6b7280)", opacity: 0.65 }}>{label}</div>
               </div>
             ))}
           </div>
@@ -4832,8 +4835,8 @@ function WeeklySection() {
     } catch (e) { setError(e.message); }
   };
 
-  const inputStyle = { fontSize: 13, padding: "6px 10px", borderRadius: 6, border: "1px solid #e2e8f0", width: "100%", boxSizing: "border-box" };
-  const sectionStyle = { background: "#f8fafc", borderRadius: 8, padding: "14px 16px", border: "1px solid #e2e8f0", marginBottom: 12 };
+  const inputStyle = { fontSize: 13, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--input-border, #e2e8f0)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)", width: "100%", boxSizing: "border-box" };
+  const sectionStyle = { background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "14px 16px", border: "1px solid var(--hf-border, #e2e8f0)", marginBottom: 12 };
 
   const subTabs = [
     { key: "config", label: "Configuración" },
@@ -4976,7 +4979,7 @@ function WeeklySection() {
           {householdProgress && (
             <div style={sectionStyle}>
               <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Progreso: {householdId}</p>
-              <pre style={{ fontSize: 11, background: "#f1f5f9", padding: 10, borderRadius: 6, overflow: "auto", maxHeight: 300 }}>
+              <pre style={{ fontSize: 11, background: "var(--surface-muted, #f1f5f9)", color: "var(--input-text, #1e293b)", padding: 10, borderRadius: 6, overflow: "auto", maxHeight: 300 }}>
                 {JSON.stringify(householdProgress, null, 2)}
               </pre>
               <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -5074,8 +5077,8 @@ function BetaInvitesSection() {
     expired: "#d97706",
   };
 
-  const fStyle = { width: "100%", boxSizing: "border-box", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db" };
-  const sectionStyle = { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: 20, marginBottom: 16 };
+  const fStyle = { width: "100%", boxSizing: "border-box", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--input-border, #d1d5db)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)" };
+  const sectionStyle = { background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 10, padding: 20, marginBottom: 16 };
 
   return (
     <div>
