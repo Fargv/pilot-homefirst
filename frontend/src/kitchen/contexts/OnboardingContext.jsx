@@ -8,6 +8,8 @@ export function OnboardingProvider({ children }) {
   const { user } = useAuth();
   const [state, setState] = useState(null);
   const [rewardEvent, setRewardEvent] = useState(null);
+  // Fired when onboarding fully completes. Requires explicit user dismissal — no auto-close.
+  const [completionEvent, setCompletionEvent] = useState(false);
   const loadedRef = useRef(false);
   const triggerQueueRef = useRef([]);
   const triggeringRef = useRef(false);
@@ -30,6 +32,10 @@ export function OnboardingProvider({ children }) {
       if (data?.event?.completed && data.event.challenge) {
         setRewardEvent(data.event.challenge);
         setTimeout(() => setRewardEvent(null), 4500);
+      }
+      // Onboarding fully complete — show the celebration modal (no auto-dismiss).
+      if (data?.event?.allDone) {
+        setCompletionEvent(true);
       }
     } catch (_) {
       // non-fatal — never break existing flows
@@ -93,9 +99,15 @@ export function OnboardingProvider({ children }) {
     loadState();
   }, [loadState]);
   const dismissReward = useCallback(() => setRewardEvent(null), []);
+  const dismissCompletionEvent = useCallback(() => setCompletionEvent(false), []);
 
   return (
-    <OnboardingContext.Provider value={{ state, notify, refresh, rewardEvent, dismissReward, isEligible }}>
+    <OnboardingContext.Provider value={{
+      state, notify, refresh,
+      rewardEvent, dismissReward,
+      completionEvent, dismissCompletionEvent,
+      isEligible
+    }}>
       {children}
     </OnboardingContext.Provider>
   );
@@ -104,6 +116,8 @@ export function OnboardingProvider({ children }) {
 export function useOnboarding() {
   return useContext(OnboardingContext) ?? {
     state: null, notify: () => {}, refresh: () => {},
-    rewardEvent: null, dismissReward: () => {}, isEligible: false
+    rewardEvent: null, dismissReward: () => {},
+    completionEvent: false, dismissCompletionEvent: () => {},
+    isEligible: false
   };
 }

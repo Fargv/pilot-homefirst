@@ -105,11 +105,14 @@ const CYCLE_CHALLENGE_DEFS = [
   },
 
   // WEEK 2 — "Tu hogar en una sola lista"
+  // NOTE: "shopping_list_completed" fires when ALL items in the list are marked as purchased.
+  // This is Basic-compatible: it requires no purchase finalization, no store selection,
+  // and no expense tracking. Do NOT change triggerType to anything Pro-only.
   {
     key: "weekly_complete_shopping_list",
-    title: "Completa una lista de compra",
-    description: "",
-    guidance: "",
+    title: "Marca toda tu lista",
+    description: "Marca todos los productos de tu lista como comprados.",
+    guidance: "Ve a la lista de la compra y marca todos los productos como comprados conforme los vayas metiendo en el carrito.",
     rewardBites: 10,
     triggerType: "shopping_list_completed",
     triggerCount: 1,
@@ -267,9 +270,9 @@ const CYCLE_CHALLENGE_DEFS = [
   },
   {
     key: "weekly_complete_shopping_list_w4",
-    title: "Completa una lista de compra",
-    description: "",
-    guidance: "",
+    title: "Marca toda tu lista",
+    description: "Marca todos los productos de tu lista como comprados.",
+    guidance: "Ve a la lista de la compra y marca todos los productos como comprados conforme los vayas metiendo en el carrito.",
     rewardBites: 5,
     triggerType: "shopping_list_completed",
     triggerCount: 1,
@@ -344,18 +347,20 @@ export async function getOrCreateCycleConfig() {
  */
 export async function seedWeeklyChallengeDefs() {
   for (const def of CYCLE_CHALLENGE_DEFS) {
-    const { key, triggerType, triggerCount, cycleWeek, cycleOrder, planCompatibility, active, guidance, description, ...insertOnly } = def;
+    const { key, title, triggerType, triggerCount, cycleWeek, cycleOrder, planCompatibility, active, guidance, description, ...insertOnly } = def;
     await WeeklyChallengeDef.updateOne(
       { key },
       {
-        // Structural fields + content that should stay in sync with the code
+        // Structural fields + content that should always stay in sync with the code.
+        // title is now included so copy changes propagate automatically on reseed.
         $set: {
+          title,
           triggerType, triggerCount, cycleWeek, cycleOrder, planCompatibility,
           active: active ?? true,
           ...(guidance !== undefined ? { guidance } : {}),
           ...(description !== undefined ? { description } : {})
         },
-        // title, rewardBites only set on first insert
+        // rewardBites only set on first insert (preserve economy balance decisions)
         $setOnInsert: { key, ...insertOnly }
       },
       { upsert: true }

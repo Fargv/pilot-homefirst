@@ -37,10 +37,10 @@ export function WeeklyChallengeProvider({ children }) {
         });
         setTimeout(() => setRewardEvent(null), 5000);
       }
-      // Beta Pro unlocked — fire a separate event so the UI can show a dedicated message.
+      // Beta Pro unlocked — fire a separate event so the UI can show a dedicated modal.
+      // No auto-close: the user must explicitly dismiss it so they don't miss it.
       if (data?.betaProUnlocked) {
         setBetaProEvent({ unlockedAt: new Date().toISOString() });
-        setTimeout(() => setBetaProEvent(null), 8000);
       }
     } catch (_) {
       // non-fatal — never break existing flows

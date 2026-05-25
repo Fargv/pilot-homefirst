@@ -93,8 +93,76 @@ function BetaProHint({ onboardingDone, weeklyState }) {
   );
 }
 
+/** Celebratory modal shown once when the onboarding guide is fully completed. */
+function OnboardingCompletionModal({ onDismiss }) {
+  return (
+    <div
+      className="onboarding-completion-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="onboarding-completion-title"
+    >
+      <div className="onboarding-completion-modal" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          className="onboarding-completion-close-x"
+          onClick={onDismiss}
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+
+        <div className="onboarding-completion-icon" aria-hidden="true">🎉</div>
+
+        <h2 className="onboarding-completion-title" id="onboarding-completion-title">
+          ¡Enhorabuena!
+        </h2>
+        <p className="onboarding-completion-subtitle">
+          Has completado el onboarding de Lunchfy.
+        </p>
+
+        <div className="onboarding-completion-areas">
+          <p className="onboarding-completion-areas-label">Ya conoces lo esencial:</p>
+          <ul className="onboarding-completion-areas-list">
+            <li><span aria-hidden="true">📅</span> <strong>Planificación</strong> — organiza tu semana de comidas</li>
+            <li><span aria-hidden="true">🍳</span> <strong>Cocina</strong> — gestiona tus platos</li>
+            <li><span aria-hidden="true">🥕</span> <strong>Productos</strong> — tu despensa digital</li>
+            <li><span aria-hidden="true">🛒</span> <strong>Lista</strong> — siempre al día y automática</li>
+            <li><span aria-hidden="true">📦</span> <strong>Básicos</strong> — lo que compras cada semana</li>
+            <li><span aria-hidden="true">📚</span> <strong>Catálogo</strong> — platos listos para usar</li>
+          </ul>
+        </div>
+
+        <div className="onboarding-completion-next-hint">
+          <p>
+            Ahora tienes acceso a los <strong>retos semanales</strong>.
+            Completa los de tu primera semana para desbloquear <strong>Pro Beta</strong> si eres elegible.
+          </p>
+        </div>
+
+        <div className="onboarding-completion-actions">
+          <button
+            type="button"
+            className="kitchen-ui-button onboarding-completion-cta"
+            onClick={onDismiss}
+          >
+            Ver retos semanales
+          </button>
+          <button
+            type="button"
+            className="onboarding-completion-secondary"
+            onClick={onDismiss}
+          >
+            Continuar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function OnboardingBanner() {
-  const { state, rewardEvent, dismissReward } = useOnboarding();
+  const { state, rewardEvent, dismissReward, completionEvent, dismissCompletionEvent } = useOnboarding();
   const { state: weeklyState } = useWeeklyChallenge();
   const [panelOpen, setPanelOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
@@ -108,6 +176,7 @@ export default function OnboardingBanner() {
   if (state.status === "completed") {
     return (
       <>
+        {completionEvent && <OnboardingCompletionModal onDismiss={dismissCompletionEvent} />}
         {rewardEvent && <RewardToast event={rewardEvent} onDismiss={dismissReward} />}
       </>
     );
