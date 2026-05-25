@@ -12,8 +12,8 @@ const WELCOME_BITES = 20;
 const EXPLORE_REQUIRED = ["visit_week", "visit_dishes", "visit_shopping", "visit_catalog", "visit_settings"];
 
 // ─── Default challenge definitions ───────────────────────────────────────────
-// Total challenge reward: 80 bites. Welcome: +20. Grand total: 100.
-// Onboarding pack costs 80 bites → user ends with 20 bites remaining.
+// Total challenge reward: 85 bites. Welcome: +20. Grand total: 105.
+// Onboarding pack costs 80 bites → user ends with 25 bites remaining.
 
 const DEFAULT_CHALLENGES = [
   {
@@ -57,11 +57,19 @@ const DEFAULT_CHALLENGES = [
     triggerType: "add_ingredient_to_dish", triggerCount: 1
   },
   {
+    key: "customize_randomization",
+    title: "Personaliza tu randomización",
+    description: "Marca y desmarca algunos platos para indicar cuáles quieres que Lunchfy use en la randomización semanal. Así el plan automático siempre propone platos que te gustan.",
+    howTo: "En Cocina → Platos, toca el checkbox '☑ En randomización' en cualquier plato para incluirlo o excluirlo del plan automático.",
+    rewardBites: 5, order: 6, phase: 3, phaseLabel: "Platos",
+    triggerType: "randomization_customized", triggerCount: 1
+  },
+  {
     key: "plan_first_meal",
     title: "Planifica tu primera comida",
     description: "Es el momento de asignar un plato a un día de la semana. Así construyes tu menú semanal y tu lista de la compra se actualiza automáticamente.",
     howTo: "Ve a Planificación → elige un día → toca el espacio de comida → selecciona el plato que creaste.",
-    rewardBites: 10, order: 6, phase: 4, phaseLabel: "Planificación",
+    rewardBites: 10, order: 7, phase: 4, phaseLabel: "Planificación",
     triggerType: "plan_meal", triggerCount: 1
   },
   {
@@ -69,7 +77,7 @@ const DEFAULT_CHALLENGES = [
     title: "Planifica 3 comidas en la semana",
     description: "Con más platos planificados tu lista de la compra empieza a tener sentido real. Cuantas más comidas planifiques, más completa y útil será tu lista.",
     howTo: "Sigue añadiendo platos a los días de la semana actual hasta tener un total de 3 comidas.",
-    rewardBites: 5, order: 7, phase: 4, phaseLabel: "Planificación",
+    rewardBites: 5, order: 8, phase: 4, phaseLabel: "Planificación",
     triggerType: "plan_meal", triggerCount: 3
   },
   {
@@ -77,7 +85,7 @@ const DEFAULT_CHALLENGES = [
     title: "Completa una semana entera",
     description: "Una semana completa significa tener comida planificada de lunes a viernes. Este es tu primer plan semanal completo.",
     howTo: "Planifica el resto de los días hasta tener los 5 días laborables con al menos una comida.",
-    rewardBites: 10, order: 8, phase: 4, phaseLabel: "Planificación",
+    rewardBites: 10, order: 9, phase: 4, phaseLabel: "Planificación",
     triggerType: "plan_full_week", triggerCount: 1
   },
   {
@@ -85,7 +93,7 @@ const DEFAULT_CHALLENGES = [
     title: "Marca 3 productos como comprados",
     description: "Cuando compres algo en el supermercado, márcalo en la lista. Así llevas el control en tiempo real y sabes exactamente qué te falta.",
     howTo: "Ve a Lista de la compra → toca el círculo al lado de un producto para marcarlo como comprado. Hazlo con 3 productos.",
-    rewardBites: 10, order: 9, phase: 5, phaseLabel: "Lista de la compra",
+    rewardBites: 10, order: 10, phase: 5, phaseLabel: "Lista de la compra",
     triggerType: "mark_purchased", triggerCount: 3
   },
   {
@@ -93,7 +101,7 @@ const DEFAULT_CHALLENGES = [
     title: "Personaliza tu hogar",
     description: "Cada household es único. Personalizar el nombre de tu hogar hace que la app sea tuya y facilita la colaboración si invitas a otras personas.",
     howTo: "Ve a Ajustes → toca el icono de editar junto al nombre del household → escribe un nombre → guarda.",
-    rewardBites: 5, order: 10, phase: 6, phaseLabel: "Tu hogar",
+    rewardBites: 5, order: 11, phase: 6, phaseLabel: "Tu hogar",
     triggerType: "update_household", triggerCount: 1
   },
   {
@@ -101,7 +109,7 @@ const DEFAULT_CHALLENGES = [
     title: "Instala tu primer pack del catálogo",
     description: "El catálogo contiene packs de platos listos para usar. Instala el pack de bienvenida con los Bites que has ganado y descubre lo fácil que es ampliar tu biblioteca.",
     howTo: "Ve a Catálogo → busca el pack de bienvenida → toca Instalar → confirma con tus Bites.",
-    rewardBites: 5, order: 11, phase: 7, phaseLabel: "Catálogo",
+    rewardBites: 5, order: 12, phase: 7, phaseLabel: "Catálogo",
     triggerType: "install_pack", triggerCount: 1
   }
 ];

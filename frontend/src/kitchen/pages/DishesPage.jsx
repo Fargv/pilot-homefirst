@@ -306,6 +306,7 @@ export default function DishesPage() {
           if (activeDish?._id === savedDish._id) {
             setActiveDish(savedDish);
           }
+          notifyOnboarding("randomization_customized");
         } else {
           await loadDishes();
         }
@@ -319,7 +320,7 @@ export default function DishesPage() {
         setDishTogglePendingId("");
       }
     },
-    [activeDish, dishTogglePendingId, dishes, persistDishUpdate]
+    [activeDish, dishTogglePendingId, dishes, notifyOnboarding, persistDishUpdate]
   );
 
   const onCategoryCreated = async (name, colors = null) => {
@@ -1291,24 +1292,20 @@ export default function DishesPage() {
                         <span>{dish.sourcePackTitle}</span>
                       </div>
                     ) : null}
-                    <button
-                      type="button"
-                      className={`kitchen-dish-random-chip${randomEnabled ? " is-enabled" : " is-disabled"}${toggleDisabled ? " is-loading" : ""}`}
-                      onClick={() => toggleDishAllowRandom(dish, !randomEnabled)}
-                      aria-label={randomEnabled ? "Excluir de randomización" : "Incluir en randomización"}
-                      title={randomEnabled ? "Excluir de randomización" : "Incluir en randomización"}
-                      disabled={toggleDisabled}
-                    >
-                      <svg viewBox="0 0 14 14" fill="none" width="12" height="12" aria-hidden="true">
-                        <rect x="0.75" y="0.75" width="12.5" height="12.5" rx="2.5" stroke="currentColor" strokeWidth="1.4" />
-                        <circle cx="4" cy="4" r="1.15" fill="currentColor" />
-                        <circle cx="7" cy="7" r="1.15" fill="currentColor" />
-                        <circle cx="10" cy="10" r="1.15" fill="currentColor" />
-                      </svg>
-                      <span>{randomEnabled ? "Randomizable" : "No randomizable"}</span>
-                    </button>
                   </div>
                   <div className="kitchen-dish-actions-bar">
+                    <label
+                      className={`kitchen-dish-random-checkbox${toggleDisabled ? " is-loading" : ""}${dish.special ? " is-special" : ""}`}
+                      title={dish.special ? "Plato especial — excluido automáticamente" : (randomEnabled ? "Clic para excluir de randomización" : "Clic para incluir en randomización")}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={randomEnabled}
+                        disabled={toggleDisabled || Boolean(dish.special)}
+                        onChange={() => toggleDishAllowRandom(dish, !randomEnabled)}
+                      />
+                      <span>{randomEnabled ? "En randomización" : "No randomizable"}</span>
+                    </label>
                     <div className="kitchen-dish-actions">
                       <div className="kitchen-dish-info-wrap">
                         {(() => {

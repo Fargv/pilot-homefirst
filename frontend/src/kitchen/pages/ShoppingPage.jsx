@@ -876,6 +876,13 @@ export default function ShoppingPage() {
         if (data.updated && (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id)) {
           setHasMarkedPurchaseInViewSession(true);
         }
+        // Fire challenge trigger when "mark all" leaves the list fully purchased
+        const remainingAfter = data.list?.pendingByCategory
+          ? Object.values(data.list.pendingByCategory).reduce((s, arr) => s + arr.length, 0)
+          : 0;
+        if (data.updated && remainingAfter === 0) {
+          notifyWeekly("shopping_list_completed");
+        }
       } else {
         setSuccess(data.updated ? "Todo volvió a pendiente" : "No había elementos comprados.");
       }

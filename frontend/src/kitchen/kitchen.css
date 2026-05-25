@@ -6928,7 +6928,10 @@ body {
 .kitchen-dish-card:not(.kitchen-ingredient-card) .kitchen-dish-actions-bar {
   padding: 12px 6px 0;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -7102,6 +7105,10 @@ body {
 }
 
 .kitchen-dish-card:not(.kitchen-ingredient-card) .kitchen-dish-actions-bar {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -7111,6 +7118,43 @@ body {
   justify-content: space-evenly;
   align-items: center;
   gap: 10px;
+}
+
+/* ── Random checkbox in actions bar ─────────────────────────────────────── */
+.kitchen-dish-random-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hf-muted, #64748b);
+  user-select: none;
+  transition: color 150ms ease;
+  flex-shrink: 0;
+}
+.kitchen-dish-random-checkbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--hf-brand, #4f46e5);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.kitchen-dish-random-checkbox.is-loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.kitchen-dish-random-checkbox.is-special {
+  opacity: 0.4;
+  cursor: default;
+}
+@media (hover: hover) {
+  .kitchen-dish-random-checkbox:not(.is-special):not(.is-loading):hover {
+    color: var(--hf-brand, #4f46e5);
+  }
+}
+[data-theme="dark"] .kitchen-dish-random-checkbox {
+  color: var(--hf-muted);
 }
 
 .kitchen-ingredient-card .kitchen-dish-actions-bar {
@@ -7123,43 +7167,39 @@ body {
   flex-shrink: 0;
 }
 
-/* ── Card action icon buttons: Neo-Soft semantic pastel palette ────────────
-   All rules below have specificity 0-4-0.
-   Cascade order: generic fallback → semantic overrides → dark-mode reset.
-   The dark-mode reset sits LAST so it wins via source order at equal spec.  */
+/* ── Card action icon buttons: semantic borders/icons, neutral backgrounds ─
+   Semantic color carried by border + icon only.
+   Backgrounds stay neutral to avoid visual noise.
+   Cascade: neutral base → semantic overrides → dark-mode reset.          */
 
-/* Neutral gray fallback — covers info (no recipe) + any unclassified button */
-.kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button:not(.has-recipe) {
-  background: #f4f7fc;
+/* Neutral base — all card action buttons */
+.kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button {
+  background: var(--surface-muted, #f8fafc);
   border-color: #dce4f0;
   color: #64748b;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
-/* Edit — soft blue */
+/* Edit — blue border/icon, neutral background */
 .kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button.edit {
-  background: #eff6ff;
   border-color: #bfdbfe;
   color: #2563eb;
 }
-/* Duplicate — soft violet */
+/* Duplicate — violet border/icon */
 .kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button.duplicate {
-  background: #f5f3ff;
   border-color: #ddd6fe;
   color: #7c3aed;
 }
-/* Assign — soft emerald */
+/* Assign — emerald border/icon */
 .kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button.assign {
-  background: #ecfdf5;
   border-color: #a7f3d0;
   color: #059669;
 }
-/* Danger — soft rose */
+/* Danger — rose border/icon */
 .kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button.danger {
-  background: #fff1f2;
   border-color: #fecdd3;
   color: #e11d48;
 }
-/* Dark-mode reset — placed LAST, same specificity → wins via source order */
+/* Dark-mode reset — placed LAST, wins via source order at equal specificity */
 [data-theme="dark"] .kitchen-dish-card .kitchen-dish-actions .kitchen-icon-button {
   background: var(--button-secondary-bg);
   border-color: var(--border-soft);

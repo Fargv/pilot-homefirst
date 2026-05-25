@@ -4680,7 +4680,7 @@ function IngredientCategoriesSection() {
 
 // ─── Admin: Onboarding section ────────────────────────────────────────────────
 
-const ONBOARDING_ECONOMY_TARGET = 100; // welcome(20) + challenges(80) = 100
+const ONBOARDING_ECONOMY_TARGET = 105; // welcome(20) + challenges(85) = 105
 
 function OnboardingSection() {
   const [challenges, setChallenges] = useState([]);
@@ -4828,7 +4828,7 @@ function OnboardingSection() {
         {!economyOk && (
           <div style={{ marginTop: 10, padding: "8px 12px", background: "#fef9c3", borderRadius: 7, fontSize: 12, color: "#713f12" }}>
             El total de bites ({grandTotal}) no coincide con el objetivo ({ONBOARDING_ECONOMY_TARGET}).
-            El pack de bienvenida cuesta 80 bites → usuario debe quedar con 20 bites al finalizar.
+            El pack de bienvenida cuesta 80 bites → usuario debe quedar con 25 bites al finalizar.
           </div>
         )}
       </Card>
@@ -5314,6 +5314,16 @@ function WeeklySection() {
                       <div>
                         <span style={{ fontWeight: 600, fontSize: 13 }}>{c.title}</span>
                         <span style={{ fontSize: 11, color: "#6b7280", marginLeft: 8 }}>({c.key})</span>
+                        <span style={{
+                          display: "inline-block",
+                          fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 3,
+                          marginLeft: 6, letterSpacing: "0.06em",
+                          background: (c.curriculum || "basic") === "pro" ? "#312e81" : "#e2e8f0",
+                          color: (c.curriculum || "basic") === "pro" ? "#fff" : "#374151",
+                          verticalAlign: "middle"
+                        }}>
+                          {(c.curriculum || "basic") === "pro" ? "PRO" : "BASIC"}
+                        </span>
                         {!c.active && <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 6 }}>[inactivo]</span>}
                         <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>trigger: {c.triggerType} x{c.triggerCount} · +{c.rewardBites} bites</p>
                       </div>
