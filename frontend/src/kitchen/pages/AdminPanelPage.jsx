@@ -73,6 +73,136 @@ function StatusBadge({ status }) {
   );
 }
 
+// ── Catalog admin helpers ──────────────────────────────────────────────────────
+
+function formatDaysSince(dateStr) {
+  if (!dateStr) return null;
+  const ms = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(ms / 86_400_000);
+  if (days < 0) return "futuro";
+  if (days === 0) return "hoy";
+  if (days === 1) return "ayer";
+  if (days < 7) return `${days}d`;
+  if (days < 30) return `${Math.floor(days / 7)}sem`;
+  if (days < 365) return `${Math.floor(days / 30)}m`;
+  return `${Math.floor(days / 365)}a`;
+}
+
+function getStripeStatus(pack) {
+  const isFree = !pack.priceBasic || Number(pack.priceBasic) <= 0;
+  if (!pack.isPaid && isFree) return { code: "free", label: "Gratis", color: "#15803d", bg: "#dcfce7" };
+  if (!pack.isPaid) return { code: "na", label: "No aplica", color: "#6b7280", bg: "#f1f5f9" };
+  const hasProduct = Boolean(pack.stripeProductId);
+  const hasPrice = Boolean(pack.stripePriceId);
+  if (pack.paymentMode === "stripe" && hasProduct && hasPrice) {
+    return { code: "connected", label: "✓ Stripe", color: "#047857", bg: "#ecfdf5" };
+  }
+  if (!hasPrice) return { code: "missing", label: "Sin Price ID", color: "#b45309", bg: "#fffbeb" };
+  if (!hasProduct) return { code: "missing", label: "Sin Product ID", color: "#b45309", bg: "#fffbeb" };
+  return { code: "pending", label: "Pendiente", color: "#b45309", bg: "#fffbeb" };
+}
+
+function getPackHealth(pack) {
+  const issues = [];
+  if (!pack.status) issues.push("Sin estado de revisión");
+  if (pack.dishCount === 0) issues.push("Sin platos");
+  const unresolved = Number(pack.validationSummary?.unresolvedIssues || 0);
+  if (unresolved > 0) issues.push(`${unresolved} ingrediente(s) sin mapear`);
+  if (pack.isPaid && pack.paymentMode === "stripe" && !pack.stripePriceId) issues.push("Stripe Price ID faltante");
+  if (pack.isPaid && pack.paymentMode === "stripe" && !pack.stripeProductId) issues.push("Stripe Product ID faltante");
+  if (pack.status === "published" && pack.active === false) issues.push("Publicado pero desactivado");
+  if (issues.length === 0) return { level: "ok", label: "OK", issues: [] };
+  if (issues.length === 1 && !pack.status) return { level: "legacy", label: "Legacy", issues };
+  return { level: "review", label: "Revisar", issues };
+}
+
+// ── PackInstallationsModal ─────────────────────────────────────────────────────
+
+function PackInstallationsModal({ pack, onClose }) {
+  const [ownerships, setOwnerships] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    apiRequest(`/api/kitchen/catalog/packs/${pack.id}/admin-ownerships`)
+      .then((d) => setOwnerships(d.ownerships || []))
+      .catch((err) => setLoadError(err.message || "Error al cargar."))
+      .finally(() => setLoading(false));
+  }, [pack.id]);
+
+  const installed = ownerships.filter((o) => o.isInstalled).length;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ background: "var(--modal-bg, #fff)", border: "1px solid var(--modal-border, transparent)", borderRadius: 12, width: 740, maxWidth: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "88vh", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "18px 24px 14px", borderBottom: "1px solid var(--hf-border, #e5e7eb)", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Instalaciones — {pack.title}</h3>
+            <p style={{ margin: "5px 0 0", fontSize: 12, color: "#6b7280", display: "flex", gap: 10 }}>
+              <span><strong style={{ color: "#374151" }}>{ownerships.length}</strong> hogar(es) con acceso</span>
+              {installed > 0 && <span><strong style={{ color: "#16a34a" }}>{installed}</strong> instalado(s)</span>}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} style={{ ...ABT.cancel, padding: "4px 12px", flexShrink: 0 }}>✕ Cerrar</button>
+        </div>
+        <div style={{ overflowY: "auto", flex: 1, padding: "14px 24px 20px" }}>
+          {loading ? (
+            <p className="kitchen-muted">Cargando...</p>
+          ) : loadError ? (
+            <div className="kitchen-alert error">{loadError}</div>
+          ) : ownerships.length === 0 ? (
+            <p className="kitchen-muted">Ningún hogar tiene este pack aún.</p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="kitchen-table">
+                <thead>
+                  <tr>
+                    <th>Hogar</th>
+                    <th style={{ fontSize: 11 }}>Email dueño</th>
+                    <th style={{ textAlign: "center" }}>Plan</th>
+                    <th style={{ textAlign: "center" }}>Vía</th>
+                    <th style={{ textAlign: "center" }}>Estado</th>
+                    <th style={{ textAlign: "center" }}>Adquirido</th>
+                    <th style={{ textAlign: "center" }}>Instalado</th>
+                    <th style={{ textAlign: "center" }}>Actividad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ownerships.map((o) => (
+                    <tr key={String(o.householdId)}>
+                      <td style={{ fontWeight: 600, fontSize: 13, maxWidth: 180, wordBreak: "break-word" }}>{o.householdName}</td>
+                      <td style={{ fontSize: 11, color: "#6b7280", maxWidth: 160, wordBreak: "break-word" }}>{o.ownerEmail || "—"}</td>
+                      <td style={{ textAlign: "center" }}><PlanBadge plan={o.subscriptionPlan} /></td>
+                      <td style={{ textAlign: "center" }}>
+                        <span style={{ fontSize: 10, background: "#f1f5f9", color: "#475569", borderRadius: 4, padding: "1px 6px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{o.acquiredVia}</span>
+                      </td>
+                      <td style={{ textAlign: "center", fontSize: 11, whiteSpace: "nowrap" }}>
+                        {o.isInstalled
+                          ? <span style={{ color: "#16a34a", fontWeight: 700 }}>● instalado</span>
+                          : <span style={{ color: "#94a3b8" }}>○ adquirido</span>}
+                      </td>
+                      <td style={{ textAlign: "center", fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" }}>
+                        {formatDaysSince(o.acquiredAt) || "—"}
+                      </td>
+                      <td style={{ textAlign: "center", fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" }}>
+                        {o.installedAt ? (formatDaysSince(o.installedAt) || "—") : "—"}
+                      </td>
+                      <td style={{ textAlign: "center", fontSize: 11, color: o.lastMeaningfulActivityAt ? "#374151" : "#94a3b8", whiteSpace: "nowrap" }}>
+                        {formatDaysSince(o.lastMeaningfulActivityAt) || "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan, onOpenPacks }) {
   const [localPlan, setLocalPlan] = useState(household.subscriptionPlan || "basic");
   const [saving, setSaving] = useState(false);
@@ -2629,9 +2759,18 @@ function CatalogPacksSection() {
   const [togglingId, setTogglingId] = useState(null);
   const [grantModal, setGrantModal] = useState(null);
   const [deleteConfirmPack, setDeleteConfirmPack] = useState(null);
+  const [installationsModal, setInstallationsModal] = useState(null);
   const [households, setHouseholds] = useState([]);
   const [saveNotice, setSaveNotice] = useState("");
   const [baseBitePrice, setBaseBitePrice] = useState(1.99);
+
+  // ── Filters + sort ──────────────────────────────────────────────────────────
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterPriceType, setFilterPriceType] = useState("all");
+  const [filterStripe, setFilterStripe] = useState("all");
+  const [filterHealth, setFilterHealth] = useState("all");
+  const [filterPlan, setFilterPlan] = useState("all");
+  const [sortBy, setSortBy] = useState("sortOrder");
 
   // ── Panel state (edit / review — mutually exclusive full-screen overlays) ──
   const [panelState, setPanelState] = useState(null); // { mode: "edit"|"review", pack }
@@ -2714,9 +2853,45 @@ function CatalogPacksSection() {
   }, []);
 
   const filtered = useMemo(() => {
+    let items = packs;
+
+    // Text search
     const q = search.trim().toLowerCase();
-    return q ? packs.filter((p) => String(p.title || "").toLowerCase().includes(q) || String(p.slug || "").toLowerCase().includes(q)) : packs;
-  }, [packs, search]);
+    if (q) items = items.filter((p) => String(p.title || "").toLowerCase().includes(q) || String(p.slug || "").toLowerCase().includes(q));
+
+    // Status / active filter
+    if (filterStatus === "active") items = items.filter((p) => p.active !== false);
+    else if (filterStatus === "inactive") items = items.filter((p) => p.active === false);
+    else if (filterStatus !== "all") items = items.filter((p) => p.status === filterStatus);
+
+    // Price type filter
+    if (filterPriceType === "free") items = items.filter((p) => !p.priceBasic || Number(p.priceBasic) <= 0);
+    else if (filterPriceType === "paid_eur") items = items.filter((p) => Number(p.priceBasic) > 0);
+    else if (filterPriceType === "paid_stripe") items = items.filter((p) => p.isPaid);
+    else if (filterPriceType === "bites") items = items.filter((p) => Number(p.monthlyCreditCost || 0) > 0);
+
+    // Stripe status filter
+    if (filterStripe !== "all") items = items.filter((p) => getStripeStatus(p).code === filterStripe);
+
+    // Health filter
+    if (filterHealth !== "all") items = items.filter((p) => getPackHealth(p).level === filterHealth);
+
+    // Plan filter
+    if (filterPlan !== "all") items = items.filter((p) => (p.includedPlans || []).includes(filterPlan));
+
+    // Sort
+    const sorted = [...items];
+    if (sortBy === "most_installed") sorted.sort((a, b) => (b.ownedByCount || 0) - (a.ownedByCount || 0));
+    else if (sortBy === "least_installed") sorted.sort((a, b) => (a.ownedByCount || 0) - (b.ownedByCount || 0));
+    else if (sortBy === "newest") sorted.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    else if (sortBy === "recently_installed") sorted.sort((a, b) => new Date(b.lastAcquiredAt || 0) - new Date(a.lastAcquiredAt || 0));
+    else if (sortBy === "price_asc") sorted.sort((a, b) => Number(a.priceBasic || 0) - Number(b.priceBasic || 0));
+    else if (sortBy === "price_desc") sorted.sort((a, b) => Number(b.priceBasic || 0) - Number(a.priceBasic || 0));
+    else if (sortBy === "bites_desc") sorted.sort((a, b) => Number(b.monthlyCreditCost || 0) - Number(a.monthlyCreditCost || 0));
+    else sorted.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    return sorted;
+  }, [packs, search, filterStatus, filterPriceType, filterStripe, filterHealth, filterPlan, sortBy]);
 
   const onlyDiets = filters.packType === "diet";
 
@@ -2836,36 +3011,119 @@ function CatalogPacksSection() {
         <p className="kitchen-muted">Crea, edita y gestiona los packs de platos del catálogo de Lunchfy.</p>
       </div>
 
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+      {/* ── Toolbar row 1: search + primary actions ────────────────────────── */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
         <input
-          style={{ padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", width: 220, outline: "none" }}
+          style={{ padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", width: 210, outline: "none", background: "var(--input-bg,#fff)", color: "var(--input-text,#374151)" }}
           placeholder="Buscar por título o slug..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button type="button" style={{ ...ABT.save, padding: "7px 16px" }} onClick={() => openPanel("edit", {})}>
-          + Nuevo pack
-        </button>
-        <button type="button" style={ABT.edit} onClick={load} disabled={loading}>
-          {loading ? "..." : "↺ Recargar"}
-        </button>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          style={{ fontSize: 12, padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", background: "var(--surface-muted,#f8fafc)", color: "var(--input-text,#374151)", cursor: "pointer", outline: "none" }}
+        >
+          <option value="sortOrder">Ordenar: posición</option>
+          <option value="most_installed">Más instalados</option>
+          <option value="least_installed">Menos instalados</option>
+          <option value="recently_installed">Últ. instalación</option>
+          <option value="newest">Más recientes</option>
+          <option value="price_asc">Precio ↑</option>
+          <option value="price_desc">Precio ↓</option>
+          <option value="bites_desc">Bites ↓</option>
+        </select>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+          <button type="button" style={{ ...ABT.save, padding: "6px 14px", fontSize: 12 }} onClick={() => openPanel("edit", {})}>
+            + Nuevo pack
+          </button>
+          <button type="button" style={ABT.edit} onClick={load} disabled={loading}>
+            {loading ? "..." : "↺"}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Toolbar row 2: filters ──────────────────────────────────────────── */}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+        {/* Status */}
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
+          style={{ fontSize: 12, padding: "5px 8px", borderRadius: 6, border: `1px solid ${filterStatus !== "all" ? "#6366f1" : "#d1d5db"}`, background: filterStatus !== "all" ? "#eef2ff" : "var(--surface-muted,#f8fafc)", color: filterStatus !== "all" ? "#4338ca" : "var(--input-text,#374151)", cursor: "pointer", outline: "none", fontWeight: filterStatus !== "all" ? 700 : 400 }}
+        >
+          <option value="all">Estado: todos</option>
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+          <option value="published">published</option>
+          <option value="ready">ready</option>
+          <option value="needs_review">needs review</option>
+          <option value="draft">draft</option>
+        </select>
+
+        {/* Price type */}
+        <select value={filterPriceType} onChange={(e) => setFilterPriceType(e.target.value)}
+          style={{ fontSize: 12, padding: "5px 8px", borderRadius: 6, border: `1px solid ${filterPriceType !== "all" ? "#6366f1" : "#d1d5db"}`, background: filterPriceType !== "all" ? "#eef2ff" : "var(--surface-muted,#f8fafc)", color: filterPriceType !== "all" ? "#4338ca" : "var(--input-text,#374151)", cursor: "pointer", outline: "none", fontWeight: filterPriceType !== "all" ? 700 : 400 }}
+        >
+          <option value="all">Precio: todos</option>
+          <option value="free">Gratis</option>
+          <option value="paid_eur">De pago (€)</option>
+          <option value="paid_stripe">Stripe activo</option>
+          <option value="bites">Con Bites</option>
+        </select>
+
+        {/* Stripe */}
+        <select value={filterStripe} onChange={(e) => setFilterStripe(e.target.value)}
+          style={{ fontSize: 12, padding: "5px 8px", borderRadius: 6, border: `1px solid ${filterStripe !== "all" ? "#6366f1" : "#d1d5db"}`, background: filterStripe !== "all" ? "#eef2ff" : "var(--surface-muted,#f8fafc)", color: filterStripe !== "all" ? "#4338ca" : "var(--input-text,#374151)", cursor: "pointer", outline: "none", fontWeight: filterStripe !== "all" ? 700 : 400 }}
+        >
+          <option value="all">Stripe: todos</option>
+          <option value="connected">Conectado</option>
+          <option value="missing">Sin IDs</option>
+          <option value="pending">Pendiente</option>
+          <option value="free">Gratis</option>
+          <option value="na">No aplica</option>
+        </select>
+
+        {/* Health */}
+        <select value={filterHealth} onChange={(e) => setFilterHealth(e.target.value)}
+          style={{ fontSize: 12, padding: "5px 8px", borderRadius: 6, border: `1px solid ${filterHealth !== "all" ? "#6366f1" : "#d1d5db"}`, background: filterHealth !== "all" ? "#eef2ff" : "var(--surface-muted,#f8fafc)", color: filterHealth !== "all" ? "#4338ca" : "var(--input-text,#374151)", cursor: "pointer", outline: "none", fontWeight: filterHealth !== "all" ? 700 : 400 }}
+        >
+          <option value="all">Salud: todos</option>
+          <option value="ok">OK</option>
+          <option value="review">Revisar</option>
+          <option value="legacy">Legacy</option>
+        </select>
+
+        {/* Plan */}
+        <select value={filterPlan} onChange={(e) => setFilterPlan(e.target.value)}
+          style={{ fontSize: 12, padding: "5px 8px", borderRadius: 6, border: `1px solid ${filterPlan !== "all" ? "#6366f1" : "#d1d5db"}`, background: filterPlan !== "all" ? "#eef2ff" : "var(--surface-muted,#f8fafc)", color: filterPlan !== "all" ? "#4338ca" : "var(--input-text,#374151)", cursor: "pointer", outline: "none", fontWeight: filterPlan !== "all" ? 700 : 400 }}
+        >
+          <option value="all">Plan: todos</option>
+          <option value="basic">basic</option>
+          <option value="pro">pro</option>
+          <option value="premium">premium</option>
+        </select>
+
+        {/* Diet toggle */}
         <button
           type="button"
           aria-pressed={onlyDiets}
           onClick={() => setFilters((prev) => ({ ...prev, packType: prev.packType === "diet" ? "all" : "diet" }))}
-          style={{
-            ...ABT.edit,
-            borderColor: onlyDiets ? "#86efac" : "#cbd5e1",
-            background: onlyDiets ? "#f0fdf4" : "#f8fafc",
-            color: onlyDiets ? "#15803d" : "#374151",
-            fontWeight: 700
-          }}
+          style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: `1px solid ${onlyDiets ? "#86efac" : "#d1d5db"}`, background: onlyDiets ? "#f0fdf4" : "var(--surface-muted,#f8fafc)", color: onlyDiets ? "#15803d" : "var(--input-text,#374151)", cursor: "pointer", fontWeight: onlyDiets ? 700 : 400 }}
         >
-          <span style={{ marginRight: 5 }}>{onlyDiets ? "✓" : "○"}</span>
-          Only diets
+          {onlyDiets ? "✓ " : ""}Dieta
         </button>
-        <span style={{ fontSize: 12, color: "#94a3b8", marginLeft: 4 }}>
-          {filtered.length}{search.trim() ? ` de ${packs.length}` : ""} packs{onlyDiets ? " de dieta" : " en total"}
+
+        {/* Reset filters */}
+        {(filterStatus !== "all" || filterPriceType !== "all" || filterStripe !== "all" || filterHealth !== "all" || filterPlan !== "all" || search.trim() || onlyDiets) && (
+          <button
+            type="button"
+            onClick={() => { setFilterStatus("all"); setFilterPriceType("all"); setFilterStripe("all"); setFilterHealth("all"); setFilterPlan("all"); setSearch(""); setFilters({ packType: "all" }); setSortBy("sortOrder"); }}
+            style={{ fontSize: 11, padding: "4px 9px", borderRadius: 6, border: "1px solid #fca5a5", background: "#fff8f8", color: "#b42318", cursor: "pointer" }}
+          >
+            ✕ Limpiar
+          </button>
+        )}
+
+        <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 2 }}>
+          {filtered.length}{filtered.length !== packs.length ? ` / ${packs.length}` : ""} packs
         </span>
       </div>
 
@@ -2873,94 +3131,158 @@ function CatalogPacksSection() {
       {saveNotice ? <div className="kitchen-alert success">{saveNotice}</div> : null}
 
       {loading ? <p className="kitchen-muted">Cargando packs...</p> : filtered.length === 0 ? (
-        <p className="kitchen-muted">No hay packs{search.trim() ? " con ese criterio" : ". Crea el primero."}.</p>
+        <p className="kitchen-muted">No hay packs{search.trim() || filterStatus !== "all" || filterPriceType !== "all" ? " con esos filtros" : ". Crea el primero."}.</p>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <table className="kitchen-table">
             <thead>
               <tr>
                 <th>Pack</th>
-                <th style={{ textAlign: "center" }}>Platos</th>
-                <th style={{ textAlign: "center" }}>Precio</th>
+                <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Precio / Bites</th>
+                <th style={{ textAlign: "center" }}>Stripe</th>
                 <th style={{ textAlign: "center" }}>Planes</th>
                 <th style={{ textAlign: "center" }}>Estado</th>
-                <th style={{ textAlign: "center" }}>Revision</th>
-                <th style={{ textAlign: "center" }}>Concedido</th>
+                <th style={{ textAlign: "center" }}>Salud</th>
+                <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Hogares</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((pack) => {
-                const isFree = !pack.priceBasic || pack.priceBasic <= 0;
+                const isFree = !pack.priceBasic || Number(pack.priceBasic) <= 0;
+                const bites = Number(pack.monthlyCreditCost || 0);
                 const togId = togglingId;
                 const unresolved = Number(pack.validationSummary?.unresolvedIssues || 0);
                 const canPublishPack = pack.status !== "published" && unresolved === 0;
+                const stripeStatus = getStripeStatus(pack);
+                const health = getPackHealth(pack);
+                const isEditing = panelState?.mode === "edit" && String(panelState.pack?.id) === String(pack.id);
+                const isReviewing = panelState?.mode === "review" && String(panelState.pack?.id) === String(pack.id);
                 return (
-                  <tr key={pack.id} style={{ opacity: pack.active !== false ? 1 : 0.45, background: panelState && String(panelState.pack?.id) === String(pack.id) ? "rgba(99,102,241,0.07)" : undefined }}>
-                    <td>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>
-                        {pack.featured ? <span style={{ color: "#f59e0b", marginRight: 4 }}>★</span> : null}
-                        {pack.title}
+                  <tr key={pack.id} style={{ opacity: pack.active !== false ? 1 : 0.45, background: (isEditing || isReviewing) ? "rgba(99,102,241,0.07)" : undefined }}>
+                    {/* Pack */}
+                    <td style={{ minWidth: 160 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+                        {pack.featured ? <span style={{ color: "#f59e0b" }}>★</span> : null}
+                        {pack.active === false ? <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700 }}>OFF</span> : null}
+                        <span>{pack.title}</span>
                       </div>
-                      <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>{pack.slug}</div>
-                      {pack.tags?.length > 0 && (
-                        <div style={{ marginTop: 3, display: "flex", gap: 3, flexWrap: "wrap" }}>
-                          {pack.tags.slice(0, 3).map((t) => (
-                            <span key={t} style={{ fontSize: 10, background: "#eef2ff", color: "#6366f1", borderRadius: 4, padding: "1px 5px" }}>{t}</span>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ textAlign: "center", fontWeight: 600 }}>{pack.dishCount}</td>
-                    <td style={{ textAlign: "center" }}>
-                      {isFree
-                        ? <span style={{ fontSize: 11, background: "#dcfce7", color: "#166534", borderRadius: 5, padding: "2px 7px", fontWeight: 700 }}>Gratis</span>
-                        : <span style={{ fontSize: 12, fontWeight: 600 }}>{Number(pack.priceBasic).toFixed(2)} €</span>}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      <div style={{ display: "flex", gap: 3, justifyContent: "center", flexWrap: "wrap" }}>
-                        {(pack.includedPlans || []).map((p) => (
-                          <span key={p} style={{ fontSize: 10, background: "#f0f4ff", color: "#4338ca", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>{p}</span>
+                      <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: "monospace", marginTop: 1 }}>{pack.slug}</div>
+                      <div style={{ display: "flex", gap: 4, marginTop: 3, alignItems: "center", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 10, color: "#6b7280", fontWeight: 600 }}>{pack.dishCount}p</span>
+                        {pack.isDietPack && <span style={{ fontSize: 10, background: "#f0fdf4", color: "#15803d", borderRadius: 4, padding: "0 4px", fontWeight: 700 }}>dieta</span>}
+                        {pack.tags?.slice(0, 2).map((t) => (
+                          <span key={t} style={{ fontSize: 10, background: "#eef2ff", color: "#6366f1", borderRadius: 4, padding: "0 4px" }}>{t}</span>
                         ))}
                       </div>
                     </td>
-                    <td style={{ textAlign: "center" }}>
-                      {pack.active !== false
-                        ? <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>● Activo</span>
-                        : <span style={{ fontSize: 11, color: "#94a3b8" }}>○ Inactivo</span>}
+
+                    {/* Precio / Bites */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      {isFree ? (
+                        <span style={{ fontSize: 11, background: "#dcfce7", color: "#166534", borderRadius: 5, padding: "2px 7px", fontWeight: 700 }}>Gratis</span>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--input-text,#374151)" }}>{Number(pack.priceBasic).toFixed(2)} €</span>
+                          {bites > 0 && (
+                            <span style={{ fontSize: 10, color: "#7c3aed", fontWeight: 700, display: "flex", alignItems: "center", gap: 2 }}>
+                              <BitesIcon size={10} />
+                              {bites}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {!isFree && bites > 0 && false /* already shown above */ }
                     </td>
-                    <td style={{ textAlign: "center" }}>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                        <PackStatusBadge status={pack.status} />
-                      {!pack.status ? (
-                        <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>legacy</span>
-                      ) : pack.validationSummary?.unresolvedIssues > 0 ? (
-                          <span style={{ fontSize: 11, color: "#c2410c", fontWeight: 700 }}>{pack.validationSummary.unresolvedIssues} pendientes</span>
-                        ) : (
-                          <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>validado</span>
-                        )}
+
+                    {/* Stripe */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <span
+                        title={pack.isPaid ? `Product: ${pack.stripeProductId || "—"}  |  Price: ${pack.stripePriceId || "—"}  |  mode: ${pack.paymentMode}` : undefined}
+                        style={{ display: "inline-block", fontSize: 10, fontWeight: 700, background: stripeStatus.bg, color: stripeStatus.color, borderRadius: 5, padding: "2px 7px", cursor: pack.isPaid ? "help" : "default", whiteSpace: "nowrap" }}
+                      >
+                        {stripeStatus.label}
+                      </span>
+                    </td>
+
+                    {/* Planes */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", gap: 2, justifyContent: "center", flexWrap: "wrap" }}>
+                        {(pack.includedPlans || []).map((p) => (
+                          <span key={p} style={{ fontSize: 10, background: "#f0f4ff", color: "#4338ca", borderRadius: 4, padding: "1px 5px", fontWeight: 600 }}>{p}</span>
+                        ))}
+                        {(pack.includedPlans || []).length === 0 && <span style={{ fontSize: 11, color: "#94a3b8" }}>—</span>}
                       </div>
                     </td>
-                    <td style={{ textAlign: "center", fontSize: 12, color: "#6b7280" }}>
-                      {pack.ownedByCount > 0
-                        ? <span style={{ fontWeight: 600, color: "#374151" }}>{pack.ownedByCount} hogares</span>
-                        : "—"}
+
+                    {/* Estado: active + status badge */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                        <PackStatusBadge status={pack.status} />
+                        {pack.active === false
+                          ? <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600 }}>inactivo</span>
+                          : unresolved > 0
+                            ? <span style={{ fontSize: 10, color: "#c2410c", fontWeight: 700 }}>{unresolved}✗</span>
+                            : pack.status === "published"
+                              ? <span style={{ fontSize: 10, color: "#16a34a", fontWeight: 600 }}>✓ válido</span>
+                              : null}
+                      </div>
                     </td>
-                    <td>
-                      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+
+                    {/* Salud */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <span
+                        title={health.issues.length > 0 ? health.issues.join(" · ") : undefined}
+                        style={{
+                          display: "inline-block",
+                          fontSize: 10, fontWeight: 700,
+                          borderRadius: 5, padding: "2px 7px",
+                          cursor: health.issues.length > 0 ? "help" : "default",
+                          background: health.level === "ok" ? "#ecfdf5" : health.level === "legacy" ? "#f8fafc" : "#fffbeb",
+                          color: health.level === "ok" ? "#047857" : health.level === "legacy" ? "#64748b" : "#b45309"
+                        }}
+                      >
+                        {health.level === "ok" ? "✓ OK" : health.level === "legacy" ? "Legacy" : "⚠ Revisar"}
+                      </span>
+                    </td>
+
+                    {/* Hogares */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      {pack.ownedByCount > 0 ? (
                         <button
                           type="button"
-                          style={{ ...ABT.edit, ...(panelState?.mode === "edit" && String(panelState.pack?.id) === String(pack.id) ? { background: "#4338ca", color: "#fff", borderColor: "#4338ca" } : {}) }}
+                          onClick={() => setInstallationsModal(pack)}
+                          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "center" }}
+                        >
+                          <div style={{ fontWeight: 700, fontSize: 13, color: "#4338ca" }}>{pack.ownedByCount}</div>
+                          {pack.installedCount > 0 && (
+                            <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 600 }}>{pack.installedCount} inst.</div>
+                          )}
+                          {pack.lastAcquiredAt && (
+                            <div style={{ fontSize: 10, color: "#94a3b8" }}>{formatDaysSince(pack.lastAcquiredAt)}</div>
+                          )}
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 12, color: "#d1d5db" }}>—</span>
+                      )}
+                    </td>
+
+                    {/* Acciones */}
+                    <td style={{ verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
+                        <button
+                          type="button"
+                          style={{ ...ABT.edit, ...(isEditing ? { background: "#4338ca", color: "#fff", borderColor: "#4338ca" } : {}) }}
                           onClick={() => openPanel("edit", pack)}
                         >
-                          {panelState?.mode === "edit" && String(panelState.pack?.id) === String(pack.id) ? "✏️ Editando" : "Editar"}
+                          {isEditing ? "✏️" : "Editar"}
                         </button>
                         <button
                           type="button"
-                          style={{ ...ABT.edit, color: "#4338ca", borderColor: "#c7d2fe", ...(panelState?.mode === "review" && String(panelState.pack?.id) === String(pack.id) ? { background: "#4338ca", color: "#fff", borderColor: "#4338ca" } : {}) }}
+                          style={{ ...ABT.edit, color: "#4338ca", borderColor: "#c7d2fe", ...(isReviewing ? { background: "#4338ca", color: "#fff", borderColor: "#4338ca" } : {}) }}
                           onClick={() => openPanel("review", pack)}
                         >
-                          {panelState?.mode === "review" && String(panelState.pack?.id) === String(pack.id) ? "🔍 Revisando" : "Revisar"}
+                          {isReviewing ? "🔍" : "Revisar"}
                         </button>
                         <ActionsMenu
                           disabled={Boolean(togId)}
@@ -3000,6 +3322,10 @@ function CatalogPacksSection() {
                             }] : []),
                             { divider: true },
                             {
+                              label: "Ver instalaciones",
+                              onClick: () => setInstallationsModal(pack)
+                            },
+                            {
                               label: "Conceder a hogar",
                               highlight: true,
                               onClick: () => setGrantModal(pack)
@@ -3023,6 +3349,12 @@ function CatalogPacksSection() {
         </div>
       )}
 
+      {installationsModal && (
+        <PackInstallationsModal
+          pack={installationsModal}
+          onClose={() => setInstallationsModal(null)}
+        />
+      )}
       {grantModal && (
         <GrantModal
           pack={grantModal}

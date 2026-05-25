@@ -16,6 +16,7 @@ import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { CatalogPack } from "../models/CatalogPack.js";
 import { HouseholdCatalogPack } from "../models/HouseholdCatalogPack.js";
 import { PackEntitlement } from "../models/PackEntitlement.js";
+import { KitchenUser } from "../models/KitchenUser.js";
 import { normalizeSubscriptionPlan } from "../subscriptionService.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import {
@@ -243,7 +244,7 @@ async function propagatePublishedPackUpdates(pack, previousDishes = []) {
   return summary;
 }
 
-function serializeAdminPack(p, ownedByCount = 0) {
+function serializeAdminPack(p, ownedByCount = 0, installedCount = 0, lastAcquiredAt = null) {
   return {
     id: p._id,
     slug: p.slug,
@@ -278,6 +279,8 @@ function serializeAdminPack(p, ownedByCount = 0) {
     reviewedAt: p.reviewedAt || null,
     publishedAt: p.publishedAt || null,
     ownedByCount,
+    installedCount,
+    lastAcquiredAt,
     createdAt: p.createdAt,
     // Payment fields
     isPaid: Boolean(p.isPaid),
@@ -372,12 +375,26 @@ router.get("/packs/admin-all", requireAuth, requireDiod, async (req, res) => {
       filter.isDietPack = true;
     }
     const packs = await CatalogPack.find(filter).sort({ sortOrder: 1, createdAt: -1 }).lean();
-    const counts = await Promise.all(
-      packs.map((p) => HouseholdCatalogPack.countDocuments({ packId: p._id }))
-    );
+    const packIds = packs.map((p) => p._id);
+    // Single aggregation: ownedByCount + installedCount + lastAcquiredAt per pack
+    const statsAgg = await HouseholdCatalogPack.aggregate([
+      { $match: { packId: { $in: packIds } } },
+      {
+        $group: {
+          _id: "$packId",
+          ownedByCount: { $sum: 1 },
+          installedCount: { $sum: { $cond: [{ $eq: ["$status", "installed"] }, 1, 0] } },
+          lastAcquiredAt: { $max: "$acquiredAt" }
+        }
+      }
+    ]);
+    const statsMap = Object.fromEntries(statsAgg.map((s) => [String(s._id), s]));
     return res.json({
       ok: true,
-      packs: packs.map((p, i) => serializeAdminPack(p, counts[i]))
+      packs: packs.map((p) => {
+        const s = statsMap[String(p._id)] || {};
+        return serializeAdminPack(p, s.ownedByCount || 0, s.installedCount || 0, s.lastAcquiredAt || null);
+      })
     });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Error." });
@@ -925,21 +942,35 @@ router.get("/packs/:packId/admin-ownerships", requireAuth, requireDiod, async (r
     const householdIds = ownerships.map((o) => o.householdId);
     const households = await Household.find(
       { _id: { $in: householdIds } },
-      { name: 1 }
+      { name: 1, subscriptionPlan: 1, subscriptionStatus: 1, lastMeaningfulActivityAt: 1, ownerUserId: 1 }
     ).lean();
-    const nameMap = Object.fromEntries(households.map((h) => [String(h._id), h.name]));
+    const householdMap = Object.fromEntries(households.map((h) => [String(h._id), h]));
+
+    // Fetch owner emails
+    const ownerUserIds = households.map((h) => h.ownerUserId).filter(Boolean);
+    const ownerUsers = ownerUserIds.length > 0
+      ? await KitchenUser.find({ _id: { $in: ownerUserIds } }, { _id: 1, email: 1 }).lean()
+      : [];
+    const ownerEmailMap = Object.fromEntries(ownerUsers.map((u) => [String(u._id), u.email || null]));
 
     const result = ownerships.map((o) => {
+      const h = householdMap[String(o.householdId)] || {};
       const isPaid = ["purchase", "subscription"].includes(o.acquiredVia) || o.paymentStatus === "paid";
       const isInstalled = o.status === "installed";
       return {
         householdId: o.householdId,
-        householdName: nameMap[String(o.householdId)] || String(o.householdId),
+        householdName: h.name || String(o.householdId),
+        ownerEmail: h.ownerUserId ? (ownerEmailMap[String(h.ownerUserId)] || null) : null,
+        subscriptionPlan: h.subscriptionPlan || "basic",
+        subscriptionStatus: h.subscriptionStatus || "inactive",
+        lastMeaningfulActivityAt: h.lastMeaningfulActivityAt || null,
         acquiredVia: o.acquiredVia || "unknown",
+        acquiredAt: o.acquiredAt || null,
+        installedAt: o.installedAt || null,
         isPaid,
         isInstalled,
-        canRevoke: !(isPaid && isInstalled),
-        acquiredAt: o.acquiredAt || null
+        status: o.status || "owned",
+        canRevoke: !(isPaid && isInstalled)
       };
     });
 
