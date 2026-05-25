@@ -53,6 +53,10 @@ const HouseholdSchema = new mongoose.Schema(
     // Last time the user performed a meaningful in-app action (not pings/crons).
     lastMeaningfulActivityAt: { type: Date, default: null },
 
+    // Date of the Monday of the first week where this household started weekly challenges.
+    // Used to calculate per-household cycle week index (1-4) instead of a shared global date.
+    weeklyChallengeCycleStartedAt: { type: Date, default: null },
+
     // Beta Pro grant tracking.
     betaPro: {
       active: { type: Boolean, default: false },

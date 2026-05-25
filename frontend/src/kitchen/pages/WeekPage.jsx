@@ -884,10 +884,13 @@ export default function WeekPage() {
     const requestUpdates = shouldKeepPersistedCook
       ? {
           ...updates,
+          // Prefer draft cook (set by startEditingDay) over persisted (which may be null after a delete)
           cookUserId: normalizeCookUserId(
-            Object.prototype.hasOwnProperty.call(persistedCookUserByDay, dayKey)
-              ? persistedCookUserByDay[dayKey]
-              : day?.cookUserId
+            Object.prototype.hasOwnProperty.call(draftCookUserByDay, dayKey)
+              ? draftCookUserByDay[dayKey]
+              : Object.prototype.hasOwnProperty.call(persistedCookUserByDay, dayKey)
+                ? persistedCookUserByDay[dayKey]
+                : day?.cookUserId
           )
         }
       : updates;
@@ -1011,6 +1014,13 @@ export default function WeekPage() {
       finalCookUserId,
       pushStatus: finalCookUserId ? "eligible" : "skipped-no-cook"
     });
+
+    // Weekly challenge: a diner (non-self) was assigned as cook
+    const currentUserId = user?.id || user?._id;
+    if (finalCookUserId && currentUserId && String(finalCookUserId) !== String(currentUserId)) {
+      notifyWeekly("diner_assigned_as_cook", { weekStart });
+    }
+
     clearCookDraftState(dayKey);
     return true;
   };

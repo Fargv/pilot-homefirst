@@ -101,19 +101,6 @@ const BASIC_CURRICULUM_DEFS = [
     planCompatibility: ["all"]
   },
   {
-    key: "weekly_use_catalog_dish",
-    title: "Usa un plato del catálogo en tu semana",
-    description: "Instala un pack del catálogo y añade uno de sus platos a tu planificación semanal.",
-    guidance: "Los packs del catálogo incluyen platos listos para usar. Instala uno desde la sección Catálogo y asigna cualquiera de sus platos a un día de la semana.",
-    rewardBites: 5,
-    triggerType: "catalog_dish_used",
-    triggerCount: 1,
-    cycleWeek: 1,
-    cycleOrder: 5,
-    curriculum: "basic",
-    planCompatibility: ["all"]
-  },
-  {
     key: "weekly_complete_all_bonus_w1",
     title: "Completa todos los retos de la semana",
     description: "",
@@ -170,6 +157,20 @@ const BASIC_CURRICULUM_DEFS = [
     planCompatibility: ["all"]
   },
   {
+    // Moved from Week 1: requires a pack to be installed first, so belongs after weekly_install_catalog_pack
+    key: "weekly_use_catalog_dish",
+    title: "Usa un plato del catálogo en tu semana",
+    description: "Instala un pack del catálogo y añade uno de sus platos a tu planificación semanal.",
+    guidance: "Los packs del catálogo incluyen platos listos para usar. Instala uno desde la sección Catálogo y asigna cualquiera de sus platos a un día de la semana.",
+    rewardBites: 5,
+    triggerType: "catalog_dish_used",
+    triggerCount: 1,
+    cycleWeek: 2,
+    cycleOrder: 4,
+    curriculum: "basic",
+    planCompatibility: ["all"]
+  },
+  {
     key: "weekly_add_2_ingredients",
     title: "Añade 2 productos nuevos",
     description: "",
@@ -178,7 +179,7 @@ const BASIC_CURRICULUM_DEFS = [
     triggerType: "ingredient_created",
     triggerCount: 2,
     cycleWeek: 2,
-    cycleOrder: 4,
+    cycleOrder: 5,
     curriculum: "basic",
     planCompatibility: ["all"]
   },
@@ -197,6 +198,19 @@ const BASIC_CURRICULUM_DEFS = [
   },
 
   // ── WEEK 3 — "Semana organizada" ─────────────────────────────────────────
+  {
+    key: "weekly_invite_diner",
+    title: "Invita a un comensal",
+    description: "Comparte tu hogar con alguien más. Usa el código de invitación para que un familiar o compañero de piso se una a tu Lunchfy.",
+    guidance: "Ve a Configuración → Hogar y copia el código de invitación. Compártelo con quien quieras que forme parte de tu hogar.",
+    rewardBites: 10,
+    triggerType: "diner_invited",
+    triggerCount: 1,
+    cycleWeek: 3,
+    cycleOrder: 5,
+    curriculum: "basic",
+    planCompatibility: ["all"]
+  },
   {
     key: "weekly_plan_full_week_before_thursday",
     title: "Planifica toda la semana antes del jueves",
@@ -264,6 +278,19 @@ const BASIC_CURRICULUM_DEFS = [
   },
 
   // ── WEEK 4 — "Chef de confianza" ─────────────────────────────────────────
+  {
+    key: "weekly_assign_diner_as_cook",
+    title: "Asigna a un comensal como cocinero",
+    description: "Delega la cocina: asigna a otro miembro del hogar como cocinero de algún día de la semana.",
+    guidance: "En la vista semanal, pulsa el avatar de cocinero de cualquier día y selecciona a otro miembro del hogar.",
+    rewardBites: 5,
+    triggerType: "diner_assigned_as_cook",
+    triggerCount: 1,
+    cycleWeek: 4,
+    cycleOrder: 5,
+    curriculum: "basic",
+    planCompatibility: ["all"]
+  },
   {
     key: "weekly_create_2_dishes",
     title: "Crea 2 platos nuevos",
@@ -739,6 +766,9 @@ export async function getOrCreateProgress(householdId, weekStart, cycleWeekIndex
         dinnersPlannedCount: 0,
         purchaseFinalizedWithStore: false,
         budgetConfigured: false,
+        // Comensales fields
+        dinerInvited: false,
+        dinerAssignedAsCook: false,
         // Sets
         dishIdsUsedThisWeek: [],
         purchasedItemKeys: [],
@@ -918,13 +948,26 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     const cycleConfig = await getOrCreateCycleConfig();
     if (cycleConfig.paused) return null;
 
-    const weekStartISO = getCurrentWeekStart();
+    const weekStartISO = contextData.weekStart || getCurrentWeekStart();
     const weekStartDate = parseWeekStart(weekStartISO);
-    const cycleWeekIndex = getCycleWeekIndex(weekStartDate, cycleConfig.cycleStartDate);
 
-    // Resolve curriculum based on household plan
-    const household = await Household.findById(householdId).select("subscriptionPlan").lean();
+    // Resolve curriculum and per-household cycle start
+    const household = await Household.findById(householdId)
+      .select("subscriptionPlan weeklyChallengeCycleStartedAt").lean();
     const curriculum = getHouseholdCurriculum(household);
+
+    // Per-household cycle start: initialize on first weekly challenge interaction.
+    // Falls back to global cycleConfig.cycleStartDate for households that pre-date this field.
+    let householdCycleStart = household?.weeklyChallengeCycleStartedAt ?? null;
+    if (!householdCycleStart) {
+      householdCycleStart = weekStartDate; // anchor to the planning week of first use
+      await Household.updateOne(
+        { _id: householdId, weeklyChallengeCycleStartedAt: null },
+        { $set: { weeklyChallengeCycleStartedAt: weekStartDate } }
+      );
+    }
+
+    const cycleWeekIndex = getCycleWeekIndex(weekStartDate, householdCycleStart);
 
     // Load only challenges for this household's curriculum
     const challenges = await WeeklyChallengeDef.find({
@@ -945,7 +988,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     if (eventType === "meal_planned") {
       const { count, dishIds, weekdaysFilled } = await _getWeekPlanStats(
         householdId,
-        contextData.weekStart || weekStartISO
+        weekStartISO  // already resolved from contextData.weekStart at top of function
       );
 
       const setUpdate = { mealsPlannedCount: count };
@@ -1203,7 +1246,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
       // so it stays consistent even on repeat triggers. Does NOT auto-complete.
       const { count: dinnerCount } = await _getDinnerPlanStats(
         householdId,
-        contextData.weekStart || weekStartISO
+        weekStartISO  // already resolved from contextData.weekStart at top of function
       );
       await HouseholdWeeklyProgress.updateOne(
         { _id: progress._id },
@@ -1286,6 +1329,36 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         newlyCompletedKeys.push("pro_w4_configure_budget");
         completedKeysBefore.add("pro_w4_configure_budget");
       }
+
+    } else if (eventType === "diner_invited") {
+      // Basic + Pro challenge: a non-owner household member has joined
+      await HouseholdWeeklyProgress.updateOne(
+        { _id: progress._id },
+        { $set: { dinerInvited: true } }
+      );
+      progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+
+      const def = challenges.find((c) => c.key === "weekly_invite_diner");
+      if (def && !completedKeysBefore.has("weekly_invite_diner")) {
+        await _markChallengeComplete(progress._id, def);
+        newlyCompletedKeys.push("weekly_invite_diner");
+        completedKeysBefore.add("weekly_invite_diner");
+      }
+
+    } else if (eventType === "diner_assigned_as_cook") {
+      // Basic + Pro challenge: any day has a cook that is not the current user (household owner)
+      await HouseholdWeeklyProgress.updateOne(
+        { _id: progress._id },
+        { $set: { dinerAssignedAsCook: true } }
+      );
+      progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+
+      const def = challenges.find((c) => c.key === "weekly_assign_diner_as_cook");
+      if (def && !completedKeysBefore.has("weekly_assign_diner_as_cook")) {
+        await _markChallengeComplete(progress._id, def);
+        newlyCompletedKeys.push("weekly_assign_diner_as_cook");
+        completedKeysBefore.add("weekly_assign_diner_as_cook");
+      }
     }
 
     // Grant rewards for newly completed challenges
@@ -1349,11 +1422,20 @@ export async function getWeeklyState(householdId) {
     const cycleConfig = await getOrCreateCycleConfig();
     const weekStartISO = getCurrentWeekStart();
     const weekStartDate = parseWeekStart(weekStartISO);
-    const cycleWeekIndex = getCycleWeekIndex(weekStartDate, cycleConfig.cycleStartDate);
 
-    // Resolve curriculum for this household
-    const household = await Household.findById(householdId).select("subscriptionPlan").lean();
+    // Resolve curriculum and per-household cycle start
+    const household = await Household.findById(householdId)
+      .select("subscriptionPlan weeklyChallengeCycleStartedAt").lean();
     const curriculum = getHouseholdCurriculum(household);
+
+    // Use per-household cycle anchor if set; fall back to global config for legacy households.
+    const householdCycleStart = household?.weeklyChallengeCycleStartedAt ?? cycleConfig.cycleStartDate;
+    const cycleWeekIndex = getCycleWeekIndex(weekStartDate, householdCycleStart);
+
+    // participationWeek: how many weeks the household has been doing challenges (1-based).
+    const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+    const weeksElapsed = Math.max(0, Math.floor((weekStartDate - householdCycleStart) / MS_PER_WEEK));
+    const participationWeek = weeksElapsed + 1;
 
     const challenges = await WeeklyChallengeDef.find({
       active: true,
@@ -1415,7 +1497,8 @@ export async function getWeeklyState(householdId) {
     return {
       available: true,
       curriculum,              // "basic" | "pro" — frontend uses for UI decoration
-      cycleWeekIndex,
+      cycleWeekIndex,          // internal 1-4 rotation index (not shown to users)
+      participationWeek,       // how many weeks user has been doing challenges (shown as "Semana N")
       weekStart: weekStartISO,
       challenges: enrichedChallenges,
       completedCount,

@@ -228,7 +228,7 @@ export default function WeeklyChallengeCard() {
         <div className="weekly-challenge-done-chip" role="region" aria-label="Retos semanales completados">
           <CheckCircleIcon />
           <span className="weekly-challenge-done-chip-text">Retos semanales completados</span>
-          <span className="weekly-challenge-done-chip-week">Semana {weeklyState.cycleWeekIndex}/4</span>
+          <span className="weekly-challenge-done-chip-week">Semana {weeklyState.participationWeek ?? weeklyState.cycleWeekIndex}</span>
           <button
             type="button"
             onClick={() => setDoneExpanded(true)}
@@ -327,7 +327,7 @@ export default function WeeklyChallengeCard() {
         )}
 
         <div className="weekly-challenge-week-label">
-          Semana {weeklyState.cycleWeekIndex} de 4
+          Semana {weeklyState.participationWeek ?? weeklyState.cycleWeekIndex}
         </div>
 
         <div className="weekly-challenge-list">

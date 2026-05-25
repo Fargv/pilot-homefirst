@@ -26,6 +26,10 @@ const HouseholdWeeklyProgress = mongoose.model(
       purchaseFinalizedWithStore: { type: Boolean, default: false }, // true once purchase finalized with store + amount
       budgetConfigured: { type: Boolean, default: false },         // true once weekly budget configured
 
+      // --- Comensales (diners) counters ---
+      dinerInvited: { type: Boolean, default: false },            // true once an extra diner (non-owner) has been invited/joined
+      dinerAssignedAsCook: { type: Boolean, default: false },     // true once a diner is assigned as cook for any day
+
       // --- Sets (deduplication) ---
       dishIdsUsedThisWeek: [{ type: mongoose.Schema.Types.ObjectId }], // unique dish IDs used in meal plans
       purchasedItemKeys: [{ type: String }],  // canonicalName of purchased items (deduplicate toggle)

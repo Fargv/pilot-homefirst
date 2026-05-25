@@ -411,14 +411,17 @@ export default function ShoppingPage() {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
       applyPayload(data);
       if (checkBasicsPopup) {
-        const householdId = user?.activeHouseholdId || user?.householdId || "";
-        const popupKey = `lunchfy_basics_popup_${householdId}_${weekStart}`;
-        try {
-          if (!localStorage.getItem(popupKey)) {
-            localStorage.setItem(popupKey, "1");
-            setBasicsPopupOpen(true);
-          }
-        } catch { /* ignore */ }
+        const plan = String(user?.subscriptionPlan || "basic").toLowerCase();
+        if (canUseBasicsFeature(plan)) {
+          const householdId = user?.activeHouseholdId || user?.householdId || "";
+          const popupKey = `lunchfy_basics_popup_${householdId}_${weekStart}`;
+          try {
+            if (!localStorage.getItem(popupKey)) {
+              localStorage.setItem(popupKey, "1");
+              setBasicsPopupOpen(true);
+            }
+          } catch { /* ignore */ }
+        }
       }
     } catch (err) {
       if (isBudgetFeatureUnavailableError(err)) {

@@ -39,6 +39,7 @@ import {
   countHouseholdLicenseUsage,
   sendHouseholdLicenseError
 } from "../householdLicenseService.js";
+import { triggerWeeklyChallenge } from "../weeklyEngine.js";
 
 const router = express.Router();
 
@@ -674,6 +675,12 @@ router.post("/invitations/:token/accept", requireAuth, async (req, res) => {
     invitation.usedAt = new Date();
     invitation.usedByUserId = req.kitchenUser._id;
     await invitation.save();
+
+    // Weekly challenge: fire diner_invited for the household owner (non-fatal).
+    const ownerHousehold = await Household.findById(invitation.householdId).select("ownerUserId").lean();
+    if (ownerHousehold?.ownerUserId) {
+      triggerWeeklyChallenge(String(invitation.householdId), "diner_invited", {}).catch(() => {});
+    }
 
     return res.json({
       ok: true,
