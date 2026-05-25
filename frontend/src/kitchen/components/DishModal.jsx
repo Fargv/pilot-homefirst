@@ -510,8 +510,8 @@ export default function DishModal({
             {/* allowRandom */}
             <div className="dish-modal-flag-row">
               <div className="dish-modal-flag-main">
-                <span className="dish-modal-flag-title">Permitir en aleatorización</span>
-                <span className="dish-modal-flag-hint">Si lo desactivas nunca entrará en aleatorización</span>
+                <span className="dish-modal-flag-title">Incluir en randomización</span>
+                <span className="dish-modal-flag-hint">Si lo desactivas, este plato no entrará en randomización</span>
               </div>
               <label className="kitchen-toggle" htmlFor="dish-randomswitch">
                 <input

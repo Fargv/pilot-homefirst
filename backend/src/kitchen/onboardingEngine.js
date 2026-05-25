@@ -59,8 +59,8 @@ const DEFAULT_CHALLENGES = [
   {
     key: "customize_randomization",
     title: "Personaliza tu randomización",
-    description: "Marca y desmarca algunos platos para indicar cuáles quieres que Lunchfy use en la randomización semanal. Así el plan automático siempre propone platos que te gustan.",
-    howTo: "En Cocina → Platos, toca el checkbox '☑ En randomización' en cualquier plato para incluirlo o excluirlo del plan automático.",
+    description: "Marca y desmarca algunos platos para indicar cuáles quieres que Lunchfy use al randomizar tu planificación. Así el plan automático siempre propone platos que te gustan.",
+    howTo: "En Cocina → Platos, activa el checkbox '☑ Incluir en randomización' en los platos que quieres que entren en la planificación automática.",
     rewardBites: 5, order: 6, phase: 3, phaseLabel: "Platos",
     triggerType: "randomization_customized", triggerCount: 1
   },

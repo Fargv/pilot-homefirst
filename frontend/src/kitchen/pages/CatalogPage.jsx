@@ -515,14 +515,14 @@ function DietPackInstallModal({ pack, onUseAsDefault, onDecline }) {
         </div>
         <h2 className="catalog-purchase-modal-title">¿Usar esta dieta por defecto?</h2>
         <p className="catalog-purchase-modal-text">
-          <strong>{label}</strong> está instalado. ¿Quieres usarlo por defecto al aleatorizar días y semanas?
+          <strong>{label}</strong> está instalado. ¿Quieres usarlo por defecto al randomizar días y semanas?
         </p>
         <div className="catalog-purchase-modal-actions">
           <button type="button" className="kitchen-btn primary" onClick={onUseAsDefault}>Usar por defecto</button>
           <button type="button" className="kitchen-btn" onClick={onDecline}>Ahora no</button>
         </div>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8, textAlign: "center" }}>
-          Puedes cambiar esto más tarde en Configuración &rsaquo; Aleatorización por dieta.
+          Puedes cambiar esto más tarde en Configuración &rsaquo; Filtro por dieta.
         </p>
       </div>
     </div>
@@ -862,7 +862,7 @@ export default function CatalogPage() {
                   randomizationDefaultDietPackIds: [packId]
                 })
               });
-              showToast("Dieta activada por defecto para la aleatorización.", "success");
+              showToast("Dieta activada por defecto para la randomización.", "success");
             } catch {
               showToast("No se pudo activar la dieta por defecto.", "error");
             }

@@ -2008,7 +2008,7 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, onSaved, baseBitePri
           <label style={{ ...labelStyle, justifyContent: "flex-end", paddingBottom: 6 }}>
             <span style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
               <input type="checkbox" checked={Boolean(form.defaultSpecial)} onChange={set("defaultSpecial")} />
-              Especiales por defecto (no entran en randomización)
+              Especiales por defecto (excluidos del plan automático)
             </span>
           </label>
           <label style={{ ...labelStyle, justifyContent: "flex-end", paddingBottom: 6 }}>

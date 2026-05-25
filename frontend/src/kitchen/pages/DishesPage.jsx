@@ -315,7 +315,7 @@ export default function DishesPage() {
         if (activeDish?._id === dish._id) {
           setActiveDish(dish);
         }
-        setDishError(err.message || "No se pudo actualizar la randomización del plato.");
+        setDishError(err.message || "No se pudo actualizar la configuración del plato.");
       } finally {
         setDishTogglePendingId("");
       }
@@ -1265,7 +1265,7 @@ export default function DishesPage() {
                         {dish.special ? (
                           <span
                             className="kitchen-dish-special-inline-star"
-                            title="Plato especial (excluido de randomización)"
+                            title="Plato especial — excluido del plan automático"
                             aria-label="Plato especial"
                           >
                             ★
@@ -1296,7 +1296,7 @@ export default function DishesPage() {
                   <div className="kitchen-dish-actions-bar">
                     <label
                       className={`kitchen-dish-random-checkbox${toggleDisabled ? " is-loading" : ""}${dish.special ? " is-special" : ""}`}
-                      title={dish.special ? "Plato especial — excluido automáticamente" : (randomEnabled ? "Clic para excluir de randomización" : "Clic para incluir en randomización")}
+                      title={dish.special ? "Plato especial — excluido del plan automático" : (randomEnabled ? "Excluir de randomización" : "Incluir en randomización")}
                     >
                       <input
                         type="checkbox"
@@ -1304,7 +1304,7 @@ export default function DishesPage() {
                         disabled={toggleDisabled || Boolean(dish.special)}
                         onChange={() => toggleDishAllowRandom(dish, !randomEnabled)}
                       />
-                      <span>{randomEnabled ? "En randomización" : "No randomizable"}</span>
+                      <span>Incluir en randomización</span>
                     </label>
                     <div className="kitchen-dish-actions">
                       <div className="kitchen-dish-info-wrap">

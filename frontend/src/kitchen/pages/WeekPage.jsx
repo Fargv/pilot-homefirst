@@ -415,10 +415,10 @@ export default function WeekPage() {
       const hasOnlySpecialWarning = warningCodes.includes("only_special_excluded");
       if (data.insufficient) {
         const message = hasOnlySpecialWarning
-          ? "No hay platos disponibles para randomizar (los platos especiales estan excluidos)."
+          ? "No hay platos disponibles para randomizar (los platos especiales están excluidos)."
           : hasWarnings
-          ? `No hay suficientes platos para completar todos los dias sin repetir. ${warningMessages.join(" ")}`
-          : "No hay suficientes platos para completar todos los dias sin repetir.";
+          ? `No hay suficientes platos para completar todos los días sin repetir. ${warningMessages.join(" ")}`
+          : "No hay suficientes platos para completar todos los días sin repetir.";
         setWeekNotice({ type: "error", message });
       } else if (hasWarnings) {
         setWeekNotice({ type: "error", message: warningMessages.join(" ") });
@@ -1687,8 +1687,8 @@ export default function WeekPage() {
       const message = reason === "all_used"
         ? "Esta semana ya se han usado todos los platos disponibles."
         : reason === "only_special"
-          ? "No hay platos disponibles para randomizar (los platos especiales estan excluidos)."
-          : "No hay platos disponibles en este hogar para asignar aleatoriamente.";
+          ? "No hay platos disponibles para randomizar (los platos especiales están excluidos)."
+          : "No hay platos disponibles en este hogar para randomizar.";
       setDayErrors((prev) => ({
         ...prev,
         [dayKey]: message
@@ -2007,7 +2007,7 @@ export default function WeekPage() {
                           className="kitchen-week-randomize-mobile"
                           onClick={() => setWeekRandomizeConfirmOpen(true)}
                           disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                          title={!dishesReadyForCurrentHousehold ? "Actualizando platos..." : "Randomizar libres"}
+                          title={!dishesReadyForCurrentHousehold ? "Actualizando platos..." : "Randomizar semana"}
                           aria-label="Randomizar semana"
                         >
                           <DiceIcon />
@@ -2129,7 +2129,7 @@ export default function WeekPage() {
                         className="kitchen-week-randomize-desktop"
                         onClick={() => setWeekRandomizeConfirmOpen(true)}
                         disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                        title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar libres"}
+                        title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar semana"}
                       >
                         <DiceIcon /> Randomizar
                       </button>
@@ -2233,7 +2233,7 @@ export default function WeekPage() {
                 const randomDisabled = !dishesReadyForCurrentHousehold;
                 const randomTitle = randomDisabled
                   ? "Actualizando platos del hogar..."
-                  : "Asignar plato aleatorio";
+                  : "Randomizar día";
                 const dayVisual = DAY_CARD_STYLES[index % DAY_CARD_STYLES.length];
                 const cardColors = isPlanned
                   ? (isAssigned && cookUser
@@ -2373,7 +2373,7 @@ export default function WeekPage() {
                           className="kitchen-button secondary kitchen-day-random-button"
                           onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
                           disabled={randomDisabled}
-                          aria-label="Asignar plato aleatorio"
+                          aria-label="Randomizar día"
                           title={randomTitle}
                         >
                           <DiceIcon />
@@ -2451,7 +2451,7 @@ export default function WeekPage() {
                             className="kitchen-button secondary kitchen-day-random-button"
                             onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
                             disabled={randomDisabled}
-                            aria-label="Asignar plato aleatorio"
+                            aria-label="Randomizar día"
                             title={randomTitle}
                           >
                             <DiceIcon />
@@ -3191,12 +3191,12 @@ export default function WeekPage() {
             className="kitchen-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Randomizar libres"
+            aria-label="Randomizar semana"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="kitchen-modal-header">
               <h3>¿Quieres randomizar la semana?</h3>
-              <p className="kitchen-muted">Se asignarán platos aleatorios sin repetir.</p>
+              <p className="kitchen-muted">Se asignarán platos aleatorios a los días libres.</p>
             </div>
             <div className="kitchen-modal-actions">
               <button
@@ -3213,7 +3213,7 @@ export default function WeekPage() {
                 onClick={handleConfirmWeekRandomize}
                 disabled={weekRandomizing}
               >
-                {weekRandomizing ? "Randomizando..." : "Randomizar libres"}
+                {weekRandomizing ? "Randomizando..." : "Randomizar semana"}
               </button>
             </div>
           </div>

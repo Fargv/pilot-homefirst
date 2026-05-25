@@ -179,10 +179,10 @@ function BetaProUnlockedModal({ onDismiss }) {
           <p className="kitchen-beta-pro-modal-features-title">Con Pro Beta tienes acceso a:</p>
           <ul className="kitchen-beta-pro-modal-features-list">
             <li>🌙 Planificación de <strong>cenas</strong></li>
-            <li>🎲 Aleatorización de toda la semana de una vez</li>
+            <li>🎲 Randomizar toda la semana de una vez</li>
             <li>💰 Presupuesto semanal de la compra</li>
             <li>👨‍👩‍👧‍👦 Hasta 8 miembros y 12 comensales</li>
-            <li>🥗 Filtros de dieta avanzados en la aleatorización</li>
+            <li>🥗 Filtros de dieta avanzados en randomización</li>
           </ul>
         </div>
 

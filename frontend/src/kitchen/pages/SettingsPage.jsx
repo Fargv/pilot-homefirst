@@ -1228,7 +1228,7 @@ export default function SettingsPage() {
               <span className="kitchen-toggle-track" />
             </label>
           </div>
-          <p className="kitchen-muted">Puede asignarse automaticamente como cocinero en randomizacion.</p>
+          <p className="kitchen-muted">Puede asignarse automáticamente como cocinero al randomizar.</p>
         </label>
         {/* Dinner preferences — only visible when household plan supports dinners AND dinners are enabled */}
         {canUseDinners && dinnersEnabled ? (
@@ -1641,7 +1641,7 @@ export default function SettingsPage() {
                 <InfoIcon />
               </button>
             </div>
-            <p className="kitchen-muted">Regla best-effort de randomizacion semanal.</p>
+            <p className="kitchen-muted">Regla best-effort para la planificación automática.</p>
           </div>
           <label className="kitchen-toggle" aria-label="Activar no repetir plato por semanas">
             <input
@@ -1687,24 +1687,24 @@ export default function SettingsPage() {
                 <CloseIcon />
               </button>
             </div>
-            <p>Evita, en lo posible, platos usados en las ultimas X semanas al randomizar la semana actual.</p>
+            <p>Evita, en lo posible, platos usados en las últimas X semanas al randomizar la semana actual.</p>
             <p>Es una regla best-effort: no bloquea la planificacion y puede relajarse si faltan platos.</p>
             <p>Ejemplo: con X=3 y solo 10 platos, el sistema intentara evitar repetidos y completara la semana igualmente.</p>
           </div>
         ) : null}
 
         <div style={{ marginTop: 8, padding: "14px 0 4px", borderTop: "1px solid var(--border-soft)" }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", marginBottom: 2 }}>Aleatorización por dieta</div>
-          <p className="kitchen-muted" style={{ marginBottom: 10 }}>Usa por defecto platos de las dietas descargadas al aleatorizar días o semanas.</p>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", marginBottom: 2 }}>Filtro por dieta</div>
+          <p className="kitchen-muted" style={{ marginBottom: 10 }}>Usa por defecto platos de las dietas descargadas al randomizar días o semanas.</p>
           {canUseDietRandomization(subscriptionPlan) ? (
             <>
               <div className="settings-household-pref-row">
                 <div className="settings-household-pref-main">
                   <div className="settings-household-pref-title">
-                    <span>Usar dietas por defecto al aleatorizar</span>
+                    <span>Usar dietas por defecto al randomizar</span>
                   </div>
                 </div>
-                <label className="kitchen-toggle" aria-label="Activar aleatorización por dieta">
+                <label className="kitchen-toggle" aria-label="Activar filtro de dieta">
                   <input
                     type="checkbox"
                     className="kitchen-toggle-input"
@@ -1726,7 +1726,7 @@ export default function SettingsPage() {
                   </p>
                 ) : (
                   <div style={{ marginTop: 8 }}>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>Selecciona las dietas para la aleatorización:</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>Selecciona las dietas para la randomización:</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {installedDietPacks.map((pack) => {
                         const isSelected = dietDefaultPackIds.includes(String(pack.id));
@@ -2359,7 +2359,7 @@ export default function SettingsPage() {
                 <span className="kitchen-toggle-track" />
               </label>
             </div>
-            <p className="kitchen-muted">Puede asignarse automaticamente como cocinero en randomizacion.</p>
+            <p className="kitchen-muted">Puede asignarse automáticamente como cocinero al randomizar.</p>
           </label>
           {/* Dinner fields in member modal — only when dinners enabled */}
           {canUseDinners && dinnersEnabled ? (

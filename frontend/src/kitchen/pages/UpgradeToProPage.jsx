@@ -28,9 +28,9 @@ const PLANS = [
     tagline: "El plan base, con lo esencial para organizar tu semana.",
     features: [
       { label: "Planificación semanal completa", included: true },
-      { label: "Randomización día a día", included: true },
+      { label: "Randomizar por día", included: true },
       { label: "Lista de la compra", included: true },
-      { label: "Randomización de semana completa", included: false },
+      { label: "Randomizar semana completa", included: false },
       { label: "Presupuesto y control de gasto", included: false }
     ]
   },
@@ -42,9 +42,9 @@ const PLANS = [
     recommended: true,
     features: [
       { label: "Planificación semanal completa", included: true },
-      { label: "Randomización día a día", included: true },
+      { label: "Randomizar por día", included: true },
       { label: "Lista de la compra", included: true },
-      { label: "Randomización de semana completa", included: true },
+      { label: "Randomizar semana completa", included: true },
       { label: "Presupuesto y control de gasto", included: true }
     ]
   },
@@ -73,13 +73,13 @@ const CANCEL_REASONS = [
 
 const FEATURES_BY_PLAN = {
   pro: [
-    "Randomización de semana completa",
+    "Randomizar semana completa",
     "Presupuesto y control de gasto",
     "Filtro de dieta en randomización"
   ],
   premium: [
     "Usuarios y comensales ilimitados",
-    "Randomización de semana completa",
+    "Randomizar semana completa",
     "Presupuesto y control de gasto",
     "Filtro de dieta en randomización",
     "Acceso prioritario a nuevas funciones"

@@ -66,7 +66,7 @@ const PLANS = [
       "Hasta 8 miembros",
       "Hasta 12 comensales",
       "Presupuesto de compra",
-      "Aleatorización avanzada del menú",
+      "Randomización avanzada del menú",
     ],
     available: false,
   },
