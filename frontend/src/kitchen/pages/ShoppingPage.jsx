@@ -962,6 +962,13 @@ export default function ShoppingPage() {
       }
       setPurchaseConfirmOpen(false);
       setPurchaseConfirmTarget(null);
+      // Weekly challenge: purchase finalized with store + amount
+      if (purchaseConfirmStoreId && purchaseConfirmAmount) {
+        notifyWeekly("purchase_finalized", {
+          storeId: purchaseConfirmStoreId,
+          amount: purchaseConfirmAmount
+        });
+      }
       setPurchaseConfirmStoreId("");
       setPurchaseConfirmAmount("");
       if (pendingNavigationRef.current) {
@@ -1653,6 +1660,7 @@ export default function ShoppingPage() {
           currentPendingCanonicals={currentPendingCanonicals}
           currentPendingIngredientIds={currentPendingIngredientIds}
           onClose={() => setBasicsPopupOpen(false)}
+          onBasicCreated={() => notifyWeekly("basic_created")}
           onApplied={({ addedCount }) => {
             setBasicsPopupOpen(false);
             if (addedCount > 0) {
@@ -1660,6 +1668,8 @@ export default function ShoppingPage() {
               clearTimeout(basicsToastTimerRef.current);
               setBasicsToast(`${addedCount} básico${addedCount !== 1 ? "s" : ""} añadido${addedCount !== 1 ? "s" : ""} a la lista ✓`);
               basicsToastTimerRef.current = setTimeout(() => setBasicsToast(""), 5000);
+              // Weekly challenge: basics added to shopping list
+              notifyWeekly("basic_added_to_list");
             }
           }}
         />

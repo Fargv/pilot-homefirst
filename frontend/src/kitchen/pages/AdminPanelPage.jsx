@@ -4706,7 +4706,7 @@ function WeeklySection() {
   const [challenges, setChallenges] = useState([]);
   const [editingChallenge, setEditingChallenge] = useState(null);
   const [editForm, setEditForm] = useState({});
-  const [newChallengeForm, setNewChallengeForm] = useState({ key: "", title: "", description: "", guidance: "", rewardBites: 10, triggerType: "", triggerCount: 1, cycleWeek: "", cycleOrder: 0, active: true });
+  const [newChallengeForm, setNewChallengeForm] = useState({ key: "", title: "", description: "", guidance: "", rewardBites: 10, triggerType: "", triggerCount: 1, cycleWeek: "", cycleOrder: 0, active: true, curriculum: "basic" });
   const [showNewForm, setShowNewForm] = useState(false);
   const [householdId, setHouseholdId] = useState("");
   const [householdProgress, setHouseholdProgress] = useState(null);
@@ -4757,7 +4757,7 @@ function WeeklySection() {
 
   const startEditChallenge = (c) => {
     setEditingChallenge(c._id);
-    setEditForm({ key: c.key, title: c.title, description: c.description, guidance: c.guidance, rewardBites: c.rewardBites, triggerType: c.triggerType, triggerCount: c.triggerCount, cycleWeek: c.cycleWeek ?? "", cycleOrder: c.cycleOrder ?? 0, active: c.active });
+    setEditForm({ key: c.key, title: c.title, description: c.description, guidance: c.guidance, rewardBites: c.rewardBites, triggerType: c.triggerType, triggerCount: c.triggerCount, cycleWeek: c.cycleWeek ?? "", cycleOrder: c.cycleOrder ?? 0, active: c.active, curriculum: c.curriculum || "basic" });
   };
 
   const saveEditChallenge = async () => {
@@ -4789,7 +4789,7 @@ function WeeklySection() {
         method: "POST", body: JSON.stringify({ ...newChallengeForm, cycleWeek: newChallengeForm.cycleWeek === "" ? null : Number(newChallengeForm.cycleWeek) })
       });
       setShowNewForm(false);
-      setNewChallengeForm({ key: "", title: "", description: "", guidance: "", rewardBites: 10, triggerType: "", triggerCount: 1, cycleWeek: "", cycleOrder: 0, active: true });
+      setNewChallengeForm({ key: "", title: "", description: "", guidance: "", rewardBites: 10, triggerType: "", triggerCount: 1, cycleWeek: "", cycleOrder: 0, active: true, curriculum: "basic" });
       await loadChallenges();
     } catch (e) { setError(e.message); }
     finally { setSaving(false); }
@@ -4844,10 +4844,14 @@ function WeeklySection() {
     { key: "households", label: "Hogares" }
   ];
 
-  const groupedChallenges = [1, 2, 3, 4, null].map((week) => ({
-    week,
-    items: challenges.filter((c) => (c.cycleWeek ?? null) === week)
-  })).filter((g) => g.items.length > 0);
+  // Group by curriculum + cycleWeek: Basic W1-4, then Pro W1-4, then unassigned each
+  const groupedChallenges = ["basic", "pro"].flatMap((curriculum) =>
+    [1, 2, 3, 4, null].map((week) => ({
+      curriculum,
+      week,
+      items: challenges.filter((c) => (c.curriculum || "basic") === curriculum && (c.cycleWeek ?? null) === week)
+    }))
+  ).filter((g) => g.items.length > 0);
 
   return (
     <div style={{ maxWidth: 900 }}>
@@ -4908,6 +4912,13 @@ function WeeklySection() {
                 <label style={wcLabelStyle}>cycleWeek (1-4 o vacío=sin asignar)</label>
                 <input style={inputStyle} type="number" min="1" max="4" value={newChallengeForm.cycleWeek ?? ""} onChange={(e) => setNewChallengeForm((p) => ({ ...p, cycleWeek: e.target.value }))} />
               </div>
+              <div style={wcFieldStyle}>
+                <label style={wcLabelStyle}>curriculum</label>
+                <select style={inputStyle} value={newChallengeForm.curriculum || "basic"} onChange={(e) => setNewChallengeForm((p) => ({ ...p, curriculum: e.target.value }))}>
+                  <option value="basic">basic</option>
+                  <option value="pro">pro</option>
+                </select>
+              </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button type="button" style={ABT.save} onClick={createChallenge} disabled={saving}>{saving ? "..." : "Crear"}</button>
                 <button type="button" style={ABT.cancel} onClick={() => setShowNewForm(false)}>Cancelar</button>
@@ -4915,11 +4926,21 @@ function WeeklySection() {
             </div>
           )}
 
-          {groupedChallenges.map(({ week, items }) => (
-            <div key={week ?? "unassigned"} style={{ marginBottom: 20 }}>
-              <p style={{ fontWeight: 700, fontSize: 13, color: "#374151", marginBottom: 8 }}>
-                {week ? `Semana ${week}` : "Sin semana asignada"}
-              </p>
+          {groupedChallenges.map(({ curriculum, week, items }) => (
+            <div key={`${curriculum}-${week ?? "unassigned"}`} style={{ marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <p style={{ fontWeight: 700, fontSize: 13, color: "#374151", margin: 0 }}>
+                  {week ? `Semana ${week}` : "Sin semana asignada"}
+                </p>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4,
+                  background: curriculum === "pro" ? "#312e81" : "#e2e8f0",
+                  color: curriculum === "pro" ? "#fff" : "#374151",
+                  letterSpacing: "0.05em"
+                }}>
+                  {curriculum === "pro" ? "PRO" : "BASIC"}
+                </span>
+              </div>
               {items.map((c) => (
                 <div key={c._id} style={{ ...sectionStyle, marginBottom: 8 }}>
                   {editingChallenge === c._id ? (
@@ -4939,6 +4960,13 @@ function WeeklySection() {
                       <div style={wcFieldStyle}>
                         <label style={wcLabelStyle}>cycleWeek (1-4 o vacío)</label>
                         <input style={inputStyle} type="number" min="1" max="4" value={editForm.cycleWeek ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, cycleWeek: e.target.value }))} />
+                      </div>
+                      <div style={wcFieldStyle}>
+                        <label style={wcLabelStyle}>curriculum</label>
+                        <select style={inputStyle} value={editForm.curriculum || "basic"} onChange={(e) => setEditForm((p) => ({ ...p, curriculum: e.target.value }))}>
+                          <option value="basic">basic</option>
+                          <option value="pro">pro</option>
+                        </select>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                         <input type="checkbox" checked={!!editForm.active} onChange={(e) => setEditForm((p) => ({ ...p, active: e.target.checked }))} />

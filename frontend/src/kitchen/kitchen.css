@@ -15543,6 +15543,29 @@ body {
   color: #15803d;
 }
 
+/* Curriculum chip — PRO badge shown next to the weekly challenge heading */
+.weekly-challenge-curriculum-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.weekly-challenge-curriculum-chip--pro {
+  background: #312e81;
+  color: #fff;
+}
+
+[data-theme="dark"] .weekly-challenge-curriculum-chip--pro {
+  background: #4338ca;
+  color: #fff;
+}
+
 .weekly-challenge-week-label {
   font-size: 11px;
   font-weight: 700;

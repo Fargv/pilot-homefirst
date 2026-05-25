@@ -18,6 +18,14 @@ const HouseholdWeeklyProgress = mongoose.model(
       shoppingListCompleted: { type: Boolean, default: false },
       catalogDishUsed: { type: Boolean, default: false },  // true once a catalog-sourced dish is used in the week plan
 
+      // --- Pro curriculum counters ---
+      weekRandomized: { type: Boolean, default: false },          // true once full-week randomization used
+      basicCreated: { type: Boolean, default: false },            // true once first Básico created
+      basicAddedToList: { type: Boolean, default: false },        // true once a Básico is added to the weekly list
+      dinnersPlannedCount: { type: Number, default: 0 },          // unique filled dinner slots in week plan
+      purchaseFinalizedWithStore: { type: Boolean, default: false }, // true once purchase finalized with store + amount
+      budgetConfigured: { type: Boolean, default: false },         // true once weekly budget configured
+
       // --- Sets (deduplication) ---
       dishIdsUsedThisWeek: [{ type: mongoose.Schema.Types.ObjectId }], // unique dish IDs used in meal plans
       purchasedItemKeys: [{ type: String }],  // canonicalName of purchased items (deduplicate toggle)

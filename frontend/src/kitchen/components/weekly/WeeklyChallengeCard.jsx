@@ -252,6 +252,9 @@ export default function WeeklyChallengeCard() {
             <div className="weekly-challenge-slim-heading">
               <TrophyIcon />
               <span className="weekly-challenge-slim-title">Retos semanales</span>
+              {weeklyState.curriculum === "pro" && (
+                <span className="weekly-challenge-curriculum-chip weekly-challenge-curriculum-chip--pro">PRO</span>
+              )}
             </div>
             <div className="weekly-challenge-slim-right">
               <span className="weekly-challenge-slim-count">
@@ -284,6 +287,9 @@ export default function WeeklyChallengeCard() {
           <div className="weekly-challenge-heading">
             <TrophyIcon />
             <span>RETOS SEMANALES</span>
+            {weeklyState.curriculum === "pro" && (
+              <span className="weekly-challenge-curriculum-chip weekly-challenge-curriculum-chip--pro">PRO</span>
+            )}
           </div>
           <div className="onboarding-guide-actions">
             <span>{completedCount}/{totalCount}</span>

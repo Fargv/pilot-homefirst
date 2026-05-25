@@ -108,6 +108,7 @@ export async function checkAllMainChallengesComplete(householdId) {
   const mainDefs = await WeeklyChallengeDef.find({
     active: true,
     cycleWeek: progress.cycleWeekIndex,
+    curriculum: "basic",          // Beta Pro only for basic curriculum users
     triggerType: { $ne: "bonus" }
   }).lean();
 

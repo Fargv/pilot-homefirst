@@ -402,6 +402,8 @@ export default function WeekPage() {
         body: JSON.stringify({ overwriteAll: false, mealType: selectedMealType })
       });
       setPlan(data.plan || null);
+      // Weekly challenge: full-week randomization used
+      notifyWeekly("week_randomized", { weekStart: weekStartRef.current });
       const warningMessages = Array.isArray(data.warnings)
         ? data.warnings.filter((item) => String(item || "").trim())
         : [];
@@ -912,6 +914,10 @@ export default function WeekPage() {
           notifyOnboarding("plan_full_week");
           notifyWeekly("full_week_planned", { weekStart });
         }
+      }
+      // Weekly challenge: dinner slot filled
+      if ("mainDishId" in requestUpdates && requestUpdates.mainDishId && mealType === "dinner") {
+        notifyWeekly("dinner_planned", { weekStart });
       }
       if (options.returnErrorObject) {
         return { plan: data.plan, error: null };

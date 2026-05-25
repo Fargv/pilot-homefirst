@@ -75,6 +75,7 @@ function SpinnerIcon() {
 export function IngredientSearchAdd({
   placeholder = "Buscar producto…",
   onAdded,        // called with the created/selected HouseholdBasic
+  onBasicCreated, // optional: called after any successful basic creation (for challenge tracking)
   householdId,
   compact = false
 }) {
@@ -130,6 +131,7 @@ export function IngredientSearchAdd({
       setQuery("");
       setSuggestions([]);
       onAdded?.(data.basic);
+      onBasicCreated?.();
     } catch (err) {
       setLocalError(err?.message || "Error al añadir básico.");
     } finally {
@@ -170,6 +172,7 @@ export function IngredientSearchAdd({
       setQuery("");
       setSuggestions([]);
       onAdded?.(basicData.basic);
+      onBasicCreated?.();
     } catch (err) {
       setLocalError(err?.message || "Error al crear el artículo.");
     } finally {
@@ -342,6 +345,7 @@ export default function BasicsPopup({
   weekStart,
   onClose,
   onApplied,
+  onBasicCreated,  // optional: called after a new basic is created (for challenge tracking)
   currentPendingCanonicals = new Set(),
   currentPendingIngredientIds = new Set(),
   plan
@@ -397,6 +401,7 @@ export default function BasicsPopup({
     if (newBasic?.id) {
       setSelected((prev) => new Set([...prev, newBasic.id]));
     }
+    // Note: onBasicCreated is fired by IngredientSearchAdd directly — no duplicate call here
   };
 
   const toggleItem = (id) => {
@@ -496,6 +501,7 @@ export default function BasicsPopup({
               <IngredientSearchAdd
                 placeholder="Añadir nuevo básico…"
                 onAdded={handleNewBasicAdded}
+                onBasicCreated={onBasicCreated}
                 householdId={householdId}
                 compact
               />

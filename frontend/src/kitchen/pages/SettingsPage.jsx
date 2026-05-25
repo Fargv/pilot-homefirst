@@ -24,6 +24,7 @@ import { getColorPalette, getUserColorById, getUserColorPreference, setUserColor
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 import { ProBadge } from "../components/ui/ProBadge.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { IngredientSearchAdd } from "../components/BasicsPopup.jsx";
 
 function initialsFromName(name = "") {
@@ -172,6 +173,7 @@ export default function SettingsPage() {
   const { user, setUser, refreshUser, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const { notify: notifyOnboarding } = useOnboarding();
+  const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { notifyOnboarding("visit_settings"); }, []);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -779,6 +781,10 @@ export default function SettingsPage() {
       setSubscriptionRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
       setDietFilterEnabled(Boolean(data?.household?.randomizationUseDietFilter));
       setDietDefaultPackIds(Array.isArray(data?.household?.randomizationDefaultDietPackIds) ? data.household.randomizationDefaultDietPackIds : []);
+      // Weekly challenge: budget configured when a non-empty, non-zero budget was saved
+      if (budgetFeatureEnabled && nextMonthlyBudget !== "" && Number(nextMonthlyBudget) > 0) {
+        notifyWeekly("budget_configured");
+      }
       updateSuccess("Preferencia del household actualizada.");
     } catch (err) {
       setError(err.message || "No se pudieron guardar las preferencias del household.");

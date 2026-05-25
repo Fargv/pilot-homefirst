@@ -9,12 +9,30 @@ import { KitchenDish } from "./models/KitchenDish.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 import { recordMeaningfulActivity, tryUnlockBetaPro } from "./betaProService.js";
 
+// ─── Curriculum resolution ────────────────────────────────────────────────────
+
+/**
+ * Returns which weekly curriculum a household should receive:
+ *   "basic" — Basic / Free users → Basic 4-week curriculum
+ *   "pro"   — Pro / Premium / BetaPro users → Pro 4-week curriculum
+ *
+ * Accepts either a full Household document or just the subscriptionPlan string.
+ */
+export function getHouseholdCurriculum(householdOrPlan) {
+  const plan = typeof householdOrPlan === "string"
+    ? String(householdOrPlan || "basic").toLowerCase()
+    : String(householdOrPlan?.subscriptionPlan || "basic").toLowerCase();
+  return (plan === "pro" || plan === "premium") ? "pro" : "basic";
+}
+
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
-const CYCLE_CHALLENGE_DEFS = [
-  // WEEK 1 — "Empieza a organizarte"
-  // Goal: planning + shopping list (manual items) + dish creation + catalog usage
-  // Removed: weekly_complete_meal_week (too similar to weekly_plan_5_meals — duplicate planning goal)
+/**
+ * BASIC CURRICULUM — 4-week rotating cycle for Basic / Free users.
+ * Goal: learn the core Lunchfy loop step by step.
+ */
+const BASIC_CURRICULUM_DEFS = [
+  // ── WEEK 1 — "Empieza a organizarte" ─────────────────────────────────────
   {
     key: "weekly_plan_5_meals",
     title: "Planifica 5 comidas",
@@ -25,12 +43,11 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 5,
     cycleWeek: 1,
     cycleOrder: 1,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
-    // RETIRED — too similar to weekly_plan_5_meals (both teach planning).
-    // Replaced in Week 1 by weekly_use_catalog_dish.
-    // Kept here with active:false so the seeder deactivates the existing DB record.
+    // RETIRED — too similar to weekly_plan_5_meals.
     key: "weekly_complete_meal_week",
     title: "Completa una semana de comidas",
     description: "Planifica los 5 días laborables de esta semana.",
@@ -41,6 +58,7 @@ const CYCLE_CHALLENGE_DEFS = [
     cycleWeek: 1,
     cycleOrder: 2,
     active: false,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -53,6 +71,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 1,
     cycleOrder: 2,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -65,6 +84,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 5,
     cycleWeek: 1,
     cycleOrder: 3,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -77,6 +97,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 1,
     cycleOrder: 4,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -89,6 +110,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 1,
     cycleOrder: 5,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -101,13 +123,13 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 1,
     cycleOrder: 99,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
 
-  // WEEK 2 — "Tu hogar en una sola lista"
+  // ── WEEK 2 — "Tu hogar en una sola lista" ────────────────────────────────
   // NOTE: "shopping_list_completed" fires when ALL items in the list are marked as purchased.
-  // This is Basic-compatible: it requires no purchase finalization, no store selection,
-  // and no expense tracking. Do NOT change triggerType to anything Pro-only.
+  // Basic-compatible: no purchase finalization, no store selection, no expense tracking.
   {
     key: "weekly_complete_shopping_list",
     title: "Marca toda tu lista",
@@ -118,6 +140,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 2,
     cycleOrder: 1,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -130,6 +153,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 3,
     cycleWeek: 2,
     cycleOrder: 2,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -142,6 +166,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 2,
     cycleOrder: 3,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -154,6 +179,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 2,
     cycleWeek: 2,
     cycleOrder: 4,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -166,10 +192,11 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 2,
     cycleOrder: 99,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
 
-  // WEEK 3 — "Semana organizada"
+  // ── WEEK 3 — "Semana organizada" ─────────────────────────────────────────
   {
     key: "weekly_plan_full_week_before_thursday",
     title: "Planifica toda la semana antes del jueves",
@@ -180,6 +207,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 3,
     cycleOrder: 1,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -192,6 +220,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 3,
     cycleOrder: 2,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -204,6 +233,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 5,
     cycleWeek: 3,
     cycleOrder: 3,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -216,6 +246,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 3,
     cycleWeek: 3,
     cycleOrder: 4,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -228,10 +259,11 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 3,
     cycleOrder: 99,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
 
-  // WEEK 4 — "Chef de confianza"
+  // ── WEEK 4 — "Chef de confianza" ─────────────────────────────────────────
   {
     key: "weekly_create_2_dishes",
     title: "Crea 2 platos nuevos",
@@ -242,6 +274,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 2,
     cycleWeek: 4,
     cycleOrder: 1,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -254,6 +287,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 5,
     cycleWeek: 4,
     cycleOrder: 2,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -266,6 +300,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 4,
     cycleOrder: 3,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -278,6 +313,7 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 4,
     cycleOrder: 4,
+    curriculum: "basic",
     planCompatibility: ["all"]
   },
   {
@@ -290,9 +326,310 @@ const CYCLE_CHALLENGE_DEFS = [
     triggerCount: 1,
     cycleWeek: 4,
     cycleOrder: 99,
+    curriculum: "basic",
     planCompatibility: ["all"]
   }
 ];
+
+/**
+ * PRO CURRICULUM — 4-week rotating cycle for Pro / Premium / BetaPro users.
+ *
+ * Philosophy:
+ * - Keeps some universal habits (marking purchased, creating dishes, catalog usage).
+ * - Replaces simpler Basic challenges with advanced Pro-oriented equivalents.
+ * - Progressively teaches: randomization → Básicos → dinners → purchase tracking → budget.
+ *
+ * All keys are prefixed with "pro_" to avoid collision with Basic curriculum.
+ */
+const PRO_CURRICULUM_DEFS = [
+  // ── WEEK 1 — "Descubre las funciones avanzadas" ───────────────────────────
+  // Theme: First contact with the three key Pro features
+  {
+    key: "pro_w1_randomize_week",
+    title: "Deja que Lunchfy planifique por ti",
+    description: "Usa la randomización semanal para completar tu planificación automáticamente.",
+    guidance: "Abre la vista semanal y pulsa el botón de randomización para que Lunchfy rellene los días pendientes.",
+    rewardBites: 10,
+    triggerType: "week_randomized",
+    triggerCount: 1,
+    cycleWeek: 1,
+    cycleOrder: 1,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w1_mark_items_purchased",
+    title: "Marca 5 ingredientes como comprados",
+    description: "Ve a la lista de la compra y marca ingredientes conforme los vayas comprando.",
+    guidance: "Ve a la lista de la compra y marca ingredientes conforme los vayas comprando.",
+    rewardBites: 5,
+    triggerType: "item_purchased",
+    triggerCount: 5,
+    cycleWeek: 1,
+    cycleOrder: 2,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w1_configure_basics",
+    title: "Configura tus básicos",
+    description: "Guarda productos recurrentes como leche, huevos o papel de cocina para reutilizarlos cada semana.",
+    guidance: "En la lista de la compra, abre el menú de Básicos y añade un artículo que compras habitualmente.",
+    rewardBites: 10,
+    triggerType: "basic_created",
+    triggerCount: 1,
+    cycleWeek: 1,
+    cycleOrder: 3,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w1_create_dish",
+    title: "Crea un plato nuevo",
+    description: "Ve a la sección Cocina y añade un plato propio con sus productos.",
+    guidance: "Ve a la sección Cocina y añade un plato propio con sus productos.",
+    rewardBites: 5,
+    triggerType: "dish_created",
+    triggerCount: 1,
+    cycleWeek: 1,
+    cycleOrder: 4,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w1_use_catalog",
+    title: "Usa un plato del catálogo",
+    description: "Instala un pack del catálogo y añade uno de sus platos a tu planificación.",
+    guidance: "Los packs del catálogo incluyen platos listos para usar. Instala uno desde Catálogo y asigna cualquiera de sus platos a un día de la semana.",
+    rewardBites: 5,
+    triggerType: "catalog_dish_used",
+    triggerCount: 1,
+    cycleWeek: 1,
+    cycleOrder: 5,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w1_bonus",
+    title: "Completa todos los retos de la semana",
+    description: "",
+    guidance: "",
+    rewardBites: 5,
+    triggerType: "bonus",
+    triggerCount: 1,
+    cycleWeek: 1,
+    cycleOrder: 99,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+
+  // ── WEEK 2 — "Automatización semanal" ────────────────────────────────────
+  // Theme: Basics in action + randomization as a habit + shopping loop
+  {
+    key: "pro_w2_randomize_week",
+    title: "Randomiza tu planificación semanal",
+    description: "Usa la randomización para completar tu planificación de la semana automáticamente.",
+    guidance: "Abre la vista semanal y pulsa el botón de randomización para que Lunchfy rellene los días pendientes.",
+    rewardBites: 10,
+    triggerType: "week_randomized",
+    triggerCount: 1,
+    cycleWeek: 2,
+    cycleOrder: 1,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w2_use_basics",
+    title: "Usa tus básicos esta semana",
+    description: "Añade algunos de tus productos recurrentes directamente a tu lista de la compra.",
+    guidance: "En la lista de la compra, abre el menú de Básicos y añade los artículos que necesites esta semana.",
+    rewardBites: 10,
+    triggerType: "basic_added_to_list",
+    triggerCount: 1,
+    cycleWeek: 2,
+    cycleOrder: 2,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w2_complete_shopping_list",
+    title: "Marca toda tu lista",
+    description: "Marca todos los productos de tu lista como comprados.",
+    guidance: "Ve a la lista de la compra y marca todos los productos como comprados conforme los vayas metiendo en el carrito.",
+    rewardBites: 10,
+    triggerType: "shopping_list_completed",
+    triggerCount: 1,
+    cycleWeek: 2,
+    cycleOrder: 3,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w2_create_dish",
+    title: "Crea un plato nuevo",
+    description: "Ve a la sección Cocina y añade un plato propio con sus productos.",
+    guidance: "Ve a la sección Cocina y añade un plato propio con sus productos.",
+    rewardBites: 5,
+    triggerType: "dish_created",
+    triggerCount: 1,
+    cycleWeek: 2,
+    cycleOrder: 4,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w2_bonus",
+    title: "Completa todos los retos de la semana",
+    description: "",
+    guidance: "",
+    rewardBites: 5,
+    triggerType: "bonus",
+    triggerCount: 1,
+    cycleWeek: 2,
+    cycleOrder: 99,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+
+  // ── WEEK 3 — "Cocina completa" ────────────────────────────────────────────
+  // Theme: Dinners + real purchase tracking
+  {
+    key: "pro_w3_plan_3_dinners",
+    title: "Organiza también tus cenas",
+    description: "Planifica al menos 3 cenas esta semana.",
+    guidance: "Abre la vista semanal y asigna un plato a 3 cenas. Si no ves las cenas, actívalas desde Configuración → Hogar.",
+    rewardBites: 10,
+    triggerType: "dinner_planned",
+    triggerCount: 3,
+    cycleWeek: 3,
+    cycleOrder: 1,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w3_finalize_purchase",
+    title: "Registra una compra real",
+    description: "Finaliza una compra indicando el supermercado y cuánto has gastado.",
+    guidance: "Cuando termines de hacer la compra, pulsa 'Finalizar compra' en la lista, selecciona el supermercado e introduce el importe total gastado.",
+    rewardBites: 10,
+    triggerType: "purchase_finalized",
+    triggerCount: 1,
+    cycleWeek: 3,
+    cycleOrder: 2,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w3_mark_items_purchased",
+    title: "Marca 5 ingredientes como comprados",
+    description: "Ve a la lista de la compra y marca ingredientes conforme los vayas comprando.",
+    guidance: "Ve a la lista de la compra y marca ingredientes conforme los vayas comprando.",
+    rewardBites: 5,
+    triggerType: "item_purchased",
+    triggerCount: 5,
+    cycleWeek: 3,
+    cycleOrder: 3,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w3_use_app_3_days",
+    title: "Usa Lunchfy 3 días distintos",
+    description: "Abre Lunchfy al menos 3 días distintos esta semana.",
+    guidance: "Abre Lunchfy al menos 3 días distintos para planificar, gestionar tu lista o revisar tus platos.",
+    rewardBites: 5,
+    triggerType: "app_activity",
+    triggerCount: 3,
+    cycleWeek: 3,
+    cycleOrder: 4,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w3_bonus",
+    title: "Completa todos los retos de la semana",
+    description: "",
+    guidance: "",
+    rewardBites: 5,
+    triggerType: "bonus",
+    triggerCount: 1,
+    cycleWeek: 3,
+    cycleOrder: 99,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+
+  // ── WEEK 4 — "Control avanzado" ───────────────────────────────────────────
+  // Theme: Consolidation + budget awareness
+  {
+    key: "pro_w4_randomize_week",
+    title: "Randomiza tu planificación semanal",
+    description: "Usa la randomización para completar tu planificación de la semana automáticamente.",
+    guidance: "Abre la vista semanal y pulsa el botón de randomización para que Lunchfy rellene los días pendientes.",
+    rewardBites: 10,
+    triggerType: "week_randomized",
+    triggerCount: 1,
+    cycleWeek: 4,
+    cycleOrder: 1,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w4_plan_3_dinners",
+    title: "Planifica 3 cenas",
+    description: "Planifica al menos 3 cenas esta semana.",
+    guidance: "Abre la vista semanal y asigna un plato a 3 cenas.",
+    rewardBites: 10,
+    triggerType: "dinner_planned",
+    triggerCount: 3,
+    cycleWeek: 4,
+    cycleOrder: 2,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w4_finalize_purchase",
+    title: "Registra una compra real",
+    description: "Finaliza una compra indicando el supermercado y cuánto has gastado.",
+    guidance: "Cuando termines de hacer la compra, pulsa 'Finalizar compra', selecciona el supermercado e introduce el importe total.",
+    rewardBites: 10,
+    triggerType: "purchase_finalized",
+    triggerCount: 1,
+    cycleWeek: 4,
+    cycleOrder: 3,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w4_configure_budget",
+    title: "Empieza a controlar tu gasto",
+    description: "Configura tu presupuesto mensual para llevar un seguimiento de lo que gastas en la compra.",
+    guidance: "Ve a Configuración → Hogar → Presupuesto e introduce tu gasto mensual habitual en alimentación.",
+    rewardBites: 10,
+    triggerType: "budget_configured",
+    triggerCount: 1,
+    cycleWeek: 4,
+    cycleOrder: 4,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  },
+  {
+    key: "pro_w4_bonus",
+    title: "Completa todos los retos de la semana",
+    description: "",
+    guidance: "",
+    rewardBites: 5,
+    triggerType: "bonus",
+    triggerCount: 1,
+    cycleWeek: 4,
+    cycleOrder: 99,
+    curriculum: "pro",
+    planCompatibility: ["pro", "premium"]
+  }
+];
+
+// Combined seed list
+const CYCLE_CHALLENGE_DEFS = [...BASIC_CURRICULUM_DEFS, ...PRO_CURRICULUM_DEFS];
 
 // ─── Date utilities ───────────────────────────────────────────────────────────
 
@@ -342,20 +679,24 @@ export async function getOrCreateCycleConfig() {
 // ─── Seed ─────────────────────────────────────────────────────────────────────
 
 /**
- * Seeds all 4-week cycle challenge definitions. Safe to call on every boot.
- * Structural fields always sync; content fields only set on first insert.
+ * Seeds all challenge definitions (both curricula). Safe to call on every boot.
+ * Structural fields always sync; rewardBites only set on first insert.
  */
 export async function seedWeeklyChallengeDefs() {
   for (const def of CYCLE_CHALLENGE_DEFS) {
-    const { key, title, triggerType, triggerCount, cycleWeek, cycleOrder, planCompatibility, active, guidance, description, ...insertOnly } = def;
+    const {
+      key, title, triggerType, triggerCount, cycleWeek, cycleOrder,
+      planCompatibility, curriculum, active, guidance, description,
+      ...insertOnly
+    } = def;
     await WeeklyChallengeDef.updateOne(
       { key },
       {
-        // Structural fields + content that should always stay in sync with the code.
-        // title is now included so copy changes propagate automatically on reseed.
         $set: {
           title,
-          triggerType, triggerCount, cycleWeek, cycleOrder, planCompatibility,
+          triggerType, triggerCount, cycleWeek, cycleOrder,
+          curriculum: curriculum || "basic",
+          planCompatibility: planCompatibility || ["all"],
           active: active ?? true,
           ...(guidance !== undefined ? { guidance } : {}),
           ...(description !== undefined ? { description } : {})
@@ -366,7 +707,7 @@ export async function seedWeeklyChallengeDefs() {
       { upsert: true }
     );
   }
-  console.log("[weekly] Challenge defs seeded.");
+  console.log("[weekly] Challenge defs seeded (basic + pro curricula).");
 }
 
 // ─── Progress helpers ─────────────────────────────────────────────────────────
@@ -391,6 +732,14 @@ export async function getOrCreateProgress(householdId, weekStart, cycleWeekIndex
         manualShoppingItemAdded: false,
         shoppingListCompleted: false,
         catalogDishUsed: false,
+        // Pro-specific fields
+        weekRandomized: false,
+        basicCreated: false,
+        basicAddedToList: false,
+        dinnersPlannedCount: 0,
+        purchaseFinalizedWithStore: false,
+        budgetConfigured: false,
+        // Sets
         dishIdsUsedThisWeek: [],
         purchasedItemKeys: [],
         appActiveDays: [],
@@ -416,8 +765,6 @@ async function _grantBites(householdId, amount, reason, metadata) {
 
   await Household.updateOne({ _id: household._id }, { $set: { freeBitesBalance: newFree } });
 
-  // Use "challenge_reward" type so admin ledger queries can distinguish automatic
-  // weekly challenge rewards from manual admin grants.
   await BitesTransaction.create({
     householdId: household._id,
     type: "challenge_reward",
@@ -475,7 +822,6 @@ export async function checkAndGrantBonus(householdId, progress, challenges, bonu
 
   if (!allMainDone) return;
 
-  // Add bonus to completedChallenges if not already there
   if (!completedKeys.has(bonusChallenge.key)) {
     const bonusEntry = {
       challengeId: bonusChallenge._id,
@@ -488,7 +834,6 @@ export async function checkAndGrantBonus(householdId, progress, challenges, bonu
       { _id: progress._id },
       { $push: { completedChallenges: bonusEntry }, $set: { bonusGranted: true } }
     );
-    // Re-fetch for consistent state
     const updatedProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
     if (updatedProgress) {
       await grantWeeklyReward(householdId, bonusChallenge.key, bonusChallenge.rewardBites, updatedProgress);
@@ -507,8 +852,7 @@ export async function checkAndGrantBonus(householdId, progress, challenges, bonu
 // ─── Week plan helpers ────────────────────────────────────────────────────────
 
 /**
- * Fetches the week plan and returns the count of filled weekday (Mon-Fri) lunch slots.
- * Also returns the array of unique dishIds from those slots.
+ * Fetches the week plan and returns stats for lunch (Mon-Fri) slots.
  */
 async function _getWeekPlanStats(householdId, weekStartISO) {
   const weekStartDate = parseWeekStart(weekStartISO);
@@ -520,16 +864,39 @@ async function _getWeekPlanStats(householdId, weekStartISO) {
   let count = 0;
 
   for (const day of plan.days) {
+    if (day.mealType && day.mealType !== "lunch") continue; // lunch only
     if (!day.mainDishId) continue;
     const d = new Date(day.date);
-    const utcDay = d.getUTCDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
-    if (utcDay < 1 || utcDay > 5) continue; // only Mon-Fri
+    const utcDay = d.getUTCDay();
+    if (utcDay < 1 || utcDay > 5) continue;
     count++;
     weekdaysFilled.add(utcDay);
     dishIdSet.add(String(day.mainDishId));
   }
 
   return { count, dishIds: Array.from(dishIdSet), weekdaysFilled };
+}
+
+/**
+ * Returns the count of filled dinner slots (Mon-Fri) in the current week plan.
+ * Used for the Pro dinner challenges. Does NOT auto-complete — only counts explicit assignments.
+ */
+async function _getDinnerPlanStats(householdId, weekStartISO) {
+  const weekStartDate = parseWeekStart(weekStartISO);
+  const plan = await KitchenWeekPlan.findOne({ householdId, weekStart: weekStartDate }).lean();
+  if (!plan || !plan.days) return { count: 0 };
+
+  let count = 0;
+  for (const day of plan.days) {
+    if (day.mealType !== "dinner") continue;
+    if (!day.mainDishId) continue;
+    const d = new Date(day.date);
+    const utcDay = d.getUTCDay();
+    if (utcDay < 1 || utcDay > 5) continue;
+    count++;
+  }
+
+  return { count };
 }
 
 // ─── Main trigger ─────────────────────────────────────────────────────────────
@@ -545,8 +912,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     const onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
     if (!onboarding || onboarding.status !== "completed") return null;
 
-    // Record that the user just did something meaningful (non-fatal — fire and forget).
-    // All triggerWeeklyChallenge calls come from user-initiated actions.
+    // Record meaningful activity (non-fatal — fire and forget).
     recordMeaningfulActivity(householdId).catch(() => {});
 
     const cycleConfig = await getOrCreateCycleConfig();
@@ -556,9 +922,15 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     const weekStartDate = parseWeekStart(weekStartISO);
     const cycleWeekIndex = getCycleWeekIndex(weekStartDate, cycleConfig.cycleStartDate);
 
+    // Resolve curriculum based on household plan
+    const household = await Household.findById(householdId).select("subscriptionPlan").lean();
+    const curriculum = getHouseholdCurriculum(household);
+
+    // Load only challenges for this household's curriculum
     const challenges = await WeeklyChallengeDef.find({
       active: true,
-      cycleWeek: cycleWeekIndex
+      cycleWeek: cycleWeekIndex,
+      curriculum
     }).sort({ cycleOrder: 1 }).lean();
 
     if (!challenges.length) return null;
@@ -576,13 +948,8 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         contextData.weekStart || weekStartISO
       );
 
-      // Update counters and sets atomically
       const setUpdate = { mealsPlannedCount: count };
-      await HouseholdWeeklyProgress.updateOne(
-        { _id: progress._id },
-        { $set: setUpdate }
-      );
-      // Add all dish IDs from the plan
+      await HouseholdWeeklyProgress.updateOne({ _id: progress._id }, { $set: setUpdate });
       if (dishIds.length > 0) {
         await HouseholdWeeklyProgress.updateOne(
           { _id: progress._id },
@@ -590,44 +957,21 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         );
       }
 
-      // Re-fetch updated progress
       progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
 
       const uniqueDishCount = (progress.dishIdsUsedThisWeek || []).length;
       const allWeekdaysFilled = weekdaysFilled.size >= 5;
       const now = new Date();
-      const todayUTCDay = now.getUTCDay(); // 1=Mon, 2=Tue, 3=Wed in [1,2,3] = before Thursday
+      const todayUTCDay = now.getUTCDay();
 
-      // Check all meal_planned challenges
       const mealChallengeChecks = [
-        {
-          key: "weekly_plan_5_meals",
-          done: count >= 5
-        },
-        {
-          key: "weekly_complete_meal_week",
-          done: allWeekdaysFilled
-        },
-        {
-          key: "weekly_complete_meal_week_w4",
-          done: allWeekdaysFilled
-        },
-        {
-          key: "weekly_use_3_different_dishes",
-          done: uniqueDishCount >= 3
-        },
-        {
-          key: "weekly_use_5_different_dishes",
-          done: uniqueDishCount >= 5
-        },
-        {
-          key: "weekly_no_repeated_dishes",
-          done: count >= 5 && uniqueDishCount === count
-        },
-        {
-          key: "weekly_plan_full_week_before_thursday",
-          done: allWeekdaysFilled && [1, 2, 3].includes(todayUTCDay)
-        }
+        { key: "weekly_plan_5_meals", done: count >= 5 },
+        { key: "weekly_complete_meal_week", done: allWeekdaysFilled },
+        { key: "weekly_complete_meal_week_w4", done: allWeekdaysFilled },
+        { key: "weekly_use_3_different_dishes", done: uniqueDishCount >= 3 },
+        { key: "weekly_use_5_different_dishes", done: uniqueDishCount >= 5 },
+        { key: "weekly_no_repeated_dishes", done: count >= 5 && uniqueDishCount === count },
+        { key: "weekly_plan_full_week_before_thursday", done: allWeekdaysFilled && [1, 2, 3].includes(todayUTCDay) }
       ];
 
       for (const check of mealChallengeChecks) {
@@ -640,17 +984,14 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         completedKeysBefore.add(check.key);
       }
 
-      // Catalog dish detection — check if the dish being planned is from a catalog pack.
-      // Uses contextData.dishId (passed by WeekPage.jsx). Falls back to checking ALL
-      // dishes in the week plan if the specific dish is already a catalog one.
+      // Catalog dish detection
       if (!completedKeysBefore.has("weekly_use_catalog_dish")) {
         const catalogChallengeDef = challenges.find((c) => c.key === "weekly_use_catalog_dish");
         if (catalogChallengeDef) {
           let isCatalogDish = progress.catalogDishUsed ?? false;
           if (!isCatalogDish && contextData.dishId) {
             const dish = await KitchenDish.findById(contextData.dishId)
-              .select("source sourcePackId")
-              .lean();
+              .select("source sourcePackId").lean();
             isCatalogDish = dish?.source === "catalog" && dish?.sourcePackId != null;
           }
           if (isCatalogDish) {
@@ -665,21 +1006,46 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
           }
         }
       }
+
+      // Pro: catalog_dish_used via meal_planned
+      if (!completedKeysBefore.has("pro_w1_use_catalog")) {
+        const catalogChallengeDef = challenges.find((c) => c.key === "pro_w1_use_catalog");
+        if (catalogChallengeDef) {
+          let isCatalogDish = progress.catalogDishUsed ?? false;
+          if (!isCatalogDish && contextData.dishId) {
+            const dish = await KitchenDish.findById(contextData.dishId)
+              .select("source sourcePackId").lean();
+            isCatalogDish = dish?.source === "catalog" && dish?.sourcePackId != null;
+          }
+          if (isCatalogDish) {
+            await HouseholdWeeklyProgress.updateOne(
+              { _id: progress._id },
+              { $set: { catalogDishUsed: true } }
+            );
+            progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+            await _markChallengeComplete(progress._id, catalogChallengeDef);
+            newlyCompletedKeys.push("pro_w1_use_catalog");
+            completedKeysBefore.add("pro_w1_use_catalog");
+          }
+        }
+      }
+
     } else if (eventType === "catalog_dish_used") {
-      // Direct trigger path — fired when a catalog dish is explicitly used.
-      // Also handled via the meal_planned path above, but kept for forward compatibility.
       await HouseholdWeeklyProgress.updateOne(
         { _id: progress._id },
         { $set: { catalogDishUsed: true } }
       );
       progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
 
-      const def = challenges.find((c) => c.key === "weekly_use_catalog_dish");
-      if (def && !completedKeysBefore.has("weekly_use_catalog_dish")) {
-        await _markChallengeComplete(progress._id, def);
-        newlyCompletedKeys.push("weekly_use_catalog_dish");
-        completedKeysBefore.add("weekly_use_catalog_dish");
+      for (const key of ["weekly_use_catalog_dish", "pro_w1_use_catalog"]) {
+        const def = challenges.find((c) => c.key === key);
+        if (def && !completedKeysBefore.has(key)) {
+          await _markChallengeComplete(progress._id, def);
+          newlyCompletedKeys.push(key);
+          completedKeysBefore.add(key);
+        }
       }
+
     } else if (eventType === "item_purchased") {
       if (contextData.itemKey) {
         await HouseholdWeeklyProgress.updateOne(
@@ -695,7 +1061,11 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         { $set: { itemsPurchasedCount: purchasedCount } }
       );
 
-      for (const key of ["weekly_mark_5_items_purchased", "weekly_mark_5_items_purchased_w3"]) {
+      const purchasedKeys = [
+        "weekly_mark_5_items_purchased", "weekly_mark_5_items_purchased_w3",
+        "pro_w1_mark_items_purchased", "pro_w3_mark_items_purchased"
+      ];
+      for (const key of purchasedKeys) {
         if (purchasedCount < 5) break;
         const def = challenges.find((c) => c.key === key);
         if (!def) continue;
@@ -704,6 +1074,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         newlyCompletedKeys.push(key);
         completedKeysBefore.add(key);
       }
+
     } else if (eventType === "shopping_list_completed") {
       await HouseholdWeeklyProgress.updateOne(
         { _id: progress._id },
@@ -711,7 +1082,10 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
       );
       progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
 
-      for (const key of ["weekly_complete_shopping_list", "weekly_complete_shopping_list_w4"]) {
+      for (const key of [
+        "weekly_complete_shopping_list", "weekly_complete_shopping_list_w4",
+        "pro_w2_complete_shopping_list"
+      ]) {
         const def = challenges.find((c) => c.key === key);
         if (!def) continue;
         if (completedKeysBefore.has(key)) continue;
@@ -719,6 +1093,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         newlyCompletedKeys.push(key);
         completedKeysBefore.add(key);
       }
+
     } else if (eventType === "dish_created") {
       await HouseholdWeeklyProgress.updateOne(
         { _id: progress._id },
@@ -730,7 +1105,9 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
 
       for (const { key, threshold } of [
         { key: "weekly_create_new_dish", threshold: 1 },
-        { key: "weekly_create_2_dishes", threshold: 2 }
+        { key: "weekly_create_2_dishes", threshold: 2 },
+        { key: "pro_w1_create_dish", threshold: 1 },
+        { key: "pro_w2_create_dish", threshold: 1 }
       ]) {
         if (dishCount < threshold) continue;
         const def = challenges.find((c) => c.key === key);
@@ -740,6 +1117,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         newlyCompletedKeys.push(key);
         completedKeysBefore.add(key);
       }
+
     } else if (eventType === "pack_installed") {
       await HouseholdWeeklyProgress.updateOne(
         { _id: progress._id },
@@ -753,6 +1131,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         newlyCompletedKeys.push("weekly_install_catalog_pack");
         completedKeysBefore.add("weekly_install_catalog_pack");
       }
+
     } else if (eventType === "ingredient_created") {
       await HouseholdWeeklyProgress.updateOne(
         { _id: progress._id },
@@ -767,6 +1146,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         newlyCompletedKeys.push("weekly_add_2_ingredients");
         completedKeysBefore.add("weekly_add_2_ingredients");
       }
+
     } else if (eventType === "manual_item_added") {
       await HouseholdWeeklyProgress.updateOne(
         { _id: progress._id },
@@ -780,6 +1160,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         newlyCompletedKeys.push("weekly_add_manual_shopping_item");
         completedKeysBefore.add("weekly_add_manual_shopping_item");
       }
+
     } else if (eventType === "app_activity") {
       const date = contextData.date || new Date().toISOString().slice(0, 10);
       await HouseholdWeeklyProgress.updateOne(
@@ -789,11 +1170,121 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
       progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
 
       const activeDays = (progress.appActiveDays || []).length;
-      const def = challenges.find((c) => c.key === "weekly_use_app_3_days");
-      if (def && activeDays >= 3 && !completedKeysBefore.has("weekly_use_app_3_days")) {
+      for (const key of ["weekly_use_app_3_days", "pro_w3_use_app_3_days"]) {
+        const def = challenges.find((c) => c.key === key);
+        if (def && activeDays >= 3 && !completedKeysBefore.has(key)) {
+          await _markChallengeComplete(progress._id, def);
+          newlyCompletedKeys.push(key);
+          completedKeysBefore.add(key);
+        }
+      }
+
+    // ── Pro-specific event handlers ─────────────────────────────────────────
+
+    } else if (eventType === "week_randomized") {
+      // Pro challenge: full-week randomization used
+      await HouseholdWeeklyProgress.updateOne(
+        { _id: progress._id },
+        { $set: { weekRandomized: true } }
+      );
+      progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+
+      for (const key of ["pro_w1_randomize_week", "pro_w2_randomize_week", "pro_w4_randomize_week"]) {
+        const def = challenges.find((c) => c.key === key);
+        if (def && !completedKeysBefore.has(key)) {
+          await _markChallengeComplete(progress._id, def);
+          newlyCompletedKeys.push(key);
+          completedKeysBefore.add(key);
+        }
+      }
+
+    } else if (eventType === "dinner_planned") {
+      // Pro challenge: count actual filled dinner slots — reads from the week plan
+      // so it stays consistent even on repeat triggers. Does NOT auto-complete.
+      const { count: dinnerCount } = await _getDinnerPlanStats(
+        householdId,
+        contextData.weekStart || weekStartISO
+      );
+      await HouseholdWeeklyProgress.updateOne(
+        { _id: progress._id },
+        { $set: { dinnersPlannedCount: dinnerCount } }
+      );
+      progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+
+      for (const key of ["pro_w3_plan_3_dinners", "pro_w4_plan_3_dinners"]) {
+        const def = challenges.find((c) => c.key === key);
+        if (def && dinnerCount >= 3 && !completedKeysBefore.has(key)) {
+          await _markChallengeComplete(progress._id, def);
+          newlyCompletedKeys.push(key);
+          completedKeysBefore.add(key);
+        }
+      }
+
+    } else if (eventType === "basic_created") {
+      // Pro challenge: first Básico created
+      await HouseholdWeeklyProgress.updateOne(
+        { _id: progress._id },
+        { $set: { basicCreated: true } }
+      );
+      progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+
+      const def = challenges.find((c) => c.key === "pro_w1_configure_basics");
+      if (def && !completedKeysBefore.has("pro_w1_configure_basics")) {
         await _markChallengeComplete(progress._id, def);
-        newlyCompletedKeys.push("weekly_use_app_3_days");
-        completedKeysBefore.add("weekly_use_app_3_days");
+        newlyCompletedKeys.push("pro_w1_configure_basics");
+        completedKeysBefore.add("pro_w1_configure_basics");
+      }
+
+    } else if (eventType === "basic_added_to_list") {
+      // Pro challenge: at least one Básico added to the weekly list
+      await HouseholdWeeklyProgress.updateOne(
+        { _id: progress._id },
+        { $set: { basicAddedToList: true } }
+      );
+      progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+
+      const def = challenges.find((c) => c.key === "pro_w2_use_basics");
+      if (def && !completedKeysBefore.has("pro_w2_use_basics")) {
+        await _markChallengeComplete(progress._id, def);
+        newlyCompletedKeys.push("pro_w2_use_basics");
+        completedKeysBefore.add("pro_w2_use_basics");
+      }
+
+    } else if (eventType === "purchase_finalized") {
+      // Pro challenge: purchase completed with BOTH store + amount.
+      // The frontend only fires this trigger when both fields are present.
+      const hasStore = Boolean(contextData.storeId);
+      const hasAmount = Boolean(contextData.amount && Number(contextData.amount) > 0);
+      if (hasStore && hasAmount) {
+        await HouseholdWeeklyProgress.updateOne(
+          { _id: progress._id },
+          { $set: { purchaseFinalizedWithStore: true } }
+        );
+        progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+
+        for (const key of ["pro_w3_finalize_purchase", "pro_w4_finalize_purchase"]) {
+          const def = challenges.find((c) => c.key === key);
+          if (def && !completedKeysBefore.has(key)) {
+            await _markChallengeComplete(progress._id, def);
+            newlyCompletedKeys.push(key);
+            completedKeysBefore.add(key);
+          }
+        }
+      }
+
+    } else if (eventType === "budget_configured") {
+      // Pro challenge: household budget set to a non-null, non-zero value
+      await HouseholdWeeklyProgress.updateOne(
+        { _id: progress._id },
+        { $set: { budgetConfigured: true } }
+      );
+      progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+
+      const def = challenges.find((c) => c.key === "pro_w4_configure_budget");
+      if (def && !completedKeysBefore.has("pro_w4_configure_budget")) {
+        await _markChallengeComplete(progress._id, def);
+        newlyCompletedKeys.push("pro_w4_configure_budget");
+        completedKeysBefore.add("pro_w4_configure_budget");
       }
     }
 
@@ -807,13 +1298,14 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
           await grantWeeklyReward(householdId, key, def.rewardBites, freshProgress);
         }
       }
-      // Check bonus after all completions
       const latestProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
       await checkAndGrantBonus(householdId, latestProgress, challenges, cycleConfig.bonusBites);
 
-      // Try Beta Pro unlock after bonus check (idempotent — safe to call every time).
-      const betaProResult = await tryUnlockBetaPro(householdId);
-      betaProUnlocked = betaProResult.unlocked;
+      // Beta Pro unlock: only relevant for basic curriculum users
+      if (curriculum === "basic") {
+        const betaProResult = await tryUnlockBetaPro(householdId);
+        betaProUnlocked = betaProResult.unlocked;
+      }
     }
 
     return { completed: newlyCompletedKeys, newlyCompleted: newlyCompletedKeys.length > 0, betaProUnlocked };
@@ -845,6 +1337,7 @@ async function _markChallengeComplete(progressId, def) {
 /**
  * Returns the full weekly challenge state for the frontend.
  * Returns null if onboarding is not completed.
+ * Now includes `curriculum` so the frontend can adjust its UI accordingly.
  */
 export async function getWeeklyState(householdId) {
   try {
@@ -858,9 +1351,14 @@ export async function getWeeklyState(householdId) {
     const weekStartDate = parseWeekStart(weekStartISO);
     const cycleWeekIndex = getCycleWeekIndex(weekStartDate, cycleConfig.cycleStartDate);
 
+    // Resolve curriculum for this household
+    const household = await Household.findById(householdId).select("subscriptionPlan").lean();
+    const curriculum = getHouseholdCurriculum(household);
+
     const challenges = await WeeklyChallengeDef.find({
       active: true,
-      cycleWeek: cycleWeekIndex
+      cycleWeek: cycleWeekIndex,
+      curriculum
     }).sort({ cycleOrder: 1 }).lean();
 
     const progress = await getOrCreateProgress(householdId, weekStartDate, cycleWeekIndex);
@@ -873,7 +1371,6 @@ export async function getWeeklyState(householdId) {
     const mainChallenges = challenges.filter((c) => c.triggerType !== "bonus");
     const bonusDef = challenges.find((c) => c.triggerType === "bonus") || null;
 
-    // Only non-bonus challenges are surfaced in the main list.
     const enrichedChallenges = mainChallenges.map((c) => {
       const completion = completedMap.get(c.key) || null;
       return {
@@ -884,6 +1381,7 @@ export async function getWeeklyState(householdId) {
         rewardBites: c.rewardBites,
         triggerType: c.triggerType,
         triggerCount: c.triggerCount,
+        curriculum: c.curriculum,
         isBonus: false,
         completed: !!completion,
         completedAt: completion?.completedAt ?? null,
@@ -903,7 +1401,6 @@ export async function getWeeklyState(householdId) {
       ? Math.round((completedCount / totalMainChallengesCount) * 100)
       : 0;
 
-    // `bonus` is the field name the frontend component expects.
     const bonus = bonusDef
       ? {
         key: bonusDef.key,
@@ -911,12 +1408,13 @@ export async function getWeeklyState(householdId) {
         rewardBites: bonusDef.rewardBites,
         completed: completedMap.has(bonusDef.key),
         rewardGranted: completedMap.get(bonusDef.key)?.rewardGranted ?? false,
-        available: allMainCompleted  // unlocked only when all main challenges done
+        available: allMainCompleted
       }
       : null;
 
     return {
       available: true,
+      curriculum,              // "basic" | "pro" — frontend uses for UI decoration
       cycleWeekIndex,
       weekStart: weekStartISO,
       challenges: enrichedChallenges,
@@ -925,7 +1423,7 @@ export async function getWeeklyState(householdId) {
       totalMainChallenges: totalMainChallengesCount,
       progressPercent,
       bonus,
-      bonusChallenge: bonus,   // keep alias for any callers that use the old name
+      bonusChallenge: bonus,
       bonusGranted: progressLean.bonusGranted ?? false,
       totalBitesAvailable,
       totalBitesEarned,
@@ -940,7 +1438,7 @@ export async function getWeeklyState(householdId) {
 // ─── Admin functions ──────────────────────────────────────────────────────────
 
 export async function adminGetAllChallengeDefs() {
-  return WeeklyChallengeDef.find({}).sort({ cycleWeek: 1, cycleOrder: 1 }).lean();
+  return WeeklyChallengeDef.find({}).sort({ curriculum: 1, cycleWeek: 1, cycleOrder: 1 }).lean();
 }
 
 export async function adminCreateChallengeDef(data) {
@@ -952,7 +1450,7 @@ export async function adminUpdateChallengeDef(id, data) {
   const allowed = [
     "title", "description", "guidance", "rewardBites",
     "triggerType", "triggerCount", "cycleWeek", "cycleOrder",
-    "active", "planCompatibility"
+    "active", "planCompatibility", "curriculum"
   ];
   const update = {};
   for (const field of allowed) {
@@ -997,35 +1495,33 @@ export async function adminResetHouseholdProgress(householdId) {
 export async function adminForceCompleteChallenge(householdId, challengeKey) {
   const onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
   if (!onboarding || onboarding.status !== "completed") {
-    throw new Error("Household onboarding not completed.");
+    throw new Error("Onboarding not completed for this household.");
   }
 
-  const cycleConfig = await getOrCreateCycleConfig();
   const weekStartISO = getCurrentWeekStart();
   const weekStartDate = parseWeekStart(weekStartISO);
+  const cycleConfig = await getOrCreateCycleConfig();
   const cycleWeekIndex = getCycleWeekIndex(weekStartDate, cycleConfig.cycleStartDate);
 
   const def = await WeeklyChallengeDef.findOne({ key: challengeKey }).lean();
-  if (!def) throw new Error(`Challenge def not found: ${challengeKey}`);
+  if (!def) throw new Error(`Challenge not found: ${challengeKey}`);
 
-  const progress = await getOrCreateProgress(householdId, weekStartDate, cycleWeekIndex);
-
-  const alreadyDone = (progress.completedChallenges || []).some(
-    (c) => c.challengeKey === challengeKey
-  );
-  if (!alreadyDone) {
+  let progress = await getOrCreateProgress(householdId, weekStartDate, cycleWeekIndex);
+  const completedKeys = new Set((progress.completedChallenges || []).map((c) => c.challengeKey));
+  if (!completedKeys.has(challengeKey)) {
     await _markChallengeComplete(progress._id, def);
+    progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+    await grantWeeklyReward(householdId, challengeKey, def.rewardBites, progress);
   }
 
-  const freshProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
-  await grantWeeklyReward(householdId, challengeKey, def.rewardBites, freshProgress);
-
-  const challenges = await WeeklyChallengeDef.find({
+  const allChallenges = await WeeklyChallengeDef.find({
     active: true,
-    cycleWeek: cycleWeekIndex
-  }).lean();
-  const latestProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
-  await checkAndGrantBonus(householdId, latestProgress, challenges, cycleConfig.bonusBites);
+    cycleWeek: cycleWeekIndex,
+    curriculum: def.curriculum || "basic"
+  }).sort({ cycleOrder: 1 }).lean();
 
-  return { ok: true, challengeKey };
+  const latestProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
+  await checkAndGrantBonus(householdId, latestProgress, allChallenges, cycleConfig.bonusBites);
+
+  return { ok: true, message: `Challenge ${challengeKey} force-completed.` };
 }
