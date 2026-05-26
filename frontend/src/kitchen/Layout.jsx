@@ -12,6 +12,7 @@ import OnboardingBanner from "./components/onboarding/OnboardingBanner.jsx";
 import WeeklyChallengeCard from "./components/weekly/WeeklyChallengeCard.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import { useWeeklyChallenge } from "./contexts/WeeklyChallengeContext.jsx";
+import MilestoneToast from "./components/rewards/MilestoneToast.jsx";
 
 function CalendarIcon(props) {
   return (
@@ -525,6 +526,8 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
         {children}
       </div>
       <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
+      {/* Milestone reward toast — portal into body, above everything */}
+      <MilestoneToast />
     </div>
   );
 }

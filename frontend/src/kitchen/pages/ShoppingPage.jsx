@@ -13,6 +13,7 @@ import ModalSheet from "../components/ui/ModalSheet.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import BasicsPopup from "../components/BasicsPopup.jsx";
+import { burstParticles, triggerMilestone } from "../hooks/useRewardAnimation.js";
 
 function RefreshIcon(props) {
   return (
@@ -789,10 +790,20 @@ export default function ShoppingPage() {
     }
   };
 
-  const setItemStatus = async (item, status) => {
+  // Anchor ref map: tracks the check button element for each item key so
+  // burstParticles can receive a live DOM element even after rerender.
+  const checkButtonRefsRef = useRef(new Map());
+
+  const setItemStatus = async (item, status, checkButtonEl) => {
     if (isDiodGlobalMode) return;
     const key = itemKey(item);
     setTransitioningItemKey(key);
+
+    // 🎯 Fire particle burst immediately (fire-and-forget, does not await)
+    if (status === "purchased" && checkButtonEl) {
+      burstParticles(checkButtonEl, { count: 5, radius: 38, duration: 560 });
+    }
+
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
         method: "PUT",
@@ -810,7 +821,16 @@ export default function ShoppingPage() {
         const remaining = data.list?.pendingByCategory
           ? Object.values(data.list.pendingByCategory).reduce((s, arr) => s + arr.length, 0)
           : null;
-        if (remaining === 0) notifyWeekly("shopping_list_completed");
+        if (remaining === 0) {
+          notifyWeekly("shopping_list_completed");
+          // 🏆 Milestone toast: entire list is done
+          triggerMilestone({
+            title   : "Lista completada",
+            subtitle: "¡Todo listo para esta semana!",
+            icon    : "✓",
+            variant : "check"
+          });
+        }
         if (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id) {
           setHasMarkedPurchaseInViewSession(true);
         }
@@ -1273,7 +1293,14 @@ export default function ShoppingPage() {
                         const key = itemKey(item);
                         return (
                           <div className={`shopping-item ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
-                            <button className="shopping-check" type="button" onClick={() => setItemStatus(item, "purchased")}><span className="shopping-check-dot">✓</span></button>
+                            <button
+                              className="shopping-check"
+                              type="button"
+                              onClick={(e) => setItemStatus(item, "purchased", e.currentTarget)}
+                              aria-label={`Marcar ${item.displayName} como comprado`}
+                            >
+                              <span className="shopping-check-dot">✓</span>
+                            </button>
                             <span className="shopping-item-text">{item.displayName}</span>
                             <div className="shopping-item-controls">
                               <button
