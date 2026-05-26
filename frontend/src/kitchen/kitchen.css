@@ -11831,6 +11831,17 @@ body {
   border-color: var(--hf-brand-light);
 }
 
+/* Results count — appears inside the explorer panel after all filters */
+.dishes-results-count {
+  margin: 2px 2px 0;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted, #9ca3af);
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
 /* ─── PWA Install Prompt ─────────────────────────────────────── */
 
 .pwa-prompt {

@@ -78,14 +78,21 @@ function ChevronIcon(props) {
 // Returns true for any dish that came from the catalog (master, override, or
 // pack-installed household copy). False means it was manually created by the
 // household — these are "Mis platos".
+//
+// Classification rules (matches backend weeklyEngine.js + dishCatalog.js):
+//   scope:"master"                        → shared global catalog dish
+//   scope:"override"                      → household tweak of a master; origin is still catalog
+//   scope:"household" + source:"catalog"  → explicitly marked as pack-installed
+//   scope:"household" + sourcePackId set  → belt-and-suspenders for older records
+//   everything else                       → household-created ("Mis platos")
 function isDishFromCatalog(dish) {
   if (!dish) return false;
-  // Global catalog dish (all households share these)
   if (dish.scope === "master") return true;
-  // Household customisation of a master/catalog dish
   if (dish.scope === "override") return true;
-  // Household copy installed from a catalog pack
-  if (dish.scope === "household" && dish.source === "catalog") return true;
+  if (dish.scope === "household") {
+    if (dish.source === "catalog") return true;
+    if (dish.sourcePackId) return true;
+  }
   return false;
 }
 
@@ -147,6 +154,7 @@ export default function DishesPage() {
   const [ingredientInfoOpenId, setIngredientInfoOpenId] = useState(null);
   const [selectedIngredientCategoryId, setSelectedIngredientCategoryId] = useState("");
   const [showAllIngredientCategories, setShowAllIngredientCategories] = useState(false);
+  const [showAllDishCategories, setShowAllDishCategories] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignDish, setAssignDish] = useState(null);
   const [assignDate, setAssignDate] = useState("");
@@ -382,14 +390,6 @@ export default function DishesPage() {
       return categoryId ? String(categoryId) === String(selectedDishCategoryId) : false;
     });
   }, [mealFilteredDishes, selectedDishCategoryId]);
-  // Origin counts — computed from categoryFilteredDishes (after meal + category
-  // filters, before origin filter) so the badges reflect the current context.
-  const originCounts = useMemo(() => ({
-    all: categoryFilteredDishes.length,
-    mine: categoryFilteredDishes.filter((d) => !isDishFromCatalog(d)).length,
-    catalog: categoryFilteredDishes.filter(isDishFromCatalog).length
-  }), [categoryFilteredDishes]);
-
   const originFilteredDishes = useMemo(() => {
     if (dishOriginFilter === DISH_ORIGIN.MINE) {
       return categoryFilteredDishes.filter((d) => !isDishFromCatalog(d));
@@ -441,6 +441,28 @@ export default function DishesPage() {
     return scoped.length ? scoped : activeCategories;
   }, [dishCategories, mealFilteredDishes, selectedDishCategoryId]);
 
+  const TOP_DISH_CATS = 5;
+
+  const extraDishCategories = useMemo(
+    () => filterChips.slice(TOP_DISH_CATS),
+    [filterChips]
+  );
+
+  const visibleDishCategoryChips = useMemo(() => {
+    const base = showAllDishCategories
+      ? filterChips
+      : filterChips.slice(0, TOP_DISH_CATS);
+    // Always show the active category even if it fell outside the truncated window
+    if (
+      selectedDishCategoryId &&
+      !base.some((c) => String(c._id) === selectedDishCategoryId)
+    ) {
+      const pinned = filterChips.find((c) => String(c._id) === selectedDishCategoryId);
+      if (pinned) return [pinned, ...base];
+    }
+    return base;
+  }, [showAllDishCategories, filterChips, selectedDishCategoryId]);
+
   const emptyMessage = useMemo(() => {
     if (dishes.length === 0) {
       return "No hay platos aún. Crea el primero.";
@@ -481,6 +503,7 @@ export default function DishesPage() {
       setSelectedDishCategoryId("");
       setSelectedMealFilter(MEAL_FILTERS.ALL);
       setDishOriginFilter(DISH_ORIGIN.ALL);
+      setShowAllDishCategories(false);
     } else {
       setSelectedIngredientCategoryId("");
       setShowAllIngredientCategories(false);
@@ -970,10 +993,10 @@ export default function DishesPage() {
                 {!isDiodGlobalMode && (
                   <div className="dishes-origin-filter" role="toolbar" aria-label="Filtrar por origen del plato">
                     {[
-                      { key: DISH_ORIGIN.ALL,     label: "Todos",      count: originCounts.all },
-                      { key: DISH_ORIGIN.MINE,    label: "Mis platos", count: originCounts.mine },
-                      { key: DISH_ORIGIN.CATALOG, label: "Catálogo",   count: originCounts.catalog }
-                    ].map(({ key, label, count }) => (
+                      { key: DISH_ORIGIN.ALL,     label: "Todos" },
+                      { key: DISH_ORIGIN.MINE,    label: "Mis platos" },
+                      { key: DISH_ORIGIN.CATALOG, label: "Catálogo" }
+                    ].map(({ key, label }) => (
                       <button
                         key={key}
                         type="button"
@@ -982,9 +1005,6 @@ export default function DishesPage() {
                         aria-pressed={dishOriginFilter === key}
                       >
                         {label}
-                        {count > 0 && (
-                          <span className="dishes-origin-count">{count}</span>
-                        )}
                       </button>
                     ))}
                   </div>
@@ -1046,7 +1066,7 @@ export default function DishesPage() {
                 >
                   Todos
                 </button>
-                {filterChips.map((category) => {
+                {visibleDishCategoryChips.map((category) => {
                   const categoryId = String(category?._id || "");
                   const selected = String(selectedDishCategoryId || "") === categoryId;
                   return (
@@ -1062,6 +1082,15 @@ export default function DishesPage() {
                     </button>
                   );
                 })}
+                {extraDishCategories.length > 0 ? (
+                  <button
+                    type="button"
+                    className="kitchen-filter-chip dishes-cat-more"
+                    onClick={() => setShowAllDishCategories((v) => !v)}
+                  >
+                    {showAllDishCategories ? "▲ Menos" : `+${extraDishCategories.length} más`}
+                  </button>
+                ) : null}
               </div>
             </>
           ) : null}
@@ -1104,6 +1133,14 @@ export default function DishesPage() {
                 </button>
               ) : null}
             </div>
+          ) : null}
+          {/* ── Results count — reflects all active filters ──────────── */}
+          {!loading && !ingredientsLoading ? (
+            <p className="dishes-results-count">
+              {isIngredientsTab
+                ? `${visibleIngredients.length} ${visibleIngredients.length === 1 ? "producto encontrado" : "productos encontrados"}`
+                : `${visibleDishes.length} ${visibleDishes.length === 1 ? "plato encontrado" : "platos encontrados"}`}
+            </p>
           ) : null}
         </div>
         {/* Onboarding suggestions (outside panel, above grid) */}
