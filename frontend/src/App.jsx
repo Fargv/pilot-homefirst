@@ -7,6 +7,8 @@ import RequireAuth from "./kitchen/RequireAuth.jsx";
 import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
 import AdminLoginPage from "./kitchen/pages/AdminLoginPage.jsx";
 import AdminPanelPage from "./kitchen/pages/AdminPanelPage.jsx";
+import AdminForgotPasswordPage from "./kitchen/pages/AdminForgotPasswordPage.jsx";
+import AdminResetPasswordPage from "./kitchen/pages/AdminResetPasswordPage.jsx";
 import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
 import ClerkAuthPage from "./kitchen/pages/ClerkAuthPage.jsx";
 import ClerkOnboardingPage from "./kitchen/pages/ClerkOnboardingPage.jsx";
@@ -191,6 +193,8 @@ function AppRoutes() {
           )}
         />
         <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
+        <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
         <Route path="/admin" element={<AdminPanelPage />} />
         <Route
           path="/kitchen"

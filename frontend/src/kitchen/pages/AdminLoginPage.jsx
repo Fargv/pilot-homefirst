@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { buildApiUrl, setToken } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -85,6 +85,14 @@ export default function AdminLoginPage() {
               <Button type="submit" disabled={submitting}>
                 {submitting ? "Entrando..." : "Entrar como admin"}
               </Button>
+            </div>
+            <div style={{ textAlign: "center", marginTop: 12 }}>
+              <Link
+                to="/admin/forgot-password"
+                style={{ fontSize: 13, color: "#6366f1", textDecoration: "none" }}
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
             </div>
           </form>
         </Card>

@@ -1,10 +1,12 @@
 import express from "express";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { Household } from "../models/Household.js";
 import { PurchaseAttempt } from "../models/PurchaseAttempt.js";
 import { PackEntitlement } from "../models/PackEntitlement.js";
 import { KitchenUser } from "../models/KitchenUser.js";
+import { KitchenAuditLog } from "../models/KitchenAuditLog.js";
 import { Invitation } from "../models/Invitation.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { KitchenDish } from "../models/KitchenDish.js";
@@ -770,6 +772,173 @@ router.post("/beta-insights/:id/revoke-beta-pro", requireAuth, requireDiod, asyn
   } catch (e) {
     console.error("[admin] revoke-beta-pro error", e?.message);
     return res.status(500).json({ ok: false, error: "Error al revocar Beta Pro." });
+  }
+});
+
+// ─── Admin Account Security ───────────────────────────────────────────────────
+// These routes allow the logged-in DIOD admin to manage their account security.
+// All sensitive operations require the current password as confirmation.
+
+function maskAdminRecoveryEmail(email) {
+  if (!email || typeof email !== "string") return null;
+  const [local, domain] = email.split("@");
+  if (!domain) return null;
+  const visible = local.length > 2 ? local.slice(0, 2) : local.slice(0, 1);
+  return `${visible}${"*".repeat(Math.max(3, local.length - visible.length))}@${domain}`;
+}
+
+function validateAdminPasswordStrength(password) {
+  const pw = String(password || "");
+  if (pw.length < 10) {
+    return { valid: false, error: "La contraseña debe tener al menos 10 caracteres." };
+  }
+  const groups = [
+    /[A-Z]/.test(pw),
+    /[a-z]/.test(pw),
+    /[0-9]/.test(pw),
+    /[^A-Za-z0-9]/.test(pw)
+  ];
+  if (groups.filter(Boolean).length < 2) {
+    return {
+      valid: false,
+      error: "La contraseña debe incluir al menos 2 de: mayúsculas, minúsculas, números, símbolos."
+    };
+  }
+  return { valid: true };
+}
+
+// GET /api/kitchen/admin/account
+// Returns masked recovery email for the logged-in admin.
+router.get("/account", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const user = await KitchenUser.findById(req.kitchenUser._id).select("email recoveryEmail").lean();
+    if (!user) return res.status(404).json({ ok: false, error: "Cuenta no encontrada." });
+
+    return res.json({
+      ok: true,
+      account: {
+        email: user.email,
+        recoveryEmailMasked: maskAdminRecoveryEmail(user.recoveryEmail),
+        hasRecoveryEmail: Boolean(user.recoveryEmail)
+      }
+    });
+  } catch (error) {
+    console.error("[admin/account] GET failed", { error: error?.message });
+    return res.status(500).json({ ok: false, error: "No se pudo cargar la información de cuenta." });
+  }
+});
+
+// PUT /api/kitchen/admin/account/recovery-email
+// Set or update the recovery email. Requires current password confirmation.
+router.put("/account/recovery-email", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const currentPassword = String(req.body?.currentPassword || "");
+    const newRecoveryEmail = req.body?.recoveryEmail !== undefined
+      ? String(req.body.recoveryEmail || "").trim().toLowerCase()
+      : undefined;
+
+    if (!currentPassword) {
+      return res.status(400).json({ ok: false, error: "La contraseña actual es obligatoria." });
+    }
+    if (newRecoveryEmail === undefined) {
+      return res.status(400).json({ ok: false, error: "El campo recoveryEmail es obligatorio." });
+    }
+
+    const user = await KitchenUser.findById(req.kitchenUser._id);
+    if (!user || !user.passwordHash) {
+      return res.status(403).json({ ok: false, error: "Operación no permitida." });
+    }
+
+    const passwordOk = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!passwordOk) {
+      return res.status(401).json({ ok: false, error: "La contraseña actual no es correcta." });
+    }
+
+    // Validate email format if provided
+    if (newRecoveryEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newRecoveryEmail)) {
+        return res.status(400).json({ ok: false, error: "El email de recuperación no tiene un formato válido." });
+      }
+    }
+
+    const oldMasked = maskAdminRecoveryEmail(user.recoveryEmail);
+    const newMasked = maskAdminRecoveryEmail(newRecoveryEmail || null);
+
+    user.recoveryEmail = newRecoveryEmail || null;
+    await user.save();
+
+    await KitchenAuditLog.create({
+      action: "admin_recovery_email_changed",
+      actorUserId: user._id,
+      data: { oldMasked, newMasked }
+    }).catch(() => {});
+
+    console.log("[admin/account] Recovery email updated", {
+      userId: user._id.toString(),
+      oldMasked,
+      newMasked
+    });
+
+    return res.json({
+      ok: true,
+      recoveryEmailMasked: maskAdminRecoveryEmail(user.recoveryEmail),
+      hasRecoveryEmail: Boolean(user.recoveryEmail)
+    });
+  } catch (error) {
+    console.error("[admin/account] PUT recovery-email failed", { error: error?.message });
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar el email de recuperación." });
+  }
+});
+
+// PUT /api/kitchen/admin/account/password
+// Change the admin password. Requires current password confirmation.
+router.put("/account/password", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const currentPassword = String(req.body?.currentPassword || "");
+    const newPassword = String(req.body?.newPassword || "");
+
+    if (!currentPassword) {
+      return res.status(400).json({ ok: false, error: "La contraseña actual es obligatoria." });
+    }
+    if (!newPassword) {
+      return res.status(400).json({ ok: false, error: "La nueva contraseña es obligatoria." });
+    }
+
+    const strengthCheck = validateAdminPasswordStrength(newPassword);
+    if (!strengthCheck.valid) {
+      return res.status(400).json({ ok: false, error: strengthCheck.error });
+    }
+
+    const user = await KitchenUser.findById(req.kitchenUser._id);
+    if (!user || !user.passwordHash) {
+      return res.status(403).json({ ok: false, error: "Operación no permitida." });
+    }
+
+    const passwordOk = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!passwordOk) {
+      return res.status(401).json({ ok: false, error: "La contraseña actual no es correcta." });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ ok: false, error: "La nueva contraseña debe ser diferente a la actual." });
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    await KitchenAuditLog.create({
+      action: "admin_password_changed",
+      actorUserId: user._id,
+      data: {}
+    }).catch(() => {});
+
+    console.log("[admin/account] Admin password changed", { userId: user._id.toString() });
+
+    return res.json({ ok: true, message: "La contraseña se actualizó correctamente." });
+  } catch (error) {
+    console.error("[admin/account] PUT password failed", { error: error?.message });
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar la contraseña." });
   }
 });
 

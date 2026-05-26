@@ -6030,6 +6030,303 @@ function BetaInsightsSection() {
   );
 }
 
+// ─── Admin Account Security Panel ────────────────────────────────────────────
+
+function AdminAccountSecurityPanel() {
+  const [account, setAccount] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  // Recovery email form state
+  const [recEmail, setRecEmail] = useState("");
+  const [recCurrentPw, setRecCurrentPw] = useState("");
+  const [recSaving, setRecSaving] = useState(false);
+  const [recMsg, setRecMsg] = useState(null); // { ok, text }
+
+  // Password change form state
+  const [pwCurrent, setPwCurrent] = useState("");
+  const [pwNew, setPwNew] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState(null); // { ok, text }
+
+  useEffect(() => {
+    apiRequest("/api/kitchen/admin/account")
+      .then((d) => {
+        setAccount(d.account);
+        setRecEmail("");
+      })
+      .catch((err) => setLoadError(err.message || "Error al cargar la cuenta."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  function checkPasswordStrengthLocal(password) {
+    const pw = String(password || "");
+    if (pw.length < 10) return { valid: false };
+    const groups = [/[A-Z]/.test(pw), /[a-z]/.test(pw), /[0-9]/.test(pw), /[^A-Za-z0-9]/.test(pw)];
+    return { valid: groups.filter(Boolean).length >= 2 };
+  }
+
+  const handleRecoveryEmailSave = async (e) => {
+    e.preventDefault();
+    setRecMsg(null);
+    setRecSaving(true);
+    try {
+      const res = await fetch(buildApiUrl("/api/kitchen/admin/account/recovery-email"), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ currentPassword: recCurrentPw, recoveryEmail: recEmail.trim() })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setRecMsg({ ok: false, text: data.error || "Error al actualizar el email de recuperación." });
+        return;
+      }
+      setAccount((prev) => ({ ...prev, recoveryEmailMasked: data.recoveryEmailMasked, hasRecoveryEmail: data.hasRecoveryEmail }));
+      setRecEmail("");
+      setRecCurrentPw("");
+      setRecMsg({ ok: true, text: "Email de recuperación actualizado correctamente." });
+    } catch {
+      setRecMsg({ ok: false, text: "No se pudo conectar con el servidor." });
+    } finally {
+      setRecSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPwMsg(null);
+    if (pwNew !== pwConfirm) {
+      setPwMsg({ ok: false, text: "Las contraseñas nuevas no coinciden." });
+      return;
+    }
+    if (!checkPasswordStrengthLocal(pwNew).valid) {
+      setPwMsg({ ok: false, text: "La contraseña debe tener mínimo 10 caracteres e incluir al menos 2 grupos: mayúsculas, minúsculas, números, símbolos." });
+      return;
+    }
+    setPwSaving(true);
+    try {
+      const res = await fetch(buildApiUrl("/api/kitchen/admin/account/password"), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ currentPassword: pwCurrent, newPassword: pwNew })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setPwMsg({ ok: false, text: data.error || "Error al cambiar la contraseña." });
+        return;
+      }
+      setPwCurrent("");
+      setPwNew("");
+      setPwConfirm("");
+      setPwMsg({ ok: true, text: "Contraseña actualizada correctamente." });
+    } catch {
+      setPwMsg({ ok: false, text: "No se pudo conectar con el servidor." });
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
+  const pwStrengthOk = checkPasswordStrengthLocal(pwNew).valid;
+  const pwReady = pwCurrent && pwNew && pwConfirm && pwNew === pwConfirm && pwStrengthOk;
+
+  if (loading) return <p style={{ color: "#6b7280", padding: 24 }}>Cargando...</p>;
+  if (loadError) return <p style={{ color: "#ef4444", padding: 24 }}>{loadError}</p>;
+
+  return (
+    <div style={{ maxWidth: 540, margin: "0 auto" }}>
+      {/* ── Current access info ── */}
+      <section style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          🔐 Cuenta admin
+        </h3>
+        <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 10, padding: "14px 18px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Email de acceso</span>
+          </div>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#111827", fontFamily: "monospace" }}>{account?.email || "—"}</p>
+          <p style={{ margin: "6px 0 0", fontSize: 11, color: "#9ca3af" }}>Este email es el identificador de acceso al panel admin y no puede cambiarse aquí.</p>
+        </div>
+      </section>
+
+      {/* ── Recovery email ── */}
+      <section style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+          ✉️ Email de recuperación
+        </h3>
+        <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12, lineHeight: 1.5 }}>
+          Se usa <strong>únicamente</strong> para recibir el enlace de recuperación de contraseña.
+          No es el email de acceso al panel y no afecta a Clerk.
+        </p>
+
+        <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 10, padding: "14px 18px", marginBottom: 14 }}>
+          <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Email configurado</div>
+          {account?.hasRecoveryEmail ? (
+            <p style={{ margin: 0, fontFamily: "monospace", fontSize: 14, color: "#374151" }}>
+              {account.recoveryEmailMasked}
+              <span style={{ fontSize: 11, color: "#16a34a", marginLeft: 8, fontFamily: "sans-serif" }}>✓ configurado</span>
+            </p>
+          ) : (
+            <p style={{ margin: 0, fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>
+              No hay email de recuperación configurado. Sin él, no podrás recuperar la contraseña si la pierdes.
+            </p>
+          )}
+        </div>
+
+        {recMsg && (
+          <div style={{ background: recMsg.ok ? "#f0fdf4" : "#fef2f2", border: `1px solid ${recMsg.ok ? "#86efac" : "#fca5a5"}`, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: recMsg.ok ? "#166534" : "#b91c1c" }}>
+            {recMsg.text}
+          </div>
+        )}
+
+        <form onSubmit={handleRecoveryEmailSave}>
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 12, color: "#374151", fontWeight: 600, display: "block", marginBottom: 4 }}>
+              Nuevo email de recuperación <span style={{ fontWeight: 400, color: "#9ca3af" }}>(vacío para eliminar)</span>
+            </label>
+            <input
+              type="email"
+              className="kitchen-input"
+              value={recEmail}
+              onChange={(e) => setRecEmail(e.target.value)}
+              placeholder="recovery@example.com"
+              style={{ width: "100%", fontSize: 14 }}
+              autoComplete="email"
+            />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, color: "#374151", fontWeight: 600, display: "block", marginBottom: 4 }}>
+              Contraseña actual <span style={{ color: "#ef4444" }}>*</span>
+            </label>
+            <input
+              type="password"
+              className="kitchen-input"
+              value={recCurrentPw}
+              onChange={(e) => setRecCurrentPw(e.target.value)}
+              placeholder="Contraseña actual"
+              required
+              style={{ width: "100%", fontSize: 14 }}
+              autoComplete="current-password"
+            />
+            <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>Necesaria para confirmar el cambio.</p>
+          </div>
+          <button type="submit" style={ABT.save} disabled={recSaving || !recCurrentPw}>
+            {recSaving ? "Guardando..." : "Guardar email de recuperación"}
+          </button>
+        </form>
+      </section>
+
+      {/* ── Change password ── */}
+      <section style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+          🔑 Cambiar contraseña
+        </h3>
+        <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12, lineHeight: 1.5 }}>
+          Mínimo 10 caracteres con al menos 2 grupos: mayúsculas, minúsculas, números, símbolos.
+        </p>
+
+        {pwMsg && (
+          <div style={{ background: pwMsg.ok ? "#f0fdf4" : "#fef2f2", border: `1px solid ${pwMsg.ok ? "#86efac" : "#fca5a5"}`, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: pwMsg.ok ? "#166534" : "#b91c1c" }}>
+            {pwMsg.text}
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordChange}>
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 12, color: "#374151", fontWeight: 600, display: "block", marginBottom: 4 }}>
+              Contraseña actual <span style={{ color: "#ef4444" }}>*</span>
+            </label>
+            <input
+              type="password"
+              className="kitchen-input"
+              value={pwCurrent}
+              onChange={(e) => setPwCurrent(e.target.value)}
+              placeholder="Contraseña actual"
+              required
+              style={{ width: "100%", fontSize: 14 }}
+              autoComplete="current-password"
+            />
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 12, color: "#374151", fontWeight: 600, display: "block", marginBottom: 4 }}>
+              Nueva contraseña <span style={{ color: "#ef4444" }}>*</span>
+            </label>
+            <input
+              type="password"
+              className="kitchen-input"
+              value={pwNew}
+              onChange={(e) => setPwNew(e.target.value)}
+              placeholder="Mínimo 10 caracteres"
+              required
+              style={{ width: "100%", fontSize: 14 }}
+              autoComplete="new-password"
+            />
+            {pwNew && (
+              <div style={{ marginTop: 4, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, color: pwNew.length >= 10 ? "#16a34a" : "#9ca3af" }}>
+                  {pwNew.length >= 10 ? "✓" : "○"} Mínimo 10 caracteres
+                </span>
+                <span style={{ fontSize: 11, color: pwStrengthOk ? "#16a34a" : "#9ca3af" }}>
+                  {pwStrengthOk ? "✓" : "○"} 2+ grupos de caracteres
+                </span>
+              </div>
+            )}
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, color: "#374151", fontWeight: 600, display: "block", marginBottom: 4 }}>
+              Confirmar nueva contraseña <span style={{ color: "#ef4444" }}>*</span>
+            </label>
+            <input
+              type="password"
+              className="kitchen-input"
+              value={pwConfirm}
+              onChange={(e) => setPwConfirm(e.target.value)}
+              placeholder="Repite la nueva contraseña"
+              required
+              style={{ width: "100%", fontSize: 14 }}
+              autoComplete="new-password"
+            />
+            {pwConfirm && pwNew !== pwConfirm && (
+              <p style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>Las contraseñas no coinciden.</p>
+            )}
+            {pwConfirm && pwNew === pwConfirm && (
+              <p style={{ fontSize: 11, color: "#16a34a", marginTop: 4 }}>✓ Las contraseñas coinciden.</p>
+            )}
+          </div>
+          <button type="submit" style={ABT.save} disabled={pwSaving || !pwReady}>
+            {pwSaving ? "Guardando..." : "Cambiar contraseña"}
+          </button>
+        </form>
+      </section>
+
+      {/* ── Security notes ── */}
+      <section>
+        <details style={{ fontSize: 12, color: "#6b7280" }}>
+          <summary style={{ cursor: "pointer", fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+            🛡 Notas de seguridad y verificación manual
+          </summary>
+          <ul style={{ lineHeight: 1.8, paddingLeft: 18, marginTop: 8 }}>
+            <li>La solicitud de recuperación siempre devuelve un mensaje genérico (no revela si existe cuenta).</li>
+            <li>El enlace de recuperación expira en <strong>15 minutos</strong> desde su generación.</li>
+            <li>El enlace se invalida después de su primer uso.</li>
+            <li>El email de recuperación solo puede actualizarse introduciendo la contraseña actual.</li>
+            <li>La contraseña actual sigue siendo válida hasta que se cambie explícitamente aquí.</li>
+            <li>Todos los cambios de contraseña y email de recuperación quedan registrados en el audit log.</li>
+            <li>El admin puede seguir iniciando sesión con la contraseña existente sin afectar a Clerk.</li>
+            <li>El email de recuperación nunca se usa como identificador de acceso al panel.</li>
+          </ul>
+        </details>
+      </section>
+    </div>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function AdminPanelPage() {
@@ -6117,7 +6414,8 @@ export default function AdminPanelPage() {
             { key: "onboarding",   label: "Onboarding" },
             { key: "weekly",       label: "Retos Semanales" },
             { key: "beta",         label: "Beta Invites" },
-            { key: "insights",     label: "Beta Insights" }
+            { key: "insights",     label: "Beta Insights" },
+            { key: "cuenta_admin", label: "🔐 Cuenta" }
           ];
           return (
             <>
@@ -6191,6 +6489,8 @@ export default function AdminPanelPage() {
           <BetaInvitesSection />
         ) : tab === "insights" ? (
           <BetaInsightsSection />
+        ) : tab === "cuenta_admin" ? (
+          <AdminAccountSecurityPanel />
         ) : (
           <QuickSubscriptionPanel />
         )}

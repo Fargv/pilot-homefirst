@@ -21,6 +21,9 @@ const KitchenUserSchema = new mongoose.Schema(
     clerkId: { type: String, trim: true, default: null },
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
+    // Legacy admin recovery — only populated for globalRole:"diod" accounts.
+    // Never used for Clerk users. Never exposed in toSafeJSON().
+    recoveryEmail: { type: String, lowercase: true, trim: true, default: null },
     role: { type: String, enum: ["owner", "member", "admin", "user"], default: "member" },
     householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" },
     createdByUserId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },

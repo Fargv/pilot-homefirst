@@ -2,6 +2,7 @@ import express from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
+import { KitchenAuditLog } from "../models/KitchenAuditLog.js";
 import { Invitation } from "../models/Invitation.js";
 import { Household } from "../models/Household.js";
 import { createToken, requireAuth } from "../middleware.js";
@@ -656,6 +657,273 @@ router.post("/accept-invite", async (req, res) => {
 router.post("/logout", (req, res) => {
   res.json({ ok: true });
 });
+
+// ─── Admin Legacy Password Recovery ──────────────────────────────────────────
+// Separate recovery flow for the DIOD/admin legacy account.
+// Must never touch Clerk users. All responses are intentionally generic.
+
+const _adminRecoveryRateLimit = new Map();
+
+function _checkAdminRecoveryRateLimit(key, maxRequests, windowMs) {
+  const now = Date.now();
+  const entry = _adminRecoveryRateLimit.get(key);
+  if (!entry || now > entry.resetAt) {
+    _adminRecoveryRateLimit.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (entry.count >= maxRequests) return false;
+  entry.count++;
+  return true;
+}
+
+function validateAdminPasswordStrength(password) {
+  const pw = String(password || "");
+  if (pw.length < 10) {
+    return { valid: false, error: "La contraseña debe tener al menos 10 caracteres." };
+  }
+  const groups = [
+    /[A-Z]/.test(pw),
+    /[a-z]/.test(pw),
+    /[0-9]/.test(pw),
+    /[^A-Za-z0-9]/.test(pw)
+  ];
+  const metGroups = groups.filter(Boolean).length;
+  if (metGroups < 2) {
+    return {
+      valid: false,
+      error: "La contraseña debe incluir al menos 2 de los siguientes grupos: mayúsculas, minúsculas, números, símbolos."
+    };
+  }
+  return { valid: true };
+}
+
+function maskRecoveryEmail(email) {
+  if (!email || typeof email !== "string") return null;
+  const [local, domain] = email.split("@");
+  if (!domain) return null;
+  const visible = local.length > 2 ? local.slice(0, 2) : local.slice(0, 1);
+  return `${visible}${"*".repeat(Math.max(3, local.length - visible.length))}@${domain}`;
+}
+
+// POST /api/auth/admin/forgot-password
+// Rate limit: 3 per 15 min per IP, 2 per 15 min per identifier
+router.post("/admin/forgot-password", async (req, res) => {
+  const GENERIC_OK = {
+    ok: true,
+    message: "Si existe una cuenta compatible, enviaremos instrucciones de recuperación."
+  };
+
+  try {
+    const ip = getClientIp(req);
+    const identifier = normalizeEmail(req.body?.identifier || req.body?.email);
+
+    if (!identifier) {
+      return res.status(400).json({ ok: false, error: "El identificador de acceso es obligatorio." });
+    }
+
+    // Rate limit by IP (3 requests / 15 min)
+    if (!_checkAdminRecoveryRateLimit(`admin-forgot:ip:${ip}`, 3, 15 * 60_000)) {
+      return res.status(429).json({ ok: false, error: "Demasiadas peticiones. Inténtalo en 15 minutos." });
+    }
+
+    // Rate limit by identifier (2 requests / 15 min)
+    if (!_checkAdminRecoveryRateLimit(`admin-forgot:id:${identifier}`, 2, 15 * 60_000)) {
+      return res.status(429).json({ ok: false, error: "Demasiadas peticiones. Inténtalo en 15 minutos." });
+    }
+
+    console.log("[admin/recovery] Password recovery requested", { identifier, ip });
+
+    const user = await KitchenUser.findOne({ email: identifier, globalRole: "diod" });
+
+    if (!user) {
+      console.log("[admin/recovery] No matching diod account found — returning generic response", { identifier });
+      return res.json(GENERIC_OK);
+    }
+
+    if (!user.recoveryEmail) {
+      console.log("[admin/recovery] diod account has no recoveryEmail — returning generic response", {
+        userId: user._id.toString()
+      });
+      // Audit: someone tried but no recovery email configured
+      await KitchenAuditLog.create({
+        action: "admin_password_recovery_requested_no_email",
+        actorUserId: user._id,
+        data: { ip }
+      }).catch(() => {});
+      return res.json(GENERIC_OK);
+    }
+
+    const rawToken = createResetPasswordToken();
+    const hashedToken = hashResetPasswordToken(rawToken);
+    const expiresAt = new Date(Date.now() + 15 * 60_000); // 15 minutes — stricter than regular users
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = expiresAt;
+    await user.save();
+
+    const resetUrl = `${String(config.appUrl || "").replace(/\/$/, "")}/admin/reset-password?token=${encodeURIComponent(rawToken)}`;
+
+    console.log("[admin/recovery] Admin reset token stored", {
+      userId: user._id.toString(),
+      tokenLength: rawToken.length,
+      expiresAt: expiresAt.toISOString(),
+      recoveryEmailMasked: maskRecoveryEmail(user.recoveryEmail)
+    });
+
+    await sendEmail({
+      to: user.recoveryEmail,
+      subject: "Lunchfy — Recuperación de acceso admin",
+      html: buildAdminResetPasswordEmail(resetUrl, expiresAt)
+    });
+
+    console.log("[admin/recovery] Admin reset email sent", {
+      userId: user._id.toString(),
+      recoveryEmailMasked: maskRecoveryEmail(user.recoveryEmail),
+      expiresAt: expiresAt.toISOString()
+    });
+
+    await KitchenAuditLog.create({
+      action: "admin_password_recovery_requested",
+      actorUserId: user._id,
+      data: { ip, recoveryEmailMasked: maskRecoveryEmail(user.recoveryEmail) }
+    }).catch(() => {});
+
+    return res.json(GENERIC_OK);
+  } catch (error) {
+    console.error("[admin/recovery] Forgot password failed", { message: error?.message });
+    // Still return generic OK to avoid leaking implementation details
+    return res.json({
+      ok: true,
+      message: "Si existe una cuenta compatible, enviaremos instrucciones de recuperación."
+    });
+  }
+});
+
+// POST /api/auth/admin/reset-password
+// Validates token, enforces admin password strength policy, invalidates token after use.
+router.post("/admin/reset-password", async (req, res) => {
+  try {
+    const rawToken = String(req.body?.token || "");
+    const newPassword = String(req.body?.newPassword || "");
+
+    if (!rawToken) {
+      return res.status(400).json({ ok: false, error: "El token de recuperación es obligatorio." });
+    }
+
+    if (!newPassword) {
+      return res.status(400).json({ ok: false, error: "La nueva contraseña es obligatoria." });
+    }
+
+    const strengthCheck = validateAdminPasswordStrength(newPassword);
+    if (!strengthCheck.valid) {
+      return res.status(400).json({ ok: false, error: strengthCheck.error });
+    }
+
+    const { hashedVariants } = buildResetPasswordTokenCandidates(rawToken);
+
+    console.log("[admin/recovery] Reset password requested", {
+      tokenLength: rawToken.length,
+      tokenPreview: tokenPreview(rawToken)
+    });
+
+    // Token must match a diod user with a non-expired token
+    const user = await KitchenUser.findOne({
+      resetPasswordToken: { $in: hashedVariants },
+      resetPasswordExpires: { $gt: new Date() },
+      globalRole: "diod"
+    });
+
+    if (!user) {
+      // Audit the failed attempt (log without leaking the token)
+      const matchedWithoutExpiry = await KitchenUser.findOne({
+        resetPasswordToken: { $in: hashedVariants },
+        globalRole: "diod"
+      }).select("_id resetPasswordExpires");
+
+      console.warn("[admin/recovery] Reset failed: invalid or expired token", {
+        tokenPreview: tokenPreview(rawToken),
+        matchedStoredToken: Boolean(matchedWithoutExpiry),
+        storedExpiry: matchedWithoutExpiry?.resetPasswordExpires?.toISOString?.() || null
+      });
+
+      return res.status(400).json({ ok: false, error: "El enlace de recuperación no es válido o ha expirado." });
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    console.log("[admin/recovery] Admin password reset completed", { userId: user._id.toString() });
+
+    await KitchenAuditLog.create({
+      action: "admin_password_reset_completed",
+      actorUserId: user._id,
+      data: { ip: getClientIp(req) }
+    }).catch(() => {});
+
+    return res.json({ ok: true, message: "La contraseña se ha restablecido correctamente." });
+  } catch (error) {
+    console.error("[admin/recovery] Reset password failed", { message: error?.message });
+    return res.status(500).json({ ok: false, error: "No se pudo restablecer la contraseña." });
+  }
+});
+
+function buildAdminResetPasswordEmail(resetUrl, expiresAt) {
+  const expiresStr = expiresAt instanceof Date
+    ? expiresAt.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC"
+    : "15 minutos";
+
+  return `
+    <div style="margin:0;padding:32px 16px;background:#f8fafc;font-family:Arial,sans-serif;color:#1f2937;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+        <tr><td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;max-width:560px;border-collapse:collapse;">
+            <tr>
+              <td style="padding-bottom:18px;text-align:center;">
+                <div style="display:inline-block;padding:10px 18px;border-radius:999px;background:#1e1b4b;color:#a5b4fc;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">
+                  Lunchfy · Admin
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff;border:1px solid #e4e7ec;border-radius:24px;padding:36px 32px;box-shadow:0 10px 30px rgba(15,23,42,0.08);">
+                <h1 style="margin:0 0 14px;font-size:24px;line-height:1.2;color:#111827;">Restablece tu contraseña de administrador</h1>
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#475467;">
+                  Recibiste este correo porque se solicitó recuperar el acceso a la cuenta de administrador de Lunchfy.
+                </p>
+                <div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:10px 14px;margin:0 0 20px;font-size:13px;color:#713f12;">
+                  ⚠ Este enlace expira a las <strong>${expiresStr}</strong> (15 minutos). Solo puede usarse una vez.
+                </div>
+                <table role="presentation" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 22px;">
+                  <tr>
+                    <td style="border-radius:999px;background:#312e81;text-align:center;">
+                      <a href="${resetUrl}" style="display:inline-block;padding:14px 24px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;">
+                        Restablecer contraseña
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#667085;">
+                  Si el botón no funciona, copia y pega este enlace en tu navegador:
+                </p>
+                <p style="margin:0 0 24px;font-size:13px;line-height:1.6;word-break:break-word;">
+                  <a href="${resetUrl}" style="color:#4338ca;text-decoration:underline;">${resetUrl}</a>
+                </p>
+                <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#667085;">
+                  Si no solicitaste este restablecimiento, ignora este correo. Tu contraseña actual no ha cambiado.
+                </p>
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#98a2b3;">
+                  Este mensaje fue generado automáticamente. No respondas directamente a este correo.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+    </div>
+  `;
+}
 
 router.post("/clerk/onboarding", async (req, res) => {
   try {
