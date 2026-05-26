@@ -11486,6 +11486,126 @@ body {
   padding: 9px 20px;
 }
 
+/* ── Origin segmented control ── Todos / Mis platos / Catálogo ────────────── */
+.dishes-origin-filter {
+  display: flex;
+  align-items: center;
+  background: var(--surface-muted, #f1f5f9);
+  border: 1px solid var(--hf-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 2px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dishes-origin-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--input-text, #6b7280);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.17s ease, color 0.17s ease, box-shadow 0.17s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dishes-origin-btn:hover {
+  background: var(--card-bg, #fff);
+  color: var(--input-text, #374151);
+}
+
+.dishes-origin-btn.is-active {
+  background: #4f46e5;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.28);
+}
+
+/* "Mis platos" active — warm indigo tint */
+.dishes-origin-btn:nth-child(2).is-active {
+  background: #4f46e5;
+}
+
+/* "Catálogo" active — slightly violet */
+.dishes-origin-btn:nth-child(3).is-active {
+  background: #7c3aed;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.26);
+}
+
+.dishes-origin-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.10);
+  color: inherit;
+  transition: background 0.17s ease;
+}
+
+.dishes-origin-btn.is-active .dishes-origin-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+/* Dark mode */
+[data-theme="dark"] .dishes-origin-filter {
+  background: var(--surface-muted, #1e1b4b);
+  border-color: var(--hf-border, #312e81);
+}
+
+[data-theme="dark"] .dishes-origin-btn {
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .dishes-origin-btn:hover {
+  background: rgba(99, 102, 241, 0.12);
+  color: #e0e7ff;
+}
+
+[data-theme="dark"] .dishes-origin-btn.is-active {
+  background: #4f46e5;
+  color: #fff;
+}
+
+[data-theme="dark"] .dishes-origin-count {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Mobile: ensure the control is scrollable if it gets too tight */
+@media (max-width: 480px) {
+  .dishes-origin-filter {
+    border-radius: 10px;
+  }
+
+  .dishes-origin-btn {
+    font-size: 12px;
+    min-height: 34px;
+    padding: 5px 6px;
+  }
+
+  .dishes-origin-count {
+    font-size: 10px;
+    min-width: 16px;
+    height: 16px;
+  }
+}
+
 /* Secondary meal-type filter row (pill style, visually lighter than main tabs) */
 .dishes-meal-filter-row {
   display: flex;

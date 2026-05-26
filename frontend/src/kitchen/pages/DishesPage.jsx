@@ -74,6 +74,27 @@ function ChevronIcon(props) {
   );
 }
 
+// ── Origin classifier ─────────────────────────────────────────────────────────
+// Returns true for any dish that came from the catalog (master, override, or
+// pack-installed household copy). False means it was manually created by the
+// household — these are "Mis platos".
+function isDishFromCatalog(dish) {
+  if (!dish) return false;
+  // Global catalog dish (all households share these)
+  if (dish.scope === "master") return true;
+  // Household customisation of a master/catalog dish
+  if (dish.scope === "override") return true;
+  // Household copy installed from a catalog pack
+  if (dish.scope === "household" && dish.source === "catalog") return true;
+  return false;
+}
+
+const DISH_ORIGIN = {
+  ALL: "all",
+  MINE: "mine",
+  CATALOG: "catalog"
+};
+
 export default function DishesPage() {
   const MEAL_FILTERS = {
     ALL: "all",
@@ -116,7 +137,7 @@ export default function DishesPage() {
   const [selectedDishCategoryId, setSelectedDishCategoryId] = useState("");
   const [selectedMealFilter, setSelectedMealFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("main");
-  const [showOnlyCatalog, setShowOnlyCatalog] = useState(false);
+  const [dishOriginFilter, setDishOriginFilter] = useState(DISH_ORIGIN.ALL);
   const [ingredients, setIngredients] = useState([]);
   const [ingredientsLoading, setIngredientsLoading] = useState(false);
   const [ingredientsError, setIngredientsError] = useState("");
@@ -361,14 +382,27 @@ export default function DishesPage() {
       return categoryId ? String(categoryId) === String(selectedDishCategoryId) : false;
     });
   }, [mealFilteredDishes, selectedDishCategoryId]);
-  const catalogFilteredDishes = useMemo(() => {
-    if (!showOnlyCatalog) return categoryFilteredDishes;
-    return categoryFilteredDishes.filter((dish) => dish.source === "catalog");
-  }, [categoryFilteredDishes, showOnlyCatalog]);
+  // Origin counts — computed from categoryFilteredDishes (after meal + category
+  // filters, before origin filter) so the badges reflect the current context.
+  const originCounts = useMemo(() => ({
+    all: categoryFilteredDishes.length,
+    mine: categoryFilteredDishes.filter((d) => !isDishFromCatalog(d)).length,
+    catalog: categoryFilteredDishes.filter(isDishFromCatalog).length
+  }), [categoryFilteredDishes]);
+
+  const originFilteredDishes = useMemo(() => {
+    if (dishOriginFilter === DISH_ORIGIN.MINE) {
+      return categoryFilteredDishes.filter((d) => !isDishFromCatalog(d));
+    }
+    if (dishOriginFilter === DISH_ORIGIN.CATALOG) {
+      return categoryFilteredDishes.filter(isDishFromCatalog);
+    }
+    return categoryFilteredDishes;
+  }, [categoryFilteredDishes, dishOriginFilter]);
 
   const visibleDishes = useMemo(() => {
-    if (!normalizedSearch) return catalogFilteredDishes;
-    return catalogFilteredDishes.filter((dish) => {
+    if (!normalizedSearch) return originFilteredDishes;
+    return originFilteredDishes.filter((dish) => {
       const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
       if (nameMatch) return true;
       return (dish.ingredients || []).some((item) => {
@@ -377,7 +411,7 @@ export default function DishesPage() {
         return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
       });
     });
-  }, [catalogFilteredDishes, normalizedSearch]);
+  }, [originFilteredDishes, normalizedSearch]);
   const dishMap = useMemo(() => {
     const map = new Map();
     dishes.forEach((dish) => {
@@ -415,8 +449,11 @@ export default function DishesPage() {
       if (dishSearchTerm.trim()) {
         return "No encontramos platos con ese criterio.";
       }
-      if (showOnlyCatalog) {
-        return "No has instalado ningún pack del catálogo aún.";
+      if (dishOriginFilter === DISH_ORIGIN.MINE) {
+        return "No hay platos creados por tu hogar aún. ¡Crea el primero!";
+      }
+      if (dishOriginFilter === DISH_ORIGIN.CATALOG) {
+        return "No hay platos del catálogo con este filtro. Instala un pack desde Catálogo.";
       }
       if (selectedDishCategoryId) {
         return "No hay platos en la categoría seleccionada.";
@@ -429,7 +466,7 @@ export default function DishesPage() {
       return "No hay platos aún. Crea el primero.";
     }
     return "";
-  }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, activeTab, dishSearchTerm, dishes.length, selectedDishCategoryId, selectedMealFilter, showOnlyCatalog, visibleDishes.length]);
+  }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, dishOriginFilter, dishSearchTerm, dishes.length, selectedDishCategoryId, selectedMealFilter, visibleDishes.length]);
 
   useEffect(() => {
     setSelectedDishCategoryId((previous) => {
@@ -443,7 +480,7 @@ export default function DishesPage() {
     if (activeTab === "ingredients") {
       setSelectedDishCategoryId("");
       setSelectedMealFilter(MEAL_FILTERS.ALL);
-      setShowOnlyCatalog(false);
+      setDishOriginFilter(DISH_ORIGIN.ALL);
     } else {
       setSelectedIngredientCategoryId("");
       setShowAllIngredientCategories(false);
@@ -924,29 +961,53 @@ export default function DishesPage() {
                 : setDishSearchTerm(event.target.value)
             }
           />
-          {/* Secondary meal-type filters + category chips (dishes tab) */}
+          {/* Origin segmented control + meal-type filters + category chips (dishes tab) */}
           {!isIngredientsTab ? (
             <>
+              {/* ── Origin segmented control ────────────────────────────────── */}
+              {!isDiodGlobalMode && (
+                <div className="dishes-origin-filter" role="toolbar" aria-label="Filtrar por origen del plato">
+                  {[
+                    { key: DISH_ORIGIN.ALL,     label: "Todos",      count: originCounts.all },
+                    { key: DISH_ORIGIN.MINE,    label: "Mis platos", count: originCounts.mine },
+                    { key: DISH_ORIGIN.CATALOG, label: "Catálogo",   count: originCounts.catalog }
+                  ].map(({ key, label, count }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`dishes-origin-btn${dishOriginFilter === key ? " is-active" : ""}`}
+                      onClick={() => setDishOriginFilter(key)}
+                      aria-pressed={dishOriginFilter === key}
+                    >
+                      {label}
+                      {count > 0 && (
+                        <span className="dishes-origin-count">{count}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* ── Meal-type chips ─────────────────────────────────────────── */}
               <div className="dishes-meal-filter-row" role="toolbar" aria-label="Filtrar por tipo de comida">
                 <button
-                  className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.ALL && !showOnlyCatalog ? "is-active is-all" : ""}`}
+                  className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.ALL ? "is-active is-all" : ""}`}
                   type="button"
-                  onClick={() => { setSelectedMealFilter(MEAL_FILTERS.ALL); setShowOnlyCatalog(false); }}
+                  onClick={() => setSelectedMealFilter(MEAL_FILTERS.ALL)}
                 >
                   Todos
                 </button>
                 <button
-                  className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.LUNCH && !showOnlyCatalog ? "is-active" : ""}`}
+                  className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.LUNCH ? "is-active" : ""}`}
                   type="button"
-                  onClick={() => { setSelectedMealFilter(MEAL_FILTERS.LUNCH); setShowOnlyCatalog(false); }}
+                  onClick={() => setSelectedMealFilter(MEAL_FILTERS.LUNCH)}
                 >
                   Comidas
                 </button>
                 {canUseDinners ? (
                   <button
-                    className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.DINNER && !showOnlyCatalog ? "is-active" : ""}`}
+                    className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.DINNER ? "is-active" : ""}`}
                     type="button"
-                    onClick={() => { setSelectedMealFilter(MEAL_FILTERS.DINNER); setShowOnlyCatalog(false); }}
+                    onClick={() => setSelectedMealFilter(MEAL_FILTERS.DINNER)}
                   >
                     Cenas
                   </button>
@@ -966,18 +1027,6 @@ export default function DishesPage() {
                     <span className="dinner-gate-pro-badge">PRO</span>
                   </button>
                 )}
-                <button
-                  className={`kitchen-filter-chip dishes-meal-chip kitchen-tab-catalog ${showOnlyCatalog ? "is-active" : ""}`}
-                  type="button"
-                  onClick={() => { setShowOnlyCatalog((v) => !v); setSelectedMealFilter(MEAL_FILTERS.ALL); }}
-                  title="Mostrar solo platos instalados desde el catálogo"
-                >
-                  <svg viewBox="0 0 16 16" aria-hidden="true" style={{ width: 12, height: 12, flexShrink: 0 }}>
-                    <rect x="1.5" y="1.5" width="13" height="13" rx="2.5" strokeWidth="1.5" fill="none" stroke="currentColor" />
-                    <path d="M4 5.5h8M4 8h5M4 10.5h6" strokeWidth="1.3" strokeLinecap="round" stroke="currentColor" />
-                  </svg>
-                  Del catálogo
-                </button>
               </div>
               {!canUseDinners && dinnerGateOpen ? (
                 <DinnerUpgradeBanner
