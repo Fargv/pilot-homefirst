@@ -7,19 +7,23 @@ const clerkClient = config.clerkSecretKey
   ? createClerkClient({ secretKey: config.clerkSecretKey })
   : null;
 
+const CLERK_API_TIMEOUT_MS = 5000;
+
 function isDevelopmentClerkReconciliationEnabled() {
   return config.nodeEnv === "development" || process.env.APP_ENV === "development";
 }
 
-function logClerkDev(message, details = {}) {
-  if (
-    config.nodeEnv !== "development"
-    && process.env.APP_ENV !== "development"
-    && process.env.CLERK_DEBUG !== "true"
-  ) {
-    return;
-  }
-  console.log(`[clerk][dev] ${message}`, details);
+function isDevMode() {
+  return (
+    config.nodeEnv === "development"
+    || process.env.APP_ENV === "development"
+    || process.env.CLERK_DEBUG === "true"
+  );
+}
+
+function logClerkDev(event, details = {}) {
+  if (!isDevMode()) return;
+  console.log(`[clerk][dev] ${event}`, details);
 }
 
 function buildAuthError(code, message, status = 401) {
@@ -27,6 +31,23 @@ function buildAuthError(code, message, status = 401) {
   error.code = code;
   error.status = status;
   return error;
+}
+
+/**
+ * Wraps a promise with a timeout. Rejects with { code: "CLERK_API_TIMEOUT" }
+ * if the promise does not resolve within `ms` milliseconds.
+ */
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(Object.assign(new Error("Clerk API timed out"), { code: "CLERK_API_TIMEOUT" })),
+      ms
+    );
+    promise.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); }
+    );
+  });
 }
 
 export function getPrimaryEmailAddress(clerkUser) {
@@ -113,30 +134,32 @@ export async function deleteClerkUserById(clerkId, context = {}) {
 
 export async function resolveClerkIdentityFromToken(token) {
   if (!isClerkAuthEnabled() || !token) {
-    logClerkDev("Clerk auth skipped", {
+    logClerkDev("clerk_auth_skipped", {
       hasSecretKey: Boolean(config.clerkSecretKey),
       hasToken: Boolean(token)
     });
     return null;
   }
 
-  logClerkDev("Verifying Clerk token", {
+  logClerkDev("token_verification_start", {
     hasJwtKey: Boolean(config.clerkJwtKey),
     authorizedParties: config.clerkAuthorizedParties,
     tokenLength: token.length
   });
 
-  let verified = null;
+  // ── Step 1: Verify JWT locally (no network call) ─────────────────────────────
+  let clerkClaims = null;
   try {
-    verified = await verifyToken(token, {
+    const verified = await verifyToken(token, {
       secretKey: config.clerkSecretKey,
       ...(config.clerkJwtKey ? { jwtKey: config.clerkJwtKey } : {}),
       ...(config.clerkAuthorizedParties.length
         ? { authorizedParties: config.clerkAuthorizedParties }
         : {})
     });
+    clerkClaims = verified?.data || verified;
   } catch (error) {
-    logClerkDev("Clerk token verification failed", {
+    logClerkDev("token_verification_failed", {
       name: error?.name || null,
       reason: error?.reason || null,
       message: error?.message || null
@@ -147,27 +170,92 @@ export async function resolveClerkIdentityFromToken(token) {
     );
   }
 
-  const clerkClaims = verified?.data || verified;
-  const verificationErrors = verified?.errors || [];
-
   if (!clerkClaims?.sub) {
-    logClerkDev("Clerk token verification returned no subject", {
+    logClerkDev("token_verification_no_subject", {
       hasPayload: Boolean(clerkClaims),
-      payloadKeys: clerkClaims ? Object.keys(clerkClaims) : [],
-      errors: verificationErrors.map((error) => error.message)
+      payloadKeys: clerkClaims ? Object.keys(clerkClaims) : []
     });
     throw buildAuthError("CLERK_TOKEN_INVALID", "No se pudo validar la sesion de Clerk.");
   }
 
-  logClerkDev("Clerk token verified", {
+  logClerkDev("token_verified_locally", {
     clerkUserId: clerkClaims.sub,
     azp: clerkClaims.azp || null,
     iss: clerkClaims.iss || null
   });
-  const clerkUser = await clerkClient.users.getUser(clerkClaims.sub);
-  const normalizedEmail = getPrimaryEmailAddress(clerkUser);
 
-  logClerkDev("Fetched Clerk user", {
+  // ── Step 2: Fast path — MongoDB lookup by clerkId (no Clerk API needed) ──────
+  // Returning users already have clerkId stored in Mongo. We can skip the
+  // Clerk Management API call entirely for them, making auth resilient to
+  // Clerk API outages.
+  const mongoUserByClerkId = await KitchenUser.findOne({ clerkId: clerkClaims.sub });
+  if (mongoUserByClerkId) {
+    const email = normalizeEmail(mongoUserByClerkId.email);
+    logClerkDev("mongo_lookup_by_clerk_id_hit", {
+      clerkUserId: clerkClaims.sub,
+      userId: mongoUserByClerkId._id.toString(),
+      email: email || null
+    });
+    if (!email) {
+      throw buildAuthError("CLERK_EMAIL_MISSING", "La cuenta de Clerk no tiene un email utilizable.");
+    }
+    // Build a minimal clerkUser stub so downstream code that reads
+    // .id, .firstName, .lastName, .emailAddresses doesn't throw.
+    // Full Clerk API was not called — only the sub is guaranteed.
+    const minimalClerkUser = {
+      id: clerkClaims.sub,
+      emailAddresses: [],
+      firstName: null,
+      lastName: null,
+      username: null,
+      primaryEmailAddressId: null
+    };
+    return {
+      authType: "clerk",
+      clerkClaims,
+      clerkUser: minimalClerkUser,
+      clerkApiSkipped: true,
+      email,
+      kitchenUser: mongoUserByClerkId
+    };
+  }
+
+  logClerkDev("mongo_lookup_by_clerk_id_miss", {
+    clerkUserId: clerkClaims.sub,
+    note: "falling back to Clerk Management API for new or unlinked user"
+  });
+
+  // ── Step 3: Clerk Management API (new/unlinked users only) ───────────────────
+  // Only reached when no Mongo user has this clerkId yet. Wrapped with a
+  // timeout so a Clerk API outage returns a clean 503 instead of a raw 500.
+  if (!clerkClient) {
+    throw buildAuthError(
+      "CLERK_API_UNAVAILABLE",
+      "Proveedor de autenticacion no disponible temporalmente.",
+      503
+    );
+  }
+
+  let clerkUser = null;
+  try {
+    clerkUser = await withTimeout(
+      clerkClient.users.getUser(clerkClaims.sub),
+      CLERK_API_TIMEOUT_MS
+    );
+  } catch (error) {
+    logClerkDev("clerk_api_failed", {
+      clerkUserId: clerkClaims.sub,
+      code: error?.code || null,
+      message: error?.message || null
+    });
+    const msg = error?.code === "CLERK_API_TIMEOUT"
+      ? "Proveedor de autenticacion no disponible temporalmente. Intentalo de nuevo en unos segundos."
+      : "No se pudo contactar con el proveedor de autenticacion.";
+    throw buildAuthError("CLERK_API_UNAVAILABLE", msg, 503);
+  }
+
+  const normalizedEmail = getPrimaryEmailAddress(clerkUser);
+  logClerkDev("clerk_api_user_fetched", {
     clerkUserId: clerkUser.id,
     primaryEmailAddressId: clerkUser.primaryEmailAddressId || null,
     emailCount: clerkUser.emailAddresses?.length || 0,
@@ -178,8 +266,9 @@ export async function resolveClerkIdentityFromToken(token) {
     throw buildAuthError("CLERK_EMAIL_MISSING", "La cuenta de Clerk no tiene un email utilizable.");
   }
 
+  // ── Step 4: Mongo lookup by email (for users not yet linked) ─────────────────
   const mongoUser = await KitchenUser.findOne({ email: normalizedEmail });
-  logClerkDev("Mongo user lookup by email completed", {
+  logClerkDev("mongo_lookup_by_email", {
     email: normalizedEmail,
     found: Boolean(mongoUser),
     userId: mongoUser?._id?.toString?.() || null,
@@ -190,6 +279,7 @@ export async function resolveClerkIdentityFromToken(token) {
     authType: "clerk",
     clerkClaims,
     clerkUser,
+    clerkApiSkipped: false,
     email: normalizedEmail,
     kitchenUser: mongoUser
   };
@@ -199,7 +289,7 @@ export async function authenticateClerkToken(token) {
   const identity = await resolveClerkIdentityFromToken(token);
   if (!identity) return null;
 
-  const { clerkUser, kitchenUser: mongoUser, email: normalizedEmail } = identity;
+  const { clerkClaims, clerkUser, clerkApiSkipped, kitchenUser: mongoUser, email: normalizedEmail } = identity;
 
   if (!mongoUser) {
     throw buildAuthError(
@@ -209,42 +299,64 @@ export async function authenticateClerkToken(token) {
     );
   }
 
-  if (!mongoUser.clerkId) {
-    mongoUser.clerkId = clerkUser.id;
-    await mongoUser.save();
-    logClerkDev("Attached Clerk ID to existing Mongo user", {
-      userId: mongoUser._id.toString(),
-      clerkUserId: clerkUser.id
-    });
-  } else if (mongoUser.clerkId !== clerkUser.id) {
-    if (isDevelopmentClerkReconciliationEnabled()) {
-      const previousClerkId = String(mongoUser.clerkId || "").trim();
+  // clerkApiSkipped === true means we found the user via MongoDB fast-path.
+  // Their clerkId is already set — no reconciliation needed.
+  if (!clerkApiSkipped && clerkUser) {
+    if (!mongoUser.clerkId) {
       mongoUser.clerkId = clerkUser.id;
       await mongoUser.save();
-      logClerkDev("Reconciled stale DEV Clerk ID on Mongo user", {
+      logClerkDev("clerk_id_attached", {
         userId: mongoUser._id.toString(),
-        email: normalizedEmail,
-        previousClerkId,
-        nextClerkId: clerkUser.id,
-        reason: "email-matched dev import/test reconciliation"
+        clerkUserId: clerkUser.id
       });
-    } else {
-      logClerkDev("Clerk ID mismatch", {
-        userId: mongoUser._id.toString(),
-        expectedClerkId: mongoUser.clerkId,
-        actualClerkId: clerkUser.id
-      });
-      throw buildAuthError(
-        "CLERK_USER_MISMATCH",
-        "La identidad de Clerk no coincide con el usuario interno vinculado."
-      );
+    } else if (mongoUser.clerkId !== clerkUser.id) {
+      if (isDevelopmentClerkReconciliationEnabled()) {
+        const previousClerkId = String(mongoUser.clerkId || "").trim();
+        mongoUser.clerkId = clerkUser.id;
+        await mongoUser.save();
+        logClerkDev("clerk_id_reconciled_dev", {
+          userId: mongoUser._id.toString(),
+          email: normalizedEmail,
+          previousClerkId,
+          nextClerkId: clerkUser.id,
+          reason: "email-matched dev import/test reconciliation"
+        });
+      } else {
+        logClerkDev("clerk_id_mismatch", {
+          userId: mongoUser._id.toString(),
+          expectedClerkId: mongoUser.clerkId,
+          actualClerkId: clerkUser.id
+        });
+        throw buildAuthError(
+          "CLERK_USER_MISMATCH",
+          "La identidad de Clerk no coincide con el usuario interno vinculado."
+        );
+      }
     }
   }
 
   return {
     authType: "clerk",
-    clerkClaims: identity.clerkClaims,
+    clerkClaims,
     clerkUser,
     kitchenUser: mongoUser
   };
+}
+
+/**
+ * Pings the Clerk Management API to check reachability.
+ * Returns { ok, ms?, error? }.
+ * Safe to call from DEV-only debug endpoints — never exposes secrets.
+ */
+export async function pingClerkApi() {
+  if (!clerkClient) {
+    return { ok: false, error: "Clerk not configured (no CLERK_SECRET_KEY)" };
+  }
+  const start = Date.now();
+  try {
+    await withTimeout(clerkClient.users.getUserList({ limit: 1 }), CLERK_API_TIMEOUT_MS);
+    return { ok: true, ms: Date.now() - start };
+  } catch (error) {
+    return { ok: false, ms: Date.now() - start, error: error?.message || "unknown" };
+  }
 }

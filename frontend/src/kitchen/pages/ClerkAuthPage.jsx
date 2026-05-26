@@ -210,7 +210,10 @@ function ClerkAuthContent({ mode }) {
       window.clearTimeout(finalBootstrapErrorTimerRef.current);
     }
     finalBootstrapErrorTimerRef.current = window.setTimeout(() => {
-      setFinalBootstrapError("No se pudo completar el acceso. Intentalo de nuevo.");
+      const msg = lastAuthError?.code === "CLERK_API_UNAVAILABLE"
+        ? "El proveedor de autenticacion esta temporalmente fuera de servicio. Tu sesion es valida — intentalo de nuevo en unos segundos."
+        : "No se pudo completar el acceso. Intentalo de nuevo.";
+      setFinalBootstrapError(msg);
     }, 1200);
   }, [isLoaded, isSignedIn, lastAuthError, loading, onboardingRequired, user?.id]);
 

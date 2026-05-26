@@ -14,7 +14,7 @@ import { sendEmail } from "../../services/emailService.js";
 import { config } from "../../config.js";
 import { findActiveInvitationByToken, atomicClaimInvitation } from "../invitationService.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
-import { isEmailRegisteredInClerk, resolveClerkIdentityFromToken } from "../clerkAuth.js";
+import { isEmailRegisteredInClerk, isClerkAuthEnabled, pingClerkApi, resolveClerkIdentityFromToken } from "../clerkAuth.js";
 import { normalizeSubscriptionPlan } from "../subscriptionService.js";
 import { initOnboarding } from "../onboardingEngine.js";
 import { checkBetaAccess, markBetaInviteUsed } from "../betaService.js";
@@ -1376,6 +1376,25 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+// ── DEV-only: Clerk connectivity debug endpoint ───────────────────────────────
+// Reports backend reachability, Clerk config, and optional API ping.
+// Never exposed in production — never logs secrets or tokens.
+if (config.nodeEnv === "development" || process.env.APP_ENV === "development") {
+  router.get("/debug-clerk", async (_req, res) => {
+    const report = {
+      backend: "reachable",
+      clerkConfigured: isClerkAuthEnabled(),
+      clerkJwtKeyConfigured: Boolean(config.clerkJwtKey),
+      clerkAuthorizedParties: config.clerkAuthorizedParties,
+      nodeEnv: config.nodeEnv,
+      appEnv: process.env.APP_ENV || null
+    };
+
+    // Ping the Clerk Management API (safe — uses getUserList with limit:1, no PII exposed).
+    report.clerkApiPing = await pingClerkApi();
+
+    return res.json({ ok: true, ...report });
+  });
+}
+
 export default router;
-
-

@@ -48,10 +48,11 @@ export function AuthProvider({ children, clerk = null }) {
         }
         return data.user;
       } catch (error) {
+        const errorCode = error?.body?.code || "AUTH_ERROR";
         const nextAuthError = {
           message: error?.message || "No se pudo validar la sesion.",
           status: error?.status || 0,
-          code: error?.body?.code || "AUTH_ERROR",
+          code: errorCode,
           body: error?.body || {}
         };
         if (authMode === "clerk" && (error?.status === 428 || error?.body?.onboardingRequired)) {
@@ -63,6 +64,16 @@ export function AuthProvider({ children, clerk = null }) {
             console.info("[clerk][dev] Clerk /me bootstrap requires onboarding", nextAuthError);
           }
           return { onboardingRequired: true, authProvider: "clerk", error: nextAuthError };
+        }
+        if (authMode === "clerk" && (error?.status === 503 || errorCode === "CLERK_API_UNAVAILABLE")) {
+          setUser(null);
+          setOnboardingRequired(false);
+          setLastAuthError({ ...nextAuthError, code: "CLERK_API_UNAVAILABLE" });
+          setLoading(false);
+          if (import.meta.env.DEV) {
+            console.warn("[clerk][dev] Clerk API unavailable — /me returned 503", nextAuthError);
+          }
+          return { authProvider: "clerk", clerkApiUnavailable: true, error: nextAuthError };
         }
         if (authMode === "clerk" && import.meta.env.DEV) {
           console.warn("[clerk][dev] No se pudo resolver /me con token de Clerk", {
