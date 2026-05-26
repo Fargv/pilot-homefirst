@@ -11486,17 +11486,20 @@ body {
   padding: 9px 20px;
 }
 
-/* ── Origin segmented control ── Todos / Mis platos / Catálogo ────────────── */
+/* ══ L2: Origin scope control — Todos / Mis platos / Catálogo ═══════════════
+   Secondary to main navigation. Auto-width pill container; sits in the same
+   row as meal chips. Active state uses a soft tint rather than solid fill so
+   it reads clearly as a filter, not primary navigation.
+   ──────────────────────────────────────────────────────────────────────── */
 .dishes-origin-filter {
-  display: flex;
+  display: inline-flex;        /* shrinks to content — not full-width */
   align-items: center;
   background: var(--surface-muted, #f1f5f9);
   border: 1px solid var(--hf-border, #e2e8f0);
-  border-radius: 12px;
-  padding: 3px;
-  gap: 2px;
-  width: 100%;
-  box-sizing: border-box;
+  border-radius: 9px;
+  padding: 2px;
+  gap: 1px;
+  flex-shrink: 0;
 }
 
 .dishes-origin-btn {
@@ -11504,109 +11507,109 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-height: 36px;
-  padding: 6px 10px;
+  gap: 4px;
+  min-height: 28px;
+  padding: 3px 11px;
   border: none;
-  border-radius: 9px;
+  border-radius: 7px;
   background: transparent;
-  color: var(--input-text, #6b7280);
-  font-size: 13px;
+  color: var(--hf-muted, #64748b);
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.17s ease, color 0.17s ease, box-shadow 0.17s ease;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
 }
 
 .dishes-origin-btn:hover {
-  background: var(--card-bg, #fff);
+  background: rgba(255, 255, 255, 0.8);
   color: var(--input-text, #374151);
 }
 
+/* Soft tint active — clearly secondary to main nav */
 .dishes-origin-btn.is-active {
-  background: #4f46e5;
-  color: #fff;
-  font-weight: 700;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.28);
+  background: rgba(79, 70, 229, 0.10);
+  color: #3730a3;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.20);
 }
 
-/* "Mis platos" active — warm indigo tint */
-.dishes-origin-btn:nth-child(2).is-active {
-  background: #4f46e5;
-}
-
-/* "Catálogo" active — slightly violet */
+/* "Catálogo" active — soft violet tint */
 .dishes-origin-btn:nth-child(3).is-active {
-  background: #7c3aed;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.26);
+  background: rgba(124, 58, 237, 0.09);
+  color: #5b21b6;
+  box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.18);
 }
 
 .dishes-origin-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
   border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 600;
   line-height: 1;
-  background: rgba(0, 0, 0, 0.10);
+  background: rgba(0, 0, 0, 0.07);
   color: inherit;
-  transition: background 0.17s ease;
+  transition: background 0.15s ease;
 }
 
 .dishes-origin-btn.is-active .dishes-origin-count {
-  background: rgba(255, 255, 255, 0.25);
-  color: #fff;
+  background: rgba(79, 70, 229, 0.14);
+  color: inherit;
+}
+
+.dishes-origin-btn:nth-child(3).is-active .dishes-origin-count {
+  background: rgba(124, 58, 237, 0.14);
 }
 
 /* Dark mode */
 [data-theme="dark"] .dishes-origin-filter {
-  background: var(--surface-muted, #1e1b4b);
-  border-color: var(--hf-border, #312e81);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--hf-border, rgba(255, 255, 255, 0.12));
 }
 
 [data-theme="dark"] .dishes-origin-btn {
-  color: #a5b4fc;
+  color: #94a3b8;
 }
 
 [data-theme="dark"] .dishes-origin-btn:hover {
-  background: rgba(99, 102, 241, 0.12);
-  color: #e0e7ff;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
 }
 
 [data-theme="dark"] .dishes-origin-btn.is-active {
-  background: #4f46e5;
-  color: #fff;
+  background: rgba(99, 102, 241, 0.22);
+  color: #a5b4fc;
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.30);
+}
+
+[data-theme="dark"] .dishes-origin-btn:nth-child(3).is-active {
+  background: rgba(139, 92, 246, 0.20);
+  color: #c4b5fd;
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.28);
 }
 
 [data-theme="dark"] .dishes-origin-count {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.10);
 }
 
-/* Mobile: ensure the control is scrollable if it gets too tight */
-@media (max-width: 480px) {
-  .dishes-origin-filter {
-    border-radius: 10px;
-  }
-
-  .dishes-origin-btn {
-    font-size: 12px;
-    min-height: 34px;
-    padding: 5px 6px;
-  }
-
-  .dishes-origin-count {
-    font-size: 10px;
-    min-width: 16px;
-    height: 16px;
-  }
+/* ══ Combined scope row — L2 origin control + L3 meal chips in one line ══════ */
+.dishes-scope-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-/* Secondary meal-type filter row (pill style, visually lighter than main tabs) */
+/* ══ L3: Meal-type filter chips — Todos / Comidas / Cenas ════════════════════
+   Same chip family as categories but slightly more prominent; these are
+   filters, not navigation.
+   ──────────────────────────────────────────────────────────────────────── */
 .dishes-meal-filter-row {
   display: flex;
   flex-wrap: wrap;
@@ -11614,11 +11617,31 @@ body {
   align-items: center;
 }
 
-/* Compact secondary chips */
+/* Inside the scope row the meal bar grows to fill remaining width */
+.dishes-scope-row .dishes-meal-filter-row {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Meal chips: same height as base filter chips; active gets a subtle fill */
 .dishes-meal-chip {
   min-height: 30px;
-  padding: 4px 12px;
+  padding: 4px 13px;
   font-size: 12px;
+  font-weight: 500;
+}
+
+.dishes-meal-chip.is-active {
+  background: rgba(124, 138, 201, 0.12);
+  border-color: #8894cc;
+}
+
+/* ══ L4: Category chips — slightly lighter than meal chips ═══════════════════ */
+.kitchen-dish-category-filters .kitchen-filter-chip {
+  min-height: 28px;
+  padding: 3px 11px;
+  font-size: 12px;
+  font-weight: 400;
 }
 
 /* Gradient primary action button */
@@ -11648,7 +11671,7 @@ body {
 @media (max-width: 900px) {
   .dishes-explorer-panel {
     padding: 16px;
-    gap: 12px;
+    gap: 10px;
     border-radius: 16px;
   }
 
@@ -11660,7 +11683,12 @@ body {
     display: none;
   }
 
-  /* Horizontal scroll for chips — prevent wrapping chaos */
+  /* Scope row wraps naturally on narrow screens */
+  .dishes-scope-row {
+    gap: 8px;
+  }
+
+  /* Horizontal scroll for meal chips and category chips */
   .dishes-explorer-panel .kitchen-dish-category-filters,
   .dishes-meal-filter-row {
     flex-wrap: nowrap;
@@ -11673,6 +11701,18 @@ body {
   .dishes-explorer-panel .kitchen-dish-category-filters::-webkit-scrollbar,
   .dishes-meal-filter-row::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* Very small screens: stack scope-row vertically, keep origin filter readable */
+@media (max-width: 400px) {
+  .dishes-scope-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dishes-origin-filter {
+    align-self: stretch;   /* stretch to row width when stacked */
   }
 }
 
@@ -11711,10 +11751,10 @@ body {
 @media (max-width: 900px) {
   .dishes-meal-filter-row,
   .dishes-explorer-panel .kitchen-dish-category-filters {
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 24px), transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 24px), transparent 100%);
-    padding-left: 4px;
-    padding-right: 4px;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 20px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 20px), transparent 100%);
+    padding-left: 2px;
+    padding-right: 2px;
   }
 }
 

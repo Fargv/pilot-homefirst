@@ -964,69 +964,72 @@ export default function DishesPage() {
           {/* Origin segmented control + meal-type filters + category chips (dishes tab) */}
           {!isIngredientsTab ? (
             <>
-              {/* ── Origin segmented control ────────────────────────────────── */}
-              {!isDiodGlobalMode && (
-                <div className="dishes-origin-filter" role="toolbar" aria-label="Filtrar por origen del plato">
-                  {[
-                    { key: DISH_ORIGIN.ALL,     label: "Todos",      count: originCounts.all },
-                    { key: DISH_ORIGIN.MINE,    label: "Mis platos", count: originCounts.mine },
-                    { key: DISH_ORIGIN.CATALOG, label: "Catálogo",   count: originCounts.catalog }
-                  ].map(({ key, label, count }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      className={`dishes-origin-btn${dishOriginFilter === key ? " is-active" : ""}`}
-                      onClick={() => setDishOriginFilter(key)}
-                      aria-pressed={dishOriginFilter === key}
-                    >
-                      {label}
-                      {count > 0 && (
-                        <span className="dishes-origin-count">{count}</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {/* ── Meal-type chips ─────────────────────────────────────────── */}
-              <div className="dishes-meal-filter-row" role="toolbar" aria-label="Filtrar por tipo de comida">
-                <button
-                  className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.ALL ? "is-active is-all" : ""}`}
-                  type="button"
-                  onClick={() => setSelectedMealFilter(MEAL_FILTERS.ALL)}
-                >
-                  Todos
-                </button>
-                <button
-                  className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.LUNCH ? "is-active" : ""}`}
-                  type="button"
-                  onClick={() => setSelectedMealFilter(MEAL_FILTERS.LUNCH)}
-                >
-                  Comidas
-                </button>
-                {canUseDinners ? (
-                  <button
-                    className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.DINNER ? "is-active" : ""}`}
-                    type="button"
-                    onClick={() => setSelectedMealFilter(MEAL_FILTERS.DINNER)}
-                  >
-                    Cenas
-                  </button>
-                ) : (
-                  <button
-                    className="kitchen-filter-chip dishes-meal-chip dinner-gate-chip"
-                    type="button"
-                    aria-disabled="true"
-                    title="Las cenas están disponibles en Pro y Premium"
-                    onClick={() => setDinnerGateOpen((v) => !v)}
-                  >
-                    <svg className="dinner-gate-lock" viewBox="0 0 12 14" width="9" height="11" fill="none" aria-hidden="true">
-                      <rect x="1.5" y="6" width="9" height="7.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-                      <path d="M4 6V4.5a2 2 0 014 0V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                    </svg>
-                    Cenas
-                    <span className="dinner-gate-pro-badge">PRO</span>
-                  </button>
+              {/* ── Scope row: origin control (L2) + meal chips (L3) side by side ── */}
+              <div className="dishes-scope-row">
+                {/* ── Origin segmented control ──────────────────────────────── */}
+                {!isDiodGlobalMode && (
+                  <div className="dishes-origin-filter" role="toolbar" aria-label="Filtrar por origen del plato">
+                    {[
+                      { key: DISH_ORIGIN.ALL,     label: "Todos",      count: originCounts.all },
+                      { key: DISH_ORIGIN.MINE,    label: "Mis platos", count: originCounts.mine },
+                      { key: DISH_ORIGIN.CATALOG, label: "Catálogo",   count: originCounts.catalog }
+                    ].map(({ key, label, count }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`dishes-origin-btn${dishOriginFilter === key ? " is-active" : ""}`}
+                        onClick={() => setDishOriginFilter(key)}
+                        aria-pressed={dishOriginFilter === key}
+                      >
+                        {label}
+                        {count > 0 && (
+                          <span className="dishes-origin-count">{count}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 )}
+                {/* ── Meal-type chips ──────────────────────────────────────── */}
+                <div className="dishes-meal-filter-row" role="toolbar" aria-label="Filtrar por tipo de comida">
+                  <button
+                    className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.ALL ? "is-active is-all" : ""}`}
+                    type="button"
+                    onClick={() => setSelectedMealFilter(MEAL_FILTERS.ALL)}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.LUNCH ? "is-active" : ""}`}
+                    type="button"
+                    onClick={() => setSelectedMealFilter(MEAL_FILTERS.LUNCH)}
+                  >
+                    Comidas
+                  </button>
+                  {canUseDinners ? (
+                    <button
+                      className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.DINNER ? "is-active" : ""}`}
+                      type="button"
+                      onClick={() => setSelectedMealFilter(MEAL_FILTERS.DINNER)}
+                    >
+                      Cenas
+                    </button>
+                  ) : (
+                    <button
+                      className="kitchen-filter-chip dishes-meal-chip dinner-gate-chip"
+                      type="button"
+                      aria-disabled="true"
+                      title="Las cenas están disponibles en Pro y Premium"
+                      onClick={() => setDinnerGateOpen((v) => !v)}
+                    >
+                      <svg className="dinner-gate-lock" viewBox="0 0 12 14" width="9" height="11" fill="none" aria-hidden="true">
+                        <rect x="1.5" y="6" width="9" height="7.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                        <path d="M4 6V4.5a2 2 0 014 0V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                      </svg>
+                      Cenas
+                      <span className="dinner-gate-pro-badge">PRO</span>
+                    </button>
+                  )}
+                </div>
               </div>
               {!canUseDinners && dinnerGateOpen ? (
                 <DinnerUpgradeBanner
@@ -1034,6 +1037,7 @@ export default function DishesPage() {
                   onClose={() => setDinnerGateOpen(false)}
                 />
               ) : null}
+              {/* ── Category chips (L4) ───────────────────────────────────── */}
               <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar por categoría">
                 <button
                   type="button"
