@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiRequest, buildApiUrl, getToken, getPlansAdminConfig, savePlansAdminConfig } from "../api.js";
+import { apiRequest, buildApiUrl, getToken, getPlansAdminConfig, hasLegacyToken, savePlansAdminConfig } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -6570,17 +6570,25 @@ function AdminAccountSecurityPanel() {
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function AdminPanelPage() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, refreshUser } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [activeHouseholdId, setActiveHouseholdId] = useState(null);
   const [tab, setTab] = useState("households");
+  const adminLegacyRetryRef = useRef(false);
 
   useEffect(() => {
     if (loading) return;
     if (!user) { navigate("/admin/login", { replace: true }); return; }
-    if (user.globalRole !== "diod") { navigate("/kitchen/semana", { replace: true }); }
-  }, [loading, navigate, user]);
+    if (user.globalRole !== "diod") {
+      if (!adminLegacyRetryRef.current && hasLegacyToken()) {
+        adminLegacyRetryRef.current = true;
+        refreshUser({ authMode: "auto" });
+        return;
+      }
+      navigate("/kitchen/semana", { replace: true });
+    }
+  }, [loading, navigate, refreshUser, user]);
 
   useEffect(() => {
     if (user?.activeHouseholdId !== undefined) {
@@ -6734,8 +6742,9 @@ export default function AdminPanelPage() {
           <AdminAccountSecurityPanel />
         ) : tab === "arquitectura" ? (
           <div style={{
-            position: "fixed", inset: 0, zIndex: 100,
-            background: "#0f0f0f", display: "flex", flexDirection: "column"
+            minHeight: "calc(100dvh - 170px)",
+            background: "#0f0f0f", display: "flex", flexDirection: "column",
+            borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2a"
           }}>
             <div style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -6745,6 +6754,13 @@ export default function AdminPanelPage() {
                 🗺 Architecture Map · Lunchfy
               </span>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button
+                  type="button"
+                  onClick={() => setTab("households")}
+                  style={{ fontSize: 12, color: "#e8e8e8", background: "#252525", border: "1px solid #444", borderRadius: 4, padding: "4px 12px", cursor: "pointer" }}
+                >
+                  Volver al panel
+                </button>
                 <a
                   href="/architecture-map.html"
                   target="_blank"
@@ -6763,7 +6779,7 @@ export default function AdminPanelPage() {
             </div>
             <iframe
               src="/architecture-map.html"
-              style={{ flex: 1, width: "100%", border: "none" }}
+              style={{ flex: 1, minHeight: 620, width: "100%", border: "none" }}
               title="Mapa de Arquitectura"
             />
           </div>
