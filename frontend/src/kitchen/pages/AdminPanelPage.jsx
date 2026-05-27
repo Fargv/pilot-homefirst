@@ -6733,10 +6733,37 @@ export default function AdminPanelPage() {
         ) : tab === "cuenta_admin" ? (
           <AdminAccountSecurityPanel />
         ) : tab === "arquitectura" ? (
-          <div style={{ margin: "-24px -16px 0", height: "calc(100vh - 178px)" }}>
+          <div style={{
+            position: "fixed", inset: 0, zIndex: 100,
+            background: "#0f0f0f", display: "flex", flexDirection: "column"
+          }}>
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "8px 14px", background: "#161616", borderBottom: "1px solid #2a2a2a", flexShrink: 0
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e8", letterSpacing: ".3px" }}>
+                🗺 Architecture Map · Lunchfy
+              </span>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <a
+                  href="/architecture-map.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: 12, color: "#f5b942", textDecoration: "none", padding: "4px 12px", border: "1px solid #f5b942", borderRadius: 4 }}
+                >
+                  ↗ Nueva pestaña
+                </a>
+                <button
+                  onClick={() => setTab("households")}
+                  style={{ fontSize: 12, color: "#8a8a8a", background: "none", border: "1px solid #2a2a2a", borderRadius: 4, padding: "4px 12px", cursor: "pointer" }}
+                >
+                  ✕ Cerrar mapa
+                </button>
+              </div>
+            </div>
             <iframe
               src="/architecture-map.html"
-              style={{ width: "100%", height: "100%", border: "none", borderRadius: 4 }}
+              style={{ flex: 1, width: "100%", border: "none" }}
               title="Mapa de Arquitectura"
             />
           </div>
