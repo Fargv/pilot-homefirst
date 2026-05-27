@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lunchfy — Mapa de Arquitectura</title>
+<style>
+:root{--bg:#0F0F0F;--panel:#161616;--panel2:#1c1c1c;--border:#2a2a2a;--text:#e8e8e8;--muted:#8a8a8a;--client:#4ea1ff;--route:#7bd389;--service:#c792ea;--db:#ffb86b;--ext:#ff6b9d;--auth:#38bdf8;--critical:#ff3860;--accent:#f5b942;--accent2:#ff7a45}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#topbar{flex-shrink:0;display:flex;gap:6px;align-items:center;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap}
+#ttl{font-size:13px;font-weight:700;margin-right:6px;white-space:nowrap}
+.chip{padding:3px 11px;border-radius:20px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.chip:hover{border-color:#444;color:var(--text)}
+.chip.active{background:#1a1a1a;border-color:var(--accent);color:var(--accent)}
+#zbts{margin-left:auto;display:flex;gap:5px}
+.zb{padding:3px 9px;border-radius:5px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);font-size:12px;cursor:pointer}
+.zb:hover{color:var(--text)}
+#main{display:flex;flex:1;overflow:hidden}
+#wrap{flex:1;overflow:hidden;position:relative;cursor:grab}
+#wrap:active{cursor:grabbing}
+svg#cv{display:block;width:100%;height:100%}
+#sb{width:300px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--border);overflow-y:auto;padding:14px;font-size:12px}
+#sb h3{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}
+.sf{margin-bottom:9px}
+.sl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:2px}
+.sv{font-size:12px;color:var(--text);line-height:1.5}
+.sv.path{font-family:monospace;font-size:10px;color:var(--accent2);word-break:break-all}
+.sn{font-size:11px;color:var(--muted);line-height:1.5;padding:3px 0;border-bottom:1px solid var(--border)}
+.sn:last-child{border-bottom:none}
+.ei{font-size:11px;color:var(--muted);padding:2px 0}
+.ei b{color:var(--accent2);margin-right:3px}
+.finding{padding:8px 10px;border-radius:6px;background:#181818;border-left:3px solid var(--accent);margin-bottom:7px;font-size:11px;line-height:1.5}
+.finding .ft{font-weight:700;color:var(--accent);margin-bottom:2px}
+.finding.warn{border-color:var(--critical)}
+.finding.warn .ft{color:var(--critical)}
+.finding.info{border-color:var(--auth)}
+.finding.info .ft{color:var(--auth)}
+hr.div{border:none;border-top:1px solid var(--border);margin:10px 0}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <span id="ttl">🗺 Lunchfy · Architecture Map</span>
+  <button class="chip active" onclick="setFilter('overview')">Overview</button>
+  <button class="chip" onclick="setFilter('planning')">Planificación</button>
+  <button class="chip" onclick="setFilter('billing')">Pagos &amp; Bites</button>
+  <button class="chip" onclick="setFilter('auth')">Auth</button>
+  <button class="chip" onclick="setFilter('onboarding')">Onboarding</button>
+  <button class="chip" onclick="setFilter('push')">Push</button>
+  <button class="chip" onclick="setFilter('catalog')">Catálogo</button>
+  <button class="chip" onclick="setFilter('all')">Todo</button>
+  <div id="zbts">
+    <button class="zb" onclick="fitView()">Fit</button>
+    <button class="zb" onclick="doZoom(1.25)">+</button>
+    <button class="zb" onclick="doZoom(0.8)">−</button>
+  </div>
+</div>
+<div id="main">
+  <div id="wrap">
+    <svg id="cv" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ac" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#ff3860"/></marker>
+        <marker id="aa" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#ff7a45"/></marker>
+        <marker id="ad" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#ffb86b"/></marker>
+        <marker id="am" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#38bdf8"/></marker>
+        <marker id="an" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#444"/></marker>
+      </defs>
+      <g id="scene"></g>
+    </svg>
+  </div>
+  <div id="sb">
+    <h3>Hallazgos</h3>
+    <div class="finding warn"><div class="ft">⚠ Triple montaje de weekRoutes</div>index.js monta el mismo router en /api/kitchen/weeks, /api/weeks y /weeks — tres URLs, un handler. API no documentada duplicada.</div>
+    <div class="finding warn"><div class="ft">⚠ Sistema de email dual</div>mailer.js (nodemailer, solo test) y emailService.js (Brevo SDK) coexisten. mailer.js nunca se llama en flujos reales de usuario.</div>
+    <div class="finding warn"><div class="ft">⚠ Auth legacy + Clerk en paralelo</div>middleware.js intenta JWT de localStorage antes que Clerk. Usuarios migrados tienen sesión fantasma hasta 7 días.</div>
+    <div class="finding info"><div class="ft">💡 3 rutas de activación de pago</div>webhook → /session-activate → /dev/apply-latest-subscription. El tercer endpoint revela que los webhooks de Stripe no son fiables en Render.</div>
+    <div class="finding info"><div class="ft">💡 StripeWebhookEvent sin TTL</div>Tabla de dedup crece sin límite. Recomendado: índice TTL a 90 días.</div>
+    <div class="finding info"><div class="ft">💡 KitchenSwap sin cron de limpieza</div>Swaps expirados se acumulan indefinidamente. No hay tarea de cleanup.</div>
+    <hr class="div">
+    <p style="font-size:10px;color:var(--muted)">Click en un nodo para ver detalles · drag para mover · rueda para zoom</p>
+  </div>
+</div>
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+
+const clusters = [
+  {id:'client',   label:'Client · React/Vite', x:20,  y:20, w:320, h:1020, color:'#0d1926'},
+  {id:'auth',     label:'Auth Layer',           x:365, y:20, w:275, h:340,  color:'#0d1a20'},
+  {id:'routes',   label:'Express Routes',       x:665, y:20, w:275, h:1020, color:'#0d1a0d'},
+  {id:'services', label:'Services · Logic',     x:965, y:20, w:275, h:1020, color:'#160d20'},
+  {id:'data',     label:'Data · MongoDB',       x:1265,y:20, w:275, h:1060, color:'#1e100a'},
+  {id:'external', label:'External APIs',        x:1565,y:20, w:235, h:400,  color:'#1e0a0a'},
+];
+
+const N=(id,cl,label,sub,x,y,w,h,color,o={})=>({id,cluster:cl,label,sub,x,y,w,h,color,...o});
+
+const CX={client:33,auth:378,routes:678,services:978,data:1278,external:1578};
+const CW=252;
+
+const nodes=[
+// CLIENT
+N('app','client','App.jsx','Router · AuthBoundary',CX.client,50,CW,62,'client',{critical:true,
+  role:'Root React component — selects Clerk vs legacy auth provider and defines all page routes.',
+  plain:'The top of the app. It picks which login system to use and sets up every page URL.',
+  path:'frontend/src/App.jsx',
+  notes:['line:217 — picks Clerk if VITE_CLERK_PUBLISHABLE_KEY is set at runtime','line:39 — HomeRedirect auto-navigates based on onboardingRequired flag','All kitchen routes wrapped in ActiveWeekProvider + OnboardingProvider + WeeklyChallengeProvider','15 routes defined; catch-all → HomeRedirect'],
+  tag:['overview','auth','all']}),
+
+N('authctx','client','auth.jsx','AuthProvider · useAuth hook',CX.client,132,CW,62,'client',{critical:true,
+  role:'Dual-mode auth context: manages legacy JWT and Clerk sessions with a shared fetchMe().',
+  plain:'"Who is logged in" brain of the frontend — keeps your user info updated whether you use old-style login or Clerk.',
+  path:'frontend/src/kitchen/auth.jsx',
+  notes:['line:19 — fetchMe() is the single path to GET /api/kitchen/auth/me','line:6 — globalClerkBootstrapInFlight prevents parallel Clerk bootstraps','ClerkEnabledAuthProvider registers Clerk token getter into api.js','Exposes: user, loading, onboardingRequired, fetchMe, logout'],
+  tag:['overview','auth','all']}),
+
+N('apijs','client','api.js','HTTP client · dual-token',CX.client,214,CW,62,'client',{critical:true,
+  role:'All backend HTTP calls go through apiRequest(). Attaches Bearer token from localStorage (legacy) or Clerk SDK.',
+  plain:'The single door between the frontend and the backend — adds your auth token to every network call.',
+  path:'frontend/src/kitchen/api.js',
+  notes:['line:44 — tries legacy localStorage token first, then Clerk getToken()','line:40 — registerClerkTokenGetter() lets auth.jsx inject Clerk token provider','buildApiUrl() uses VITE_API_URL env var','ApiRequestError carries HTTP status + parsed body for structured error handling'],
+  tag:['overview','auth','all']}),
+
+N('requireauth','client','RequireAuth.jsx','Route guard',CX.client,296,CW,52,'client',{
+  role:'HOC that redirects unauthenticated users to /login.',
+  plain:'A gate on every protected page — sends you to login if not signed in.',
+  path:'frontend/src/kitchen/RequireAuth.jsx',
+  notes:['Supports optional roles prop (admin routes use roles={["admin"]})','Renders null while loading to avoid flash of unauthorised content'],
+  tag:['auth','overview','all']}),
+
+N('weekpage','client','WeekPage.jsx','Weekly meal plan view',CX.client,368,CW,62,'client',{critical:true,
+  role:'Primary user screen — weekly meal planner grid with dish assignment, randomisation, and attendee management.',
+  plain:'The main screen families use every week: assign meals Mon–Fri, swap dishes, see who\'s eating.',
+  path:'frontend/src/kitchen/pages/WeekPage.jsx',
+  notes:['GET /api/kitchen/weeks/:weekStart on mount and week navigation','PUT .../day/:date triggers shopping rebuild + push notification server-side','POST .../randomize is Pro-gated (canRandomizeFullWeek)','Uses useActiveWeek() context for week-to-week navigation'],
+  tag:['overview','planning','all']}),
+
+N('shoppage','client','ShoppingPage.jsx','Shopping list view',CX.client,450,CW,52,'client',{
+  role:'Renders the weekly shopping list with item check-off, purchase sessions, and store grouping.',
+  plain:'Shows what to buy this week based on the meal plan. Lets you tick off items as you shop.',
+  path:'frontend/src/kitchen/pages/ShoppingPage.jsx',
+  notes:['POST /rebuild triggers shoppingService.rebuildShoppingList()','Items grouped by Category and optionally by Store','Purchase sessions track multi-trip shopping (ShoppingTrip model)'],
+  tag:['planning','all']}),
+
+N('dishpage','client','DishesPage.jsx','Dish & ingredient manager',CX.client,522,CW,52,'client',{
+  role:'CRUD interface for KitchenDish and KitchenIngredient records.',
+  plain:'Where you add recipes, edit them, and manage ingredients.',
+  path:'frontend/src/kitchen/pages/DishesPage.jsx',
+  notes:['Two tabs: Platos (dishes) and Productos (ingredients)','Ingredient creation triggers onboarding challenge event','Image upload via Multer stored in /uploads/ static folder'],
+  tag:['planning','onboarding','all']}),
+
+N('upgradepage','client','UpgradeToProPage.jsx','Billing / upgrade page',CX.client,594,CW,52,'client',{
+  role:'Displays subscription plans and initiates Stripe Checkout via POST /api/payments/checkout-session.',
+  plain:'The "go Pro" page — shows plan benefits and starts the payment flow.',
+  path:'frontend/src/kitchen/pages/UpgradeToProPage.jsx',
+  notes:['Reads PlansConfig from /api/kitchen/plans for dynamic pricing','After checkout: PaymentSuccessPage polls household until subscriptionPlan upgrades','PaymentCancelledPage shown on Stripe cancel_url'],
+  tag:['billing','all']}),
+
+N('catalogpage','client','CatalogPage.jsx','Recipe pack catalog',CX.client,666,CW,52,'client',{
+  role:'Browse and install curated dish packs — free, subscription credit, or Bites unlock.',
+  plain:'The recipe store: browse packs, claim free ones or buy them with Bites.',
+  path:'frontend/src/kitchen/pages/CatalogPage.jsx',
+  notes:['GET /api/kitchen/catalog/packs returns entitlement-aware list','Pro: 1 free pack/month; Premium: 2/month','Bites unlock via POST /catalog/packs/:id/unlock-bites'],
+  tag:['catalog','billing','all']}),
+
+N('onboardingpage','client','ClerkOnboardingPage.jsx','New user setup',CX.client,738,CW,52,'client',{
+  role:'Post-Clerk-signup form: collects household name and links Clerk identity to MongoDB KitchenUser.',
+  plain:'The welcome form new users fill after signing up — sets up their household.',
+  path:'frontend/src/kitchen/pages/ClerkOnboardingPage.jsx',
+  notes:['Triggered when auth returns onboardingRequired=true (HTTP 428 from middleware)','POST /api/kitchen/auth/clerk-onboard creates KitchenUser + Household','On success re-fetches /me to refresh auth context'],
+  tag:['auth','onboarding','all']}),
+
+N('adminpage','client','AdminPanelPage.jsx','DIOD super-admin dashboard',CX.client,810,CW,52,'client',{
+  role:'Internal admin panel with 13+ tabs: households, users, catalog, bites, plans, beta invites, etc.',
+  plain:'The internal dashboard for the Lunchfy team to manage users, subscriptions, and content.',
+  path:'frontend/src/kitchen/pages/AdminPanelPage.jsx',
+  notes:['Only accessible to globalRole==="diod" users','~6500 lines — largest file in codebase','Separate /admin/login (legacy password, not Clerk)','Includes this architecture map in the Arquitectura tab'],
+  tag:['admin','all']}),
+
+N('onboardingctx','client','OnboardingContext.jsx','Onboarding state',CX.client,882,CW,52,'client',{
+  role:'React context that tracks onboarding challenge progress and fires trigger events.',
+  plain:'Tracks which tutorial steps you\'ve completed and rewards Bites when you do.',
+  path:'frontend/src/kitchen/contexts/OnboardingContext.jsx',
+  notes:['GET /api/kitchen/onboarding/status on mount','POST /api/kitchen/onboarding/event records user actions','Feeds MilestoneToast reward animation on challenge completion'],
+  tag:['onboarding','all']}),
+
+N('weekctx','client','weekContext.jsx','Active week context',CX.client,954,CW,52,'client',{
+  role:'Provides the current selected week (Monday ISO date) across all planning pages.',
+  plain:'Remembers which week you\'re looking at as you navigate between screens.',
+  path:'frontend/src/kitchen/weekContext.jsx',
+  notes:['Persists selected week in sessionStorage','Default: current Monday (getMondayISO)','Shared by WeekPage, ShoppingPage, SwapsPage'],
+  tag:['planning','all']}),
+
+// AUTH
+N('middleware','auth','middleware.js','requireAuth · requireRole',CX.auth,55,CW,62,'auth',{critical:true,
+  role:'Express middleware: authenticates every protected request — tries legacy JWT first, then Clerk.',
+  plain:'The backend security guard. Checks your login token on every protected API call.',
+  path:'backend/src/kitchen/middleware.js',
+  notes:['line:79 — legacy JWT tried first; Clerk only attempted on failure','line:34 — createToken() signs 7-day JWT (legacy login path)','requireRole() normalises "owner"→"admin", "member"→"user"','requireDiod() is a separate guard for super-admin endpoints only'],
+  tag:['overview','auth','all']}),
+
+N('clerkauth','auth','clerkAuth.js','Clerk JWT verify + user lookup',CX.auth,137,CW,62,'auth',{critical:true,
+  role:'Verifies Clerk JWT locally, then MongoDB fast-path by clerkId (skips Clerk API for returning users).',
+  plain:'Validates Clerk tokens. Fast for returning users — no external API call needed.',
+  path:'backend/src/kitchen/clerkAuth.js',
+  notes:['line:192 — MongoDB clerkId fast-path skips Clerk Management API entirely','line:241 — 5s timeout wraps Clerk API to prevent hanging on outage','Dev-only: clerkId mismatch silently reconciled (not in prod)','Returns 428 if Clerk user has no mapped KitchenUser (triggers onboarding)'],
+  tag:['overview','auth','all']}),
+
+N('hhscope','auth','householdScope.js','Household ID resolver',CX.auth,219,CW,52,'auth',{
+  role:'Resolves the effective householdId for any request; handles DIOD admin impersonation.',
+  plain:'Figures out which household a request belongs to. Admin users can switch between households.',
+  path:'backend/src/kitchen/householdScope.js',
+  notes:['DIOD users use activeHouseholdId instead of their own','buildScopedFilter() adds householdId to every DB query — data isolation guarantee','handleHouseholdError() maps scope errors to clean 400 responses'],
+  tag:['auth','overview','all']}),
+
+N('configjs','auth','config.js','Env vars · startup assertions',CX.auth,291,CW,52,'auth',{
+  role:'Loads all env vars and runs fatal startup checks (JWT secret, Stripe key/mode mismatch).',
+  plain:'Reads all configuration secrets and refuses to start if critical settings are wrong.',
+  path:'backend/src/config.js',
+  notes:['FATAL: sk_live_ key with STRIPE_MODE≠live (and vice versa)','FATAL: ALLOW_TEST_ENTITLEMENTS=true in live mode','FATAL: JWT_SECRET missing in production','15+ env vars required for full functionality'],
+  tag:['auth','billing','all']}),
+
+// ROUTES
+N('beindex','routes','src/index.js','Express server entry',CX.routes,55,CW,62,'route',{critical:true,
+  role:'Express app entry: registers all routers, Stripe webhook, static uploads, and starts server after DB connects.',
+  plain:'The starting point of the backend server — connects to the database, sets up all routes, then starts listening.',
+  path:'backend/src/index.js',
+  notes:['line:50 — Stripe webhook registered BEFORE express.json() (needs raw body)','line:77-78 — weekRoutes triple-mounted: /api/kitchen/weeks + /api/weeks + /weeks','Runs seedOnboarding + deactivateExpiredSubscriptions on startup','helmet() + dynamic CORS with multi-origin allowlist'],
+  tag:['overview','all']}),
+
+N('kitchenidx','routes','kitchen/index.js','Kitchen sub-router',CX.routes,137,CW,52,'route',{
+  role:'Mounts all 18 kitchen feature routers under /api/kitchen prefix.',
+  plain:'The switchboard for /api/kitchen/* requests — directs each path to the right handler.',
+  path:'backend/src/kitchen/index.js',
+  notes:['18 sub-routers mounted','No shared middleware here — each sub-router adds its own requireAuth','authRoutes, dishRoutes, weekRoutes, shoppingRoutes, swapRoutes, userRoutes, householdRoutes, catalogRoutes, bitesRoutes, plansRoutes, onboardingRoutes, weeklyRoutes, betaRoutes, basicsRoutes…'],
+  tag:['overview','all']}),
+
+N('rauthroute','routes','routes/auth.js','Auth endpoints',CX.routes,209,CW,52,'route',{
+  role:'POST /login, GET /me, POST /clerk-onboard, POST /logout, invite-code join.',
+  plain:'The login and "who am I" endpoints — everything related to starting and ending sessions.',
+  path:'backend/src/kitchen/routes/auth.js',
+  notes:['GET /me called by AuthProvider on every app load','POST /clerk-onboard links Clerk identity to new KitchenUser + Household','POST /login — legacy email+password, returns JWT','Uses betaService to gate new-household creation in private beta'],
+  tag:['overview','auth','onboarding','all']}),
+
+N('rweeks','routes','routes/weeks.js','Week plan CRUD',CX.routes,281,CW,62,'route',{critical:true,
+  role:'GET/PUT endpoints for reading and updating weekly meal plans — the most-called route in production.',
+  plain:'The API for the weekly planner: get this week\'s meals, assign a dish, randomise a week.',
+  path:'backend/src/kitchen/routes/weeks.js',
+  notes:['GET /:weekStart — calls createOrGetWeekPlan (auto-creates blank plan if missing)','PUT /:weekStart/day/:date — updates one day; triggers shopping rebuild + push notification','POST /:weekStart/randomize — Pro-gated via canRandomizeFullWeek()','Imports assignmentPushService for cook-assignment push after PUT'],
+  tag:['overview','planning','all']}),
+
+N('rshopping','routes','routes/shopping.js','Shopping list API',CX.routes,363,CW,52,'route',{
+  role:'GET, rebuild, and update the weekly shopping list.',
+  plain:'The API for the shopping list: fetch it, rebuild from meal plan, mark items bought.',
+  path:'backend/src/kitchen/routes/shopping.js',
+  notes:['POST /rebuild triggers shoppingService.rebuildShoppingList()','PUT /item marks items purchased/pending','Uses purchaseSessionService for multi-trip shopping sessions'],
+  tag:['planning','all']}),
+
+N('rdishes','routes','routes/dishes.js','Dishes CRUD',CX.routes,435,CW,52,'route',{
+  role:'Full CRUD for KitchenDish including image upload via Multer.',
+  plain:'The API for recipes — create, update, delete, photo upload.',
+  path:'backend/src/kitchen/routes/dishes.js',
+  notes:['Multer stores images in /uploads/ (served as static)','Dishes can be household-owned or from master catalog','ingredientOverrides per dish for shopping list customisation'],
+  tag:['planning','catalog','all']}),
+
+N('rhousehold','routes','routes/household.js','Household management',CX.routes,507,CW,52,'route',{
+  role:'Household settings, invite code generation, member management, dinner config.',
+  plain:'The API for household settings: invite members, rename, toggle dinner planning.',
+  path:'backend/src/kitchen/routes/household.js',
+  notes:['POST /invite — generates 6-char alphanumeric invite code','GET /members — returns all active household members','Dinner feature gated by canUseDinnersFeature() (Pro+)'],
+  tag:['planning','auth','all']}),
+
+N('radmin','routes','routes/admin.js','DIOD admin endpoints',CX.routes,579,CW,52,'route',{
+  role:'Super-admin CRUD: households, users, subscriptions, catalog packs, bites, audit logs.',
+  plain:'The internal admin API for managing the entire platform.',
+  path:'backend/src/kitchen/routes/admin.js',
+  notes:['All routes require requireDiod() — globalRole==="diod" only','DIOD can impersonate any household via activeHouseholdId switch','Bites admin grant/remove endpoints','Catalog pack CRUD with Stripe Product/Price ID assignment'],
+  tag:['admin','billing','all']}),
+
+N('rcatalog','routes','routes/catalog.js','Catalog pack API',CX.routes,651,CW,52,'route',{
+  role:'Browse, claim (subscription credit), and unlock (Bites) catalog packs.',
+  plain:'The recipe store API — list packs, claim with subscription credit, spend Bites to unlock.',
+  path:'backend/src/kitchen/routes/catalog.js',
+  notes:['GET /packs — returns entitlement-aware list per household','POST /packs/:id/claim — uses subscription monthly credit (Pro:1/mo, Premium:2/mo)','POST /packs/:id/unlock-bites — spends Bites via bitesService.spendBites()'],
+  tag:['catalog','billing','all']}),
+
+N('rbites','routes','routes/bites.js','Bites economy API',CX.routes,723,CW,52,'route',{
+  role:'Read Bites wallet, trigger monthly grant, list transaction history.',
+  plain:'The Bites (virtual currency) API — balance, history, monthly top-up.',
+  path:'backend/src/kitchen/routes/bites.js',
+  notes:['GET /wallet — freeBitesBalance + purchasedBitesBalance from Household doc','POST /grant-monthly — idempotent; skipped if already granted this calendar month','Monthly amounts: basic=100, pro=300, premium=1000 Bites'],
+  tag:['billing','all']}),
+
+N('rpayments','routes','routes/payments.js','Stripe payments router',CX.routes,795,CW,62,'route',{
+  role:'Stripe Checkout session creation, webhook handler, subscription cancel/reactivate, and DEV fallbacks.',
+  plain:'The payment API — start checkout, handle Stripe callbacks, manage subscriptions.',
+  path:'backend/src/routes/payments.js',
+  notes:['POST /checkout-session — rate-limited 10 req/15min/IP; creates PurchaseAttempt','POST /webhook — raw body; idempotent via StripeWebhookEvent unique index','POST /session-activate — webhook fallback for unreliable delivery (Render)','POST /cancel-subscription — sets cancel_at_period_end on Stripe + schedules pendingDowngradeAt'],
+  tag:['overview','billing','all']}),
+
+N('ronboarding','routes','routes/onboarding.js','Onboarding API',CX.routes,877,CW,52,'route',{
+  role:'Onboarding challenge status, event recording, and Bites reward distribution.',
+  plain:'The new-user tutorial API — tracks progress and awards Bites.',
+  path:'backend/src/kitchen/routes/onboarding.js',
+  notes:['POST /event — records user action, checks challenge completion','GET /status — challenge list with completion flags','Bites rewards deposited to household.freeBitesBalance'],
+  tag:['onboarding','all']}),
+
+N('rweekly','routes','routes/weekly.js','Weekly challenges API',CX.routes,949,CW,52,'route',{
+  role:'Weekly challenge definitions, per-household progress, Bites reward distribution.',
+  plain:'The weekly goals API — shows this week\'s challenge and tracks your progress.',
+  path:'backend/src/kitchen/routes/weekly.js',
+  notes:['4-week rotating curriculum: basic track + pro track','Cycle week index calculated per-household from weeklyChallengeCycleStartedAt','Rewards deposited to freeBitesBalance on completion'],
+  tag:['onboarding','planning','all']}),
+
+// SERVICES
+N('weekplansvc','services','weekPlanService.js','Week plan read/write',CX.services,55,CW,62,'service',{critical:true,
+  role:'Creates or retrieves KitchenWeekPlan for a household+week. Auto-creates dinner slots if dinnersEnabled.',
+  plain:'The engine behind the weekly planner — finds your meal plan or creates a blank one for new weeks.',
+  path:'backend/src/kitchen/weekPlanService.js',
+  notes:['createOrGetWeekPlan() handles concurrent creation via E11000 duplicate-key catch','ensureDinnerSlotsIfEnabled() adds dinner rows when household.dinnersEnabled=true','line:130 — race condition guard: retries findOne on E11000','Dinner attendees filtered by member.dinnerActive !== false'],
+  tag:['overview','planning','all']}),
+
+N('shopsvc','services','shoppingService.js','Shopping list builder',CX.services,137,CW,52,'service',{
+  role:'Aggregates ingredients from all dishes in a week plan, deduplicates, and resolves to KitchenIngredient records.',
+  plain:'The brain that builds your shopping list — reads all week\'s meals and figures out what to buy.',
+  path:'backend/src/kitchen/shoppingService.js',
+  notes:['rebuildShoppingList() preserves "purchased" status across rebuilds','Ingredient scope priority: override > household > master','ensureDefaultCategory() creates fallback category if none matched','filterValidShoppingItems() logs + removes malformed items before save'],
+  tag:['planning','all']}),
+
+N('subsvc','services','subscriptionService.js','Subscription plan logic',CX.services,209,CW,62,'service',{critical:true,
+  role:'Defines plan tiers, feature flags, and functions to activate/deactivate subscriptions on Household.',
+  plain:'Knows what each plan (Basic/Pro/Premium) unlocks and can switch a household\'s plan.',
+  path:'backend/src/kitchen/subscriptionService.js',
+  notes:['Plans: free | basic | pro | premium','applyAdminSubscriptionActivation() sets subscriptionEndsAt to now+30d mock; webhook overrides with real date','isPro gates: budget, full-week randomisation, diet filter, dinners, basics','canRandomizeSingleDay() available on Basic too (not Pro-gated)'],
+  tag:['overview','billing','all']}),
+
+N('bitessvc','services','bitesService.js','Bites economy engine',CX.services,291,CW,52,'service',{
+  role:'Manages Bites wallet: monthly grant, spend (pack unlock), purchased grant, admin adjustments.',
+  plain:'Handles the virtual currency — gives monthly Bites, spends them on packs, processes purchases.',
+  path:'backend/src/kitchen/bitesService.js',
+  notes:['spendBites() drains free balance first, then purchased','grantPurchasedBites() creates transaction BEFORE balance update (webhook idempotency)','Monthly cap: basic=500, pro=1000, premium=5000 carry-over','Economy: 100 Bites ≈ €1.99'],
+  tag:['billing','all']}),
+
+N('catsvc','services','catalogService.js','Pack entitlement resolver',CX.services,363,CW,52,'service',{
+  role:'Resolves whether a household can access a catalog pack (free, subscription credit, Bites, or Stripe).',
+  plain:'Decides if a household can access a recipe pack and through which method.',
+  path:'backend/src/kitchen/catalogService.js',
+  notes:['Pro: 1 free claim/month; Premium: 2/month','resolvePackEntitlement() returns owned, installed, isFree, canClaimWithPlan, canUnlockWithBites','Monthly claim window resets on calendar month boundary'],
+  tag:['catalog','billing','all']}),
+
+N('onboardeng','services','onboardingEngine.js','Onboarding challenge engine',CX.services,435,CW,52,'service',{
+  role:'Seeds default onboarding challenges on startup and processes user events to mark challenges complete.',
+  plain:'Defines the new-user tutorial tasks and checks them off as users complete each step.',
+  path:'backend/src/kitchen/onboardingEngine.js',
+  notes:['9 default challenges; total reward 85 Bites + 20 welcome = 105 Bites','Onboarding pack costs 80 Bites — leaves user with 25 net','cleanupOldChallenges() removes stale HouseholdOnboarding docs on startup','Welcome Bites checked via BitesTransaction query (idempotent)'],
+  tag:['onboarding','all']}),
+
+N('weeklyeng','services','weeklyEngine.js','Weekly challenge engine',CX.services,507,CW,52,'service',{
+  role:'Manages the 4-week rotating challenge curriculum (basic/pro tracks) and awards Bites on completion.',
+  plain:'Runs the weekly challenge system — rotates goals and gives Bites rewards.',
+  path:'backend/src/kitchen/weeklyEngine.js',
+  notes:['Two curricula: "basic" and "pro" — assigned by subscriptionPlan','Cycle week index per-household from weeklyChallengeCycleStartedAt','One challenge key marked RETIRED but seed still runs (no data harm, just noise)','seedWeeklyChallengeDefs() is idempotent — safe to run on every startup'],
+  tag:['onboarding','planning','all']}),
+
+N('paymentsvc','services','paymentEntitlementService.js','Post-payment entitlement',CX.services,579,CW,52,'service',{
+  role:'Applies pack or Bites bundle entitlements after a confirmed Stripe payment.',
+  plain:'After a payment goes through, this grants the purchased content to the household.',
+  path:'backend/src/kitchen/paymentEntitlementService.js',
+  notes:['applyPackEntitlementFromAttempt() creates HouseholdCatalogPack record','applyBitesBundleEntitlementFromAttempt() calls bitesService.grantPurchasedBites()','Both functions check for existing entitlement before creating (idempotent)','Called from both webhook handler and /session-activate fallback path'],
+  tag:['billing','catalog','all']}),
+
+N('betaprosvc','services','betaProService.js','Beta Pro auto-unlock',CX.services,651,CW,52,'service',{
+  role:'Automatically upgrades active beta users to Pro plan for a configured duration based on activity.',
+  plain:'Rewards early beta users with a free Pro upgrade if they stay active.',
+  path:'backend/src/kitchen/betaProService.js',
+  notes:['tryUnlockBetaPro() called from weeklyEngine after meaningful activity','BETA_PRO_DURATION_DAYS env var (default 30d)','Inactivity grace: BETA_INACTIVITY_GRACE_DAYS (default 14d) before expiry','betaPro.active + expiresAt stored on Household doc'],
+  tag:['onboarding','billing','all']}),
+
+N('betasvc','services','betaService.js','Beta invite gate',CX.services,723,CW,52,'service',{
+  role:'Controls new-household creation during private beta: requires a valid BetaInvite token.',
+  plain:'During private beta, stops random signups by requiring an invite code.',
+  path:'backend/src/kitchen/betaService.js',
+  notes:['PRIVATE_BETA_ENABLED=true activates gate; PUBLIC_REGISTRATION_ENABLED=true overrides (fast rollback)','Invite tokens are 64-char hex (32 random bytes, single-use)','Used only in routes/auth.js and routes/beta.js'],
+  tag:['onboarding','auth','all']}),
+
+N('subcron','services','subscriptionCron.js','Subscription expiry cron',CX.services,795,CW,52,'service',{
+  role:'Runs hourly: finds households where subscriptionEndsAt < now and downgrades them to Basic.',
+  plain:'Checks every hour for expired subscriptions and automatically downgrades them.',
+  path:'backend/src/kitchen/subscriptionCron.js',
+  notes:['Started in index.js: runs immediately then every 3600s','Handles pendingDowngradeAt for scheduled cancellations','Writes to KitchenAuditLog on each downgrade','No distributed lock — safe only on single-instance deploy'],
+  tag:['billing','all']}),
+
+N('emailsvc','services','emailService.js / mailer.js','Email — dual system',CX.services,867,CW,52,'service',{
+  role:'Two parallel email paths: emailService.js (Brevo SDK) for real emails; mailer.js (nodemailer) for test endpoint only.',
+  plain:'Two ways to send email exist — one for real invitations (Brevo), one left over from early testing.',
+  path:'backend/src/services/emailService.js',
+  notes:['emailService.js uses @getbrevo/brevo SDK — wired to householdInvitationEmail.js','mailer.js uses nodemailer — only called by POST /api/email/test','DEAD PATH: mailer.js never reached in normal user flows','Consolidation opportunity: remove mailer.js or unify behind one interface'],
+  tag:['all']}),
+
+N('pushsvc','services','pushService.js + assignmentPush',CX.services,939,CW,52,'service',{
+  role:'VAPID init (pushService) + cook-assignment push notifications (assignmentPushService) + daily reminders (internalPushReminderService).',
+  plain:'Sends push notifications to household members when cooking assignments or reminders fire.',
+  path:'backend/src/services/pushService.js',
+  notes:['WEB_PUSH_PUBLIC/PRIVATE_KEY + CONTACT_EMAIL required','assignmentPushService reads PushSubscription records and sends per-device','internalPushReminderService handles daily/weekly reminders via cron-triggered /api/internal/push','PushReminderDelivery tracks sent reminders to avoid duplicates'],
+  tag:['push','all']}),
+
+// DATA
+N('weekplanm','data','KitchenWeekPlan','householdId · weekStart · days[]',CX.data,50,CW,56,'db',{critical:true,
+  role:'Document storing 5–7 meal slots per week per household, each with mainDishId, sideDishId, attendeeIds.',
+  plain:'The database record for one household\'s meal plan for one week.',
+  path:'backend/src/kitchen/models/KitchenWeekPlan.js',
+  notes:['Unique compound index: householdId + weekStart','days[] embeds mealType, attendeeIds, ingredientOverrides, isLeftovers flag','Used by both weekPlanService and shoppingService','Dinner days distinguished by mealType="dinner"'],
+  tag:['overview','planning','all']}),
+
+N('userm','data','KitchenUser','role · clerkId · householdId',CX.data,116,CW,52,'db',{
+  role:'User document linking Clerk identity to household membership and role.',
+  plain:'The database record for each user — links Clerk login to their household.',
+  path:'backend/src/kitchen/models/KitchenUser.js',
+  notes:['clerkId added lazily on first Clerk auth (not required at creation)','role: "owner" | "member" → mapped to admin/user in requireRole()','globalRole: "diod" = super-admin access across all households','Email stored normalised (lowercase trim)'],
+  tag:['auth','overview','all']}),
+
+N('householdm','data','Household','subscription · Bites · Stripe IDs',CX.data,178,CW,62,'db',{critical:true,
+  role:'Central household document: owns subscription plan, Bites balances, Stripe IDs, and feature flags.',
+  plain:'The main record for a household — stores plan, Bites balance, and payment info.',
+  path:'backend/src/kitchen/models/Household.js',
+  notes:['subscriptionPlan: free|basic|pro|premium; subscriptionStatus: inactive|trial|active|pending','freeBitesBalance + purchasedBitesBalance stored as ints on Household (not in separate collection)','stripeCustomerId stored here for webhook lookup by Stripe customer ID','isPro boolean denormalised for fast entitlement checks'],
+  tag:['overview','billing','all']}),
+
+N('dishm','data','KitchenDish','scope · ingredients[]',CX.data,250,CW,52,'db',{
+  role:'Dish document with scope (master/household), category, ingredient list, and recipe content.',
+  plain:'A single recipe in the database — from the shared master library or household-specific.',
+  path:'backend/src/kitchen/models/KitchenDish.js',
+  notes:['scope: "master" (shared) | "household" (private)','ingredients[] embeds ingredientId refs + amounts','mainType: "main" | "side" affects shopping list generation','CatalogPack dishes bulk-imported during pack install'],
+  tag:['planning','catalog','all']}),
+
+N('ingredm','data','KitchenIngredient','scope · canonicalName',CX.data,312,CW,52,'db',{
+  role:'Ingredient with canonical name, category, and scope (master/household/override).',
+  plain:'A grocery ingredient — shared across all households (master) or private.',
+  path:'backend/src/kitchen/models/KitchenIngredient.js',
+  notes:['canonicalName is normalised lowercase — dedup key in shopping list builder','Scope priority in shoppingService: override > household > master','override scope lets catalog normalization fix master ingredient issues per-household'],
+  tag:['planning','catalog','all']}),
+
+N('shoplistm','data','KitchenShoppingList','weekStart · items[]',CX.data,374,CW,52,'db',{
+  role:'Shopping list per household per week. Items embed ingredient metadata and purchase status.',
+  plain:'The shopping list in the database — one per household per week.',
+  path:'backend/src/kitchen/models/KitchenShoppingList.js',
+  notes:['items[].status: "pending" | "purchased"','items[].purchasedBy tracks which user ticked the item','Rebuilt by rebuildShoppingList() but preserves "purchased" status','items[].storeId + purchaseSessionId for multi-trip tracking'],
+  tag:['planning','all']}),
+
+N('swapm','data','KitchenSwap','proposer · recipient · status',CX.data,436,CW,52,'db',{
+  role:'Cook swap request between two household members.',
+  plain:'A record of one member asking another to swap cooking duties.',
+  path:'backend/src/kitchen/models/KitchenSwap.js',
+  notes:['status: pending | accepted | rejected | expired','Accepted swaps update KitchenWeekPlan attendeeIds','No cron cleanup for expired swaps — accumulates over time (known gap)'],
+  tag:['planning','all']}),
+
+N('catalogpackm','data','CatalogPack','dishes · pricing · Stripe IDs',CX.data,498,CW,52,'db',{
+  role:'Curated dish pack with metadata, pricing tiers, and Stripe product/price IDs.',
+  plain:'A recipe pack in the store — includes price, plan inclusions, and Stripe payment IDs.',
+  path:'backend/src/kitchen/models/CatalogPack.js',
+  notes:['isPaid + stripePriceId required for Stripe-sold packs','status: "draft" | "review" | "published"','freeUntil date makes any pack temporarily free','includedPlans[] lists which subscription plans get the pack included'],
+  tag:['catalog','billing','all']}),
+
+N('purchaseattemptm','data','PurchaseAttempt','status · type · planKey',CX.data,560,CW,52,'db',{
+  role:'Records every checkout attempt with Stripe session ID and final payment status.',
+  plain:'Tracks every payment attempt — from checkout start to success or failure.',
+  path:'backend/src/kitchen/models/PurchaseAttempt.js',
+  notes:['status: created | completed | expired | failed','type: "subscription" | "pack" | "bites"','stripeCheckoutSessionId links to Stripe dashboard','Used as fallback lookup when webhook metadata.purchaseAttemptId is missing'],
+  tag:['billing','all']}),
+
+N('webhookm','data','StripeWebhookEvent','eventId (unique) · eventType',CX.data,622,CW,52,'db',{
+  role:'Deduplication store for processed Stripe webhook events.',
+  plain:'Prevents the same Stripe payment event from being processed twice.',
+  path:'backend/src/kitchen/models/StripeWebhookEvent.js',
+  notes:['E11000 on insert = already processed; return 200 immediately','On handler error: delete dedup record so Stripe can retry','No TTL index — grows unbounded (add TTL after 90d recommended)'],
+  tag:['billing','all']}),
+
+N('packentm','data','PackEntitlement','householdId · packId · status',CX.data,684,CW,52,'db',{
+  role:'Records catalog packs purchased via Stripe one-time payment.',
+  plain:'Proof of purchase for paid recipe packs.',
+  path:'backend/src/kitchen/models/PackEntitlement.js',
+  notes:['status: "active" | "refunded"','charge.refunded webhook sets status="refunded" via paymentIntentId lookup','Distinct from HouseholdCatalogPack (subscription/Bites access)','mode: "test" | "live" prevents test purchases activating in prod'],
+  tag:['billing','catalog','all']}),
+
+N('bitestxm','data','BitesTransaction','type · amount · balanceAfter',CX.data,746,CW,52,'db',{
+  role:'Immutable ledger of every Bites balance change per household.',
+  plain:'The audit log for Bites — every gain and spend is recorded.',
+  path:'backend/src/kitchen/models/BitesTransaction.js',
+  notes:['types: monthly_grant | pack_unlock | purchase | admin_grant | admin_remove','amount is signed (negative = spend)','balanceAfterFree + balanceAfterPurchased stored as snapshot per transaction','Used as idempotency check in grantPurchasedBites()'],
+  tag:['billing','all']}),
+
+N('hhonboardm','data','HouseholdOnboarding','challenges[] · completedAt',CX.data,808,CW,52,'db',{
+  role:'Per-household onboarding challenge completion state.',
+  plain:'Stores which tutorial steps each household has finished.',
+  path:'backend/src/kitchen/models/HouseholdOnboarding.js',
+  notes:['One document per household','challenges[].completedAt set when triggerCount is reached','cleanupOldChallenges() removes docs where all challenges completed >30d ago'],
+  tag:['onboarding','all']}),
+
+N('weeklydefsm','data','WeeklyChallengeDef + Progress','curriculum · cycleWeek',CX.data,870,CW,52,'db',{
+  role:'Weekly challenge curriculum definitions (global) and per-household progress records.',
+  plain:'Defines the weekly goals and tracks how far each household has gotten.',
+  path:'backend/src/kitchen/models/WeeklyChallengeDef.js',
+  notes:['WeeklyChallengeDef: global definitions seeded on startup','HouseholdWeeklyProgress: per-household progress per challenge per cycle week','Two curricula: basic (4 weeks) and pro (4 weeks)'],
+  tag:['onboarding','planning','all']}),
+
+N('betainvitem','data','BetaInvite','token · status · email',CX.data,932,CW,52,'db',{
+  role:'Single-use invite tokens for private beta registration gating.',
+  plain:'The invite codes that let people join during the private beta.',
+  path:'backend/src/kitchen/models/BetaInvite.js',
+  notes:['status: pending → sent → used (or revoked)','64-char hex token (32 random bytes, single-use)','Only relevant when PRIVATE_BETA_ENABLED=true'],
+  tag:['onboarding','auth','all']}),
+
+N('dbjs','data','db.js','MongoDB connection',CX.data,994,CW,52,'db',{
+  role:'Connects to MongoDB via Mongoose on server startup.',
+  plain:'Opens the database connection when the server starts.',
+  path:'backend/src/db.js',
+  notes:['connectDb() called in index.js before server.listen()','Process exits on connect failure','MONGODB_URI env var required'],
+  tag:['overview','all']}),
+
+// EXTERNAL
+N('stripe','external','Stripe','Checkout · Webhooks · Portal',CX.external,55,CW-40,56,'external',{
+  role:'Handles payment processing: hosted checkout, subscription lifecycle, and webhook events.',
+  plain:'The payment processor — takes money, manages subscriptions, sends payment events.',
+  path:'stripe.com — API version 2024-04-10',
+  notes:['Events handled: checkout.session.completed, customer.subscription.*, invoice.payment_succeeded, charge.refunded','Billing portal at /customer-portal (STRIPE_PORTAL_ENABLED=true required)','Webhook reliability issues on Render documented by 3-path activation design'],
+  tag:['overview','billing','all']}),
+
+N('clerk','external','Clerk Auth','JWT · OAuth · User Management',CX.external,121,CW-40,56,'external',{
+  role:'Identity provider: token signing, OAuth, and user management for the modern auth path.',
+  plain:'The login service — handles sign-in, sign-up, and identity for Clerk-based auth.',
+  path:'clerk.com — @clerk/backend ^3.2.8',
+  notes:['Tokens verified locally via verifyToken() — no network for returning users','Clerk Management API (getUser) only called for new/unlinked users','5s timeout guards against Clerk outages','CLERK_SECRET_KEY absence disables Clerk entirely — falls back to legacy JWT'],
+  tag:['overview','auth','all']}),
+
+N('mongodb','external','MongoDB Atlas','mongoose ^8.6.1',CX.external,187,CW-40,56,'external',{
+  role:'Primary data store — all app data in a single MongoDB database.',
+  plain:'The database where all user, household, recipe, and payment data is stored.',
+  path:'MONGODB_URI env var',
+  notes:['Mongoose 8.6.1 — modern async API','~20 collections','connectDb() in src/db.js — process.exit(1) on failure'],
+  tag:['overview','all']}),
+
+N('brevo','external','Brevo (email)','@getbrevo/brevo ^4.0.1',CX.external,253,CW-40,56,'external',{
+  role:'Transactional email provider for household invitations.',
+  plain:'The email service used to send household invitations.',
+  path:'backend/src/kitchen/householdInvitationEmail.js',
+  notes:['BREVO_API_KEY required','Parallel legacy: mailer.js (nodemailer) still in codebase','Only invitation emails confirmed using Brevo in production'],
+  tag:['all']}),
+
+N('webpush','external','Web Push (VAPID)','web-push ^3.6.7',CX.external,319,CW-40,56,'external',{
+  role:'Browser push notification delivery for cook assignments and daily reminders.',
+  plain:'Delivers push notifications to household members\' browsers and devices.',
+  path:'backend/src/services/pushService.js',
+  notes:['WEB_PUSH_PUBLIC_KEY + PRIVATE_KEY + CONTACT_EMAIL required','PushSubscription model stores per-device subscription objects','Daily/weekly reminders via /api/internal/push (cron-triggered endpoint)'],
+  tag:['push','all']}),
+];
+
+const edges=[
+  // ── Critical path: auth bootstrap
+  {from:'app',to:'authctx',kind:'mount',label:'AuthProvider wrap',tag:['overview','auth','all']},
+  {from:'authctx',to:'apijs',kind:'critical',label:'GET /auth/me',tag:['overview','auth','all']},
+  {from:'apijs',to:'rauthroute',kind:'critical',label:'GET /kitchen/auth/me',tag:['overview','auth','all']},
+  {from:'rauthroute',to:'middleware',kind:'critical',label:'requireAuth()',tag:['overview','auth','all']},
+  {from:'middleware',to:'clerkauth',kind:'critical',label:'Clerk verify',tag:['overview','auth','all']},
+  {from:'clerkauth',to:'userm',kind:'db',label:'findOne {clerkId}',tag:['auth','all']},
+  {from:'clerkauth',to:'clerk',kind:'api',label:'getUser() new users',tag:['auth','all']},
+
+  // ── Critical path: WeekPage load
+  {from:'app',to:'weekpage',kind:'mount',label:'/kitchen/semana',tag:['overview','planning','all']},
+  {from:'weekpage',to:'apijs',kind:'critical',label:'GET /weeks/:weekStart',tag:['overview','planning','all']},
+  {from:'apijs',to:'rweeks',kind:'critical',label:'GET /kitchen/weeks',tag:['overview','planning','all']},
+  {from:'rweeks',to:'middleware',kind:'critical',label:'requireAuth()',tag:['overview','auth','all']},
+  {from:'rweeks',to:'weekplansvc',kind:'critical',label:'createOrGetWeekPlan()',tag:['overview','planning','all']},
+  {from:'weekplansvc',to:'weekplanm',kind:'critical',label:'DB read/write',tag:['overview','planning','all']},
+  {from:'weekplansvc',to:'householdm',kind:'db',label:'dinnersEnabled check',tag:['planning','all']},
+
+  // ── Shopping rebuild
+  {from:'rweeks',to:'shopsvc',kind:'normal',label:'rebuildShoppingList()',tag:['planning','all']},
+  {from:'rshopping',to:'shopsvc',kind:'normal',label:'rebuild / get',tag:['planning','all']},
+  {from:'shopsvc',to:'shoplistm',kind:'db',label:'upsert list',tag:['planning','all']},
+  {from:'shopsvc',to:'weekplanm',kind:'db',label:'read week dishes',tag:['planning','all']},
+  {from:'shopsvc',to:'ingredm',kind:'db',label:'resolve ingredients',tag:['planning','all']},
+
+  // ── Stripe billing
+  {from:'upgradepage',to:'apijs',kind:'api',label:'POST /checkout-session',tag:['billing','all']},
+  {from:'apijs',to:'rpayments',kind:'api',label:'POST /payments/*',tag:['billing','all']},
+  {from:'rpayments',to:'stripe',kind:'api',label:'Checkout API',tag:['billing','all']},
+  {from:'stripe',to:'rpayments',kind:'api',label:'webhook events',tag:['billing','all']},
+  {from:'rpayments',to:'subsvc',kind:'normal',label:'applySubscription()',tag:['billing','all']},
+  {from:'rpayments',to:'paymentsvc',kind:'normal',label:'applyEntitlement()',tag:['billing','all']},
+  {from:'subsvc',to:'householdm',kind:'db',label:'update plan',tag:['billing','all']},
+  {from:'rpayments',to:'purchaseattemptm',kind:'db',label:'create/update',tag:['billing','all']},
+  {from:'rpayments',to:'webhookm',kind:'db',label:'dedup write',tag:['billing','all']},
+  {from:'paymentsvc',to:'packentm',kind:'db',label:'create entitlement',tag:['billing','catalog','all']},
+
+  // ── Bites
+  {from:'bitessvc',to:'householdm',kind:'db',label:'update balance',tag:['billing','all']},
+  {from:'bitessvc',to:'bitestxm',kind:'db',label:'write ledger',tag:['billing','all']},
+  {from:'rbites',to:'bitessvc',kind:'normal',label:'grant / spend',tag:['billing','all']},
+  {from:'rcatalog',to:'bitessvc',kind:'normal',label:'spendBites()',tag:['catalog','billing','all']},
+
+  // ── Catalog
+  {from:'catalogpage',to:'apijs',kind:'normal',label:'GET /catalog/packs',tag:['catalog','all']},
+  {from:'apijs',to:'rcatalog',kind:'normal',label:'catalog requests',tag:['catalog','all']},
+  {from:'rcatalog',to:'catsvc',kind:'normal',label:'resolveEntitlement()',tag:['catalog','all']},
+  {from:'rcatalog',to:'catalogpackm',kind:'db',label:'pack read',tag:['catalog','all']},
+
+  // ── Onboarding
+  {from:'onboardingctx',to:'apijs',kind:'normal',label:'POST /onboarding/event',tag:['onboarding','all']},
+  {from:'apijs',to:'ronboarding',kind:'normal',label:'onboarding API',tag:['onboarding','all']},
+  {from:'ronboarding',to:'onboardeng',kind:'normal',label:'processEvent()',tag:['onboarding','all']},
+  {from:'onboardeng',to:'hhonboardm',kind:'db',label:'read/write progress',tag:['onboarding','all']},
+  {from:'onboardeng',to:'bitessvc',kind:'normal',label:'reward Bites',tag:['onboarding','billing','all']},
+
+  // ── Weekly challenges
+  {from:'apijs',to:'rweekly',kind:'normal',label:'weekly challenge API',tag:['onboarding','all']},
+  {from:'rweekly',to:'weeklyeng',kind:'normal',label:'getStatus / record',tag:['onboarding','all']},
+  {from:'weeklyeng',to:'weeklydefsm',kind:'db',label:'defs + progress',tag:['onboarding','all']},
+  {from:'weeklyeng',to:'betaprosvc',kind:'normal',label:'tryUnlockBetaPro()',tag:['onboarding','billing','all']},
+
+  // ── Server mounts
+  {from:'beindex',to:'mongodb',kind:'db',label:'connectDb()',tag:['overview','all']},
+  {from:'beindex',to:'kitchenidx',kind:'mount',label:'app.use /api/kitchen',tag:['overview','all']},
+  {from:'beindex',to:'rpayments',kind:'mount',label:'app.use /api/payments',tag:['overview','billing','all']},
+  {from:'kitchenidx',to:'rweeks',kind:'mount',label:'/weeks',tag:['overview','planning','all']},
+  {from:'kitchenidx',to:'rauthroute',kind:'mount',label:'/auth',tag:['overview','auth','all']},
+  {from:'kitchenidx',to:'rshopping',kind:'mount',label:'/shopping',tag:['planning','all']},
+  {from:'kitchenidx',to:'rcatalog',kind:'mount',label:'/catalog',tag:['catalog','all']},
+  {from:'kitchenidx',to:'rbites',kind:'mount',label:'/bites',tag:['billing','all']},
+  {from:'kitchenidx',to:'ronboarding',kind:'mount',label:'/onboarding',tag:['onboarding','all']},
+
+  // ── Auth external
+  {from:'middleware',to:'userm',kind:'db',label:'findById (legacy JWT)',tag:['auth','all']},
+  {from:'hhscope',to:'householdm',kind:'db',label:'scope resolution',tag:['auth','all']},
+
+  // ── Push
+  {from:'rweeks',to:'pushsvc',kind:'normal',label:'cook assignment push',tag:['push','all']},
+  {from:'pushsvc',to:'webpush',kind:'api',label:'sendNotification()',tag:['push','all']},
+
+  // ── Email
+  {from:'emailsvc',to:'brevo',kind:'api',label:'send invitation',tag:['all']},
+];
+
+const FIXES={};
+const KNOWN_BUGS={};
+
+// ── COLOUR MAP
+const KIND_COLOR={critical:'#ff3860',api:'#ff7a45',db:'#ffb86b',mount:'#38bdf8',normal:'#444'};
+const KIND_MARKER={critical:'ac',api:'aa',db:'ad',mount:'am',normal:'an'};
+const NODE_FILL={client:'#0d1f3a',route:'#0d1f0d',service:'#1a0d2e',db:'#251500',external:'#250a0a',auth:'#0d1f2a'};
+const NODE_STROKE={client:'#4ea1ff',route:'#7bd389',service:'#c792ea',db:'#ffb86b',external:'#ff6b9d',auth:'#38bdf8'};
+
+// ── STATE
+let tx=0,ty=0,scale=1,dragging=false,dragStart={x:0,y:0},panStart={x:0,y:0};
+let selected=null,hovered=null,activeFilter='overview';
+
+// ── NODE LOOKUPS
+const nodeById=Object.fromEntries(nodes.map(n=>[n.id,n]));
+const edgesByNode={};
+nodes.forEach(n=>{edgesByNode[n.id]={out:[],in:[]};});
+edges.forEach(e=>{
+  if(edgesByNode[e.from])edgesByNode[e.from].out.push(e);
+  if(edgesByNode[e.to])edgesByNode[e.to].in.push(e);
+});
+
+// ── RENDER
+const scene=document.getElementById('scene');
+const wrap=document.getElementById('wrap');
+const sb=document.getElementById('sb');
+
+function applyTransform(){
+  scene.setAttribute('transform',`translate(${tx},${ty}) scale(${scale})`);
+}
+
+function visible(item){
+  if(activeFilter==='all')return true;
+  return item.tag&&item.tag.includes(activeFilter);
+}
+
+function connectedToSelected(nodeId){
+  if(!selected)return false;
+  const e=edgesByNode[selected];
+  if(!e)return false;
+  return e.out.some(ed=>ed.to===nodeId)||e.in.some(ed=>ed.from===nodeId);
+}
+
+function draw(){
+  scene.innerHTML='';
+
+  // clusters
+  clusters.forEach(cl=>{
+    const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',cl.x);r.setAttribute('y',cl.y);
+    r.setAttribute('width',cl.w);r.setAttribute('height',cl.h);
+    r.setAttribute('rx',10);
+    r.setAttribute('fill',cl.color);
+    r.setAttribute('stroke','#333');r.setAttribute('stroke-width','1');
+    scene.appendChild(r);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',cl.x+cl.w/2);t.setAttribute('y',cl.y+18);
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('fill','#555');t.setAttribute('font-size','10');t.setAttribute('font-family','sans-serif');
+    t.textContent=cl.label;
+    scene.appendChild(t);
+  });
+
+  // edges
+  edges.forEach(e=>{
+    const src=nodeById[e.from],dst=nodeById[e.to];
+    if(!src||!dst)return;
+    const vis=visible(e);
+    const isActive=selected&&(e.from===selected||e.to===selected);
+    const opacity=selected?(isActive?1:0.04):(vis?0.7:0.07);
+    const x1=src.x+src.w,y1=src.y+src.h/2;
+    const x2=dst.x,y2=dst.y+dst.h/2;
+    const cx1=x1+(x2-x1)*0.4,cx2=x1+(x2-x1)*0.6;
+    const color=KIND_COLOR[e.kind]||'#444';
+    const marker=KIND_MARKER[e.kind]||'an';
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${x1},${y1} C${cx1},${y1} ${cx2},${y2} ${x2},${y2}`);
+    path.setAttribute('stroke',color);
+    path.setAttribute('stroke-width',e.kind==='critical'?2:1.2);
+    path.setAttribute('fill','none');
+    path.setAttribute('opacity',opacity);
+    path.setAttribute('marker-end',`url(#${marker})`);
+    scene.appendChild(path);
+    if(e.label&&(isActive||(!selected&&vis))){
+      const mx=(x1+x2)/2,my=(y1+y2)/2-5;
+      const lt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      lt.setAttribute('x',mx);lt.setAttribute('y',my);
+      lt.setAttribute('text-anchor','middle');lt.setAttribute('font-size','8');
+      lt.setAttribute('fill',isActive?color:'#555');
+      lt.setAttribute('font-family','monospace');
+      lt.setAttribute('opacity',isActive?1:0.7);
+      lt.textContent=e.label;
+      scene.appendChild(lt);
+    }
+  });
+
+  // nodes
+  nodes.forEach(n=>{
+    const vis=visible(n);
+    const isSel=n.id===selected;
+    const isConn=connectedToSelected(n.id);
+    const isHov=n.id===hovered;
+    let opacity=1;
+    if(selected&&!isSel&&!isConn)opacity=0.12;
+    else if(!vis&&!selected)opacity=0.15;
+
+    const clType=n.cluster;
+    const fill=NODE_FILL[clType]||'#1a1a1a';
+    const stroke=NODE_STROKE[clType]||'#666';
+    const sw=n.critical?2.5:(isSel||isHov?1.8:1);
+
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('opacity',opacity);
+    g.style.cursor='pointer';
+
+    const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x',n.x);rect.setAttribute('y',n.y);
+    rect.setAttribute('width',n.w);rect.setAttribute('height',n.h);
+    rect.setAttribute('rx',6);
+    rect.setAttribute('fill',isSel?'#222':fill);
+    rect.setAttribute('stroke',isSel?'#fff':(n.critical?'#ff3860':stroke));
+    rect.setAttribute('stroke-width',sw);
+    g.appendChild(rect);
+
+    if(n.critical){
+      const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('cx',n.x+n.w-8);dot.setAttribute('cy',n.y+8);
+      dot.setAttribute('r',4);dot.setAttribute('fill','#ff3860');
+      g.appendChild(dot);
+    }
+
+    const label=document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x',n.x+10);label.setAttribute('y',n.y+18);
+    label.setAttribute('font-size','11');label.setAttribute('font-weight','700');
+    label.setAttribute('fill',isSel?'#fff':stroke);
+    label.setAttribute('font-family','sans-serif');
+    label.textContent=n.label;
+    g.appendChild(label);
+
+    const sub=document.createElementNS('http://www.w3.org/2000/svg','text');
+    sub.setAttribute('x',n.x+10);sub.setAttribute('y',n.y+32);
+    sub.setAttribute('font-size','9');sub.setAttribute('fill','#888');
+    sub.setAttribute('font-family','sans-serif');
+    sub.textContent=n.sub;
+    g.appendChild(sub);
+
+    if(n.path){
+      const pt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      pt.setAttribute('x',n.x+10);pt.setAttribute('y',n.y+n.h-7);
+      pt.setAttribute('font-size','8');pt.setAttribute('fill','#555');
+      pt.setAttribute('font-family','monospace');
+      const short=n.path.split('/').slice(-2).join('/');
+      pt.textContent=short;
+      g.appendChild(pt);
+    }
+
+    g.addEventListener('click',(ev)=>{ev.stopPropagation();selectNode(n.id);});
+    g.addEventListener('mouseenter',()=>{hovered=n.id;draw();});
+    g.addEventListener('mouseleave',()=>{hovered=null;draw();});
+    scene.appendChild(g);
+  });
+}
+
+function selectNode(id){
+  selected=selected===id?null:id;
+  draw();
+  if(selected){
+    const n=nodeById[selected];
+    showSidebar(n);
+  } else {
+    showDefault();
+  }
+}
+
+function showSidebar(n){
+  const stroke=NODE_STROKE[n.cluster]||'#999';
+  const out=edgesByNode[n.id]?.out||[];
+  const inn=edgesByNode[n.id]?.in||[];
+  let html=`<h3 style="color:${stroke}">${n.label}</h3>`;
+  html+=`<div class="sf"><div class="sl">Rol técnico</div><div class="sv">${n.role||''}</div></div>`;
+  html+=`<div class="sf"><div class="sl">En castellano</div><div class="sv">${n.plain||''}</div></div>`;
+  html+=`<div class="sf"><div class="sl">Ruta</div><div class="sv path">${n.path||''}</div></div>`;
+  if(n.notes?.length){
+    html+=`<div class="sf"><div class="sl">Notas</div>`;
+    n.notes.forEach(note=>{html+=`<div class="sn">${note}</div>`;});
+    html+=`</div>`;
+  }
+  if(out.length){
+    html+=`<div class="sf"><div class="sl">Llama a →</div>`;
+    out.forEach(e=>{
+      const dst=nodeById[e.to];
+      html+=`<div class="ei"><b>→</b>${dst?.label||e.to} <span style="color:#555;font-size:10px">${e.label||''}</span></div>`;
+    });
+    html+=`</div>`;
+  }
+  if(inn.length){
+    html+=`<div class="sf"><div class="sl">Llamado por ←</div>`;
+    inn.forEach(e=>{
+      const src=nodeById[e.from];
+      html+=`<div class="ei"><b>←</b>${src?.label||e.from} <span style="color:#555;font-size:10px">${e.label||''}</span></div>`;
+    });
+    html+=`</div>`;
+  }
+  sb.innerHTML=html;
+}
+
+function showDefault(){
+  sb.innerHTML=`<h3>Hallazgos</h3>
+    <div class="finding warn"><div class="ft">⚠ Triple montaje de weekRoutes</div>index.js monta el mismo router en /api/kitchen/weeks, /api/weeks y /weeks — tres URLs, un handler.</div>
+    <div class="finding warn"><div class="ft">⚠ Sistema de email dual</div>mailer.js (nodemailer, test-only) y emailService.js (Brevo SDK) coexisten. mailer.js nunca se llama en flujos reales.</div>
+    <div class="finding warn"><div class="ft">⚠ Auth legacy + Clerk en paralelo</div>middleware.js intenta JWT de localStorage antes que Clerk. Sesión fantasma hasta 7 días tras migración.</div>
+    <div class="finding info"><div class="ft">💡 3 rutas de activación de pago</div>webhook → /session-activate → /dev/apply-latest-subscription. Indicio de que webhooks de Stripe no son fiables en Render.</div>
+    <div class="finding info"><div class="ft">💡 StripeWebhookEvent sin TTL</div>Tabla de dedup crece sin límite. Recomendado: índice TTL a 90 días.</div>
+    <div class="finding info"><div class="ft">💡 KitchenSwap sin limpieza</div>Swaps expirados se acumulan — no hay cron de cleanup.</div>
+    <hr class="div"><p style="font-size:10px;color:var(--muted)">Click en un nodo para ver detalles</p>`;
+}
+
+// ── PAN/ZOOM
+wrap.addEventListener('mousedown',e=>{
+  if(e.target===wrap||e.target===document.getElementById('cv')){
+    dragging=true;
+    dragStart={x:e.clientX,y:e.clientY};
+    panStart={x:tx,y:ty};
+  }
+});
+window.addEventListener('mousemove',e=>{
+  if(!dragging)return;
+  tx=panStart.x+(e.clientX-dragStart.x);
+  ty=panStart.y+(e.clientY-dragStart.y);
+  applyTransform();
+});
+window.addEventListener('mouseup',()=>{dragging=false;});
+wrap.addEventListener('click',e=>{
+  if(e.target===wrap||e.target===document.getElementById('cv')){
+    selected=null;draw();showDefault();
+  }
+});
+wrap.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const rect=wrap.getBoundingClientRect();
+  const cx=e.clientX-rect.left,cy=e.clientY-rect.top;
+  const factor=e.deltaY<0?1.12:0.88;
+  const newScale=Math.max(0.15,Math.min(4,scale*factor));
+  tx=cx-(cx-tx)*(newScale/scale);
+  ty=cy-(cy-ty)*(newScale/scale);
+  scale=newScale;
+  applyTransform();
+},{passive:false});
+
+function doZoom(f){
+  const rect=wrap.getBoundingClientRect();
+  const cx=rect.width/2,cy=rect.height/2;
+  const newScale=Math.max(0.15,Math.min(4,scale*f));
+  tx=cx-(cx-tx)*(newScale/scale);
+  ty=cy-(cy-ty)*(newScale/scale);
+  scale=newScale;
+  applyTransform();
+}
+
+function fitView(){
+  const rect=wrap.getBoundingClientRect();
+  const allX=nodes.map(n=>n.x);
+  const allY=nodes.map(n=>n.y);
+  const allX2=nodes.map(n=>n.x+n.w);
+  const allY2=nodes.map(n=>n.y+n.h);
+  const minX=Math.min(...allX)-20,minY=Math.min(...allY)-20;
+  const maxX=Math.max(...allX2)+20,maxY=Math.max(...allY2)+20;
+  const contentW=maxX-minX,contentH=maxY-minY;
+  scale=Math.min(rect.width/contentW,rect.height/contentH,1)*0.96;
+  tx=rect.width/2-scale*(minX+contentW/2);
+  ty=rect.height/2-scale*(minY+contentH/2);
+  applyTransform();
+}
+
+function setFilter(f){
+  activeFilter=f;
+  document.querySelectorAll('.chip').forEach(c=>{
+    c.classList.toggle('active',c.getAttribute('onclick').includes(`'${f}'`));
+  });
+  draw();
+}
+
+// ── INIT
+draw();
+setTimeout(fitView,50);
+</script>
+</body>
+</html>
