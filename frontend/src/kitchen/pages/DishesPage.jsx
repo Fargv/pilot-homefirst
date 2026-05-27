@@ -75,25 +75,14 @@ function ChevronIcon(props) {
 }
 
 // ── Origin classifier ─────────────────────────────────────────────────────────
-// Returns true for any dish that came from the catalog (master, override, or
-// pack-installed household copy). False means it was manually created by the
-// household — these are "Mis platos".
-//
-// Classification rules (matches backend weeklyEngine.js + dishCatalog.js):
-//   scope:"master"                        → shared global catalog dish
-//   scope:"override"                      → household tweak of a master; origin is still catalog
-//   scope:"household" + source:"catalog"  → explicitly marked as pack-installed
-//   scope:"household" + sourcePackId set  → belt-and-suspenders for older records
+// Returns true only for household dishes installed from a catalog pack.
+// scope:"master" and scope:"override" are global/override dishes, NOT pack-installs.
+//   scope:"household" + source:"catalog"  → pack-installed (standard)
+//   scope:"household" + sourcePackId set  → legacy pack-installed (missing source field)
 //   everything else                       → household-created ("Mis platos")
 function isDishFromCatalog(dish) {
-  if (!dish) return false;
-  if (dish.scope === "master") return true;
-  if (dish.scope === "override") return true;
-  if (dish.scope === "household") {
-    if (dish.source === "catalog") return true;
-    if (dish.sourcePackId) return true;
-  }
-  return false;
+  if (!dish || dish.scope !== "household") return false;
+  return dish.source === "catalog" || Boolean(dish.sourcePackId);
 }
 
 const DISH_ORIGIN = {
