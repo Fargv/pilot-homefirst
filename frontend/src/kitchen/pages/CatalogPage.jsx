@@ -692,7 +692,11 @@ export default function CatalogPage() {
       if (result.alreadyInstalled) {
         showToast("Este pack ya estaba instalado.", "info");
       } else {
-        showToast(`¡Pack instalado! ${result.dishesCreated} platos añadidos a tu biblioteca.`, "success");
+        if (pack.slug === "ayuno-permanente-vol1") {
+          showToast("🎉 Tu lista de la compra acaba de simplificarse muchísimo.", "success");
+        } else {
+          showToast(`¡Pack instalado! ${result.dishesCreated} platos añadidos a tu biblioteca.`, "success");
+        }
         notifyOnboarding("install_pack");
         notifyWeekly("pack_installed");
         if (result.isDietPack && canUseDietRandomization(plan) && !isDietPackModalDismissed(String(pack.id))) {

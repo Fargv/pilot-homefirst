@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { apiRequest } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useOnboarding } from "./OnboardingContext.jsx";
+import { triggerMilestone } from "../hooks/useRewardAnimation.js";
 
 const WeeklyChallengeContext = createContext(null);
 
@@ -28,19 +29,39 @@ export function WeeklyChallengeProvider({ children }) {
         body: JSON.stringify({ type, contextData })
       });
       if (data?.weekly) setState(data.weekly);
-      if (data?.event?.completed && data.event.challenges?.length > 0) {
-        setRewardEvent({
+      if (data?.event?.challenges?.length > 0) {
+        const rewardData = {
           challenges: data.event.challenges,
-          bonusCompleted: data.event.bonusCompleted,
-          bonusBites: data.event.bonusBites,
+          bonusCompleted: data.event.bonusCompleted ?? false,
+          bonusBites: data.event.bonusBites ?? 0,
           betaProUnlocked: data.betaProUnlocked ?? false
-        });
+        };
+        setRewardEvent(rewardData);
         setTimeout(() => setRewardEvent(null), 5000);
+
+        // Fire Anime.js milestone toast for the reward
+        const totalBites = (data.event.challenges || []).reduce((s, c) => s + (c.rewardBites || 0), 0)
+          + (data.event.bonusCompleted ? (data.event.bonusBites || 0) : 0);
+        const challengeCount = data.event.challenges.length;
+        triggerMilestone({
+          title: challengeCount === 1
+            ? data.event.challenges[0].title
+            : `${challengeCount} retos completados`,
+          subtitle: totalBites > 0 ? `+${totalBites} Bites` : "",
+          icon: "🏆",
+          variant: "trophy"
+        });
       }
       // Beta Pro unlocked — fire a separate event so the UI can show a dedicated modal.
       // No auto-close: the user must explicitly dismiss it so they don't miss it.
       if (data?.betaProUnlocked) {
         setBetaProEvent({ unlockedAt: new Date().toISOString() });
+        triggerMilestone({
+          title: "¡Pro Beta desbloqueado!",
+          subtitle: "Acceso Pro activo durante el periodo beta",
+          icon: "⭐",
+          variant: "spark"
+        });
       }
     } catch (_) {
       // non-fatal — never break existing flows

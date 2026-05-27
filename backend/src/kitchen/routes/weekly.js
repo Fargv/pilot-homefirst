@@ -13,9 +13,12 @@ import {
   adminGetHouseholdProgress,
   adminResetHouseholdProgress,
   adminForceCompleteChallenge,
+  adminGetHouseholdCycleState,
+  adminResetHouseholdCycle,
+  adminSetHouseholdCycleWeek,
   seedWeeklyChallengeDefs
 } from "../weeklyEngine.js";
-import { runLazyExpiryChecks, serializeBetaPro } from "../betaProService.js";
+import { runLazyExpiryChecks, serializeBetaPro, checkAndGrantBetaPro } from "../betaProService.js";
 import { Household } from "../models/Household.js";
 
 const router = express.Router();
@@ -66,7 +69,25 @@ router.post("/trigger", requireAuth, async (req, res) => {
     const weekly = await getWeeklyState(householdId);
     const betaProUnlocked = event?.betaProUnlocked ?? false;
 
-    return res.json({ ok: true, event, weekly, betaProUnlocked });
+    // Enrich the event with challenge objects so the frontend toast can display titles/bites.
+    // The frontend WeeklyChallengeContext expects event.challenges (array of objects),
+    // but triggerWeeklyChallenge only returns event.completed (array of keys).
+    let enrichedEvent = event;
+    if (event?.completed?.length > 0 && weekly?.challenges) {
+      const completedSet = new Set(event.completed);
+      const completedChallenges = [
+        ...weekly.challenges.filter((c) => completedSet.has(c.key)),
+        ...(weekly.bonus && completedSet.has(weekly.bonus.key) ? [weekly.bonus] : [])
+      ];
+      enrichedEvent = {
+        ...event,
+        challenges: completedChallenges,
+        bonusCompleted: weekly.bonus ? completedSet.has(weekly.bonus.key) : false,
+        bonusBites: weekly.bonus?.rewardBites ?? 0
+      };
+    }
+
+    return res.json({ ok: true, event: enrichedEvent, weekly, betaProUnlocked });
   } catch (err) {
     console.error("[weekly] POST /trigger error:", err.message);
     return res.status(500).json({ ok: false, error: err.message });
@@ -234,6 +255,70 @@ router.post("/admin/seed", requireAuth, requireDiod, async (req, res) => {
     return res.json({ ok: true, message: "Weekly challenge defs re-seeded." });
   } catch (err) {
     console.error("[weekly] POST /admin/seed error:", err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── Cycle & Beta Pro testing admin endpoints ─────────────────────────────────
+
+/**
+ * GET /weekly/admin/households/:householdId/cycle-state
+ * Returns a household's full cycle state for the admin testing panel.
+ */
+router.get("/admin/households/:householdId/cycle-state", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const state = await adminGetHouseholdCycleState(req.params.householdId);
+    return res.json({ ok: true, state });
+  } catch (err) {
+    console.error("[weekly] GET cycle-state error:", err.message);
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * POST /weekly/admin/households/:householdId/reset-cycle
+ * Resets the household's cycle anchor and current-week progress to Week 1.
+ */
+router.post("/admin/households/:householdId/reset-cycle", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const result = await adminResetHouseholdCycle(req.params.householdId);
+    return res.json(result);
+  } catch (err) {
+    console.error("[weekly] POST reset-cycle error:", err.message);
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * POST /weekly/admin/households/:householdId/set-cycle-week
+ * Body: { week: 1|2|3|4 }
+ * Forces this calendar week to be the given cycle week for the household.
+ */
+router.post("/admin/households/:householdId/set-cycle-week", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const week = Number(req.body?.week);
+    if (!week || week < 1 || week > 4) {
+      return res.status(400).json({ ok: false, error: "week must be 1-4." });
+    }
+    const result = await adminSetHouseholdCycleWeek(req.params.householdId, week);
+    return res.json(result);
+  } catch (err) {
+    console.error("[weekly] POST set-cycle-week error:", err.message);
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * POST /weekly/admin/households/:householdId/check-beta-pro
+ * Runs the idempotent Beta Pro eligibility check and grants if eligible.
+ * Returns the result with reason code.
+ */
+router.post("/admin/households/:householdId/check-beta-pro", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const result = await checkAndGrantBetaPro(req.params.householdId);
+    return res.json({ ok: true, betaPro: result });
+  } catch (err) {
+    console.error("[weekly] POST check-beta-pro error:", err.message);
     return res.status(500).json({ ok: false, error: err.message });
   }
 });

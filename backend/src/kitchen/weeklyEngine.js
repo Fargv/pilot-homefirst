@@ -7,7 +7,7 @@ import { Household } from "./models/Household.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { KitchenDish } from "./models/KitchenDish.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
-import { recordMeaningfulActivity, tryUnlockBetaPro } from "./betaProService.js";
+import { recordMeaningfulActivity, tryUnlockBetaPro, checkAndGrantBetaPro, inspectBetaProEligibility } from "./betaProService.js";
 
 // ─── Curriculum resolution ────────────────────────────────────────────────────
 
@@ -1575,6 +1575,106 @@ export async function adminResetHouseholdProgress(householdId) {
   return HouseholdWeeklyProgress.deleteOne({ householdId, weekStart: weekStartDate });
 }
 
+/**
+ * Returns the full cycle state for a household — used in the admin testing panel.
+ */
+export async function adminGetHouseholdCycleState(householdId) {
+  const weekStartISO = getCurrentWeekStart();
+  const weekStartDate = parseWeekStart(weekStartISO);
+
+  const household = await Household.findById(householdId)
+    .select("subscriptionPlan weeklyChallengeCycleStartedAt betaPro planSource subscriptionStatus stripeSubscriptionId")
+    .lean();
+  if (!household) throw new Error("Household not found.");
+
+  const onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
+
+  const householdCycleStart = household.weeklyChallengeCycleStartedAt ?? null;
+  let cycleWeekIndex = null;
+  let participationWeek = null;
+  if (householdCycleStart) {
+    const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+    const weeksElapsed = Math.max(
+      0,
+      Math.floor((weekStartDate - new Date(householdCycleStart)) / MS_PER_WEEK)
+    );
+    participationWeek = weeksElapsed + 1;
+    cycleWeekIndex = getCycleWeekIndex(weekStartDate, new Date(householdCycleStart));
+  }
+
+  const progress = await HouseholdWeeklyProgress.findOne(
+    { householdId, weekStart: weekStartDate }
+  ).lean();
+
+  // Beta Pro eligibility — read-only inspect, does NOT grant
+  const betaProCheck = await inspectBetaProEligibility(householdId).catch(() => ({ result: "error" }));
+
+  return {
+    onboardingStatus: onboarding?.status ?? null,
+    weeklyChallengeCycleStartedAt: householdCycleStart,
+    cycleWeekIndex,
+    participationWeek,
+    currentWeekStart: weekStartISO,
+    currentProgress: progress ? {
+      cycleWeekIndex: progress.cycleWeekIndex,
+      completedChallenges: (progress.completedChallenges || []).map((c) => ({
+        key: c.challengeKey,
+        rewardGranted: c.rewardGranted,
+        completedAt: c.completedAt
+      })),
+      bonusGranted: progress.bonusGranted
+    } : null,
+    betaPro: household.betaPro ?? null,
+    betaProEligibility: betaProCheck
+  };
+}
+
+/**
+ * Resets a household's cycle to Week 1 of this calendar week.
+ * Deletes the current week's progress doc and clears the cycle anchor so the
+ * next event re-initializes it to "this Monday = Week 1".
+ */
+export async function adminResetHouseholdCycle(householdId) {
+  const weekStartISO = getCurrentWeekStart();
+  const weekStartDate = parseWeekStart(weekStartISO);
+
+  await Household.updateOne(
+    { _id: householdId },
+    { $unset: { weeklyChallengeCycleStartedAt: "" } }
+  );
+  await HouseholdWeeklyProgress.deleteOne({ householdId, weekStart: weekStartDate });
+
+  console.log(`[weekly/admin] Cycle reset to Week 1 for household=${householdId}`);
+  return { ok: true };
+}
+
+/**
+ * Forces the household's cycle anchor so that the current calendar week
+ * corresponds to the given cycleWeekIndex (1-4).
+ * E.g. setWeek=2 means "this week is the household's cycle Week 2".
+ *
+ * This adjusts weeklyChallengeCycleStartedAt backward by (setWeek-1) weeks,
+ * then deletes the current week's progress doc so fresh challenges are loaded.
+ */
+export async function adminSetHouseholdCycleWeek(householdId, setWeek) {
+  const week = Math.min(4, Math.max(1, Number(setWeek) || 1));
+  const weekStartISO = getCurrentWeekStart();
+  const weekStartDate = parseWeekStart(weekStartISO);
+
+  // The cycle anchor must be (week - 1) weeks before the current weekStart
+  const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+  const newCycleStart = new Date(weekStartDate.getTime() - (week - 1) * MS_PER_WEEK);
+
+  await Household.updateOne(
+    { _id: householdId },
+    { $set: { weeklyChallengeCycleStartedAt: newCycleStart } }
+  );
+  await HouseholdWeeklyProgress.deleteOne({ householdId, weekStart: weekStartDate });
+
+  console.log(`[weekly/admin] Cycle week forced to ${week} for household=${householdId} (anchor=${newCycleStart.toISOString().slice(0, 10)})`);
+  return { ok: true, cycleWeekIndex: week, newCycleStart };
+}
+
 export async function adminForceCompleteChallenge(householdId, challengeKey) {
   const onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
   if (!onboarding || onboarding.status !== "completed") {
@@ -1583,8 +1683,21 @@ export async function adminForceCompleteChallenge(householdId, challengeKey) {
 
   const weekStartISO = getCurrentWeekStart();
   const weekStartDate = parseWeekStart(weekStartISO);
-  const cycleConfig = await getOrCreateCycleConfig();
-  const cycleWeekIndex = getCycleWeekIndex(weekStartDate, cycleConfig.cycleStartDate);
+
+  // Use per-household cycle anchor (same logic as triggerWeeklyChallenge) — NOT global config.
+  const household = await Household.findById(householdId)
+    .select("weeklyChallengeCycleStartedAt subscriptionPlan").lean();
+
+  let householdCycleStart = household?.weeklyChallengeCycleStartedAt ?? null;
+  if (!householdCycleStart) {
+    householdCycleStart = weekStartDate;
+    await Household.updateOne(
+      { _id: householdId, weeklyChallengeCycleStartedAt: null },
+      { $set: { weeklyChallengeCycleStartedAt: weekStartDate } }
+    );
+  }
+
+  const cycleWeekIndex = getCycleWeekIndex(weekStartDate, new Date(householdCycleStart));
 
   const def = await WeeklyChallengeDef.findOne({ key: challengeKey }).lean();
   if (!def) throw new Error(`Challenge not found: ${challengeKey}`);
@@ -1603,8 +1716,19 @@ export async function adminForceCompleteChallenge(householdId, challengeKey) {
     curriculum: def.curriculum || "basic"
   }).sort({ cycleOrder: 1 }).lean();
 
+  const cycleConfig = await getOrCreateCycleConfig();
   const latestProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
   await checkAndGrantBonus(householdId, latestProgress, allChallenges, cycleConfig.bonusBites);
 
-  return { ok: true, message: `Challenge ${challengeKey} force-completed.` };
+  // Attempt Beta Pro unlock — only relevant for basic curriculum
+  let betaProResult = null;
+  if ((def.curriculum || "basic") === "basic") {
+    betaProResult = await checkAndGrantBetaPro(householdId);
+  }
+
+  return {
+    ok: true,
+    message: `Challenge ${challengeKey} force-completed.`,
+    betaPro: betaProResult
+  };
 }

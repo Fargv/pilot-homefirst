@@ -5047,6 +5047,15 @@ function WeeklySection() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
 
+  // Ciclo testing state
+  const [cycleHouseholdId, setCycleHouseholdId] = useState("");
+  const [cycleState, setCycleState] = useState(null);
+  const [cycleLoading, setCycleLoading] = useState(false);
+  const [cycleMsg, setCycleMsg] = useState("");
+  const [cycleError, setCycleError] = useState("");
+  const [betaProCheckResult, setBetaProCheckResult] = useState(null);
+  const [forceCycleWeek, setForceCycleWeek] = useState("1");
+
   const loadConfig = async () => {
     setLoading(true);
     setError("");
@@ -5167,13 +5176,64 @@ function WeeklySection() {
     } catch (e) { setError(e.message); }
   };
 
+  const loadCycleState = async () => {
+    if (!cycleHouseholdId.trim()) return;
+    setCycleLoading(true); setCycleError(""); setCycleState(null); setBetaProCheckResult(null);
+    try {
+      const data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/cycle-state`);
+      setCycleState(data.state || null);
+    } catch (e) { setCycleError(e.message); }
+    finally { setCycleLoading(false); }
+  };
+
+  const cycleAction = async (action) => {
+    if (!cycleHouseholdId.trim()) return;
+    setCycleLoading(true); setCycleError(""); setCycleMsg("");
+    try {
+      let data;
+      if (action === "reset-cycle") {
+        if (!window.confirm("¿Reiniciar ciclo a Semana 1? Se eliminará el progreso de esta semana.")) { setCycleLoading(false); return; }
+        data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/reset-cycle`, { method: "POST" });
+        setCycleMsg("Ciclo reiniciado a Semana 1.");
+      } else if (action === "set-cycle-week") {
+        const week = Number(forceCycleWeek);
+        if (!week || week < 1 || week > 4) { setCycleError("Semana debe ser 1-4."); setCycleLoading(false); return; }
+        if (!window.confirm(`¿Forzar semana del ciclo a ${week}? Se eliminará el progreso de la semana actual.`)) { setCycleLoading(false); return; }
+        data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/set-cycle-week`, {
+          method: "POST", body: JSON.stringify({ week })
+        });
+        setCycleMsg(`Semana del ciclo forzada a ${week}.`);
+      } else if (action === "check-beta-pro") {
+        data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/check-beta-pro`, { method: "POST" });
+        setBetaProCheckResult(data.betaPro || null);
+        const r = data.betaPro?.result;
+        if (r === "granted") setCycleMsg("✅ Beta Pro concedido.");
+        else if (r === "already_beta_pro") setCycleMsg("ℹ️ Ya tiene Beta Pro activo.");
+        else if (r === "already_paid_plan") setCycleMsg("ℹ️ Plan de pago — no se sobreescribe.");
+        else if (r === "onboarding_incomplete") setCycleMsg("⚠️ Onboarding incompleto.");
+        else if (r === "first_week_incomplete") setCycleMsg("⚠️ Primera semana de retos no completada.");
+        else if (r === "beta_pro_disabled") setCycleMsg("⚠️ BETA_PRO_ENABLED no está activo.");
+        else if (r === "missing_cycle_anchor") setCycleMsg("⚠️ Sin anclaje de ciclo — el hogar no ha iniciado retos.");
+        else setCycleMsg(`Resultado: ${r || "error"}`);
+      } else if (action === "reset-progress") {
+        if (!window.confirm("¿Resetear el progreso de retos de esta semana? No borra el historial de Bites.")) { setCycleLoading(false); return; }
+        data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/reset`, { method: "POST" });
+        setCycleMsg("Progreso semanal eliminado.");
+      }
+      setTimeout(() => setCycleMsg(""), 6000);
+      await loadCycleState();
+    } catch (e) { setCycleError(e.message); }
+    finally { setCycleLoading(false); }
+  };
+
   const inputStyle = { fontSize: 13, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--input-border, #e2e8f0)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)", width: "100%", boxSizing: "border-box" };
   const sectionStyle = { background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "14px 16px", border: "1px solid var(--hf-border, #e2e8f0)", marginBottom: 12 };
 
   const subTabs = [
     { key: "config", label: "Configuración" },
     { key: "challenges", label: "Retos" },
-    { key: "households", label: "Hogares" }
+    { key: "households", label: "Hogares" },
+    { key: "ciclo", label: "🔬 Ciclo Testing" }
   ];
 
   // Group by curriculum + cycleWeek: Basic W1-4, then Pro W1-4, then unassigned each
@@ -5357,6 +5417,186 @@ function WeeklySection() {
                 <button type="button" style={ABT.green} onClick={() => householdAction("complete-challenge")}>Completar reto</button>
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {subTab === "ciclo" && (
+        <div style={{ maxWidth: 720 }}>
+          <div style={{ ...sectionStyle, borderColor: "#c7d2fe", background: "#eef2ff" }}>
+            <p style={{ fontWeight: 700, fontSize: 14, margin: "0 0 4px", color: "#312e81" }}>🔬 Herramientas de Testing de Ciclo Semanal</p>
+            <p style={{ fontSize: 12, color: "#4338ca", margin: 0 }}>
+              Inspecciona y ajusta el estado del ciclo de retos semanales de un hogar. Solo para DEV/Admin.
+            </p>
+          </div>
+
+          {cycleError && <div style={{ color: "#b42318", background: "#fff8f8", border: "1px solid #fca5a5", borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>{cycleError}</div>}
+          {cycleMsg && <div style={{ color: "#15803d", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>{cycleMsg}</div>}
+
+          {/* Household ID input */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <input
+              style={{ ...inputStyle, width: 300 }}
+              placeholder="Household ID"
+              value={cycleHouseholdId}
+              onChange={(e) => setCycleHouseholdId(e.target.value)}
+            />
+            <button type="button" style={ABT.edit} onClick={loadCycleState} disabled={cycleLoading}>
+              {cycleLoading ? "..." : "Ver estado del ciclo"}
+            </button>
+          </div>
+
+          {cycleState && (
+            <>
+              {/* ── Cycle state overview ── */}
+              <div style={sectionStyle}>
+                <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Estado actual del ciclo</p>
+                <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                  <tbody>
+                    {[
+                      ["Onboarding", cycleState.onboardingStatus ?? "—"],
+                      ["Ciclo anclado el", cycleState.weeklyChallengeCycleStartedAt
+                        ? new Date(cycleState.weeklyChallengeCycleStartedAt).toLocaleDateString("es-ES")
+                        : "Sin anclaje"],
+                      ["Semana de participación", cycleState.participationWeek ?? "—"],
+                      ["Semana del ciclo (cycleWeekIndex)", cycleState.cycleWeekIndex ?? "—"],
+                      ["Semana actual (inicio)", cycleState.currentWeekStart],
+                      ["Plan del hogar", cycleState.betaPro?.active ? "Pro Beta ✅" : (cycleState.betaPro?.expiredAt ? "Beta Pro (expirado)" : "Basic")]
+                    ].map(([label, value]) => (
+                      <tr key={label} style={{ borderBottom: "1px solid var(--hf-border, #f1f5f9)" }}>
+                        <td style={{ padding: "5px 8px", fontWeight: 600, color: "#6b7280", width: "45%" }}>{label}</td>
+                        <td style={{ padding: "5px 8px", color: "var(--input-text, #1e293b)" }}>{String(value)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ── Current week progress ── */}
+              {cycleState.currentProgress && (
+                <div style={sectionStyle}>
+                  <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>
+                    Progreso semana actual (cycleWeek almacenado: {cycleState.currentProgress.cycleWeekIndex})
+                  </p>
+                  {cycleState.currentProgress.completedChallenges.length === 0 ? (
+                    <p style={{ fontSize: 12, color: "#9ca3af" }}>Sin retos completados esta semana.</p>
+                  ) : (
+                    <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ background: "var(--surface-muted, #f1f5f9)" }}>
+                          <th style={{ padding: "4px 8px", textAlign: "left" }}>Clave del reto</th>
+                          <th style={{ padding: "4px 8px", textAlign: "center" }}>Recompensa</th>
+                          <th style={{ padding: "4px 8px", textAlign: "center" }}>Completado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cycleState.currentProgress.completedChallenges.map((c) => (
+                          <tr key={c.key} style={{ borderBottom: "1px solid var(--hf-border, #f1f5f9)" }}>
+                            <td style={{ padding: "4px 8px", fontFamily: "monospace" }}>{c.key}</td>
+                            <td style={{ padding: "4px 8px", textAlign: "center" }}>
+                              <span style={{ color: c.rewardGranted ? "#15803d" : "#b42318", fontWeight: 700 }}>
+                                {c.rewardGranted ? "✓ Concedida" : "✗ Pendiente"}
+                              </span>
+                            </td>
+                            <td style={{ padding: "4px 8px", textAlign: "center", color: "#6b7280" }}>
+                              {c.completedAt ? new Date(c.completedAt).toLocaleString("es-ES") : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  {cycleState.currentProgress.bonusGranted && (
+                    <p style={{ fontSize: 12, color: "#15803d", marginTop: 6, fontWeight: 600 }}>⭐ Bonus concedido</p>
+                  )}
+                </div>
+              )}
+              {!cycleState.currentProgress && (
+                <div style={{ ...sectionStyle, color: "#9ca3af", fontSize: 12 }}>Sin progreso registrado esta semana.</div>
+              )}
+
+              {/* ── Beta Pro eligibility ── */}
+              <div style={{ ...sectionStyle, borderColor: betaProCheckResult?.result === "granted" ? "#86efac" : betaProCheckResult?.result === "already_beta_pro" ? "#c7d2fe" : "#fcd34d" }}>
+                <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>Elegibilidad Beta Pro</p>
+                <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 10 }}>
+                  Eligibilidad calculada en tiempo real: <strong>{cycleState.betaProEligibility?.result ?? "—"}</strong>
+                  {cycleState.betaProEligibility?.cycleWeekIndex && ` (cycleWeek ${cycleState.betaProEligibility.cycleWeekIndex})`}
+                </p>
+                <button
+                  type="button"
+                  style={{ ...ABT.save, background: "#7c3aed" }}
+                  onClick={() => cycleAction("check-beta-pro")}
+                  disabled={cycleLoading}
+                >
+                  {cycleLoading ? "..." : "Reevaluar Beta Pro"}
+                </button>
+                {betaProCheckResult && (
+                  <p style={{ fontSize: 12, marginTop: 8, fontWeight: 600,
+                    color: betaProCheckResult.result === "granted" ? "#15803d" : "#b42318"
+                  }}>
+                    Resultado: {betaProCheckResult.result}
+                    {betaProCheckResult.expiresAt && ` (expira: ${new Date(betaProCheckResult.expiresAt).toLocaleDateString("es-ES")})`}
+                  </p>
+                )}
+              </div>
+
+              {/* ── Cycle actions ── */}
+              <div style={sectionStyle}>
+                <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Acciones del ciclo</p>
+
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    style={{ ...ABT.del, padding: "6px 14px" }}
+                    onClick={() => cycleAction("reset-cycle")}
+                    disabled={cycleLoading}
+                  >
+                    Reiniciar ciclo a Semana 1
+                  </button>
+                  <span style={{ fontSize: 11, color: "#9ca3af" }}>
+                    Borra el anclaje y el progreso de esta semana. El próximo evento del hogar iniciará en Semana 1.
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+                  <select
+                    value={forceCycleWeek}
+                    onChange={(e) => setForceCycleWeek(e.target.value)}
+                    style={{ ...inputStyle, width: 120 }}
+                  >
+                    <option value="1">Semana 1</option>
+                    <option value="2">Semana 2</option>
+                    <option value="3">Semana 3</option>
+                    <option value="4">Semana 4</option>
+                  </select>
+                  <button
+                    type="button"
+                    style={{ ...ABT.edit, padding: "6px 14px" }}
+                    onClick={() => cycleAction("set-cycle-week")}
+                    disabled={cycleLoading}
+                  >
+                    Forzar semana del ciclo
+                  </button>
+                  <span style={{ fontSize: 11, color: "#9ca3af" }}>
+                    Ajusta el anclaje para que esta semana corresponda a la semana seleccionada.
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    style={{ ...ABT.del, padding: "6px 14px" }}
+                    onClick={() => cycleAction("reset-progress")}
+                    disabled={cycleLoading}
+                  >
+                    Recalcular progreso semanal
+                  </button>
+                  <span style={{ fontSize: 11, color: "#9ca3af" }}>
+                    Borra el doc de progreso de esta semana. No elimina el historial de Bites.
+                  </span>
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -6415,7 +6655,8 @@ export default function AdminPanelPage() {
             { key: "weekly",       label: "Retos Semanales" },
             { key: "beta",         label: "Beta Invites" },
             { key: "insights",     label: "Beta Insights" },
-            { key: "cuenta_admin", label: "🔐 Cuenta" }
+            { key: "cuenta_admin", label: "🔐 Cuenta" },
+            { key: "arquitectura",  label: "🗺 Arquitectura" }
           ];
           return (
             <>
@@ -6491,6 +6732,14 @@ export default function AdminPanelPage() {
           <BetaInsightsSection />
         ) : tab === "cuenta_admin" ? (
           <AdminAccountSecurityPanel />
+        ) : tab === "arquitectura" ? (
+          <div style={{ margin: "-24px -16px 0", height: "calc(100vh - 178px)" }}>
+            <iframe
+              src="/architecture-map.html"
+              style={{ width: "100%", height: "100%", border: "none", borderRadius: 4 }}
+              title="Mapa de Arquitectura"
+            />
+          </div>
         ) : (
           <QuickSubscriptionPanel />
         )}

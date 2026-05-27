@@ -41,6 +41,14 @@ import { HouseholdOnboarding } from "./models/HouseholdOnboarding.js";
 import { HouseholdWeeklyProgress } from "./models/HouseholdWeeklyProgress.js";
 import { WeeklyChallengeDef } from "./models/WeeklyChallengeDef.js";
 
+// Local copy to avoid circular dependency with weeklyEngine.js
+function _getCycleWeekIndex(weekStartDate, cycleStartDate) {
+  const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+  const weeksElapsed = Math.floor((weekStartDate - cycleStartDate) / MS_PER_WEEK);
+  if (weeksElapsed < 0) return 1;
+  return (weeksElapsed % 4) + 1;
+}
+
 // ─── Config readers ───────────────────────────────────────────────────────────
 
 export function isBetaProEnabled() {
@@ -92,8 +100,14 @@ export async function recordMeaningfulActivity(householdId) {
 // ─── Challenge completion check ───────────────────────────────────────────────
 
 /**
- * Returns { complete: boolean } indicating whether ALL main (non-bonus) challenges
- * for the most recent weekly progress document have rewardGranted === true.
+ * Returns { complete: boolean, cycleWeekIndex?: number } indicating whether ALL main
+ * (non-bonus) challenges for the most recent weekly progress document have
+ * rewardGranted === true.
+ *
+ * IMPORTANT: cycleWeekIndex is derived from the household's per-household cycle anchor
+ * (weeklyChallengeCycleStartedAt), NOT from the stored progress.cycleWeekIndex.
+ * This prevents a regression where progress docs created under the old global cycle had
+ * a stale cycleWeekIndex that no longer matched the household's per-household Week 1.
  */
 export async function checkAllMainChallengesComplete(householdId) {
   // Most recent progress doc for this household (any week).
@@ -105,9 +119,23 @@ export async function checkAllMainChallengesComplete(householdId) {
 
   if (!progress) return { complete: false };
 
+  // Derive cycleWeekIndex from household's own cycle anchor — not from the stored
+  // progress.cycleWeekIndex, which may be stale if the cycle was migrated from global.
+  const household = await Household.findById(householdId)
+    .select("weeklyChallengeCycleStartedAt")
+    .lean();
+
+  const householdCycleStart = household?.weeklyChallengeCycleStartedAt;
+  if (!householdCycleStart) return { complete: false };
+
+  const cycleWeekIndex = _getCycleWeekIndex(
+    new Date(progress.weekStart),
+    new Date(householdCycleStart)
+  );
+
   const mainDefs = await WeeklyChallengeDef.find({
     active: true,
-    cycleWeek: progress.cycleWeekIndex,
+    cycleWeek: cycleWeekIndex,
     curriculum: "basic",          // Beta Pro only for basic curriculum users
     triggerType: { $ne: "bonus" }
   }).lean();
@@ -121,7 +149,7 @@ export async function checkAllMainChallengesComplete(householdId) {
   );
 
   const allDone = mainDefs.every((def) => rewardedKeys.has(def.key));
-  return { complete: allDone };
+  return { complete: allDone, cycleWeekIndex };
 }
 
 // ─── Unlock ───────────────────────────────────────────────────────────────────
@@ -158,7 +186,7 @@ export async function tryUnlockBetaPro(householdId) {
 
     // Gate 2: all main challenges complete with rewards granted
     const { complete } = await checkAllMainChallengesComplete(householdId);
-    if (!complete) return { unlocked: false, reason: "challenges_incomplete" };
+    if (!complete) return { unlocked: false, reason: "first_week_incomplete" };
 
     // Grant Beta Pro
     const durationDays = getBetaProDurationDays();
@@ -187,6 +215,109 @@ export async function tryUnlockBetaPro(householdId) {
   } catch (err) {
     console.error("[betaPro] tryUnlockBetaPro error:", err.message);
     return { unlocked: false, reason: "error" };
+  }
+}
+
+// ─── Read-only eligibility inspect ──────────────────────────────────────────
+
+/**
+ * Returns Beta Pro eligibility reason WITHOUT granting.
+ * Safe to call from admin state-view endpoints (GET).
+ */
+export async function inspectBetaProEligibility(householdId) {
+  try {
+    if (!isBetaProEnabled()) return { result: "beta_pro_disabled" };
+
+    const household = await Household.findById(householdId).lean();
+    if (!household) return { result: "error", detail: "household_not_found" };
+    if (isPaidPlan(household)) return { result: "already_paid_plan" };
+    if (household.betaPro?.active) return { result: "already_beta_pro" };
+
+    const onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
+    if (!onboarding || onboarding.status !== "completed") {
+      return { result: "onboarding_incomplete" };
+    }
+    if (!household.weeklyChallengeCycleStartedAt) {
+      return { result: "missing_cycle_anchor" };
+    }
+
+    const { complete, cycleWeekIndex } = await checkAllMainChallengesComplete(householdId);
+    if (!complete) return { result: "first_week_incomplete", cycleWeekIndex };
+
+    return { result: "eligible" };
+  } catch (err) {
+    console.error("[betaPro] inspectBetaProEligibility error:", err.message);
+    return { result: "error", detail: err.message };
+  }
+}
+
+// ─── Idempotent check-and-grant ──────────────────────────────────────────────
+
+/**
+ * Safe, idempotent Beta Pro eligibility check and grant.
+ * Call this after any event that could affect eligibility:
+ *   - onboarding completion
+ *   - weekly challenge completion
+ *   - admin re-evaluation
+ *
+ * Returns one of:
+ *   granted             — Beta Pro just unlocked
+ *   already_beta_pro    — already active, nothing to do
+ *   already_paid_plan   — paid Stripe plan; never overwrite
+ *   onboarding_incomplete
+ *   first_week_incomplete — challenges exist but not all rewarded
+ *   beta_pro_disabled   — BETA_PRO_ENABLED !== "true"
+ *   missing_cycle_anchor — household never started weekly challenges
+ *   error               — unexpected exception
+ */
+export async function checkAndGrantBetaPro(householdId) {
+  try {
+    if (!isBetaProEnabled()) return { result: "beta_pro_disabled" };
+
+    const household = await Household.findById(householdId).lean();
+    if (!household) return { result: "error", detail: "household_not_found" };
+
+    if (isPaidPlan(household)) return { result: "already_paid_plan" };
+    if (household.betaPro?.active) return { result: "already_beta_pro" };
+
+    const onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
+    if (!onboarding || onboarding.status !== "completed") {
+      return { result: "onboarding_incomplete" };
+    }
+
+    if (!household.weeklyChallengeCycleStartedAt) {
+      return { result: "missing_cycle_anchor" };
+    }
+
+    const { complete, cycleWeekIndex } = await checkAllMainChallengesComplete(householdId);
+    if (!complete) return { result: "first_week_incomplete", cycleWeekIndex };
+
+    const durationDays = getBetaProDurationDays();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+    await Household.updateOne(
+      { _id: householdId },
+      {
+        $set: {
+          subscriptionPlan: "pro",
+          planSource: "beta_pro",
+          isPro: true,
+          "betaPro.active": true,
+          "betaPro.unlockedAt": now,
+          "betaPro.expiresAt": expiresAt,
+          "betaPro.lastRenewedAt": now,
+          "betaPro.expiredAt": null,
+          "betaPro.expirationReason": ""
+        }
+      }
+    );
+
+    console.log(`[betaPro] checkAndGrantBetaPro: granted household=${householdId}, expires=${expiresAt.toISOString()}`);
+    return { result: "granted", expiresAt };
+  } catch (err) {
+    console.error("[betaPro] checkAndGrantBetaPro error:", err.message);
+    return { result: "error", detail: err.message };
   }
 }
 

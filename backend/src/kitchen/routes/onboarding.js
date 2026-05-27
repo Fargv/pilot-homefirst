@@ -14,6 +14,7 @@ import {
   setOnboardingStatus,
   initOnboarding
 } from "../onboardingEngine.js";
+import { checkAndGrantBetaPro } from "../betaProService.js";
 
 const router = express.Router();
 
@@ -39,6 +40,14 @@ router.post("/trigger", requireAuth, async (req, res) => {
     const householdId = getEffectiveHouseholdId(req.user);
     const result = await triggerOnboarding(householdId, type);
     const state = await getOnboardingState(householdId);
+
+    // If onboarding just completed, run Beta Pro eligibility check (non-fatal).
+    // This handles the case where weekly challenges were completed before onboarding finished.
+    if (result?.allDone) {
+      checkAndGrantBetaPro(householdId).catch((err) => {
+        console.error("[onboarding] Beta Pro check after completion failed:", err.message);
+      });
+    }
 
     return res.json({ ok: true, event: result, onboarding: state });
   } catch (err) {
