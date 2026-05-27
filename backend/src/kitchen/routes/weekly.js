@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { getEffectiveHouseholdId } from "../householdScope.js";
 import {
@@ -22,6 +23,18 @@ import { runLazyExpiryChecks, serializeBetaPro, checkAndGrantBetaPro } from "../
 import { Household } from "../models/Household.js";
 
 const router = express.Router();
+
+function validateAdminHouseholdObjectId(req, res, next) {
+  const householdId = String(req.params.householdId || "");
+  if (!mongoose.isValidObjectId(householdId)) {
+    return res.status(400).json({
+      ok: false,
+      code: "INVALID_HOUSEHOLD_ID",
+      error: `householdId invalido: "${householdId}". Usa el ObjectId real de MongoDB, no el codigo corto.`
+    });
+  }
+  return next();
+}
 
 // ─── User routes ──────────────────────────────────────────────────────────────
 
@@ -204,7 +217,7 @@ router.delete("/admin/challenges/:id", requireAuth, requireDiod, async (req, res
 /**
  * GET /weekly/admin/households/:householdId/progress
  */
-router.get("/admin/households/:householdId/progress", requireAuth, requireDiod, async (req, res) => {
+router.get("/admin/households/:householdId/progress", requireAuth, requireDiod, validateAdminHouseholdObjectId, async (req, res) => {
   try {
     const progress = await adminGetHouseholdProgress(req.params.householdId);
     return res.json({ ok: true, progress });
@@ -217,7 +230,7 @@ router.get("/admin/households/:householdId/progress", requireAuth, requireDiod, 
 /**
  * POST /weekly/admin/households/:householdId/reset
  */
-router.post("/admin/households/:householdId/reset", requireAuth, requireDiod, async (req, res) => {
+router.post("/admin/households/:householdId/reset", requireAuth, requireDiod, validateAdminHouseholdObjectId, async (req, res) => {
   try {
     await adminResetHouseholdProgress(req.params.householdId);
     return res.json({ ok: true });
@@ -231,7 +244,7 @@ router.post("/admin/households/:householdId/reset", requireAuth, requireDiod, as
  * POST /weekly/admin/households/:householdId/complete-challenge
  * Body: { challengeKey: string }
  */
-router.post("/admin/households/:householdId/complete-challenge", requireAuth, requireDiod, async (req, res) => {
+router.post("/admin/households/:householdId/complete-challenge", requireAuth, requireDiod, validateAdminHouseholdObjectId, async (req, res) => {
   try {
     const { challengeKey } = req.body;
     if (!challengeKey) {
@@ -265,7 +278,7 @@ router.post("/admin/seed", requireAuth, requireDiod, async (req, res) => {
  * GET /weekly/admin/households/:householdId/cycle-state
  * Returns a household's full cycle state for the admin testing panel.
  */
-router.get("/admin/households/:householdId/cycle-state", requireAuth, requireDiod, async (req, res) => {
+router.get("/admin/households/:householdId/cycle-state", requireAuth, requireDiod, validateAdminHouseholdObjectId, async (req, res) => {
   try {
     const state = await adminGetHouseholdCycleState(req.params.householdId);
     return res.json({ ok: true, state });
@@ -279,7 +292,7 @@ router.get("/admin/households/:householdId/cycle-state", requireAuth, requireDio
  * POST /weekly/admin/households/:householdId/reset-cycle
  * Resets the household's cycle anchor and current-week progress to Week 1.
  */
-router.post("/admin/households/:householdId/reset-cycle", requireAuth, requireDiod, async (req, res) => {
+router.post("/admin/households/:householdId/reset-cycle", requireAuth, requireDiod, validateAdminHouseholdObjectId, async (req, res) => {
   try {
     const result = await adminResetHouseholdCycle(req.params.householdId);
     return res.json(result);
@@ -294,7 +307,7 @@ router.post("/admin/households/:householdId/reset-cycle", requireAuth, requireDi
  * Body: { week: 1|2|3|4 }
  * Forces this calendar week to be the given cycle week for the household.
  */
-router.post("/admin/households/:householdId/set-cycle-week", requireAuth, requireDiod, async (req, res) => {
+router.post("/admin/households/:householdId/set-cycle-week", requireAuth, requireDiod, validateAdminHouseholdObjectId, async (req, res) => {
   try {
     const week = Number(req.body?.week);
     if (!week || week < 1 || week > 4) {
@@ -313,7 +326,7 @@ router.post("/admin/households/:householdId/set-cycle-week", requireAuth, requir
  * Runs the idempotent Beta Pro eligibility check and grants if eligible.
  * Returns the result with reason code.
  */
-router.post("/admin/households/:householdId/check-beta-pro", requireAuth, requireDiod, async (req, res) => {
+router.post("/admin/households/:householdId/check-beta-pro", requireAuth, requireDiod, validateAdminHouseholdObjectId, async (req, res) => {
   try {
     const result = await checkAndGrantBetaPro(req.params.householdId);
     return res.json({ ok: true, betaPro: result });

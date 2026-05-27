@@ -75,6 +75,103 @@ function StatusBadge({ status }) {
 
 // ── Catalog admin helpers ──────────────────────────────────────────────────────
 
+const OBJECT_ID_RE = /^[a-f0-9]{24}$/i;
+
+function isMongoObjectId(value) {
+  return OBJECT_ID_RE.test(String(value || "").trim());
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  try {
+    return new Date(value).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return "-";
+  }
+}
+
+function AdminPill({ children, tone = "slate" }) {
+  const tones = {
+    slate: ["#f8fafc", "#cbd5e1", "#475569"],
+    green: ["#f0fdf4", "#86efac", "#15803d"],
+    amber: ["#fffbeb", "#fcd34d", "#92400e"],
+    indigo: ["#eef2ff", "#c7d2fe", "#4338ca"],
+    red: ["#fff8f8", "#fca5a5", "#b42318"]
+  };
+  const [background, border, color] = tones[tone] || tones.slate;
+  return (
+    <span style={{
+      display: "inline-flex",
+      alignItems: "center",
+      borderRadius: 999,
+      border: `1px solid ${border}`,
+      background,
+      color,
+      padding: "2px 8px",
+      fontSize: 11,
+      fontWeight: 700,
+      whiteSpace: "nowrap"
+    }}>
+      {children}
+    </span>
+  );
+}
+
+function ObjectIdChip({ id, onCopy }) {
+  const objectId = String(id || "");
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+      <code style={{
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        fontSize: 11,
+        color: "#334155",
+        background: "var(--surface-muted, #f8fafc)",
+        border: "1px solid var(--hf-border, #e2e8f0)",
+        borderRadius: 6,
+        padding: "2px 6px",
+        maxWidth: 190,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap"
+      }}>
+        {objectId || "-"}
+      </code>
+      {objectId ? (
+        <button type="button" style={{ ...ABT.edit, padding: "2px 8px" }} onClick={() => onCopy?.(objectId)} title="Copiar ObjectId">
+          Copiar
+        </button>
+      ) : null}
+    </span>
+  );
+}
+
+function AdminHouseholdContextBanner({ household, onClear }) {
+  if (!household?.id) return null;
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      flexWrap: "wrap",
+      background: "#eef2ff",
+      border: "1px solid #c7d2fe",
+      color: "#312e81",
+      borderRadius: 8,
+      padding: "9px 12px",
+      marginBottom: 12
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <strong>Viendo datos de: {household.name || "Hogar"}</strong>
+        <span style={{ marginLeft: 8, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 11 }}>
+          {household.id}
+        </span>
+      </div>
+      <button type="button" style={ABT.cancel} onClick={onClear}>Limpiar filtro</button>
+    </div>
+  );
+}
+
 function formatDaysSince(dateStr) {
   if (!dateStr) return null;
   const ms = Date.now() - new Date(dateStr).getTime();
@@ -203,7 +300,225 @@ function PackInstallationsModal({ pack, onClose }) {
   );
 }
 
-function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan, onOpenPacks }) {
+function HouseholdControlCenter({ household, onClose, onNavigate, onRefresh }) {
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!household?.id) return;
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest(`/api/admin/households/${household.id}/control-center`);
+      setDetail(data);
+    } catch (err) {
+      setError(err.message || "No se pudo cargar el hogar.");
+    } finally {
+      setLoading(false);
+    }
+  }, [household?.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const copyText = async (text, label = "Copiado") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setMsg(label);
+      setTimeout(() => setMsg(""), 2500);
+    } catch {
+      setMsg("No se pudo copiar.");
+    }
+  };
+
+  const runAction = async (type, extra = {}) => {
+    if (!household?.id) return;
+    setSaving(true);
+    setMsg("");
+    setError("");
+    try {
+      if (type === "assign-onboarding") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/assign`, { method: "POST" });
+        setMsg("Onboarding asignado.");
+      } else if (type === "reset-onboarding") {
+        const reason = window.prompt("Razon del reset (opcional):") || "";
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/reset`, { method: "POST", body: JSON.stringify({ reason }) });
+        setMsg("Onboarding reseteado.");
+      } else if (type === "enable-onboarding") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/status`, { method: "POST", body: JSON.stringify({ status: "active" }) });
+        setMsg("Onboarding activado.");
+      } else if (type === "disable-onboarding") {
+        if (!window.confirm("Desactivar onboarding para este hogar?")) return;
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/status`, { method: "POST", body: JSON.stringify({ status: "disabled" }) });
+        setMsg("Onboarding desactivado.");
+      } else if (type === "reset-weekly") {
+        if (!window.confirm("Resetear el progreso semanal actual?")) return;
+        await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/reset`, { method: "POST" });
+        setMsg("Progreso semanal reseteado.");
+      } else if (type === "reset-cycle") {
+        if (!window.confirm("Reiniciar el ciclo a semana 1?")) return;
+        await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/reset-cycle`, { method: "POST" });
+        setMsg("Ciclo reiniciado.");
+      } else if (type === "set-cycle-week") {
+        await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/set-cycle-week`, { method: "POST", body: JSON.stringify({ week: extra.week }) });
+        setMsg(`Ciclo forzado a semana ${extra.week}.`);
+      } else if (type === "check-beta-pro") {
+        const data = await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/check-beta-pro`, { method: "POST" });
+        setMsg(`Beta Pro: ${data.betaPro?.result || "revisado"}.`);
+      } else if (type === "grant-beta-pro") {
+        await apiRequest(`/api/admin/beta-insights/${household.id}/grant-beta-pro`, { method: "POST", body: JSON.stringify({ daysFromNow: 30 }) });
+        setMsg("Beta Pro concedido 30 dias.");
+      } else if (type === "revoke-beta-pro") {
+        if (!window.confirm("Revocar Beta Pro? No se tocaran planes pagados.")) return;
+        await apiRequest(`/api/admin/beta-insights/${household.id}/revoke-beta-pro`, { method: "POST" });
+        setMsg("Beta Pro revocado.");
+      }
+      await load();
+      onRefresh?.();
+    } catch (err) {
+      setError(err.message || "No se pudo ejecutar la accion.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const h = detail?.household || household;
+  const debugSummary = detail?.debugSummary || {};
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(15,23,42,0.42)", display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ width: "min(980px, 100%)", height: "100%", overflow: "auto", background: "var(--bg-card, #fff)", boxShadow: "-20px 0 60px rgba(15,23,42,0.22)" }}>
+        <div style={{ position: "sticky", top: 0, zIndex: 1, background: "var(--bg-card, #fff)", borderBottom: "1px solid var(--hf-border, #e2e8f0)", padding: "16px 20px", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 21 }}>Gestionar hogar</h2>
+            <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <strong>{h.name || "Hogar"}</strong>
+              <ObjectIdChip id={h.objectId || h.id} onCopy={(value) => copyText(value, "ObjectId copiado.")} />
+              <PlanBadge plan={h.subscriptionPlan || h.plan || "basic"} />
+              {h.betaPro?.active ? <AdminPill tone="amber">Beta Pro</AdminPill> : null}
+              {h.paidPlanProtected ? <AdminPill tone="green">Pago protegido</AdminPill> : null}
+            </div>
+          </div>
+          <button type="button" style={ABT.cancel} onClick={onClose}>Cerrar</button>
+        </div>
+
+        <div style={{ padding: 20 }}>
+          {error ? <div className="kitchen-alert error">{error}</div> : null}
+          {msg ? <div className="kitchen-alert success">{msg}</div> : null}
+          {loading ? <p className="kitchen-muted">Cargando centro de control...</p> : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Overview</h3>
+                <table style={{ width: "100%", fontSize: 12 }}>
+                  <tbody>
+                    {[
+                      ["Plan source", h.planSource || "-"],
+                      ["Owner", h.ownerEmail || "-"],
+                      ["Creado", formatDateTime(h.createdAt)],
+                      ["Ultima actividad", formatDateTime(h.lastMeaningfulActivityAt)],
+                      ["Miembros", detail?.users?.length ?? household.memberCount ?? 0],
+                      ["Invite code", h.inviteCode || "-"]
+                    ].map(([k, v]) => (
+                      <tr key={k}><td style={{ color: "#64748b", padding: "4px 0" }}>{k}</td><td style={{ fontWeight: 700, textAlign: "right" }}>{String(v)}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Usuarios</h3>
+                <p className="kitchen-muted">{detail?.users?.length || 0} usuarios en este hogar</p>
+                <div style={{ display: "grid", gap: 6, maxHeight: 155, overflow: "auto" }}>
+                  {(detail?.users || []).slice(0, 8).map((u) => (
+                    <div key={u.id} style={{ fontSize: 12, display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{u.email || u.displayName || u.id}</span>
+                      <AdminPill>{u.role || "member"}</AdminPill>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" style={{ ...ABT.edit, marginTop: 12 }} onClick={() => onNavigate("users", h)}>Ver usuarios</button>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Onboarding</h3>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                  <AdminPill tone={detail?.onboarding?.status === "completed" ? "green" : "amber"}>{detail?.onboarding?.status || "not_started"}</AdminPill>
+                  <AdminPill>{detail?.onboarding?.completedCount || 0} completados</AdminPill>
+                  <AdminPill>{detail?.onboarding?.totalBitesEarned || 0} bites</AdminPill>
+                </div>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                  <button type="button" style={ABT.green} disabled={saving} onClick={() => runAction("assign-onboarding")}>Asignar</button>
+                  <button type="button" style={ABT.edit} disabled={saving} onClick={() => runAction("reset-onboarding")}>Reset</button>
+                  <button type="button" style={ABT.edit} disabled={saving} onClick={() => runAction("enable-onboarding")}>Activar</button>
+                  <button type="button" style={ABT.del} disabled={saving} onClick={() => runAction("disable-onboarding")}>Desactivar</button>
+                  <button type="button" style={ABT.edit} onClick={() => onNavigate("onboarding", h)}>Abrir tools</button>
+                </div>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Retos semanales</h3>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                  <AdminPill tone="indigo">Ciclo {detail?.weekly?.cycleState?.cycleWeekIndex || "-"}</AdminPill>
+                  <AdminPill>{detail?.weekly?.progress?.[0]?.completedCount || 0} retos semana</AdminPill>
+                  {detail?.weekly?.progress?.[0]?.weekRandomized ? <AdminPill tone="green">Semana randomizada</AdminPill> : null}
+                </div>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                  <button type="button" style={ABT.edit} disabled={saving} onClick={() => onNavigate("weekly", h)}>Ver progreso</button>
+                  <button type="button" style={ABT.del} disabled={saving} onClick={() => runAction("reset-weekly")}>Reset progreso</button>
+                  <button type="button" style={ABT.edit} disabled={saving} onClick={() => runAction("reset-cycle")}>Ciclo semana 1</button>
+                  {[1, 2, 3, 4].map((week) => (
+                    <button key={week} type="button" style={ABT.edit} disabled={saving} onClick={() => runAction("set-cycle-week", { week })}>Forzar {week}</button>
+                  ))}
+                </div>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Beta Pro</h3>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                  <AdminPill tone={detail?.betaPro?.active ? "green" : "slate"}>{detail?.betaPro?.active ? "Concedido" : "No activo"}</AdminPill>
+                  <AdminPill tone={detail?.betaPro?.eligible ? "green" : "amber"}>{detail?.betaPro?.eligibilityResult || "sin evaluacion"}</AdminPill>
+                </div>
+                <p className="kitchen-muted" style={{ marginTop: 0 }}>Expira: {formatDateTime(detail?.betaPro?.expiresAt)}</p>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                  <button type="button" style={ABT.save} disabled={saving} onClick={() => runAction("check-beta-pro")}>Reevaluar</button>
+                  <button type="button" style={ABT.green} disabled={saving || h.paidPlanProtected} onClick={() => runAction("grant-beta-pro")}>Grant 30d</button>
+                  <button type="button" style={ABT.del} disabled={saving || h.paidPlanProtected} onClick={() => runAction("revoke-beta-pro")}>Revocar</button>
+                </div>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Actividad</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, fontSize: 12 }}>
+                  <div><strong>{detail?.planningWeeks?.length || 0}</strong><br />semanas recientes</div>
+                  <div><strong>{detail?.shoppingActivity?.reduce((n, x) => n + (x.itemsCount || 0), 0) || 0}</strong><br />items lista</div>
+                  <div><strong>{detail?.packs?.length || 0}</strong><br />packs</div>
+                  <div><strong>{detail?.biteLedger?.length || 0}</strong><br />movimientos bites</div>
+                </div>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 12 }}>
+                  <button type="button" style={ABT.edit} onClick={() => onNavigate("insights", h)}>Beta Insights</button>
+                  <button type="button" style={ABT.edit} onClick={() => onNavigate("catalog_packs", h)}>Catalogo</button>
+                  <button type="button" style={ABT.edit} onClick={() => onNavigate("bites_economy", h)}>Bites</button>
+                </div>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Advanced</h3>
+                <button type="button" style={ABT.edit} onClick={() => copyText(JSON.stringify(debugSummary, null, 2), "Debug summary copiado.")}>Copiar debug summary</button>
+                <pre style={{ marginTop: 10, maxHeight: 180, overflow: "auto", fontSize: 11, background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: 10 }}>
+                  {JSON.stringify(debugSummary, null, 2)}
+                </pre>
+              </Card>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan, onOpenPacks, onOpenDetails, onCopyId }) {
   const [localPlan, setLocalPlan] = useState(household.subscriptionPlan || "basic");
   const [saving, setSaving] = useState(false);
   const [rowError, setRowError] = useState("");
@@ -274,14 +589,20 @@ function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan,
         </div>
         {household.inviteCode ? (
           <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: "monospace", marginTop: 2 }}>
-            invite: {household.inviteCode}
+            codigo corto: {household.inviteCode}
           </div>
         ) : null}
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 3 }}>
+          {household.ownerEmail || "Sin owner visible"} · creado {formatDaysSince(household.createdAt) || "-"}
+        </div>
         {household.pendingDowngradeReason ? (
           <div style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic", marginTop: 2, maxWidth: 260 }}>
             "{household.pendingDowngradeReason}"
           </div>
         ) : null}
+      </td>
+      <td>
+        <ObjectIdChip id={household.objectId || household.id} onCopy={onCopyId} />
       </td>
       <td style={{ textAlign: "center" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
@@ -300,10 +621,27 @@ function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan,
           ) : null}
         </div>
       </td>
-      <td style={{ textAlign: "center" }}><StatusBadge status={household.subscriptionStatus} /></td>
+      <td style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center" }}>
+          <StatusBadge status={household.subscriptionStatus} />
+          <AdminPill tone={household.onboardingStatus === "completed" ? "green" : "amber"}>
+            onboarding {household.onboardingStatus || "not_started"}
+          </AdminPill>
+          <AdminPill tone={household.weeklyStatus?.active ? "indigo" : "slate"}>
+            retos {household.weeklyStatus?.completedCount || 0}
+          </AdminPill>
+        </div>
+      </td>
       <td style={{ textAlign: "center" }}>{household.memberCount || 0}</td>
       <td>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            style={{ fontSize: 12, padding: "4px 13px", borderRadius: 6, border: "none", background: "#0f172a", color: "#fff", cursor: "pointer", fontWeight: 600 }}
+            onClick={() => onOpenDetails(household)}
+          >
+            Gestionar hogar
+          </button>
           <button
             type="button"
             style={{ fontSize: 12, padding: "4px 13px", borderRadius: 6, border: "none", background: "#4338ca", color: "#fff", cursor: "pointer", fontWeight: 600 }}
@@ -336,12 +674,14 @@ function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan,
   );
 }
 
-function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange }) {
+function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange, onNavigateWithHousehold, onSetHouseholdContext }) {
   const [households, setHouseholds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [packsModalHousehold, setPacksModalHousehold] = useState(null);
+  const [detailsHousehold, setDetailsHousehold] = useState(null);
+  const [copyMsg, setCopyMsg] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -361,8 +701,24 @@ function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange }) {
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return households;
-    return households.filter((h) => h.name.toLowerCase().includes(needle));
+    return households.filter((h) =>
+      (h.name || "").toLowerCase().includes(needle) ||
+      (h.id || "").toLowerCase().includes(needle) ||
+      (h.objectId || "").toLowerCase().includes(needle) ||
+      (h.inviteCode || "").toLowerCase().includes(needle) ||
+      (h.ownerEmail || "").toLowerCase().includes(needle)
+    );
   }, [households, query]);
+
+  const copyId = async (value) => {
+    try {
+      await navigator.clipboard.writeText(String(value || ""));
+      setCopyMsg("ObjectId copiado.");
+      setTimeout(() => setCopyMsg(""), 2500);
+    } catch {
+      setCopyMsg("No se pudo copiar el ObjectId.");
+    }
+  };
 
   const onChangePlan = async (householdId, plan) => {
     if (plan === "off") {
@@ -418,6 +774,7 @@ function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange }) {
       </div>
 
       {error ? <div className="kitchen-alert error">{error}</div> : null}
+      {copyMsg ? <div className="kitchen-alert success">{copyMsg}</div> : null}
 
       {loading ? (
         <p className="kitchen-muted">Cargando...</p>
@@ -429,6 +786,7 @@ function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange }) {
             <thead>
               <tr>
                 <th>Nombre</th>
+                <th>ObjectId real</th>
                 <th style={{ textAlign: "center" }}>Plan</th>
                 <th style={{ textAlign: "center" }}>Estado</th>
                 <th style={{ textAlign: "center" }}>Miembros</th>
@@ -444,6 +802,11 @@ function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange }) {
                   onSetActive={onSetActive}
                   onChangePlan={onChangePlan}
                   onOpenPacks={setPacksModalHousehold}
+                  onOpenDetails={(hh) => {
+                    setDetailsHousehold(hh);
+                    onSetHouseholdContext?.(hh);
+                  }}
+                  onCopyId={copyId}
                 />
               ))}
             </tbody>
@@ -457,11 +820,22 @@ function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange }) {
         onClose={() => setPacksModalHousehold(null)}
       />
     )}
+    {detailsHousehold && (
+      <HouseholdControlCenter
+        household={detailsHousehold}
+        onClose={() => setDetailsHousehold(null)}
+        onRefresh={load}
+        onNavigate={(nextTab, hh) => {
+          setDetailsHousehold(null);
+          onNavigateWithHousehold?.(nextTab, hh);
+        }}
+      />
+    )}
   </>
   );
 }
 
-function UsersSection() {
+function UsersSection({ householdContext, onClearHouseholdContext }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -477,12 +851,17 @@ function UsersSection() {
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return users;
-    return users.filter((u) =>
+    let list = users;
+    if (householdContext?.id) {
+      list = list.filter((u) => String(u.householdId || "") === String(householdContext.id));
+    }
+    if (!needle) return list;
+    return list.filter((u) =>
       (u.email || "").toLowerCase().includes(needle) ||
-      (u.displayName || "").toLowerCase().includes(needle)
+      (u.displayName || "").toLowerCase().includes(needle) ||
+      (u.householdId || "").toLowerCase().includes(needle)
     );
-  }, [users, query]);
+  }, [users, query, householdContext?.id]);
 
   const onboardingAction = async (householdId, action) => {
     if (!householdId) { setOnboardingMsg("Este usuario no tiene household asignado."); return; }
@@ -505,6 +884,7 @@ function UsersSection() {
 
   return (
     <Card className="kitchen-block-gap">
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <div>
           <h2 className="kitchen-title-no-margin">Usuarios</h2>
@@ -2747,7 +3127,7 @@ function GrantModal({ pack, households, onGrant, onClose }) {
   );
 }
 
-function CatalogPacksSection() {
+function CatalogPacksSection({ householdContext, onClearHouseholdContext }) {
   const [packs, setPacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -3006,6 +3386,7 @@ function CatalogPacksSection() {
 
   return (<>
     <Card className="kitchen-block-gap">
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
       <div style={{ marginBottom: 16 }}>
         <h2 className="kitchen-title-no-margin">Catálogo de packs</h2>
         <p className="kitchen-muted">Crea, edita y gestiona los packs de platos del catálogo de Lunchfy.</p>
@@ -3472,7 +3853,7 @@ function CatalogPacksSection() {
 
 // ─── Bites Economy section ───────────────────────────────────────────────────
 
-function BitesEconomySection() {
+function BitesEconomySection({ householdContext, onClearHouseholdContext }) {
   const [config, setConfig] = useState(null);
   const [bundles, setBundles] = useState([]);
   const [households, setHouseholds] = useState([]);
@@ -3522,6 +3903,12 @@ function BitesEconomySection() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (householdContext?.id) {
+      setGrantForm((form) => ({ ...form, householdId: householdContext.id }));
+    }
+  }, [householdContext?.id]);
 
   const saveConfig = async () => {
     setSavingConfig(true);
@@ -3637,6 +4024,7 @@ function BitesEconomySection() {
 
   return (
     <Card style={{ maxWidth: 900 }}>
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
       <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
         <BitesIcon size={22} decorative /> Bites Economy
       </h2>
@@ -4682,7 +5070,7 @@ function IngredientCategoriesSection() {
 
 const ONBOARDING_ECONOMY_TARGET = 105; // welcome(20) + challenges(85) = 105
 
-function OnboardingSection() {
+function OnboardingSection({ householdContext, onClearHouseholdContext }) {
   const [challenges, setChallenges] = useState([]);
   const [households, setHouseholds] = useState([]);
   const [analytics, setAnalytics] = useState(null);
@@ -4793,9 +5181,12 @@ function OnboardingSection() {
 
   if (loading) return <div style={{ padding: 24, color: "#6b7280" }}>Cargando onboarding...</div>;
 
-  const filteredHouseholds = households.filter((h) =>
-    !householdSearch || String(h.householdId).toLowerCase().includes(householdSearch.toLowerCase()) || (h.status || "").includes(householdSearch)
-  );
+  const filteredHouseholds = households.filter((h) => {
+    if (householdContext?.id && String(h.householdId) !== String(householdContext.id)) return false;
+    return !householdSearch ||
+      String(h.householdId).toLowerCase().includes(householdSearch.toLowerCase()) ||
+      (h.status || "").toLowerCase().includes(householdSearch.toLowerCase());
+  });
 
   const activeChallenges = challenges.filter((c) => c.active);
   const totalChallengeBites = activeChallenges.reduce((s, c) => s + (c.rewardBites || 0), 0);
@@ -4807,6 +5198,7 @@ function OnboardingSection() {
 
   return (
     <div>
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
       {error && <div style={{ background: "#fee2e2", color: "#b42318", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
 
       {/* Economy balance card */}
@@ -5029,7 +5421,7 @@ function OnboardingSection() {
 
 // ─── Weekly Challenges Admin Section ────────────────────────────────────────
 
-function WeeklySection() {
+function WeeklySection({ householdContext, onClearHouseholdContext }) {
   const wcFieldStyle = { display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 };
   const wcLabelStyle = { fontSize: 12, fontWeight: 600, color: "#374151" };
   const [subTab, setSubTab] = useState("config");
@@ -5041,6 +5433,7 @@ function WeeklySection() {
   const [newChallengeForm, setNewChallengeForm] = useState({ key: "", title: "", description: "", guidance: "", rewardBites: 10, triggerType: "", triggerCount: 1, cycleWeek: "", cycleOrder: 0, active: true, curriculum: "basic" });
   const [showNewForm, setShowNewForm] = useState(false);
   const [householdId, setHouseholdId] = useState("");
+  const [adminHouseholds, setAdminHouseholds] = useState([]);
   const [householdProgress, setHouseholdProgress] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -5055,6 +5448,15 @@ function WeeklySection() {
   const [cycleError, setCycleError] = useState("");
   const [betaProCheckResult, setBetaProCheckResult] = useState(null);
   const [forceCycleWeek, setForceCycleWeek] = useState("1");
+
+  const loadAdminHouseholds = useCallback(async () => {
+    try {
+      const data = await apiRequest("/api/admin/households");
+      setAdminHouseholds(data.households || []);
+    } catch {
+      setAdminHouseholds([]);
+    }
+  }, []);
 
   const loadConfig = async () => {
     setLoading(true);
@@ -5081,6 +5483,16 @@ function WeeklySection() {
     if (subTab === "config") loadConfig();
     else if (subTab === "challenges") loadChallenges();
   }, [subTab]);
+
+  useEffect(() => { loadAdminHouseholds(); }, [loadAdminHouseholds]);
+
+  useEffect(() => {
+    if (householdContext?.id) {
+      setHouseholdId(householdContext.id);
+      setCycleHouseholdId(householdContext.id);
+      setSubTab("ciclo");
+    }
+  }, [householdContext?.id]);
 
   const saveConfig = async () => {
     setSaving(true);
@@ -5148,6 +5560,10 @@ function WeeklySection() {
 
   const loadHouseholdProgress = async () => {
     if (!householdId.trim()) return;
+    if (!isMongoObjectId(householdId)) {
+      setError("Selecciona el ObjectId real del hogar. Los codigos cortos no son validos para estas herramientas.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -5159,6 +5575,10 @@ function WeeklySection() {
 
   const householdAction = async (action, extra = {}) => {
     if (!householdId.trim()) return;
+    if (!isMongoObjectId(householdId)) {
+      setError("Selecciona el ObjectId real del hogar. Los codigos cortos no son validos para estas herramientas.");
+      return;
+    }
     try {
       if (action === "reset") {
         if (!window.confirm("¿Resetear progreso semanal de este hogar?")) return;
@@ -5178,6 +5598,10 @@ function WeeklySection() {
 
   const loadCycleState = async () => {
     if (!cycleHouseholdId.trim()) return;
+    if (!isMongoObjectId(cycleHouseholdId)) {
+      setCycleError("Selecciona el ObjectId real del hogar. Los codigos cortos no son validos para estas herramientas.");
+      return;
+    }
     setCycleLoading(true); setCycleError(""); setCycleState(null); setBetaProCheckResult(null);
     try {
       const data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/cycle-state`);
@@ -5188,6 +5612,10 @@ function WeeklySection() {
 
   const cycleAction = async (action) => {
     if (!cycleHouseholdId.trim()) return;
+    if (!isMongoObjectId(cycleHouseholdId)) {
+      setCycleError("Selecciona el ObjectId real del hogar. Los codigos cortos no son validos para estas herramientas.");
+      return;
+    }
     setCycleLoading(true); setCycleError(""); setCycleMsg("");
     try {
       let data;
@@ -5228,6 +5656,16 @@ function WeeklySection() {
 
   const inputStyle = { fontSize: 13, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--input-border, #e2e8f0)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)", width: "100%", boxSizing: "border-box" };
   const sectionStyle = { background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "14px 16px", border: "1px solid var(--hf-border, #e2e8f0)", marginBottom: 12 };
+  const householdOptions = adminHouseholds.filter((h) => isMongoObjectId(h.id));
+  const selectedCycleHousehold = householdOptions.find((h) => String(h.id) === String(cycleHouseholdId));
+  const householdSelect = (value, setValue) => (
+    <select style={{ ...inputStyle, width: 340, maxWidth: "100%" }} value={value} onChange={(e) => setValue(e.target.value)}>
+      <option value="">Selecciona hogar...</option>
+      {householdOptions.map((h) => (
+        <option key={h.id} value={h.id}>{h.name || "Hogar"} - {h.id}</option>
+      ))}
+    </select>
+  );
 
   const subTabs = [
     { key: "config", label: "Configuración" },
@@ -5247,6 +5685,7 @@ function WeeklySection() {
 
   return (
     <div style={{ maxWidth: 900 }}>
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         {subTabs.map(({ key, label }) => (
           <button key={key} type="button" onClick={() => setSubTab(key)} style={{ ...ABT.edit, background: subTab === key ? "#e0e7ff" : "#f8fafc", color: subTab === key ? "#312e81" : "#374151", fontWeight: subTab === key ? 700 : 500 }}>
@@ -5403,9 +5842,10 @@ function WeeklySection() {
       {subTab === "households" && (
         <div>
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            <input style={{ ...inputStyle, width: 260 }} placeholder="Household ID" value={householdId} onChange={(e) => setHouseholdId(e.target.value)} />
+            {householdSelect(householdId, setHouseholdId)}
             <button type="button" style={ABT.edit} onClick={loadHouseholdProgress}>Cargar</button>
           </div>
+          {householdId && <p style={{ fontSize: 12, color: "#64748b", marginTop: -4 }}>Usando ObjectId real: <code>{householdId}</code></p>}
           {householdProgress && (
             <div style={sectionStyle}>
               <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Progreso: {householdId}</p>
@@ -5433,18 +5873,18 @@ function WeeklySection() {
           {cycleError && <div style={{ color: "#b42318", background: "#fff8f8", border: "1px solid #fca5a5", borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>{cycleError}</div>}
           {cycleMsg && <div style={{ color: "#15803d", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>{cycleMsg}</div>}
 
-          {/* Household ID input */}
           <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-            <input
-              style={{ ...inputStyle, width: 300 }}
-              placeholder="Household ID"
-              value={cycleHouseholdId}
-              onChange={(e) => setCycleHouseholdId(e.target.value)}
-            />
+            {householdSelect(cycleHouseholdId, setCycleHouseholdId)}
             <button type="button" style={ABT.edit} onClick={loadCycleState} disabled={cycleLoading}>
               {cycleLoading ? "..." : "Ver estado del ciclo"}
             </button>
           </div>
+          {selectedCycleHousehold ? (
+            <div style={{ ...sectionStyle, padding: "10px 12px" }}>
+              <strong>{selectedCycleHousehold.name}</strong>
+              <div style={{ marginTop: 4 }}><ObjectIdChip id={selectedCycleHousehold.id} onCopy={(id) => navigator.clipboard.writeText(id)} /></div>
+            </div>
+          ) : null}
 
           {cycleState && (
             <>
@@ -6012,7 +6452,7 @@ function InsightsDetailModal({ h, onClose, onAction, msg, saving }) {
   );
 }
 
-function BetaInsightsSection() {
+function BetaInsightsSection({ householdContext, onClearHouseholdContext }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -6061,6 +6501,9 @@ function BetaInsightsSection() {
 
   const filtered = useMemo(() => {
     let list = data;
+    if (householdContext?.id) {
+      list = list.filter((h) => String(h.id) === String(householdContext.id));
+    }
     if (filter === "very_active")   list = list.filter((h) => h.healthScore >= 80);
     else if (filter === "active")   list = list.filter((h) => h.healthScore >= 50 && h.healthScore < 80);
     else if (filter === "at_risk")  list = list.filter((h) => h.healthScore >= 20 && h.healthScore < 50);
@@ -6069,10 +6512,10 @@ function BetaInsightsSection() {
     else if (filter === "no_onboarding") list = list.filter((h) => h.onboardingStatus !== "completed");
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      list = list.filter((h) => h.name.toLowerCase().includes(q) || (h.ownerEmail || "").toLowerCase().includes(q));
+      list = list.filter((h) => h.name.toLowerCase().includes(q) || (h.ownerEmail || "").toLowerCase().includes(q) || String(h.id || "").toLowerCase().includes(q));
     }
     return list;
-  }, [data, filter, search]);
+  }, [data, filter, search, householdContext?.id]);
 
   const handleAction = useCallback(async (type, arg) => {
     if (!selected) return;
@@ -6122,6 +6565,7 @@ function BetaInsightsSection() {
 
   return (
     <div>
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
       <Card className="kitchen-block-gap">
         {/* Section header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
@@ -6575,6 +7019,7 @@ export default function AdminPanelPage() {
   const navigate = useNavigate();
   const [activeHouseholdId, setActiveHouseholdId] = useState(null);
   const [tab, setTab] = useState("households");
+  const [householdContext, setHouseholdContext] = useState(null);
   const adminLegacyRetryRef = useRef(false);
 
   useEffect(() => {
@@ -6602,6 +7047,13 @@ export default function AdminPanelPage() {
     await logout();
     navigate("/admin/login", { replace: true });
   };
+
+  const navigateWithHousehold = (nextTab, household) => {
+    setHouseholdContext(household?.id ? { id: String(household.id), name: household.name || "Hogar" } : null);
+    setTab(nextTab);
+  };
+
+  const clearHouseholdContext = () => setHouseholdContext(null);
 
   return (
     <div className="kitchen-app">
@@ -6714,15 +7166,17 @@ export default function AdminPanelPage() {
           <HouseholdsSection
             activeHouseholdId={activeHouseholdId}
             onActiveHouseholdChange={setActiveHouseholdId}
+            onNavigateWithHousehold={navigateWithHousehold}
+            onSetHouseholdContext={(household) => setHouseholdContext(household?.id ? { id: String(household.id), name: household.name || "Hogar" } : null)}
           />
         ) : tab === "users" ? (
-          <UsersSection />
+          <UsersSection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
         ) : tab === "master" ? (
           <MasterCatalogSection />
         ) : tab === "catalog_packs" ? (
-          <CatalogPacksSection />
+          <CatalogPacksSection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
         ) : tab === "bites_economy" ? (
-          <BitesEconomySection />
+          <BitesEconomySection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
         ) : tab === "plans" ? (
           <PlansSection />
         ) : tab === "categories" ? (
@@ -6731,13 +7185,13 @@ export default function AdminPanelPage() {
             <IngredientCategoriesSection />
           </>
         ) : tab === "onboarding" ? (
-          <OnboardingSection />
+          <OnboardingSection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
         ) : tab === "weekly" ? (
-          <WeeklySection />
+          <WeeklySection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
         ) : tab === "beta" ? (
           <BetaInvitesSection />
         ) : tab === "insights" ? (
-          <BetaInsightsSection />
+          <BetaInsightsSection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
         ) : tab === "cuenta_admin" ? (
           <AdminAccountSecurityPanel />
         ) : tab === "arquitectura" ? (

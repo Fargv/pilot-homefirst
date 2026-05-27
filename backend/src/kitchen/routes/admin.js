@@ -28,6 +28,7 @@ import {
   applyAdminSubscriptionDeactivation,
   buildHouseholdSubscriptionResponse
 } from "../subscriptionService.js";
+import { adminGetHouseholdCycleState } from "../weeklyEngine.js";
 
 const router = express.Router();
 
@@ -43,24 +44,74 @@ function normalizeActiveHouseholdIdInput(body = {}) {
   return rawHouseholdId;
 }
 
+function isValidObjectIdString(value) {
+  return typeof value === "string" && mongoose.isValidObjectId(value);
+}
+
+function sendInvalidHouseholdId(res, value) {
+  return res.status(400).json({
+    ok: false,
+    code: "INVALID_HOUSEHOLD_ID",
+    error: `householdId invalido: "${String(value || "")}". Usa el ObjectId real de MongoDB, no el codigo corto.`
+  });
+}
+
+function serializeBetaPro(betaPro) {
+  return betaPro
+    ? {
+      active: betaPro.active ?? false,
+      unlockedAt: betaPro.unlockedAt ?? null,
+      expiresAt: betaPro.expiresAt ?? null,
+      expiredAt: betaPro.expiredAt ?? null,
+      expirationReason: betaPro.expirationReason ?? ""
+    }
+    : null;
+}
+
 router.get("/households", requireAuth, requireDiod, async (req, res) => {
   try {
     const households = await Household.find(
       {},
-      { name: 1, subscriptionPlan: 1, subscriptionStatus: 1, subscriptionEndsAt: 1, pendingDowngradeAt: 1, pendingDowngradeReason: 1, isPro: 1, planSource: 1, betaPro: 1, ownerUserId: 1, createdAt: 1, inviteCode: 1, freeBitesBalance: 1, purchasedBitesBalance: 1 }
+      { name: 1, subscriptionPlan: 1, subscriptionStatus: 1, subscriptionEndsAt: 1, pendingDowngradeAt: 1, pendingDowngradeReason: 1, isPro: 1, planSource: 1, betaPro: 1, ownerUserId: 1, createdAt: 1, inviteCode: 1, freeBitesBalance: 1, purchasedBitesBalance: 1, lastMeaningfulActivityAt: 1, weeklyChallengeCycleStartedAt: 1, stripeSubscriptionId: 1 }
     ).sort({ createdAt: 1 }).lean();
 
     const householdIds = households.map((h) => h._id);
-    const memberCounts = await KitchenUser.aggregate([
-      { $match: { householdId: { $in: householdIds }, type: { $ne: "placeholder" } } },
-      { $group: { _id: "$householdId", count: { $sum: 1 } } }
+    const ownerIds = [...new Set(
+      households.map((h) => h.ownerUserId).filter((id) => id && mongoose.isValidObjectId(id))
+    )];
+
+    const [memberCounts, ownerUsers, onboardings, latestWeeklyProgress] = await Promise.all([
+      KitchenUser.aggregate([
+        { $match: { householdId: { $in: householdIds }, type: { $ne: "placeholder" } } },
+        { $group: { _id: "$householdId", count: { $sum: 1 } } }
+      ]),
+      ownerIds.length
+        ? KitchenUser.find({ _id: { $in: ownerIds } }, { email: 1 }).lean()
+        : Promise.resolve([]),
+      HouseholdOnboarding.find(
+        { householdId: { $in: householdIds } },
+        { householdId: 1, status: 1 }
+      ).lean(),
+      HouseholdWeeklyProgress.find(
+        { householdId: { $in: householdIds } },
+        { householdId: 1, weekStart: 1, cycleWeekIndex: 1, completedChallenges: 1, bonusGranted: 1, updatedAt: 1 }
+      ).sort({ weekStart: -1 }).lean()
     ]);
+
     const memberCountMap = Object.fromEntries(memberCounts.map((m) => [String(m._id), m.count]));
+    const ownerEmailMap = Object.fromEntries(ownerUsers.map((u) => [String(u._id), u.email || ""]));
+    const onboardingMap = Object.fromEntries(onboardings.map((o) => [String(o.householdId), o.status]));
+    const weeklyMap = new Map();
+    for (const progress of latestWeeklyProgress) {
+      const key = String(progress.householdId);
+      if (!weeklyMap.has(key)) weeklyMap.set(key, progress);
+    }
 
     return res.json({
       ok: true,
       households: households.map((household) => ({
-        id: household._id,
+        id: String(household._id),
+        objectId: String(household._id),
         name: household.name,
         subscriptionPlan: household.subscriptionPlan || "basic",
         subscriptionStatus: household.subscriptionStatus || "inactive",
@@ -69,21 +120,32 @@ router.get("/households", requireAuth, requireDiod, async (req, res) => {
         pendingDowngradeReason: household.pendingDowngradeReason || "",
         isPro: Boolean(household.isPro),
         planSource: household.planSource || "manual",
-        betaPro: household.betaPro
-          ? {
-            active: household.betaPro.active ?? false,
-            unlockedAt: household.betaPro.unlockedAt ?? null,
-            expiresAt: household.betaPro.expiresAt ?? null,
-            expiredAt: household.betaPro.expiredAt ?? null,
-            expirationReason: household.betaPro.expirationReason ?? ""
-          }
-          : null,
+        betaPro: serializeBetaPro(household.betaPro),
         memberCount: memberCountMap[String(household._id)] || 0,
         inviteCode: household.inviteCode || null,
         createdAt: household.createdAt || null,
+        ownerUserId: household.ownerUserId ? String(household.ownerUserId) : null,
         isActive: String(household._id) === String(req.kitchenUser.activeHouseholdId || ""),
         freeBitesBalance: household.freeBitesBalance ?? 0,
-        purchasedBitesBalance: household.purchasedBitesBalance ?? 0
+        purchasedBitesBalance: household.purchasedBitesBalance ?? 0,
+        ownerEmail: ownerEmailMap[String(household.ownerUserId)] || "",
+        onboardingStatus: onboardingMap[String(household._id)] || "not_started",
+        lastMeaningfulActivityAt: household.lastMeaningfulActivityAt || null,
+        weeklyChallengeCycleStartedAt: household.weeklyChallengeCycleStartedAt || null,
+        paidPlanProtected: Boolean(household.stripeSubscriptionId || household.planSource === "paid"),
+        weeklyStatus: (() => {
+          const progress = weeklyMap.get(String(household._id));
+          return progress
+            ? {
+              active: true,
+              weekStart: progress.weekStart || null,
+              cycleWeekIndex: progress.cycleWeekIndex || null,
+              completedCount: progress.completedChallenges?.length || 0,
+              bonusGranted: Boolean(progress.bonusGranted),
+              updatedAt: progress.updatedAt || null
+            }
+            : { active: false, completedCount: 0 };
+        })()
       })),
       activeHouseholdId: req.kitchenUser.activeHouseholdId || null
     });
@@ -129,6 +191,190 @@ router.get("/households/:householdId/packs", requireAuth, requireDiod, async (re
     return res.json({ ok: true, packs: result });
   } catch (error) {
     return res.status(500).json({ ok: false, error: "No se pudieron cargar los packs del hogar." });
+  }
+});
+
+router.get("/households/:householdId/control-center", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const { householdId } = req.params;
+    if (!isValidObjectIdString(householdId)) {
+      return sendInvalidHouseholdId(res, householdId);
+    }
+
+    const household = await Household.findById(householdId).lean();
+    if (!household) {
+      return res.status(404).json({ ok: false, code: "HOUSEHOLD_NOT_FOUND", error: "Hogar no encontrado." });
+    }
+
+    const [
+      owner,
+      users,
+      onboarding,
+      weeklyProgress,
+      cycleStateResult,
+      packOwnerships,
+      recentBites,
+      recentPlans,
+      recentShoppingLists
+    ] = await Promise.all([
+      household.ownerUserId
+        ? KitchenUser.findById(household.ownerUserId, { email: 1, displayName: 1, role: 1 }).lean()
+        : Promise.resolve(null),
+      KitchenUser.find(
+        { householdId, type: { $ne: "placeholder" } },
+        { email: 1, displayName: 1, role: 1, globalRole: 1, activeHouseholdId: 1, createdAt: 1 }
+      ).sort({ createdAt: -1 }).lean(),
+      HouseholdOnboarding.findOne({ householdId }).lean(),
+      HouseholdWeeklyProgress.find({ householdId }).sort({ weekStart: -1 }).limit(8).lean(),
+      adminGetHouseholdCycleState(householdId).catch((error) => ({
+        error: error?.message || "No se pudo calcular el ciclo semanal."
+      })),
+      HouseholdCatalogPack.find({ householdId }).sort({ updatedAt: -1 }).limit(20).lean(),
+      BitesTransaction.find({ householdId }).sort({ createdAt: -1 }).limit(12).lean(),
+      KitchenWeekPlan.find({ householdId }, { weekStart: 1, days: 1, updatedAt: 1 }).sort({ weekStart: -1 }).limit(8).lean(),
+      KitchenShoppingList.find({ householdId }, { weekStart: 1, items: 1, updatedAt: 1 }).sort({ weekStart: -1 }).limit(8).lean()
+    ]);
+
+    const packIds = packOwnerships.map((ownership) => ownership.packId).filter(Boolean);
+    const catalogPacks = packIds.length
+      ? await CatalogPack.find({ _id: { $in: packIds } }, { title: 1, slug: 1 }).lean()
+      : [];
+    const packMap = Object.fromEntries(catalogPacks.map((pack) => [String(pack._id), pack]));
+
+    const latestProgress = weeklyProgress[0] || null;
+    const betaPro = serializeBetaPro(household.betaPro);
+    const paidPlanProtected = Boolean(household.stripeSubscriptionId || household.planSource === "paid");
+    const debugSummary = {
+      householdId: String(household._id),
+      name: household.name || "",
+      plan: household.subscriptionPlan || "basic",
+      subscriptionStatus: household.subscriptionStatus || "inactive",
+      planSource: household.planSource || "manual",
+      paidPlanProtected,
+      onboardingStatus: onboarding?.status || "not_started",
+      weeklyCycleAnchor: household.weeklyChallengeCycleStartedAt || null,
+      currentCycleWeek: cycleStateResult?.cycleWeekIndex || latestProgress?.cycleWeekIndex || null,
+      betaPro,
+      usersCount: users.length
+    };
+
+    return res.json({
+      ok: true,
+      household: {
+        id: String(household._id),
+        objectId: String(household._id),
+        name: household.name || "",
+        inviteCode: household.inviteCode || null,
+        subscriptionPlan: household.subscriptionPlan || "basic",
+        subscriptionStatus: household.subscriptionStatus || "inactive",
+        subscriptionEndsAt: household.subscriptionEndsAt || null,
+        pendingDowngradeAt: household.pendingDowngradeAt || null,
+        pendingDowngradeReason: household.pendingDowngradeReason || "",
+        isPro: Boolean(household.isPro),
+        planSource: household.planSource || "manual",
+        betaPro,
+        ownerUserId: household.ownerUserId ? String(household.ownerUserId) : null,
+        ownerEmail: owner?.email || "",
+        ownerDisplayName: owner?.displayName || "",
+        createdAt: household.createdAt || null,
+        updatedAt: household.updatedAt || null,
+        lastMeaningfulActivityAt: household.lastMeaningfulActivityAt || null,
+        weeklyChallengeCycleStartedAt: household.weeklyChallengeCycleStartedAt || null,
+        paidPlanProtected,
+        balances: {
+          free: household.freeBitesBalance ?? 0,
+          purchased: household.purchasedBitesBalance ?? 0,
+          spent: household.totalBitesSpent ?? 0
+        }
+      },
+      users: users.map((user) => ({
+        id: String(user._id),
+        email: user.email || "",
+        displayName: user.displayName || "",
+        role: user.role || "member",
+        globalRole: user.globalRole || null,
+        activeHouseholdId: user.activeHouseholdId ? String(user.activeHouseholdId) : null,
+        createdAt: user.createdAt || null
+      })),
+      onboarding: onboarding
+        ? {
+          status: onboarding.status || "not_started",
+          completedChallenges: onboarding.completedChallenges || [],
+          completedCount: onboarding.completedChallenges?.length || 0,
+          pendingCount: Math.max(0, 5 - (onboarding.completedChallenges?.length || 0)),
+          totalBitesEarned: onboarding.totalBitesEarned || 0,
+          welcomeBitesGranted: Boolean(onboarding.welcomeBitesGranted),
+          startedAt: onboarding.startedAt || null,
+          completedAt: onboarding.completedAt || null,
+          resetHistory: onboarding.resetHistory || []
+        }
+        : { status: "not_started", completedChallenges: [], completedCount: 0, pendingCount: 5 },
+      weekly: {
+        cycleState: cycleStateResult,
+        progress: weeklyProgress.map((progress) => ({
+          id: String(progress._id),
+          weekStart: progress.weekStart || null,
+          cycleWeekIndex: progress.cycleWeekIndex || null,
+          completedChallenges: progress.completedChallenges || [],
+          completedCount: progress.completedChallenges?.length || 0,
+          bonusGranted: Boolean(progress.bonusGranted),
+          weekRandomized: Boolean(progress.weekRandomized),
+          basicCreated: Boolean(progress.basicCreated),
+          basicAddedToList: Boolean(progress.basicAddedToList),
+          dinnersPlannedCount: progress.dinnersPlannedCount || 0,
+          budgetConfigured: Boolean(progress.budgetConfigured),
+          updatedAt: progress.updatedAt || null
+        }))
+      },
+      betaPro: {
+        ...(betaPro || {}),
+        eligible: cycleStateResult?.betaProEligibility?.eligible ?? false,
+        eligibilityResult: cycleStateResult?.betaProEligibility?.result || null,
+        reason: cycleStateResult?.betaProEligibility?.reason || cycleStateResult?.betaProEligibility?.result || null,
+        paidPlanProtected
+      },
+      packs: packOwnerships.map((ownership) => {
+        const pack = packMap[String(ownership.packId)] || {};
+        return {
+          packId: ownership.packId ? String(ownership.packId) : "",
+          title: pack.title || String(ownership.packId || ""),
+          slug: pack.slug || "",
+          status: ownership.status || "owned",
+          acquiredVia: ownership.acquiredVia || "",
+          paymentStatus: ownership.paymentStatus || "",
+          acquiredAt: ownership.acquiredAt || null,
+          installedAt: ownership.installedAt || null
+        };
+      }),
+      biteLedger: recentBites.map((tx) => ({
+        id: String(tx._id),
+        type: tx.type,
+        amount: tx.amount,
+        reason: tx.reason || "",
+        balanceAfterFree: tx.balanceAfterFree,
+        balanceAfterPurchased: tx.balanceAfterPurchased,
+        createdAt: tx.createdAt || null,
+        metadata: tx.metadata || null
+      })),
+      planningWeeks: recentPlans.map((plan) => ({
+        id: String(plan._id),
+        weekStart: plan.weekStart || null,
+        mealsPlanned: (plan.days || []).filter((day) => day.mainDishId || day.sideDishId).length,
+        dinnerSlots: (plan.days || []).filter((day) => day.mealType === "dinner").length,
+        updatedAt: plan.updatedAt || null
+      })),
+      shoppingActivity: recentShoppingLists.map((list) => ({
+        id: String(list._id),
+        weekStart: list.weekStart || null,
+        itemsCount: list.items?.length || 0,
+        purchasedCount: (list.items || []).filter((item) => item.status === "purchased").length,
+        updatedAt: list.updatedAt || null
+      })),
+      debugSummary
+    });
+  } catch (error) {
+    console.error("[admin] household control-center error", { error: error?.message, stack: error?.stack });
+    return res.status(500).json({ ok: false, error: "No se pudo cargar el centro de control del hogar." });
   }
 });
 
@@ -707,13 +953,20 @@ router.get("/beta-insights", requireAuth, requireDiod, async (req, res) => {
 
 router.post("/beta-insights/:id/grant-beta-pro", requireAuth, requireDiod, async (req, res) => {
   const { id } = req.params;
-  if (!mongoose.isValidObjectId(id)) return res.status(400).json({ ok: false, error: "ID inválido." });
+  if (!isValidObjectIdString(id)) return sendInvalidHouseholdId(res, id);
   try {
     const days = Math.min(365, Math.max(1, Number(req.body?.daysFromNow) || 30));
     const now = new Date();
     const expiresAt = new Date(now.getTime() + days * 24 * 3600 * 1000);
     const h = await Household.findById(id).lean();
     if (!h) return res.status(404).json({ ok: false, error: "Hogar no encontrado." });
+    if (h.stripeSubscriptionId || h.planSource === "paid") {
+      return res.status(409).json({
+        ok: false,
+        code: "PAID_PLAN_PROTECTED",
+        error: "Este hogar tiene un plan de pago activo. Beta Pro no debe sobrescribir planes pagados."
+      });
+    }
     await Household.updateOne({ _id: id }, {
       $set: {
         subscriptionPlan: "pro",
@@ -746,21 +999,31 @@ router.post("/beta-insights/:id/grant-beta-pro", requireAuth, requireDiod, async
 
 router.post("/beta-insights/:id/revoke-beta-pro", requireAuth, requireDiod, async (req, res) => {
   const { id } = req.params;
-  if (!mongoose.isValidObjectId(id)) return res.status(400).json({ ok: false, error: "ID inválido." });
+  if (!isValidObjectIdString(id)) return sendInvalidHouseholdId(res, id);
   try {
     const h = await Household.findById(id).lean();
     if (!h) return res.status(404).json({ ok: false, error: "Hogar no encontrado." });
+    if (h.stripeSubscriptionId || h.planSource === "paid") {
+      return res.status(409).json({
+        ok: false,
+        code: "PAID_PLAN_PROTECTED",
+        error: "Este hogar tiene un plan de pago activo. No se revoca ni se degrada desde Beta Pro."
+      });
+    }
     const now = new Date();
-    await Household.updateOne({ _id: id }, {
-      $set: {
+    const set = {
+      "betaPro.active": false,
+      "betaPro.expiredAt": now,
+      "betaPro.expirationReason": "admin_revoke"
+    };
+    if (h.planSource === "beta_pro") {
+      Object.assign(set, {
         subscriptionPlan: "basic",
         planSource: "manual",
-        isPro: false,
-        "betaPro.active": false,
-        "betaPro.expiredAt": now,
-        "betaPro.expirationReason": "admin_revoke"
-      }
-    });
+        isPro: false
+      });
+    }
+    await Household.updateOne({ _id: id }, { $set: set });
     // Audit log
     console.log("[admin] Beta Pro REVOKED", {
       householdId: id,
