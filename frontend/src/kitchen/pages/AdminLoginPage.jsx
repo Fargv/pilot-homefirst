@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { buildApiUrl, setToken } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -9,6 +9,11 @@ import Button from "../components/ui/Button.jsx";
 export default function AdminLoginPage() {
   const { user, loading, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const nextPath = (() => {
+    const raw = new URLSearchParams(location.search).get("next") || "/admin";
+    return raw.startsWith("/admin") ? raw : "/admin";
+  })();
   const [email, setEmail] = useState("admin@admin.com");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -16,9 +21,9 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (!loading && user?.globalRole === "diod") {
-      navigate("/admin", { replace: true });
+      navigate(nextPath, { replace: true });
     }
-  }, [loading, navigate, user]);
+  }, [loading, navigate, nextPath, user]);
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -41,7 +46,7 @@ export default function AdminLoginPage() {
       }
       setToken(data.token);
       await refreshUser();
-      navigate("/admin", { replace: true });
+      navigate(nextPath, { replace: true });
     } catch {
       setError("No se pudo conectar con el servidor.");
     } finally {

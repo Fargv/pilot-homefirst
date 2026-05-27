@@ -100,6 +100,9 @@ export default function RequireAuth({ children, roles }) {
   }
 
   if (roles && !roles.includes(user.role)) {
+    if (location.pathname.startsWith("/admin")) {
+      return <Navigate to="/admin/login" replace />;
+    }
     return <Navigate to="/kitchen/semana" replace />;
   }
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { apiRequest, buildApiUrl, getToken, getPlansAdminConfig, hasLegacyToken, savePlansAdminConfig } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useTheme } from "../../context/ThemeContext.jsx";
@@ -168,6 +168,157 @@ function AdminHouseholdContextBanner({ household, onClear }) {
         </span>
       </div>
       <button type="button" style={ABT.cancel} onClick={onClear}>Limpiar filtro</button>
+    </div>
+  );
+}
+
+const ARCHITECTURE_AREAS = [
+  {
+    title: "Cliente React",
+    tone: "#4ea1ff",
+    items: ["App routes", "Admin shell", "Kitchen views", "Feature gates"]
+  },
+  {
+    title: "Auth y hogares",
+    tone: "#38bdf8",
+    items: ["Clerk / legacy auth", "DIOD admin", "Household scope", "Plan helpers"]
+  },
+  {
+    title: "API Express",
+    tone: "#7bd389",
+    items: ["Kitchen routes", "Admin routes", "Weekly engine", "Beta Pro service"]
+  },
+  {
+    title: "Datos MongoDB",
+    tone: "#ffb86b",
+    items: ["Households", "Users", "Week plans", "Shopping lists"]
+  },
+  {
+    title: "Pagos y Bites",
+    tone: "#ff6b9d",
+    items: ["Stripe", "Bites ledger", "Catalog packs", "Subscriptions"]
+  }
+];
+
+function AdminArchitecturePanel({ onBack }) {
+  return (
+    <div style={{
+      minHeight: "calc(100dvh - 108px)",
+      width: "100%",
+      background: "#0f0f0f",
+      color: "#e8e8e8",
+      display: "flex",
+      flexDirection: "column"
+    }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 12,
+        flexWrap: "wrap",
+        padding: "14px 22px",
+        borderBottom: "1px solid #2a2a2a",
+        background: "#161616"
+      }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 18, letterSpacing: 0 }}>Architecture Map</h1>
+          <p style={{ margin: "4px 0 0", color: "#8a8a8a", fontSize: 12 }}>
+            Lunchfy fullstack overview · React, Express, MongoDB, Clerk, Stripe
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" style={{ ...ABT.cancel, background: "#252525", color: "#e8e8e8", borderColor: "#444" }} onClick={onBack}>
+            Volver al Admin
+          </button>
+          <a
+            href="/architecture-map.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 12, color: "#f5b942", textDecoration: "none", padding: "7px 14px", border: "1px solid #f5b942", borderRadius: 6 }}
+          >
+            Abrir mapa legacy
+          </a>
+        </div>
+      </div>
+
+      <div style={{
+        flex: 1,
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 0,
+        minHeight: 0
+      }}>
+        <div style={{ flex: "1 1 680px", minWidth: 0, padding: "24px clamp(16px, 3vw, 34px)", overflow: "auto" }}>
+          <div style={{
+            minHeight: 520,
+            border: "1px solid #2a2a2a",
+            borderRadius: 12,
+            background: "radial-gradient(circle at 25% 20%, rgba(78,161,255,0.16), transparent 24%), #111",
+            padding: "28px clamp(18px, 3vw, 34px)"
+          }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14, alignItems: "stretch" }}>
+              {ARCHITECTURE_AREAS.map((area, index) => (
+                <div key={area.title} style={{
+                  border: `1px solid ${area.tone}`,
+                  background: "#161616",
+                  borderRadius: 10,
+                  padding: 14,
+                  boxShadow: `0 0 24px ${area.tone}22`,
+                  minHeight: 184
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 999, background: area.tone, boxShadow: `0 0 14px ${area.tone}` }} />
+                    <strong style={{ fontSize: 13 }}>{area.title}</strong>
+                  </div>
+                  <div style={{ display: "grid", gap: 7 }}>
+                    {area.items.map((item) => (
+                      <div key={item} style={{ fontSize: 11, color: "#c9c9c9", border: "1px solid #292929", borderRadius: 7, padding: "7px 8px", background: "#111" }}>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                  {index < ARCHITECTURE_AREAS.length - 1 ? (
+                    <div style={{ display: "none" }} aria-hidden="true">→</div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+              {[
+                ["Request path", "React route -> apiRequest -> Express route -> service/model -> MongoDB"],
+                ["Admin isolation", "DIOD checks protect admin tools; household actions use real Mongo ObjectIds."],
+                ["Plan access", "Pro-like access is centralized through plan helpers for paid, Premium and active Beta Pro."],
+                ["Critical flows", "Weekly challenges, Beta Pro eligibility, basics, dinners, budget, shopping and catalog packs."]
+              ].map(([title, body]) => (
+                <section key={title} style={{ border: "1px solid #2a2a2a", borderRadius: 10, padding: 14, background: "#151515" }}>
+                  <h2 style={{ margin: "0 0 7px", fontSize: 13, color: "#f5b942" }}>{title}</h2>
+                  <p style={{ margin: 0, fontSize: 12, color: "#bdbdbd", lineHeight: 1.55 }}>{body}</p>
+                </section>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <aside style={{ flex: "1 1 320px", borderLeft: "1px solid #2a2a2a", background: "#161616", padding: 20, overflow: "auto" }}>
+          <h2 style={{ margin: "0 0 12px", fontSize: 13, color: "#f5b942", textTransform: "uppercase", letterSpacing: ".08em" }}>
+            Admin Notes
+          </h2>
+          <div style={{ display: "grid", gap: 12 }}>
+            {[
+              ["Scope", "Esta vista vive dentro del router React de Admin y conserva header, tabs y auth DIOD."],
+              ["Legacy map", "El mapa HTML interactivo queda disponible como referencia externa, pero ya no define el layout admin."],
+              ["Refresh", "La ruta /admin/architecture es una ruta SPA real, por lo que F5 mantiene el panel abierto."],
+              ["Support", "Usa el control center de Households para copiar ObjectIds, revisar Beta Pro, onboarding y retos."]
+            ].map(([title, body]) => (
+              <div key={title} style={{ borderBottom: "1px solid #252525", paddingBottom: 11 }}>
+                <h3 style={{ margin: "0 0 4px", fontSize: 12 }}>{title}</h3>
+                <p style={{ margin: 0, color: "#8a8a8a", fontSize: 12, lineHeight: 1.55 }}>{body}</p>
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
@@ -7017,23 +7168,35 @@ export default function AdminPanelPage() {
   const { user, loading, logout, refreshUser } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeHouseholdId, setActiveHouseholdId] = useState(null);
-  const [tab, setTab] = useState("households");
+  const [tab, setTab] = useState(location.pathname === "/admin/architecture" ? "arquitectura" : "households");
   const [householdContext, setHouseholdContext] = useState(null);
   const adminLegacyRetryRef = useRef(false);
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { navigate("/admin/login", { replace: true }); return; }
+    if (!user) {
+      const next = `${location.pathname}${location.search || ""}`;
+      navigate(`/admin/login?next=${encodeURIComponent(next)}`, { replace: true });
+      return;
+    }
     if (user.globalRole !== "diod") {
       if (!adminLegacyRetryRef.current && hasLegacyToken()) {
         adminLegacyRetryRef.current = true;
         refreshUser({ authMode: "auto" });
         return;
       }
-      navigate("/kitchen/semana", { replace: true });
     }
-  }, [loading, navigate, refreshUser, user]);
+  }, [loading, location.pathname, location.search, navigate, refreshUser, user]);
+
+  useEffect(() => {
+    if (location.pathname === "/admin/architecture") {
+      setTab("arquitectura");
+    } else if (location.pathname === "/admin" && tab === "arquitectura") {
+      setTab("households");
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (user?.activeHouseholdId !== undefined) {
@@ -7041,19 +7204,45 @@ export default function AdminPanelPage() {
     }
   }, [user?.activeHouseholdId]);
 
-  if (loading || !user || user.globalRole !== "diod") return null;
-
   const onLogout = async () => {
     await logout();
     navigate("/admin/login", { replace: true });
   };
 
+  if (loading || !user) return null;
+
+  if (user.globalRole !== "diod") {
+    return (
+      <div className="kitchen-app" style={{ minHeight: "100dvh", display: "grid", placeItems: "center", background: "#f8fafc", padding: 24 }}>
+        <Card style={{ maxWidth: 440, textAlign: "center" }}>
+          <h1 style={{ margin: "0 0 8px", fontSize: 20 }}>Acceso admin no autorizado</h1>
+          <p className="kitchen-muted" style={{ marginBottom: 18 }}>
+            Esta sesion no tiene permisos DIOD/admin para abrir el panel.
+          </p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+            <button type="button" style={ABT.edit} onClick={() => navigate("/admin/login", { replace: true })}>Ir al login admin</button>
+            <button type="button" style={ABT.cancel} onClick={onLogout}>Cerrar sesion</button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   const navigateWithHousehold = (nextTab, household) => {
     setHouseholdContext(household?.id ? { id: String(household.id), name: household.name || "Hogar" } : null);
-    setTab(nextTab);
+    handleTabChange(nextTab);
   };
 
   const clearHouseholdContext = () => setHouseholdContext(null);
+
+  const handleTabChange = (nextTab) => {
+    setTab(nextTab);
+    if (nextTab === "arquitectura") {
+      if (location.pathname !== "/admin/architecture") navigate("/admin/architecture");
+      return;
+    }
+    if (location.pathname !== "/admin") navigate("/admin");
+  };
 
   return (
     <div className="kitchen-app">
@@ -7126,7 +7315,7 @@ export default function AdminPanelPage() {
                   <button
                     key={key}
                     type="button"
-                    onClick={() => setTab(key)}
+                    onClick={() => handleTabChange(key)}
                     style={{
                       background: tab === key ? "#fff" : "transparent",
                       color: tab === key ? "#312e81" : "#c7d2fe",
@@ -7148,7 +7337,7 @@ export default function AdminPanelPage() {
               <div className="admin-tab-selector-mobile">
                 <select
                   value={tab}
-                  onChange={(e) => setTab(e.target.value)}
+                  onChange={(e) => handleTabChange(e.target.value)}
                   aria-label="Sección admin"
                 >
                   {ADMIN_TABS.map(({ key, label }) => (
@@ -7161,6 +7350,9 @@ export default function AdminPanelPage() {
         })()}
       </div>
 
+      {tab === "arquitectura" ? (
+        <AdminArchitecturePanel onBack={() => handleTabChange("households")} />
+      ) : (
       <div className="kitchen-container" style={{ paddingTop: 24 }}>
         {tab === "households" ? (
           <HouseholdsSection
@@ -7194,53 +7386,11 @@ export default function AdminPanelPage() {
           <BetaInsightsSection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
         ) : tab === "cuenta_admin" ? (
           <AdminAccountSecurityPanel />
-        ) : tab === "arquitectura" ? (
-          <div style={{
-            minHeight: "calc(100dvh - 170px)",
-            background: "#0f0f0f", display: "flex", flexDirection: "column",
-            borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2a"
-          }}>
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "8px 14px", background: "#161616", borderBottom: "1px solid #2a2a2a", flexShrink: 0
-            }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e8", letterSpacing: ".3px" }}>
-                🗺 Architecture Map · Lunchfy
-              </span>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <button
-                  type="button"
-                  onClick={() => setTab("households")}
-                  style={{ fontSize: 12, color: "#e8e8e8", background: "#252525", border: "1px solid #444", borderRadius: 4, padding: "4px 12px", cursor: "pointer" }}
-                >
-                  Volver al panel
-                </button>
-                <a
-                  href="/architecture-map.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: 12, color: "#f5b942", textDecoration: "none", padding: "4px 12px", border: "1px solid #f5b942", borderRadius: 4 }}
-                >
-                  ↗ Nueva pestaña
-                </a>
-                <button
-                  onClick={() => setTab("households")}
-                  style={{ fontSize: 12, color: "#8a8a8a", background: "none", border: "1px solid #2a2a2a", borderRadius: 4, padding: "4px 12px", cursor: "pointer" }}
-                >
-                  ✕ Cerrar mapa
-                </button>
-              </div>
-            </div>
-            <iframe
-              src="/architecture-map.html"
-              style={{ flex: 1, minHeight: 620, width: "100%", border: "none" }}
-              title="Mapa de Arquitectura"
-            />
-          </div>
         ) : (
           <QuickSubscriptionPanel />
         )}
       </div>
+      )}
     </div>
   );
 }
