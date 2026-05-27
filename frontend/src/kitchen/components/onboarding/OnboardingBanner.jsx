@@ -78,7 +78,7 @@ function BetaProHint({ onboardingDone, weeklyState }) {
 
   // Only show for basic users who haven't unlocked Beta Pro yet
   if (plan === "pro" || plan === "premium") return null;
-  if (planSource === "beta_pro") return null;
+  if (planSource === "beta_pro" || user?.betaProActive === true) return null;
 
   // Calculate whether conditions are getting close (show hint when onboarding OR weekly not done)
   const weeklyComplete = weeklyState && weeklyState.completedCount >= weeklyState.totalCount && weeklyState.totalCount > 0;

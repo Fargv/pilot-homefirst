@@ -22,41 +22,81 @@ export function normalizeSubscriptionPlan(plan) {
   return SUBSCRIPTION_PLANS.includes(normalizedPlan) ? normalizedPlan : "basic";
 }
 
+function isPlanString(value) {
+  return typeof value === "string" || value == null;
+}
+
+function isActiveBetaProGrant(household, now = new Date()) {
+  if (!household || typeof household !== "object") return false;
+  const betaPro = household.betaPro || {};
+  const betaProActive = betaPro.active === true || household.betaProActive === true;
+  const planSource = String(household.planSource || "").toLowerCase();
+  if (!betaProActive && planSource !== "beta_pro") return false;
+  if (betaPro.expiredAt) return false;
+  if (betaPro.expiresAt && new Date(betaPro.expiresAt).getTime() <= now.getTime()) return false;
+  return betaProActive;
+}
+
+export function isProLikeHousehold(household, now = new Date()) {
+  if (isPlanString(household)) {
+    return ACTIVE_PLANS.has(normalizeSubscriptionPlan(household));
+  }
+
+  const plan = normalizeSubscriptionPlan(household?.subscriptionPlan);
+  if (plan === "premium") return true;
+  if (String(household?.planSource || "").toLowerCase() === "beta_pro") {
+    return isActiveBetaProGrant(household, now);
+  }
+  if (plan === "pro") return true;
+  return isActiveBetaProGrant(household, now);
+}
+
 export function isRequestableSubscriptionPlan(plan) {
   return REQUESTABLE_SUBSCRIPTION_PLANS.includes(String(plan || "").toLowerCase());
 }
 
-export function canUseBudgetFeature(plan) {
-  return BUDGET_ENABLED_PLANS.has(normalizeSubscriptionPlan(plan));
+export function canUseBudgetFeature(householdOrPlan) {
+  return isPlanString(householdOrPlan)
+    ? BUDGET_ENABLED_PLANS.has(normalizeSubscriptionPlan(householdOrPlan))
+    : isProLikeHousehold(householdOrPlan);
 }
 
-export function canRandomizeFullWeek(plan) {
-  return FULL_WEEK_RANDOMIZATION_PLANS.has(normalizeSubscriptionPlan(plan));
+export function canRandomizeFullWeek(householdOrPlan) {
+  return isPlanString(householdOrPlan)
+    ? FULL_WEEK_RANDOMIZATION_PLANS.has(normalizeSubscriptionPlan(householdOrPlan))
+    : isProLikeHousehold(householdOrPlan);
 }
 
 export function canRandomizeSingleDay(plan) {
   return ["basic", "pro", "premium"].includes(normalizeSubscriptionPlan(plan));
 }
 
-export function canUseDietRandomization(plan) {
-  return DIET_RANDOMIZATION_PLANS.has(normalizeSubscriptionPlan(plan));
+export function canUseDietRandomization(householdOrPlan) {
+  return isPlanString(householdOrPlan)
+    ? DIET_RANDOMIZATION_PLANS.has(normalizeSubscriptionPlan(householdOrPlan))
+    : isProLikeHousehold(householdOrPlan);
 }
 
-export function canUseDinnersFeature(plan) {
-  return DINNER_PLANS.has(normalizeSubscriptionPlan(plan));
+export function canUseDinnersFeature(householdOrPlan) {
+  return isPlanString(householdOrPlan)
+    ? DINNER_PLANS.has(normalizeSubscriptionPlan(householdOrPlan))
+    : isProLikeHousehold(householdOrPlan);
 }
 
-export function canUseBasicsFeature(plan) {
-  return BASICS_PLANS.has(normalizeSubscriptionPlan(plan));
+export function canUseBasicsFeature(householdOrPlan) {
+  return isPlanString(householdOrPlan)
+    ? BASICS_PLANS.has(normalizeSubscriptionPlan(householdOrPlan))
+    : isProLikeHousehold(householdOrPlan);
 }
 
 export function buildHouseholdFeatureAvailability(household) {
   return {
-    budget: canUseBudgetFeature(household?.subscriptionPlan),
-    fullWeekRandomization: canRandomizeFullWeek(household?.subscriptionPlan),
+    budget: canUseBudgetFeature(household),
+    fullWeekRandomization: canRandomizeFullWeek(household),
     singleDayRandomization: canRandomizeSingleDay(household?.subscriptionPlan),
-    dietRandomization: canUseDietRandomization(household?.subscriptionPlan),
-    dinners: canUseDinnersFeature(household?.subscriptionPlan)
+    dietRandomization: canUseDietRandomization(household),
+    dinners: canUseDinnersFeature(household),
+    basics: canUseBasicsFeature(household)
   };
 }
 
@@ -78,7 +118,9 @@ export function buildHouseholdSubscriptionResponse(household) {
     pendingDowngradeAt: household?.pendingDowngradeAt || null,
     pendingDowngradeReason: household?.pendingDowngradeReason || "",
     isPro: Boolean(household?.isPro),
-    assignedByAdmin: Boolean(household?.assignedByAdmin)
+    assignedByAdmin: Boolean(household?.assignedByAdmin),
+    planSource: household?.planSource || "manual",
+    betaProActive: isActiveBetaProGrant(household)
   };
 }
 

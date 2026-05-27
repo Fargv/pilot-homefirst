@@ -171,7 +171,7 @@ export default function DishesPage() {
     dishNames: {}
   });
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
-  const canUseDinners = isDiodGlobalMode || canUseDinnersFeature(user?.subscriptionPlan);
+  const canUseDinners = isDiodGlobalMode || canUseDinnersFeature(user);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;

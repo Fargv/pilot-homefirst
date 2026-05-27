@@ -412,8 +412,7 @@ export default function ShoppingPage() {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
       applyPayload(data);
       if (checkBasicsPopup) {
-        const plan = String(user?.subscriptionPlan || "basic").toLowerCase();
-        if (canUseBasicsFeature(plan)) {
+        if (canUseBasicsFeature(user)) {
           const householdId = user?.activeHouseholdId || user?.householdId || "";
           const popupKey = `lunchfy_basics_popup_${householdId}_${weekStart}`;
           try {
@@ -1693,7 +1692,7 @@ export default function ShoppingPage() {
       {basicsPopupOpen && (
         <BasicsPopup
           weekStart={weekStart}
-          plan={String(user?.subscriptionPlan || "basic").toLowerCase()}
+          plan={user}
           currentPendingCanonicals={currentPendingCanonicals}
           currentPendingIngredientIds={currentPendingIngredientIds}
           onClose={() => setBasicsPopupOpen(false)}

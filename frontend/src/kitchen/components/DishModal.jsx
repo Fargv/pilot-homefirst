@@ -49,8 +49,8 @@ export default function DishModal({
   const ingredientCache = useRef(new Map());
 
   const isDiod = user?.globalRole === "diod";
-  const isPro = isDiod || canRandomizeFullWeek(user?.subscriptionPlan);
-  const canDinnerDishes = isDiod || canUseDinnersFeature(user?.subscriptionPlan);
+  const isPro = isDiod || canRandomizeFullWeek(user);
+  const canDinnerDishes = isDiod || canUseDinnersFeature(user);
 
   const hasExistingRecipe = Boolean(
     recipe.steps || (recipe.ingredients || []).some((i) => i.name || i.quantity)

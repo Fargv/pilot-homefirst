@@ -214,7 +214,7 @@ export default function WeeklyChallengeCard() {
   // Pre-unlock Beta Pro hint: show for Basic users who haven't unlocked it yet
   const plan = String(user?.subscriptionPlan || "basic").toLowerCase();
   const planSource = user?.planSource || "";
-  const showBetaProHint = (plan === "basic") && planSource !== "beta_pro";
+  const showBetaProHint = (plan === "basic") && planSource !== "beta_pro" && user?.betaProActive !== true;
 
   const toggleCollapsed = (next) => {
     writeCollapsedPref(next);

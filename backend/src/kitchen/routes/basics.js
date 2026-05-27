@@ -31,11 +31,13 @@ function isValidObjectId(value) {
 }
 
 async function resolveBasicsAccess(effectiveHouseholdId) {
-  const household = await Household.findById(effectiveHouseholdId).select("subscriptionPlan").lean();
+  const household = await Household.findById(effectiveHouseholdId)
+    .select("subscriptionPlan planSource betaPro")
+    .lean();
   const plan = household?.subscriptionPlan || "basic";
   return {
     household,
-    basicsFeatureEnabled: canUseBasicsFeature(plan),
+    basicsFeatureEnabled: canUseBasicsFeature(household),
     plan
   };
 }

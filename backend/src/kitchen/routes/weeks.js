@@ -497,9 +497,9 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     let householdDinnersIncludeInShopping = false;
     if (isDinnerMeal(mealType)) {
       const household = await Household.findById(effectiveHouseholdId)
-        .select("subscriptionPlan dinnersIncludeInShopping")
+        .select("subscriptionPlan planSource betaPro dinnersIncludeInShopping")
         .lean();
-      if (!canUseDinnersFeature(household?.subscriptionPlan)) {
+      if (!canUseDinnersFeature(household)) {
         return res.status(403).json({
           ok: false,
           error: "La planificación de cenas requiere un plan Pro o Premium.",
@@ -811,7 +811,7 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
     }
 
     const household = await Household.findById(effectiveHouseholdId)
-      .select("avoidRepeatsEnabled avoidRepeatsWeeks randomizationUseDietFilter randomizationDefaultDietPackIds subscriptionPlan")
+      .select("avoidRepeatsEnabled avoidRepeatsWeeks randomizationUseDietFilter randomizationDefaultDietPackIds subscriptionPlan planSource betaPro")
       .lean();
     const avoidRepeatsEnabled = Boolean(household?.avoidRepeatsEnabled);
     const avoidRepeatsWeeks = normalizeAvoidRepeatsWeeks(household?.avoidRepeatsWeeks);
@@ -820,7 +820,7 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
       : new Set();
 
     // Apply diet filter for single-day randomization
-    const singleDayDietEnabled = canUseDietRandomization(household?.subscriptionPlan)
+    const singleDayDietEnabled = canUseDietRandomization(household)
       && Boolean(household?.randomizationUseDietFilter);
     const singleDayDietPackIds = singleDayDietEnabled
       ? (Array.isArray(household?.randomizationDefaultDietPackIds) ? household.randomizationDefaultDietPackIds.map(String) : [])
@@ -921,12 +921,12 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
     const householdForAccess = await Household.findById(effectiveHouseholdId)
-      .select("_id subscriptionPlan")
+      .select("_id subscriptionPlan planSource betaPro")
       .lean();
     if (!householdForAccess) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-    if (!canRandomizeFullWeek(householdForAccess.subscriptionPlan)) {
+    if (!canRandomizeFullWeek(householdForAccess)) {
       return res.status(403).json({
         ok: false,
         code: "WEEK_RANDOMIZATION_NOT_AVAILABLE",
@@ -1005,7 +1005,7 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       : new Set();
 
     // Apply diet filter if Pro/Premium and preference is enabled
-    const householdDietEnabled = canUseDietRandomization(householdForAccess.subscriptionPlan)
+    const householdDietEnabled = canUseDietRandomization(householdForAccess)
       && Boolean(household?.randomizationUseDietFilter);
     const householdDietPackIds = householdDietEnabled
       ? (Array.isArray(household?.randomizationDefaultDietPackIds) ? household.randomizationDefaultDietPackIds.map(String) : [])
@@ -1520,5 +1520,4 @@ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
 });
 
 export default router;
-
 

@@ -8,6 +8,7 @@ import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { KitchenDish } from "./models/KitchenDish.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 import { recordMeaningfulActivity, tryUnlockBetaPro, checkAndGrantBetaPro, inspectBetaProEligibility } from "./betaProService.js";
+import { isProLikeHousehold } from "./subscriptionService.js";
 
 // ─── Curriculum resolution ────────────────────────────────────────────────────
 
@@ -19,10 +20,7 @@ import { recordMeaningfulActivity, tryUnlockBetaPro, checkAndGrantBetaPro, inspe
  * Accepts either a full Household document or just the subscriptionPlan string.
  */
 export function getHouseholdCurriculum(householdOrPlan) {
-  const plan = typeof householdOrPlan === "string"
-    ? String(householdOrPlan || "basic").toLowerCase()
-    : String(householdOrPlan?.subscriptionPlan || "basic").toLowerCase();
-  return (plan === "pro" || plan === "premium") ? "pro" : "basic";
+  return isProLikeHousehold(householdOrPlan) ? "pro" : "basic";
 }
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
@@ -948,12 +946,24 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     const cycleConfig = await getOrCreateCycleConfig();
     if (cycleConfig.paused) return null;
 
-    const weekStartISO = contextData.weekStart || getCurrentWeekStart();
+    const currentWeekStartISO = getCurrentWeekStart();
+    const randomizedWeekStartISO = contextData.randomizedWeekStart || contextData.weekStart || currentWeekStartISO;
+    if (eventType === "week_randomized") {
+      const randomizedWeekStartDate = parseWeekStart(randomizedWeekStartISO);
+      const currentWeekStartDate = parseWeekStart(currentWeekStartISO);
+      if (randomizedWeekStartDate.getTime() < currentWeekStartDate.getTime()) {
+        return { completed: [], newlyCompleted: false, ignored: "past_week_randomization" };
+      }
+    }
+
+    const weekStartISO = eventType === "week_randomized"
+      ? currentWeekStartISO
+      : (contextData.weekStart || currentWeekStartISO);
     const weekStartDate = parseWeekStart(weekStartISO);
 
     // Resolve curriculum and per-household cycle start
     const household = await Household.findById(householdId)
-      .select("subscriptionPlan weeklyChallengeCycleStartedAt").lean();
+      .select("subscriptionPlan planSource betaPro weeklyChallengeCycleStartedAt").lean();
     const curriculum = getHouseholdCurriculum(household);
 
     // Per-household cycle start: initialize on first weekly challenge interaction.
@@ -1425,7 +1435,7 @@ export async function getWeeklyState(householdId) {
 
     // Resolve curriculum and per-household cycle start
     const household = await Household.findById(householdId)
-      .select("subscriptionPlan weeklyChallengeCycleStartedAt").lean();
+      .select("subscriptionPlan planSource betaPro weeklyChallengeCycleStartedAt").lean();
     const curriculum = getHouseholdCurriculum(household);
 
     // Use per-household cycle anchor if set; fall back to global config for legacy households.
@@ -1686,7 +1696,7 @@ export async function adminForceCompleteChallenge(householdId, challengeKey) {
 
   // Use per-household cycle anchor (same logic as triggerWeeklyChallenge) — NOT global config.
   const household = await Household.findById(householdId)
-    .select("weeklyChallengeCycleStartedAt subscriptionPlan").lean();
+    .select("weeklyChallengeCycleStartedAt subscriptionPlan planSource betaPro").lean();
 
   let householdCycleStart = household?.weeklyChallengeCycleStartedAt ?? null;
   if (!householdCycleStart) {

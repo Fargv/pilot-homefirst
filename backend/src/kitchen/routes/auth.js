@@ -15,7 +15,7 @@ import { config } from "../../config.js";
 import { findActiveInvitationByToken, atomicClaimInvitation } from "../invitationService.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
 import { isEmailRegisteredInClerk, isClerkAuthEnabled, pingClerkApi, resolveClerkIdentityFromToken } from "../clerkAuth.js";
-import { normalizeSubscriptionPlan } from "../subscriptionService.js";
+import { isProLikeHousehold, normalizeSubscriptionPlan } from "../subscriptionService.js";
 import { initOnboarding } from "../onboardingEngine.js";
 import { checkBetaAccess, markBetaInviteUsed } from "../betaService.js";
 
@@ -1191,7 +1191,9 @@ router.get("/me", requireAuth, async (req, res) => {
       householdName = household?.name || null;
       subscriptionPlan = normalizeSubscriptionPlan(household?.subscriptionPlan);
       planSource = household?.planSource || "manual";
-      betaProActive = household?.betaPro?.active ?? false;
+      betaProActive = household?.planSource === "beta_pro"
+        && household?.betaPro?.active === true
+        && isProLikeHousehold(household);
     }
 
     res.json({

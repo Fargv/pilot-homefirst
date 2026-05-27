@@ -699,7 +699,16 @@ export default function CatalogPage() {
         }
         notifyOnboarding("install_pack");
         notifyWeekly("pack_installed");
-        if (result.isDietPack && canUseDietRandomization(plan) && !isDietPackModalDismissed(String(pack.id))) {
+        if (
+          result.isDietPack
+          && canUseDietRandomization({
+            subscriptionPlan: plan,
+            planSource: user?.planSource,
+            betaProActive: user?.betaProActive,
+            betaPro: user?.betaPro
+          })
+          && !isDietPackModalDismissed(String(pack.id))
+        ) {
           const isOwnerOrAdmin = String(user?.role || "").toLowerCase() === "owner"
             || String(user?.globalRole || "").toLowerCase() === "diod";
           if (isOwnerOrAdmin) {

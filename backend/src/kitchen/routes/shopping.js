@@ -133,12 +133,12 @@ function buildBudgetFeatureUnavailablePayload() {
 
 async function resolveHouseholdBudgetAccess(effectiveHouseholdId) {
   const household = await Household.findById(effectiveHouseholdId)
-    .select("_id subscriptionPlan monthlyBudget cycleStartDay")
+    .select("_id subscriptionPlan planSource betaPro monthlyBudget cycleStartDay")
     .lean();
 
   return {
     household,
-    budgetFeatureEnabled: canUseBudgetFeature(household?.subscriptionPlan)
+    budgetFeatureEnabled: canUseBudgetFeature(household)
   };
 }
 

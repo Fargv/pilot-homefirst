@@ -99,8 +99,8 @@ function parseCycleStartDayInput(value) {
 }
 
 function buildHouseholdResponse(household, license = null) {
-  const budgetFeatureEnabled = canUseBudgetFeature(household?.subscriptionPlan);
-  const dietFeatureEnabled = canUseDietRandomization(household?.subscriptionPlan);
+  const budgetFeatureEnabled = canUseBudgetFeature(household);
+  const dietFeatureEnabled = canUseDietRandomization(household);
   return {
     id: household._id,
     name: household.name || "Mi household",
@@ -248,7 +248,7 @@ router.get("/summary", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("_id name inviteCode ownerUserId dinnersEnabled dinnersIncludeInShopping avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin randomizationUseDietFilter randomizationDefaultDietPackIds stripeSubscriptionId stripeCustomerId paymentProvider paymentMode planUpdatedAt")
+      .select("_id name inviteCode ownerUserId dinnersEnabled dinnersIncludeInShopping avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin planSource betaPro randomizationUseDietFilter randomizationDefaultDietPackIds stripeSubscriptionId stripeCustomerId paymentProvider paymentMode planUpdatedAt")
       .lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
@@ -319,7 +319,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-    const budgetFeatureEnabled = canUseBudgetFeature(household?.subscriptionPlan);
+    const budgetFeatureEnabled = canUseBudgetFeature(household);
     const isBudgetMutation = req.body?.monthlyBudget !== undefined || req.body?.cycleStartDay !== undefined;
     if (!budgetFeatureEnabled && isBudgetMutation) {
       return res.status(403).json({
@@ -329,7 +329,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       });
     }
 
-    const dietFeatureEnabled = canUseDietRandomization(household?.subscriptionPlan);
+    const dietFeatureEnabled = canUseDietRandomization(household);
     const isDietMutation = req.body?.randomizationUseDietFilter !== undefined || req.body?.randomizationDefaultDietPackIds !== undefined;
     if (!dietFeatureEnabled && isDietMutation) {
       return res.status(403).json({
@@ -354,7 +354,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     if (!parsedDinnersEnabled.ok) {
       return res.status(400).json({ ok: false, error: "dinnersEnabled debe ser booleano." });
     }
-    const dinnersFeatureEnabled = canUseDinnersFeature(household?.subscriptionPlan);
+    const dinnersFeatureEnabled = canUseDinnersFeature(household);
     const parsedDinnersIncludeInShopping = incomingDinnersIncludeInShopping === undefined
       ? { ok: true, value: Boolean(household.dinnersIncludeInShopping) }
       : parseBooleanInput(incomingDinnersIncludeInShopping);
@@ -961,4 +961,3 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
 });
 
 export default router;
-

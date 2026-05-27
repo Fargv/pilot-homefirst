@@ -245,6 +245,8 @@ export default function WeekPage() {
   const [dinnersEnabled, setDinnersEnabled] = useState(false);
   const [dinnersIncludeInShopping, setDinnersIncludeInShopping] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
+  const [householdPlanSource, setHouseholdPlanSource] = useState("");
+  const [householdBetaProActive, setHouseholdBetaProActive] = useState(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { notifyOnboarding("visit_week"); }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -327,7 +329,16 @@ export default function WeekPage() {
   const [missingWeekPromptOpen, setMissingWeekPromptOpen] = useState(false);
   const [dinnerUpgradeOpen, setDinnerUpgradeOpen] = useState(false);
   const safeDays = useMemo(() => (Array.isArray(plan?.days) ? plan.days : []), [plan]);
-  const canUseDinners = canUseDinnersFeature(subscriptionPlan);
+  const subscriptionAccess = useMemo(
+    () => ({
+      subscriptionPlan,
+      planSource: householdPlanSource || user?.planSource,
+      betaProActive: householdBetaProActive || user?.betaProActive,
+      betaPro: user?.betaPro
+    }),
+    [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro]
+  );
+  const canUseDinners = canUseDinnersFeature(subscriptionAccess);
   const selectedMealType = (dinnersEnabled && canUseDinners) ? normalizeMealType(mealTab) : "lunch";
   const visibleDays = useMemo(
     () => safeDays.filter((day) => dayMealType(day) === selectedMealType),
@@ -343,7 +354,7 @@ export default function WeekPage() {
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const hasIncompleteVisibleDays = visibleDays.some((day) => !day?.mainDishId && !day?.isLeftovers);
   const canShowWeekRandomize = Boolean(plan && visibleDays.length && hasIncompleteVisibleDays);
-  const canUseFullWeekRandomization = canRandomizeFullWeek(subscriptionPlan);
+  const canUseFullWeekRandomization = canRandomizeFullWeek(subscriptionAccess);
   const currentHouseholdId = user?.activeHouseholdId || user?.householdId || null;
   const currentHouseholdKey = currentHouseholdId ? String(currentHouseholdId) : "__no_household__";
   const dishesReadyForCurrentHousehold = !dishesLoading && dishesLoadedForHouseholdKey === currentHouseholdKey;
@@ -404,7 +415,7 @@ export default function WeekPage() {
       });
       setPlan(data.plan || null);
       // Weekly challenge: full-week randomization used
-      notifyWeekly("week_randomized", { weekStart: weekStartRef.current });
+      notifyWeekly("week_randomized", { randomizedWeekStart: weekStartRef.current });
       const warningMessages = Array.isArray(data.warnings)
         ? data.warnings.filter((item) => String(item || "").trim())
         : [];
@@ -533,6 +544,8 @@ export default function WeekPage() {
       setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
       setDinnersIncludeInShopping(Boolean(householdData?.household?.dinnersIncludeInShopping));
       setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
+      setHouseholdPlanSource(String(householdData?.household?.planSource || ""));
+      setHouseholdBetaProActive(Boolean(householdData?.household?.betaProActive));
       hasEverLoadedRef.current = true;
       // Trigger slide-in animation for week navigation (not on initial load)
       if (!isFirstLoad && navDir) {

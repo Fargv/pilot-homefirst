@@ -282,7 +282,7 @@ router.post("/", requireAuth, async (req, res) => {
     }
     if (dinnerDish && !isDiod) {
       const household = await Household.findById(effectiveHouseholdId).lean();
-      if (!canUseDinnersFeature(household?.subscriptionPlan)) {
+      if (!canUseDinnersFeature(household)) {
         return res.status(403).json({
           ok: false,
           error: "La creación de platos de cena requiere un plan Pro o Premium.",
@@ -568,8 +568,8 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       }
 
       const requiredHouseholdId = getEffectiveHouseholdId(req.user);
-      const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan").lean();
-      if (!household || !canRandomizeFullWeek(household.subscriptionPlan)) {
+      const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan planSource betaPro").lean();
+      if (!household || !canRandomizeFullWeek(household)) {
         return res.status(403).json({ ok: false, error: "Esta funcionalidad requiere un plan PRO o superior.", code: "PRO_REQUIRED" });
       }
 
@@ -606,8 +606,8 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       return res.status(403).json({ ok: false, error: "No tienes permisos para editar la receta de este plato." });
     }
     if (!isDiod) {
-      const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan").lean();
-      if (!household || !canRandomizeFullWeek(household.subscriptionPlan)) {
+      const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan planSource betaPro").lean();
+      if (!household || !canRandomizeFullWeek(household)) {
         return res.status(403).json({ ok: false, error: "Esta funcionalidad requiere un plan PRO o superior.", code: "PRO_REQUIRED" });
       }
     }

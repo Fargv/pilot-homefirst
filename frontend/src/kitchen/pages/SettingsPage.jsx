@@ -196,6 +196,8 @@ export default function SettingsPage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
   const [subscriptionRequestedPlan, setSubscriptionRequestedPlan] = useState("");
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState(null);
+  const [householdPlanSource, setHouseholdPlanSource] = useState("");
+  const [householdBetaProActive, setHouseholdBetaProActive] = useState(false);
   const [pendingDowngradeAt, setPendingDowngradeAt] = useState(null);
   const [undoCancelLoading, setUndoCancelLoading] = useState(false);
   const [avoidRepeatsInfoOpen, setAvoidRepeatsInfoOpen] = useState(false);
@@ -304,9 +306,18 @@ export default function SettingsPage() {
     () => palette.find((item) => item.id === selectedColorId) || palette[0],
     [palette, selectedColorId]
   );
-  const budgetFeatureEnabled = canUseBudgetFeature(subscriptionPlan);
-  const basicsFeatureEnabled = canUseBasicsFeature(subscriptionPlan);
-  const canUseDinners = canUseDinnersFeature(subscriptionPlan);
+  const subscriptionAccess = useMemo(
+    () => ({
+      subscriptionPlan,
+      planSource: householdPlanSource || user?.planSource,
+      betaProActive: householdBetaProActive || user?.betaProActive,
+      betaPro: user?.betaPro
+    }),
+    [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro]
+  );
+  const budgetFeatureEnabled = canUseBudgetFeature(subscriptionAccess);
+  const basicsFeatureEnabled = canUseBasicsFeature(subscriptionAccess);
+  const canUseDinners = canUseDinnersFeature(subscriptionAccess);
   const licenseActionLabel = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
   const memberUsage = useMemo(() => countLicenseUsage(members), [members]);
   const licenseState = useMemo(
@@ -500,6 +511,8 @@ export default function SettingsPage() {
       setSubscriptionStatus(String(householdData?.household?.subscriptionStatus || "inactive").toLowerCase());
       setSubscriptionRequestedPlan(String(householdData?.household?.subscriptionRequestedPlan || "").toLowerCase());
       setSubscriptionEndsAt(householdData?.household?.subscriptionEndsAt || null);
+      setHouseholdPlanSource(String(householdData?.household?.planSource || ""));
+      setHouseholdBetaProActive(Boolean(householdData?.household?.betaProActive));
       setPendingDowngradeAt(householdData?.household?.pendingDowngradeAt || null);
       setDietFilterEnabled(Boolean(householdData?.household?.randomizationUseDietFilter));
       setDietDefaultPackIds(Array.isArray(householdData?.household?.randomizationDefaultDietPackIds) ? householdData.household.randomizationDefaultDietPackIds : []);
@@ -746,7 +759,7 @@ export default function SettingsPage() {
         ), 10) || 1
       )
     );
-    const dietEnabled = canUseDietRandomization(subscriptionPlan);
+    const dietEnabled = canUseDietRandomization(subscriptionAccess);
     const nextDietFilterEnabled = Object.prototype.hasOwnProperty.call(nextValues, "randomizationUseDietFilter")
       ? Boolean(nextValues.randomizationUseDietFilter)
       : Boolean(dietFilterEnabled);
@@ -786,6 +799,8 @@ export default function SettingsPage() {
       setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
       setSubscriptionStatus(String(data?.household?.subscriptionStatus || "inactive").toLowerCase());
       setSubscriptionRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
+      setHouseholdPlanSource(String(data?.household?.planSource || ""));
+      setHouseholdBetaProActive(Boolean(data?.household?.betaProActive));
       setDietFilterEnabled(Boolean(data?.household?.randomizationUseDietFilter));
       setDietDefaultPackIds(Array.isArray(data?.household?.randomizationDefaultDietPackIds) ? data.household.randomizationDefaultDietPackIds : []);
       // Weekly challenge: budget configured when a non-empty, non-zero budget was saved
@@ -1696,7 +1711,7 @@ export default function SettingsPage() {
         <div style={{ marginTop: 8, padding: "14px 0 4px", borderTop: "1px solid var(--border-soft)" }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", marginBottom: 2 }}>Filtro por dieta</div>
           <p className="kitchen-muted" style={{ marginBottom: 10 }}>Usa por defecto platos de las dietas descargadas al randomizar días o semanas.</p>
-          {canUseDietRandomization(subscriptionPlan) ? (
+          {canUseDietRandomization(subscriptionAccess) ? (
             <>
               <div className="settings-household-pref-row">
                 <div className="settings-household-pref-main">
