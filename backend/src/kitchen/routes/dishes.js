@@ -551,11 +551,18 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
     const normalizedIngredients = Array.isArray(ingredients)
       ? ingredients
           .filter((item) => item && String(item.name || "").trim())
-          .map((item) => ({
-            name: String(item.name || "").trim(),
-            quantity: String(item.quantity || "").trim(),
-            ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
-          }))
+          .map((item) => {
+            // Accept structured quantity object or legacy string
+            const qty = item.quantity;
+            const normalizedQty = qty !== null && typeof qty === "object"
+              ? qty
+              : String(qty || "").trim();
+            return {
+              name: String(item.name || "").trim(),
+              quantity: normalizedQty,
+              ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
+            };
+          })
       : [];
     const normalizedServings = servings != null && Number.isFinite(Number(servings)) ? Number(servings) : null;
     const recipeData = { ingredients: normalizedIngredients, steps: steps ?? null, servings: normalizedServings };

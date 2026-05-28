@@ -2416,7 +2416,7 @@ export default function WeekPage() {
                               <button
                                 type="button"
                                 className="kitchen-day-title-info-action has-recipe"
-                                onClick={() => setRecipeModal({ dish: mainDish })}
+                                onClick={() => setRecipeModal({ dish: mainDish, servings: attendeeCount || null })}
                                 aria-label="Ver elaboración"
                                 title="Ver elaboración"
                               >
@@ -3527,7 +3527,11 @@ export default function WeekPage() {
         initialIsDinner={dishModalMealType === "dinner"}
       />
       {recipeModal ? (
-        <RecipeModal dish={recipeModal.dish} onClose={() => setRecipeModal(null)} />
+        <RecipeModal
+          dish={recipeModal.dish}
+          targetServings={recipeModal.servings}
+          onClose={() => setRecipeModal(null)}
+        />
       ) : null}
     </KitchenLayout>
   );

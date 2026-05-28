@@ -8,6 +8,12 @@ import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import TextStyle from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
+import {
+  RECIPE_UNITS,
+  isUnitScalable,
+  getStructuredQty,
+  displayIngredientQuantity
+} from "../utils/recipeScaling.js";
 
 const APP_COLORS = [
   { label: "Índigo", value: "#4338ca" },
@@ -29,6 +35,8 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+// ─── Ingredient name autocomplete ─────────────────────────────────────────────
 
 function RecipeIngredientInput({ item, index, onUpdateFields }) {
   const [query, setQuery] = useState(item.name || "");
@@ -106,6 +114,52 @@ function RecipeIngredientInput({ item, index, onUpdateFields }) {
     </div>
   );
 }
+
+// ─── Structured quantity editor ───────────────────────────────────────────────
+
+function QuantityEditor({ qty, onChange }) {
+  const s = qty && typeof qty === "object" ? qty : { amount: null, unit: "", scalable: true };
+  const hideAmount = !isUnitScalable(s.unit) || !s.unit;
+
+  const handleAmountChange = (e) => {
+    const amount = e.target.value === "" ? null : +e.target.value;
+    onChange({ ...s, amount: isNaN(amount) ? null : amount });
+  };
+
+  const handleUnitChange = (e) => {
+    const unit = e.target.value;
+    const scalable = isUnitScalable(unit);
+    onChange({ ...s, unit, scalable, amount: scalable ? s.amount : null });
+  };
+
+  return (
+    <div className="recipe-qty-group">
+      {!hideAmount && (
+        <input
+          type="number"
+          className="recipe-qty-amount"
+          placeholder="—"
+          value={s.amount ?? ""}
+          min="0"
+          step="0.1"
+          onChange={handleAmountChange}
+        />
+      )}
+      <select
+        className="recipe-qty-unit"
+        value={s.unit || ""}
+        onChange={handleUnitChange}
+      >
+        <option value="">Cant.</option>
+        {RECIPE_UNITS.map((u) => (
+          <option key={u.value} value={u.value}>{u.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// ─── Toolbar ──────────────────────────────────────────────────────────────────
 
 function ToolbarButton({ onClick, isActive, title, children }) {
   return (
@@ -226,7 +280,6 @@ function Toolbar({ editor }) {
         </svg>
       </ToolbarButton>
       <span className="recipe-toolbar-sep" aria-hidden="true" />
-      {/* Link button + dialog */}
       <div className="recipe-toolbar-popover-wrap" ref={linkRef}>
         <ToolbarButton onClick={openLinkDialog} isActive={editor.isActive("link")} title="Insertar enlace">
           <svg viewBox="0 0 18 18" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
@@ -301,7 +354,6 @@ function Toolbar({ editor }) {
         </svg>
       </ToolbarButton>
       <span className="recipe-toolbar-sep" aria-hidden="true" />
-      {/* Color picker */}
       <div className="recipe-toolbar-popover-wrap" ref={colorRef}>
         <ToolbarButton
           onClick={() => setColorOpen((prev) => !prev)}
@@ -354,10 +406,13 @@ function Toolbar({ editor }) {
   );
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function RecipeEditor({
   recipeIngredients = [],
   recipeSteps = null,
   recipeServings = null,
+  targetServings = null,
   dishIngredientNames = [],
   onAddIngredientToDish,
   onChange,
@@ -385,7 +440,7 @@ export default function RecipeEditor({
     if (!onChange) return;
     onChange((prev) => ({
       ...prev,
-      ingredients: [...(prev.ingredients || []), { name: "", quantity: "" }]
+      ingredients: [...(prev.ingredients || []), { name: "", quantity: { amount: null, unit: "", scalable: true } }]
     }));
   };
 
@@ -410,41 +465,57 @@ export default function RecipeEditor({
     });
   };
 
-  // Ingredient is considered "linked to dish" (shows as pill) if it has
-  // an ingredientId AND its name matches one of the dish's own ingredients.
   const isLinkedToDish = (item) => {
     if (!item.ingredientId) return false;
     const name = (item.name || "").toLowerCase().trim();
     return name.length > 0 && dishIngredientNames.includes(name);
   };
 
-  // An ingredient is "new" (not yet in dish) if its name is not in dishIngredientNames.
   const isNewIngredient = (name) => {
     if (!name || !dishIngredientNames.length) return false;
     return !dishIngredientNames.includes(String(name).toLowerCase().trim());
   };
 
+  // ── Read-only view ─────────────────────────────────────────────────────────
+
+  const isScaled = Boolean(targetServings && recipeServings && targetServings !== recipeServings);
+
   if (readOnly) {
     return (
       <div className="recipe-editor-section">
-        {recipeServings ? (
+        {isScaled ? (
+          <p className="recipe-servings-label">
+            Para {targetServings} {targetServings === 1 ? "persona" : "personas"}
+            <span className="recipe-servings-base"> (receta base: {recipeServings})</span>
+          </p>
+        ) : recipeServings ? (
           <p className="recipe-servings-label">Para {recipeServings} {recipeServings === 1 ? "persona" : "personas"}</p>
         ) : null}
+
         {recipeIngredients && recipeIngredients.length > 0 ? (
           <div>
             <p className="recipe-section-title">Ingredientes</p>
             <table className="recipe-ingredients-table">
               <tbody>
-                {recipeIngredients.map((item, idx) => (
-                  <tr key={idx}>
-                    <td>{item.name}</td>
-                    <td>{item.quantity}</td>
-                  </tr>
-                ))}
+                {recipeIngredients.map((item, idx) => {
+                  const displayQty = displayIngredientQuantity(item, recipeServings, targetServings);
+                  const wasScaled = isScaled && displayQty && displayQty !== (
+                    typeof item.quantity === "string" ? item.quantity : ""
+                  );
+                  return (
+                    <tr key={idx}>
+                      <td>{item.name}</td>
+                      <td className={wasScaled ? "recipe-qty-scaled" : undefined}>
+                        {displayQty}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         ) : null}
+
         {recipeSteps ? (
           <div>
             <p className="recipe-section-title">Elaboración</p>
@@ -453,12 +524,15 @@ export default function RecipeEditor({
             </div>
           </div>
         ) : null}
+
         {(!recipeIngredients || recipeIngredients.length === 0) && !recipeSteps ? (
           <p className="kitchen-muted">Este plato aún no tiene elaboración.</p>
         ) : null}
       </div>
     );
   }
+
+  // ── Edit view ──────────────────────────────────────────────────────────────
 
   return (
     <div className="recipe-editor-section">
@@ -494,11 +568,9 @@ export default function RecipeEditor({
                     <span className="recipe-ingredient-pill-dot" />
                     <span className="recipe-ingredient-pill-name">{item.name}</span>
                   </span>
-                  <input
-                    className="recipe-ingredient-input recipe-ingredient-qty"
-                    placeholder="Cantidad"
-                    value={item.quantity || ""}
-                    onChange={(e) => updateIngredient(idx, "quantity", e.target.value)}
+                  <QuantityEditor
+                    qty={getStructuredQty(item.quantity)}
+                    onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
                   />
                   <button
                     type="button"
@@ -520,11 +592,9 @@ export default function RecipeEditor({
                   index={idx}
                   onUpdateFields={updateIngredient}
                 />
-                <input
-                  className="recipe-ingredient-input recipe-ingredient-qty"
-                  placeholder="Cantidad"
-                  value={item.quantity || ""}
-                  onChange={(e) => updateIngredient(idx, "quantity", e.target.value)}
+                <QuantityEditor
+                  qty={getStructuredQty(item.quantity)}
+                  onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
                 />
                 {item.ingredientId && isNewIngredient(item.name) && onAddIngredientToDish ? (
                   <button

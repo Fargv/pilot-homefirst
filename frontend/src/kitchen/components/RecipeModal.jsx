@@ -1,7 +1,7 @@
 import React from "react";
 import RecipeEditor from "./RecipeEditor.jsx";
 
-export default function RecipeModal({ dish, onClose }) {
+export default function RecipeModal({ dish, targetServings = null, onClose }) {
   if (!dish) return null;
 
   const recipe = dish.recipe || {};
@@ -49,6 +49,8 @@ export default function RecipeModal({ dish, onClose }) {
             <RecipeEditor
               recipeIngredients={ingredients}
               recipeSteps={steps}
+              recipeServings={recipe.servings ?? null}
+              targetServings={targetServings}
               readOnly={true}
             />
           ) : (
