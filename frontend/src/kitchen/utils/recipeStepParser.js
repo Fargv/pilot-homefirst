@@ -215,13 +215,34 @@ export function parseRecipeSteps(steps) {
     return parseTiptapDoc(steps) || null;
   }
 
-  // Already an array of step objects or strings
+  // Structured steps array (new Guided Cooking Mode format)
   if (Array.isArray(steps)) {
     if (steps.length === 0) return null;
     return steps
       .map((s, i) => {
-        const text = typeof s === "string" ? s : String(s.text || s.description || "");
-        return makeStep(i, text, null);
+        if (typeof s === "string") return makeStep(i, s, null);
+
+        const text = String(s.text || s.description || "");
+        const base = makeStep(i, text, null);
+
+        // Carry over explicit structured fields
+        if (s.title)  base.title = s.title;
+        if (s.tips)   base.tips  = s.tips;
+        if (s.order != null) base.order = s.order;
+        if (Array.isArray(s.ingredients)) base.stepIngredients = s.ingredients;
+
+        // Use explicit timer data when available (overrides auto-detection)
+        if (s.hasTimer === true && s.durationSeconds > 0) {
+          base.detectedTimers = [{
+            durationSec: s.durationSeconds,
+            label: s.timerLabel || formatDuration(s.durationSeconds),
+            offset: 0,
+          }];
+        } else if (s.hasTimer === false) {
+          base.detectedTimers = []; // explicit no-timer, skip auto-detect
+        }
+
+        return base;
       })
       .filter((s) => s.text.length > 0);
   }

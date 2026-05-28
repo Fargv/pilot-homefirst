@@ -1,6 +1,24 @@
 import React from "react";
 import { useCookingSession } from "../../contexts/CookingSessionContext.jsx";
-import { getRemainingMs, formatRemaining } from "../../utils/timerService.js";
+import { formatRemaining } from "../../utils/timerService.js";
+import { useLiveCookingTimer } from "../../hooks/useLiveCookingTimer.js";
+
+function BannerTimer({ timer }) {
+  // Own live tick — updates every second when running
+  const remainingMs = useLiveCookingTimer(timer?.status === "running" ? timer : null);
+  const displayMs = timer?.status === "paused"
+    ? (remainingMs > 0 ? remainingMs : 0)
+    : remainingMs;
+
+  return (
+    <div className={`cooking-banner-timer${timer?.status === "paused" ? " is-paused" : ""}`}>
+      <span aria-hidden="true">{timer?.status === "running" ? "⏱" : "⏸"}</span>
+      <span className="cooking-banner-timer-remaining">
+        {formatRemaining(displayMs)}
+      </span>
+    </div>
+  );
+}
 
 export default function CookingSessionBanner() {
   const { session, isStepperOpen, openStepper } = useCookingSession();
@@ -18,8 +36,6 @@ export default function CookingSessionBanner() {
       break;
     }
   }
-
-  const remainingMs = activeTimer ? getRemainingMs(activeTimer) : 0;
 
   return (
     <button
@@ -39,16 +55,7 @@ export default function CookingSessionBanner() {
         </span>
       </div>
 
-      {activeTimer ? (
-        <div
-          className={`cooking-banner-timer${activeTimer.status === "paused" ? " is-paused" : ""}`}
-        >
-          <span aria-hidden="true">{activeTimer.status === "running" ? "⏱" : "⏸"}</span>
-          <span className="cooking-banner-timer-remaining">
-            {formatRemaining(remainingMs)}
-          </span>
-        </div>
-      ) : null}
+      {activeTimer ? <BannerTimer timer={activeTimer} /> : null}
 
       <span className="cooking-banner-chevron" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none"

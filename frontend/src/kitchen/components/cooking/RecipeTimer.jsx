@@ -1,16 +1,19 @@
 import React from "react";
-import { getRemainingMs, formatRemaining } from "../../utils/timerService.js";
+import { formatRemaining } from "../../utils/timerService.js";
 import { primeAudio } from "../../utils/notificationService.js";
+import { useLiveCookingTimer } from "../../hooks/useLiveCookingTimer.js";
 
 export default function RecipeTimer({ timerKey, timer, durationMs, label, onAction }) {
   const status = timer?.status || "idle";
-  const remaining = getRemainingMs(
-    timer || { durationMs, elapsed: 0, status: "idle", startedAt: null }
-  );
   const isRunning = status === "running";
   const isPaused  = status === "paused";
   const isDone    = status === "done";
-  const isUrgent  = isRunning && remaining < 10_000;
+
+  // Live remaining time — ticks every second when running,
+  // uses timestamp math so it stays correct after refresh/sleep.
+  const remainingMs = useLiveCookingTimer(isRunning || isPaused ? timer : null);
+  const displayMs = isDone ? 0 : (isRunning || isPaused ? remainingMs : durationMs);
+  const isUrgent = isRunning && remainingMs < 10_000;
 
   function handleStart() {
     primeAudio();
@@ -40,9 +43,9 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, onActi
         className={`recipe-timer recipe-timer--active${isUrgent ? " recipe-timer--urgent" : ""}`}
         role="timer"
         aria-live="polite"
-        aria-label={`${label}: ${formatRemaining(remaining)} restantes`}
+        aria-label={`${label}: ${formatRemaining(displayMs)} restantes`}
       >
-        <span className="recipe-timer-countdown">{formatRemaining(remaining)}</span>
+        <span className="recipe-timer-countdown">{formatRemaining(displayMs)}</span>
         {isRunning ? (
           <button
             type="button"

@@ -35,32 +35,50 @@ export function CookingSessionProvider({ children }) {
     : "";
   const hasRunningTimer = timerStatuses.includes("running");
 
-  // Interval: re-render every 500ms while a timer is running + check for completion
-  useEffect(() => {
-    if (!hasRunningTimer) return;
-    const id = setInterval(() => {
-      setSession((prev) => {
-        if (!prev) return prev;
-        let changed = false;
-        const nextTimers = { ...prev.timers };
-        for (const key of Object.keys(nextTimers)) {
-          const t = nextTimers[key];
-          if (t.status === "running" && getRemainingMs(t) <= 0) {
-            nextTimers[key] = markDoneTimer(t);
-            changed = true;
-            if (!notifiedRef.current.has(key)) {
-              notifiedRef.current.add(key);
-              const stepIdx = parseInt(key.split("_")[0], 10);
-              const step = prev.steps[stepIdx];
-              notifyTimerComplete(step?.text ?? "");
-            }
+  // Scan all running timers and mark any that have expired.
+  // Returns true when at least one timer was marked done.
+  const checkAndExpireTimers = useCallback(() => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      let changed = false;
+      const nextTimers = { ...prev.timers };
+      for (const key of Object.keys(nextTimers)) {
+        const t = nextTimers[key];
+        if (t.status === "running" && getRemainingMs(t) <= 0) {
+          nextTimers[key] = markDoneTimer(t);
+          changed = true;
+          if (!notifiedRef.current.has(key)) {
+            notifiedRef.current.add(key);
+            const stepIdx = parseInt(key.split("_")[0], 10);
+            const step = prev.steps[stepIdx];
+            notifyTimerComplete(step?.text ?? "");
           }
         }
-        return changed ? { ...prev, timers: nextTimers } : prev;
-      });
-    }, 500);
+      }
+      return changed ? { ...prev, timers: nextTimers } : prev;
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll every 500ms while a timer is running to detect expiry.
+  // (Display ticking is handled locally inside RecipeTimer/Banner via useLiveCookingTimer.)
+  useEffect(() => {
+    if (!hasRunningTimer) return;
+    const id = setInterval(checkAndExpireTimers, 500);
     return () => clearInterval(id);
-  }, [hasRunningTimer]);
+  }, [hasRunningTimer, checkAndExpireTimers]);
+
+  // When the page becomes visible again, immediately check whether any timer
+  // expired while the app was in the background / device was sleeping.
+  useEffect(() => {
+    if (!hasRunningTimer) return;
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        checkAndExpireTimers();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [hasRunningTimer, checkAndExpireTimers]);
 
   // ── Actions ──────────────────────────────────────────────────────────────────
 
