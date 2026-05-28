@@ -13,6 +13,9 @@ import WeeklyChallengeCard from "./components/weekly/WeeklyChallengeCard.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import { useWeeklyChallenge } from "./contexts/WeeklyChallengeContext.jsx";
 import MilestoneToast from "./components/rewards/MilestoneToast.jsx";
+import { CookingSessionProvider } from "./contexts/CookingSessionContext.jsx";
+import CookingSessionBanner from "./components/cooking/CookingSessionBanner.jsx";
+import CookingSessionStepper from "./components/cooking/CookingSessionStepper.jsx";
 
 function CalendarIcon(props) {
   return (
@@ -377,6 +380,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
   const userColors = getUserColorById(user?.colorId, user?.id || user?.email || user?.username || "");
 
   return (
+    <CookingSessionProvider>
     <div className="kitchen-app">
       <Header
         left={(
@@ -529,6 +533,10 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
       <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
       {/* Milestone reward toast — portal into body, above everything */}
       <MilestoneToast />
+      {/* Guided cooking mode — banner + full-screen stepper */}
+      <CookingSessionBanner />
+      <CookingSessionStepper />
     </div>
+    </CookingSessionProvider>
   );
 }

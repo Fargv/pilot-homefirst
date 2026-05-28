@@ -1,13 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import RecipeEditor from "./RecipeEditor.jsx";
+import RecipeExecutionModal from "./cooking/RecipeExecutionModal.jsx";
 
 export default function RecipeModal({ dish, targetServings = null, onClose }) {
+  const [showExecution, setShowExecution] = useState(false);
+
   if (!dish) return null;
 
   const recipe = dish.recipe || {};
   const ingredients = recipe.ingredients || [];
   const steps = recipe.steps || null;
   const hasContent = ingredients.length > 0 || steps;
+  const initialServings = targetServings ?? recipe.servings ?? 4;
 
   return (
     <div
@@ -44,6 +48,7 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
             </svg>
           </button>
         </div>
+
         <div style={{ padding: "0 2px" }}>
           {hasContent ? (
             <RecipeEditor
@@ -57,7 +62,28 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
             <p className="kitchen-muted">Este plato aún no tiene elaboración.</p>
           )}
         </div>
+
+        {hasContent ? (
+          <div className="recipe-modal-execute-wrap">
+            <button
+              type="button"
+              className="cooking-cta recipe-modal-execute-btn"
+              onClick={() => setShowExecution(true)}
+            >
+              🍳 Ejecutar receta
+            </button>
+          </div>
+        ) : null}
       </div>
+
+      {showExecution ? (
+        <RecipeExecutionModal
+          dish={dish}
+          initialServings={initialServings}
+          onClose={() => setShowExecution(false)}
+          onStart={onClose}
+        />
+      ) : null}
     </div>
   );
 }
