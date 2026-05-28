@@ -17322,6 +17322,22 @@ td.recipe-qty-scaled {
   flex: 1;
   min-width: 0;
 }
+.cooking-stepper-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.cooking-stepper-paused-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #475569);
+  background: var(--surface-muted, #f1f5f9);
+  border: 1px solid var(--hf-border, #e2e8f0);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
 .cooking-stepper-recipe-name {
   font-size: 17px;
   font-weight: 700;
@@ -17799,8 +17815,15 @@ td.recipe-qty-scaled {
   color: #166534;
   flex-shrink: 0;
 }
-.cooking-banner-timer.is-paused { color: var(--text-secondary, #475569); }
 .cooking-banner-timer-remaining { font-variant-numeric: tabular-nums; }
+.cooking-banner-paused-hint {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #475569);
+  flex-shrink: 0;
+}
 .cooking-banner-chevron {
   color: var(--hf-brand, #4f46e5);
   flex-shrink: 0;
@@ -18057,7 +18080,12 @@ td.recipe-qty-scaled {
 [data-theme="dark"] .cooking-banner-name  { color: #f1f5f9; }
 [data-theme="dark"] .cooking-banner-step  { color: #64748b; }
 [data-theme="dark"] .cooking-banner-timer { color: #86efac; }
-[data-theme="dark"] .cooking-banner-timer.is-paused { color: #94a3b8; }
+[data-theme="dark"] .cooking-banner-paused-hint { color: #64748b; }
+[data-theme="dark"] .cooking-stepper-paused-hint {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
 [data-theme="dark"] .cooking-execution-modal {
   background: #0f172a;
 }

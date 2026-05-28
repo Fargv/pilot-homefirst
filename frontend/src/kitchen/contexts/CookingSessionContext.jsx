@@ -10,7 +10,7 @@ import {
   markDoneTimer,
   getRemainingMs,
 } from "../utils/timerService.js";
-import { notifyTimerComplete } from "../utils/notificationService.js";
+import { notifyTimerComplete, notifyTimerAutoPaused } from "../utils/notificationService.js";
 
 const CookingSessionContext = createContext(null);
 
@@ -22,6 +22,11 @@ export function CookingSessionProvider({ children }) {
   const [session, setSession] = useState(() => loadSession());
   const [isStepperOpen, setIsStepperOpen] = useState(() => Boolean(loadSession()));
   const notifiedRef = useRef(new Set());
+  // Ref so timerAction can read current timers without a stale closure
+  const sessionRef = useRef(session);
+
+  // Keep sessionRef current so timerAction can read it without stale closures
+  useEffect(() => { sessionRef.current = session; }, [session]);
 
   // Persist to localStorage
   useEffect(() => {
@@ -138,18 +143,36 @@ export function CookingSessionProvider({ children }) {
   const minimizeStepper = useCallback(() => setIsStepperOpen(false), []);
 
   const timerAction = useCallback((key, action, durationMs) => {
+    // Determine before the state update whether another timer will be auto-paused.
+    // We read from sessionRef (always current) to avoid adding session to deps.
+    const prevTimers = sessionRef.current?.timers || {};
+    const willAutoPause = (action === "start" || action === "resume") &&
+      Object.entries(prevTimers).some(([k, t]) => k !== key && t.status === "running");
+
     setSession((prev) => {
       if (!prev) return prev;
       const timers = { ...prev.timers };
       let t = timers[key];
 
       if (action === "start") {
+        // One-active-timer rule: pause any other running timer first
+        for (const [otherKey, otherTimer] of Object.entries(timers)) {
+          if (otherKey !== key && otherTimer.status === "running") {
+            timers[otherKey] = pauseTimer(otherTimer);
+          }
+        }
         if (!t) t = createTimer(durationMs || 0);
         notifiedRef.current.delete(key);
         timers[key] = startTimer(t);
       } else if (action === "pause") {
         if (t) timers[key] = pauseTimer(t);
       } else if (action === "resume") {
+        // One-active-timer rule: pause any other running timer first
+        for (const [otherKey, otherTimer] of Object.entries(timers)) {
+          if (otherKey !== key && otherTimer.status === "running") {
+            timers[otherKey] = pauseTimer(otherTimer);
+          }
+        }
         if (t) {
           notifiedRef.current.delete(key);
           timers[key] = resumeTimer(t);
@@ -163,7 +186,12 @@ export function CookingSessionProvider({ children }) {
 
       return { ...prev, timers };
     });
-  }, []);
+
+    // Show toast if we auto-paused another timer (checked before state update)
+    if (willAutoPause) {
+      notifyTimerAutoPaused();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = {
     session,

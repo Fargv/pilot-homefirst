@@ -116,6 +116,8 @@ export default function CookingSessionStepper() {
   if (!session || !isStepperOpen) return null;
 
   const { steps, currentStepIndex, completedSteps, timers, isComplete, recipeName, selectedServings } = session;
+
+  const pausedTimerCount = Object.values(timers || {}).filter((t) => t.status === "paused").length;
   const currentStep = steps[currentStepIndex];
   const isFirst = currentStepIndex === 0;
   const isLast  = currentStepIndex === steps.length - 1;
@@ -156,14 +158,21 @@ export default function CookingSessionStepper() {
                 Para {selectedServings} {selectedServings === 1 ? "persona" : "personas"}
               </p>
             </div>
-            <button
-              type="button"
-              className="cooking-stepper-minimize"
-              onClick={minimizeStepper}
-              aria-label="Minimizar modo cocina"
-            >
-              <ChevronDown />
-            </button>
+            <div className="cooking-stepper-header-right">
+              {pausedTimerCount > 0 && (
+                <span className="cooking-stepper-paused-hint" aria-label={`${pausedTimerCount} temporizador${pausedTimerCount !== 1 ? "es" : ""} en pausa`}>
+                  ⏸ {pausedTimerCount} en pausa
+                </span>
+              )}
+              <button
+                type="button"
+                className="cooking-stepper-minimize"
+                onClick={minimizeStepper}
+                aria-label="Minimizar modo cocina"
+              >
+                <ChevronDown />
+              </button>
+            </div>
           </div>
 
           {/* ── Progress ── */}

@@ -89,3 +89,21 @@ export function notifyTimerComplete(stepText = "") {
   // Future:
   // showBrowserNotification("⏰ Temporizador", stepText || "Tiempo completado");
 }
+
+/**
+ * Soft toast when a running timer is automatically paused
+ * because the user started a new timer on a different step.
+ * No sound or vibration — this is informational only.
+ */
+export function notifyTimerAutoPaused() {
+  import("../hooks/useRewardAnimation.js")
+    .then(({ triggerMilestone }) => {
+      triggerMilestone({
+        title:    "⏸ Temporizador pausado",
+        subtitle: "Se ha pausado el temporizador anterior",
+        icon:     "⏸",
+        variant:  "spark",
+      });
+    })
+    .catch(() => {});
+}

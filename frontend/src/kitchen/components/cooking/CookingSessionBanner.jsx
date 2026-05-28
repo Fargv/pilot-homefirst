@@ -4,17 +4,13 @@ import { formatRemaining } from "../../utils/timerService.js";
 import { useLiveCookingTimer } from "../../hooks/useLiveCookingTimer.js";
 
 function BannerTimer({ timer }) {
-  // Own live tick — updates every second when running
-  const remainingMs = useLiveCookingTimer(timer?.status === "running" ? timer : null);
-  const displayMs = timer?.status === "paused"
-    ? (remainingMs > 0 ? remainingMs : 0)
-    : remainingMs;
-
+  // Live tick — only ticks when timer is running
+  const remainingMs = useLiveCookingTimer(timer);
   return (
-    <div className={`cooking-banner-timer${timer?.status === "paused" ? " is-paused" : ""}`}>
-      <span aria-hidden="true">{timer?.status === "running" ? "⏱" : "⏸"}</span>
+    <div className="cooking-banner-timer">
+      <span aria-hidden="true">⏱</span>
       <span className="cooking-banner-timer-remaining">
-        {formatRemaining(displayMs)}
+        {formatRemaining(remainingMs)}
       </span>
     </div>
   );
@@ -28,13 +24,13 @@ export default function CookingSessionBanner() {
   const { recipeName, currentStepIndex, steps, timers, isComplete } = session;
   const stepLabel = `Paso ${currentStepIndex + 1}/${steps.length}`;
 
-  // Find the first running or paused timer
-  let activeTimer = null;
+  // Banner shows only the actively running timer.
+  // Paused timers are shown as a count hint — they don't tick in the banner.
+  let runningTimer = null;
+  let pausedCount = 0;
   for (const timer of Object.values(timers || {})) {
-    if (timer.status === "running" || timer.status === "paused") {
-      activeTimer = timer;
-      break;
-    }
+    if (timer.status === "running") runningTimer = timer;
+    else if (timer.status === "paused") pausedCount++;
   }
 
   return (
@@ -55,7 +51,13 @@ export default function CookingSessionBanner() {
         </span>
       </div>
 
-      {activeTimer ? <BannerTimer timer={activeTimer} /> : null}
+      {runningTimer ? (
+        <BannerTimer timer={runningTimer} />
+      ) : pausedCount > 0 ? (
+        <div className="cooking-banner-paused-hint" aria-hidden="true">
+          <span>⏸ {pausedCount}</span>
+        </div>
+      ) : null}
 
       <span className="cooking-banner-chevron" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
