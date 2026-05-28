@@ -13,7 +13,7 @@ const DishIngredientTemplateSchema = new mongoose.Schema(
 const RecipeIngredientTemplateSchema = new mongoose.Schema(
   {
     name: { type: String, trim: true },
-    quantity: { type: String, trim: true }
+    quantity: { type: mongoose.Schema.Types.Mixed }
   },
   { _id: false }
 );
@@ -31,7 +31,10 @@ const DishTemplateSchema = new mongoose.Schema(
     recipe: {
       ingredients: { type: [RecipeIngredientTemplateSchema], default: [] },
       steps: { type: mongoose.Schema.Types.Mixed, default: null },
-      servings: { type: Number, default: null }
+      servings: { type: Number, default: null },
+      baseServings: { type: Number, default: null },
+      prepMinutes: { type: Number, default: null },
+      cookMinutes: { type: Number, default: null }
     }
   },
   { _id: false }

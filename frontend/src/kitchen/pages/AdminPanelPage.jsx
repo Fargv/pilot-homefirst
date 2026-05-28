@@ -1208,8 +1208,11 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
   const [showRecipe, setShowRecipe] = useState(false);
   const [recipe, setRecipe] = useState({
     ingredients: item.recipe?.ingredients || [],
-    steps: item.recipe?.steps ?? null,
-    servings: item.recipe?.servings ?? null
+    // Prefer elaboration (legacy Tiptap preserved by migration); preserve structured array steps
+    steps: item.recipe?.elaboration ?? item.recipe?.steps ?? null,
+    servings: item.recipe?.baseServings ?? item.recipe?.servings ?? null,
+    prepMinutes: item.recipe?.prepMinutes ?? null,
+    cookMinutes: item.recipe?.cookMinutes ?? null,
   });
 
   // ── Save state ──────────────────────────────────────────────────────────────
@@ -1269,6 +1272,14 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
+    if (Array.isArray(recipe.steps)) {
+      if (recipe.steps.some((s) => !String(s.text || "").trim())) {
+        setError("Todos los pasos deben tener instrucción."); return;
+      }
+      if (recipe.steps.some((s) => s.hasTimer && !(s.durationSeconds > 0))) {
+        setError("Los pasos con temporizador deben tener una duración válida (minutos > 0)."); return;
+      }
+    }
     setSaving(true); setError("");
     try {
       await onSave({ _id: item._id, ...form, ingredients: dishIngredients, recipe });
@@ -1422,29 +1433,19 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
             }}
           >
             {showRecipe ? "▲ Ocultar elaboración" : "▼ Editar elaboración"}
-            {(item.recipe?.steps || (item.recipe?.ingredients?.length > 0)) && (
+            {(item.recipe?.elaboration || item.recipe?.steps || (item.recipe?.ingredients?.length > 0)) && (
               <span style={{ marginLeft: 8, fontSize: 11, background: "#818cf8", color: "#fff", borderRadius: 4, padding: "1px 6px" }}>tiene elaboración</span>
             )}
           </button>
 
           {showRecipe && (
             <div style={{ background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: "0 0 8px 8px", padding: 14, borderTop: "none" }}>
-              <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
-                <label style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
-                  Raciones:
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={recipe.servings ?? ""}
-                  onChange={(e) => setRecipe((p) => ({ ...p, servings: e.target.value ? Number(e.target.value) : null }))}
-                  style={{ width: 70, padding: "4px 8px", borderRadius: 5, border: "1px solid #d1d5db", fontSize: 13 }}
-                />
-              </div>
               <RecipeEditor
                 recipeIngredients={recipe.ingredients || []}
                 recipeSteps={recipe.steps}
                 recipeServings={recipe.servings}
+                recipePrepMinutes={recipe.prepMinutes}
+                recipeCookMinutes={recipe.cookMinutes}
                 dishIngredientNames={dishIngredientNames}
                 onAddIngredientToDish={(name) => {
                   if (!name) return;
@@ -2029,7 +2030,7 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
       special: Boolean(defaults.defaultSpecial),
       allowRandom: defaults.defaultAllowRandom !== false,
       dishCategoryId: null, ingredients: [],
-      recipe: { ingredients: [], steps: null, servings: null }
+      recipe: { ingredients: [], steps: null, servings: null, baseServings: null }
     }];
     onChange(next);
     setExpanded(next.length - 1);
@@ -2141,10 +2142,12 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>Elaboración</div>
                 <RecipeEditor
                   recipeIngredients={dish.recipe?.ingredients || []}
-                  recipeSteps={dish.recipe?.steps ?? null}
-                  recipeServings={dish.recipe?.servings ?? null}
+                  recipeSteps={dish.recipe?.elaboration ?? dish.recipe?.steps ?? null}
+                  recipeServings={dish.recipe?.baseServings ?? dish.recipe?.servings ?? null}
+                  recipePrepMinutes={dish.recipe?.prepMinutes ?? null}
+                  recipeCookMinutes={dish.recipe?.cookMinutes ?? null}
                   onChange={(updater) => {
-                    const prev = dish.recipe || { ingredients: [], steps: null, servings: null };
+                    const prev = dish.recipe || { ingredients: [], steps: null, servings: null, prepMinutes: null, cookMinutes: null };
                     const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
                     updateDish(i, { recipe: next });
                   }}
@@ -2183,8 +2186,11 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, onSaved, baseBitePri
     })) : [],
     recipe: {
       ingredients: Array.isArray(d.recipe?.ingredients) ? d.recipe.ingredients : [],
-      steps: d.recipe?.steps ?? null,
-      servings: d.recipe?.servings ?? null
+      // Prefer elaboration (legacy Tiptap); preserve structured array steps
+      steps: d.recipe?.elaboration ?? d.recipe?.steps ?? null,
+      servings: d.recipe?.baseServings ?? d.recipe?.servings ?? null,
+      prepMinutes: d.recipe?.prepMinutes ?? null,
+      cookMinutes: d.recipe?.cookMinutes ?? null,
     }
   }));
 
@@ -2291,7 +2297,10 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, onSaved, baseBitePri
     recipe: {
       ingredients: (d.recipe?.ingredients || []).filter((x) => x.name?.trim()),
       steps: d.recipe?.steps ?? null,
-      servings: d.recipe?.servings ? parseInt(d.recipe.servings, 10) : null
+      baseServings: d.recipe?.servings ? parseInt(d.recipe.servings, 10) : null,
+      servings: d.recipe?.servings ? parseInt(d.recipe.servings, 10) : null,
+      prepMinutes: d.recipe?.prepMinutes ? parseInt(d.recipe.prepMinutes, 10) : null,
+      cookMinutes: d.recipe?.cookMinutes ? parseInt(d.recipe.cookMinutes, 10) : null,
     }
   })).filter((d) => d.name);
 

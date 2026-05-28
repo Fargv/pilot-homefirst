@@ -547,7 +547,7 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Plato no encontrado." });
     }
 
-    const { ingredients, steps, servings } = req.body || {};
+    const { ingredients, steps, servings, baseServings, prepMinutes, cookMinutes } = req.body || {};
     const normalizedIngredients = Array.isArray(ingredients)
       ? ingredients
           .filter((item) => item && String(item.name || "").trim())
@@ -564,8 +564,17 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
             };
           })
       : [];
-    const normalizedServings = servings != null && Number.isFinite(Number(servings)) ? Number(servings) : null;
-    const recipeData = { ingredients: normalizedIngredients, steps: steps ?? null, servings: normalizedServings };
+    const rawServings = baseServings ?? servings;
+    const normalizedServings = rawServings != null && Number.isFinite(Number(rawServings)) ? Number(rawServings) : null;
+    const normalizedPrepMinutes = prepMinutes != null && Number.isFinite(Number(prepMinutes)) ? Number(prepMinutes) : null;
+    const normalizedCookMinutes = cookMinutes != null && Number.isFinite(Number(cookMinutes)) ? Number(cookMinutes) : null;
+    const recipeData = {
+      ingredients: normalizedIngredients,
+      steps: steps ?? null,
+      servings: normalizedServings,
+      prepMinutes: normalizedPrepMinutes,
+      cookMinutes: normalizedCookMinutes,
+    };
 
     if (dish.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {

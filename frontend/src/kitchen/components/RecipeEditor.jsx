@@ -14,6 +14,7 @@ import {
   getStructuredQty,
   displayIngredientQuantity
 } from "../utils/recipeScaling.js";
+import { parseRecipeSteps } from "../utils/recipeStepParser.js";
 import RecipeServingsControl from "./RecipeServingsControl.jsx";
 
 const APP_COLORS = [
@@ -407,18 +408,186 @@ function Toolbar({ editor }) {
   );
 }
 
+// ─── Guided steps editor ─────────────────────────────────────────────────────
+
+const STEP_F = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "5px 8px",
+  fontSize: 13,
+  borderRadius: 5,
+  border: "1px solid var(--input-border, #d1d5db)",
+  background: "var(--input-bg, #fff)",
+  color: "var(--input-text, #1e293b)",
+  outline: "none",
+};
+
+function GuidedStepsEditor({ steps, onChangeSteps }) {
+  const update = (i, updates) => {
+    const next = steps.map((s, idx) => {
+      if (idx !== i) return s;
+      const merged = { ...s, ...updates };
+      // Keep durationSeconds in sync whenever durationMinutes changes
+      if ("durationMinutes" in updates) {
+        const mins = parseFloat(updates.durationMinutes);
+        merged.durationSeconds = Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : 0;
+      }
+      return merged;
+    });
+    onChangeSteps(next);
+  };
+
+  const moveUp = (i) => {
+    if (i === 0) return;
+    const next = [...steps];
+    [next[i - 1], next[i]] = [next[i], next[i - 1]];
+    onChangeSteps(next);
+  };
+
+  const moveDown = (i) => {
+    if (i === steps.length - 1) return;
+    const next = [...steps];
+    [next[i], next[i + 1]] = [next[i + 1], next[i]];
+    onChangeSteps(next);
+  };
+
+  const removeStep = (i) => onChangeSteps(steps.filter((_, idx) => idx !== i));
+
+  const addStep = () => onChangeSteps([
+    ...steps,
+    { text: "", title: "", hasTimer: false, durationMinutes: null, durationSeconds: 0, timerLabel: "", tips: "" }
+  ]);
+
+  const getDurationMinutes = (step) => {
+    if (step.durationMinutes != null) return step.durationMinutes;
+    if (step.durationSeconds > 0) return +(step.durationSeconds / 60).toFixed(1);
+    return "";
+  };
+
+  return (
+    <div className="guided-steps-editor">
+      {steps.map((step, i) => (
+        <div key={i} className="guided-step-editor-card">
+          <div className="guided-step-editor-header">
+            <span className="guided-step-editor-label">Paso {i + 1}</span>
+            <div className="guided-step-editor-actions">
+              <button
+                type="button"
+                onClick={() => moveUp(i)}
+                disabled={i === 0}
+                title="Subir"
+                className="guided-step-move-btn"
+              >↑</button>
+              <button
+                type="button"
+                onClick={() => moveDown(i)}
+                disabled={i === steps.length - 1}
+                title="Bajar"
+                className="guided-step-move-btn"
+              >↓</button>
+              <button
+                type="button"
+                onClick={() => removeStep(i)}
+                title="Eliminar paso"
+                className="guided-step-delete-btn"
+              >×</button>
+            </div>
+          </div>
+
+          <div className="guided-step-editor-body">
+            <label className="guided-step-field">
+              <span className="guided-step-field-label">Instrucción *</span>
+              <textarea
+                className="guided-step-textarea"
+                style={STEP_F}
+                value={step.text || ""}
+                rows={3}
+                placeholder="Describe el paso de elaboración..."
+                onChange={(e) => update(i, { text: e.target.value })}
+              />
+            </label>
+
+            <div className="guided-step-optional-row">
+              <label className="guided-step-field" style={{ flex: 1 }}>
+                <span className="guided-step-field-label">Título (opcional)</span>
+                <input
+                  type="text"
+                  style={STEP_F}
+                  value={step.title || ""}
+                  placeholder="Ej: Dorar la cebolla"
+                  onChange={(e) => update(i, { title: e.target.value })}
+                />
+              </label>
+              <label className="guided-step-field" style={{ flex: 1 }}>
+                <span className="guided-step-field-label">Consejo (opcional)</span>
+                <input
+                  type="text"
+                  style={STEP_F}
+                  value={step.tips || ""}
+                  placeholder="Ej: A fuego medio para no quemar"
+                  onChange={(e) => update(i, { tips: e.target.value })}
+                />
+              </label>
+            </div>
+
+            <div className="guided-step-timer-row">
+              <label className="guided-step-timer-check">
+                <input
+                  type="checkbox"
+                  checked={Boolean(step.hasTimer)}
+                  onChange={(e) => update(i, { hasTimer: e.target.checked })}
+                />
+                <span>Temporizador</span>
+              </label>
+              {step.hasTimer && (
+                <div className="guided-step-timer-fields">
+                  <input
+                    type="number"
+                    style={{ ...STEP_F, width: 70 }}
+                    min="0.5"
+                    step="0.5"
+                    value={getDurationMinutes(step)}
+                    placeholder="—"
+                    onChange={(e) => update(i, { durationMinutes: e.target.value === "" ? null : +e.target.value })}
+                  />
+                  <span className="guided-step-timer-unit">min</span>
+                  <input
+                    type="text"
+                    style={{ ...STEP_F, flex: 1 }}
+                    value={step.timerLabel || ""}
+                    placeholder="Etiqueta (ej: 10 minutos)"
+                    onChange={(e) => update(i, { timerLabel: e.target.value })}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <button type="button" className="guided-step-add-btn" onClick={addStep}>
+        + Añadir paso
+      </button>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function RecipeEditor({
   recipeIngredients = [],
   recipeSteps = null,
   recipeServings = null,
+  recipePrepMinutes = null,
+  recipeCookMinutes = null,
   targetServings = null,
   dishIngredientNames = [],
   onAddIngredientToDish,
   onChange,
   readOnly = false
 }) {
+  const isGuidedSteps = Array.isArray(recipeSteps);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
@@ -429,10 +598,11 @@ export default function RecipeEditor({
       TextStyle,
       Color
     ],
-    content: recipeSteps || "",
+    // Tiptap can't render an array — use empty string for structured steps
+    content: isGuidedSteps ? "" : (recipeSteps || ""),
     editable: !readOnly,
     onUpdate: ({ editor: ed }) => {
-      if (!onChange) return;
+      if (!onChange || isGuidedSteps) return;
       onChange((prev) => ({ ...prev, steps: ed.getJSON() }));
     }
   });
@@ -519,7 +689,29 @@ export default function RecipeEditor({
           </div>
         ) : null}
 
-        {recipeSteps ? (
+        {Array.isArray(recipeSteps) && recipeSteps.length > 0 ? (
+          <div>
+            <p className="recipe-section-title">Elaboración</p>
+            <ol className="recipe-structured-steps">
+              {recipeSteps.map((step, idx) => (
+                <li key={step.order ?? idx} className="recipe-structured-step">
+                  {step.title && (
+                    <p className="recipe-structured-step-title">{step.title}</p>
+                  )}
+                  <p className="recipe-structured-step-text">{step.text}</p>
+                  {step.hasTimer && step.durationSeconds > 0 && (
+                    <span className="recipe-structured-step-timer">
+                      ⏱ {step.timerLabel ?? `${Math.round(step.durationSeconds / 60)} min`}
+                    </span>
+                  )}
+                  {step.tips && (
+                    <p className="recipe-structured-step-tips">💡 {step.tips}</p>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : recipeSteps ? (
           <div>
             <p className="recipe-section-title">Elaboración</p>
             <div className="recipe-viewer-wrap">
@@ -537,9 +729,28 @@ export default function RecipeEditor({
 
   // ── Edit view ──────────────────────────────────────────────────────────────
 
+  const convertToGuidedSteps = () => {
+    if (!onChange) return;
+    if (!window.confirm("¿Convertir a pasos guiados? El texto libre del editor se convertirá en pasos. Esta acción no se puede deshacer fácilmente.")) return;
+    const tiptapContent = editor ? editor.getJSON() : null;
+    const parsed = tiptapContent ? parseRecipeSteps(tiptapContent) : null;
+    const initialSteps = parsed?.length > 0
+      ? parsed.map((s) => ({ text: s.text, title: "", hasTimer: false, durationMinutes: null, durationSeconds: 0, timerLabel: "", tips: "" }))
+      : [{ text: "", title: "", hasTimer: false, durationMinutes: null, durationSeconds: 0, timerLabel: "", tips: "" }];
+    onChange((prev) => ({ ...prev, steps: initialSteps }));
+  };
+
+  const convertToFreeText = () => {
+    if (!onChange) return;
+    if (!window.confirm("¿Volver a texto libre? Se perderán los pasos guiados estructurados.")) return;
+    if (editor) editor.commands.setContent("");
+    onChange((prev) => ({ ...prev, steps: null }));
+  };
+
   return (
     <div className="recipe-editor-section">
-      <div className="recipe-servings-row">
+      {/* Servings + timing row */}
+      <div className="recipe-servings-row" style={{ gap: 12, flexWrap: "wrap", alignItems: "center" }}>
         <label className="recipe-section-title" htmlFor="recipe-servings">Para</label>
         <input
           id="recipe-servings"
@@ -556,6 +767,36 @@ export default function RecipeEditor({
           }}
         />
         <span className="recipe-section-title">personas</span>
+        <span className="recipe-section-title" style={{ marginLeft: 8 }}>Prep.</span>
+        <input
+          type="number"
+          min="0"
+          className="recipe-servings-input"
+          placeholder="—"
+          value={recipePrepMinutes ?? ""}
+          onChange={(e) => {
+            if (!onChange) return;
+            const val = e.target.value === "" ? null : Number(e.target.value);
+            onChange((prev) => ({ ...prev, prepMinutes: val }));
+          }}
+          title="Minutos de preparación"
+        />
+        <span className="recipe-section-title">min</span>
+        <span className="recipe-section-title" style={{ marginLeft: 4 }}>Cocción</span>
+        <input
+          type="number"
+          min="0"
+          className="recipe-servings-input"
+          placeholder="—"
+          value={recipeCookMinutes ?? ""}
+          onChange={(e) => {
+            if (!onChange) return;
+            const val = e.target.value === "" ? null : Number(e.target.value);
+            onChange((prev) => ({ ...prev, cookMinutes: val }));
+          }}
+          title="Minutos de cocción"
+        />
+        <span className="recipe-section-title">min</span>
       </div>
 
       <div>
@@ -628,11 +869,40 @@ export default function RecipeEditor({
       </div>
 
       <div>
-        <p className="recipe-section-title">Elaboración</p>
-        <Toolbar editor={editor} />
-        <div className="recipe-editor-wrap">
-          <EditorContent editor={editor} />
+        <div className="recipe-steps-header">
+          <p className="recipe-section-title" style={{ margin: 0 }}>Elaboración</p>
+          <div className="recipe-steps-mode-toggle">
+            {isGuidedSteps ? (
+              <>
+                <span className="recipe-steps-mode-badge">Pasos guiados</span>
+                <button type="button" className="recipe-steps-mode-btn" onClick={convertToFreeText}>
+                  Cambiar a texto libre
+                </button>
+              </>
+            ) : (
+              <button type="button" className="recipe-steps-mode-btn recipe-steps-mode-btn--guided" onClick={convertToGuidedSteps}>
+                Convertir a pasos guiados
+              </button>
+            )}
+          </div>
         </div>
+
+        {isGuidedSteps ? (
+          <GuidedStepsEditor
+            steps={recipeSteps}
+            onChangeSteps={(newSteps) => {
+              if (!onChange) return;
+              onChange((prev) => ({ ...prev, steps: newSteps }));
+            }}
+          />
+        ) : (
+          <>
+            <Toolbar editor={editor} />
+            <div className="recipe-editor-wrap">
+              <EditorContent editor={editor} />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

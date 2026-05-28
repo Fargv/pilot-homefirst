@@ -232,10 +232,13 @@ export function parseRecipeSteps(steps) {
         if (Array.isArray(s.ingredients)) base.stepIngredients = s.ingredients;
 
         // Use explicit timer data when available (overrides auto-detection)
-        if (s.hasTimer === true && s.durationSeconds > 0) {
+        const durationSec = s.durationSeconds > 0
+          ? s.durationSeconds
+          : (s.durationMinutes > 0 ? Math.round(s.durationMinutes * 60) : 0);
+        if (s.hasTimer === true && durationSec > 0) {
           base.detectedTimers = [{
-            durationSec: s.durationSeconds,
-            label: s.timerLabel || formatDuration(s.durationSeconds),
+            durationSec,
+            label: s.timerLabel || formatDuration(durationSec),
             offset: 0,
           }];
         } else if (s.hasTimer === false) {
