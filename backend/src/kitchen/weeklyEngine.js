@@ -1083,6 +1083,74 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
         }
       }
 
+      // Cross-week fallback: meals planned for a future week may satisfy challenges
+      // for the CURRENT calendar week.  This fixes the case where a user plans
+      // 5 meals next week and "Planifica 5 comidas" doesn't complete because the
+      // triggered cycleWeekIndex ≠ the current week's cycleWeekIndex.
+      // Guard: only future weeks — past-week edits should not retroactively
+      // complete current-week challenges.
+      if (weekStartISO !== currentWeekStartISO
+          && weekStartDate.getTime() > parseWeekStart(currentWeekStartISO).getTime()) {
+        const curWeekDate = parseWeekStart(currentWeekStartISO);
+        const curCycleWeekIdx = getCycleWeekIndex(curWeekDate, householdCycleStart);
+
+        // Only run when the cycle week differs — if they happen to map to the same
+        // cycleWeekIndex the main block already handled everything.
+        if (curCycleWeekIdx !== cycleWeekIndex) {
+          const curWeekMealChallenges = await WeeklyChallengeDef.find({
+            active: true,
+            cycleWeek: curCycleWeekIdx,
+            curriculum,
+            triggerType: "meal_planned"
+          }).sort({ cycleOrder: 1 }).lean();
+
+          if (curWeekMealChallenges.length) {
+            const curProgressDoc = await getOrCreateProgress(householdId, curWeekDate, curCycleWeekIdx);
+            const curCompletedBefore = new Set(
+              (curProgressDoc.completedChallenges || []).map((c) => c.challengeKey)
+            );
+
+            // Use triggered week's stats to evaluate current week's meal challenges.
+            const crossChecks = [
+              { key: "weekly_plan_5_meals", done: count >= 5 },
+              { key: "weekly_complete_meal_week", done: allWeekdaysFilled },
+              { key: "weekly_complete_meal_week_w4", done: allWeekdaysFilled },
+              { key: "weekly_use_3_different_dishes", done: uniqueDishCount >= 3 },
+              { key: "weekly_use_5_different_dishes", done: uniqueDishCount >= 5 },
+              { key: "weekly_no_repeated_dishes", done: count >= 5 && uniqueDishCount === count },
+              { key: "weekly_plan_full_week_before_thursday", done: allWeekdaysFilled && [1, 2, 3].includes(todayUTCDay) }
+            ];
+
+            let crossWeekCompleted = false;
+            for (const check of crossChecks) {
+              if (!check.done || curCompletedBefore.has(check.key)) continue;
+              const def = curWeekMealChallenges.find((c) => c.key === check.key);
+              if (!def) continue;
+
+              await _markChallengeComplete(curProgressDoc._id, def);
+              curCompletedBefore.add(check.key);
+
+              // Grant reward directly against the current week's progress doc.
+              const freshCurProgress = await HouseholdWeeklyProgress.findById(curProgressDoc._id).lean();
+              await grantWeeklyReward(householdId, def.key, def.rewardBites, freshCurProgress);
+
+              newlyCompletedKeys.push(check.key);
+              completedKeysBefore.add(check.key);
+              crossWeekCompleted = true;
+            }
+
+            if (crossWeekCompleted) {
+              // Check bonus for the current week in case all main challenges are now done.
+              const allCurChallenges = await WeeklyChallengeDef.find({
+                active: true, cycleWeek: curCycleWeekIdx, curriculum
+              }).lean();
+              const latestCurProgress = await HouseholdWeeklyProgress.findById(curProgressDoc._id).lean();
+              await checkAndGrantBonus(householdId, latestCurProgress, allCurChallenges, cycleConfig.bonusBites);
+            }
+          }
+        }
+      }
+
     } else if (eventType === "catalog_dish_used") {
       await HouseholdWeeklyProgress.updateOne(
         { _id: progress._id },

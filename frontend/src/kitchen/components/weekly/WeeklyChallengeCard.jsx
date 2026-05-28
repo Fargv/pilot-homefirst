@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useWeeklyChallenge } from "../../contexts/WeeklyChallengeContext.jsx";
 import { useOnboarding } from "../../contexts/OnboardingContext.jsx";
 import { useAuth } from "../../auth.jsx";
@@ -89,7 +90,7 @@ function WeeklyRewardToast({ event, onDismiss }) {
   if (!event) return null;
   const totalBites = (event.challenges || []).reduce((s, c) => s + (c.rewardBites || 0), 0)
     + (event.bonusCompleted ? (event.bonusBites || 0) : 0);
-  return (
+  return createPortal(
     <div className="onboarding-reward-toast-wrap" onClick={onDismiss}>
       <div className="onboarding-reward-toast">
         <div className="onboarding-reward-toast-icon">
@@ -109,7 +110,8 @@ function WeeklyRewardToast({ event, onDismiss }) {
           <span>+{totalBites}</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

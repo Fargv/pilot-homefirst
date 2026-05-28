@@ -155,9 +155,9 @@ function getFirstName(displayName = "") {
 function BetaProUnlockedModal({ onDismiss }) {
   const navigate = useNavigate();
 
-  const handleGoHousehold = () => {
+  const handleGoSettings = () => {
     onDismiss();
-    navigate("/kitchen/configuracion?section=household-members");
+    navigate("/kitchen/configuracion");
   };
 
   return (
@@ -168,22 +168,23 @@ function BetaProUnlockedModal({ onDismiss }) {
           ¡Enhorabuena!
         </h2>
         <p className="kitchen-beta-pro-modal-subtitle">
-          Has desbloqueado <strong>Pro Beta</strong>
+          Has completado el onboarding y la primera semana de retos
         </p>
         <p className="kitchen-beta-pro-modal-body">
-          Puedes activar funciones Pro como las <strong>cenas</strong> desde{" "}
-          <strong>Configuración → Household</strong>. Tu acceso Pro Beta está
-          activo durante el periodo de beta según las reglas vigentes.
+          Como recompensa, hemos activado tu licencia <strong>Beta Pro</strong>.
+          Ahora tienes acceso a todo lo que Lunchfy Pro puede ofrecerte durante el
+          periodo beta.
         </p>
 
         <div className="kitchen-beta-pro-modal-features">
-          <p className="kitchen-beta-pro-modal-features-title">Con Pro Beta tienes acceso a:</p>
+          <p className="kitchen-beta-pro-modal-features-title">Con Beta Pro puedes:</p>
           <ul className="kitchen-beta-pro-modal-features-list">
-            <li>🌙 Planificación de <strong>cenas</strong></li>
-            <li>🎲 Randomizar toda la semana de una vez</li>
-            <li>💰 Presupuesto semanal de la compra</li>
-            <li>👨‍👩‍👧‍👦 Hasta 8 miembros y 12 comensales</li>
-            <li>🥗 Filtros de dieta avanzados en randomización</li>
+            <li>📅 Planificación semanal completa — comidas y cenas</li>
+            <li>🍽️ Más flexibilidad para organizar tu menú</li>
+            <li>📚 Uso avanzado del catálogo de platos</li>
+            <li>🛒 Mejores herramientas para la lista de la compra</li>
+            <li>👨‍👩‍👧‍👦 Más miembros y comensales en tu hogar</li>
+            <li>🚀 Acceso anticipado a funciones Pro que vayamos liberando</li>
           </ul>
         </div>
 
@@ -191,9 +192,9 @@ function BetaProUnlockedModal({ onDismiss }) {
           <button
             type="button"
             className="kitchen-ui-button kitchen-beta-pro-modal-cta"
-            onClick={handleGoHousehold}
+            onClick={handleGoSettings}
           >
-            Ir a Household
+            Explorar ajustes Pro
           </button>
           <button
             type="button"
