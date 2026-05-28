@@ -509,9 +509,13 @@ function HouseholdControlCenter({ household, onClose, onNavigate, onRefresh }) {
         await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/reset`, { method: "POST" });
         setMsg("Progreso semanal reseteado.");
       } else if (type === "reset-cycle") {
-        if (!window.confirm("Reiniciar el ciclo a semana 1?")) return;
-        await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/reset-cycle`, { method: "POST" });
-        setMsg("Ciclo reiniciado.");
+        if (!window.confirm("¿Reset completo? Se elimina TODO el progreso de retos, se borra Beta Pro (si activo) y el plan vuelve a Basic. Los planes Stripe de pago NO se tocan.")) return;
+        const data = await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/reset-cycle`, { method: "POST" });
+        if (data.ok === false) {
+          setMsg(`Reset bloqueado: ${data.reason || "error"}`);
+        } else {
+          setMsg(`Ciclo reiniciado.${data.betaProCleared ? " Beta Pro eliminado." : ""}`);
+        }
       } else if (type === "set-cycle-week") {
         await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/set-cycle-week`, { method: "POST", body: JSON.stringify({ week: extra.week }) });
         setMsg(`Ciclo forzado a semana ${extra.week}.`);
@@ -618,7 +622,7 @@ function HouseholdControlCenter({ household, onClose, onNavigate, onRefresh }) {
                 <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
                   <button type="button" style={ABT.edit} disabled={saving} onClick={() => onNavigate("weekly", h)}>Ver progreso</button>
                   <button type="button" style={ABT.del} disabled={saving} onClick={() => runAction("reset-weekly")}>Reset progreso</button>
-                  <button type="button" style={ABT.edit} disabled={saving} onClick={() => runAction("reset-cycle")}>Ciclo semana 1</button>
+                  <button type="button" style={ABT.del} disabled={saving} onClick={() => runAction("reset-cycle")}>Reset completo</button>
                   {[1, 2, 3, 4].map((week) => (
                     <button key={week} type="button" style={ABT.edit} disabled={saving} onClick={() => runAction("set-cycle-week", { week })}>Forzar {week}</button>
                   ))}
@@ -5771,7 +5775,7 @@ function WeeklySection({ householdContext, onClearHouseholdContext }) {
     try {
       let data;
       if (action === "reset-cycle") {
-        if (!window.confirm("¿Reset completo? Se eliminará TODO el progreso de retos, se borrará Beta Pro (si estaba activo) y el plan se pondrá a Free. Los planes Stripe de pago NO se tocan.")) { setCycleLoading(false); return; }
+        if (!window.confirm("¿Reset completo? Se eliminará TODO el progreso de retos, se borrará Beta Pro (si estaba activo) y el plan volverá a Basic. Los planes Stripe de pago NO se tocan.")) { setCycleLoading(false); return; }
         data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/reset-cycle`, { method: "POST" });
         if (data.ok === false) {
           setCycleError(`Reset bloqueado: ${data.reason || "error"}`);

@@ -179,11 +179,17 @@ router.post("/", requireAuth, async (req, res) => {
       .lean();
     const nextOrder = typeof order === "number" ? order : ((lastBasic?.order ?? -1) + 1);
 
+    const resolvedName = ingredient.name || ingredient.canonicalName;
+    const resolvedCanonical = ingredient.canonicalName || ingredient.name;
+    if (!resolvedName || !resolvedCanonical) {
+      return res.status(400).json({ ok: false, error: "El ingrediente no tiene nombre válido." });
+    }
+
     const basic = await HouseholdBasic.create({
       householdId: effectiveHouseholdId,
       ingredientId: ingredient._id,
-      name: ingredient.name,
-      canonicalName: ingredient.canonicalName,
+      name: resolvedName,
+      canonicalName: resolvedCanonical,
       categoryId: ingredient.categoryId || null,
       emoji: String(emoji || "").slice(0, 8),
       active: true,
@@ -202,6 +208,7 @@ router.post("/", requireAuth, async (req, res) => {
         if (existing) return res.json({ ok: true, basic: serializeBasic(existing), alreadyExists: true });
       } catch { /* fall through */ }
     }
+    console.error("[basics] POST create error:", err.message, err.stack || "");
     const handled = handleHouseholdError(res, err);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo crear el básico." });

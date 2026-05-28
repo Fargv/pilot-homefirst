@@ -1703,7 +1703,7 @@ export async function adminResetHouseholdCycle(householdId) {
   const householdUpdate = {
     $unset: { weeklyChallengeCycleStartedAt: "" },
     $set: {
-      subscriptionPlan: "free",
+      subscriptionPlan: "basic",
       planSource: "manual",
       isPro: false,
       "betaPro.active": false,
