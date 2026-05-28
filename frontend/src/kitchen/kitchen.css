@@ -9067,6 +9067,65 @@ td.recipe-qty-scaled {
   font-weight: 500;
 }
 
+/* ── Interactive servings selector ─────────────────────────────────────────── */
+.recipe-servings-ctrl {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.recipe-servings-ctrl-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-surface, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  overflow: hidden;
+}
+.recipe-servings-ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-primary, #1e293b);
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+}
+.recipe-servings-ctrl-btn:hover:not(:disabled) {
+  background: var(--hf-brand-light, #e0e7ff);
+  color: var(--hf-brand, #4338ca);
+}
+.recipe-servings-ctrl-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.recipe-servings-ctrl-label {
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+  white-space: nowrap;
+  border-left: 1px solid var(--border-color, #e2e8f0);
+  border-right: 1px solid var(--border-color, #e2e8f0);
+  line-height: 36px;
+}
+.recipe-servings-ctrl-hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--hf-brand, #4338ca);
+  opacity: 0.8;
+  text-align: center;
+}
+
 .recipe-ingredient-row {
   display: grid;
   grid-template-columns: 1fr auto auto 32px;
@@ -14519,6 +14578,26 @@ td.recipe-qty-scaled {
 }
 [data-theme="dark"] td.recipe-qty-scaled {
   color: var(--hf-brand-darker, var(--hf-brand));
+}
+
+[data-theme="dark"] .recipe-servings-ctrl-row {
+  background: var(--bg-surface-dark, #1e293b);
+  border-color: var(--border-color-dark, #334155);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+[data-theme="dark"] .recipe-servings-ctrl-label {
+  color: var(--text-primary-dark, #f1f5f9);
+  border-color: var(--border-color-dark, #334155);
+}
+[data-theme="dark"] .recipe-servings-ctrl-btn {
+  color: var(--text-primary-dark, #f1f5f9);
+}
+[data-theme="dark"] .recipe-servings-ctrl-btn:hover:not(:disabled) {
+  background: rgba(99,102,241,0.15);
+  color: var(--hf-brand-light, #a5b4fc);
+}
+[data-theme="dark"] .recipe-servings-ctrl-hint {
+  color: var(--hf-brand-light, #a5b4fc);
 }
 
 [data-theme="dark"] .recipe-toolbar-sep,

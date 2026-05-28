@@ -14,6 +14,7 @@ import {
   getStructuredQty,
   displayIngredientQuantity
 } from "../utils/recipeScaling.js";
+import RecipeServingsControl from "./RecipeServingsControl.jsx";
 
 const APP_COLORS = [
   { label: "Índigo", value: "#4338ca" },
@@ -478,18 +479,20 @@ export default function RecipeEditor({
 
   // ── Read-only view ─────────────────────────────────────────────────────────
 
-  const isScaled = Boolean(targetServings && recipeServings && targetServings !== recipeServings);
+  const defaultServings = (targetServings >= 1 ? targetServings : null) ?? (recipeServings >= 1 ? recipeServings : null) ?? 4;
+  const [displayServings, setDisplayServings] = useState(defaultServings);
+
+  const isScaled = Boolean(displayServings && recipeServings && displayServings !== recipeServings);
 
   if (readOnly) {
     return (
       <div className="recipe-editor-section">
-        {isScaled ? (
-          <p className="recipe-servings-label">
-            Para {targetServings} {targetServings === 1 ? "persona" : "personas"}
-            <span className="recipe-servings-base"> (receta base: {recipeServings})</span>
-          </p>
-        ) : recipeServings ? (
-          <p className="recipe-servings-label">Para {recipeServings} {recipeServings === 1 ? "persona" : "personas"}</p>
+        {recipeServings ? (
+          <RecipeServingsControl
+            servings={displayServings}
+            baseServings={recipeServings}
+            onChange={setDisplayServings}
+          />
         ) : null}
 
         {recipeIngredients && recipeIngredients.length > 0 ? (
@@ -498,7 +501,7 @@ export default function RecipeEditor({
             <table className="recipe-ingredients-table">
               <tbody>
                 {recipeIngredients.map((item, idx) => {
-                  const displayQty = displayIngredientQuantity(item, recipeServings, targetServings);
+                  const displayQty = displayIngredientQuantity(item, recipeServings, displayServings);
                   const wasScaled = isScaled && displayQty && displayQty !== (
                     typeof item.quantity === "string" ? item.quantity : ""
                   );
