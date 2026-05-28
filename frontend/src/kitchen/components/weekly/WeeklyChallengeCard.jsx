@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useWeeklyChallenge } from "../../contexts/WeeklyChallengeContext.jsx";
 import { useOnboarding } from "../../contexts/OnboardingContext.jsx";
 import { useAuth } from "../../auth.jsx";
@@ -86,35 +85,6 @@ function ChevronUpIcon() {
   );
 }
 
-function WeeklyRewardToast({ event, onDismiss }) {
-  if (!event) return null;
-  const totalBites = (event.challenges || []).reduce((s, c) => s + (c.rewardBites || 0), 0)
-    + (event.bonusCompleted ? (event.bonusBites || 0) : 0);
-  return createPortal(
-    <div className="onboarding-reward-toast-wrap" onClick={onDismiss}>
-      <div className="onboarding-reward-toast">
-        <div className="onboarding-reward-toast-icon">
-          <StarIcon />
-        </div>
-        <div>
-          <p className="onboarding-reward-toast-title">&#161;Reto semanal completado!</p>
-          {event.challenges?.map((c) => (
-            <p key={c.key} className="onboarding-reward-toast-subtitle">{c.title}</p>
-          ))}
-          {event.bonusCompleted && (
-            <p className="onboarding-reward-toast-subtitle">&#127873; Bonus desbloqueado</p>
-          )}
-        </div>
-        <div className="onboarding-reward-toast-bites">
-          <BitesIcon size={14} />
-          <span>+{totalBites}</span>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
 function ChallengeRow({ challenge }) {
   const { completed, title, description, guidance, rewardBites, progress, target } = challenge;
 
@@ -181,7 +151,7 @@ function BonusRow({ bonus }) {
 }
 
 export default function WeeklyChallengeCard() {
-  const { state: weeklyState, rewardEvent, dismissReward } = useWeeklyChallenge();
+  const { state: weeklyState } = useWeeklyChallenge();
   const { state: onboardingState } = useOnboarding();
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
@@ -240,7 +210,6 @@ export default function WeeklyChallengeCard() {
             <ChevronDownIcon />
           </button>
         </div>
-        {rewardEvent && <WeeklyRewardToast event={rewardEvent} onDismiss={dismissReward} />}
       </>
     );
   }
@@ -276,7 +245,6 @@ export default function WeeklyChallengeCard() {
             <div style={{ width: `${progressPercent}%` }} />
           </div>
         </div>
-        {rewardEvent && <WeeklyRewardToast event={rewardEvent} onDismiss={dismissReward} />}
       </>
     );
   }
@@ -354,7 +322,6 @@ export default function WeeklyChallengeCard() {
         </div>
       </div>
 
-      {rewardEvent && <WeeklyRewardToast event={rewardEvent} onDismiss={dismissReward} />}
     </>
   );
 }

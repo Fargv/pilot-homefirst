@@ -290,7 +290,8 @@ router.get("/admin/households/:householdId/cycle-state", requireAuth, requireDio
 
 /**
  * POST /weekly/admin/households/:householdId/reset-cycle
- * Resets the household's cycle anchor and current-week progress to Week 1.
+ * Full reset: clears cycle anchor, all weekly progress, and Beta Pro.
+ * Blocked (ok:false, reason:"paid_plan") if the household has a real Stripe plan.
  */
 router.post("/admin/households/:householdId/reset-cycle", requireAuth, requireDiod, validateAdminHouseholdObjectId, async (req, res) => {
   try {

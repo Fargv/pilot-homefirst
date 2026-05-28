@@ -42,19 +42,11 @@ import { HouseholdWeeklyProgress } from "./models/HouseholdWeeklyProgress.js";
 import { WeeklyChallengeDef } from "./models/WeeklyChallengeDef.js";
 
 // Local copies to avoid circular dependency with weeklyEngine.js
-function _getCycleWeekIndex(weekStartDate, cycleStartDate) {
-  const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
-  const weeksElapsed = Math.floor((weekStartDate - cycleStartDate) / MS_PER_WEEK);
-  if (weeksElapsed < 0) return 1;
-  return (weeksElapsed % 4) + 1;
-}
-
-function _getCurrentWeekStart() {
-  const now = new Date();
-  const day = now.getUTCDay();
+function _getMondayOf(date) {
+  const d = new Date(date);
+  const day = d.getUTCDay();
   const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff));
-  return monday.toISOString().slice(0, 10);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + diff));
 }
 
 // ─── Config readers ───────────────────────────────────────────────────────────
@@ -108,14 +100,12 @@ export async function recordMeaningfulActivity(householdId) {
 // ─── Challenge completion check ───────────────────────────────────────────────
 
 /**
- * Returns { complete: boolean, cycleWeekIndex?: number } indicating whether ALL main
- * (non-bonus) challenges for the CURRENT calendar week's progress document have
- * rewardGranted === true.
+ * Returns { complete: boolean, cycleWeekIndex: 1 } indicating whether ALL main
+ * (non-bonus) week-1 basic challenges have rewardGranted === true.
  *
- * Uses the current week's progress doc (not the most-recent one) so the check
- * matches exactly what the user sees in the UI.  Future-week meal planning creates
- * progress docs with later weekStart dates; without this fix those docs would be
- * fetched instead and the check would evaluate the wrong week's challenges.
+ * Beta Pro requires completing week 1. With the sticky-week-1 rule, progress is
+ * always tracked in the anchor week's doc (getMondayOf(weeklyChallengeCycleStartedAt)).
+ * We look at that doc and check cycleWeek:1 basic challenges.
  */
 export async function checkAllMainChallengesComplete(householdId) {
   const household = await Household.findById(householdId)
@@ -125,26 +115,20 @@ export async function checkAllMainChallengesComplete(householdId) {
   const householdCycleStart = household?.weeklyChallengeCycleStartedAt;
   if (!householdCycleStart) return { complete: false };
 
-  // Always check the CURRENT calendar week's progress so the result matches
-  // what the user sees in the UI.  Using the most-recent doc caused a false
-  // "incomplete" when the user had also planned meals for a future week
-  // (that planning creates a later progress doc for cycleWeek 2+).
-  const currentWeekISO = _getCurrentWeekStart();
-  const currentWeekDate = new Date(currentWeekISO + "T00:00:00.000Z");
+  // Sticky week 1: progress always tracked in the anchor week's doc.
+  const anchorMonday = _getMondayOf(householdCycleStart);
 
   const progress = await HouseholdWeeklyProgress.findOne({
     householdId,
-    weekStart: currentWeekDate
+    weekStart: anchorMonday
   }).lean();
 
   if (!progress) return { complete: false };
 
-  const cycleWeekIndex = _getCycleWeekIndex(currentWeekDate, new Date(householdCycleStart));
-
   const mainDefs = await WeeklyChallengeDef.find({
     active: true,
-    cycleWeek: cycleWeekIndex,
-    curriculum: "basic",          // Beta Pro only for basic curriculum users
+    cycleWeek: 1,
+    curriculum: "basic",
     triggerType: { $ne: "bonus" }
   }).lean();
 
@@ -157,7 +141,7 @@ export async function checkAllMainChallengesComplete(householdId) {
   );
 
   const allDone = mainDefs.every((def) => rewardedKeys.has(def.key));
-  return { complete: allDone, cycleWeekIndex };
+  return { complete: allDone, cycleWeekIndex: 1 };
 }
 
 // ─── Unlock ───────────────────────────────────────────────────────────────────

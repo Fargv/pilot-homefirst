@@ -5771,9 +5771,14 @@ function WeeklySection({ householdContext, onClearHouseholdContext }) {
     try {
       let data;
       if (action === "reset-cycle") {
-        if (!window.confirm("¿Reiniciar ciclo a Semana 1? Se eliminará el progreso de esta semana.")) { setCycleLoading(false); return; }
+        if (!window.confirm("¿Reset completo? Se eliminará TODO el progreso de retos, se borrará Beta Pro (si estaba activo) y el plan se pondrá a Free. Los planes Stripe de pago NO se tocan.")) { setCycleLoading(false); return; }
         data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/reset-cycle`, { method: "POST" });
-        setCycleMsg("Ciclo reiniciado a Semana 1.");
+        if (data.ok === false) {
+          setCycleError(`Reset bloqueado: ${data.reason || "error"}`);
+          setCycleLoading(false);
+          return;
+        }
+        setCycleMsg(`Ciclo reiniciado${data.betaProCleared ? " — Beta Pro eliminado" : ""}.`);
       } else if (action === "set-cycle-week") {
         const week = Number(forceCycleWeek);
         if (!week || week < 1 || week > 4) { setCycleError("Semana debe ser 1-4."); setCycleLoading(false); return; }
@@ -5859,6 +5864,10 @@ function WeeklySection({ householdContext, onClearHouseholdContext }) {
           <div style={wcFieldStyle}>
             <label style={wcLabelStyle}>Bonus bites</label>
             <input style={inputStyle} type="number" value={configForm.bonusBites ?? 5} onChange={(e) => setConfigForm((p) => ({ ...p, bonusBites: Number(e.target.value) }))} />
+          </div>
+          <div style={wcFieldStyle}>
+            <label style={wcLabelStyle}>Semanas por ciclo (totalCycleWeeks)</label>
+            <input style={inputStyle} type="number" min="1" max="12" value={configForm.totalCycleWeeks ?? 4} onChange={(e) => setConfigForm((p) => ({ ...p, totalCycleWeeks: Number(e.target.value) }))} />
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <input type="checkbox" id="wc-paused" checked={!!configForm.paused} onChange={(e) => setConfigForm((p) => ({ ...p, paused: e.target.checked }))} />
@@ -6142,10 +6151,10 @@ function WeeklySection({ householdContext, onClearHouseholdContext }) {
                     onClick={() => cycleAction("reset-cycle")}
                     disabled={cycleLoading}
                   >
-                    Reiniciar ciclo a Semana 1
+                    Reset completo (+ Beta Pro)
                   </button>
                   <span style={{ fontSize: 11, color: "#9ca3af" }}>
-                    Borra el anclaje y el progreso de esta semana. El próximo evento del hogar iniciará en Semana 1.
+                    Borra anclaje, TODO el progreso de retos y Beta Pro (si activo). Plan pasa a Free. Planes Stripe no se tocan.
                   </span>
                 </div>
 

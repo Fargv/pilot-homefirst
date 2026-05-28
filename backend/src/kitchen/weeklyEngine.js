@@ -7,7 +7,7 @@ import { Household } from "./models/Household.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { KitchenDish } from "./models/KitchenDish.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
-import { recordMeaningfulActivity, tryUnlockBetaPro, checkAndGrantBetaPro, inspectBetaProEligibility } from "./betaProService.js";
+import { recordMeaningfulActivity, tryUnlockBetaPro, checkAndGrantBetaPro, inspectBetaProEligibility, isPaidPlan } from "./betaProService.js";
 import { isProLikeHousehold } from "./subscriptionService.js";
 
 // ─── Curriculum resolution ────────────────────────────────────────────────────
@@ -678,13 +678,24 @@ export function parseWeekStart(isoString) {
 }
 
 /**
- * Returns 1-4 cycle week index given a weekStartDate and cycleStartDate.
+ * Returns the UTC Monday of the week containing the given date.
  */
-export function getCycleWeekIndex(weekStartDate, cycleStartDate) {
+export function getMondayOf(date) {
+  const d = new Date(date);
+  const day = d.getUTCDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + diff));
+}
+
+/**
+ * Returns cycle week index given a weekStartDate and cycleStartDate.
+ * totalCycleWeeks defaults to 4 for backward compatibility.
+ */
+export function getCycleWeekIndex(weekStartDate, cycleStartDate, totalCycleWeeks = 4) {
   const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
   const weeksElapsed = Math.floor((weekStartDate - cycleStartDate) / MS_PER_WEEK);
   if (weeksElapsed < 0) return 1;
-  return (weeksElapsed % 4) + 1;
+  return (weeksElapsed % totalCycleWeeks) + 1;
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -695,7 +706,7 @@ export function getCycleWeekIndex(weekStartDate, cycleStartDate) {
 export async function getOrCreateCycleConfig() {
   const config = await WeeklyCycleConfig.findOneAndUpdate(
     { key: "default" },
-    { $setOnInsert: { key: "default", cycleStartDate: new Date("2025-05-19"), paused: false, bonusBites: 5 } },
+    { $setOnInsert: { key: "default", cycleStartDate: new Date("2025-05-19"), paused: false, bonusBites: 5, totalCycleWeeks: 4 } },
     { upsert: true, new: true }
   );
   return config;
@@ -946,6 +957,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     const cycleConfig = await getOrCreateCycleConfig();
     if (cycleConfig.paused) return null;
 
+    const totalCycleWeeks = cycleConfig.totalCycleWeeks ?? 4;
     const currentWeekStartISO = getCurrentWeekStart();
     const randomizedWeekStartISO = contextData.randomizedWeekStart || contextData.weekStart || currentWeekStartISO;
     if (eventType === "week_randomized") {
@@ -956,6 +968,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
       }
     }
 
+    // weekStartISO/weekStartDate: the week of the actual event (used for reading plan stats)
     const weekStartISO = eventType === "week_randomized"
       ? currentWeekStartISO
       : (contextData.weekStart || currentWeekStartISO);
@@ -967,17 +980,30 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     const curriculum = getHouseholdCurriculum(household);
 
     // Per-household cycle start: initialize on first weekly challenge interaction.
-    // Falls back to global cycleConfig.cycleStartDate for households that pre-date this field.
+    // Falls back to current week for households that have never started challenges.
     let householdCycleStart = household?.weeklyChallengeCycleStartedAt ?? null;
     if (!householdCycleStart) {
-      householdCycleStart = weekStartDate; // anchor to the planning week of first use
+      const anchorDate = parseWeekStart(currentWeekStartISO);
+      householdCycleStart = anchorDate;
       await Household.updateOne(
         { _id: householdId, weeklyChallengeCycleStartedAt: null },
-        { $set: { weeklyChallengeCycleStartedAt: weekStartDate } }
+        { $set: { weeklyChallengeCycleStartedAt: anchorDate } }
       );
     }
 
-    const cycleWeekIndex = getCycleWeekIndex(weekStartDate, householdCycleStart);
+    // Sticky week 1 rule: before Beta Pro is granted, always force week 1.
+    // effectiveWeekDate = where progress is tracked (anchor week pre-grant, calendar week post-grant).
+    const betaProGranted = !!household?.betaPro?.unlockedAt;
+    let effectiveWeekDate, cycleWeekIndex;
+
+    if (!betaProGranted) {
+      effectiveWeekDate = getMondayOf(householdCycleStart);
+      cycleWeekIndex = 1;
+    } else {
+      const grantMonday = getMondayOf(household.betaPro.unlockedAt);
+      cycleWeekIndex = getCycleWeekIndex(weekStartDate, grantMonday, totalCycleWeeks);
+      effectiveWeekDate = weekStartDate;
+    }
 
     // Load only challenges for this household's curriculum
     const challenges = await WeeklyChallengeDef.find({
@@ -988,7 +1014,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
 
     if (!challenges.length) return null;
 
-    let progress = await getOrCreateProgress(householdId, weekStartDate, cycleWeekIndex);
+    let progress = await getOrCreateProgress(householdId, effectiveWeekDate, cycleWeekIndex);
 
     const completedKeysBefore = new Set((progress.completedChallenges || []).map((c) => c.challengeKey));
     const newlyCompletedKeys = [];
@@ -1079,74 +1105,6 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
             await _markChallengeComplete(progress._id, catalogChallengeDef);
             newlyCompletedKeys.push("pro_w1_use_catalog");
             completedKeysBefore.add("pro_w1_use_catalog");
-          }
-        }
-      }
-
-      // Cross-week fallback: meals planned for a future week may satisfy challenges
-      // for the CURRENT calendar week.  This fixes the case where a user plans
-      // 5 meals next week and "Planifica 5 comidas" doesn't complete because the
-      // triggered cycleWeekIndex ≠ the current week's cycleWeekIndex.
-      // Guard: only future weeks — past-week edits should not retroactively
-      // complete current-week challenges.
-      if (weekStartISO !== currentWeekStartISO
-          && weekStartDate.getTime() > parseWeekStart(currentWeekStartISO).getTime()) {
-        const curWeekDate = parseWeekStart(currentWeekStartISO);
-        const curCycleWeekIdx = getCycleWeekIndex(curWeekDate, householdCycleStart);
-
-        // Only run when the cycle week differs — if they happen to map to the same
-        // cycleWeekIndex the main block already handled everything.
-        if (curCycleWeekIdx !== cycleWeekIndex) {
-          const curWeekMealChallenges = await WeeklyChallengeDef.find({
-            active: true,
-            cycleWeek: curCycleWeekIdx,
-            curriculum,
-            triggerType: "meal_planned"
-          }).sort({ cycleOrder: 1 }).lean();
-
-          if (curWeekMealChallenges.length) {
-            const curProgressDoc = await getOrCreateProgress(householdId, curWeekDate, curCycleWeekIdx);
-            const curCompletedBefore = new Set(
-              (curProgressDoc.completedChallenges || []).map((c) => c.challengeKey)
-            );
-
-            // Use triggered week's stats to evaluate current week's meal challenges.
-            const crossChecks = [
-              { key: "weekly_plan_5_meals", done: count >= 5 },
-              { key: "weekly_complete_meal_week", done: allWeekdaysFilled },
-              { key: "weekly_complete_meal_week_w4", done: allWeekdaysFilled },
-              { key: "weekly_use_3_different_dishes", done: uniqueDishCount >= 3 },
-              { key: "weekly_use_5_different_dishes", done: uniqueDishCount >= 5 },
-              { key: "weekly_no_repeated_dishes", done: count >= 5 && uniqueDishCount === count },
-              { key: "weekly_plan_full_week_before_thursday", done: allWeekdaysFilled && [1, 2, 3].includes(todayUTCDay) }
-            ];
-
-            let crossWeekCompleted = false;
-            for (const check of crossChecks) {
-              if (!check.done || curCompletedBefore.has(check.key)) continue;
-              const def = curWeekMealChallenges.find((c) => c.key === check.key);
-              if (!def) continue;
-
-              await _markChallengeComplete(curProgressDoc._id, def);
-              curCompletedBefore.add(check.key);
-
-              // Grant reward directly against the current week's progress doc.
-              const freshCurProgress = await HouseholdWeeklyProgress.findById(curProgressDoc._id).lean();
-              await grantWeeklyReward(householdId, def.key, def.rewardBites, freshCurProgress);
-
-              newlyCompletedKeys.push(check.key);
-              completedKeysBefore.add(check.key);
-              crossWeekCompleted = true;
-            }
-
-            if (crossWeekCompleted) {
-              // Check bonus for the current week in case all main challenges are now done.
-              const allCurChallenges = await WeeklyChallengeDef.find({
-                active: true, cycleWeek: curCycleWeekIdx, curriculum
-              }).lean();
-              const latestCurProgress = await HouseholdWeeklyProgress.findById(curProgressDoc._id).lean();
-              await checkAndGrantBonus(householdId, latestCurProgress, allCurChallenges, cycleConfig.bonusBites);
-            }
           }
         }
       }
@@ -1498,6 +1456,7 @@ export async function getWeeklyState(householdId) {
     }
 
     const cycleConfig = await getOrCreateCycleConfig();
+    const totalCycleWeeks = cycleConfig.totalCycleWeeks ?? 4;
     const weekStartISO = getCurrentWeekStart();
     const weekStartDate = parseWeekStart(weekStartISO);
 
@@ -1506,14 +1465,27 @@ export async function getWeeklyState(householdId) {
       .select("subscriptionPlan planSource betaPro weeklyChallengeCycleStartedAt").lean();
     const curriculum = getHouseholdCurriculum(household);
 
-    // Use per-household cycle anchor if set; fall back to global config for legacy households.
-    const householdCycleStart = household?.weeklyChallengeCycleStartedAt ?? cycleConfig.cycleStartDate;
-    const cycleWeekIndex = getCycleWeekIndex(weekStartDate, householdCycleStart);
+    // Use per-household cycle anchor if set; fall back to current week (same as trigger init).
+    const householdCycleStart = household?.weeklyChallengeCycleStartedAt ?? weekStartDate;
 
-    // participationWeek: how many weeks the household has been doing challenges (1-based).
-    const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
-    const weeksElapsed = Math.max(0, Math.floor((weekStartDate - householdCycleStart) / MS_PER_WEEK));
-    const participationWeek = weeksElapsed + 1;
+    // Sticky week 1 rule: before Beta Pro is granted, the household always sees week 1
+    // challenges. Progress is tracked in the anchor week's doc.  Once Beta Pro is
+    // granted (betaPro.unlockedAt is set), progression resumes from the grant Monday.
+    const betaProGranted = !!household?.betaPro?.unlockedAt;
+    let effectiveWeekDate, cycleWeekIndex, participationWeek;
+
+    if (!betaProGranted) {
+      effectiveWeekDate = getMondayOf(householdCycleStart);
+      cycleWeekIndex = 1;
+      participationWeek = 1;
+    } else {
+      const grantMonday = getMondayOf(household.betaPro.unlockedAt);
+      const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+      const weeksElapsed = Math.max(0, Math.floor((weekStartDate - grantMonday) / MS_PER_WEEK));
+      cycleWeekIndex = (weeksElapsed % totalCycleWeeks) + 1;
+      effectiveWeekDate = weekStartDate;
+      participationWeek = weeksElapsed + 1;
+    }
 
     const challenges = await WeeklyChallengeDef.find({
       active: true,
@@ -1521,7 +1493,7 @@ export async function getWeeklyState(householdId) {
       curriculum
     }).sort({ cycleOrder: 1 }).lean();
 
-    const progress = await getOrCreateProgress(householdId, weekStartDate, cycleWeekIndex);
+    const progress = await getOrCreateProgress(householdId, effectiveWeekDate, cycleWeekIndex);
     const progressLean = progress.toObject ? progress.toObject() : progress;
 
     const completedMap = new Map(
@@ -1629,7 +1601,7 @@ export async function adminGetCycleConfig() {
 }
 
 export async function adminUpdateCycleConfig(data) {
-  const allowed = ["cycleStartDate", "paused", "bonusBites"];
+  const allowed = ["cycleStartDate", "paused", "bonusBites", "totalCycleWeeks"];
   const update = {};
   for (const field of allowed) {
     if (data[field] !== undefined) update[field] = data[field];
@@ -1708,22 +1680,47 @@ export async function adminGetHouseholdCycleState(householdId) {
 }
 
 /**
- * Resets a household's cycle to Week 1 of this calendar week.
- * Deletes the current week's progress doc and clears the cycle anchor so the
- * next event re-initializes it to "this Monday = Week 1".
+ * Full cycle reset: clears the cycle anchor, deletes ALL weekly progress docs,
+ * and downgrades Beta Pro back to free (unless the household is on a real paid plan).
+ *
+ * Guard: if the household has a real Stripe-paid subscription (planSource === "paid"
+ * or an active stripeSubscriptionId) this call returns { ok: false, reason: "paid_plan" }
+ * without touching anything — admin must use Stripe dashboard to modify those.
  */
 export async function adminResetHouseholdCycle(householdId) {
-  const weekStartISO = getCurrentWeekStart();
-  const weekStartDate = parseWeekStart(weekStartISO);
+  const household = await Household.findById(householdId)
+    .select("betaPro planSource subscriptionPlan isPro stripeSubscriptionId subscriptionStatus")
+    .lean();
+  if (!household) return { ok: false, reason: "household_not_found" };
 
-  await Household.updateOne(
-    { _id: householdId },
-    { $unset: { weeklyChallengeCycleStartedAt: "" } }
-  );
-  await HouseholdWeeklyProgress.deleteOne({ householdId, weekStart: weekStartDate });
+  if (isPaidPlan(household)) {
+    return { ok: false, reason: "paid_plan" };
+  }
 
-  console.log(`[weekly/admin] Cycle reset to Week 1 for household=${householdId}`);
-  return { ok: true };
+  // Clear cycle anchor so the next event re-anchors to that Monday
+  const betaProWasActive = !!household.betaPro?.active;
+
+  const householdUpdate = {
+    $unset: { weeklyChallengeCycleStartedAt: "" },
+    $set: {
+      subscriptionPlan: "free",
+      planSource: "manual",
+      isPro: false,
+      "betaPro.active": false,
+      "betaPro.expiredAt": new Date(),
+      "betaPro.expirationReason": "admin_reset"
+    }
+  };
+  // Null out the unlock timestamp fields so the sticky-week-1 rule resets cleanly
+  householdUpdate.$set["betaPro.unlockedAt"] = null;
+  householdUpdate.$set["betaPro.expiresAt"] = null;
+  householdUpdate.$set["betaPro.lastRenewedAt"] = null;
+
+  await Household.updateOne({ _id: householdId }, householdUpdate);
+  await HouseholdWeeklyProgress.deleteMany({ householdId });
+
+  console.log(`[weekly/admin] Full cycle reset for household=${householdId} (betaProCleared=${betaProWasActive})`);
+  return { ok: true, betaProCleared: betaProWasActive };
 }
 
 /**
@@ -1735,7 +1732,9 @@ export async function adminResetHouseholdCycle(householdId) {
  * then deletes the current week's progress doc so fresh challenges are loaded.
  */
 export async function adminSetHouseholdCycleWeek(householdId, setWeek) {
-  const week = Math.min(4, Math.max(1, Number(setWeek) || 1));
+  const cycleConfig = await getOrCreateCycleConfig();
+  const totalCycleWeeks = cycleConfig.totalCycleWeeks ?? 4;
+  const week = Math.min(totalCycleWeeks, Math.max(1, Number(setWeek) || 1));
   const weekStartISO = getCurrentWeekStart();
   const weekStartDate = parseWeekStart(weekStartISO);
 
