@@ -977,7 +977,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     // Resolve curriculum and per-household cycle start
     const household = await Household.findById(householdId)
       .select("subscriptionPlan planSource betaPro weeklyChallengeCycleStartedAt").lean();
-    const curriculum = getHouseholdCurriculum(household);
+    let curriculum = getHouseholdCurriculum(household);
 
     // Per-household cycle start: initialize on first weekly challenge interaction.
     // Falls back to current week for households that have never started challenges.
@@ -993,6 +993,10 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
 
     // Sticky week 1 rule: before Beta Pro is granted, always force week 1.
     // effectiveWeekDate = where progress is tracked (anchor week pre-grant, calendar week post-grant).
+    //
+    // Grant-week purgatory: when Beta Pro is granted during the current calendar week,
+    // keep evaluating triggers against basic week 1 (already fully completed — no-ops).
+    // Pro curriculum starts from the Monday after the grant week.
     const betaProGranted = !!household?.betaPro?.unlockedAt;
     let effectiveWeekDate, cycleWeekIndex;
 
@@ -1001,8 +1005,18 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
       cycleWeekIndex = 1;
     } else {
       const grantMonday = getMondayOf(household.betaPro.unlockedAt);
-      cycleWeekIndex = getCycleWeekIndex(weekStartDate, grantMonday, totalCycleWeeks);
-      effectiveWeekDate = weekStartDate;
+      const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+      const weeksElapsed = Math.max(0, Math.floor((weekStartDate - grantMonday) / MS_PER_WEEK));
+      if (weeksElapsed === 0) {
+        // Same calendar week as grant — stay on basic week 1 (all already complete, no-ops).
+        effectiveWeekDate = getMondayOf(householdCycleStart);
+        cycleWeekIndex = 1;
+        curriculum = "basic";
+      } else {
+        const proWeeksElapsed = weeksElapsed - 1;
+        cycleWeekIndex = (proWeeksElapsed % totalCycleWeeks) + 1;
+        effectiveWeekDate = weekStartDate;
+      }
     }
 
     // Load only challenges for this household's curriculum
@@ -1463,7 +1477,7 @@ export async function getWeeklyState(householdId) {
     // Resolve curriculum and per-household cycle start
     const household = await Household.findById(householdId)
       .select("subscriptionPlan planSource betaPro weeklyChallengeCycleStartedAt").lean();
-    const curriculum = getHouseholdCurriculum(household);
+    let curriculum = getHouseholdCurriculum(household);
 
     // Use per-household cycle anchor if set; fall back to current week (same as trigger init).
     const householdCycleStart = household?.weeklyChallengeCycleStartedAt ?? weekStartDate;
@@ -1471,6 +1485,11 @@ export async function getWeeklyState(householdId) {
     // Sticky week 1 rule: before Beta Pro is granted, the household always sees week 1
     // challenges. Progress is tracked in the anchor week's doc.  Once Beta Pro is
     // granted (betaPro.unlockedAt is set), progression resumes from the grant Monday.
+    //
+    // Grant-week purgatory: when Beta Pro is granted during the current calendar week
+    // (weeksElapsed === 0), keep showing the completed basic week 1 challenges until
+    // the next Monday. Pro curriculum starts from the Monday AFTER the grant week
+    // (proWeeksElapsed = weeksElapsed - 1 → cycleWeekIndex 1 on the first post-grant Mon).
     const betaProGranted = !!household?.betaPro?.unlockedAt;
     let effectiveWeekDate, cycleWeekIndex, participationWeek;
 
@@ -1482,9 +1501,19 @@ export async function getWeeklyState(householdId) {
       const grantMonday = getMondayOf(household.betaPro.unlockedAt);
       const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
       const weeksElapsed = Math.max(0, Math.floor((weekStartDate - grantMonday) / MS_PER_WEEK));
-      cycleWeekIndex = (weeksElapsed % totalCycleWeeks) + 1;
-      effectiveWeekDate = weekStartDate;
-      participationWeek = weeksElapsed + 1;
+      if (weeksElapsed === 0) {
+        // Same calendar week as grant — show completed basic week 1, not pro challenges.
+        effectiveWeekDate = getMondayOf(householdCycleStart);
+        cycleWeekIndex = 1;
+        curriculum = "basic";
+        participationWeek = 1;
+      } else {
+        // Pro progression: week 1 of pro starts the Monday after the grant week.
+        const proWeeksElapsed = weeksElapsed - 1;
+        cycleWeekIndex = (proWeeksElapsed % totalCycleWeeks) + 1;
+        effectiveWeekDate = weekStartDate;
+        participationWeek = weeksElapsed + 1;
+      }
     }
 
     const challenges = await WeeklyChallengeDef.find({
