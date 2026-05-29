@@ -17,6 +17,17 @@ import {
 import { parseRecipeSteps } from "../utils/recipeStepParser.js";
 import RecipeServingsControl from "./RecipeServingsControl.jsx";
 
+// Stable module-level extensions — never recreated, so Tiptap never remounts on mobile
+const TIPTAP_EXTENSIONS = [
+  StarterKit.configure({ heading: { levels: [2, 3] } }),
+  Underline,
+  Link.configure({ openOnClick: false }),
+  Image.configure({ inline: false }),
+  Placeholder.configure({ placeholder: "Describe los pasos de elaboración..." }),
+  TextStyle,
+  Color
+];
+
 const APP_COLORS = [
   { label: "Índigo", value: "#4338ca" },
   { label: "Rojo", value: "#ef4444" },
@@ -422,7 +433,7 @@ const STEP_F = {
   outline: "none",
 };
 
-function GuidedStepsEditor({ steps, onChangeSteps }) {
+function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
   const update = (i, updates) => {
     const next = steps.map((s, idx) => {
       if (idx !== i) return s;
@@ -455,7 +466,7 @@ function GuidedStepsEditor({ steps, onChangeSteps }) {
 
   const addStep = () => onChangeSteps([
     ...steps,
-    { text: "", title: "", hasTimer: false, durationMinutes: null, durationSeconds: 0, timerLabel: "", tips: "" }
+    { text: "", title: "", hasTimer: false, durationMinutes: null, durationSeconds: 0, timerLabel: "", tips: "", stepIngredients: [] }
   ]);
 
   const getDurationMinutes = (step) => {
@@ -530,6 +541,47 @@ function GuidedStepsEditor({ steps, onChangeSteps }) {
               </label>
             </div>
 
+            {dishIngredients.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <span className="guided-step-field-label" style={{ display: "block", marginBottom: 4 }}>
+                  Ingredientes del paso (opcional)
+                </span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {dishIngredients.map((ing, ingIdx) => {
+                    const stepIngs = step.stepIngredients || [];
+                    const isSelected = stepIngs.some(
+                      (si) => si.name.toLowerCase() === ing.name.toLowerCase()
+                    );
+                    return (
+                      <button
+                        key={ingIdx}
+                        type="button"
+                        style={{
+                          padding: "3px 10px",
+                          borderRadius: 999,
+                          fontSize: 12,
+                          fontWeight: isSelected ? 600 : 400,
+                          border: `1px solid ${isSelected ? "#4f46e5" : "#d1d5db"}`,
+                          background: isSelected ? "#eef2ff" : "transparent",
+                          color: isSelected ? "#4338ca" : "#6b7280",
+                          cursor: "pointer",
+                          transition: "all 0.12s",
+                        }}
+                        onClick={() => {
+                          const next = isSelected
+                            ? stepIngs.filter((si) => si.name.toLowerCase() !== ing.name.toLowerCase())
+                            : [...stepIngs, { name: ing.name, ingredientId: ing.ingredientId || null }];
+                          update(i, { stepIngredients: next });
+                        }}
+                      >
+                        {isSelected ? "✓ " : ""}{ing.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="guided-step-timer-row">
               <label className="guided-step-timer-check">
                 <input
@@ -582,30 +634,35 @@ export default function RecipeEditor({
   recipeCookMinutes = null,
   targetServings = null,
   dishIngredientNames = [],
+  dishIngredients = [],
   onAddIngredientToDish,
   onChange,
   readOnly = false
 }) {
   const isGuidedSteps = Array.isArray(recipeSteps);
 
+  // Stable refs so the Tiptap onUpdate closure is never stale — critical for mobile
+  const onChangeRef = useRef(onChange);
+  const isGuidedStepsRef = useRef(isGuidedSteps);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  useEffect(() => { isGuidedStepsRef.current = isGuidedSteps; }, [isGuidedSteps]);
+
+  // deps=[] keeps the editor instance stable across every parent re-render
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] } }),
-      Underline,
-      Link.configure({ openOnClick: false }),
-      Image.configure({ inline: false }),
-      Placeholder.configure({ placeholder: "Describe los pasos de elaboración..." }),
-      TextStyle,
-      Color
-    ],
-    // Tiptap can't render an array — use empty string for structured steps
+    extensions: TIPTAP_EXTENSIONS,
     content: isGuidedSteps ? "" : (recipeSteps || ""),
     editable: !readOnly,
     onUpdate: ({ editor: ed }) => {
-      if (!onChange || isGuidedSteps) return;
-      onChange((prev) => ({ ...prev, steps: ed.getJSON() }));
+      if (!onChangeRef.current || isGuidedStepsRef.current) return;
+      onChangeRef.current((prev) => ({ ...prev, steps: ed.getJSON() }));
     }
-  });
+  }, []);
+
+  // Local display state for minute inputs — avoids controlled-number-input bugs on mobile
+  const [prepMin, setPrepMin] = useState(recipePrepMinutes != null ? String(recipePrepMinutes) : "");
+  const [cookMin, setCookMin] = useState(recipeCookMinutes != null ? String(recipeCookMinutes) : "");
+  useEffect(() => { setPrepMin(recipePrepMinutes != null ? String(recipePrepMinutes) : ""); }, [recipePrepMinutes]);
+  useEffect(() => { setCookMin(recipeCookMinutes != null ? String(recipeCookMinutes) : ""); }, [recipeCookMinutes]);
 
   const addIngredient = () => {
     if (!onChange) return;
@@ -735,8 +792,8 @@ export default function RecipeEditor({
     const tiptapContent = editor ? editor.getJSON() : null;
     const parsed = tiptapContent ? parseRecipeSteps(tiptapContent) : null;
     const initialSteps = parsed?.length > 0
-      ? parsed.map((s) => ({ text: s.text, title: "", hasTimer: false, durationMinutes: null, durationSeconds: 0, timerLabel: "", tips: "" }))
-      : [{ text: "", title: "", hasTimer: false, durationMinutes: null, durationSeconds: 0, timerLabel: "", tips: "" }];
+      ? parsed.map((s) => ({ text: s.text, title: "", hasTimer: false, durationMinutes: null, durationSeconds: 0, timerLabel: "", tips: "", stepIngredients: [] }))
+      : [{ text: "", title: "", hasTimer: false, durationMinutes: null, durationSeconds: 0, timerLabel: "", tips: "", stepIngredients: [] }];
     onChange((prev) => ({ ...prev, steps: initialSteps }));
   };
 
@@ -769,30 +826,34 @@ export default function RecipeEditor({
         <span className="recipe-section-title">personas</span>
         <span className="recipe-section-title" style={{ marginLeft: 8 }}>Prep.</span>
         <input
-          type="number"
-          min="0"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           className="recipe-servings-input"
           placeholder="—"
-          value={recipePrepMinutes ?? ""}
-          onChange={(e) => {
+          value={prepMin}
+          onChange={(e) => { if (/^\d*$/.test(e.target.value)) setPrepMin(e.target.value); }}
+          onBlur={() => {
             if (!onChange) return;
-            const val = e.target.value === "" ? null : Number(e.target.value);
-            onChange((prev) => ({ ...prev, prepMinutes: val }));
+            const n = prepMin === "" ? null : parseInt(prepMin, 10);
+            onChange((prev) => ({ ...prev, prepMinutes: Number.isFinite(n) ? n : null }));
           }}
           title="Minutos de preparación"
         />
         <span className="recipe-section-title">min</span>
         <span className="recipe-section-title" style={{ marginLeft: 4 }}>Cocción</span>
         <input
-          type="number"
-          min="0"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           className="recipe-servings-input"
           placeholder="—"
-          value={recipeCookMinutes ?? ""}
-          onChange={(e) => {
+          value={cookMin}
+          onChange={(e) => { if (/^\d*$/.test(e.target.value)) setCookMin(e.target.value); }}
+          onBlur={() => {
             if (!onChange) return;
-            const val = e.target.value === "" ? null : Number(e.target.value);
-            onChange((prev) => ({ ...prev, cookMinutes: val }));
+            const n = cookMin === "" ? null : parseInt(cookMin, 10);
+            onChange((prev) => ({ ...prev, cookMinutes: Number.isFinite(n) ? n : null }));
           }}
           title="Minutos de cocción"
         />
@@ -890,6 +951,7 @@ export default function RecipeEditor({
         {isGuidedSteps ? (
           <GuidedStepsEditor
             steps={recipeSteps}
+            dishIngredients={dishIngredients}
             onChangeSteps={(newSteps) => {
               if (!onChange) return;
               onChange((prev) => ({ ...prev, steps: newSteps }));

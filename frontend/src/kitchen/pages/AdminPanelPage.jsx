@@ -1447,6 +1447,10 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
                 recipePrepMinutes={recipe.prepMinutes}
                 recipeCookMinutes={recipe.cookMinutes}
                 dishIngredientNames={dishIngredientNames}
+                dishIngredients={dishIngredients.map((i) => ({
+                  name: i.displayName || i.canonicalName || "",
+                  ingredientId: i.ingredientId || null,
+                }))}
                 onAddIngredientToDish={(name) => {
                   if (!name) return;
                   if (dishIngredients.some((i) => (i.displayName || "").toLowerCase() === name.toLowerCase())) return;

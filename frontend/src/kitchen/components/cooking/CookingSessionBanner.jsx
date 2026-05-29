@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useCookingSession } from "../../contexts/CookingSessionContext.jsx";
 import { formatRemaining } from "../../utils/timerService.js";
 import { useLiveCookingTimer } from "../../hooks/useLiveCookingTimer.js";
@@ -18,6 +18,16 @@ function BannerTimer({ timer }) {
 
 export default function CookingSessionBanner() {
   const { session, isStepperOpen, openStepper } = useCookingSession();
+
+  const bannerVisible = Boolean(session) && !isStepperOpen;
+  useEffect(() => {
+    if (bannerVisible) {
+      document.body.classList.add("has-cooking-banner");
+    } else {
+      document.body.classList.remove("has-cooking-banner");
+    }
+    return () => { document.body.classList.remove("has-cooking-banner"); };
+  }, [bannerVisible]);
 
   if (!session || isStepperOpen) return null;
 

@@ -18116,3 +18116,32 @@ td.recipe-qty-scaled {
 [data-theme="dark"] .recipe-structured-step-text  { color: #f1f5f9; }
 [data-theme="dark"] .recipe-structured-step-timer { background: rgba(99, 102, 241, 0.12); color: #818cf8; }
 [data-theme="dark"] .recipe-structured-step-tips  { color: #64748b; }
+
+/* ── FAB: lift above minimized cooking banner ──────────────────────────────── */
+@media (max-width: 900px) {
+  .has-cooking-banner .dishes-fab {
+    bottom: calc(78px + 64px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── Desktop: constrain guided cooking content to a comfortable max-width ──── */
+@media (min-width: 900px) {
+  .cooking-stepper-overlay {
+    background: var(--surface-muted, #f1f5f9);
+  }
+  /* Inset each row so content stays within ~840px centered */
+  .cooking-stepper-header,
+  .cooking-progress-row,
+  .cooking-step-dots,
+  .cooking-nav {
+    padding-left:  max(20px, calc((100% - 840px) / 2));
+    padding-right: max(20px, calc((100% - 840px) / 2));
+  }
+  .cooking-step-area {
+    padding-left:  max(20px, calc((100% - 880px) / 2));
+    padding-right: max(20px, calc((100% - 880px) / 2));
+  }
+  .cooking-step-card {
+    max-width: 720px;
+  }
+}

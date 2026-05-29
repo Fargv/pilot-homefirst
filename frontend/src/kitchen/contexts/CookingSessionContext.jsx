@@ -13,6 +13,7 @@ import {
 import { notifyTimerComplete, notifyTimerAutoPaused } from "../utils/notificationService.js";
 
 const CookingSessionContext = createContext(null);
+const STEPPER_OPEN_KEY = "lunchfy:cooking_stepper_open";
 
 export function useCookingSession() {
   return useContext(CookingSessionContext);
@@ -20,7 +21,11 @@ export function useCookingSession() {
 
 export function CookingSessionProvider({ children }) {
   const [session, setSession] = useState(() => loadSession());
-  const [isStepperOpen, setIsStepperOpen] = useState(() => Boolean(loadSession()));
+  const [isStepperOpen, setIsStepperOpen] = useState(() => {
+    const saved = loadSession();
+    if (!saved) return false;
+    try { return localStorage.getItem(STEPPER_OPEN_KEY) !== "false"; } catch { return true; }
+  });
   const notifiedRef = useRef(new Set());
   // Ref so timerAction can read current timers without a stale closure
   const sessionRef = useRef(session);
@@ -108,12 +113,14 @@ export function CookingSessionProvider({ children }) {
       timers:           {},
     });
     setIsStepperOpen(true);
+    try { localStorage.setItem(STEPPER_OPEN_KEY, "true"); } catch {}
   }, []);
 
   const endSession = useCallback(() => {
     notifiedRef.current.clear();
     setSession(null);
     setIsStepperOpen(false);
+    try { localStorage.removeItem(STEPPER_OPEN_KEY); } catch {}
   }, []);
 
   const goToStep = useCallback((index) => {
@@ -139,8 +146,14 @@ export function CookingSessionProvider({ children }) {
     setSession((prev) => (prev ? { ...prev, isComplete: true } : prev));
   }, []);
 
-  const openStepper   = useCallback(() => setIsStepperOpen(true),  []);
-  const minimizeStepper = useCallback(() => setIsStepperOpen(false), []);
+  const openStepper = useCallback(() => {
+    setIsStepperOpen(true);
+    try { localStorage.setItem(STEPPER_OPEN_KEY, "true"); } catch {}
+  }, []);
+  const minimizeStepper = useCallback(() => {
+    setIsStepperOpen(false);
+    try { localStorage.setItem(STEPPER_OPEN_KEY, "false"); } catch {}
+  }, []);
 
   const timerAction = useCallback((key, action, durationMs) => {
     // Determine before the state update whether another timer will be auto-paused.

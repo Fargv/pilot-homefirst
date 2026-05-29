@@ -10,7 +10,7 @@ export default function RecipeStepCard({
   onTimerAction,
   onToggleComplete,
 }) {
-  const { text, html, detectedTimers } = step;
+  const { text, html, detectedTimers, title, tips } = step;
 
   return (
     <div className={`cooking-step-card${isComplete ? " cooking-step-card--done" : ""}`}>
@@ -21,18 +21,10 @@ export default function RecipeStepCard({
         >
           {stepNumber}
         </div>
-        <button
-          type="button"
-          className={`cooking-step-check${isComplete ? " is-checked" : ""}`}
-          onClick={onToggleComplete}
-          aria-label={isComplete ? "Desmarcar paso completado" : "Marcar paso como completado"}
-          aria-pressed={isComplete}
-        >
-          {isComplete ? "✓" : ""}
-        </button>
       </div>
 
       <div className="cooking-step-text">
+        {title && <p className="cooking-step-title">{title}</p>}
         {html ? (
           <div
             className="cooking-step-html"
@@ -40,6 +32,9 @@ export default function RecipeStepCard({
           />
         ) : (
           <p>{text}</p>
+        )}
+        {tips && (
+          <p className="cooking-step-tips">💡 {tips}</p>
         )}
       </div>
 
