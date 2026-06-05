@@ -159,6 +159,7 @@ export default function DishesPage() {
   const panelHeadingRef = useRef(null);
   const [showStickyAction, setShowStickyAction] = useState(false);
   const [dinnerGateOpen, setDinnerGateOpen] = useState(false);
+  const [mealFilterOpen, setMealFilterOpen] = useState(false);
   const todayKey = new Date().toISOString().slice(0, 10);
   const currentWeekStart = useMemo(
     () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
@@ -941,7 +942,7 @@ export default function DishesPage() {
               + {headerActionLabel}
             </button>
           </div>
-          {/* Main navigation tabs */}
+          {/* FILA 1 — Tab principal */}
           <div className="dishes-explorer-nav" role="tablist" aria-label="Secciones de cocina">
             <button
               className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
@@ -962,44 +963,139 @@ export default function DishesPage() {
               Productos
             </button>
           </div>
-          {/* Search */}
-          <input
-            className="kitchen-input"
-            placeholder={isIngredientsTab ? "Buscar producto…" : "Buscar por plato o producto…"}
-            value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
-            onChange={(event) =>
-              isIngredientsTab
-                ? setIngredientSearchTerm(event.target.value)
-                : setDishSearchTerm(event.target.value)
-            }
-          />
-          {/* Origin segmented control + meal-type filters + category chips (dishes tab) */}
+
+          {/* FILA 2 — Tab secundario origen (dishes only, non-diod) */}
+          {!isIngredientsTab && !isDiodGlobalMode ? (
+            <div className="dishes-origin-tabs" role="tablist" aria-label="Filtrar por origen del plato">
+              <button
+                className={`dishes-origin-tab${dishOriginFilter === DISH_ORIGIN.MINE ? " is-active" : ""}`}
+                type="button"
+                role="tab"
+                aria-selected={dishOriginFilter === DISH_ORIGIN.MINE}
+                onClick={() => setDishOriginFilter(dishOriginFilter === DISH_ORIGIN.MINE ? DISH_ORIGIN.ALL : DISH_ORIGIN.MINE)}
+              >
+                Mis platos
+              </button>
+              <button
+                className={`dishes-origin-tab${dishOriginFilter === DISH_ORIGIN.CATALOG ? " is-active" : ""}`}
+                type="button"
+                role="tab"
+                aria-selected={dishOriginFilter === DISH_ORIGIN.CATALOG}
+                onClick={() => setDishOriginFilter(dishOriginFilter === DISH_ORIGIN.CATALOG ? DISH_ORIGIN.ALL : DISH_ORIGIN.CATALOG)}
+              >
+                Catálogo
+              </button>
+            </div>
+          ) : null}
+
+          {/* FILA 3 — Category chips (horizontal scroll) */}
           {!isIngredientsTab ? (
-            <>
-              {/* ── Scope row: origin control (L2) + meal chips (L3) side by side ── */}
-              <div className="dishes-scope-row">
-                {/* ── Origin segmented control ──────────────────────────────── */}
-                {!isDiodGlobalMode && (
-                  <div className="dishes-origin-filter" role="toolbar" aria-label="Filtrar por origen del plato">
-                    {[
-                      { key: DISH_ORIGIN.ALL,     label: "Todos" },
-                      { key: DISH_ORIGIN.MINE,    label: "Mis platos" },
-                      { key: DISH_ORIGIN.CATALOG, label: "Catálogo" }
-                    ].map(({ key, label }) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className={`dishes-origin-btn${dishOriginFilter === key ? " is-active" : ""}`}
-                        onClick={() => setDishOriginFilter(key)}
-                        aria-pressed={dishOriginFilter === key}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+            <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar por categoría">
+              <button
+                type="button"
+                className={`kitchen-filter-chip ${!selectedDishCategoryId ? "is-active is-all" : ""}`}
+                onClick={() => setSelectedDishCategoryId("")}
+              >
+                Todos
+              </button>
+              {visibleDishCategoryChips.map((category) => {
+                const categoryId = String(category?._id || "");
+                const selected = String(selectedDishCategoryId || "") === categoryId;
+                return (
+                  <button
+                    key={categoryId}
+                    type="button"
+                    className={`kitchen-filter-chip ${selected ? "is-active" : ""}`}
+                    onClick={() => setSelectedDishCategoryId((previous) => (String(previous || "") === categoryId ? "" : categoryId))}
+                  >
+                    <span className="kitchen-filter-chip-dot" style={{ background: category.colorText || "#475467" }} />
+                    <span>{category.name}</span>
+                  </button>
+                );
+              })}
+              {extraDishCategories.length > 0 ? (
+                <button
+                  type="button"
+                  className="kitchen-filter-chip dishes-cat-more"
+                  onClick={() => setShowAllDishCategories((v) => !v)}
+                >
+                  {showAllDishCategories ? "Menos" : `+${extraDishCategories.length} más`}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {isIngredientsTab && !ingredientsLoading && ingredientCategories.length > 0 ? (
+            <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar productos por categoría">
+              <button
+                type="button"
+                className={`kitchen-filter-chip ${!selectedIngredientCategoryId ? "is-active is-all" : ""}`}
+                onClick={() => setSelectedIngredientCategoryId("")}
+              >
+                Todos
+              </button>
+              {visibleIngredientCategoryChips.map((cat) => {
+                const catId = String(cat._id || "");
+                const selected = selectedIngredientCategoryId === catId;
+                return (
+                  <button
+                    key={catId}
+                    type="button"
+                    className={`kitchen-filter-chip ${selected ? "is-active" : ""}`}
+                    onClick={() => setSelectedIngredientCategoryId((prev) => (prev === catId ? "" : catId))}
+                  >
+                    {cat.colorText ? (
+                      <span className="kitchen-filter-chip-dot" style={{ background: cat.colorText }} />
+                    ) : null}
+                    {cat.name}
+                    <span className="dishes-cat-count">{ingredientCategoryCount[catId] || 0}</span>
+                  </button>
+                );
+              })}
+              {extraIngredientCategories.length > 0 ? (
+                <button
+                  type="button"
+                  className="kitchen-filter-chip dishes-cat-more"
+                  onClick={() => setShowAllIngredientCategories((v) => !v)}
+                >
+                  {showAllIngredientCategories ? "Menos" : `+${extraIngredientCategories.length} más`}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* FILA 4 — Filtro Comidas/Cenas (colapsable, dishes only) */}
+          {!isIngredientsTab ? (
+            <div className="dishes-meal-toggle-wrap">
+              <button
+                type="button"
+                className={`dishes-meal-toggle-chip${selectedMealFilter !== MEAL_FILTERS.ALL ? " has-filter" : ""}${mealFilterOpen ? " is-open" : ""}`}
+                onClick={() => setMealFilterOpen((v) => !v)}
+                aria-expanded={mealFilterOpen}
+              >
+                <span>
+                  {selectedMealFilter === MEAL_FILTERS.ALL
+                    ? "Tipo de comida"
+                    : selectedMealFilter === MEAL_FILTERS.LUNCH
+                    ? "Comidas"
+                    : "Cenas"}
+                </span>
+                {selectedMealFilter !== MEAL_FILTERS.ALL ? (
+                  <button
+                    type="button"
+                    className="dishes-meal-toggle-clear"
+                    onClick={(e) => { e.stopPropagation(); setSelectedMealFilter(MEAL_FILTERS.ALL); setMealFilterOpen(false); }}
+                    aria-label="Limpiar filtro de tipo de comida"
+                  >
+                    ×
+                  </button>
+                ) : (
+                  <svg className={`dishes-meal-toggle-chevron${mealFilterOpen ? " is-open" : ""}`} viewBox="0 0 12 12" width="10" height="10" fill="none" aria-hidden="true">
+                    <path d="M2.5 4.5l3.5 3 3.5-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 )}
-                {/* ── Meal-type chips ──────────────────────────────────────── */}
-                <div className="dishes-meal-filter-row" role="toolbar" aria-label="Filtrar por tipo de comida">
+              </button>
+              {mealFilterOpen ? (
+                <div className="dishes-meal-toggle-row" role="toolbar" aria-label="Filtrar por tipo de comida">
                   <button
                     className={`kitchen-filter-chip dishes-meal-chip ${selectedMealFilter === MEAL_FILTERS.ALL ? "is-active is-all" : ""}`}
                     type="button"
@@ -1027,7 +1123,6 @@ export default function DishesPage() {
                       className="kitchen-filter-chip dishes-meal-chip dinner-gate-chip"
                       type="button"
                       aria-disabled="true"
-                      title="Las cenas están disponibles en Pro y Premium"
                       onClick={() => setDinnerGateOpen((v) => !v)}
                     >
                       <svg className="dinner-gate-lock" viewBox="0 0 12 14" width="9" height="11" fill="none" aria-hidden="true">
@@ -1039,91 +1134,29 @@ export default function DishesPage() {
                     </button>
                   )}
                 </div>
-              </div>
+              ) : null}
               {!canUseDinners && dinnerGateOpen ? (
                 <DinnerUpgradeBanner
                   className="dinner-upgrade-banner-dishes"
                   onClose={() => setDinnerGateOpen(false)}
                 />
               ) : null}
-              {/* ── Category chips (L4) ───────────────────────────────────── */}
-              <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar por categoría">
-                <button
-                  type="button"
-                  className={`kitchen-filter-chip ${!selectedDishCategoryId ? "is-active is-all" : ""}`}
-                  onClick={() => setSelectedDishCategoryId("")}
-                >
-                  Todos
-                </button>
-                {visibleDishCategoryChips.map((category) => {
-                  const categoryId = String(category?._id || "");
-                  const selected = String(selectedDishCategoryId || "") === categoryId;
-                  return (
-                    <button
-                      key={categoryId}
-                      type="button"
-                      className={`kitchen-filter-chip ${selected ? "is-active" : ""}`}
-                      style={selected ? { background: category.colorBg || "#eef2ff", borderColor: category.colorText || "#667085" } : undefined}
-                      onClick={() => setSelectedDishCategoryId((previous) => (String(previous || "") === categoryId ? "" : categoryId))}
-                    >
-                      <span className="kitchen-filter-chip-dot" style={{ background: category.colorText || "#475467" }} />
-                      <span>{category.name}</span>
-                    </button>
-                  );
-                })}
-                {extraDishCategories.length > 0 ? (
-                  <button
-                    type="button"
-                    className="kitchen-filter-chip dishes-cat-more"
-                    onClick={() => setShowAllDishCategories((v) => !v)}
-                  >
-                    {showAllDishCategories ? "▲ Menos" : `+${extraDishCategories.length} más`}
-                  </button>
-                ) : null}
-              </div>
-            </>
-          ) : null}
-          {/* Ingredient category chips (ingredients tab) */}
-          {isIngredientsTab && !ingredientsLoading && ingredientCategories.length > 0 ? (
-            <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar productos por categoría">
-              <button
-                type="button"
-                className={`kitchen-filter-chip ${!selectedIngredientCategoryId ? "is-active is-all" : ""}`}
-                onClick={() => setSelectedIngredientCategoryId("")}
-              >
-                Todos
-              </button>
-              {visibleIngredientCategoryChips.map((cat) => {
-                const catId = String(cat._id || "");
-                const selected = selectedIngredientCategoryId === catId;
-                return (
-                  <button
-                    key={catId}
-                    type="button"
-                    className={`kitchen-filter-chip ${selected ? "is-active" : ""}`}
-                    style={selected && cat.colorBg ? { background: cat.colorBg, borderColor: cat.colorText } : undefined}
-                    onClick={() => setSelectedIngredientCategoryId((prev) => (prev === catId ? "" : catId))}
-                  >
-                    {cat.colorText ? (
-                      <span className="kitchen-filter-chip-dot" style={{ background: cat.colorText }} />
-                    ) : null}
-                    {cat.name}
-                    <span className="dishes-cat-count">{ingredientCategoryCount[catId] || 0}</span>
-                  </button>
-                );
-              })}
-              {extraIngredientCategories.length > 0 ? (
-                <button
-                  type="button"
-                  className="kitchen-filter-chip dishes-cat-more"
-                  onClick={() => setShowAllIngredientCategories((v) => !v)}
-                >
-                  {showAllIngredientCategories ? "▲ Menos" : `+${extraIngredientCategories.length} más`}
-                </button>
-              ) : null}
             </div>
           ) : null}
-          {/* ── Results count — reflects all active filters ──────────── */}
+
+          {/* FILA 5 — Buscador */}
+          <input
+            className="kitchen-input dishes-search-input"
+            placeholder={isIngredientsTab ? "Buscar producto…" : "Buscar por plato o producto…"}
+            value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
+            onChange={(event) =>
+              isIngredientsTab
+                ? setIngredientSearchTerm(event.target.value)
+                : setDishSearchTerm(event.target.value)
+            }
+          />
+
+          {/* FILA 6 — Contador resultados */}
           {!loading && !ingredientsLoading ? (
             <p className="dishes-results-count">
               {isIngredientsTab

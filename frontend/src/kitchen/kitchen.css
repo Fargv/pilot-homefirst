@@ -11828,162 +11828,231 @@ td.recipe-qty-scaled {
   padding: 9px 20px;
 }
 
-/* ══ L2: Origin scope control — Todos / Mis platos / Catálogo ═══════════════
-   Secondary to main navigation. Auto-width pill container; sits in the same
-   row as meal chips. Active state uses a soft tint rather than solid fill so
-   it reads clearly as a filter, not primary navigation.
+/* ══ FILA 2: Origin tabs — secondary variant ════════════════════════════════
+   Visually subordinate to the main nav: softer container, compact height,
+   soft-tint active state (not brand fill) to signal "filter, not navigation".
    ──────────────────────────────────────────────────────────────────────── */
-.dishes-origin-filter {
-  display: inline-flex;        /* shrinks to content — not full-width */
-  align-items: center;
-  background: var(--surface-muted, #f1f5f9);
-  border: 1px solid var(--hf-border, #e2e8f0);
-  border-radius: 9px;
-  padding: 2px;
-  gap: 1px;
-  flex-shrink: 0;
+.dishes-origin-tabs {
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  border: 1px solid var(--hf-border);
+  align-self: flex-start;
 }
 
-.dishes-origin-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: 28px;
-  padding: 3px 11px;
+.dishes-origin-tab {
   border: none;
-  border-radius: 7px;
   background: transparent;
-  color: var(--hf-muted, #64748b);
-  font-size: 12px;
+  padding: 5px 14px;
+  border-radius: 7px;
   font-weight: 500;
+  font-size: 13px;
+  color: var(--text-secondary, #475569);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  min-height: 30px;
   white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
-.dishes-origin-btn:hover {
-  background: rgba(255, 255, 255, 0.8);
-  color: var(--input-text, #374151);
+.dishes-origin-tab:hover {
+  background: rgba(79, 70, 229, 0.06);
+  color: var(--text-primary, #1e293b);
 }
 
-/* Soft tint active — clearly secondary to main nav */
-.dishes-origin-btn.is-active {
+.dishes-origin-tab.is-active {
   background: rgba(79, 70, 229, 0.10);
   color: #3730a3;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.20);
 }
 
-/* "Catálogo" active — soft violet tint */
-.dishes-origin-btn:nth-child(3).is-active {
-  background: rgba(124, 58, 237, 0.09);
-  color: #5b21b6;
-  box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.18);
+.dishes-origin-tab:focus-visible {
+  outline: 2px solid rgba(79, 70, 229, 0.4);
+  outline-offset: 2px;
 }
 
-.dishes-origin-count {
+[data-theme="dark"] .dishes-origin-tabs {
+  background: var(--surface-muted);
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .dishes-origin-tab {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .dishes-origin-tab:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .dishes-origin-tab.is-active {
+  background: rgba(99, 102, 241, 0.18);
+  color: #a5b4fc;
+}
+
+/* ══ FILA 4: Meal-type toggle (collapsible) ══════════════════════════════════
+   Collapsed: single chip "Tipo de comida ▾" or "Comidas ×".
+   Expanded: pill row with Todos / Comidas / Cenas.
+   ──────────────────────────────────────────────────────────────────────── */
+.dishes-meal-toggle-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.dishes-meal-toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--chip-border, #dbe2f0);
+  background: var(--chip-bg, #f8fafc);
+  color: var(--text-secondary, #475569);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 32px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dishes-meal-toggle-chip:hover {
+  background: #eef2ff;
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #1e293b;
+}
+
+.dishes-meal-toggle-chip.has-filter {
+  background: rgba(79, 70, 229, 0.09);
+  border-color: rgba(79, 70, 229, 0.28);
+  color: #3730a3;
+  font-weight: 600;
+}
+
+.dishes-meal-toggle-chip.is-open {
+  background: #eef2ff;
+  border-color: rgba(99, 102, 241, 0.35);
+  color: #1e293b;
+}
+
+.dishes-meal-toggle-chevron {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  color: var(--text-muted, #9ca3af);
+  flex-shrink: 0;
+}
+
+.dishes-meal-toggle-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.dishes-meal-toggle-clear {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 16px;
+  width: 16px;
   height: 16px;
-  padding: 0 4px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1;
-  background: rgba(0, 0, 0, 0.07);
-  color: inherit;
-  transition: background 0.15s ease;
-}
-
-.dishes-origin-btn.is-active .dishes-origin-count {
+  border: none;
   background: rgba(79, 70, 229, 0.14);
-  color: inherit;
+  color: #3730a3;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.1s ease;
+  font-family: inherit;
 }
 
-.dishes-origin-btn:nth-child(3).is-active .dishes-origin-count {
-  background: rgba(124, 58, 237, 0.14);
+.dishes-meal-toggle-clear:hover {
+  background: rgba(79, 70, 229, 0.26);
 }
 
-/* Dark mode */
-[data-theme="dark"] .dishes-origin-filter {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--hf-border, rgba(255, 255, 255, 0.12));
+.dishes-meal-toggle-clear:focus-visible {
+  outline: 2px solid rgba(79, 70, 229, 0.4);
+  outline-offset: 1px;
 }
 
-[data-theme="dark"] .dishes-origin-btn {
-  color: #94a3b8;
-}
-
-[data-theme="dark"] .dishes-origin-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
-}
-
-[data-theme="dark"] .dishes-origin-btn.is-active {
-  background: rgba(99, 102, 241, 0.22);
-  color: #a5b4fc;
-  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.30);
-}
-
-[data-theme="dark"] .dishes-origin-btn:nth-child(3).is-active {
-  background: rgba(139, 92, 246, 0.20);
-  color: #c4b5fd;
-  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.28);
-}
-
-[data-theme="dark"] .dishes-origin-count {
-  background: rgba(255, 255, 255, 0.10);
-}
-
-/* ══ Combined scope row — L2 origin control + L3 meal chips in one line ══════ */
-.dishes-scope-row {
+.dishes-meal-toggle-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* ══ L3: Meal-type filter chips — Todos / Comidas / Cenas ════════════════════
-   Same chip family as categories but slightly more prominent; these are
-   filters, not navigation.
-   ──────────────────────────────────────────────────────────────────────── */
-.dishes-meal-filter-row {
-  display: flex;
-  flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  animation: mealToggleSlideIn 150ms ease-out both;
 }
 
-/* Inside the scope row the meal bar grows to fill remaining width */
-.dishes-scope-row .dishes-meal-filter-row {
-  flex: 1;
-  min-width: 0;
+.dishes-meal-toggle-row::-webkit-scrollbar { display: none; }
+
+@keyframes mealToggleSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Meal chips: same height as base filter chips; active gets a subtle fill */
+/* Meal chips: inherit filter-chip base but slightly more compact */
 .dishes-meal-chip {
   min-height: 30px;
   padding: 4px 13px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
 }
 
-.dishes-meal-chip.is-active {
-  background: rgba(124, 138, 201, 0.12);
-  border-color: #8894cc;
+[data-theme="dark"] .dishes-meal-toggle-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-soft);
+  color: var(--text-secondary);
 }
 
-/* ══ L4: Category chips — slightly lighter than meal chips ═══════════════════ */
+[data-theme="dark"] .dishes-meal-toggle-chip:hover,
+[data-theme="dark"] .dishes-meal-toggle-chip.is-open {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.28);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .dishes-meal-toggle-chip.has-filter {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: rgba(99, 102, 241, 0.32);
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .dishes-meal-toggle-clear {
+  background: rgba(99, 102, 241, 0.22);
+  color: #a5b4fc;
+}
+
+/* ══ FILA 5: Search input ════════════════════════════════════════════════════ */
+.dishes-search-input {
+  width: 100%;
+}
+
+/* ══ FILA 3: Category chips — always horizontal scroll ══════════════════════ */
+.dishes-explorer-panel .kitchen-dish-category-filters {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+}
+
+.dishes-explorer-panel .kitchen-dish-category-filters::-webkit-scrollbar {
+  display: none;
+}
+
 .kitchen-dish-category-filters .kitchen-filter-chip {
-  min-height: 28px;
-  padding: 3px 11px;
-  font-size: 12px;
-  font-weight: 400;
+  min-height: 30px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 /* Gradient primary action button */
@@ -12025,37 +12094,6 @@ td.recipe-qty-scaled {
     display: none;
   }
 
-  /* Scope row wraps naturally on narrow screens */
-  .dishes-scope-row {
-    gap: 8px;
-  }
-
-  /* Horizontal scroll for meal chips and category chips */
-  .dishes-explorer-panel .kitchen-dish-category-filters,
-  .dishes-meal-filter-row {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    padding-bottom: 2px;
-  }
-
-  .dishes-explorer-panel .kitchen-dish-category-filters::-webkit-scrollbar,
-  .dishes-meal-filter-row::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-/* Very small screens: stack scope-row vertically, keep origin filter readable */
-@media (max-width: 400px) {
-  .dishes-scope-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .dishes-origin-filter {
-    align-self: stretch;   /* stretch to row width when stacked */
-  }
 }
 
 /* Mobile FAB */
