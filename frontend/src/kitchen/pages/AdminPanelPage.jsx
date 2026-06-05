@@ -1210,6 +1210,7 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
     ingredients: item.recipe?.ingredients || [],
     // Prefer elaboration (legacy Tiptap preserved by migration); preserve structured array steps
     steps: item.recipe?.elaboration ?? item.recipe?.steps ?? null,
+    baseServings: item.recipe?.baseServings ?? item.recipe?.servings ?? null,
     servings: item.recipe?.baseServings ?? item.recipe?.servings ?? null,
     prepMinutes: item.recipe?.prepMinutes ?? null,
     cookMinutes: item.recipe?.cookMinutes ?? null,
@@ -1282,7 +1283,12 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
     }
     setSaving(true); setError("");
     try {
-      await onSave({ _id: item._id, ...form, ingredients: dishIngredients, recipe });
+      await onSave({
+        _id: item._id,
+        ...form,
+        ingredients: dishIngredients,
+        recipe: { ...recipe, baseServings: recipe.servings || recipe.baseServings || null }
+      });
     } catch (err) { setError(err.message || "Error al guardar."); }
     finally { setSaving(false); }
   };
@@ -1444,6 +1450,7 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
                 recipeIngredients={recipe.ingredients || []}
                 recipeSteps={recipe.steps}
                 recipeServings={recipe.servings}
+                recipeBaseServings={recipe.baseServings}
                 recipePrepMinutes={recipe.prepMinutes}
                 recipeCookMinutes={recipe.cookMinutes}
                 dishIngredientNames={dishIngredientNames}
@@ -1459,6 +1466,21 @@ function DishForm({ item, dishCategories, onSave, onCancel }) {
                 onChange={setRecipe}
                 readOnly={false}
               />
+              {(recipe.ingredients || []).length > 0 ? (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--hf-border, #e2e8f0)" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>
+                    Vista previa
+                  </div>
+                  <RecipeEditor
+                    recipeIngredients={recipe.ingredients || []}
+                    recipeSteps={recipe.steps}
+                    recipeServings={recipe.servings}
+                    recipeBaseServings={recipe.servings || recipe.baseServings}
+                    targetServings={recipe.servings}
+                    readOnly
+                  />
+                </div>
+              ) : null}
             </div>
           )}
         </div>
@@ -2148,14 +2170,28 @@ function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked
                   recipeIngredients={dish.recipe?.ingredients || []}
                   recipeSteps={dish.recipe?.elaboration ?? dish.recipe?.steps ?? null}
                   recipeServings={dish.recipe?.baseServings ?? dish.recipe?.servings ?? null}
+                  recipeBaseServings={dish.recipe?.baseServings ?? dish.recipe?.servings ?? null}
                   recipePrepMinutes={dish.recipe?.prepMinutes ?? null}
                   recipeCookMinutes={dish.recipe?.cookMinutes ?? null}
                   onChange={(updater) => {
-                    const prev = dish.recipe || { ingredients: [], steps: null, servings: null, prepMinutes: null, cookMinutes: null };
+                    const prev = dish.recipe || { ingredients: [], steps: null, baseServings: null, servings: null, prepMinutes: null, cookMinutes: null };
                     const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
                     updateDish(i, { recipe: next });
                   }}
                 />
+                {(dish.recipe?.ingredients || []).length > 0 ? (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--hf-border, #e2e8f0)" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>Vista previa</div>
+                    <RecipeEditor
+                      recipeIngredients={dish.recipe?.ingredients || []}
+                      recipeSteps={dish.recipe?.elaboration ?? dish.recipe?.steps ?? null}
+                      recipeServings={dish.recipe?.servings ?? dish.recipe?.baseServings ?? null}
+                      recipeBaseServings={dish.recipe?.servings ?? dish.recipe?.baseServings ?? null}
+                      targetServings={dish.recipe?.servings ?? dish.recipe?.baseServings ?? null}
+                      readOnly
+                    />
+                  </div>
+                ) : null}
               </div>
             </div>
           )}
@@ -2192,6 +2228,7 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, onSaved, baseBitePri
       ingredients: Array.isArray(d.recipe?.ingredients) ? d.recipe.ingredients : [],
       // Prefer elaboration (legacy Tiptap); preserve structured array steps
       steps: d.recipe?.elaboration ?? d.recipe?.steps ?? null,
+      baseServings: d.recipe?.baseServings ?? d.recipe?.servings ?? null,
       servings: d.recipe?.baseServings ?? d.recipe?.servings ?? null,
       prepMinutes: d.recipe?.prepMinutes ?? null,
       cookMinutes: d.recipe?.cookMinutes ?? null,

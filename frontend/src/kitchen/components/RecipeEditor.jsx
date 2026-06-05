@@ -12,10 +12,11 @@ import {
   RECIPE_UNITS,
   isUnitScalable,
   getStructuredQty,
-  displayIngredientQuantity
+  getRecipeBaseServings
 } from "../utils/recipeScaling.js";
 import { parseRecipeSteps } from "../utils/recipeStepParser.js";
 import RecipeServingsControl from "./RecipeServingsControl.jsx";
+import RecipeIngredientsList from "./RecipeIngredientsList.jsx";
 
 // Stable module-level extensions — never recreated, so Tiptap never remounts on mobile
 const TIPTAP_EXTENSIONS = [
@@ -630,9 +631,11 @@ export default function RecipeEditor({
   recipeIngredients = [],
   recipeSteps = null,
   recipeServings = null,
+  recipeBaseServings = null,
   recipePrepMinutes = null,
   recipeCookMinutes = null,
   targetServings = null,
+  onTargetServingsChange = null,
   dishIngredientNames = [],
   dishIngredients = [],
   onAddIngredientToDish,
@@ -706,43 +709,38 @@ export default function RecipeEditor({
 
   // ── Read-only view ─────────────────────────────────────────────────────────
 
-  const defaultServings = (targetServings >= 1 ? targetServings : null) ?? (recipeServings >= 1 ? recipeServings : null) ?? 4;
+  const baseServings = getRecipeBaseServings({ baseServings: recipeBaseServings, servings: recipeServings });
+  const defaultServings = (targetServings >= 1 ? targetServings : null) ?? baseServings;
   const [displayServings, setDisplayServings] = useState(defaultServings);
 
-  const isScaled = Boolean(displayServings && recipeServings && displayServings !== recipeServings);
+  useEffect(() => {
+    setDisplayServings(defaultServings);
+  }, [defaultServings]);
+
+  const handleDisplayServingsChange = (nextServings) => {
+    setDisplayServings(nextServings);
+    onTargetServingsChange?.(nextServings);
+  };
 
   if (readOnly) {
     return (
       <div className="recipe-editor-section">
-        {recipeServings ? (
+        {baseServings ? (
           <RecipeServingsControl
             servings={displayServings}
-            baseServings={recipeServings}
-            onChange={setDisplayServings}
+            baseServings={baseServings}
+            onChange={handleDisplayServingsChange}
           />
         ) : null}
 
         {recipeIngredients && recipeIngredients.length > 0 ? (
           <div>
             <p className="recipe-section-title">Ingredientes</p>
-            <table className="recipe-ingredients-table">
-              <tbody>
-                {recipeIngredients.map((item, idx) => {
-                  const displayQty = displayIngredientQuantity(item, recipeServings, displayServings);
-                  const wasScaled = isScaled && displayQty && displayQty !== (
-                    typeof item.quantity === "string" ? item.quantity : ""
-                  );
-                  return (
-                    <tr key={idx}>
-                      <td>{item.name}</td>
-                      <td className={wasScaled ? "recipe-qty-scaled" : undefined}>
-                        {displayQty}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <RecipeIngredientsList
+              ingredients={recipeIngredients}
+              baseServings={baseServings}
+              targetServings={displayServings}
+            />
           </div>
         ) : null}
 

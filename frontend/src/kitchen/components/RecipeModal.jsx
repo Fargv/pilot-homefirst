@@ -1,17 +1,25 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import RecipeEditor from "./RecipeEditor.jsx";
 import RecipeExecutionModal from "./cooking/RecipeExecutionModal.jsx";
+import { getInitialServings, getRecipeBaseServings } from "../utils/recipeScaling.js";
 
 export default function RecipeModal({ dish, targetServings = null, onClose }) {
   const [showExecution, setShowExecution] = useState(false);
+  const recipe = dish?.recipe || {};
+  const baseServings = getRecipeBaseServings(recipe);
+  const initialServings = targetServings ?? getInitialServings({ recipe, dish });
+  const [selectedServings, setSelectedServings] = useState(initialServings);
+
+  useEffect(() => {
+    setSelectedServings(initialServings);
+    setShowExecution(false);
+  }, [dish?._id, initialServings]);
 
   if (!dish) return null;
 
-  const recipe = dish.recipe || {};
   const ingredients = recipe.ingredients || [];
   const steps = recipe.steps || null;
   const hasContent = ingredients.length > 0 || steps;
-  const initialServings = targetServings ?? recipe.baseServings ?? recipe.servings ?? 4;
 
   return (
     <div
@@ -55,7 +63,9 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
               recipeIngredients={ingredients}
               recipeSteps={steps}
               recipeServings={recipe.servings ?? null}
-              targetServings={targetServings}
+              recipeBaseServings={baseServings}
+              targetServings={selectedServings}
+              onTargetServingsChange={setSelectedServings}
               readOnly={true}
             />
           ) : (
@@ -79,7 +89,7 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
       {showExecution ? (
         <RecipeExecutionModal
           dish={dish}
-          initialServings={initialServings}
+          initialServings={selectedServings}
           onClose={() => setShowExecution(false)}
           onStart={onClose}
         />

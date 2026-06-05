@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { parseRecipeSteps } from "../utils/recipeStepParser.js";
+import { getRecipeBaseServings } from "../utils/recipeScaling.js";
 import { loadSession, saveSession, clearSession } from "../utils/cookingSessionStorage.js";
 import {
   createTimer,
@@ -104,7 +105,9 @@ export function CookingSessionProvider({ children }) {
       recipeId:        String(dish?._id || ""),
       recipeName:      dish?.name || "Receta",
       recipeServings:  recipe.servings ?? null,
+      baseServings:    getRecipeBaseServings(recipe),
       selectedServings: servings,
+      ingredients:     Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
       steps,
       currentStepIndex: 0,
       completedSteps:   [],

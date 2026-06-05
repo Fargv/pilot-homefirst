@@ -41,7 +41,7 @@ export default function DishModal({
   const [error, setError] = useState("");
   const [isCreatingIngredient, setIsCreatingIngredient] = useState(false);
   const [activeTab, setActiveTab] = useState("datos");
-  const [recipe, setRecipe] = useState({ ingredients: [], steps: null, servings: null });
+  const [recipe, setRecipe] = useState({ ingredients: [], steps: null, baseServings: null, servings: null });
   const [recipeSaving, setRecipeSaving] = useState(false);
   const [recipeError, setRecipeError] = useState("");
   const [recipeSaved, setRecipeSaved] = useState(false);
@@ -135,7 +135,8 @@ export default function DishModal({
         setRecipe({
           ingredients: recipeIngredients,
           steps: initialDish.recipe?.steps || null,
-          servings: initialDish.recipe?.servings || null
+          baseServings: initialDish.recipe?.baseServings || initialDish.recipe?.servings || null,
+          servings: initialDish.recipe?.baseServings || initialDish.recipe?.servings || null
         });
       } else {
         setForm({
@@ -149,7 +150,7 @@ export default function DishModal({
           isArchived: false
         });
         setEditingId(null);
-        setRecipe({ ingredients: [], steps: null, servings: null });
+        setRecipe({ ingredients: [], steps: null, baseServings: null, servings: null });
       }
     };
     setup();
@@ -168,7 +169,7 @@ export default function DishModal({
     setRecipeError("");
     setRecipeSaved(false);
     setActiveTab("datos");
-    setRecipe({ ingredients: [], steps: null });
+    setRecipe({ ingredients: [], steps: null, baseServings: null, servings: null });
     setIsCreatingIngredient(false);
     setRecipeEditing(false);
     onClose?.();
@@ -249,6 +250,7 @@ export default function DishModal({
         body: JSON.stringify({
           ingredients: recipe.ingredients || [],
           steps: recipe.steps || null,
+          baseServings: recipe.servings || recipe.baseServings || null,
           servings: recipe.servings || null
         })
       });
@@ -313,6 +315,7 @@ export default function DishModal({
                       recipeIngredients={recipe.ingredients}
                       recipeSteps={recipe.steps}
                       recipeServings={recipe.servings}
+                      recipeBaseServings={recipe.baseServings}
                       dishIngredientNames={dishIngredientNames}
                       onAddIngredientToDish={editingId ? handleAddIngredientToDish : undefined}
                       onChange={setRecipe}
@@ -342,6 +345,7 @@ export default function DishModal({
                       recipeIngredients={recipe.ingredients}
                       recipeSteps={recipe.steps}
                       recipeServings={recipe.servings}
+                      recipeBaseServings={recipe.baseServings}
                       dishIngredientNames={dishIngredientNames}
                       onChange={setRecipe}
                       readOnly
@@ -377,6 +381,7 @@ export default function DishModal({
                   recipeIngredients={recipe.ingredients}
                   recipeSteps={recipe.steps}
                   recipeServings={recipe.servings}
+                  recipeBaseServings={recipe.baseServings}
                   dishIngredientNames={dishIngredientNames}
                   onAddIngredientToDish={editingId ? handleAddIngredientToDish : undefined}
                   onChange={setRecipe}

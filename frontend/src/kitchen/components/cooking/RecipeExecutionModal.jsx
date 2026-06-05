@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import RecipeServingsControl from "../RecipeServingsControl.jsx";
-import { displayIngredientQuantity } from "../../utils/recipeScaling.js";
+import RecipeIngredientsList from "../RecipeIngredientsList.jsx";
+import { getRecipeBaseServings } from "../../utils/recipeScaling.js";
 import { parseRecipeSteps, estimateTotalDuration, formatDuration } from "../../utils/recipeStepParser.js";
 import { useCookingSession } from "../../contexts/CookingSessionContext.jsx";
 
@@ -9,7 +10,7 @@ export default function RecipeExecutionModal({ dish, initialServings, onClose, o
   const { startSession } = useCookingSession();
 
   const recipe = dish?.recipe || {};
-  const baseServings = recipe.baseServings ?? recipe.servings ?? null;
+  const baseServings = getRecipeBaseServings(recipe);
   const [servings, setServings] = useState(
     initialServings >= 1 ? initialServings : (baseServings >= 1 ? baseServings : 4)
   );
@@ -93,16 +94,16 @@ export default function RecipeExecutionModal({ dish, initialServings, onClose, o
         {ingredients.length > 0 && (
           <div className="cooking-execution-ingredients">
             <p className="cooking-execution-section-title">Ingredientes</p>
-            <ul className="cooking-execution-ingredient-list">
-              {ingredients.map((item, idx) => (
-                <li key={idx} className="cooking-execution-ingredient">
-                  <span className="cooking-execution-ingredient-name">{item.name}</span>
-                  <span className="cooking-execution-ingredient-qty">
-                    {displayIngredientQuantity(item, baseServings, servings)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <RecipeIngredientsList
+              as="list"
+              ingredients={ingredients}
+              baseServings={baseServings}
+              targetServings={servings}
+              tableClassName="cooking-execution-ingredient-list"
+              rowClassName="cooking-execution-ingredient"
+              nameClassName="cooking-execution-ingredient-name"
+              quantityClassName="cooking-execution-ingredient-qty"
+            />
           </div>
         )}
 

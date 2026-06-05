@@ -1,0 +1,1822 @@
+{
+  "C:\\APPS\\pilot-homefirst\\.claude\\settings.json": {
+    "mtime": 1780662127.090945,
+    "ast_hash": "af5683cedca023035194f9ad92eb0eef",
+    "semantic_hash": "af5683cedca023035194f9ad92eb0eef"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\settings.local.json": {
+    "mtime": 1779719609.7941227,
+    "ast_hash": "47b0fa2ebc2400a9149d7887102bcc57",
+    "semantic_hash": "47b0fa2ebc2400a9149d7887102bcc57"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\cleanup-deprecated.mjs": {
+    "mtime": 1779348316.2810702,
+    "ast_hash": "51208407b06e051bb6d8ceab244db39c",
+    "semantic_hash": "51208407b06e051bb6d8ceab244db39c"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\command-metadata.json": {
+    "mtime": 1779348316.2810702,
+    "ast_hash": "b25ed9a4d6c24c83d5af46ec69b99a97",
+    "semantic_hash": "b25ed9a4d6c24c83d5af46ec69b99a97"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\critique-storage.mjs": {
+    "mtime": 1779348316.2810702,
+    "ast_hash": "69825b7f6236350030e72dd7dd3212b7",
+    "semantic_hash": "69825b7f6236350030e72dd7dd3212b7"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\design-parser.mjs": {
+    "mtime": 1779348316.2820706,
+    "ast_hash": "df65268bfe73ad8202ca309c2da3805c",
+    "semantic_hash": "df65268bfe73ad8202ca309c2da3805c"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detect-csp.mjs": {
+    "mtime": 1779348316.2820706,
+    "ast_hash": "0d3243060e66ba0d0a64684f9684ecc7",
+    "semantic_hash": "0d3243060e66ba0d0a64684f9684ecc7"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detect.mjs": {
+    "mtime": 1779348316.2820706,
+    "ast_hash": "db2157bcff7ab1b222d68cf96cb8643c",
+    "semantic_hash": "db2157bcff7ab1b222d68cf96cb8643c"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\browser\\injected\\index.mjs": {
+    "mtime": 1779348316.283071,
+    "ast_hash": "24867ebe9708560f16fb093ffa6a7907",
+    "semantic_hash": "24867ebe9708560f16fb093ffa6a7907"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\cli\\main.mjs": {
+    "mtime": 1779348316.2840703,
+    "ast_hash": "91a6f160f667697a5756cef4e5291cca",
+    "semantic_hash": "91a6f160f667697a5756cef4e5291cca"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\detect-antipatterns-browser.js": {
+    "mtime": 1779348316.2850714,
+    "ast_hash": "3d78561d091fc7eded749ec6f88840b0",
+    "semantic_hash": "3d78561d091fc7eded749ec6f88840b0"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\detect-antipatterns.mjs": {
+    "mtime": 1779348316.2850714,
+    "ast_hash": "6e104a47779c0469e873a4f914deea5a",
+    "semantic_hash": "6e104a47779c0469e873a4f914deea5a"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\engines\\browser\\detect-url.mjs": {
+    "mtime": 1779348316.2860737,
+    "ast_hash": "82dffdced816d676e914d238e4ff0866",
+    "semantic_hash": "82dffdced816d676e914d238e4ff0866"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\engines\\regex\\detect-text.mjs": {
+    "mtime": 1779348316.287075,
+    "ast_hash": "9783bb8871d70ddd3f4eca7fac21e4d9",
+    "semantic_hash": "9783bb8871d70ddd3f4eca7fac21e4d9"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\engines\\static-html\\css-cascade.mjs": {
+    "mtime": 1779348316.287075,
+    "ast_hash": "867b22e91ac69af4d6cbcc607a7d70e3",
+    "semantic_hash": "867b22e91ac69af4d6cbcc607a7d70e3"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\engines\\static-html\\detect-html.mjs": {
+    "mtime": 1779348316.2880714,
+    "ast_hash": "9e9a2382477652caf8964d0cdaf35ca0",
+    "semantic_hash": "9e9a2382477652caf8964d0cdaf35ca0"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\engines\\visual\\screenshot-contrast.mjs": {
+    "mtime": 1779348316.2880714,
+    "ast_hash": "136f756b3cc7cab36af45530ac6280d5",
+    "semantic_hash": "136f756b3cc7cab36af45530ac6280d5"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\findings.mjs": {
+    "mtime": 1779348316.2880714,
+    "ast_hash": "6ddf10dbbbd45e66bfd24146ebecf276",
+    "semantic_hash": "6ddf10dbbbd45e66bfd24146ebecf276"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\node\\file-system.mjs": {
+    "mtime": 1779348316.289072,
+    "ast_hash": "1a42e1fcc487e885443d855ddde1fb7e",
+    "semantic_hash": "1a42e1fcc487e885443d855ddde1fb7e"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\profile\\profiler.mjs": {
+    "mtime": 1779348316.289072,
+    "ast_hash": "59f176f3d3c19ad42d3f805fbec35dcf",
+    "semantic_hash": "59f176f3d3c19ad42d3f805fbec35dcf"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\registry\\antipatterns.mjs": {
+    "mtime": 1779348316.2900715,
+    "ast_hash": "9f8342dcd67819b2a80ac905ce43e448",
+    "semantic_hash": "9f8342dcd67819b2a80ac905ce43e448"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\rules\\checks.mjs": {
+    "mtime": 1779348316.2900715,
+    "ast_hash": "28a03a3350e2e7d0d8a94d06a5583a13",
+    "semantic_hash": "28a03a3350e2e7d0d8a94d06a5583a13"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\shared\\color.mjs": {
+    "mtime": 1779348316.2910707,
+    "ast_hash": "314ef3951c3c749c87db398c6b1650ad",
+    "semantic_hash": "314ef3951c3c749c87db398c6b1650ad"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\shared\\constants.mjs": {
+    "mtime": 1779348316.2910707,
+    "ast_hash": "0ea260c576497ea74edd9e9b51057598",
+    "semantic_hash": "0ea260c576497ea74edd9e9b51057598"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\detector\\shared\\page.mjs": {
+    "mtime": 1779348316.2910707,
+    "ast_hash": "7d121e7fa277cc7d9ed6cae6b585fad5",
+    "semantic_hash": "7d121e7fa277cc7d9ed6cae6b585fad5"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\impeccable-paths.mjs": {
+    "mtime": 1779348316.2920716,
+    "ast_hash": "0e34c40e77c7a30eeabb1bac897f58a2",
+    "semantic_hash": "0e34c40e77c7a30eeabb1bac897f58a2"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\is-generated.mjs": {
+    "mtime": 1779348316.2920716,
+    "ast_hash": "81ada1894b5f562b0993fdff1756d82c",
+    "semantic_hash": "81ada1894b5f562b0993fdff1756d82c"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-accept.mjs": {
+    "mtime": 1779348316.2920716,
+    "ast_hash": "feee297789fa52b5901e21bb354e8a4f",
+    "semantic_hash": "feee297789fa52b5901e21bb354e8a4f"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-browser-session.js": {
+    "mtime": 1779348316.2920716,
+    "ast_hash": "e54c01fe1a8287f757161759beaab916",
+    "semantic_hash": "e54c01fe1a8287f757161759beaab916"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-browser.js": {
+    "mtime": 1779348316.29407,
+    "ast_hash": "09d5959c4f68346ac3e032a1e16f8924",
+    "semantic_hash": "09d5959c4f68346ac3e032a1e16f8924"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-complete.mjs": {
+    "mtime": 1779348316.29407,
+    "ast_hash": "0ed6226feb3d80adf38f2098b6d7efd4",
+    "semantic_hash": "0ed6226feb3d80adf38f2098b6d7efd4"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-completion.mjs": {
+    "mtime": 1779348316.29407,
+    "ast_hash": "c51f1de5c7aae5aa3f2c67f5d9875d3e",
+    "semantic_hash": "c51f1de5c7aae5aa3f2c67f5d9875d3e"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-inject.mjs": {
+    "mtime": 1779348316.29407,
+    "ast_hash": "01365c3718e920dbeee5eeb9159093fa",
+    "semantic_hash": "01365c3718e920dbeee5eeb9159093fa"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-poll.mjs": {
+    "mtime": 1779348316.2950706,
+    "ast_hash": "7b78710647b202a90d99852bdb7a5135",
+    "semantic_hash": "7b78710647b202a90d99852bdb7a5135"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-resume.mjs": {
+    "mtime": 1779348316.2950706,
+    "ast_hash": "9187fc4ae434c0573b7c84c95b05f744",
+    "semantic_hash": "9187fc4ae434c0573b7c84c95b05f744"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-server.mjs": {
+    "mtime": 1779348316.2950706,
+    "ast_hash": "2754268fc4579377e0d40d6a2e34679a",
+    "semantic_hash": "2754268fc4579377e0d40d6a2e34679a"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-session-store.mjs": {
+    "mtime": 1779348316.29607,
+    "ast_hash": "b0c628113419432d164204b18587d681",
+    "semantic_hash": "b0c628113419432d164204b18587d681"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-status.mjs": {
+    "mtime": 1779348316.29607,
+    "ast_hash": "f7f787396f44ef06c890f97c45d0ba75",
+    "semantic_hash": "f7f787396f44ef06c890f97c45d0ba75"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live-wrap.mjs": {
+    "mtime": 1779348316.29607,
+    "ast_hash": "9612f1254ce763221690053592892110",
+    "semantic_hash": "9612f1254ce763221690053592892110"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\live.mjs": {
+    "mtime": 1779348316.2970712,
+    "ast_hash": "073965c7d10925f8ad9651a336220ee8",
+    "semantic_hash": "073965c7d10925f8ad9651a336220ee8"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\load-context.mjs": {
+    "mtime": 1779348316.2970712,
+    "ast_hash": "f96317a92230153a77069e4f81bd8e11",
+    "semantic_hash": "f96317a92230153a77069e4f81bd8e11"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\modern-screenshot.umd.js": {
+    "mtime": 1779348316.2970712,
+    "ast_hash": "c6afaf6ebceb162206f6a2e5b0ed653c",
+    "semantic_hash": "c6afaf6ebceb162206f6a2e5b0ed653c"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\scripts\\pin.mjs": {
+    "mtime": 1779348316.2980704,
+    "ast_hash": "59e1f8315c2083fb7997e5ff3edfcb57",
+    "semantic_hash": "59e1f8315c2083fb7997e5ff3edfcb57"
+  },
+  "C:\\APPS\\pilot-homefirst\\.impeccable\\design.json": {
+    "mtime": 1779349962.6229484,
+    "ast_hash": "529646e5d08eeaa1eddf023c093eb118",
+    "semantic_hash": "529646e5d08eeaa1eddf023c093eb118"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\air-fryer-light-vol1.json": {
+    "mtime": 1780007592.6886523,
+    "ast_hash": "151a1133b5475717259ee2ff45979710",
+    "semantic_hash": "151a1133b5475717259ee2ff45979710"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\alta-proteina-vol1.json": {
+    "mtime": 1780007593.00555,
+    "ast_hash": "cd071712ad0c55cf2ce4930464ce6107",
+    "semantic_hash": "cd071712ad0c55cf2ce4930464ce6107"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\ayuno-permanente-vol1.json": {
+    "mtime": 1780007593.099887,
+    "ast_hash": "69ecf38c0ab9f57eca786a49de246f7e",
+    "semantic_hash": "69ecf38c0ab9f57eca786a49de246f7e"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\bajo-carbohidratos-vol1.json": {
+    "mtime": 1780007593.153809,
+    "ast_hash": "00df087c88c179eb55bf17acc434c43a",
+    "semantic_hash": "00df087c88c179eb55bf17acc434c43a"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\cenas-ninos-vol1.json": {
+    "mtime": 1780007593.233819,
+    "ast_hash": "cc2703dda158b102bec17a5ab7e05668",
+    "semantic_hash": "cc2703dda158b102bec17a5ab7e05668"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\keto-vol1.json": {
+    "mtime": 1780007593.3338149,
+    "ast_hash": "5015f4e8bd67898ea5cd608dcaa30f49",
+    "semantic_hash": "5015f4e8bd67898ea5cd608dcaa30f49"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\mediterranean-pack-vol1.json": {
+    "mtime": 1780005757.9709358,
+    "ast_hash": "00165fdab3c538e682c1ebea69d811b7",
+    "semantic_hash": "00165fdab3c538e682c1ebea69d811b7"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\mexican-pack-vol1.json": {
+    "mtime": 1780005758.0065982,
+    "ast_hash": "0e687a6d2b2cd552050ee854af51339e",
+    "semantic_hash": "0e687a6d2b2cd552050ee854af51339e"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\navidad-espanola-vol1.json": {
+    "mtime": 1780007593.4048097,
+    "ast_hash": "adfdbb1e8b6a1b82e21a64ea56377a98",
+    "semantic_hash": "adfdbb1e8b6a1b82e21a64ea56377a98"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\perdida-grasa-sostenible-vol1.json": {
+    "mtime": 1780007593.4453597,
+    "ast_hash": "666fcb5e688ba3a3a343b5fde1f9354b",
+    "semantic_hash": "666fcb5e688ba3a3a343b5fde1f9354b"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\tapas-espanolas-vol1.json": {
+    "mtime": 1780007593.5162146,
+    "ast_hash": "b448fb3a7ffbdf2544b7d28d04a2828c",
+    "semantic_hash": "b448fb3a7ffbdf2544b7d28d04a2828c"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\thanksgiving-vol1.json": {
+    "mtime": 1780007593.567807,
+    "ast_hash": "83993c5a928d00260c589610153fd6e8",
+    "semantic_hash": "83993c5a928d00260c589610153fd6e8"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\exports\\users.dev.json": {
+    "mtime": 1776781182.525885,
+    "ast_hash": "49f935ba5af760340955e048e4808642",
+    "semantic_hash": "49f935ba5af760340955e048e4808642"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\package.json": {
+    "mtime": 1780007547.6216688,
+    "ast_hash": "c13b237dfcceee13a3933536581ccb99",
+    "semantic_hash": "c13b237dfcceee13a3933536581ccb99"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-backup-20260512-1619.json": {
+    "mtime": 1778595579.9858356,
+    "ast_hash": "518c476ae62ec94d9c9d3f8194af82bf",
+    "semantic_hash": "518c476ae62ec94d9c9d3f8194af82bf"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-manual-review-20260512-1552.json": {
+    "mtime": 1778593980.8916583,
+    "ast_hash": "fe4f3a23219203ac0b56d9ba86228209",
+    "semantic_hash": "fe4f3a23219203ac0b56d9ba86228209"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-manual-review-20260512-1556.json": {
+    "mtime": 1778594171.5872147,
+    "ast_hash": "c1a81c0b08d8c5046aedbe78458bc8de",
+    "semantic_hash": "c1a81c0b08d8c5046aedbe78458bc8de"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-manual-review-20260512-1558.json": {
+    "mtime": 1778594289.7456129,
+    "ast_hash": "c1a81c0b08d8c5046aedbe78458bc8de",
+    "semantic_hash": "c1a81c0b08d8c5046aedbe78458bc8de"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-manual-review-20260512-1604.json": {
+    "mtime": 1778594665.0989003,
+    "ast_hash": "c1a81c0b08d8c5046aedbe78458bc8de",
+    "semantic_hash": "c1a81c0b08d8c5046aedbe78458bc8de"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-manual-review-20260512-1619.json": {
+    "mtime": 1778595590.8317504,
+    "ast_hash": "c1a81c0b08d8c5046aedbe78458bc8de",
+    "semantic_hash": "c1a81c0b08d8c5046aedbe78458bc8de"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-manual-review-20260512-1621.json": {
+    "mtime": 1778595714.1580577,
+    "ast_hash": "c1a81c0b08d8c5046aedbe78458bc8de",
+    "semantic_hash": "c1a81c0b08d8c5046aedbe78458bc8de"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1552.json": {
+    "mtime": 1778593980.889657,
+    "ast_hash": "64f086c3c197ee2d52d23c569537ebe3",
+    "semantic_hash": "64f086c3c197ee2d52d23c569537ebe3"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1556.json": {
+    "mtime": 1778594171.5852146,
+    "ast_hash": "cbd29332c2b904dad9e4da4ef0cd27ac",
+    "semantic_hash": "cbd29332c2b904dad9e4da4ef0cd27ac"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1558.json": {
+    "mtime": 1778594289.7446127,
+    "ast_hash": "7b9ed47f454d1fad4f9bd762c78b94fd",
+    "semantic_hash": "7b9ed47f454d1fad4f9bd762c78b94fd"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1604.json": {
+    "mtime": 1778594665.0968997,
+    "ast_hash": "852549ba643d12b1b2a3238e3ef07112",
+    "semantic_hash": "852549ba643d12b1b2a3238e3ef07112"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1619.json": {
+    "mtime": 1778595590.829128,
+    "ast_hash": "ea9c62e116b101eecf5cb101db64db81",
+    "semantic_hash": "ea9c62e116b101eecf5cb101db64db81"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1621.json": {
+    "mtime": 1778595714.157056,
+    "ast_hash": "c85e8ee98827eb91ecbd465ab0a919e0",
+    "semantic_hash": "c85e8ee98827eb91ecbd465ab0a919e0"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\create-diod.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "27e3e1851fe08fc3705e1bb6bbecdd90",
+    "semantic_hash": "27e3e1851fe08fc3705e1bb6bbecdd90"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\export-clerk-dev-users.js": {
+    "mtime": 1776780374.8506992,
+    "ast_hash": "3d1a67b658bfaee48ff71427fa6bdd36",
+    "semantic_hash": "3d1a67b658bfaee48ff71427fa6bdd36"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\inflate-bites-economy.js": {
+    "mtime": 1779200149.964883,
+    "ast_hash": "a2d5b6c3ff3874be924ccefb7971230f",
+    "semantic_hash": "a2d5b6c3ff3874be924ccefb7971230f"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrate-add-householdId.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "8173f8ade9c813050fe7d1042f619c18",
+    "semantic_hash": "8173f8ade9c813050fe7d1042f619c18"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrate-households.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "a98f750fd186ea400b10a4600f018d9d",
+    "semantic_hash": "a98f750fd186ea400b10a4600f018d9d"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrate-ingredient-category-id.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "ea71a037d79cd558e147d3019af99e63",
+    "semantic_hash": "ea71a037d79cd558e147d3019af99e63"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrate-purchase-sessions.js": {
+    "mtime": 1775688143.8311605,
+    "ast_hash": "898686e96888d4f987560eda66081aed",
+    "semantic_hash": "898686e96888d4f987560eda66081aed"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrate-remove-shopping-trip-amount.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "2c49adebb97826e53b40624e3fab1438",
+    "semantic_hash": "2c49adebb97826e53b40624e3fab1438"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrate-user-email-partial-index.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "f647532287de330f5e04ca5ed65102bd",
+    "semantic_hash": "f647532287de330f5e04ca5ed65102bd"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrate-user-flags.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "87e955da802c68df37f63f558c5e5354",
+    "semantic_hash": "87e955da802c68df37f63f558c5e5354"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrateRecipeQuantities.js": {
+    "mtime": 1780005699.0790894,
+    "ast_hash": "7230ed8df96b4191142069bc3e5367cc",
+    "semantic_hash": "7230ed8df96b4191142069bc3e5367cc"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrateStructuredSteps.js": {
+    "mtime": 1780007540.562924,
+    "ast_hash": "fbd644678ba3ac1aaac8313cada09507",
+    "semantic_hash": "fbd644678ba3ac1aaac8313cada09507"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\mongo-url.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "f9a721314bf564f9517c298f99257338",
+    "semantic_hash": "f9a721314bf564f9517c298f99257338"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\normalization-overrides.json": {
+    "mtime": 1778593587.717466,
+    "ast_hash": "07ec32028dae5d4d5d1a9c4c6d9d5296",
+    "semantic_hash": "07ec32028dae5d4d5d1a9c4c6d9d5296"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\normalizeMasterData.js": {
+    "mtime": 1779351418.825854,
+    "ast_hash": "f566d200b3344c68d483c03b7e383b64",
+    "semantic_hash": "f566d200b3344c68d483c03b7e383b64"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\reconcile-dev-clerk-id.js": {
+    "mtime": 1776782197.1277523,
+    "ast_hash": "e2bc9403bebd9e146a0553fe3b3686cb",
+    "semantic_hash": "e2bc9403bebd9e146a0553fe3b3686cb"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\repair-catalog-source.js": {
+    "mtime": 1779916370.8892727,
+    "ast_hash": "90bc7f6760b33780c3a43b172555fdea",
+    "semantic_hash": "90bc7f6760b33780c3a43b172555fdea"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\repair-shopping-list-items.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "e9763ee42c96e5307d2852412a55fd64",
+    "semantic_hash": "e9763ee42c96e5307d2852412a55fd64"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\seedCatalog.js": {
+    "mtime": 1779200175.1906695,
+    "ast_hash": "4f07c09c5abf4bdd2c1684ac5437e2da",
+    "semantic_hash": "4f07c09c5abf4bdd2c1684ac5437e2da"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\test-connection.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "fcb45b24c60313eba760bed1e66b7b9a",
+    "semantic_hash": "fcb45b24c60313eba760bed1e66b7b9a"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\validate-clerk-dev-import.js": {
+    "mtime": 1776444586.5930474,
+    "ast_hash": "c1b4072a6490273eb2706cda2ac2ffa4",
+    "semantic_hash": "c1b4072a6490273eb2706cda2ac2ffa4"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\verify-category-cascade.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "8dcb7d7c0ad71f3826af352b6b2d043e",
+    "semantic_hash": "8dcb7d7c0ad71f3826af352b6b2d043e"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\config.js": {
+    "mtime": 1779613671.3735228,
+    "ast_hash": "40a1fc7d7407758cb7a74d4c86ea1ba3",
+    "semantic_hash": "40a1fc7d7407758cb7a74d4c86ea1ba3"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\db.js": {
+    "mtime": 1775688143.8331654,
+    "ast_hash": "f822ce00f44b6920fe39122bcbec88bc",
+    "semantic_hash": "f822ce00f44b6920fe39122bcbec88bc"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\index.js": {
+    "mtime": 1779545598.9931612,
+    "ast_hash": "12168064f1215aadfa6a4753962ef012",
+    "semantic_hash": "12168064f1215aadfa6a4753962ef012"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\assignmentPushService.js": {
+    "mtime": 1775688143.834169,
+    "ast_hash": "86ce98a4d6b39a2e9a27dbb90229531f",
+    "semantic_hash": "86ce98a4d6b39a2e9a27dbb90229531f"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\betaProService.js": {
+    "mtime": 1779991088.1082475,
+    "ast_hash": "7d174efdb635dac7c411ecbee38c3566",
+    "semantic_hash": "7d174efdb635dac7c411ecbee38c3566"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\betaService.js": {
+    "mtime": 1779613636.5813985,
+    "ast_hash": "cb8f8448d2c990061432a24a2f5e22dc",
+    "semantic_hash": "cb8f8448d2c990061432a24a2f5e22dc"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\bitesConstants.js": {
+    "mtime": 1779199897.7610095,
+    "ast_hash": "61194246df0985b2b8201b3c0d9c7367",
+    "semantic_hash": "61194246df0985b2b8201b3c0d9c7367"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\bitesService.js": {
+    "mtime": 1779199911.8069067,
+    "ast_hash": "21a4015c535887a67f502adf2514a332",
+    "semantic_hash": "21a4015c535887a67f502adf2514a332"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\bootstrap\\masterDishes.js": {
+    "mtime": 1779351400.865351,
+    "ast_hash": "405376be66ccaf973bc36fc1235ca893",
+    "semantic_hash": "405376be66ccaf973bc36fc1235ca893"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\catalogNormalization.js": {
+    "mtime": 1778577628.2883928,
+    "ast_hash": "9e50af32eae17a30733e91f594840594",
+    "semantic_hash": "9e50af32eae17a30733e91f594840594"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\catalogService.js": {
+    "mtime": 1778571468.2396846,
+    "ast_hash": "98ec76cf5e2916105174947ae1a1a2cd",
+    "semantic_hash": "98ec76cf5e2916105174947ae1a1a2cd"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\clerkAuth.js": {
+    "mtime": 1779832236.1109076,
+    "ast_hash": "550b2baa2d5352237a64d0e8f083a3b2",
+    "semantic_hash": "550b2baa2d5352237a64d0e8f083a3b2"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\householdInvitationEmail.js": {
+    "mtime": 1775923660.2779987,
+    "ast_hash": "55f525b9f9b9acabf2d3d6af30965ff9",
+    "semantic_hash": "55f525b9f9b9acabf2d3d6af30965ff9"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\householdInviteCode.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "a2ce3729d84564acc0a4574878dfb476",
+    "semantic_hash": "a2ce3729d84564acc0a4574878dfb476"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\householdLicenseService.js": {
+    "mtime": 1775688143.8363194,
+    "ast_hash": "515fc29e125bedbf66b818dfbc3d62e7",
+    "semantic_hash": "515fc29e125bedbf66b818dfbc3d62e7"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\householdScope.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "4e3a46d6b5ca896ea6d786579634ddb1",
+    "semantic_hash": "4e3a46d6b5ca896ea6d786579634ddb1"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\index.js": {
+    "mtime": 1779656081.24771,
+    "ast_hash": "fd08acf1de5e2f12a81b2c6e6f7e23d1",
+    "semantic_hash": "fd08acf1de5e2f12a81b2c6e6f7e23d1"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\invitationService.js": {
+    "mtime": 1778318672.5543623,
+    "ast_hash": "15ad8cda4616bdfb681d45ff059eddb6",
+    "semantic_hash": "15ad8cda4616bdfb681d45ff059eddb6"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\middleware.js": {
+    "mtime": 1775921319.1236014,
+    "ast_hash": "82ca8fa266430233ee18f5309424478f",
+    "semantic_hash": "82ca8fa266430233ee18f5309424478f"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\BetaInvite.js": {
+    "mtime": 1779568057.3357458,
+    "ast_hash": "810dc0153884f0e926f3be362b25a9ba",
+    "semantic_hash": "810dc0153884f0e926f3be362b25a9ba"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\BitesConfig.js": {
+    "mtime": 1779283273.0868251,
+    "ast_hash": "e034c65dd83f31cf3b7013569f73d345",
+    "semantic_hash": "e034c65dd83f31cf3b7013569f73d345"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\BitesTransaction.js": {
+    "mtime": 1779613563.901814,
+    "ast_hash": "6af06ef408d19422b5bf648cb818c794",
+    "semantic_hash": "6af06ef408d19422b5bf648cb818c794"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\CatalogPack.js": {
+    "mtime": 1780008461.7894044,
+    "ast_hash": "ec2d440f2311183fc4523ea7705c5513",
+    "semantic_hash": "ec2d440f2311183fc4523ea7705c5513"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\Category.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "a4ab779841ce7fc75f1eac07549a8e77",
+    "semantic_hash": "a4ab779841ce7fc75f1eac07549a8e77"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\HiddenMaster.js": {
+    "mtime": 1775688143.8384256,
+    "ast_hash": "4819afd902371329595c44d8d7f82aa6",
+    "semantic_hash": "4819afd902371329595c44d8d7f82aa6"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\Household.js": {
+    "mtime": 1779750563.020985,
+    "ast_hash": "4778d72db18bedc1031452f985f5d449",
+    "semantic_hash": "4778d72db18bedc1031452f985f5d449"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\HouseholdBasic.js": {
+    "mtime": 1779657545.3950012,
+    "ast_hash": "6f7e155615a66dbd520f3b4bfc092c88",
+    "semantic_hash": "6f7e155615a66dbd520f3b4bfc092c88"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\HouseholdCatalogPack.js": {
+    "mtime": 1778511830.1238513,
+    "ast_hash": "080a37666a0e7f3ca0eb961510308390",
+    "semantic_hash": "080a37666a0e7f3ca0eb961510308390"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\HouseholdOnboarding.js": {
+    "mtime": 1779309667.6026034,
+    "ast_hash": "be82ba72ae716890025aef6b20cbe95a",
+    "semantic_hash": "be82ba72ae716890025aef6b20cbe95a"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\HouseholdWeeklyProgress.js": {
+    "mtime": 1779750667.0146086,
+    "ast_hash": "891bf9e480ac3e73cb5549ebd46c09f6",
+    "semantic_hash": "891bf9e480ac3e73cb5549ebd46c09f6"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\Invitation.js": {
+    "mtime": 1775688143.839579,
+    "ast_hash": "b77818dbe212b070372709e7e5933793",
+    "semantic_hash": "b77818dbe212b070372709e7e5933793"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\KitchenAuditLog.js": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "c658db4d1d15a76941bf4d2df6bf675d",
+    "semantic_hash": "c658db4d1d15a76941bf4d2df6bf675d"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\KitchenDish.js": {
+    "mtime": 1780008450.6285784,
+    "ast_hash": "a790288704bedc157cabed7a3660fc4f",
+    "semantic_hash": "a790288704bedc157cabed7a3660fc4f"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\KitchenDishCategory.js": {
+    "mtime": 1773141082.340708,
+    "ast_hash": "2b28eff116b46917ae73213d7e1f749d",
+    "semantic_hash": "2b28eff116b46917ae73213d7e1f749d"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\KitchenIngredient.js": {
+    "mtime": 1773141082.340708,
+    "ast_hash": "68e32dfce2d5ffa088145cc32287578b",
+    "semantic_hash": "68e32dfce2d5ffa088145cc32287578b"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\KitchenShoppingList.js": {
+    "mtime": 1775688143.8406348,
+    "ast_hash": "a4fd8f9bd343727d801968562c9a5377",
+    "semantic_hash": "a4fd8f9bd343727d801968562c9a5377"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\KitchenSwap.js": {
+    "mtime": 1773141082.341613,
+    "ast_hash": "817b9c15df55fafdcbdd8593261fdc04",
+    "semantic_hash": "817b9c15df55fafdcbdd8593261fdc04"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\KitchenUser.js": {
+    "mtime": 1779830443.568283,
+    "ast_hash": "b1fc32593762fa4ec192466a8e501a3f",
+    "semantic_hash": "b1fc32593762fa4ec192466a8e501a3f"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\KitchenWeekPlan.js": {
+    "mtime": 1773141082.3429377,
+    "ast_hash": "3b16a5425a3f7d78c89a11c3a1ec4bf3",
+    "semantic_hash": "3b16a5425a3f7d78c89a11c3a1ec4bf3"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\OnboardingChallenge.js": {
+    "mtime": 1779292148.0474143,
+    "ast_hash": "76ce97460d9f0c9136548a9535fde3e1",
+    "semantic_hash": "76ce97460d9f0c9136548a9535fde3e1"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\OnboardingSuggestion.js": {
+    "mtime": 1779309656.3175514,
+    "ast_hash": "d072c3edd87a05b023584833105dc4ac",
+    "semantic_hash": "d072c3edd87a05b023584833105dc4ac"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\PackEntitlement.js": {
+    "mtime": 1778769315.923501,
+    "ast_hash": "98eb6d8fff2ade3bdc9083797e49fc04",
+    "semantic_hash": "98eb6d8fff2ade3bdc9083797e49fc04"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\PlansConfig.js": {
+    "mtime": 1778857605.3806362,
+    "ast_hash": "b412461d096096f4db7d04da731bff20",
+    "semantic_hash": "b412461d096096f4db7d04da731bff20"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\PurchaseAttempt.js": {
+    "mtime": 1778766475.413592,
+    "ast_hash": "a7c19daba0075661b67806070a728b28",
+    "semantic_hash": "a7c19daba0075661b67806070a728b28"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\PurchaseSession.js": {
+    "mtime": 1775688143.8417063,
+    "ast_hash": "e28f529ed89dddaad304ce2669d24697",
+    "semantic_hash": "e28f529ed89dddaad304ce2669d24697"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\PushReminderDelivery.js": {
+    "mtime": 1775688143.8417063,
+    "ast_hash": "003fbce8478ce9a48f290ccc28dd6a95",
+    "semantic_hash": "003fbce8478ce9a48f290ccc28dd6a95"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\PushSubscription.js": {
+    "mtime": 1775688143.8417063,
+    "ast_hash": "bd50bf559b1146f670da1e68b7f4a6c9",
+    "semantic_hash": "bd50bf559b1146f670da1e68b7f4a6c9"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\ShoppingTrip.js": {
+    "mtime": 1773141082.3429377,
+    "ast_hash": "810ff50aa5bb818af4d312321614df9f",
+    "semantic_hash": "810ff50aa5bb818af4d312321614df9f"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\Store.js": {
+    "mtime": 1773141082.3429377,
+    "ast_hash": "056a2d40ac357d053781e0252f2d7b47",
+    "semantic_hash": "056a2d40ac357d053781e0252f2d7b47"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\StripeWebhookEvent.js": {
+    "mtime": 1779202705.357275,
+    "ast_hash": "0aaf0599f333d4ede10867ce72df52ee",
+    "semantic_hash": "0aaf0599f333d4ede10867ce72df52ee"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\WeeklyChallengeDef.js": {
+    "mtime": 1779721347.7833552,
+    "ast_hash": "2a84ac7f49ef289ad863d006b7c16e1f",
+    "semantic_hash": "2a84ac7f49ef289ad863d006b7c16e1f"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\WeeklyCycleConfig.js": {
+    "mtime": 1779990933.6454778,
+    "ast_hash": "feff8f6e3cde46f15e9414996bae529b",
+    "semantic_hash": "feff8f6e3cde46f15e9414996bae529b"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\onboardingEngine.js": {
+    "mtime": 1779748463.6541705,
+    "ast_hash": "f98189628187e168a9f7ee3f26e9f3d6",
+    "semantic_hash": "f98189628187e168a9f7ee3f26e9f3d6"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\paymentEntitlementService.js": {
+    "mtime": 1779179694.4532077,
+    "ast_hash": "f7c5cde95842486f4134b7cce492e9b8",
+    "semantic_hash": "f7c5cde95842486f4134b7cce492e9b8"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\purchaseSessionService.js": {
+    "mtime": 1775688143.8428278,
+    "ast_hash": "5a0a3ba694d0f1cb193aaef026e551e8",
+    "semantic_hash": "5a0a3ba694d0f1cb193aaef026e551e8"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\admin.js": {
+    "mtime": 1779921375.1409512,
+    "ast_hash": "46aea0c3e49716fcd5889ea6e88be892",
+    "semantic_hash": "46aea0c3e49716fcd5889ea6e88be892"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\auth.js": {
+    "mtime": 1779920527.5653865,
+    "ast_hash": "a37e537cdc3621b4ee9540fd3325510c",
+    "semantic_hash": "a37e537cdc3621b4ee9540fd3325510c"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\basics.js": {
+    "mtime": 1779998865.6146674,
+    "ast_hash": "54c404fe2d8c3b789c74361eeee4af0e",
+    "semantic_hash": "54c404fe2d8c3b789c74361eeee4af0e"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\beta.js": {
+    "mtime": 1779613600.989833,
+    "ast_hash": "a3c46064852b1f16691fc8c6b3535a7c",
+    "semantic_hash": "a3c46064852b1f16691fc8c6b3535a7c"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\bites.js": {
+    "mtime": 1779283341.3053212,
+    "ast_hash": "43433ed45e7979aeb67bedf40d71867b",
+    "semantic_hash": "43433ed45e7979aeb67bedf40d71867b"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\catalog.js": {
+    "mtime": 1779724202.6419084,
+    "ast_hash": "e90868dd4309cb6c522118ba925126e7",
+    "semantic_hash": "e90868dd4309cb6c522118ba925126e7"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\categories.js": {
+    "mtime": 1773141082.345415,
+    "ast_hash": "8c648c8988ee4442a9756caec3a75c14",
+    "semantic_hash": "8c648c8988ee4442a9756caec3a75c14"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\dishCategories.js": {
+    "mtime": 1773141082.3460686,
+    "ast_hash": "42c7807a2b5ac451ce78b4ee1dcb8cb7",
+    "semantic_hash": "42c7807a2b5ac451ce78b4ee1dcb8cb7"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\dishes.js": {
+    "mtime": 1780008473.800237,
+    "ast_hash": "e3c7696cab062ba037d24655890a1006",
+    "semantic_hash": "e3c7696cab062ba037d24655890a1006"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\household.js": {
+    "mtime": 1779920247.4435325,
+    "ast_hash": "fc5b5f7516199af3679436a7b1a137ac",
+    "semantic_hash": "fc5b5f7516199af3679436a7b1a137ac"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\kitchenIngredients.js": {
+    "mtime": 1779659116.821369,
+    "ast_hash": "ee667acfa6e525190bbbc26a5d3590df",
+    "semantic_hash": "ee667acfa6e525190bbbc26a5d3590df"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\onboarding.js": {
+    "mtime": 1779917622.092948,
+    "ast_hash": "88e56b079095b0d40f8566ede0d00330",
+    "semantic_hash": "88e56b079095b0d40f8566ede0d00330"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\plans.js": {
+    "mtime": 1778857620.6295652,
+    "ast_hash": "6275298485391da7303dad5b829aac2f",
+    "semantic_hash": "6275298485391da7303dad5b829aac2f"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\push.js": {
+    "mtime": 1775688143.8465025,
+    "ast_hash": "7050d3371cf06551f1fd04e7ec3e873a",
+    "semantic_hash": "7050d3371cf06551f1fd04e7ec3e873a"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\shopping.js": {
+    "mtime": 1779920264.211961,
+    "ast_hash": "ce923aa6ec4ebd89e848a57d43b05938",
+    "semantic_hash": "ce923aa6ec4ebd89e848a57d43b05938"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\swaps.js": {
+    "mtime": 1775688143.8488152,
+    "ast_hash": "d15376c6d0c96f38b824def425996216",
+    "semantic_hash": "d15376c6d0c96f38b824def425996216"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\users.js": {
+    "mtime": 1775923517.4778829,
+    "ast_hash": "3170c15140730ee25d7503e98ac7037d",
+    "semantic_hash": "3170c15140730ee25d7503e98ac7037d"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\weekly.js": {
+    "mtime": 1779991163.2426481,
+    "ast_hash": "8ea5c326675300412595656dbd0e9c1b",
+    "semantic_hash": "8ea5c326675300412595656dbd0e9c1b"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\weeks.js": {
+    "mtime": 1779920283.9634802,
+    "ast_hash": "df1852bcbe78dcc43772ed5043e3bfec",
+    "semantic_hash": "df1852bcbe78dcc43772ed5043e3bfec"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\shoppingService.js": {
+    "mtime": 1775688143.8509972,
+    "ast_hash": "a473716f5f1322f84d1e5a1e78527c1a",
+    "semantic_hash": "a473716f5f1322f84d1e5a1e78527c1a"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\stripeSync.js": {
+    "mtime": 1779284655.8444304,
+    "ast_hash": "204311f52540eb034f54257cb152adb6",
+    "semantic_hash": "204311f52540eb034f54257cb152adb6"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\subscriptionCron.js": {
+    "mtime": 1779205356.520935,
+    "ast_hash": "37d980c5392a0eb51ff05008c36405f9",
+    "semantic_hash": "37d980c5392a0eb51ff05008c36405f9"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\subscriptionService.js": {
+    "mtime": 1779920233.1565044,
+    "ast_hash": "dcbc63160678633d53ecc21922f74a50",
+    "semantic_hash": "dcbc63160678633d53ecc21922f74a50"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\utils\\budget.js": {
+    "mtime": 1775688143.8521888,
+    "ast_hash": "fbeeeb7343b83bd4866aed70e438bd10",
+    "semantic_hash": "fbeeeb7343b83bd4866aed70e438bd10"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\utils\\catalogScopes.js": {
+    "mtime": 1773141082.3515074,
+    "ast_hash": "145c49a51bebc77feebcffaf6edbba04",
+    "semantic_hash": "145c49a51bebc77feebcffaf6edbba04"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\utils\\categoryMatching.js": {
+    "mtime": 1773141082.3521078,
+    "ast_hash": "d7e095bd621ef4d0ea56ba73b7de1d86",
+    "semantic_hash": "d7e095bd621ef4d0ea56ba73b7de1d86"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\utils\\dates.js": {
+    "mtime": 1775688143.8521888,
+    "ast_hash": "773d4bd08c3bb94c7aee65aa59151cc8",
+    "semantic_hash": "773d4bd08c3bb94c7aee65aa59151cc8"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\utils\\dishCatalog.js": {
+    "mtime": 1779351240.2650228,
+    "ast_hash": "15d0ad4b6789db708a003a44a5af393f",
+    "semantic_hash": "15d0ad4b6789db708a003a44a5af393f"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\utils\\ingredients.js": {
+    "mtime": 1773141082.3535893,
+    "ast_hash": "7fd5b85250b2a86793fb8c312d715498",
+    "semantic_hash": "7fd5b85250b2a86793fb8c312d715498"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\utils\\normalize.js": {
+    "mtime": 1773141082.3535893,
+    "ast_hash": "83cb824b4bb517aebd8b3ddc8112729e",
+    "semantic_hash": "83cb824b4bb517aebd8b3ddc8112729e"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\weekPlanService.js": {
+    "mtime": 1779723161.4384265,
+    "ast_hash": "2227608c95eb386340462b8a5ebd894b",
+    "semantic_hash": "2227608c95eb386340462b8a5ebd894b"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\weeklyEngine.js": {
+    "mtime": 1780000116.8466816,
+    "ast_hash": "b9b07d1d348a62554ff3fc2f161dcbf9",
+    "semantic_hash": "b9b07d1d348a62554ff3fc2f161dcbf9"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\mailer.js": {
+    "mtime": 1773141082.3545883,
+    "ast_hash": "60f6e76dec42ceb9faf0cd172bf568ca",
+    "semantic_hash": "60f6e76dec42ceb9faf0cd172bf568ca"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\routes\\internalPush.js": {
+    "mtime": 1775688143.8540993,
+    "ast_hash": "f895f569d4ad5791c133798c729ee10b",
+    "semantic_hash": "f895f569d4ad5791c133798c729ee10b"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\routes\\payments.js": {
+    "mtime": 1779205388.619738,
+    "ast_hash": "468222cc02f6ca38207e652c8335a572",
+    "semantic_hash": "468222cc02f6ca38207e652c8335a572"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\routes\\subscription.js": {
+    "mtime": 1775688143.8540993,
+    "ast_hash": "a3f845a0875f8594eab496d7acf9dcef",
+    "semantic_hash": "a3f845a0875f8594eab496d7acf9dcef"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\routes\\testEmail.js": {
+    "mtime": 1775688143.8552432,
+    "ast_hash": "b184d7b75fb4f5b7580fc89d8034bd34",
+    "semantic_hash": "b184d7b75fb4f5b7580fc89d8034bd34"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\services\\emailService.js": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "9a28b788c63fb74a820bcd8fd489b1a5",
+    "semantic_hash": "9a28b788c63fb74a820bcd8fd489b1a5"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\services\\internalPushReminderService.js": {
+    "mtime": 1775688143.8559039,
+    "ast_hash": "95efe95c8e37c5123ccaa13989535f28",
+    "semantic_hash": "95efe95c8e37c5123ccaa13989535f28"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\services\\pushService.js": {
+    "mtime": 1775688143.8566668,
+    "ast_hash": "f0b34c814243e0996a0699867a9dbe3b",
+    "semantic_hash": "f0b34c814243e0996a0699867a9dbe3b"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\users\\index.js": {
+    "mtime": 1775688143.8566668,
+    "ast_hash": "987eb8313bdad8de3876e8806de49585",
+    "semantic_hash": "987eb8313bdad8de3876e8806de49585"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\src\\users\\utils.js": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "519565ff4000dc843fa12a07d2f3d90d",
+    "semantic_hash": "519565ff4000dc843fa12a07d2f3d90d"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\package.json": {
+    "mtime": 1779834759.1510928,
+    "ast_hash": "93aa90ee8f67be1886d0d1c22e7c2649",
+    "semantic_hash": "93aa90ee8f67be1886d0d1c22e7c2649"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\public\\sw.js": {
+    "mtime": 1775688143.8576777,
+    "ast_hash": "d8b5a529c8360b94369f1dcfeb0e306b",
+    "semantic_hash": "d8b5a529c8360b94369f1dcfeb0e306b"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\App.jsx": {
+    "mtime": 1779922323.0583427,
+    "ast_hash": "9f54bf92b21c47c717d3a7d7deaf15c8",
+    "semantic_hash": "9f54bf92b21c47c717d3a7d7deaf15c8"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\components\\AppErrorBoundary.jsx": {
+    "mtime": 1775688143.8586857,
+    "ast_hash": "4dfd76084d2f9e6182eec9eee49f9b4a",
+    "semantic_hash": "4dfd76084d2f9e6182eec9eee49f9b4a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\components\\DevEnvironmentBanner.jsx": {
+    "mtime": 1775688143.8599079,
+    "ast_hash": "38e13e3c6485c01ce630ce317153e5f7",
+    "semantic_hash": "38e13e3c6485c01ce630ce317153e5f7"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\context\\ThemeContext.jsx": {
+    "mtime": 1779375391.9920287,
+    "ast_hash": "fcd327b93069089a2c6211152b7edc62",
+    "semantic_hash": "fcd327b93069089a2c6211152b7edc62"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\Layout.jsx": {
+    "mtime": 1780006928.4997284,
+    "ast_hash": "36f008bc6b794fde1a77eb80abd159e5",
+    "semantic_hash": "36f008bc6b794fde1a77eb80abd159e5"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\RequireAuth.jsx": {
+    "mtime": 1779922499.6827104,
+    "ast_hash": "1b9cc67960227a261705d21963f082cd",
+    "semantic_hash": "1b9cc67960227a261705d21963f082cd"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\api.js": {
+    "mtime": 1779203923.2258637,
+    "ast_hash": "f540056ef6dfe5426f908ee9169259ca",
+    "semantic_hash": "f540056ef6dfe5426f908ee9169259ca"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\auth.jsx": {
+    "mtime": 1779832136.892692,
+    "ast_hash": "6b5797433aa129b8605a5a9c10204e3d",
+    "semantic_hash": "6b5797433aa129b8605a5a9c10204e3d"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\authRedirect.js": {
+    "mtime": 1775688143.860942,
+    "ast_hash": "faba1c3a88827f07516704bd25b8033c",
+    "semantic_hash": "faba1c3a88827f07516704bd25b8033c"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\clerk-shared.js": {
+    "mtime": 1779568158.7446666,
+    "ast_hash": "e85026f1a3c8c1e7f06295e16fa7433e",
+    "semantic_hash": "e85026f1a3c8c1e7f06295e16fa7433e"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\BasicsPopup.jsx": {
+    "mtime": 1779721895.9993956,
+    "ast_hash": "e38a9ce54b55d6af7a18fbf62f4365e0",
+    "semantic_hash": "e38a9ce54b55d6af7a18fbf62f4365e0"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\BitesIcon.jsx": {
+    "mtime": 1778708096.199807,
+    "ast_hash": "8dc495f7099a9760869289ca19e51e1a",
+    "semantic_hash": "8dc495f7099a9760869289ca19e51e1a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\CategoryChip.jsx": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "949fc9961cedc417b7af54de0f11f29a",
+    "semantic_hash": "949fc9961cedc417b7af54de0f11f29a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\CategoryIcon.jsx": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "9ef290ee22164c4c9697e8e1b7267542",
+    "semantic_hash": "9ef290ee22164c4c9697e8e1b7267542"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\DishModal.jsx": {
+    "mtime": 1779920368.8716252,
+    "ast_hash": "8f26bc44b54c6db8d1a6b93fd449b233",
+    "semantic_hash": "8f26bc44b54c6db8d1a6b93fd449b233"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\IngredientModal.jsx": {
+    "mtime": 1779372642.50064,
+    "ast_hash": "e185e35f79c94791f7faa8f22da8529f",
+    "semantic_hash": "e185e35f79c94791f7faa8f22da8529f"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\IngredientPicker.jsx": {
+    "mtime": 1779374646.3669848,
+    "ast_hash": "9707025d2bbedcddf877b77b1d49a3ba",
+    "semantic_hash": "9707025d2bbedcddf877b77b1d49a3ba"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\PushNotificationsPanel.jsx": {
+    "mtime": 1775688143.8629892,
+    "ast_hash": "f3f4cf0bd0d6ab9862c402b64de46d66",
+    "semantic_hash": "f3f4cf0bd0d6ab9862c402b64de46d66"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\PwaInstallPrompt.jsx": {
+    "mtime": 1778764982.4174526,
+    "ast_hash": "08ba21a7f5a70b9d03613a57547a59d3",
+    "semantic_hash": "08ba21a7f5a70b9d03613a57547a59d3"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\RecipeEditor.jsx": {
+    "mtime": 1780058868.2327423,
+    "ast_hash": "e3293cc202c231f0d9071f852cf2b0c9",
+    "semantic_hash": "e3293cc202c231f0d9071f852cf2b0c9"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\RecipeModal.jsx": {
+    "mtime": 1780007628.4189923,
+    "ast_hash": "2e78c96a3e8f99aa2b6beb1aad0579ff",
+    "semantic_hash": "2e78c96a3e8f99aa2b6beb1aad0579ff"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\RecipeServingsControl.jsx": {
+    "mtime": 1780005219.9793177,
+    "ast_hash": "b1fe69c014d5233438e26b84ef8fec8e",
+    "semantic_hash": "b1fe69c014d5233438e26b84ef8fec8e"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\SettingsSharePanel.jsx": {
+    "mtime": 1775923636.14952,
+    "ast_hash": "0fdffd7fb976b5edd1ebc5c5369a860b",
+    "semantic_hash": "0fdffd7fb976b5edd1ebc5c5369a860b"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ShareWhatsAppButton.jsx": {
+    "mtime": 1775688143.8645453,
+    "ast_hash": "b712e055986b9fce2787f339372e7744",
+    "semantic_hash": "b712e055986b9fce2787f339372e7744"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\WeekDayTabs.jsx": {
+    "mtime": 1779529920.4441497,
+    "ast_hash": "e4b3b15ce12c22c80a146afbf308ac0a",
+    "semantic_hash": "e4b3b15ce12c22c80a146afbf308ac0a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\WeekDaysStrip.jsx": {
+    "mtime": 1775688143.8653035,
+    "ast_hash": "a5a58c5c1081e5661e85bdab3a270e80",
+    "semantic_hash": "a5a58c5c1081e5661e85bdab3a270e80"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\WeekPageSkeleton.jsx": {
+    "mtime": 1775688143.8659692,
+    "ast_hash": "6925ebd8628e4f04e6e1d780b3d85a0d",
+    "semantic_hash": "6925ebd8628e4f04e6e1d780b3d85a0d"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\WhatsAppIconButton.jsx": {
+    "mtime": 1775688143.866546,
+    "ast_hash": "a63768ccd77abfae4f21049ca1f353c0",
+    "semantic_hash": "a63768ccd77abfae4f21049ca1f353c0"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\categoryIconMap.js": {
+    "mtime": 1779351430.9439116,
+    "ast_hash": "e386dab46df467dee55f40f133cf166a",
+    "semantic_hash": "e386dab46df467dee55f40f133cf166a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\categoryUtils.js": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "c5c638f36c68205dded54ffcfd0dd843",
+    "semantic_hash": "c5c638f36c68205dded54ffcfd0dd843"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\cooking\\CookingSessionBanner.jsx": {
+    "mtime": 1780058923.4358623,
+    "ast_hash": "8e89f8c427c5b2c02a865304086b4022",
+    "semantic_hash": "8e89f8c427c5b2c02a865304086b4022"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\cooking\\CookingSessionStepper.jsx": {
+    "mtime": 1780009033.2136137,
+    "ast_hash": "9ed048f5b56388a5a9772507178a8eb6",
+    "semantic_hash": "9ed048f5b56388a5a9772507178a8eb6"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\cooking\\RecipeExecutionModal.jsx": {
+    "mtime": 1780007637.7436924,
+    "ast_hash": "d2e64e9c9b1d002d64cf9b8db120f296",
+    "semantic_hash": "d2e64e9c9b1d002d64cf9b8db120f296"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\cooking\\RecipeStepCard.jsx": {
+    "mtime": 1780058879.4351838,
+    "ast_hash": "6238a2f097ab1df808af1c8d6e2fe23c",
+    "semantic_hash": "6238a2f097ab1df808af1c8d6e2fe23c"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\cooking\\RecipeTimer.jsx": {
+    "mtime": 1780007578.34066,
+    "ast_hash": "f87c37dd6ebdaafc8a132285b9eb44a6",
+    "semantic_hash": "f87c37dd6ebdaafc8a132285b9eb44a6"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\onboarding\\OnboardingBanner.jsx": {
+    "mtime": 1779920438.0879552,
+    "ast_hash": "425875f0eeb804fcc0051a773bfeb250",
+    "semantic_hash": "425875f0eeb804fcc0051a773bfeb250"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\onboarding\\OnboardingPanel.jsx": {
+    "mtime": 1779660718.8573387,
+    "ast_hash": "197d1dfa859c6cd7b233edddc03cd335",
+    "semantic_hash": "197d1dfa859c6cd7b233edddc03cd335"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\rewards\\MilestoneToast.jsx": {
+    "mtime": 1779834980.2176263,
+    "ast_hash": "80fd3dc188a997f7b7be08f8aac08ef4",
+    "semantic_hash": "80fd3dc188a997f7b7be08f8aac08ef4"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\rewards\\index.js": {
+    "mtime": 1779834959.8357348,
+    "ast_hash": "d530909b2660b53db6ba151e82298aaf",
+    "semantic_hash": "d530909b2660b53db6ba151e82298aaf"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\AvatarStack.jsx": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "87c5198bcac7f3384340f76aaca5cd59",
+    "semantic_hash": "87c5198bcac7f3384340f76aaca5cd59"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\Badge.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "9cf8d29302672930ea633c83566f7f4e",
+    "semantic_hash": "9cf8d29302672930ea633c83566f7f4e"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\BottomNav.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "d5838284c0d87701c77c575fddd0a890",
+    "semantic_hash": "d5838284c0d87701c77c575fddd0a890"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\Button.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "a03dc5600595b664d4b44981a5a8b97a",
+    "semantic_hash": "a03dc5600595b664d4b44981a5a8b97a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\Card.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "11dbf0e0d52c83e89cca5d85a90c9ad2",
+    "semantic_hash": "11dbf0e0d52c83e89cca5d85a90c9ad2"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\DatePickerField.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "94e3b7076ad563e0935e4993fb627170",
+    "semantic_hash": "94e3b7076ad563e0935e4993fb627170"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\DinnerUpgradeBanner.jsx": {
+    "mtime": 1779359680.8679128,
+    "ast_hash": "ae76082647d817a0f7f2e5caf011e5bc",
+    "semantic_hash": "ae76082647d817a0f7f2e5caf011e5bc"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\Fab.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "2b0c909f59b181f9dad773c1fddb0732",
+    "semantic_hash": "2b0c909f59b181f9dad773c1fddb0732"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\Header.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "2a345958ae13656c5a8a930fe1348e8e",
+    "semantic_hash": "2a345958ae13656c5a8a930fe1348e8e"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\Input.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "9e14de444470f48004691b77568aeb3a",
+    "semantic_hash": "9e14de444470f48004691b77568aeb3a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\ModalSheet.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "6e2b432ec04ee02e7e974ba134233d4e",
+    "semantic_hash": "6e2b432ec04ee02e7e974ba134233d4e"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\ProBadge.jsx": {
+    "mtime": 1778425758.1325164,
+    "ast_hash": "e888b0c2b0c77084b9c43f3bd34bd91a",
+    "semantic_hash": "e888b0c2b0c77084b9c43f3bd34bd91a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\SearchableSelect.jsx": {
+    "mtime": 1779372520.1402218,
+    "ast_hash": "51a1930e5b7d185cca46b405cb1c1fad",
+    "semantic_hash": "51a1930e5b7d185cca46b405cb1c1fad"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\Skeleton.jsx": {
+    "mtime": 1775688143.867051,
+    "ast_hash": "02597ce15c6138f015931cb4be692e29",
+    "semantic_hash": "02597ce15c6138f015931cb4be692e29"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\ui\\WeekNavigator.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "d2e8f8dba4ab95fc0de5de0f25a1b1f2",
+    "semantic_hash": "d2e8f8dba4ab95fc0de5de0f25a1b1f2"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\weekly\\WeeklyChallengeCard.jsx": {
+    "mtime": 1780659073.3230088,
+    "ast_hash": "7c6fb254052aa61ce095f5cdf9257ac3",
+    "semantic_hash": "7c6fb254052aa61ce095f5cdf9257ac3"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\contexts\\CookingSessionContext.jsx": {
+    "mtime": 1780058906.5784023,
+    "ast_hash": "af9a2efe95984700ebfb0635cf745100",
+    "semantic_hash": "af9a2efe95984700ebfb0635cf745100"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\contexts\\OnboardingContext.jsx": {
+    "mtime": 1779718116.7484436,
+    "ast_hash": "d3d350463da13866853def3d2cdc4096",
+    "semantic_hash": "d3d350463da13866853def3d2cdc4096"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\contexts\\WeeklyChallengeContext.jsx": {
+    "mtime": 1779917643.5624177,
+    "ast_hash": "b748a3b2fe66862c4ae9195032ec9352",
+    "semantic_hash": "b748a3b2fe66862c4ae9195032ec9352"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\deepLinks.js": {
+    "mtime": 1778360199.0847878,
+    "ast_hash": "0059245ee30746a6b6f01b86d00f6a31",
+    "semantic_hash": "0059245ee30746a6b6f01b86d00f6a31"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\hooks\\useLiveCookingTimer.js": {
+    "mtime": 1780007563.5868287,
+    "ast_hash": "00b51c92ca772b4a92776bc881b47f31",
+    "semantic_hash": "00b51c92ca772b4a92776bc881b47f31"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\hooks\\usePwaInstallPrompt.js": {
+    "mtime": 1778764954.73072,
+    "ast_hash": "52c37c70b95e269a507e2ec81bacab19",
+    "semantic_hash": "52c37c70b95e269a507e2ec81bacab19"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\hooks\\useRewardAnimation.js": {
+    "mtime": 1779834824.8168707,
+    "ast_hash": "9487df4b4b2630d3d4feca4a23ecc6f6",
+    "semantic_hash": "9487df4b4b2630d3d4feca4a23ecc6f6"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\AdminForgotPasswordPage.jsx": {
+    "mtime": 1779830570.110766,
+    "ast_hash": "b5fd2fbc77a239eb73a30b6c736c923f",
+    "semantic_hash": "b5fd2fbc77a239eb73a30b6c736c923f"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\AdminLoginPage.jsx": {
+    "mtime": 1779922612.9687848,
+    "ast_hash": "c3dd201f02a6071317525c3feac3c907",
+    "semantic_hash": "c3dd201f02a6071317525c3feac3c907"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\AdminPanelPage.jsx": {
+    "mtime": 1780058979.9992082,
+    "ast_hash": "0df5bdb8aeee4f47813a806dd7308016",
+    "semantic_hash": "0df5bdb8aeee4f47813a806dd7308016"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\AdminResetPasswordPage.jsx": {
+    "mtime": 1779830597.4856272,
+    "ast_hash": "33ca8472b132a917fde2356d582feaa3",
+    "semantic_hash": "33ca8472b132a917fde2356d582feaa3"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\AdminUsersPage.jsx": {
+    "mtime": 1775688143.868439,
+    "ast_hash": "8d4584d5624ddf5e307210e34a51112a",
+    "semantic_hash": "8d4584d5624ddf5e307210e34a51112a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\BootstrapPage.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "848b545b3ceb9545b7d0390b7877faa5",
+    "semantic_hash": "848b545b3ceb9545b7d0390b7877faa5"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\CatalogPage.jsx": {
+    "mtime": 1779920416.506034,
+    "ast_hash": "1a64e7db33374db4448e470442a000f6",
+    "semantic_hash": "1a64e7db33374db4448e470442a000f6"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\ClerkAuthPage.jsx": {
+    "mtime": 1779832164.9554935,
+    "ast_hash": "cf42155022a4a474b1650affacce0bed",
+    "semantic_hash": "cf42155022a4a474b1650affacce0bed"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\ClerkOnboardingPage.jsx": {
+    "mtime": 1779748562.5338645,
+    "ast_hash": "aa7bd111b761e5f3f8130a8507a09217",
+    "semantic_hash": "aa7bd111b761e5f3f8130a8507a09217"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\DishesPage.jsx": {
+    "mtime": 1779920375.6555526,
+    "ast_hash": "d0d231ba7101301b5622a643ed8ce588",
+    "semantic_hash": "d0d231ba7101301b5622a643ed8ce588"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\InviteLandingPage.jsx": {
+    "mtime": 1779207466.3238854,
+    "ast_hash": "140106059651f197fe372ce4efba82a1",
+    "semantic_hash": "140106059651f197fe372ce4efba82a1"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\PaymentCancelledPage.jsx": {
+    "mtime": 1778766562.418481,
+    "ast_hash": "4f268a30ac7a810ee077226a4bfada66",
+    "semantic_hash": "4f268a30ac7a810ee077226a4bfada66"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\PaymentSuccessPage.jsx": {
+    "mtime": 1779201232.3094418,
+    "ast_hash": "1ff2fad50010d6bf4edb247c1c34b0de",
+    "semantic_hash": "1ff2fad50010d6bf4edb247c1c34b0de"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\SettingsPage.jsx": {
+    "mtime": 1779920501.7441533,
+    "ast_hash": "b066bc3cb7acdb61820d73c083fc1048",
+    "semantic_hash": "b066bc3cb7acdb61820d73c083fc1048"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\ShoppingBudgetPage.jsx": {
+    "mtime": 1775688143.8723724,
+    "ast_hash": "91aac52ba3f80133175ae9e6af2e6c69",
+    "semantic_hash": "91aac52ba3f80133175ae9e6af2e6c69"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\ShoppingPage.jsx": {
+    "mtime": 1780661689.985635,
+    "ast_hash": "0d351001eba7f4cc92c3d210a05cbab5",
+    "semantic_hash": "0d351001eba7f4cc92c3d210a05cbab5"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\SwapsPage.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "600dec09e01451513e3f7492386b9b3a",
+    "semantic_hash": "600dec09e01451513e3f7492386b9b3a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\UpgradeToProPage.jsx": {
+    "mtime": 1779748408.1174412,
+    "ast_hash": "19ad1196b63cdc0a91e734f4ffc07bcd",
+    "semantic_hash": "19ad1196b63cdc0a91e734f4ffc07bcd"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\WeekPage.jsx": {
+    "mtime": 1780004542.2033823,
+    "ast_hash": "c5b630fce3e810663130c72e60caf631",
+    "semantic_hash": "c5b630fce3e810663130c72e60caf631"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\push.js": {
+    "mtime": 1775688143.875254,
+    "ast_hash": "9517466cebb76ba14fffbff18f1998e8",
+    "semantic_hash": "9517466cebb76ba14fffbff18f1998e8"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\subscription.js": {
+    "mtime": 1779920349.3899043,
+    "ast_hash": "118136fb958ddc74418db41442569d35",
+    "semantic_hash": "118136fb958ddc74418db41442569d35"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\cookingSessionStorage.js": {
+    "mtime": 1780006744.6539514,
+    "ast_hash": "4a0a01567ff4269cf0ccf15100d51069",
+    "semantic_hash": "4a0a01567ff4269cf0ccf15100d51069"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\normalize.js": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "6e6d32d2feaa04b81ccbc6a7c3f96e5c",
+    "semantic_hash": "6e6d32d2feaa04b81ccbc6a7c3f96e5c"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\notificationService.js": {
+    "mtime": 1780008958.7643623,
+    "ast_hash": "52df2163f714a24817b81e5fd26c5cf9",
+    "semantic_hash": "52df2163f714a24817b81e5fd26c5cf9"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\packImages.js": {
+    "mtime": 1778682900.901384,
+    "ast_hash": "41010f960c6cb3c01961ec02f51f00b2",
+    "semantic_hash": "41010f960c6cb3c01961ec02f51f00b2"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\recipeScaling.js": {
+    "mtime": 1780004416.1919014,
+    "ast_hash": "0db7f06670f8a5278983012c19c7ecee",
+    "semantic_hash": "0db7f06670f8a5278983012c19c7ecee"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\recipeStepParser.js": {
+    "mtime": 1780008704.884838,
+    "ast_hash": "19737db373a1b880469ac31c55aa5dd3",
+    "semantic_hash": "19737db373a1b880469ac31c55aa5dd3"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\timerService.js": {
+    "mtime": 1780006758.796943,
+    "ast_hash": "842a0ca3d36a30da0a2468ebc434f7be",
+    "semantic_hash": "842a0ca3d36a30da0a2468ebc434f7be"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\userColors.js": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "6f5a46d2a968686372a0a607b40daf4a",
+    "semantic_hash": "6f5a46d2a968686372a0a607b40daf4a"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\userInitials.js": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "62895fe3625c9853f82accb60e1b394e",
+    "semantic_hash": "62895fe3625c9853f82accb60e1b394e"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\weekContext.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "4722a28a52ccd0994c517cfdd70cdc90",
+    "semantic_hash": "4722a28a52ccd0994c517cfdd70cdc90"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\main.jsx": {
+    "mtime": 1779375414.1834204,
+    "ast_hash": "2d88ce10cdfecca3a8b2fca84cfc0287",
+    "semantic_hash": "2d88ce10cdfecca3a8b2fca84cfc0287"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\pages\\DashboardPage.jsx": {
+    "mtime": 1773141082.3873825,
+    "ast_hash": "cc6117e65b25c0bcbb1254216c792ef1",
+    "semantic_hash": "cc6117e65b25c0bcbb1254216c792ef1"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\vite.config.js": {
+    "mtime": 1778450732.3284688,
+    "ast_hash": "2dc51eadd3ccf3ed74f72d3e85c05442",
+    "semantic_hash": "2dc51eadd3ccf3ed74f72d3e85c05442"
+  },
+  "C:\\APPS\\pilot-homefirst\\package.json": {
+    "mtime": 1778451306.9120243,
+    "ast_hash": "99a0d682a6f53c36943e73f606f1866b",
+    "semantic_hash": "99a0d682a6f53c36943e73f606f1866b"
+  },
+  "C:\\APPS\\pilot-homefirst\\scripts\\admin-subscription.sh": {
+    "mtime": 1778425752.4545739,
+    "ast_hash": "79fb21b3e75711c8ba7ab590de1adda6",
+    "semantic_hash": "79fb21b3e75711c8ba7ab590de1adda6"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\SKILL.md": {
+    "mtime": 1779348316.27007,
+    "ast_hash": "e6c61de5abd2b2e7d018a926d81a9568",
+    "semantic_hash": "e6c61de5abd2b2e7d018a926d81a9568"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\adapt.md": {
+    "mtime": 1779348316.27107,
+    "ast_hash": "7c2a0a4385e635c3aa2abd71fee4dfcf",
+    "semantic_hash": "7c2a0a4385e635c3aa2abd71fee4dfcf"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\animate.md": {
+    "mtime": 1779348316.27107,
+    "ast_hash": "e06b26efc697e3d50feaa6aa0277e582",
+    "semantic_hash": "e06b26efc697e3d50feaa6aa0277e582"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\audit.md": {
+    "mtime": 1779348316.27107,
+    "ast_hash": "3dd214a2705d56ba81420bb1ef77e79a",
+    "semantic_hash": "3dd214a2705d56ba81420bb1ef77e79a"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\bolder.md": {
+    "mtime": 1779348316.27107,
+    "ast_hash": "5e7b949c085b8daf91230e2c63458215",
+    "semantic_hash": "5e7b949c085b8daf91230e2c63458215"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\brand.md": {
+    "mtime": 1779348316.2720716,
+    "ast_hash": "74e97fbbaad8eba976b3fd29943f4424",
+    "semantic_hash": "74e97fbbaad8eba976b3fd29943f4424"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\clarify.md": {
+    "mtime": 1779348316.2720716,
+    "ast_hash": "bafe85c7e9256a2882c2fad8980e016f",
+    "semantic_hash": "bafe85c7e9256a2882c2fad8980e016f"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\codex.md": {
+    "mtime": 1779348316.2720716,
+    "ast_hash": "abcb85c754f58b52e025a508e0a9ccd8",
+    "semantic_hash": "abcb85c754f58b52e025a508e0a9ccd8"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\cognitive-load.md": {
+    "mtime": 1779348316.2730725,
+    "ast_hash": "464d1b1b3566c74909fadcd2c13bc544",
+    "semantic_hash": "464d1b1b3566c74909fadcd2c13bc544"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\color-and-contrast.md": {
+    "mtime": 1779348316.2730725,
+    "ast_hash": "c51e5bca12b63f220ad15454852a8594",
+    "semantic_hash": "c51e5bca12b63f220ad15454852a8594"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\colorize.md": {
+    "mtime": 1779348316.2730725,
+    "ast_hash": "04cedee6c68412acf17c6146484e1a4d",
+    "semantic_hash": "04cedee6c68412acf17c6146484e1a4d"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\craft.md": {
+    "mtime": 1779348316.2730725,
+    "ast_hash": "68f3b9cf476752034f7945a70d38a200",
+    "semantic_hash": "68f3b9cf476752034f7945a70d38a200"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\critique.md": {
+    "mtime": 1779348316.2740731,
+    "ast_hash": "8e221c826720cce26bbc5ab89142e830",
+    "semantic_hash": "8e221c826720cce26bbc5ab89142e830"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\delight.md": {
+    "mtime": 1779348316.2740731,
+    "ast_hash": "4e0a8303f08b3512e6923c2ae8ad77ec",
+    "semantic_hash": "4e0a8303f08b3512e6923c2ae8ad77ec"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\distill.md": {
+    "mtime": 1779348316.2740731,
+    "ast_hash": "1626e83b2619826c6f000712466d9110",
+    "semantic_hash": "1626e83b2619826c6f000712466d9110"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\document.md": {
+    "mtime": 1779348316.2750707,
+    "ast_hash": "8dc57bf5c61b388bfcb51b387ed68f97",
+    "semantic_hash": "8dc57bf5c61b388bfcb51b387ed68f97"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\extract.md": {
+    "mtime": 1779348316.2750707,
+    "ast_hash": "d23c667a410f3fa1fe518286de8d556e",
+    "semantic_hash": "d23c667a410f3fa1fe518286de8d556e"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\harden.md": {
+    "mtime": 1779348316.2750707,
+    "ast_hash": "b0c5a36a9e08c788cb91b7ad329028fa",
+    "semantic_hash": "b0c5a36a9e08c788cb91b7ad329028fa"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\heuristics-scoring.md": {
+    "mtime": 1779348316.2750707,
+    "ast_hash": "f1606921268571e14591682483b595ef",
+    "semantic_hash": "f1606921268571e14591682483b595ef"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\interaction-design.md": {
+    "mtime": 1779348316.2760708,
+    "ast_hash": "ea39b98601f17b5a87f7de799b953000",
+    "semantic_hash": "ea39b98601f17b5a87f7de799b953000"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\layout.md": {
+    "mtime": 1779348316.2760708,
+    "ast_hash": "9b6d6337ac4599dbb241673104927a27",
+    "semantic_hash": "9b6d6337ac4599dbb241673104927a27"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\live.md": {
+    "mtime": 1779348316.2760708,
+    "ast_hash": "44200ad0344143f95b1ee916a88d599e",
+    "semantic_hash": "44200ad0344143f95b1ee916a88d599e"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\motion-design.md": {
+    "mtime": 1779348316.2770703,
+    "ast_hash": "95de769ab6e30a4214a969ebb25ebe89",
+    "semantic_hash": "95de769ab6e30a4214a969ebb25ebe89"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\onboard.md": {
+    "mtime": 1779348316.2770703,
+    "ast_hash": "b26a00ed39ddec9588f99ca40898e73d",
+    "semantic_hash": "b26a00ed39ddec9588f99ca40898e73d"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\optimize.md": {
+    "mtime": 1779348316.2770703,
+    "ast_hash": "37f6c5e1cc54a51ed4c9233992d95bb4",
+    "semantic_hash": "37f6c5e1cc54a51ed4c9233992d95bb4"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\overdrive.md": {
+    "mtime": 1779348316.2770703,
+    "ast_hash": "00d8ceb50dacaf95c71c9615572fc901",
+    "semantic_hash": "00d8ceb50dacaf95c71c9615572fc901"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\personas.md": {
+    "mtime": 1779348316.2780707,
+    "ast_hash": "a944438aa2cb765b740fbdd7348aef68",
+    "semantic_hash": "a944438aa2cb765b740fbdd7348aef68"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\polish.md": {
+    "mtime": 1779348316.2780707,
+    "ast_hash": "a43f15bcd01880d10e3d378b47e4afb8",
+    "semantic_hash": "a43f15bcd01880d10e3d378b47e4afb8"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\product.md": {
+    "mtime": 1779348316.2780707,
+    "ast_hash": "c073e67bbcec51f31af4ba132730aca9",
+    "semantic_hash": "c073e67bbcec51f31af4ba132730aca9"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\quieter.md": {
+    "mtime": 1779348316.2780707,
+    "ast_hash": "5d95eb92803df12852b74cd97eaccac2",
+    "semantic_hash": "5d95eb92803df12852b74cd97eaccac2"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\responsive-design.md": {
+    "mtime": 1779348316.2790716,
+    "ast_hash": "3a0e2834961edfe9d44cef19ffc84737",
+    "semantic_hash": "3a0e2834961edfe9d44cef19ffc84737"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\shape.md": {
+    "mtime": 1779348316.2790716,
+    "ast_hash": "9d672c245559ba0666c47c5a32245082",
+    "semantic_hash": "9d672c245559ba0666c47c5a32245082"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\spatial-design.md": {
+    "mtime": 1779348316.2790716,
+    "ast_hash": "28fd3d7f36c9ad72fdc5c3a90c7f5505",
+    "semantic_hash": "28fd3d7f36c9ad72fdc5c3a90c7f5505"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\teach.md": {
+    "mtime": 1779348316.2800705,
+    "ast_hash": "9d6520883f5996dbe5e78a38872c44df",
+    "semantic_hash": "9d6520883f5996dbe5e78a38872c44df"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\typeset.md": {
+    "mtime": 1779348316.2800705,
+    "ast_hash": "9c1eef50c877f83a6af1cfc07fb802be",
+    "semantic_hash": "9c1eef50c877f83a6af1cfc07fb802be"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\typography.md": {
+    "mtime": 1779348316.2800705,
+    "ast_hash": "841fa5dc3d8cf998ecb63b211b766c7c",
+    "semantic_hash": "841fa5dc3d8cf998ecb63b211b766c7c"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\impeccable\\reference\\ux-writing.md": {
+    "mtime": 1779348316.2800705,
+    "ast_hash": "74e4aac960c114a7b8761210f80a8cc5",
+    "semantic_hash": "74e4aac960c114a7b8761210f80a8cc5"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\ui-review\\SKILL.md": {
+    "mtime": 1780659494.7397413,
+    "ast_hash": "ab7b54942f0a49a7f1957e767fef9876",
+    "semantic_hash": "ab7b54942f0a49a7f1957e767fef9876"
+  },
+  "C:\\APPS\\pilot-homefirst\\.claude\\skills\\ux-review\\SKILL.md": {
+    "mtime": 1780659564.7377448,
+    "ast_hash": "96be55082435367d093bf01cf495f987",
+    "semantic_hash": "96be55082435367d093bf01cf495f987"
+  },
+  "C:\\APPS\\pilot-homefirst\\.postman\\resources.yaml": {
+    "mtime": 1773141082.3091507,
+    "ast_hash": "9ffbece362e3a106f639d5edfafb7113",
+    "semantic_hash": "9ffbece362e3a106f639d5edfafb7113"
+  },
+  "C:\\APPS\\pilot-homefirst\\AUTH_MIGRATION_PLAN.md": {
+    "mtime": 1777218753.3461158,
+    "ast_hash": "d3e6ac3e43970552cf3cd306bc5ff471",
+    "semantic_hash": "d3e6ac3e43970552cf3cd306bc5ff471"
+  },
+  "C:\\APPS\\pilot-homefirst\\CLAUDE.md": {
+    "mtime": 1780662127.090945,
+    "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
+    "semantic_hash": "8a6643a420fdad6bfb583523bc6cef16"
+  },
+  "C:\\APPS\\pilot-homefirst\\DESIGN.md": {
+    "mtime": 1779349880.4420192,
+    "ast_hash": "ea550d20e7f374edad5c7ada09830217",
+    "semantic_hash": "ea550d20e7f374edad5c7ada09830217"
+  },
+  "C:\\APPS\\pilot-homefirst\\PRODUCT.md": {
+    "mtime": 1779349008.7951496,
+    "ast_hash": "c5128f7d049ad4b9a5004c2af1c01b90",
+    "semantic_hash": "c5128f7d049ad4b9a5004c2af1c01b90"
+  },
+  "C:\\APPS\\pilot-homefirst\\README.md": {
+    "mtime": 1773141082.325067,
+    "ast_hash": "c55d21c9a78fab69b0fb2d7885bfcad4",
+    "semantic_hash": "c55d21c9a78fab69b0fb2d7885bfcad4"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1552.md": {
+    "mtime": 1778593980.8906577,
+    "ast_hash": "f8156bb47080cd25ca0b4b907308809c",
+    "semantic_hash": "f8156bb47080cd25ca0b4b907308809c"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1556.md": {
+    "mtime": 1778594171.5862207,
+    "ast_hash": "76ed528217d323ab6d672e979e5e5328",
+    "semantic_hash": "76ed528217d323ab6d672e979e5e5328"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1558.md": {
+    "mtime": 1778594289.7456129,
+    "ast_hash": "508ba1615f3ac5019c14ace11e504e3b",
+    "semantic_hash": "508ba1615f3ac5019c14ace11e504e3b"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1604.md": {
+    "mtime": 1778594665.0979006,
+    "ast_hash": "e713b210d186535370ddad1f114a98d2",
+    "semantic_hash": "e713b210d186535370ddad1f114a98d2"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1619.md": {
+    "mtime": 1778595590.8317504,
+    "ast_hash": "d508d29054fc943ab66d149eac823fb9",
+    "semantic_hash": "d508d29054fc943ab66d149eac823fb9"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-report-20260512-1621.md": {
+    "mtime": 1778595714.157056,
+    "ast_hash": "17d1aff46ef96f09c9181a73e5cbd4aa",
+    "semantic_hash": "17d1aff46ef96f09c9181a73e5cbd4aa"
+  },
+  "C:\\APPS\\pilot-homefirst\\docs\\signup-audit.md": {
+    "mtime": 1779207461.274409,
+    "ast_hash": "08ba162f67dcfe670417c4721ab02437",
+    "semantic_hash": "08ba162f67dcfe670417c4721ab02437"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\index.html": {
+    "mtime": 1779375399.519939,
+    "ast_hash": "87c329a686810ec45020fa6014809d36",
+    "semantic_hash": "87c329a686810ec45020fa6014809d36"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\public\\architecture-map.html": {
+    "mtime": 1779919070.1083093,
+    "ast_hash": "f536439a3eb2e4421a183741cdaa000d",
+    "semantic_hash": "f536439a3eb2e4421a183741cdaa000d"
+  },
+  "C:\\APPS\\pilot-homefirst\\postman\\collections\\New Collection\\.resources\\definition.yaml": {
+    "mtime": 1773141082.4030402,
+    "ast_hash": "25dbabec141d59a9dffe455963130d0a",
+    "semantic_hash": "25dbabec141d59a9dffe455963130d0a"
+  },
+  "C:\\APPS\\pilot-homefirst\\postman\\globals\\workspace.globals.yaml": {
+    "mtime": 1773141082.4030402,
+    "ast_hash": "a255bf3fa7e8762ed256d17832966a3f",
+    "semantic_hash": "a255bf3fa7e8762ed256d17832966a3f"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\public\\brand\\Lunchfy_icon.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "86b79998b7f1c18be023fb6b02f84379",
+    "semantic_hash": "86b79998b7f1c18be023fb6b02f84379"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\public\\icons\\icon-192.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "ce1228f2d093704b51f6f9465413c36e",
+    "semantic_hash": "ce1228f2d093704b51f6f9465413c36e"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\public\\icons\\icon-512.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "122bb5ec5db67af4e690c953e7da8ddf",
+    "semantic_hash": "122bb5ec5db67af4e690c953e7da8ddf"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\brand\\Lunchfy_icon.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "86b79998b7f1c18be023fb6b02f84379",
+    "semantic_hash": "86b79998b7f1c18be023fb6b02f84379"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\brand\\Lunchfy_logo1.png": {
+    "mtime": 1778748682.9565802,
+    "ast_hash": "0dd19f34969f4c8daa3d3a8ad13f5828",
+    "semantic_hash": "0dd19f34969f4c8daa3d3a8ad13f5828"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\category-icons\\Chicken_tp.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "e10ad2d753de6727fc4923890bdc49f5",
+    "semantic_hash": "e10ad2d753de6727fc4923890bdc49f5"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\category-icons\\Fish_tp.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "96edba485c2a7995b1de5d46e9507aec",
+    "semantic_hash": "96edba485c2a7995b1de5d46e9507aec"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\category-icons\\Legumes_tp.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "90fffcea7dcabe71d38475fec4fe4d37",
+    "semantic_hash": "90fffcea7dcabe71d38475fec4fe4d37"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\category-icons\\Meat_tp.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "17769d7e0905d5410c278e803f9d3e41",
+    "semantic_hash": "17769d7e0905d5410c278e803f9d3e41"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\category-icons\\Pasta_tp.png": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "141ccb710fc2cb0961fa83e5e47688a4",
+    "semantic_hash": "141ccb710fc2cb0961fa83e5e47688a4"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\category-icons\\Rice_tp.png": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "a7da3f6d1fa75f0295dc81b61a900c3f",
+    "semantic_hash": "a7da3f6d1fa75f0295dc81b61a900c3f"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\category-icons\\Sides_tp.png": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "8ab69bc300b7cc339bc915df7368fa74",
+    "semantic_hash": "8ab69bc300b7cc339bc915df7368fa74"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\category-icons\\Special_tp.png": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "cb3415c3dab2353984d8a32d257f70de",
+    "semantic_hash": "cb3415c3dab2353984d8a32d257f70de"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\category-icons\\Vegetables_tp.png": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "b1d114c510a2dfb7cf517e3a9619c1fb",
+    "semantic_hash": "b1d114c510a2dfb7cf517e3a9619c1fb"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\category-icons\\eggs_tp.png": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "992d6abefb0a91f55db2a9c17d5f2a21",
+    "semantic_hash": "992d6abefb0a91f55db2a9c17d5f2a21"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\food\\empty-dish.svg": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "d60b419b04e67889b4be52a8029ed310",
+    "semantic_hash": "d60b419b04e67889b4be52a8029ed310"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\food\\main-course.svg": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\assets\\food\\side-dish.svg": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "666fa2bf762b9600c775df9fe2cd2330",
+    "semantic_hash": "666fa2bf762b9600c775df9fe2cd2330"
+  }
+}

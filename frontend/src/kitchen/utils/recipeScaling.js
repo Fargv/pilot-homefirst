@@ -36,8 +36,39 @@ export const RECIPE_UNITS = [
 
 const NON_SCALABLE_UNITS = new Set(["al gusto", "pizca"]);
 
+function asPositiveNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export function isUnitScalable(unit) {
   return !NON_SCALABLE_UNITS.has(unit);
+}
+
+export function getRecipeBaseServings(recipeOrDish) {
+  const recipe = recipeOrDish?.recipe || recipeOrDish || {};
+  return (
+    asPositiveNumber(recipe.baseServings) ??
+    asPositiveNumber(recipe.servings) ??
+    asPositiveNumber(recipeOrDish?.baseServings) ??
+    4
+  );
+}
+
+export function getInitialServings({ recipe, dish, plannedMeal, context } = {}) {
+  const baseServings = getRecipeBaseServings(recipe || dish);
+  if (context === "planning" || context === "week") {
+    return (
+      asPositiveNumber(plannedMeal?.servings) ??
+      asPositiveNumber(plannedMeal?.attendeeCount) ??
+      asPositiveNumber(dish?.servings) ??
+      baseServings
+    );
+  }
+  if (context === "guided") {
+    return asPositiveNumber(plannedMeal?.servings) ?? asPositiveNumber(dish?.servings) ?? baseServings;
+  }
+  return baseServings;
 }
 
 function getRoundType(unit) {
@@ -64,15 +95,23 @@ export function formatScaledAmount(amount, unit) {
     return String(+amount.toFixed(2));
   }
 
-  // Fraction: round to nearest quarter, use unicode fraction glyphs
   const q = Math.round(amount * 4) / 4;
-  const whole = Math.floor(q);
-  const frac = Math.round((q - whole) * 4);
-  const fracGlyph = ["", "¼", "½", "¾"][frac] ?? "";
-  if (whole === 0 && !fracGlyph) return "0";
-  if (!fracGlyph) return String(whole);
-  if (whole === 0) return fracGlyph;
-  return `${whole} ${fracGlyph}`;
+  return String(+q.toFixed(2));
+}
+
+function formatDisplayUnit(unit, amount) {
+  if (amount === null || amount === undefined || !unit) return unit;
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return unit;
+  const pluralByUnit = {
+    unidad: "unidades",
+    cucharada: "cucharadas",
+    cucharadita: "cucharaditas",
+    taza: "tazas",
+    vaso: "vasos",
+  };
+  if (n !== 1 && pluralByUnit[unit]) return pluralByUnit[unit];
+  return unit;
 }
 
 /**
@@ -87,6 +126,15 @@ export function scaleIngredientQuantity(qty, baseServings, targetServings) {
   if (!baseServings || !targetServings || baseServings <= 0) return qty;
   if (baseServings === targetServings) return qty;
   return { ...qty, amount: qty.amount * (targetServings / baseServings) };
+}
+
+export function scaleRecipeIngredients({ ingredients = [], baseServings, targetServings } = {}) {
+  const safeBase = asPositiveNumber(baseServings) ?? 4;
+  const safeTarget = asPositiveNumber(targetServings) ?? safeBase;
+  return (Array.isArray(ingredients) ? ingredients : []).map((item) => ({
+    ...item,
+    displayQuantity: displayIngredientQuantity(item, safeBase, safeTarget),
+  }));
 }
 
 /**
@@ -106,7 +154,7 @@ export function displayIngredientQuantity(item, baseServings, targetServings) {
         const scaled = scaleIngredientQuantity(parsed, baseServings, targetServings);
         const formatted = formatScaledAmount(scaled.amount, scaled.unit);
         if (formatted !== null) {
-          return [formatted, scaled.unit, scaled.note].filter(Boolean).join(" ");
+          return [formatted, formatDisplayUnit(scaled.unit, scaled.amount), scaled.note].filter(Boolean).join(" ");
         }
       }
     }
@@ -123,7 +171,7 @@ export function displayIngredientQuantity(item, baseServings, targetServings) {
   }
 
   const formatted = formatScaledAmount(scaled.amount, scaled.unit);
-  return [formatted ?? String(scaled.amount), scaled.unit, scaled.note].filter(Boolean).join(" ");
+  return [formatted ?? String(scaled.amount), formatDisplayUnit(scaled.unit, scaled.amount), scaled.note].filter(Boolean).join(" ");
 }
 
 /**
