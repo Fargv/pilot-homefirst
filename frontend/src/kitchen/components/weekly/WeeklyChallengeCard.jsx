@@ -8,9 +8,10 @@ const COLLAPSED_KEY = "lunchfy_weekly_card_collapsed";
 
 function readCollapsedPref() {
   try {
-    return localStorage.getItem(COLLAPSED_KEY) === "1";
+    const stored = localStorage.getItem(COLLAPSED_KEY);
+    return stored === null ? true : stored === "1";
   } catch {
-    return false;
+    return true;
   }
 }
 

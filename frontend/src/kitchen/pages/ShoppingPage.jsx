@@ -116,6 +116,24 @@ function EmptyHistoryIcon(props) {
   );
 }
 
+function DotsIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <circle cx="5" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="19" cy="12" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ChevronSmallIcon({ className, ...props }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className={className} {...props}>
+      <path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function addDaysToISO(iso, days) {
   const date = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return getCurrentWeekStart();
@@ -267,6 +285,9 @@ export default function ShoppingPage() {
   const [basicsPopupOpen, setBasicsPopupOpen] = useState(false);
   const [basicsToast, setBasicsToast] = useState("");
   const basicsToastTimerRef = useRef(null);
+  const [budgetExpanded, setBudgetExpanded] = useState(false);
+  const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
+  const overflowMenuRef = useRef(null);
   const weekDirRef = useRef(null);
   const [dismissedBannerIds, setDismissedBannerIds] = useState(() => {
     try {
@@ -559,6 +580,16 @@ export default function ShoppingPage() {
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [quickCreateOpen, quickCategoryMenuOpen]);
+
+  useEffect(() => {
+    if (!overflowMenuOpen) return undefined;
+    const handlePointerDown = (event) => {
+      if (overflowMenuRef.current?.contains(event.target)) return;
+      setOverflowMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [overflowMenuOpen]);
 
   const updateQuickCategoryMenuPosition = useCallback(() => {
     const field = quickCategoryFieldRef.current;
@@ -1100,16 +1131,75 @@ export default function ShoppingPage() {
       <div className="shopping-page-shell">
         <div className="kitchen-card shopping-main-card">
           <div className="shopping-header-card">
+            {/* Title + icon actions */}
             <div className="shopping-header-row">
               <div className="shopping-header-title">
                 <h1>Lista de la compra</h1>
+              </div>
+              <div className="shopping-header-actions">
                 <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
                   <RefreshIcon className="shopping-week-arrow-icon" />
                 </button>
+                <ShareWhatsAppButton
+                  iconOnly
+                  size={20}
+                  className="kitchen-tab-share-button"
+                  buttonLabel="Compartir lista"
+                  title="Compartir en HomeFirst"
+                  items={[
+                    {
+                      id: "shopping-list",
+                      label: "Compartir esta lista",
+                      description: "Comparte la lista de la compra de esta semana con acceso protegido.",
+                      url: buildShoppingShareUrl(weekStart),
+                      message: `Here is the shopping list in HomeFirst: ${buildShoppingShareUrl(weekStart)}`
+                    }
+                  ]}
+                />
+                <div className="shopping-overflow-wrapper" ref={overflowMenuRef}>
+                  <button
+                    type="button"
+                    className="shopping-overflow-btn"
+                    onClick={() => setOverflowMenuOpen((v) => !v)}
+                    aria-label="Más acciones"
+                    aria-expanded={overflowMenuOpen}
+                  >
+                    <DotsIcon style={{ width: 18, height: 18 }} />
+                  </button>
+                  {overflowMenuOpen ? (
+                    <div className="shopping-overflow-menu" role="menu">
+                      {tab === "pending" ? (
+                        <button
+                          type="button"
+                          className="shopping-overflow-item"
+                          role="menuitem"
+                          onClick={() => { void setAllItemsStatus("purchased"); setOverflowMenuOpen(false); }}
+                        >
+                          Marcar todo comprado
+                        </button>
+                      ) : null}
+                      {tab === "purchased" ? (
+                        <button
+                          type="button"
+                          className="shopping-overflow-item"
+                          role="menuitem"
+                          onClick={() => {
+                            if (window.confirm("¿Desmarcar todo lo comprado de esta semana?")) {
+                              void setAllItemsStatus("pending");
+                            }
+                            setOverflowMenuOpen(false);
+                          }}
+                        >
+                          Desmarcar todo
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
 
-            {/* Unified controls bar: week navigator + state filters on one line */}
+            {/* Unified controls bar: week navigator + tabs on one line */}
             <div className="shopping-controls-bar">
               <div className="shopping-header-week-row">
                 <div className="kitchen-week-nav-row shopping-week-nav-row">
@@ -1137,94 +1227,86 @@ export default function ShoppingPage() {
               <span className="shopping-controls-divider" aria-hidden="true" />
 
               <div className="shopping-header-tabs-row">
-                <div className="kitchen-tab-share-row shopping-tab-share-row">
-                  <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
-                    <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-                    <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-                    {budgetFeatureEnabled ? (
-                      <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
-                        Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
-                      </button>
-                    ) : null}
-                  </div>
-                  <ShareWhatsAppButton
-                    iconOnly
-                    size={22}
-                    className="kitchen-tab-share-button"
-                    buttonLabel="Compartir lista por WhatsApp"
-                    title="Compartir en HomeFirst"
-                    items={[
-                      {
-                        id: "shopping-list",
-                        label: "Compartir esta lista",
-                        description: "Comparte la lista de la compra de esta semana con acceso protegido.",
-                        url: buildShoppingShareUrl(weekStart),
-                        message: `Here is the shopping list in HomeFirst: ${buildShoppingShareUrl(weekStart)}`
-                      }
-                    ]}
-                  />
+                <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
+                  <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
+                  <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+                  {budgetFeatureEnabled ? (
+                    <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
+                      Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </div>
 
-            {/* Budget cards — shown below the unified controls bar */}
+            {/* Budget: discrete toggle chip + collapsible (200ms ease-out) */}
             {budgetFeatureEnabled === true ? (
-              <div className="shopping-budget-row">
-                <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
-                  <span className="shopping-budget-label">Budget semanal</span>
-                  <strong className="shopping-budget-amount">{formatCurrency(budget?.weeklyBudget)}</strong>
+              <div className="shopping-budget-section">
+                <button
+                  type="button"
+                  className="shopping-budget-toggle-chip"
+                  onClick={() => setBudgetExpanded((v) => !v)}
+                  aria-expanded={budgetExpanded}
+                >
+                  <span>Ver presupuesto</span>
+                  <ChevronSmallIcon className={`shopping-budget-toggle-chevron${budgetExpanded ? " is-up" : ""}`} />
                 </button>
-                <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--spent" onClick={openWeeklyBudgetPanel}>
-                  <span className="shopping-budget-label">Gastado esta semana</span>
-                  <strong className="shopping-budget-amount">{formatCurrency(budget?.spent)}</strong>
-                </button>
-                <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--available" onClick={openWeeklyBudgetPanel}>
-                  <span className="shopping-budget-label">Disponible</span>
-                  <strong className="shopping-budget-amount">{formatCurrency(budget?.available)}</strong>
-                </button>
+                <div className={`shopping-budget-collapsible${budgetExpanded ? " is-open" : ""}`}>
+                  <div className="shopping-budget-collapsible-inner">
+                    <div className="shopping-budget-row">
+                      <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
+                        <span className="shopping-budget-label">Budget semanal</span>
+                        <strong className="shopping-budget-amount">{formatCurrency(budget?.weeklyBudget)}</strong>
+                      </button>
+                      <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--spent" onClick={openWeeklyBudgetPanel}>
+                        <span className="shopping-budget-label">Gastado esta semana</span>
+                        <strong className="shopping-budget-amount">{formatCurrency(budget?.spent)}</strong>
+                      </button>
+                      <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--available" onClick={openWeeklyBudgetPanel}>
+                        <span className="shopping-budget-label">Disponible</span>
+                        <strong className="shopping-budget-amount">{formatCurrency(budget?.available)}</strong>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : null}
 
+            {/* Prominent add input — primary action of the page */}
             {tab === "pending" ? (
-              <div className="shopping-header-input-row">
-                <div className="shopping-header-quick-col">
-                  <div className="shopping-quick-add shopping-quick-add-header" role="region" aria-label="Añadir ingrediente rápido">
-                    <div className="shopping-quick-add-row">
-                      <span className="shopping-quick-add-icon" aria-hidden="true">+</span>
-                      <input
-                        ref={quickInputRef}
-                        className="kitchen-input shopping-quick-add-input"
-                        value={quickQuery}
-                        onChange={(event) => setQuickQuery(event.target.value)}
-                        placeholder="Añadir producto, ingrediente u otro artículo…"
-                      />
-                      <button
-                        type="button"
-                        className="shopping-basics-btn"
-                        onClick={() => setBasicsPopupOpen(true)}
-                        title="Básicos de compra"
-                        aria-label="Añadir básicos de compra"
-                      >
-                        <span className="shopping-basics-btn-icon">🧺</span>
-                        <span className="shopping-basics-btn-label">+Básicos</span>
-                      </button>
+              <div className="shopping-add-row">
+                <div className="shopping-add-wrapper" role="region" aria-label="Añadir ingrediente">
+                  <input
+                    ref={quickInputRef}
+                    className="kitchen-input shopping-add-input"
+                    value={quickQuery}
+                    onChange={(event) => setQuickQuery(event.target.value)}
+                    placeholder="¿Qué necesitas comprar?"
+                  />
+                  <button
+                    type="button"
+                    className="shopping-basics-icon-btn"
+                    onClick={() => setBasicsPopupOpen(true)}
+                    title="Básicos de compra"
+                    aria-label="Añadir básicos de compra"
+                  >
+                    🧺
+                  </button>
+                  {quickQuery ? (
+                    <div className="shopping-quick-suggestions">
+                      {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
+                      {!quickSearching ? quickSuggestions.slice(0, 8).map((item) => (
+                        <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => handleQuickSelect(item)} disabled={quickBusy}>
+                          <span className="kitchen-suggestion-name">{item.name}</span>
+                        </button>
+                      )) : null}
+                      {!quickSearching && !hasExactSuggestion && quickQuery.trim() ? (
+                        <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={openQuickCreateModal} disabled={quickBusy}>
+                          Crear "{quickQuery.trim()}"
+                        </button>
+                      ) : null}
                     </div>
-                    {quickQuery ? (
-                      <div className="shopping-quick-suggestions">
-                        {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
-                        {!quickSearching ? quickSuggestions.slice(0, 8).map((item) => (
-                          <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => handleQuickSelect(item)} disabled={quickBusy}>
-                            <span className="kitchen-suggestion-name">{item.name}</span>
-                          </button>
-                        )) : null}
-                        {!quickSearching && !hasExactSuggestion && quickQuery.trim() ? (
-                          <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={openQuickCreateModal} disabled={quickBusy}>
-                            Crear "{quickQuery.trim()}"
-                          </button>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -1272,9 +1354,6 @@ export default function ShoppingPage() {
           >
           {tab === "pending" ? (
             <div className="shopping-categories">
-              <div className="shopping-bulk-actions">
-                <button className="kitchen-button shopping-bulk-button shopping-bulk-gradient" type="button" onClick={() => setAllItemsStatus("purchased")}>Marcar todo comprado</button>
-              </div>
               {!Array.isArray(pendingByCategory) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
               ) : pendingByCategory.length === 0 ? (
@@ -1334,19 +1413,6 @@ export default function ShoppingPage() {
 
           {tab === "purchased" ? (
             <div className="shopping-categories">
-              <div className="shopping-bulk-actions">
-                <button
-                  className="kitchen-button secondary shopping-bulk-button"
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm("¿Desmarcar todo lo comprado de esta semana?")) {
-                      void setAllItemsStatus("pending");
-                    }
-                  }}
-                >
-                  Desmarcar todo
-                </button>
-              </div>
               {!Array.isArray(purchasedByStoreDay) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
               ) : purchasedByStoreDay.length === 0 ? (
