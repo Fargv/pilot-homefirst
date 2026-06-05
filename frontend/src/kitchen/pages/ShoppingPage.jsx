@@ -134,15 +134,6 @@ function ChevronSmallIcon({ className, ...props }) {
   );
 }
 
-function EuroIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M17 6.5A7 7 0 1 0 17 17.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-      <path d="M5 10h8M5 14h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
 function addDaysToISO(iso, days) {
   const date = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return getCurrentWeekStart();
@@ -1154,6 +1145,16 @@ export default function ShoppingPage() {
             <div className="shopping-header-row">
               <div className="shopping-header-title-area">
                 <h1>Lista de la compra</h1>
+                {budgetFeatureEnabled === true ? (
+                  <button
+                    type="button"
+                    className="shopping-budget-pill"
+                    onClick={() => setBudgetModalOpen(true)}
+                    aria-label="Ver desglose del presupuesto"
+                  >
+                    {formatCurrency(budget?.spent)} / {formatCurrency(budget?.weeklyBudget)}
+                  </button>
+                ) : null}
               </div>
               <div className="shopping-header-actions-right">
                 <ShareWhatsAppButton
@@ -1198,38 +1199,7 @@ export default function ShoppingPage() {
                   ) : null}
                 </div>
               </div>
-
-              <span className="shopping-controls-divider" aria-hidden="true" />
-
-              <div className="shopping-header-tabs-row">
-                <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
-                  <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-                  <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-                  {budgetFeatureEnabled ? (
-                    <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
-                      Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
-                    </button>
-                  ) : null}
-                </div>
-              </div>
             </div>
-
-            {/* Budget: subtle inline row + modal trigger */}
-            {budgetFeatureEnabled === true ? (
-              <div className="shopping-budget-inline-row">
-                <span className="shopping-budget-inline-text">
-                  Gastado: <strong>{formatCurrency(budget?.spent)}</strong> de {formatCurrency(budget?.weeklyBudget)}
-                </span>
-                <button
-                  type="button"
-                  className="shopping-budget-modal-trigger"
-                  onClick={() => setBudgetModalOpen(true)}
-                  aria-label="Ver desglose del presupuesto"
-                >
-                  <EuroIcon style={{ width: 14, height: 14 }} />
-                </button>
-              </div>
-            ) : null}
 
             {/* Prominent add input — primary action of the page */}
             {tab === "pending" ? (
@@ -1270,6 +1240,19 @@ export default function ShoppingPage() {
                 </div>
               </div>
             ) : null}
+
+            {/* Tabs — just above the list */}
+            <div className="shopping-tabs-standalone">
+              <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
+                <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
+                <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+                {budgetFeatureEnabled ? (
+                  <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
+                    Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </div>
           {(success || error) ? (
             <div className="shopping-toolbar-alerts" aria-live="polite">

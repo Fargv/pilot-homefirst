@@ -18184,6 +18184,7 @@ td.recipe-qty-scaled {
 .shopping-header-title-area {
   display: flex;
   align-items: center;
+  gap: 8px;
   min-width: 0;
   flex: 1;
 }
@@ -18274,6 +18275,43 @@ td.recipe-qty-scaled {
   background: rgba(255,255,255,0.05);
   border-color: rgba(255,255,255,0.12);
   color: rgba(255,255,255,0.55);
+}
+
+/* ── Budget pill in the title row ── */
+.shopping-budget-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.22);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  font-family: inherit;
+}
+.shopping-budget-pill:hover {
+  box-shadow: 0 5px 14px rgba(79, 70, 229, 0.34);
+  transform: translateY(-1px);
+}
+.shopping-budget-pill:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.18);
+}
+.shopping-budget-pill:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.4);
+  outline-offset: 2px;
+}
+
+/* ── Tabs row standalone (below input, above list) ── */
+.shopping-tabs-standalone {
+  padding-top: 4px;
 }
 
 /* ── Budget breakdown modal ── */
@@ -18377,28 +18415,30 @@ td.recipe-qty-scaled {
 }
 .shopping-add-split .shopping-basics-btn {
   width: 100%;
-  height: 44px;
-  font-size: 14px;
+  min-height: 48px;
+  font-size: 15px;
   font-weight: 600;
-  border-radius: 12px;
-  border: 1.5px solid var(--hf-brand, #4f46e5);
-  background: transparent;
-  color: var(--hf-brand, #4f46e5);
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+  color: #fff;
   cursor: pointer;
   font-family: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.28);
+  transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
   letter-spacing: 0.01em;
 }
 .shopping-add-split .shopping-basics-btn:hover {
-  background: var(--nav-active-bg, #eef2ff);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.12);
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6366f1 100%);
+  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.38);
+  transform: translateY(-1px);
 }
 .shopping-add-split .shopping-basics-btn:active {
-  transform: scale(0.98);
-  background: rgba(79, 70, 229, 0.08);
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.22);
 }
 .shopping-add-split .shopping-basics-btn:focus-visible {
   outline: 3px solid rgba(99, 102, 241, 0.3);
@@ -18418,19 +18458,9 @@ td.recipe-qty-scaled {
   .shopping-add-split .shopping-basics-btn {
     width: auto;
     flex-shrink: 0;
-    height: 48px;
     padding: 0 18px;
     white-space: nowrap;
   }
-}
-
-[data-theme="dark"] .shopping-add-split .shopping-basics-btn {
-  border-color: rgba(99, 102, 241, 0.5);
-  color: #818cf8;
-  background: transparent;
-}
-[data-theme="dark"] .shopping-add-split .shopping-basics-btn:hover {
-  background: rgba(99, 102, 241, 0.1);
 }
 
 /* ── Per-category "Marcar todos" ── */
