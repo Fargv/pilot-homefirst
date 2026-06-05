@@ -32,6 +32,7 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
   const parsedSteps = parseRecipeSteps(steps);
   const stepCount = parsedSteps?.length || 0;
   const estimatedSec = parsedSteps ? estimateTotalDuration(parsedSteps) : null;
+  const hasElaboration = stepCount > 0;
   const hasRecipeContent = recipeIngredients.length > 0 || Boolean(steps);
   const hasContent = ingredients.length > 0 || Boolean(steps);
 
@@ -75,6 +76,25 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
     </div>
   ) : null;
 
+  const closeButton = (
+    <button
+      type="button"
+      className="kitchen-icon-button"
+      onClick={onClose}
+      aria-label="Cerrar"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M6 6l12 12M18 6l-12 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </svg>
+    </button>
+  );
+
   return (
     <div
       className="kitchen-modal-backdrop"
@@ -85,35 +105,19 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
         className="kitchen-modal recipe-modal"
         role="dialog"
         aria-modal="true"
-        aria-label={`Elaboracion de ${dish.name || "plato"}`}
+        aria-label={`Detalle de ${dish.name || "plato"}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="kitchen-modal-header">
-          <div>
-            <h3>{dish.name || "Receta"}</h3>
-            <p className="kitchen-muted">Elaboracion del plato</p>
-          </div>
-          <button
-            type="button"
-            className="kitchen-icon-button"
-            onClick={onClose}
-            aria-label="Cerrar"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M6 6l12 12M18 6l-12 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <div style={{ padding: "0 2px" }}>
-          {hasContent ? (
-            <>
+        {hasElaboration ? (
+          <>
+            <div className="kitchen-modal-header">
+              <div>
+                <h3>{dish.name || "Receta"}</h3>
+                <p className="kitchen-muted">Elaboración del plato</p>
+              </div>
+              {closeButton}
+            </div>
+            <div style={{ padding: "0 2px" }}>
               <RecipeEditor
                 recipeIngredients={ingredients}
                 recipeSteps={steps}
@@ -124,16 +128,42 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
                 actionAfterIngredients={executeAction}
                 readOnly
               />
-              {!hasRecipeContent ? (
-                <p className="kitchen-muted recipe-modal-missing-recipe">
-                  Este plato todavia no tiene elaboracion guardada.
-                </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="kitchen-modal-header">
+              <div>
+                <h3>{dish.name || "Plato"}</h3>
+              </div>
+              {closeButton}
+            </div>
+            <div className="recipe-modal-no-recipe">
+              {ingredients.length > 0 ? (
+                <div className="recipe-modal-ingredients-only">
+                  <h4 className="recipe-modal-section-label">Ingredientes</h4>
+                  <ul className="recipe-modal-ingredients-list">
+                    {ingredients.map((ing, idx) => (
+                      <li key={idx} className="recipe-modal-ingredient-row">
+                        {ing.quantity ? (
+                          <span className="recipe-modal-ingredient-qty">{ing.quantity}</span>
+                        ) : null}
+                        <span>{ing.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ) : null}
-            </>
-          ) : (
-            <p className="kitchen-muted">Este plato todavia no tiene elaboracion guardada.</p>
-          )}
-        </div>
+              <div className="recipe-modal-notice" role="status">
+                <svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true" style={{ flexShrink: 0, color: "#d97706" }}>
+                  <path d="M10 3L2 17h16L10 3z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                  <path d="M10 9v3.5M10 14.5v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+                <span>Este plato todavía no tiene elaboración guardada.</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
