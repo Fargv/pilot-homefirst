@@ -13,7 +13,8 @@ import {
   RECIPE_UNITS,
   isUnitScalable,
   getStructuredQty,
-  getRecipeBaseServings
+  getRecipeBaseServings,
+  displayIngredientQuantity
 } from "../utils/recipeScaling.js";
 import { parseRecipeSteps } from "../utils/recipeStepParser.js";
 import RecipeServingsControl from "./RecipeServingsControl.jsx";
@@ -435,12 +436,20 @@ const STEP_F = {
   outline: "none",
 };
 
-function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
+// recipeIngredients = full recipe ingredient list (source of truth, with quantities)
+// onAddIngredient(newIng) = adds ingredient to the recipe ingredient list (parent-owned)
+function GuidedStepsEditor({ steps, onChangeSteps, recipeIngredients = [], onAddIngredient }) {
+  const [addFormStep, setAddFormStep] = useState(null);
+  const [addForm, setAddForm] = useState({ name: "", amount: "", unit: "g", note: "", scalable: true });
+  const [addFormMsg, setAddFormMsg] = useState("");
+
+  const normalizeIngName = (s) =>
+    String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
   const update = (i, updates) => {
     const next = steps.map((s, idx) => {
       if (idx !== i) return s;
       const merged = { ...s, ...updates };
-      // Keep durationSeconds in sync whenever durationMinutes changes
       if ("durationMinutes" in updates) {
         const mins = parseFloat(updates.durationMinutes);
         merged.durationSeconds = Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : 0;
@@ -472,8 +481,7 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
   ]);
 
   const autodetectStep = (i) => {
-    const step = steps[i];
-    const detected = detectStepIngredients(step.text || "", dishIngredients);
+    const detected = detectStepIngredients(steps[i].text || "", recipeIngredients);
     update(i, { stepIngredients: detected });
   };
 
@@ -481,7 +489,7 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
     const next = steps.map((step) => {
       const hasRefs = Array.isArray(step.stepIngredients) && step.stepIngredients.length > 0;
       if (onlyEmpty && hasRefs) return step;
-      const detected = detectStepIngredients(step.text || "", dishIngredients);
+      const detected = detectStepIngredients(step.text || "", recipeIngredients);
       return { ...step, stepIngredients: detected };
     });
     onChangeSteps(next);
@@ -489,10 +497,54 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
 
   const autodetectableCount = steps.filter((s) => {
     if (!(Array.isArray(s.stepIngredients) && s.stepIngredients.length > 0)) {
-      return detectStepIngredients(s.text || "", dishIngredients).length > 0;
+      return detectStepIngredients(s.text || "", recipeIngredients).length > 0;
     }
     return false;
   }).length;
+
+  const openAddForm = (i) => {
+    setAddFormStep(i);
+    setAddForm({ name: "", amount: "", unit: "g", note: "", scalable: true });
+    setAddFormMsg("");
+  };
+
+  const closeAddForm = () => { setAddFormStep(null); setAddFormMsg(""); };
+
+  const commitAddIngredient = (stepIdx) => {
+    const trimmedName = addForm.name.trim();
+    if (!trimmedName) return;
+    const norm = normalizeIngName(trimmedName);
+
+    // Check duplicate
+    const existing = recipeIngredients.find((ing) => normalizeIngName(ing.name) === norm);
+    if (existing) {
+      const stepIngs = steps[stepIdx].stepIngredients || [];
+      const alreadySel = stepIngs.some((si) => normalizeIngName(si.name) === norm);
+      if (!alreadySel) {
+        update(stepIdx, {
+          stepIngredients: [...stepIngs, { name: existing.name, ingredientId: existing.ingredientId || null }]
+        });
+      }
+      setAddFormMsg("Este ingrediente ya existe. Se ha seleccionado para este paso.");
+      return;
+    }
+
+    const qty = {
+      amount: addForm.amount === "" ? null : Number(addForm.amount),
+      unit: addForm.unit || "",
+      scalable: addForm.scalable,
+      ...(addForm.note ? { note: addForm.note } : {}),
+      originalText: addForm.amount ? `${addForm.amount} ${addForm.unit}`.trim() : "",
+    };
+    const newIng = { name: trimmedName, quantity: qty };
+    onAddIngredient?.(newIng);
+
+    const stepIngs = steps[stepIdx].stepIngredients || [];
+    update(stepIdx, {
+      stepIngredients: [...stepIngs, { name: trimmedName, ingredientId: null }]
+    });
+    closeAddForm();
+  };
 
   const getDurationMinutes = (step) => {
     if (step.durationMinutes != null) return step.durationMinutes;
@@ -507,26 +559,9 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
           <div className="guided-step-editor-header">
             <span className="guided-step-editor-label">Paso {i + 1}</span>
             <div className="guided-step-editor-actions">
-              <button
-                type="button"
-                onClick={() => moveUp(i)}
-                disabled={i === 0}
-                title="Subir"
-                className="guided-step-move-btn"
-              >↑</button>
-              <button
-                type="button"
-                onClick={() => moveDown(i)}
-                disabled={i === steps.length - 1}
-                title="Bajar"
-                className="guided-step-move-btn"
-              >↓</button>
-              <button
-                type="button"
-                onClick={() => removeStep(i)}
-                title="Eliminar paso"
-                className="guided-step-delete-btn"
-              >×</button>
+              <button type="button" onClick={() => moveUp(i)} disabled={i === 0} title="Subir" className="guided-step-move-btn">↑</button>
+              <button type="button" onClick={() => moveDown(i)} disabled={i === steps.length - 1} title="Bajar" className="guided-step-move-btn">↓</button>
+              <button type="button" onClick={() => removeStep(i)} title="Eliminar paso" className="guided-step-delete-btn">×</button>
             </div>
           </div>
 
@@ -546,57 +581,38 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
             <div className="guided-step-optional-row">
               <label className="guided-step-field" style={{ flex: 1 }}>
                 <span className="guided-step-field-label">Título (opcional)</span>
-                <input
-                  type="text"
-                  style={STEP_F}
-                  value={step.title || ""}
-                  placeholder="Ej: Dorar la cebolla"
-                  onChange={(e) => update(i, { title: e.target.value })}
-                />
+                <input type="text" style={STEP_F} value={step.title || ""} placeholder="Ej: Dorar la cebolla" onChange={(e) => update(i, { title: e.target.value })} />
               </label>
               <label className="guided-step-field" style={{ flex: 1 }}>
                 <span className="guided-step-field-label">Consejo (opcional)</span>
-                <input
-                  type="text"
-                  style={STEP_F}
-                  value={step.tips || ""}
-                  placeholder="Ej: A fuego medio para no quemar"
-                  onChange={(e) => update(i, { tips: e.target.value })}
-                />
+                <input type="text" style={STEP_F} value={step.tips || ""} placeholder="Ej: A fuego medio para no quemar" onChange={(e) => update(i, { tips: e.target.value })} />
               </label>
             </div>
 
-            {dishIngredients.length > 0 && (
-              <div className="guided-step-ing-section">
-                <div className="guided-step-ing-header">
-                  <span className="guided-step-field-label">Ingredientes del paso</span>
-                  <div className="guided-step-ing-actions">
-                    <button
-                      type="button"
-                      className="guided-step-ing-action-btn"
-                      onClick={() => autodetectStep(i)}
-                      title="Detectar ingredientes automáticamente para este paso"
-                    >
+            {/* ── Ingredient selector ── */}
+            <div className="guided-step-ing-section">
+              <div className="guided-step-ing-header">
+                <span className="guided-step-field-label">Ingredientes del paso</span>
+                <div className="guided-step-ing-actions">
+                  {recipeIngredients.length > 0 && (
+                    <button type="button" className="guided-step-ing-action-btn" onClick={() => autodetectStep(i)} title="Detectar ingredientes automáticamente">
                       Autodetectar
                     </button>
-                    {(step.stepIngredients || []).length > 0 && (
-                      <button
-                        type="button"
-                        className="guided-step-ing-action-btn guided-step-ing-clear-btn"
-                        onClick={() => update(i, { stepIngredients: [] })}
-                        title="Quitar todos los ingredientes de este paso"
-                      >
-                        Limpiar
-                      </button>
-                    )}
-                  </div>
+                  )}
+                  {(step.stepIngredients || []).length > 0 && (
+                    <button type="button" className="guided-step-ing-action-btn guided-step-ing-clear-btn" onClick={() => update(i, { stepIngredients: [] })} title="Quitar todos">
+                      Limpiar
+                    </button>
+                  )}
                 </div>
+              </div>
+
+              {recipeIngredients.length > 0 ? (
                 <div className="guided-step-ing-chips">
-                  {dishIngredients.map((ing, ingIdx) => {
+                  {recipeIngredients.map((ing, ingIdx) => {
                     const stepIngs = step.stepIngredients || [];
-                    const isSelected = stepIngs.some(
-                      (si) => si.name.toLowerCase() === ing.name.toLowerCase()
-                    );
+                    const isSelected = stepIngs.some((si) => si.name.toLowerCase() === ing.name.toLowerCase());
+                    const qty = ing.quantity ? displayIngredientQuantity(ing, 1, 1) : null;
                     return (
                       <button
                         key={ingIdx}
@@ -614,21 +630,72 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
                             <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         ) : null}
-                        {ing.name}
+                        <span>{ing.name}</span>
+                        {qty ? <span className="guided-step-ing-chip-qty">{qty}</span> : null}
                       </button>
                     );
                   })}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="guided-step-ing-empty">Añade ingredientes a la receta para asignarlos aquí.</p>
+              )}
+
+              {/* Add new ingredient inline */}
+              {addFormStep === i ? (
+                <div className="guided-step-ing-add-form">
+                  <div className="guided-step-ing-add-row">
+                    <input
+                      type="text"
+                      className="guided-step-ing-add-input"
+                      placeholder="Nombre del ingrediente"
+                      value={addForm.name}
+                      onChange={(e) => { setAddForm((f) => ({ ...f, name: e.target.value })); setAddFormMsg(""); }}
+                      autoFocus
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      className="guided-step-ing-add-input guided-step-ing-add-amount"
+                      placeholder="Cantidad"
+                      value={addForm.amount}
+                      onChange={(e) => setAddForm((f) => ({ ...f, amount: e.target.value }))}
+                    />
+                    <select
+                      className="guided-step-ing-add-select"
+                      value={addForm.unit}
+                      onChange={(e) => setAddForm((f) => ({ ...f, unit: e.target.value, scalable: isUnitScalable(e.target.value) }))}
+                    >
+                      {RECIPE_UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+                    </select>
+                    <input
+                      type="text"
+                      className="guided-step-ing-add-input guided-step-ing-add-note"
+                      placeholder="Nota (opcional)"
+                      value={addForm.note}
+                      onChange={(e) => setAddForm((f) => ({ ...f, note: e.target.value }))}
+                    />
+                  </div>
+                  {addFormMsg ? <p className="guided-step-ing-add-msg">{addFormMsg}</p> : null}
+                  <div className="guided-step-ing-add-actions">
+                    <button type="button" className="guided-step-ing-add-save" onClick={() => commitAddIngredient(i)} disabled={!addForm.name.trim()}>
+                      Añadir
+                    </button>
+                    <button type="button" className="guided-step-ing-add-cancel" onClick={closeAddForm}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" className="guided-step-ing-add-btn" onClick={() => openAddForm(i)}>
+                  + Añadir ingrediente
+                </button>
+              )}
+            </div>
 
             <div className="guided-step-timer-row">
               <label className="guided-step-timer-check">
-                <input
-                  type="checkbox"
-                  checked={Boolean(step.hasTimer)}
-                  onChange={(e) => update(i, { hasTimer: e.target.checked })}
-                />
+                <input type="checkbox" checked={Boolean(step.hasTimer)} onChange={(e) => update(i, { hasTimer: e.target.checked })} />
                 <span>Temporizador</span>
               </label>
               {step.hasTimer && (
@@ -661,7 +728,7 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
         <button type="button" className="guided-step-add-btn" onClick={addStep}>
           + Añadir paso
         </button>
-        {dishIngredients.length > 0 && autodetectableCount > 0 ? (
+        {recipeIngredients.length > 0 && autodetectableCount > 0 ? (
           <button
             type="button"
             className="guided-steps-autodetect-all-btn"
@@ -1008,7 +1075,14 @@ export default function RecipeEditor({
         {isGuidedSteps ? (
           <GuidedStepsEditor
             steps={recipeSteps}
-            dishIngredients={dishIngredients}
+            recipeIngredients={recipeIngredients || []}
+            onAddIngredient={(newIng) => {
+              if (!onChange) return;
+              onChange((prev) => ({
+                ...prev,
+                ingredients: [...(prev.ingredients || []), newIng]
+              }));
+            }}
             onChangeSteps={(newSteps) => {
               if (!onChange) return;
               onChange((prev) => ({ ...prev, steps: newSteps }));

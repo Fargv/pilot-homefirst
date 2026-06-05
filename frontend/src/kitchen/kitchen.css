@@ -9802,6 +9802,158 @@ td.recipe-qty-scaled {
   font-weight: 600;
 }
 
+.guided-step-ing-chip-qty {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.7;
+  margin-left: 2px;
+}
+
+.guided-step-ing-chip.is-selected .guided-step-ing-chip-qty {
+  opacity: 0.75;
+}
+
+.guided-step-ing-empty {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted, #9ca3af);
+  font-style: italic;
+}
+
+/* "+ Añadir ingrediente" trigger button */
+.guided-step-ing-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--hf-border, #e4e7ec);
+  background: transparent;
+  color: var(--text-muted, #9ca3af);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.guided-step-ing-add-btn:hover {
+  border-color: rgba(79, 70, 229, 0.4);
+  color: var(--hf-brand, #4f46e5);
+}
+
+/* Inline add-ingredient form */
+.guided-step-ing-add-form {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-muted, #f8fafc);
+  border: 1px solid var(--hf-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guided-step-ing-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.guided-step-ing-add-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  border: 1px solid var(--input-border, #d0d5dd);
+  background: var(--input-bg, #fff);
+  color: var(--input-text, #1e293b);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.guided-step-ing-add-input:focus { border-color: var(--hf-brand, #4f46e5); }
+
+.guided-step-ing-add-amount {
+  flex: 0 0 80px;
+  min-width: 0;
+}
+
+.guided-step-ing-add-note {
+  flex: 0 1 110px;
+}
+
+.guided-step-ing-add-select {
+  padding: 6px 9px;
+  border-radius: 7px;
+  border: 1px solid var(--input-border, #d0d5dd);
+  background: var(--input-bg, #fff);
+  color: var(--input-text, #1e293b);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+}
+.guided-step-ing-add-select:focus { border-color: var(--hf-brand, #4f46e5); }
+
+.guided-step-ing-add-msg {
+  margin: 0;
+  font-size: 12px;
+  color: #4338ca;
+  font-weight: 500;
+}
+
+.guided-step-ing-add-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.guided-step-ing-add-save {
+  padding: 5px 14px;
+  border-radius: 7px;
+  border: none;
+  background: var(--hf-brand, #4f46e5);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.12s ease;
+}
+.guided-step-ing-add-save:disabled { opacity: 0.45; cursor: not-allowed; }
+.guided-step-ing-add-save:not(:disabled):hover { opacity: 0.88; }
+
+.guided-step-ing-add-cancel {
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--hf-border);
+  background: transparent;
+  color: var(--text-secondary, #475569);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s ease;
+}
+.guided-step-ing-add-cancel:hover { background: var(--surface-muted, #f8fafc); }
+
+[data-theme="dark"] .guided-step-ing-add-form {
+  background: rgba(255,255,255,0.04);
+  border-color: var(--border-soft);
+}
+[data-theme="dark"] .guided-step-ing-add-input,
+[data-theme="dark"] .guided-step-ing-add-select {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .guided-step-ing-add-cancel {
+  border-color: var(--border-soft);
+  color: var(--text-secondary);
+}
+[data-theme="dark"] .guided-step-ing-add-cancel:hover { background: rgba(255,255,255,0.06); }
+
 [data-theme="dark"] .guided-step-ing-chip {
   border-color: rgba(255,255,255,0.15);
   color: #94a3b8;
