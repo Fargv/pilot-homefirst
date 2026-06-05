@@ -37,6 +37,7 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
         className="cooking-cta recipe-modal-execute-btn"
         onClick={() => setShowExecution(true)}
       >
+        <span aria-hidden="true">🍳</span>
         Ejecutar receta
       </button>
     </div>

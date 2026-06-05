@@ -726,12 +726,18 @@ export default function RecipeEditor({
   if (readOnly) {
     return (
       <div className="recipe-editor-section">
-        {baseServings ? (
-          <RecipeServingsControl
-            servings={displayServings}
-            baseServings={baseServings}
-            onChange={handleDisplayServingsChange}
-          />
+        {baseServings || actionAfterIngredients ? (
+          <div className="recipe-control-panel">
+            {baseServings ? (
+              <RecipeServingsControl
+                servings={displayServings}
+                baseServings={baseServings}
+                onChange={handleDisplayServingsChange}
+              />
+            ) : null}
+            <p className="recipe-control-helper">Cantidad ajustada automaticamente</p>
+            {actionAfterIngredients ? actionAfterIngredients : null}
+          </div>
         ) : null}
 
         {recipeIngredients && recipeIngredients.length > 0 ? (
@@ -744,8 +750,6 @@ export default function RecipeEditor({
             />
           </div>
         ) : null}
-
-        {actionAfterIngredients ? actionAfterIngredients : null}
 
         {Array.isArray(recipeSteps) && recipeSteps.length > 0 ? (
           <div>

@@ -9110,6 +9110,62 @@ td.recipe-qty-scaled {
   gap: 6px;
   margin-bottom: 16px;
 }
+
+.recipe-control-panel {
+  margin: 2px 0 18px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(199, 210, 254, 0.78);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92)),
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 42%);
+  box-shadow: 0 14px 30px rgba(79, 70, 229, 0.12);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.recipe-control-panel .recipe-servings-ctrl {
+  margin-bottom: 0;
+}
+
+.recipe-control-panel .recipe-servings-ctrl-hint {
+  display: none;
+}
+
+.recipe-control-helper {
+  margin: -2px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--hf-brand, #4f46e5);
+  text-align: center;
+}
+
+@media (min-width: 560px) {
+  .recipe-control-panel {
+    grid-template-columns: minmax(230px, 1fr) minmax(210px, 0.95fr);
+    align-items: center;
+    gap: 6px 16px;
+    padding: 16px;
+  }
+
+  .recipe-control-panel .recipe-servings-ctrl {
+    align-items: flex-start;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .recipe-control-helper {
+    grid-column: 1;
+    grid-row: 2;
+    text-align: left;
+  }
+
+  .recipe-control-panel .recipe-modal-execute-wrap {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
 .recipe-servings-ctrl-row {
   display: inline-flex;
   align-items: center;
@@ -15167,6 +15223,18 @@ td.recipe-qty-scaled {
   color: var(--hf-brand-darker, var(--hf-brand));
 }
 
+[data-theme="dark"] .recipe-control-panel {
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.94)),
+    radial-gradient(circle at top left, rgba(129, 140, 248, 0.18), transparent 44%);
+  border-color: rgba(129, 140, 248, 0.34);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34);
+}
+
+[data-theme="dark"] .recipe-control-helper {
+  color: var(--hf-brand-light, #a5b4fc);
+}
+
 [data-theme="dark"] .recipe-servings-ctrl-row {
   background: var(--bg-surface-dark, #1e293b);
   border-color: var(--border-color-dark, #334155);
@@ -18261,7 +18329,7 @@ td.recipe-qty-scaled {
 
 /* ── RecipeModal execute button ──────────────────────────────────────────── */
 .recipe-modal-execute-wrap {
-  padding: 14px 0 18px;
+  padding: 0;
 }
 .recipe-modal-execute-btn {
   font-size: 16px;
