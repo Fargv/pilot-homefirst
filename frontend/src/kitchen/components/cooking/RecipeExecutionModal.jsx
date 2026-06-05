@@ -9,7 +9,7 @@ export default function RecipeExecutionModal({ dish, initialServings, onClose, o
   const { startSession } = useCookingSession();
 
   const recipe = dish?.recipe || {};
-  const baseServings = recipe.servings ?? null;
+  const baseServings = recipe.baseServings ?? recipe.servings ?? null;
   const [servings, setServings] = useState(
     initialServings >= 1 ? initialServings : (baseServings >= 1 ? baseServings : 4)
   );

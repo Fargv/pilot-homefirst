@@ -21,7 +21,10 @@
     "clerk:dev-export": "node scripts/export-clerk-dev-users.js --export",
     "clerk:dev-validate": "node scripts/validate-clerk-dev-import.js",
     "clerk:dev-reconcile-id": "node scripts/reconcile-dev-clerk-id.js",
-    "seed:catalog": "node scripts/seedCatalog.js"
+    "seed:catalog": "node scripts/seedCatalog.js",
+    "migrate:recipeQuantities": "node scripts/migrateRecipeQuantities.js",
+    "migrate:structuredSteps": "node scripts/migrateStructuredSteps.js",
+    "migrate:structuredSteps:dry": "node scripts/migrateStructuredSteps.js --dry-run"
   },
   "dependencies": {
     "@clerk/backend": "^3.2.8",

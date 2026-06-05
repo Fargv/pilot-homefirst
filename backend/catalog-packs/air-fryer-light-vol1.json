@@ -4,13 +4,23 @@
   "subtitle": "Crujiente por fuera, jugoso por dentro y mucho más ligero",
   "description": "10 recetas pensadas para el air fryer: menos aceite, más textura y sabor. Estilo mediterráneo y europeo con pollo, pescado, marisco, verduras y guarniciones crujientes. Platos modernos para toda la semana, listos en minutos.",
   "coverImage": "https://images.unsplash.com/photo-1557859985-a6d5489ae83c?w=1200&q=80&auto=format&fit=crop",
-  "tags": ["air fryer", "ligero", "crujiente", "mediterráneo", "familiar", "saludable"],
+  "tags": [
+    "air fryer",
+    "ligero",
+    "crujiente",
+    "mediterráneo",
+    "familiar",
+    "saludable"
+  ],
   "cuisineType": "variada",
   "active": true,
   "featured": false,
   "diet": false,
   "priceBasic": 1.99,
-  "includedPlans": ["pro", "premium"],
+  "includedPlans": [
+    "pro",
+    "premium"
+  ],
   "monthlyCreditCost": 1,
   "sortOrder": 15,
   "disclaimer": "Los tiempos y temperaturas están indicados para freidoras de aire de 1500-1800 W con cesta de 4-5 litros. Ajusta según la potencia y el modelo de tu freidora.",
@@ -26,49 +36,317 @@
       "estimatedDifficulty": "fácil",
       "estimatedPrepTime": "30 min",
       "ingredients": [
-        { "displayName": "Muslos de pollo sin piel", "canonicalName": "muslo de pollo" },
-        { "displayName": "Pimentón ahumado", "canonicalName": "pimenton ahumado" },
-        { "displayName": "Ajo", "canonicalName": "ajo" },
-        { "displayName": "Limón", "canonicalName": "limon" }
+        {
+          "displayName": "Muslos de pollo sin piel",
+          "canonicalName": "muslo de pollo"
+        },
+        {
+          "displayName": "Pimentón ahumado",
+          "canonicalName": "pimenton ahumado"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        },
+        {
+          "displayName": "Limón",
+          "canonicalName": "limon"
+        }
       ],
       "recipe": {
-        "servings": 2,
         "ingredients": [
-          { "name": "Muslos de pollo sin piel", "quantity": "4 unidades" },
-          { "name": "Pimentón ahumado", "quantity": "1½ cucharaditas" },
-          { "name": "Ajo en polvo", "quantity": "1 cucharadita" },
-          { "name": "Limón", "quantity": "½ unidad" },
-          { "name": "Aceite de oliva", "quantity": "1 cucharadita" },
-          { "name": "Sal y pimienta", "quantity": "al gusto" }
+          {
+            "name": "Muslos de pollo sin piel",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "4 unidades"
+            }
+          },
+          {
+            "name": "Pimentón ahumado",
+            "quantity": {
+              "amount": 10.5,
+              "unit": "cucharadita",
+              "displayUnit": "cucharaditas",
+              "scalable": true,
+              "originalText": "1½ cucharaditas"
+            }
+          },
+          {
+            "name": "Ajo en polvo",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Limón",
+            "quantity": {
+              "amount": 0.5,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "½ unidad"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Sal y pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Precalienta el air fryer a 200 °C",
+            "text": "Precalienta el air fryer a 200 °C durante 3 min. Seca bien los muslos con papel de cocina.",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 180,
+            "timerLabel": "3 min"
+          },
+          {
+            "order": 2,
+            "title": "Mezcla el pimentón, el",
+            "text": "Mezcla el pimentón, el ajo en polvo, sal, pimienta y el aceite. Frota bien los muslos por todos lados con la mezcla.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Cocina en la cesta a 200 °C durante",
+            "text": "Cocina en la cesta a 200 °C durante 20-22 min, dando la vuelta a mitad. El pollo está listo cuando la temperatura interna supere 74 °C.",
+            "hasTimer": true,
+            "durationMinutes": 16,
+            "durationSeconds": 960,
+            "timerLabel": "20-22 min"
+          },
+          {
+            "order": 4,
+            "title": "Sirve con un chorro",
+            "text": "Sirve con un chorro de limón recién exprimido por encima.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 2,
+        "elaboration": {
           "type": "doc",
           "content": [
-            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
-            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Precalienta el air fryer a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 3 min" },
-                { "type": "text", "text": ". Seca bien los muslos con papel de cocina." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Mezcla el pimentón, el ajo en polvo, sal, pimienta y el aceite. " },
-                { "type": "text", "text": "Frota bien los muslos por todos lados con la mezcla." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina en la cesta a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 20-22 min" },
-                { "type": "text", "text": ", dando la vuelta a mitad. El pollo está listo cuando la temperatura interna supere " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "74 °C" },
-                { "type": "text", "text": "." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve con un chorro de limón " },
-                { "type": "text", "text": "recién exprimido por encima." }
-              ]}] }
-            ]},
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#ef4444" } }], "text": "⚠ No amontones los muslos en la cesta — en capas el aire no circula y quedan sin dorar." }] },
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: secar bien el pollo antes de condimentarlo es la clave para conseguir una piel crujiente perfecta." }] }
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Elaboración"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Precalienta el air fryer a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C durante 3 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Seca bien los muslos con papel de cocina."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Mezcla el pimentón, el ajo en polvo, sal, pimienta y el aceite. "
+                        },
+                        {
+                          "type": "text",
+                          "text": "Frota bien los muslos por todos lados con la mezcla."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Cocina en la cesta a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C durante 20-22 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ", dando la vuelta a mitad. El pollo está listo cuando la temperatura interna supere "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "74 °C"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Sirve con un chorro de limón "
+                        },
+                        {
+                          "type": "text",
+                          "text": "recién exprimido por encima."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#ef4444"
+                      }
+                    }
+                  ],
+                  "text": "⚠ No amontones los muslos en la cesta — en capas el aire no circula y quedan sin dorar."
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "✔ Truco: secar bien el pollo antes de condimentarlo es la clave para conseguir una piel crujiente perfecta."
+                }
+              ]
+            }
           ]
         }
       }
@@ -84,47 +362,286 @@
       "estimatedDifficulty": "fácil",
       "estimatedPrepTime": "20 min",
       "ingredients": [
-        { "displayName": "Filetes de salmón", "canonicalName": "salmon" },
-        { "displayName": "Mostaza de Dijon", "canonicalName": "mostaza" },
-        { "displayName": "Tomillo fresco", "canonicalName": "tomillo" },
-        { "displayName": "Limón", "canonicalName": "limon" },
-        { "displayName": "Panko (pan rallado grueso)", "canonicalName": "panko" }
+        {
+          "displayName": "Filetes de salmón",
+          "canonicalName": "salmon"
+        },
+        {
+          "displayName": "Mostaza de Dijon",
+          "canonicalName": "mostaza"
+        },
+        {
+          "displayName": "Tomillo fresco",
+          "canonicalName": "tomillo"
+        },
+        {
+          "displayName": "Limón",
+          "canonicalName": "limon"
+        },
+        {
+          "displayName": "Panko (pan rallado grueso)",
+          "canonicalName": "panko"
+        }
       ],
       "recipe": {
-        "servings": 2,
         "ingredients": [
-          { "name": "Filetes de salmón (con piel)", "quantity": "2 unidades (150 g c/u)" },
-          { "name": "Mostaza de Dijon", "quantity": "1 cucharada" },
-          { "name": "Panko", "quantity": "3 cucharadas" },
-          { "name": "Tomillo fresco", "quantity": "1 cucharadita" },
-          { "name": "Limón", "quantity": "1 unidad" },
-          { "name": "Aceite de oliva", "quantity": "1 cucharadita" },
-          { "name": "Sal y pimienta", "quantity": "al gusto" }
+          {
+            "name": "Filetes de salmón (con piel)",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "note": "(150 g c/u)",
+              "scalable": true,
+              "originalText": "2 unidades (150 g c/u)"
+            }
+          },
+          {
+            "name": "Mostaza de Dijon",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharada",
+              "scalable": true,
+              "originalText": "1 cucharada"
+            }
+          },
+          {
+            "name": "Panko",
+            "quantity": {
+              "amount": 3,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "3 cucharadas"
+            }
+          },
+          {
+            "name": "Tomillo fresco",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Limón",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Sal y pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Mezcla el panko con",
+            "text": "Mezcla el panko con el tomillo deshojado, sal, pimienta y un chorrito de aceite. Reserva.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Unta la mostaza sobre la parte",
+            "text": "Unta la mostaza sobre la parte superior de cada filete (sin piel). Cubre con la mezcla de panko, presionando ligeramente para que se adhiera.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Cocina a 180 °C durante 10-12 min sin",
+            "text": "Cocina a 180 °C durante 10-12 min sin darle la vuelta. La costra debe quedar dorada y el salmón ligeramente rosado en el centro.",
+            "hasTimer": true,
+            "durationMinutes": 9,
+            "durationSeconds": 510,
+            "timerLabel": "10-12 min"
+          },
+          {
+            "order": 4,
+            "title": "Sirve con gajos de",
+            "text": "Sirve con gajos de limón y unas hojas de rúcula o ensalada verde.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 2,
+        "elaboration": {
           "type": "doc",
           "content": [
-            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
-            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Mezcla el panko con el tomillo deshojado, sal, pimienta y un chorrito de aceite. " },
-                { "type": "text", "text": "Reserva." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Unta la mostaza " },
-                { "type": "text", "text": "sobre la parte superior de cada filete (sin piel). Cubre con la mezcla de panko, presionando ligeramente para que se adhiera." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "180 °C durante 10-12 min" },
-                { "type": "text", "text": " sin darle la vuelta. La costra debe quedar dorada y el salmón ligeramente rosado en el centro." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve con gajos de limón " },
-                { "type": "text", "text": "y unas hojas de rúcula o ensalada verde." }
-              ]}] }
-            ]},
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: la mostaza actúa como pegamento para la costra y aporta un toque de sabor sin calorías extra." }] }
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Elaboración"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Mezcla el panko con el tomillo deshojado, sal, pimienta y un chorrito de aceite. "
+                        },
+                        {
+                          "type": "text",
+                          "text": "Reserva."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Unta la mostaza "
+                        },
+                        {
+                          "type": "text",
+                          "text": "sobre la parte superior de cada filete (sin piel). Cubre con la mezcla de panko, presionando ligeramente para que se adhiera."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Cocina a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "180 °C durante 10-12 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " sin darle la vuelta. La costra debe quedar dorada y el salmón ligeramente rosado en el centro."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Sirve con gajos de limón "
+                        },
+                        {
+                          "type": "text",
+                          "text": "y unas hojas de rúcula o ensalada verde."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "✔ Truco: la mostaza actúa como pegamento para la costra y aporta un toque de sabor sin calorías extra."
+                }
+              ]
+            }
           ]
         }
       }
@@ -140,48 +657,305 @@
       "estimatedDifficulty": "fácil",
       "estimatedPrepTime": "25 min",
       "ingredients": [
-        { "displayName": "Calabacín", "canonicalName": "calabacin" },
-        { "displayName": "Pimiento rojo", "canonicalName": "pimiento rojo" },
-        { "displayName": "Berenjena", "canonicalName": "berenjena" },
-        { "displayName": "Tomates cherry", "canonicalName": "tomate cherry" },
-        { "displayName": "Cebolla roja", "canonicalName": "cebolla" }
+        {
+          "displayName": "Calabacín",
+          "canonicalName": "calabacin"
+        },
+        {
+          "displayName": "Pimiento rojo",
+          "canonicalName": "pimiento rojo"
+        },
+        {
+          "displayName": "Berenjena",
+          "canonicalName": "berenjena"
+        },
+        {
+          "displayName": "Tomates cherry",
+          "canonicalName": "tomate cherry"
+        },
+        {
+          "displayName": "Cebolla roja",
+          "canonicalName": "cebolla"
+        }
       ],
       "recipe": {
-        "servings": 2,
         "ingredients": [
-          { "name": "Calabacín", "quantity": "1 unidad" },
-          { "name": "Pimiento rojo", "quantity": "1 unidad" },
-          { "name": "Berenjena pequeña", "quantity": "1 unidad" },
-          { "name": "Tomates cherry", "quantity": "150 g" },
-          { "name": "Cebolla roja", "quantity": "1 unidad" },
-          { "name": "Ajo", "quantity": "2 dientes" },
-          { "name": "Orégano seco", "quantity": "1 cucharadita" },
-          { "name": "Aceite de oliva virgen extra", "quantity": "1½ cucharadas" },
-          { "name": "Sal y pimienta", "quantity": "al gusto" }
+          {
+            "name": "Calabacín",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Pimiento rojo",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Berenjena pequeña",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Tomates cherry",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Cebolla roja",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "2 dientes"
+            }
+          },
+          {
+            "name": "Orégano seco",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Aceite de oliva virgen extra",
+            "quantity": {
+              "amount": 10.5,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "1½ cucharadas"
+            }
+          },
+          {
+            "name": "Sal y pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Corta todas las verduras",
+            "text": "Corta todas las verduras en trozos similares de 2-3 cm. Mezcla en un bol con el ajo laminado, el aceite, el orégano, sal y pimienta.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Cocina en tandas a 200 °C durante",
+            "text": "Cocina en tandas a 200 °C durante 12-15 min, agitando la cesta a mitad. Las verduras más densas (berenjena, pimiento) primero.",
+            "hasTimer": true,
+            "durationMinutes": 11,
+            "durationSeconds": 630,
+            "timerLabel": "12-15 min"
+          },
+          {
+            "order": 3,
+            "title": "Añade los cherry los",
+            "text": "Añade los cherry los últimos 4-5 min para que se caramelicen sin deshacerse. Sirve caliente o a temperatura ambiente.",
+            "hasTimer": true,
+            "durationMinutes": 4,
+            "durationSeconds": 210,
+            "timerLabel": "4-5 min"
+          }
+        ],
+        "baseServings": 2,
+        "elaboration": {
           "type": "doc",
           "content": [
-            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
-            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Corta todas las verduras " },
-                { "type": "text", "text": "en trozos similares de 2-3 cm. Mezcla en un bol con el ajo laminado, el aceite, el orégano, sal y pimienta." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina en tandas a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 12-15 min" },
-                { "type": "text", "text": ", agitando la cesta a mitad. Las verduras más densas (berenjena, pimiento) primero." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade los cherry " },
-                { "type": "text", "text": "los últimos " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "4-5 min" },
-                { "type": "text", "text": " para que se caramelicen sin deshacerse. Sirve caliente o a temperatura ambiente." }
-              ]}] }
-            ]},
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#ef4444" } }], "text": "⚠ Si llenas demasiado la cesta las verduras se cuecen al vapor en vez de asarse. Trabaja en tandas." }] },
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Sirve sobre cuscús, arroz integral o con queso feta desmenuzado por encima para una comida completa." }] }
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Elaboración"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Corta todas las verduras "
+                        },
+                        {
+                          "type": "text",
+                          "text": "en trozos similares de 2-3 cm. Mezcla en un bol con el ajo laminado, el aceite, el orégano, sal y pimienta."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Cocina en tandas a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C durante 12-15 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ", agitando la cesta a mitad. Las verduras más densas (berenjena, pimiento) primero."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Añade los cherry "
+                        },
+                        {
+                          "type": "text",
+                          "text": "los últimos "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "4-5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " para que se caramelicen sin deshacerse. Sirve caliente o a temperatura ambiente."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#ef4444"
+                      }
+                    }
+                  ],
+                  "text": "⚠ Si llenas demasiado la cesta las verduras se cuecen al vapor en vez de asarse. Trabaja en tandas."
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "✔ Sirve sobre cuscús, arroz integral o con queso feta desmenuzado por encima para una comida completa."
+                }
+              ]
+            }
           ]
         }
       }
@@ -197,41 +971,240 @@
       "estimatedDifficulty": "media",
       "estimatedPrepTime": "40 min",
       "ingredients": [
-        { "displayName": "Patatas medianas", "canonicalName": "patata" },
-        { "displayName": "Mantequilla sin sal", "canonicalName": "mantequilla" },
-        { "displayName": "Ajo", "canonicalName": "ajo" },
-        { "displayName": "Romero fresco", "canonicalName": "romero" }
+        {
+          "displayName": "Patatas medianas",
+          "canonicalName": "patata"
+        },
+        {
+          "displayName": "Mantequilla sin sal",
+          "canonicalName": "mantequilla"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        },
+        {
+          "displayName": "Romero fresco",
+          "canonicalName": "romero"
+        }
       ],
       "recipe": {
-        "servings": 2,
         "ingredients": [
-          { "name": "Patatas medianas (250-300 g c/u)", "quantity": "2 unidades" },
-          { "name": "Mantequilla sin sal", "quantity": "30 g" },
-          { "name": "Ajo", "quantity": "3 dientes" },
-          { "name": "Romero fresco", "quantity": "2 ramitas" },
-          { "name": "Aceite de oliva", "quantity": "1 cucharadita" },
-          { "name": "Sal en escamas y pimienta", "quantity": "al gusto" }
+          {
+            "name": "Patatas medianas (250-300 g c/u)",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 unidades"
+            }
+          },
+          {
+            "name": "Mantequilla sin sal",
+            "quantity": {
+              "amount": 30,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "30 g"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 3,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "3 dientes"
+            }
+          },
+          {
+            "name": "Romero fresco",
+            "quantity": {
+              "amount": 2,
+              "unit": "ramitas",
+              "scalable": true,
+              "originalText": "2 ramitas"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Sal en escamas y pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Corta las patatas en",
+            "text": "Corta las patatas en láminas finas sin llegar al fondo (pon un palillo por cada lado para no cortar del todo). Separa ligeramente las láminas.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Derrite la mantequilla con el ajo",
+            "text": "Derrite la mantequilla con el ajo laminado y el romero. Pinta las patatas con la mezcla, intentando que entre entre las láminas. Salpimenta.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Cocina a 180 °C durante 30-35 min",
+            "text": "Cocina a 180 °C durante 30-35 min, pintando con más mantequilla a mitad de cocción. Listas cuando las láminas estén crujientes y el interior tierno.",
+            "hasTimer": true,
+            "durationMinutes": 25,
+            "durationSeconds": 1500,
+            "timerLabel": "30-35 min"
+          }
+        ],
+        "baseServings": 2,
+        "elaboration": {
           "type": "doc",
           "content": [
-            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
-            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Corta las patatas en láminas finas " },
-                { "type": "text", "text": "sin llegar al fondo (pon un palillo por cada lado para no cortar del todo). Separa ligeramente las láminas." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Derrite la mantequilla con el ajo laminado y el romero. " },
-                { "type": "text", "text": "Pinta las patatas con la mezcla, intentando que entre entre las láminas. Salpimenta." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "180 °C durante 30-35 min" },
-                { "type": "text", "text": ", pintando con más mantequilla a mitad de cocción. Listas cuando las láminas estén crujientes y el interior tierno." }
-              ]}] }
-            ]},
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el tamaño importa — patatas de 250-300 g son ideales para que la piel quede crujiente antes de que el interior se seque." }] }
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Elaboración"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Corta las patatas en láminas finas "
+                        },
+                        {
+                          "type": "text",
+                          "text": "sin llegar al fondo (pon un palillo por cada lado para no cortar del todo). Separa ligeramente las láminas."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Derrite la mantequilla con el ajo laminado y el romero. "
+                        },
+                        {
+                          "type": "text",
+                          "text": "Pinta las patatas con la mezcla, intentando que entre entre las láminas. Salpimenta."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Cocina a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "180 °C durante 30-35 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ", pintando con más mantequilla a mitad de cocción. Listas cuando las láminas estén crujientes y el interior tierno."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "✔ Truco: el tamaño importa — patatas de 250-300 g son ideales para que la piel quede crujiente antes de que el interior se seque."
+                }
+              ]
+            }
           ]
         }
       }
@@ -247,43 +1220,259 @@
       "estimatedDifficulty": "fácil",
       "estimatedPrepTime": "30 min",
       "ingredients": [
-        { "displayName": "Boniatos", "canonicalName": "boniato" },
-        { "displayName": "Yogur griego natural", "canonicalName": "yogur griego" },
-        { "displayName": "Menta fresca", "canonicalName": "menta" },
-        { "displayName": "Limón", "canonicalName": "limon" }
+        {
+          "displayName": "Boniatos",
+          "canonicalName": "boniato"
+        },
+        {
+          "displayName": "Yogur griego natural",
+          "canonicalName": "yogur griego"
+        },
+        {
+          "displayName": "Menta fresca",
+          "canonicalName": "menta"
+        },
+        {
+          "displayName": "Limón",
+          "canonicalName": "limon"
+        }
       ],
       "recipe": {
-        "servings": 2,
         "ingredients": [
-          { "name": "Boniatos medianos", "quantity": "2 unidades (400 g)" },
-          { "name": "Yogur griego natural", "quantity": "150 g" },
-          { "name": "Menta fresca", "quantity": "1 cucharada picada" },
-          { "name": "Limón", "quantity": "½ unidad" },
-          { "name": "Comino molido", "quantity": "1 cucharadita" },
-          { "name": "Pimentón", "quantity": "½ cucharadita" },
-          { "name": "Aceite de oliva", "quantity": "1 cucharadita" },
-          { "name": "Sal y pimienta", "quantity": "al gusto" }
+          {
+            "name": "Boniatos medianos",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "note": "(400 g)",
+              "scalable": true,
+              "originalText": "2 unidades (400 g)"
+            }
+          },
+          {
+            "name": "Yogur griego natural",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Menta fresca",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharada",
+              "note": "picada",
+              "scalable": true,
+              "originalText": "1 cucharada picada"
+            }
+          },
+          {
+            "name": "Limón",
+            "quantity": {
+              "amount": 0.5,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "½ unidad"
+            }
+          },
+          {
+            "name": "Comino molido",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Pimentón",
+            "quantity": {
+              "amount": 0.5,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "½ cucharadita"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Sal y pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Pela los boniatos y",
+            "text": "Pela los boniatos y córtalos en gajos. Mezcla con el comino, el pimentón, el aceite, sal y pimienta.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Cocina a 190 °C durante 18-20 min",
+            "text": "Cocina a 190 °C durante 18-20 min, agitando la cesta a mitad, hasta que los bordes estén caramelizados y el interior tierno.",
+            "hasTimer": true,
+            "durationMinutes": 15,
+            "durationSeconds": 870,
+            "timerLabel": "18-20 min"
+          },
+          {
+            "order": 3,
+            "title": "Prepara el yogur de",
+            "text": "Prepara el yogur de menta: mezcla el yogur con la menta picada, el zumo de limón, sal y pimienta. Sirve los boniatos con el yogur al lado.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 2,
+        "elaboration": {
           "type": "doc",
           "content": [
-            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
-            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Pela los boniatos y córtalos en gajos. " },
-                { "type": "text", "text": "Mezcla con el comino, el pimentón, el aceite, sal y pimienta." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "190 °C durante 18-20 min" },
-                { "type": "text", "text": ", agitando la cesta a mitad, hasta que los bordes estén caramelizados y el interior tierno." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara el yogur de menta: " },
-                { "type": "text", "text": "mezcla el yogur con la menta picada, el zumo de limón, sal y pimienta. Sirve los boniatos con el yogur al lado." }
-              ]}] }
-            ]},
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el yogur de menta aporta frescura y equilibra la dulzura natural del boniato — una combinación que sorprende." }] }
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Elaboración"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Pela los boniatos y córtalos en gajos. "
+                        },
+                        {
+                          "type": "text",
+                          "text": "Mezcla con el comino, el pimentón, el aceite, sal y pimienta."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Cocina a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "190 °C durante 18-20 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ", agitando la cesta a mitad, hasta que los bordes estén caramelizados y el interior tierno."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Prepara el yogur de menta: "
+                        },
+                        {
+                          "type": "text",
+                          "text": "mezcla el yogur con la menta picada, el zumo de limón, sal y pimienta. Sirve los boniatos con el yogur al lado."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "✔ Truco: el yogur de menta aporta frescura y equilibra la dulzura natural del boniato — una combinación que sorprende."
+                }
+              ]
+            }
           ]
         }
       }
@@ -299,43 +1488,267 @@
       "estimatedDifficulty": "fácil",
       "estimatedPrepTime": "15 min",
       "ingredients": [
-        { "displayName": "Gambas peladas", "canonicalName": "gamba" },
-        { "displayName": "Ajo", "canonicalName": "ajo" },
-        { "displayName": "Limón", "canonicalName": "limon" },
-        { "displayName": "Perejil fresco", "canonicalName": "perejil fresco" }
+        {
+          "displayName": "Gambas peladas",
+          "canonicalName": "gamba"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        },
+        {
+          "displayName": "Limón",
+          "canonicalName": "limon"
+        },
+        {
+          "displayName": "Perejil fresco",
+          "canonicalName": "perejil fresco"
+        }
       ],
       "recipe": {
-        "servings": 2,
         "ingredients": [
-          { "name": "Gambas peladas (crudas)", "quantity": "300 g" },
-          { "name": "Ajo", "quantity": "4 dientes" },
-          { "name": "Limón", "quantity": "1 unidad" },
-          { "name": "Perejil fresco", "quantity": "2 cucharadas" },
-          { "name": "Aceite de oliva", "quantity": "1 cucharada" },
-          { "name": "Guindilla seca (opcional)", "quantity": "1 pizca" },
-          { "name": "Sal", "quantity": "al gusto" }
+          {
+            "name": "Gambas peladas (crudas)",
+            "quantity": {
+              "amount": 300,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "300 g"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "4 dientes"
+            }
+          },
+          {
+            "name": "Limón",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Perejil fresco",
+            "quantity": {
+              "amount": 2,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "2 cucharadas"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharada",
+              "scalable": true,
+              "originalText": "1 cucharada"
+            }
+          },
+          {
+            "name": "Guindilla seca (opcional)",
+            "quantity": {
+              "amount": 1,
+              "unit": "pizca",
+              "scalable": false,
+              "originalText": "1 pizca"
+            }
+          },
+          {
+            "name": "Sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Seca las gambas con papel de cocina",
+            "text": "Seca las gambas con papel de cocina. Mezcla con el ajo laminado, la guindilla, el aceite y una pizca de sal.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Cocina a 200 °C durante 6-8 min. Las",
+            "text": "Cocina a 200 °C durante 6-8 min. Las gambas están listas cuando hayan cambiado de color completamente y los bordes se vean ligeramente dorados.",
+            "hasTimer": true,
+            "durationMinutes": 6,
+            "durationSeconds": 330,
+            "timerLabel": "6-8 min"
+          },
+          {
+            "order": 3,
+            "title": "Sirve inmediatamente con abundante",
+            "text": "Sirve inmediatamente con abundante perejil picado y zumo de limón recién exprimido. Acompaña con pan de calidad.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 2,
+        "elaboration": {
           "type": "doc",
           "content": [
-            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
-            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Seca las gambas con papel de cocina. " },
-                { "type": "text", "text": "Mezcla con el ajo laminado, la guindilla, el aceite y una pizca de sal." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 6-8 min" },
-                { "type": "text", "text": ". Las gambas están listas cuando hayan cambiado de color completamente y los bordes se vean ligeramente dorados." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve inmediatamente " },
-                { "type": "text", "text": "con abundante perejil picado y zumo de limón recién exprimido. Acompaña con pan de calidad." }
-              ]}] }
-            ]},
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#ef4444" } }], "text": "⚠ El air fryer cocina el marisco muy rápido. Pásate de tiempo y quedará goma — vigila bien a partir del minuto 6." }] },
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: usa gambas crudas, nunca ya cocidas. El calor del air fryer las seca y quedan chiclosas." }] }
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Elaboración"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Seca las gambas con papel de cocina. "
+                        },
+                        {
+                          "type": "text",
+                          "text": "Mezcla con el ajo laminado, la guindilla, el aceite y una pizca de sal."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Cocina a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C durante 6-8 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Las gambas están listas cuando hayan cambiado de color completamente y los bordes se vean ligeramente dorados."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Sirve inmediatamente "
+                        },
+                        {
+                          "type": "text",
+                          "text": "con abundante perejil picado y zumo de limón recién exprimido. Acompaña con pan de calidad."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#ef4444"
+                      }
+                    }
+                  ],
+                  "text": "⚠ El air fryer cocina el marisco muy rápido. Pásate de tiempo y quedará goma — vigila bien a partir del minuto 6."
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "✔ Truco: usa gambas crudas, nunca ya cocidas. El calor del air fryer las seca y quedan chiclosas."
+                }
+              ]
+            }
           ]
         }
       }
@@ -351,49 +1764,306 @@
       "estimatedDifficulty": "fácil",
       "estimatedPrepTime": "20 min",
       "ingredients": [
-        { "displayName": "Filetes de merluza", "canonicalName": "merluza" },
-        { "displayName": "Panko (pan rallado grueso)", "canonicalName": "panko" },
-        { "displayName": "Huevos", "canonicalName": "huevo" },
-        { "displayName": "Limón", "canonicalName": "limon" }
+        {
+          "displayName": "Filetes de merluza",
+          "canonicalName": "merluza"
+        },
+        {
+          "displayName": "Panko (pan rallado grueso)",
+          "canonicalName": "panko"
+        },
+        {
+          "displayName": "Huevos",
+          "canonicalName": "huevo"
+        },
+        {
+          "displayName": "Limón",
+          "canonicalName": "limon"
+        }
       ],
       "recipe": {
-        "servings": 2,
         "ingredients": [
-          { "name": "Filetes de merluza sin piel", "quantity": "2 unidades (150 g c/u)" },
-          { "name": "Panko", "quantity": "80 g" },
-          { "name": "Huevo", "quantity": "1 unidad" },
-          { "name": "Limón", "quantity": "1 unidad" },
-          { "name": "Ajo en polvo", "quantity": "½ cucharadita" },
-          { "name": "Perejil seco", "quantity": "1 cucharadita" },
-          { "name": "Aceite en spray o ½ cucharadita aceite", "quantity": "al gusto" },
-          { "name": "Sal y pimienta", "quantity": "al gusto" }
+          {
+            "name": "Filetes de merluza sin piel",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "note": "(150 g c/u)",
+              "scalable": true,
+              "originalText": "2 unidades (150 g c/u)"
+            }
+          },
+          {
+            "name": "Panko",
+            "quantity": {
+              "amount": 80,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "80 g"
+            }
+          },
+          {
+            "name": "Huevo",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Limón",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Ajo en polvo",
+            "quantity": {
+              "amount": 0.5,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "½ cucharadita"
+            }
+          },
+          {
+            "name": "Perejil seco",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Aceite en spray o ½ cucharadita aceite",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Sal y pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Mezcla el panko con",
+            "text": "Mezcla el panko con el ajo en polvo, el perejil, sal y pimienta. Bate el huevo en un plato aparte.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Pasa cada filete por huevo batido y",
+            "text": "Pasa cada filete por huevo batido y luego por el panko, presionando para que se adhiera bien por los dos lados.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Rocía ligeramente con aceite en spray",
+            "text": "Rocía ligeramente con aceite en spray. Cocina a 200 °C durante 10-12 min, dando la vuelta a los 6 min. La costra debe quedar dorada y crujiente.",
+            "hasTimer": true,
+            "durationMinutes": 9,
+            "durationSeconds": 510,
+            "timerLabel": "10-12 min"
+          },
+          {
+            "order": 4,
+            "title": "Sirve con gajos de",
+            "text": "Sirve con gajos de limón y ensalada verde o puré de guisantes.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 2,
+        "elaboration": {
           "type": "doc",
           "content": [
-            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
-            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Mezcla el panko con el ajo en polvo, el perejil, sal y pimienta. " },
-                { "type": "text", "text": "Bate el huevo en un plato aparte." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Pasa cada filete por huevo batido " },
-                { "type": "text", "text": "y luego por el panko, presionando para que se adhiera bien por los dos lados." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Rocía ligeramente con aceite en spray. Cocina a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 10-12 min" },
-                { "type": "text", "text": ", dando la vuelta a los " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "6 min" },
-                { "type": "text", "text": ". La costra debe quedar dorada y crujiente." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve con gajos de limón " },
-                { "type": "text", "text": "y ensalada verde o puré de guisantes." }
-              ]}] }
-            ]},
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: el panko en vez de pan rallado fino es la diferencia entre una costra crujiente y una blanda." }] }
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Elaboración"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Mezcla el panko con el ajo en polvo, el perejil, sal y pimienta. "
+                        },
+                        {
+                          "type": "text",
+                          "text": "Bate el huevo en un plato aparte."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Pasa cada filete por huevo batido "
+                        },
+                        {
+                          "type": "text",
+                          "text": "y luego por el panko, presionando para que se adhiera bien por los dos lados."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Rocía ligeramente con aceite en spray. Cocina a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C durante 10-12 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ", dando la vuelta a los "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "6 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". La costra debe quedar dorada y crujiente."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Sirve con gajos de limón "
+                        },
+                        {
+                          "type": "text",
+                          "text": "y ensalada verde o puré de guisantes."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "✔ Truco: el panko en vez de pan rallado fino es la diferencia entre una costra crujiente y una blanda."
+                }
+              ]
+            }
           ]
         }
       }
@@ -409,48 +2079,298 @@
       "estimatedDifficulty": "media",
       "estimatedPrepTime": "30 min",
       "ingredients": [
-        { "displayName": "Pechugas de pollo gruesas", "canonicalName": "pechuga de pollo" },
-        { "displayName": "Espinacas frescas", "canonicalName": "espinaca" },
-        { "displayName": "Queso crema", "canonicalName": "queso crema" },
-        { "displayName": "Ajo", "canonicalName": "ajo" }
+        {
+          "displayName": "Pechugas de pollo gruesas",
+          "canonicalName": "pechuga de pollo"
+        },
+        {
+          "displayName": "Espinacas frescas",
+          "canonicalName": "espinaca"
+        },
+        {
+          "displayName": "Queso crema",
+          "canonicalName": "queso crema"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        }
       ],
       "recipe": {
-        "servings": 2,
         "ingredients": [
-          { "name": "Pechugas de pollo (gruesas)", "quantity": "2 unidades (200 g c/u)" },
-          { "name": "Espinacas frescas", "quantity": "80 g" },
-          { "name": "Queso crema", "quantity": "60 g" },
-          { "name": "Ajo", "quantity": "1 diente" },
-          { "name": "Pimentón ahumado", "quantity": "½ cucharadita" },
-          { "name": "Aceite de oliva", "quantity": "1 cucharadita" },
-          { "name": "Sal y pimienta", "quantity": "al gusto" }
+          {
+            "name": "Pechugas de pollo (gruesas)",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "note": "(200 g c/u)",
+              "scalable": true,
+              "originalText": "2 unidades (200 g c/u)"
+            }
+          },
+          {
+            "name": "Espinacas frescas",
+            "quantity": {
+              "amount": 80,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "80 g"
+            }
+          },
+          {
+            "name": "Queso crema",
+            "quantity": {
+              "amount": 60,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "60 g"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "1 diente"
+            }
+          },
+          {
+            "name": "Pimentón ahumado",
+            "quantity": {
+              "amount": 0.5,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "½ cucharadita"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Sal y pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Saltea las espinacas con",
+            "text": "Saltea las espinacas con el ajo picado en una sartén 2 min hasta que se marchiten. Escurre bien, pica y mezcla con el queso crema, sal y pimienta.",
+            "hasTimer": true,
+            "durationMinutes": 2,
+            "durationSeconds": 120,
+            "timerLabel": "2 min"
+          },
+          {
+            "order": 2,
+            "title": "Practica un corte lateral profundo en",
+            "text": "Practica un corte lateral profundo en cada pechuga formando un bolsillo. Rellena con la mezcla de espinacas y cierra con un palillo.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Unta el exterior con aceite y",
+            "text": "Unta el exterior con aceite y pimentón. Cocina a 180 °C durante 18-20 min hasta que el interior marque 74 °C. Deja reposar 3 min antes de servir.",
+            "hasTimer": true,
+            "durationMinutes": 15,
+            "durationSeconds": 870,
+            "timerLabel": "18-20 min"
+          }
+        ],
+        "baseServings": 2,
+        "elaboration": {
           "type": "doc",
           "content": [
-            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
-            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Saltea las espinacas con el ajo picado " },
-                { "type": "text", "text": "en una sartén " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2 min" },
-                { "type": "text", "text": " hasta que se marchiten. Escurre bien, pica y mezcla con el queso crema, sal y pimienta." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Practica un corte lateral profundo en cada pechuga " },
-                { "type": "text", "text": "formando un bolsillo. Rellena con la mezcla de espinacas y cierra con un palillo." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Unta el exterior con aceite y pimentón. Cocina a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "180 °C durante 18-20 min" },
-                { "type": "text", "text": " hasta que el interior marque " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "74 °C" },
-                { "type": "text", "text": ". Deja reposar " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3 min" },
-                { "type": "text", "text": " antes de servir." }
-              ]}] }
-            ]},
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: escurrir bien las espinacas evita que el relleno quede aguado y que el queso se salga durante la cocción." }] }
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Elaboración"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Saltea las espinacas con el ajo picado "
+                        },
+                        {
+                          "type": "text",
+                          "text": "en una sartén "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "2 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que se marchiten. Escurre bien, pica y mezcla con el queso crema, sal y pimienta."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Practica un corte lateral profundo en cada pechuga "
+                        },
+                        {
+                          "type": "text",
+                          "text": "formando un bolsillo. Rellena con la mezcla de espinacas y cierra con un palillo."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Unta el exterior con aceite y pimentón. Cocina a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "180 °C durante 18-20 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que el interior marque "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "74 °C"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Deja reposar "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " antes de servir."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "✔ Truco: escurrir bien las espinacas evita que el relleno quede aguado y que el queso se salga durante la cocción."
+                }
+              ]
+            }
           ]
         }
       }
@@ -466,43 +2386,258 @@
       "estimatedDifficulty": "fácil",
       "estimatedPrepTime": "20 min",
       "ingredients": [
-        { "displayName": "Brócoli", "canonicalName": "brocoli" },
-        { "displayName": "Queso parmesano rallado", "canonicalName": "queso parmesano" },
-        { "displayName": "Ajo", "canonicalName": "ajo" },
-        { "displayName": "Limón", "canonicalName": "limon" }
+        {
+          "displayName": "Brócoli",
+          "canonicalName": "brocoli"
+        },
+        {
+          "displayName": "Queso parmesano rallado",
+          "canonicalName": "queso parmesano"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        },
+        {
+          "displayName": "Limón",
+          "canonicalName": "limon"
+        }
       ],
       "recipe": {
-        "servings": 2,
         "ingredients": [
-          { "name": "Brócoli", "quantity": "1 cabeza grande (500 g)" },
-          { "name": "Queso parmesano rallado", "quantity": "40 g" },
-          { "name": "Ajo", "quantity": "2 dientes" },
-          { "name": "Limón", "quantity": "½ unidad" },
-          { "name": "Aceite de oliva", "quantity": "1½ cucharadas" },
-          { "name": "Sal y pimienta", "quantity": "al gusto" }
+          {
+            "name": "Brócoli",
+            "quantity": {
+              "amount": 1,
+              "unit": "cabeza",
+              "note": "grande (500 g)",
+              "scalable": true,
+              "originalText": "1 cabeza grande (500 g)"
+            }
+          },
+          {
+            "name": "Queso parmesano rallado",
+            "quantity": {
+              "amount": 40,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "40 g"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "2 dientes"
+            }
+          },
+          {
+            "name": "Limón",
+            "quantity": {
+              "amount": 0.5,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "½ unidad"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 10.5,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "1½ cucharadas"
+            }
+          },
+          {
+            "name": "Sal y pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Separa el brócoli en ramilletes",
+            "text": "Separa el brócoli en ramilletes medianos. Sécalos bien. Mezcla con el ajo laminado, el aceite, sal y pimienta.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Cocina a 200 °C durante 8 min. Agita",
+            "text": "Cocina a 200 °C durante 8 min. Agita la cesta, esparce el parmesano rallado por encima y cocina 3-4 min más hasta que el queso esté fundido y dorado.",
+            "hasTimer": true,
+            "durationMinutes": 8,
+            "durationSeconds": 480,
+            "timerLabel": "8 min"
+          },
+          {
+            "order": 3,
+            "title": "Sirve con un chorro",
+            "text": "Sirve con un chorro de limón recién exprimido. Queda crujiente en los extremos y tierno en el tallo.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 2,
+        "elaboration": {
           "type": "doc",
           "content": [
-            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
-            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Separa el brócoli en ramilletes medianos. " },
-                { "type": "text", "text": "Sécalos bien. Mezcla con el ajo laminado, el aceite, sal y pimienta." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 8 min" },
-                { "type": "text", "text": ". Agita la cesta, esparce el parmesano rallado por encima y cocina " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min más" },
-                { "type": "text", "text": " hasta que el queso esté fundido y dorado." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve con un chorro de limón " },
-                { "type": "text", "text": "recién exprimido. Queda crujiente en los extremos y tierno en el tallo." }
-              ]}] }
-            ]},
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Truco: los ramilletes bien secos son clave — la humedad es el enemigo del crujiente en el air fryer." }] }
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Elaboración"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Separa el brócoli en ramilletes medianos. "
+                        },
+                        {
+                          "type": "text",
+                          "text": "Sécalos bien. Mezcla con el ajo laminado, el aceite, sal y pimienta."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Cocina a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C durante 8 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Agita la cesta, esparce el parmesano rallado por encima y cocina "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3-4 min más"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que el queso esté fundido y dorado."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Sirve con un chorro de limón "
+                        },
+                        {
+                          "type": "text",
+                          "text": "recién exprimido. Queda crujiente en los extremos y tierno en el tallo."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "✔ Truco: los ramilletes bien secos son clave — la humedad es el enemigo del crujiente en el air fryer."
+                }
+              ]
+            }
           ]
         }
       }
@@ -518,46 +2653,282 @@
       "estimatedDifficulty": "fácil",
       "estimatedPrepTime": "25 min",
       "ingredients": [
-        { "displayName": "Carne picada de ternera", "canonicalName": "carne picada de ternera" },
-        { "displayName": "Cebolla", "canonicalName": "cebolla" },
-        { "displayName": "Huevo", "canonicalName": "huevo" },
-        { "displayName": "Hierbas provenzales", "canonicalName": "hierba provenzal" }
+        {
+          "displayName": "Carne picada de ternera",
+          "canonicalName": "carne picada de ternera"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla"
+        },
+        {
+          "displayName": "Huevo",
+          "canonicalName": "huevo"
+        },
+        {
+          "displayName": "Hierbas provenzales",
+          "canonicalName": "hierba provenzal"
+        }
       ],
       "recipe": {
-        "servings": 3,
         "ingredients": [
-          { "name": "Carne picada de ternera", "quantity": "400 g" },
-          { "name": "Cebolla", "quantity": "½ unidad rallada" },
-          { "name": "Huevo", "quantity": "1 unidad" },
-          { "name": "Hierbas provenzales", "quantity": "1 cucharadita" },
-          { "name": "Pan rallado integral", "quantity": "2 cucharadas" },
-          { "name": "Ajo en polvo", "quantity": "½ cucharadita" },
-          { "name": "Sal y pimienta", "quantity": "al gusto" }
+          {
+            "name": "Carne picada de ternera",
+            "quantity": {
+              "amount": 400,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "400 g"
+            }
+          },
+          {
+            "name": "Cebolla",
+            "quantity": {
+              "amount": 0.5,
+              "unit": "unidad",
+              "note": "rallada",
+              "scalable": true,
+              "originalText": "½ unidad rallada"
+            }
+          },
+          {
+            "name": "Huevo",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Hierbas provenzales",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Pan rallado integral",
+            "quantity": {
+              "amount": 2,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "2 cucharadas"
+            }
+          },
+          {
+            "name": "Ajo en polvo",
+            "quantity": {
+              "amount": 0.5,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "½ cucharadita"
+            }
+          },
+          {
+            "name": "Sal y pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Mezcla todos los ingredientes",
+            "text": "Mezcla todos los ingredientes en un bol hasta obtener una masa homogénea. No mezcles en exceso o quedarán duras.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Forma albóndigas del tamaño",
+            "text": "Forma albóndigas del tamaño de una pelota de golf (unos 30 g cada una). Obtendrás aproximadamente 14-16 albóndigas.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Cocina a 200 °C durante 12-14 min",
+            "text": "Cocina a 200 °C durante 12-14 min, agitando la cesta a mitad. Quedan doradas por fuera y jugosas por dentro sin nada de grasa extra.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "12-14 min"
+          },
+          {
+            "order": 4,
+            "title": "Sirve con salsa de",
+            "text": "Sirve con salsa de tomate casera, tzatziki o simplemente con ensalada. También ideales para pasta o en bocadillo.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 3,
+        "elaboration": {
           "type": "doc",
           "content": [
-            { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }], "text": "Elaboración" }] },
-            { "type": "orderedList", "attrs": { "start": 1 }, "content": [
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Mezcla todos los ingredientes " },
-                { "type": "text", "text": "en un bol hasta obtener una masa homogénea. No mezcles en exceso o quedarán duras." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Forma albóndigas del tamaño de una pelota de golf " },
-                { "type": "text", "text": "(unos 30 g cada una). Obtendrás aproximadamente 14-16 albóndigas." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Cocina a " },
-                { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "200 °C durante 12-14 min" },
-                { "type": "text", "text": ", agitando la cesta a mitad. Quedan doradas por fuera y jugosas por dentro sin nada de grasa extra." }
-              ]}] },
-              { "type": "listItem", "content": [{ "type": "paragraph", "content": [
-                { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve con salsa de tomate casera, " },
-                { "type": "text", "text": "tzatziki o simplemente con ensalada. También ideales para pasta o en bocadillo." }
-              ]}] }
-            ]},
-            { "type": "paragraph", "content": [{ "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }], "text": "✔ Batch: congela en crudo o ya cocinadas. Se descongelan directamente en el air fryer a 180 °C durante 8 min." }] }
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Elaboración"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Mezcla todos los ingredientes "
+                        },
+                        {
+                          "type": "text",
+                          "text": "en un bol hasta obtener una masa homogénea. No mezcles en exceso o quedarán duras."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Forma albóndigas del tamaño de una pelota de golf "
+                        },
+                        {
+                          "type": "text",
+                          "text": "(unos 30 g cada una). Obtendrás aproximadamente 14-16 albóndigas."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Cocina a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C durante 12-14 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ", agitando la cesta a mitad. Quedan doradas por fuera y jugosas por dentro sin nada de grasa extra."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Sirve con salsa de tomate casera, "
+                        },
+                        {
+                          "type": "text",
+                          "text": "tzatziki o simplemente con ensalada. También ideales para pasta o en bocadillo."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "✔ Batch: congela en crudo o ya cocinadas. Se descongelan directamente en el air fryer a 180 °C durante 8 min."
+                }
+              ]
+            }
           ]
         }
       }

@@ -4,12 +4,23 @@
   "subtitle": "Las recetas más auténticas del bar de barrio",
   "description": "Un pack con las 6 tapas más icónicas de la gastronomía española. Recetas clásicas, ingredientes fáciles de encontrar y el sabor de toda la vida para compartir en buena compañía.",
   "coverImage": null,
-  "tags": ["español", "tapas", "tradicional", "social", "fácil"],
+  "tags": [
+    "español",
+    "tapas",
+    "tradicional",
+    "social",
+    "fácil"
+  ],
   "cuisineType": "española",
   "active": true,
   "featured": true,
   "priceBasic": 0,
-  "includedPlans": ["free", "basic", "pro", "premium"],
+  "includedPlans": [
+    "free",
+    "basic",
+    "pro",
+    "premium"
+  ],
   "monthlyCreditCost": 0,
   "sortOrder": 1,
   "dishes": [
@@ -21,78 +32,323 @@
       "special": false,
       "allowRandom": true,
       "ingredients": [
-        { "displayName": "Patatas", "canonicalName": "patata" },
-        { "displayName": "Aceite de oliva", "canonicalName": "aceite de oliva" },
-        { "displayName": "Pimentón picante", "canonicalName": "pimenton picante" },
-        { "displayName": "Pimentón dulce", "canonicalName": "pimenton dulce" },
-        { "displayName": "Ajo", "canonicalName": "ajo" },
-        { "displayName": "Tomate triturado", "canonicalName": "tomate triturado" },
-        { "displayName": "Harina de trigo", "canonicalName": "harina de trigo" },
-        { "displayName": "Sal", "canonicalName": "sal" }
+        {
+          "displayName": "Patatas",
+          "canonicalName": "patata"
+        },
+        {
+          "displayName": "Aceite de oliva",
+          "canonicalName": "aceite de oliva"
+        },
+        {
+          "displayName": "Pimentón picante",
+          "canonicalName": "pimenton picante"
+        },
+        {
+          "displayName": "Pimentón dulce",
+          "canonicalName": "pimenton dulce"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        },
+        {
+          "displayName": "Tomate triturado",
+          "canonicalName": "tomate triturado"
+        },
+        {
+          "displayName": "Harina de trigo",
+          "canonicalName": "harina de trigo"
+        },
+        {
+          "displayName": "Sal",
+          "canonicalName": "sal"
+        }
       ],
       "recipe": {
-        "servings": 4,
         "ingredients": [
-          { "name": "Patatas", "quantity": "800 g" },
-          { "name": "Aceite de oliva", "quantity": "abundante (para freír)" },
-          { "name": "Pimentón picante", "quantity": "1 cucharadita" },
-          { "name": "Pimentón dulce", "quantity": "1 cucharadita" },
-          { "name": "Ajo", "quantity": "2 dientes" },
-          { "name": "Tomate triturado", "quantity": "200 g" },
-          { "name": "Harina", "quantity": "1 cucharada" },
-          { "name": "Sal", "quantity": "al gusto" }
+          {
+            "name": "Patatas",
+            "quantity": {
+              "amount": 800,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "800 g"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": null,
+              "unit": "abundante",
+              "note": "(para freír)",
+              "scalable": false,
+              "originalText": "abundante (para freír)"
+            }
+          },
+          {
+            "name": "Pimentón picante",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Pimentón dulce",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "2 dientes"
+            }
+          },
+          {
+            "name": "Tomate triturado",
+            "quantity": {
+              "amount": 200,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "200 g"
+            }
+          },
+          {
+            "name": "Harina",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharada",
+              "scalable": true,
+              "originalText": "1 cucharada"
+            }
+          },
+          {
+            "name": "Sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Pela y corta las",
+            "text": "Pela y corta las patatas en trozos irregulares de unos 3 cm.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Fríe las patatas en",
+            "text": "Fríe las patatas en aceite a 160 °C durante 8 min hasta que estén tiernas. Sube a 180 °C 2 min más para que queden doradas y crujientes. Escurre en papel absorbente.",
+            "hasTimer": true,
+            "durationMinutes": 8,
+            "durationSeconds": 480,
+            "timerLabel": "8 min"
+          },
+          {
+            "order": 3,
+            "title": "Prepara la salsa brava:",
+            "text": "Prepara la salsa brava: sofríe el ajo picado en 2 cucharadas de aceite, añade la harina y remueve 1 min. Agrega el pimentón dulce y picante, después el tomate triturado. Cocina 5 min a fuego medio, sala y tritura si quieres una salsa más fina.",
+            "hasTimer": true,
+            "durationMinutes": 1,
+            "durationSeconds": 60,
+            "timerLabel": "1 min"
+          },
+          {
+            "order": 4,
+            "title": "Sirve las patatas en",
+            "text": "Sirve las patatas en una fuente y napa generosamente con la salsa brava bien caliente.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
           "type": "doc",
           "content": [
             {
               "type": "heading",
-              "attrs": { "level": 2 },
+              "attrs": {
+                "level": 2
+              },
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
                   "text": "Elaboración"
                 }
               ]
             },
             {
               "type": "orderedList",
-              "attrs": { "start": 1 },
+              "attrs": {
+                "start": 1
+              },
               "content": [
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Pela y corta " },
-                    { "type": "text", "text": "las patatas en trozos irregulares de unos 3 cm." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Pela y corta "
+                        },
+                        {
+                          "type": "text",
+                          "text": "las patatas en trozos irregulares de unos 3 cm."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Fríe " },
-                    { "type": "text", "text": "las patatas en aceite a " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "160 °C durante 8 min" },
-                    { "type": "text", "text": " hasta que estén tiernas. Sube a " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "180 °C 2 min más" },
-                    { "type": "text", "text": " para que queden doradas y crujientes. Escurre en papel absorbente." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Fríe "
+                        },
+                        {
+                          "type": "text",
+                          "text": "las patatas en aceite a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "160 °C durante 8 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que estén tiernas. Sube a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "180 °C 2 min más"
+                        },
+                        {
+                          "type": "text",
+                          "text": " para que queden doradas y crujientes. Escurre en papel absorbente."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Prepara la salsa brava: " },
-                    { "type": "text", "text": "sofríe el ajo picado en 2 cucharadas de aceite, añade la harina y remueve 1 min. Agrega el pimentón dulce y picante, después el tomate triturado. Cocina " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min a fuego medio" },
-                    { "type": "text", "text": ", sala y tritura si quieres una salsa más fina." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Prepara la salsa brava: "
+                        },
+                        {
+                          "type": "text",
+                          "text": "sofríe el ajo picado en 2 cucharadas de aceite, añade la harina y remueve 1 min. Agrega el pimentón dulce y picante, después el tomate triturado. Cocina "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "5 min a fuego medio"
+                        },
+                        {
+                          "type": "text",
+                          "text": ", sala y tritura si quieres una salsa más fina."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Sirve " },
-                    { "type": "text", "text": "las patatas en una fuente y napa generosamente con la salsa brava bien caliente." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Sirve "
+                        },
+                        {
+                          "type": "text",
+                          "text": "las patatas en una fuente y napa generosamente con la salsa brava bien caliente."
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -101,7 +357,14 @@
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
                   "text": "✔ Truco: escalda las patatas 5 min en agua hirviendo antes de freír para que queden más crujientes por fuera y cremosas por dentro."
                 }
               ]
@@ -118,123 +381,490 @@
       "special": true,
       "allowRandom": true,
       "ingredients": [
-        { "displayName": "Jamón serrano", "canonicalName": "jamon" },
-        { "displayName": "Leche entera", "canonicalName": "leche" },
-        { "displayName": "Harina de trigo", "canonicalName": "harina de trigo" },
-        { "displayName": "Mantequilla", "canonicalName": "mantequilla" },
-        { "displayName": "Cebolla", "canonicalName": "cebolla" },
-        { "displayName": "Huevo", "canonicalName": "huevo" },
-        { "displayName": "Pan rallado", "canonicalName": "pan rallado" },
-        { "displayName": "Aceite de oliva", "canonicalName": "aceite de oliva" },
-        { "displayName": "Nuez moscada", "canonicalName": "nuez moscada" },
-        { "displayName": "Sal", "canonicalName": "sal" }
+        {
+          "displayName": "Jamón serrano",
+          "canonicalName": "jamon"
+        },
+        {
+          "displayName": "Leche entera",
+          "canonicalName": "leche"
+        },
+        {
+          "displayName": "Harina de trigo",
+          "canonicalName": "harina de trigo"
+        },
+        {
+          "displayName": "Mantequilla",
+          "canonicalName": "mantequilla"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla"
+        },
+        {
+          "displayName": "Huevo",
+          "canonicalName": "huevo"
+        },
+        {
+          "displayName": "Pan rallado",
+          "canonicalName": "pan rallado"
+        },
+        {
+          "displayName": "Aceite de oliva",
+          "canonicalName": "aceite de oliva"
+        },
+        {
+          "displayName": "Nuez moscada",
+          "canonicalName": "nuez moscada"
+        },
+        {
+          "displayName": "Sal",
+          "canonicalName": "sal"
+        }
       ],
       "recipe": {
-        "servings": 4,
         "ingredients": [
-          { "name": "Jamón serrano", "quantity": "150 g" },
-          { "name": "Leche entera", "quantity": "500 ml" },
-          { "name": "Harina", "quantity": "60 g" },
-          { "name": "Mantequilla", "quantity": "50 g" },
-          { "name": "Cebolla", "quantity": "1/2 unidad" },
-          { "name": "Huevo", "quantity": "2 unidades" },
-          { "name": "Pan rallado", "quantity": "150 g" },
-          { "name": "Aceite de oliva", "quantity": "abundante (para freír)" },
-          { "name": "Nuez moscada", "quantity": "1 pizca" },
-          { "name": "Sal", "quantity": "al gusto" }
+          {
+            "name": "Jamón serrano",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Leche entera",
+            "quantity": {
+              "amount": 500,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "500 ml"
+            }
+          },
+          {
+            "name": "Harina",
+            "quantity": {
+              "amount": 60,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "60 g"
+            }
+          },
+          {
+            "name": "Mantequilla",
+            "quantity": {
+              "amount": 50,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "50 g"
+            }
+          },
+          {
+            "name": "Cebolla",
+            "quantity": {
+              "amount": 0.5,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1/2 unidad"
+            }
+          },
+          {
+            "name": "Huevo",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 unidades"
+            }
+          },
+          {
+            "name": "Pan rallado",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": null,
+              "unit": "abundante",
+              "note": "(para freír)",
+              "scalable": false,
+              "originalText": "abundante (para freír)"
+            }
+          },
+          {
+            "name": "Nuez moscada",
+            "quantity": {
+              "amount": 1,
+              "unit": "pizca",
+              "scalable": false,
+              "originalText": "1 pizca"
+            }
+          },
+          {
+            "name": "Sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Pica la cebolla muy",
+            "text": "Pica la cebolla muy fina y el jamón en trocitos pequeños.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Derrite la mantequilla a fuego medio",
+            "text": "Derrite la mantequilla a fuego medio, sofríe la cebolla 5 min hasta que esté transparente.",
+            "hasTimer": true,
+            "durationMinutes": 5,
+            "durationSeconds": 300,
+            "timerLabel": "5 min"
+          },
+          {
+            "order": 3,
+            "title": "Añade la harina y",
+            "text": "Añade la harina y remueve continuamente 2 min para que se tueste un poco sin quemarse.",
+            "hasTimer": true,
+            "durationMinutes": 2,
+            "durationSeconds": 120,
+            "timerLabel": "2 min"
+          },
+          {
+            "order": 4,
+            "title": "Incorpora la leche caliente",
+            "text": "Incorpora la leche caliente poco a poco sin dejar de remover con varillas. Agrega el jamón, nuez moscada y sal. Cocina 10-12 min a fuego lento hasta que la masa se despegue de las paredes.",
+            "hasTimer": true,
+            "durationMinutes": 9,
+            "durationSeconds": 510,
+            "timerLabel": "10-12 min"
+          },
+          {
+            "order": 5,
+            "title": "Vierte en una fuente",
+            "text": "Vierte en una fuente, cubre con film transparente a piel y deja enfriar en nevera mínimo 4 horas (mejor toda la noche).",
+            "hasTimer": true,
+            "durationMinutes": 240,
+            "durationSeconds": 14400,
+            "timerLabel": "4 horas"
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
           "type": "doc",
           "content": [
             {
               "type": "heading",
-              "attrs": { "level": 2 },
+              "attrs": {
+                "level": 2
+              },
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
                   "text": "Elaboración"
                 }
               ]
             },
             {
               "type": "heading",
-              "attrs": { "level": 3 },
-              "content": [{ "type": "text", "text": "La bechamel" }]
+              "attrs": {
+                "level": 3
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "La bechamel"
+                }
+              ]
             },
             {
               "type": "orderedList",
-              "attrs": { "start": 1 },
+              "attrs": {
+                "start": 1
+              },
               "content": [
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Pica " },
-                    { "type": "text", "text": "la cebolla muy fina y el jamón en trocitos pequeños." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Pica "
+                        },
+                        {
+                          "type": "text",
+                          "text": "la cebolla muy fina y el jamón en trocitos pequeños."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Derrite " },
-                    { "type": "text", "text": "la mantequilla a fuego medio, sofríe la cebolla " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
-                    { "type": "text", "text": " hasta que esté transparente." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Derrite "
+                        },
+                        {
+                          "type": "text",
+                          "text": "la mantequilla a fuego medio, sofríe la cebolla "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que esté transparente."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade la harina " },
-                    { "type": "text", "text": "y remueve continuamente " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2 min" },
-                    { "type": "text", "text": " para que se tueste un poco sin quemarse." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Añade la harina "
+                        },
+                        {
+                          "type": "text",
+                          "text": "y remueve continuamente "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "2 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " para que se tueste un poco sin quemarse."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Incorpora la leche caliente " },
-                    { "type": "text", "text": "poco a poco sin dejar de remover con varillas. Agrega el jamón, nuez moscada y sal. Cocina " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "10-12 min a fuego lento" },
-                    { "type": "text", "text": " hasta que la masa se despegue de las paredes." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Incorpora la leche caliente "
+                        },
+                        {
+                          "type": "text",
+                          "text": "poco a poco sin dejar de remover con varillas. Agrega el jamón, nuez moscada y sal. Cocina "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "10-12 min a fuego lento"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que la masa se despegue de las paredes."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Vierte " },
-                    { "type": "text", "text": "en una fuente, cubre con film transparente a piel y deja enfriar en nevera " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "mínimo 4 horas" },
-                    { "type": "text", "text": " (mejor toda la noche)." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Vierte "
+                        },
+                        {
+                          "type": "text",
+                          "text": "en una fuente, cubre con film transparente a piel y deja enfriar en nevera "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "mínimo 4 horas"
+                        },
+                        {
+                          "type": "text",
+                          "text": " (mejor toda la noche)."
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             },
             {
               "type": "heading",
-              "attrs": { "level": 3 },
-              "content": [{ "type": "text", "text": "Formado y fritura" }]
+              "attrs": {
+                "level": 3
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Formado y fritura"
+                }
+              ]
             },
             {
               "type": "orderedList",
-              "attrs": { "start": 6 },
+              "attrs": {
+                "start": 6
+              },
               "content": [
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Forma " },
-                    { "type": "text", "text": "las croquetas con dos cucharas o a mano, pásalas por huevo batido y después por pan rallado. Repite el empanado para mayor crujiente." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Forma "
+                        },
+                        {
+                          "type": "text",
+                          "text": "las croquetas con dos cucharas o a mano, pásalas por huevo batido y después por pan rallado. Repite el empanado para mayor crujiente."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Fríe " },
-                    { "type": "text", "text": "en aceite abundante a " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "180 °C" },
-                    { "type": "text", "text": " hasta que estén doradas uniformemente. No pongas demasiadas a la vez." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Fríe "
+                        },
+                        {
+                          "type": "text",
+                          "text": "en aceite abundante a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "180 °C"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que estén doradas uniformemente. No pongas demasiadas a la vez."
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -243,7 +873,14 @@
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
                   "text": "✔ Truco: congela las croquetas ya formadas y empanadas. Se fríen directamente del congelador, quedan perfectas."
                 }
               ]
@@ -260,66 +897,237 @@
       "special": false,
       "allowRandom": true,
       "ingredients": [
-        { "displayName": "Pan de barra", "canonicalName": "pan" },
-        { "displayName": "Tomate maduro", "canonicalName": "tomate" },
-        { "displayName": "Ajo", "canonicalName": "ajo" },
-        { "displayName": "Aceite de oliva virgen extra", "canonicalName": "aceite de oliva" },
-        { "displayName": "Sal gruesa", "canonicalName": "sal" }
+        {
+          "displayName": "Pan de barra",
+          "canonicalName": "pan"
+        },
+        {
+          "displayName": "Tomate maduro",
+          "canonicalName": "tomate"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        },
+        {
+          "displayName": "Aceite de oliva virgen extra",
+          "canonicalName": "aceite de oliva"
+        },
+        {
+          "displayName": "Sal gruesa",
+          "canonicalName": "sal"
+        }
       ],
       "recipe": {
-        "servings": 4,
         "ingredients": [
-          { "name": "Pan de barra", "quantity": "1 unidad" },
-          { "name": "Tomate maduro", "quantity": "3 unidades grandes" },
-          { "name": "Ajo", "quantity": "2 dientes" },
-          { "name": "Aceite de oliva virgen extra", "quantity": "4 cucharadas" },
-          { "name": "Sal gruesa", "quantity": "al gusto" }
+          {
+            "name": "Pan de barra",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Tomate maduro",
+            "quantity": {
+              "amount": 3,
+              "unit": "unidad",
+              "note": "grandes",
+              "scalable": true,
+              "originalText": "3 unidades grandes"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "2 dientes"
+            }
+          },
+          {
+            "name": "Aceite de oliva virgen extra",
+            "quantity": {
+              "amount": 4,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "4 cucharadas"
+            }
+          },
+          {
+            "name": "Sal gruesa",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Corta el pan en",
+            "text": "Corta el pan en rebanadas de 1,5 cm y tuéstalas en una sartén o tostadora hasta que estén bien doradas por ambas caras.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Frota el ajo pelado sobre la cara",
+            "text": "Frota el ajo pelado sobre la cara tostada de la rebanada mientras aún está caliente. Usa más o menos cantidad según el gusto.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Parte los tomates por",
+            "text": "Parte los tomates por la mitad y frota con fuerza sobre el pan hasta que absorba toda la pulpa. Desecha la piel.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 4,
+            "title": "Aliña con un buen chorro de aceite de",
+            "text": "Aliña con un buen chorro de aceite de oliva virgen extra y una pizca de sal gruesa justo antes de servir.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
           "type": "doc",
           "content": [
             {
               "type": "heading",
-              "attrs": { "level": 2 },
+              "attrs": {
+                "level": 2
+              },
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
                   "text": "Elaboración"
                 }
               ]
             },
             {
               "type": "orderedList",
-              "attrs": { "start": 1 },
+              "attrs": {
+                "start": 1
+              },
               "content": [
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Corta " },
-                    { "type": "text", "text": "el pan en rebanadas de 1,5 cm y tuéstalas en una sartén o tostadora hasta que estén bien doradas por ambas caras." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Corta "
+                        },
+                        {
+                          "type": "text",
+                          "text": "el pan en rebanadas de 1,5 cm y tuéstalas en una sartén o tostadora hasta que estén bien doradas por ambas caras."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Frota el ajo " },
-                    { "type": "text", "text": "pelado sobre la cara tostada de la rebanada mientras aún está caliente. Usa más o menos cantidad según el gusto." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Frota el ajo "
+                        },
+                        {
+                          "type": "text",
+                          "text": "pelado sobre la cara tostada de la rebanada mientras aún está caliente. Usa más o menos cantidad según el gusto."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Parte los tomates " },
-                    { "type": "text", "text": "por la mitad y frota con fuerza sobre el pan hasta que absorba toda la pulpa. Desecha la piel." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Parte los tomates "
+                        },
+                        {
+                          "type": "text",
+                          "text": "por la mitad y frota con fuerza sobre el pan hasta que absorba toda la pulpa. Desecha la piel."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Aliña " },
-                    { "type": "text", "text": "con un buen chorro de aceite de oliva virgen extra y una pizca de sal gruesa justo antes de servir." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Aliña "
+                        },
+                        {
+                          "type": "text",
+                          "text": "con un buen chorro de aceite de oliva virgen extra y una pizca de sal gruesa justo antes de servir."
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -328,7 +1136,14 @@
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
                   "text": "✔ Truco: usa tomates muy maduros de temporada y aceite de calidad. Son los dos únicos secretos de esta receta."
                 }
               ]
@@ -345,81 +1160,329 @@
       "special": true,
       "allowRandom": true,
       "ingredients": [
-        { "displayName": "Gambas", "canonicalName": "gamba" },
-        { "displayName": "Ajo", "canonicalName": "ajo" },
-        { "displayName": "Guindilla", "canonicalName": "guindilla" },
-        { "displayName": "Aceite de oliva virgen extra", "canonicalName": "aceite de oliva" },
-        { "displayName": "Perejil fresco", "canonicalName": "perejil fresco" },
-        { "displayName": "Sal", "canonicalName": "sal" }
+        {
+          "displayName": "Gambas",
+          "canonicalName": "gamba"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        },
+        {
+          "displayName": "Guindilla",
+          "canonicalName": "guindilla"
+        },
+        {
+          "displayName": "Aceite de oliva virgen extra",
+          "canonicalName": "aceite de oliva"
+        },
+        {
+          "displayName": "Perejil fresco",
+          "canonicalName": "perejil fresco"
+        },
+        {
+          "displayName": "Sal",
+          "canonicalName": "sal"
+        }
       ],
       "recipe": {
-        "servings": 4,
         "ingredients": [
-          { "name": "Gambas", "quantity": "500 g" },
-          { "name": "Ajo", "quantity": "5 dientes" },
-          { "name": "Guindilla", "quantity": "1 unidad" },
-          { "name": "Aceite de oliva virgen extra", "quantity": "6 cucharadas" },
-          { "name": "Perejil fresco", "quantity": "1 manojo" },
-          { "name": "Sal", "quantity": "al gusto" }
+          {
+            "name": "Gambas",
+            "quantity": {
+              "amount": 500,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "500 g"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 5,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "5 dientes"
+            }
+          },
+          {
+            "name": "Guindilla",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Aceite de oliva virgen extra",
+            "quantity": {
+              "amount": 6,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "6 cucharadas"
+            }
+          },
+          {
+            "name": "Perejil fresco",
+            "quantity": {
+              "amount": 1,
+              "unit": "manojo",
+              "scalable": true,
+              "originalText": "1 manojo"
+            }
+          },
+          {
+            "name": "Sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Pela las gambas dejando",
+            "text": "Pela las gambas dejando la cola si lo deseas. Sécalas bien con papel de cocina — la humedad las haría cocer en vez de saltearse.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Lamina el ajo en",
+            "text": "Lamina el ajo en rodajas finas. Calienta el aceite en una cazuela de barro o sartén a fuego vivo hasta que humee.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Añade el ajo y",
+            "text": "Añade el ajo y la guindilla y sofríe 30 segundos sin que el ajo se dore demasiado — que aromatice el aceite, no que se queme.",
+            "hasTimer": true,
+            "durationMinutes": 1,
+            "durationSeconds": 30,
+            "timerLabel": "30 segundos"
+          },
+          {
+            "order": 4,
+            "title": "Incorpora las gambas, sala",
+            "text": "Incorpora las gambas, sala y saltea 1-2 min hasta que cambien de color. No las cocines de más o quedarán gomosas.",
+            "hasTimer": true,
+            "durationMinutes": 1,
+            "durationSeconds": 75,
+            "timerLabel": "1-2 min"
+          },
+          {
+            "order": 5,
+            "title": "Espolvorea perejil picado y",
+            "text": "Espolvorea perejil picado y sirve inmediatamente en la misma cazuela, con pan de barra para mojar el aceite.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
           "type": "doc",
           "content": [
             {
               "type": "heading",
-              "attrs": { "level": 2 },
+              "attrs": {
+                "level": 2
+              },
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
                   "text": "Elaboración"
                 }
               ]
             },
             {
               "type": "orderedList",
-              "attrs": { "start": 1 },
+              "attrs": {
+                "start": 1
+              },
               "content": [
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Pela las gambas " },
-                    { "type": "text", "text": "dejando la cola si lo deseas. Sécalas bien con papel de cocina — la humedad las haría cocer en vez de saltearse." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Pela las gambas "
+                        },
+                        {
+                          "type": "text",
+                          "text": "dejando la cola si lo deseas. Sécalas bien con papel de cocina — la humedad las haría cocer en vez de saltearse."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Lamina el ajo " },
-                    { "type": "text", "text": "en rodajas finas. Calienta el aceite en una cazuela de barro o sartén a " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "fuego vivo hasta que humee" },
-                    { "type": "text", "text": "." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Lamina el ajo "
+                        },
+                        {
+                          "type": "text",
+                          "text": "en rodajas finas. Calienta el aceite en una cazuela de barro o sartén a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "fuego vivo hasta que humee"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade el ajo y la guindilla " },
-                    { "type": "text", "text": "y sofríe " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "30 segundos" },
-                    { "type": "text", "text": " sin que el ajo se dore demasiado — que aromatice el aceite, no que se queme." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Añade el ajo y la guindilla "
+                        },
+                        {
+                          "type": "text",
+                          "text": "y sofríe "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "30 segundos"
+                        },
+                        {
+                          "type": "text",
+                          "text": " sin que el ajo se dore demasiado — que aromatice el aceite, no que se queme."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Incorpora las gambas, " },
-                    { "type": "text", "text": "sala y saltea " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "1-2 min" },
-                    { "type": "text", "text": " hasta que cambien de color. No las cocines de más o quedarán gomosas." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Incorpora las gambas, "
+                        },
+                        {
+                          "type": "text",
+                          "text": "sala y saltea "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "1-2 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que cambien de color. No las cocines de más o quedarán gomosas."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Espolvorea perejil " },
-                    { "type": "text", "text": "picado y sirve inmediatamente en la misma cazuela, con pan de barra para mojar el aceite." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Espolvorea perejil "
+                        },
+                        {
+                          "type": "text",
+                          "text": "picado y sirve inmediatamente en la misma cazuela, con pan de barra para mojar el aceite."
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -428,7 +1491,14 @@
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
                   "text": "✔ Truco: si usas cazuela de barro, caliéntala antes en el fuego. Mantiene el calor y llega hirviendo a la mesa."
                 }
               ]
@@ -445,99 +1515,349 @@
       "special": true,
       "allowRandom": true,
       "ingredients": [
-        { "displayName": "Huevos", "canonicalName": "huevo" },
-        { "displayName": "Patatas", "canonicalName": "patata" },
-        { "displayName": "Cebolla", "canonicalName": "cebolla" },
-        { "displayName": "Aceite de oliva", "canonicalName": "aceite de oliva" },
-        { "displayName": "Sal", "canonicalName": "sal" }
+        {
+          "displayName": "Huevos",
+          "canonicalName": "huevo"
+        },
+        {
+          "displayName": "Patatas",
+          "canonicalName": "patata"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla"
+        },
+        {
+          "displayName": "Aceite de oliva",
+          "canonicalName": "aceite de oliva"
+        },
+        {
+          "displayName": "Sal",
+          "canonicalName": "sal"
+        }
       ],
       "recipe": {
-        "servings": 4,
         "ingredients": [
-          { "name": "Huevos", "quantity": "6 unidades" },
-          { "name": "Patatas", "quantity": "500 g" },
-          { "name": "Cebolla", "quantity": "1 unidad mediana" },
-          { "name": "Aceite de oliva", "quantity": "200 ml" },
-          { "name": "Sal", "quantity": "al gusto" }
+          {
+            "name": "Huevos",
+            "quantity": {
+              "amount": 6,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "6 unidades"
+            }
+          },
+          {
+            "name": "Patatas",
+            "quantity": {
+              "amount": 500,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "500 g"
+            }
+          },
+          {
+            "name": "Cebolla",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "note": "mediana",
+              "scalable": true,
+              "originalText": "1 unidad mediana"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 200,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "200 ml"
+            }
+          },
+          {
+            "name": "Sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Pela y lamina las",
+            "text": "Pela y lamina las patatas muy finas (2-3 mm). Pela y pica la cebolla en juliana.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Confita patatas y cebolla en abundante",
+            "text": "Confita patatas y cebolla en abundante aceite a fuego medio-bajo durante 20 min — deben quedar tiernas y melosas, no fritas. Escurre muy bien el aceite (guárdalo, vale para todo).",
+            "hasTimer": true,
+            "durationMinutes": 20,
+            "durationSeconds": 1200,
+            "timerLabel": "20 min"
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
           "type": "doc",
           "content": [
             {
               "type": "heading",
-              "attrs": { "level": 2 },
+              "attrs": {
+                "level": 2
+              },
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
                   "text": "Elaboración"
                 }
               ]
             },
             {
               "type": "heading",
-              "attrs": { "level": 3 },
-              "content": [{ "type": "text", "text": "Las patatas y la cebolla" }]
+              "attrs": {
+                "level": 3
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Las patatas y la cebolla"
+                }
+              ]
             },
             {
               "type": "orderedList",
-              "attrs": { "start": 1 },
+              "attrs": {
+                "start": 1
+              },
               "content": [
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Pela y lamina " },
-                    { "type": "text", "text": "las patatas muy finas (2-3 mm). Pela y pica la cebolla en juliana." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Pela y lamina "
+                        },
+                        {
+                          "type": "text",
+                          "text": "las patatas muy finas (2-3 mm). Pela y pica la cebolla en juliana."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Confita " },
-                    { "type": "text", "text": "patatas y cebolla en abundante aceite a " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "fuego medio-bajo durante 20 min" },
-                    { "type": "text", "text": " — deben quedar tiernas y melosas, no fritas. Escurre muy bien el aceite (guárdalo, vale para todo)." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Confita "
+                        },
+                        {
+                          "type": "text",
+                          "text": "patatas y cebolla en abundante aceite a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "fuego medio-bajo durante 20 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " — deben quedar tiernas y melosas, no fritas. Escurre muy bien el aceite (guárdalo, vale para todo)."
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             },
             {
               "type": "heading",
-              "attrs": { "level": 3 },
-              "content": [{ "type": "text", "text": "El cuajado" }]
+              "attrs": {
+                "level": 3
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "El cuajado"
+                }
+              ]
             },
             {
               "type": "orderedList",
-              "attrs": { "start": 3 },
+              "attrs": {
+                "start": 3
+              },
               "content": [
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Bate los huevos " },
-                    { "type": "text", "text": "con sal en un bol grande. Añade las patatas y cebolla escurridas, mezcla bien y deja reposar " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "5 min" },
-                    { "type": "text", "text": " para que el huevo impregne bien las patatas." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Bate los huevos "
+                        },
+                        {
+                          "type": "text",
+                          "text": "con sal en un bol grande. Añade las patatas y cebolla escurridas, mezcla bien y deja reposar "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " para que el huevo impregne bien las patatas."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Calienta 2 cucharadas de aceite " },
-                    { "type": "text", "text": "en una sartén antiadherente de " },
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "20 cm" },
-                    { "type": "text", "text": ". Vierte la mezcla y cuaja a " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "fuego medio-bajo 4-5 min" },
-                    { "type": "text", "text": ". Los bordes deben estar cuajados y el centro aún móvil." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Calienta 2 cucharadas de aceite "
+                        },
+                        {
+                          "type": "text",
+                          "text": "en una sartén antiadherente de "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "20 cm"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Vierte la mezcla y cuaja a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "fuego medio-bajo 4-5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Los bordes deben estar cuajados y el centro aún móvil."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Da la vuelta " },
-                    { "type": "text", "text": "con un plato llano de diámetro igual o mayor. Desliza la tortilla de vuelta a la sartén y cuaja por el otro lado " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "2-3 min más" },
-                    { "type": "text", "text": ". Debe quedar jugosa y ligeramente temblorosa en el centro." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Da la vuelta "
+                        },
+                        {
+                          "type": "text",
+                          "text": "con un plato llano de diámetro igual o mayor. Desliza la tortilla de vuelta a la sartén y cuaja por el otro lado "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "2-3 min más"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Debe quedar jugosa y ligeramente temblorosa en el centro."
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -546,7 +1866,14 @@
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#22c55e" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
                   "text": "✔ Truco: la tortilla perfecta es la que está poco cuajada. Cuando la saques ya seguirá cocinándose con el calor residual."
                 }
               ]
@@ -563,68 +1890,254 @@
       "special": false,
       "allowRandom": true,
       "ingredients": [
-        { "displayName": "Pimientos de padrón", "canonicalName": "pimiento" },
-        { "displayName": "Aceite de oliva virgen extra", "canonicalName": "aceite de oliva" },
-        { "displayName": "Sal gruesa", "canonicalName": "sal" }
+        {
+          "displayName": "Pimientos de padrón",
+          "canonicalName": "pimiento"
+        },
+        {
+          "displayName": "Aceite de oliva virgen extra",
+          "canonicalName": "aceite de oliva"
+        },
+        {
+          "displayName": "Sal gruesa",
+          "canonicalName": "sal"
+        }
       ],
       "recipe": {
-        "servings": 4,
         "ingredients": [
-          { "name": "Pimientos de padrón", "quantity": "500 g" },
-          { "name": "Aceite de oliva virgen extra", "quantity": "4 cucharadas" },
-          { "name": "Sal gruesa", "quantity": "al gusto" }
+          {
+            "name": "Pimientos de padrón",
+            "quantity": {
+              "amount": 500,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "500 g"
+            }
+          },
+          {
+            "name": "Aceite de oliva virgen extra",
+            "quantity": {
+              "amount": 4,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "4 cucharadas"
+            }
+          },
+          {
+            "name": "Sal gruesa",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
         ],
-        "steps": {
+        "steps": [
+          {
+            "order": 1,
+            "title": "Lava y seca los pimientos muy bien con",
+            "text": "Lava y seca los pimientos muy bien con papel de cocina. La humedad hace que salten en la sartén.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Calienta el aceite en",
+            "text": "Calienta el aceite en una sartén amplia a fuego muy alto hasta que humee. Este punto es clave para que se arruguen sin que absorban grasa.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Añade los pimientos en",
+            "text": "Añade los pimientos en una sola capa y fríe 3-4 min sin mover demasiado, hasta que la piel se arrugue y aparezcan manchas doradas por ambos lados.",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 165,
+            "timerLabel": "3-4 min"
+          },
+          {
+            "order": 4,
+            "title": "Escurre sobre papel absorbente",
+            "text": "Escurre sobre papel absorbente y espolvorea sal gruesa generosa por encima. Sirve inmediatamente.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
           "type": "doc",
           "content": [
             {
               "type": "heading",
-              "attrs": { "level": 2 },
+              "attrs": {
+                "level": 2
+              },
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#4338ca" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
                   "text": "Elaboración"
                 }
               ]
             },
             {
               "type": "orderedList",
-              "attrs": { "start": 1 },
+              "attrs": {
+                "start": 1
+              },
               "content": [
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Lava y seca " },
-                    { "type": "text", "text": "los pimientos muy bien con papel de cocina. La humedad hace que salten en la sartén." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Lava y seca "
+                        },
+                        {
+                          "type": "text",
+                          "text": "los pimientos muy bien con papel de cocina. La humedad hace que salten en la sartén."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Calienta el aceite " },
-                    { "type": "text", "text": "en una sartén amplia a " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "fuego muy alto hasta que humee" },
-                    { "type": "text", "text": ". Este punto es clave para que se arruguen sin que absorban grasa." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Calienta el aceite "
+                        },
+                        {
+                          "type": "text",
+                          "text": "en una sartén amplia a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "fuego muy alto hasta que humee"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Este punto es clave para que se arruguen sin que absorban grasa."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Añade los pimientos " },
-                    { "type": "text", "text": "en una sola capa y fríe " },
-                    { "type": "text", "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }], "text": "3-4 min" },
-                    { "type": "text", "text": " sin mover demasiado, hasta que la piel se arrugue y aparezcan manchas doradas por ambos lados." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Añade los pimientos "
+                        },
+                        {
+                          "type": "text",
+                          "text": "en una sola capa y fríe "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3-4 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " sin mover demasiado, hasta que la piel se arrugue y aparezcan manchas doradas por ambos lados."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "listItem",
-                  "content": [{ "type": "paragraph", "content": [
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "Escurre " },
-                    { "type": "text", "text": "sobre papel absorbente y espolvorea " },
-                    { "type": "text", "marks": [{ "type": "bold" }], "text": "sal gruesa generosa" },
-                    { "type": "text", "text": " por encima. Sirve inmediatamente." }
-                  ]}]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Escurre "
+                        },
+                        {
+                          "type": "text",
+                          "text": "sobre papel absorbente y espolvorea "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "sal gruesa generosa"
+                        },
+                        {
+                          "type": "text",
+                          "text": " por encima. Sirve inmediatamente."
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -633,7 +2146,14 @@
               "content": [
                 {
                   "type": "text",
-                  "marks": [{ "type": "textStyle", "attrs": { "color": "#f97316" } }],
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#f97316"
+                      }
+                    }
+                  ],
                   "text": "⚡ Ojo: algunos pican y otros no. Esa es la gracia. No hay forma de saberlo de antemano."
                 }
               ]

@@ -11,7 +11,7 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
   const ingredients = recipe.ingredients || [];
   const steps = recipe.steps || null;
   const hasContent = ingredients.length > 0 || steps;
-  const initialServings = targetServings ?? recipe.servings ?? 4;
+  const initialServings = targetServings ?? recipe.baseServings ?? recipe.servings ?? 4;
 
   return (
     <div
