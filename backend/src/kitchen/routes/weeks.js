@@ -159,15 +159,27 @@ function resolveDayAttendeeIds(day, defaultAttendeeIds = [], mealType = "lunch")
   if (dayType !== normalizedMeal) {
     return [...defaultAttendeeIds];
   }
-  if (Array.isArray(day?.attendeeIds)) {
+  if (Array.isArray(day?.attendeeIds) && day.attendeeIds.length > 0) {
     return dedupeIds(day.attendeeIds);
   }
+  if (Array.isArray(day?.attendeeIds) && Number(day?.attendeeCount ?? 0) === 0) return [];
   return [...defaultAttendeeIds];
 }
 
-function applyAttendeesToDay(day, attendeeIds) {
+function normalizeExtraGuests(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+function getTotalDiners(attendeeIds = [], extraGuests = 0) {
+  return dedupeIds(attendeeIds).length + normalizeExtraGuests(extraGuests);
+}
+
+function applyAttendeesToDay(day, attendeeIds, extraGuests = day?.extraGuests ?? 0) {
   day.attendeeIds = dedupeIds(attendeeIds);
-  day.attendeeCount = day.attendeeIds.length;
+  day.extraGuests = normalizeExtraGuests(extraGuests);
+  day.attendeeCount = getTotalDiners(day.attendeeIds, day.extraGuests);
+  day.servings = day.attendeeCount;
 }
 
 function getWeekOffset(monday, date) {
@@ -187,9 +199,10 @@ function createDefaultDaySlot(date, mealType, attendeeIds = []) {
     date,
     mealType,
     attendeeIds: [...attendeeIds],
+    extraGuests: 0,
     attendeeCount: attendeeIds.length,
     cookTiming: isDinner ? "same_day" : "previous_day",
-    servings: 4,
+    servings: attendeeIds.length,
     includeMainIngredients: !isDinner,
     includeSideIngredients: !isDinner,
     isLeftovers: false,
@@ -206,6 +219,7 @@ function resetDayPlanning(day, attendeeIds = []) {
   const defaults = createDefaultDaySlot(day.date, dayMealType(day), attendeeIds);
   day.cookUserId = null;
   day.attendeeIds = [...defaults.attendeeIds];
+  day.extraGuests = defaults.extraGuests;
   day.attendeeCount = defaults.attendeeCount;
   day.cookTiming = defaults.cookTiming;
   day.servings = defaults.servings;
@@ -229,6 +243,7 @@ function snapshotAssignment(day) {
     mainDishId: day?.mainDishId || null,
     attendeeCount: typeof day?.attendeeCount === "number" ? day.attendeeCount : null,
     attendeeIds: Array.isArray(day?.attendeeIds) ? dedupeIds(day.attendeeIds) : [],
+    extraGuests: normalizeExtraGuests(day?.extraGuests),
     servings: day?.servings || null,
     date: day?.date ? new Date(day.date) : null,
     mealType: dayMealType(day),
@@ -393,9 +408,10 @@ router.post("/:weekStart/weekend", requireAuth, async (req, res) => {
         date: targetDate,
         mealType,
         attendeeIds: [...defaultAttendeeIds],
+        extraGuests: 0,
         attendeeCount: defaultAttendeeIds.length,
         cookTiming: isDinner ? "same_day" : "previous_day",
-        servings: 4,
+        servings: defaultAttendeeIds.length,
         includeMainIngredients: !isDinner,
         includeSideIngredients: !isDinner,
         ingredientOverrides: []
@@ -515,11 +531,11 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     const {
       cookUserId,
       cookTiming,
-      servings,
       mainDishId,
       sideDishId,
       ingredientOverrides,
       attendeeIds,
+      extraGuests,
       baseIngredientExclusions,
       includeMainIngredients,
       includeSideIngredients,
@@ -554,6 +570,12 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       const invalidAttendeeId = attendeeIds.find((item) => !mongoose.isValidObjectId(item));
       if (invalidAttendeeId) {
         return res.status(400).json({ ok: false, error: "Algun attendeeId no es valido." });
+      }
+    }
+    if (extraGuests !== undefined) {
+      const parsedExtraGuests = Number(extraGuests);
+      if (!Number.isFinite(parsedExtraGuests) || parsedExtraGuests < 0) {
+        return res.status(400).json({ ok: false, error: "extraGuests debe ser un numero positivo." });
       }
     }
     if (baseIngredientExclusions !== undefined && !Array.isArray(baseIngredientExclusions)) {
@@ -621,7 +643,6 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       day.cookUserId = req.kitchenUser._id;
     }
     if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
-    if (servings) day.servings = Number(servings) || 4;
     if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
     if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
     if (typeof includeMainIngredients === "boolean") {
@@ -684,7 +705,8 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     if (Array.isArray(baseIngredientExclusions)) {
       day.baseIngredientExclusions = normalizeBaseIngredientExclusions(baseIngredientExclusions);
     }
-    applyAttendeesToDay(day, nextAttendeeIds);
+    const nextExtraGuests = extraGuests !== undefined ? normalizeExtraGuests(extraGuests) : normalizeExtraGuests(day.extraGuests);
+    applyAttendeesToDay(day, nextAttendeeIds, nextExtraGuests);
 
     await plan.save();
     await notifyCookAssignments({
@@ -716,49 +738,6 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Datos invalidos al actualizar el dia del plan." });
     }
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el dia del plan." });
-  }
-});
-
-router.post("/:weekStart/day/:date/toggle-attendance", requireAuth, async (req, res) => {
-  try {
-    const weekStart = parseISODate(req.params.weekStart);
-    const date = parseISODate(req.params.date);
-    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha invalida." });
-
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const monday = getWeekStart(weekStart);
-    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
-    const mealType = normalizeMealType(req.query?.mealType || req.body?.mealType || "lunch");
-    const day = findDayByDateAndMeal(plan, date, mealType);
-    if (!day) return res.status(404).json({ ok: false, error: "Dia fuera de la semana." });
-
-    const members = await loadHouseholdMembers(effectiveHouseholdId);
-    const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);
-    const selfId = String(req.kitchenUser?._id || "");
-    const nextAttendeeIds = resolveDayAttendeeIds(day, defaultAttendeeIds, mealType);
-    const isPresent = nextAttendeeIds.includes(selfId);
-    const toggledAttendees = isPresent
-      ? nextAttendeeIds.filter((id) => id !== selfId)
-      : [...nextAttendeeIds, selfId];
-
-    applyAttendeesToDay(day, toggledAttendees);
-    await plan.save();
-    return res.json({
-      ok: true,
-      plan,
-      attending: !isPresent,
-      attendeeIds: day.attendeeIds,
-      attendeeCount: day.attendeeCount
-    });
-  } catch (error) {
-    const handled = handleHouseholdError(res, error);
-    if (handled) return handled;
-    logKitchenError("toggle-attendance", error, {
-      weekStart: req.params.weekStart,
-      date: req.params.date,
-      userId: String(req.kitchenUser?._id || "")
-    });
-    return res.status(500).json({ ok: false, error: "No se pudo actualizar asistencia." });
   }
 });
 
@@ -1205,11 +1184,10 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
       mealType: dayMealType(day),
       cookUserId: day.cookUserId,
       attendeeIds: Array.isArray(day.attendeeIds) ? dedupeIds(day.attendeeIds) : undefined,
-      attendeeCount: Array.isArray(day.attendeeIds)
-        ? dedupeIds(day.attendeeIds).length
-        : (typeof day.attendeeCount === "number" ? day.attendeeCount : undefined),
+      extraGuests: normalizeExtraGuests(day.extraGuests),
+      attendeeCount: getTotalDiners(day.attendeeIds, day.extraGuests),
       cookTiming: day.cookTiming,
-      servings: day.servings,
+      servings: getTotalDiners(day.attendeeIds, day.extraGuests),
       mainDishId: day.mainDishId,
       includeMainIngredients: typeof day.includeMainIngredients === "boolean"
         ? day.includeMainIngredients
@@ -1399,7 +1377,8 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       leftoversSourceDishName: sourceDay.leftoversSourceDishName || null,
       ingredientOverrides: cloneIngredientOverrides(sourceDay.ingredientOverrides),
       baseIngredientExclusions: normalizeBaseIngredientExclusions(sourceDay.baseIngredientExclusions),
-      attendeeIds: cloneAttendeeIds(sourceDay.attendeeIds)
+      attendeeIds: cloneAttendeeIds(sourceDay.attendeeIds),
+      extraGuests: normalizeExtraGuests(sourceDay.extraGuests)
     };
     const targetSnapshot = {
       ...snapshotAssignment(targetDay),
@@ -1419,7 +1398,8 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       leftoversSourceDishName: targetDay.leftoversSourceDishName || null,
       ingredientOverrides: cloneIngredientOverrides(targetDay.ingredientOverrides),
       baseIngredientExclusions: normalizeBaseIngredientExclusions(targetDay.baseIngredientExclusions),
-      attendeeIds: cloneAttendeeIds(targetDay.attendeeIds)
+      attendeeIds: cloneAttendeeIds(targetDay.attendeeIds),
+      extraGuests: normalizeExtraGuests(targetDay.extraGuests)
     };
 
     sourceDay.cookUserId = targetSnapshot.cookUserId;
@@ -1436,7 +1416,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     sourceDay.leftoversSourceDishName = targetSnapshot.leftoversSourceDishName;
     sourceDay.ingredientOverrides = targetSnapshot.ingredientOverrides;
     sourceDay.baseIngredientExclusions = targetSnapshot.baseIngredientExclusions;
-    applyAttendeesToDay(sourceDay, targetSnapshot.attendeeIds);
+    applyAttendeesToDay(sourceDay, targetSnapshot.attendeeIds, targetSnapshot.extraGuests);
 
     targetDay.cookUserId = sourceSnapshot.cookUserId;
     targetDay.cookTiming = sourceSnapshot.cookTiming;
@@ -1452,7 +1432,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     targetDay.leftoversSourceDishName = sourceSnapshot.leftoversSourceDishName;
     targetDay.ingredientOverrides = sourceSnapshot.ingredientOverrides;
     targetDay.baseIngredientExclusions = sourceSnapshot.baseIngredientExclusions;
-    applyAttendeesToDay(targetDay, sourceSnapshot.attendeeIds);
+    applyAttendeesToDay(targetDay, sourceSnapshot.attendeeIds, sourceSnapshot.extraGuests);
 
     await plan.save();
     await notifyCookAssignments({
@@ -1520,4 +1500,3 @@ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
 });
 
 export default router;
-

@@ -25,9 +25,10 @@ function buildDefaultDays(weekStartDate, attendeeIds = [], mealType = "lunch") {
     date,
     mealType,
     attendeeIds: [...attendeeIds],
+    extraGuests: 0,
     attendeeCount: attendeeIds.length,
     cookTiming: "previous_day",
-    servings: 4,
+    servings: attendeeIds.length,
     includeMainIngredients: !isDinner,
     includeSideIngredients: !isDinner,
     ingredientOverrides: []
@@ -72,9 +73,10 @@ async function ensureDinnerSlotsIfEnabled(plan, effectiveHouseholdId) {
       date,
       mealType: "dinner",
       attendeeIds: [...dinnerAttendees],
+      extraGuests: 0,
       attendeeCount: dinnerAttendees.length,
       cookTiming: "same_day",
-      servings: 4,
+      servings: dinnerAttendees.length,
       includeMainIngredients: dinnerIncludeInShopping,
       includeSideIngredients: dinnerIncludeInShopping,
       ingredientOverrides: []

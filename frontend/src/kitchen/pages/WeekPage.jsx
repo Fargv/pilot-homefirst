@@ -193,7 +193,10 @@ function isActiveMember(user) {
 }
 
 function resolveDayAttendees(day, users = [], mealType = "lunch") {
-  if (Array.isArray(day?.attendeeIds)) return day.attendeeIds.map((item) => String(item));
+  if (Array.isArray(day?.attendeeIds) && day.attendeeIds.length > 0) {
+    return day.attendeeIds.map((item) => String(item));
+  }
+  if (Array.isArray(day?.attendeeIds) && Number(day?.attendeeCount ?? 0) === 0) return [];
   if (normalizeMealType(mealType) === "dinner") {
     return users
       .filter((member) => isActiveMember(member) && member?.dinnerActive !== false)
@@ -202,6 +205,19 @@ function resolveDayAttendees(day, users = [], mealType = "lunch") {
   return users
     .filter((member) => isActiveMember(member))
     .map((member) => String(member.id));
+}
+
+function resolveDayExtraGuests(day) {
+  const value = Number(day?.extraGuests ?? 0);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
+function resolveDayDinerCount(day, users = [], mealType = "lunch") {
+  const memberCount = resolveDayAttendees(day, users, mealType).length;
+  const guests = resolveDayExtraGuests(day);
+  if (memberCount + guests > 0) return memberCount + guests;
+  const legacyCount = Number(day?.attendeeCount ?? day?.servings ?? 0);
+  return Number.isFinite(legacyCount) && legacyCount > 0 ? Math.floor(legacyCount) : 0;
 }
 
 function normalizeExclusionKey(value) {
@@ -254,7 +270,6 @@ export default function WeekPage() {
   const [weekNotice, setWeekNotice] = useState(null);
   const [dayStatus, setDayStatus] = useState({});
   const [dayErrors, setDayErrors] = useState({});
-  const [dayAttendanceBusy, setDayAttendanceBusy] = useState({});
   const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
   const [addIngredientsOpen, setAddIngredientsOpen] = useState({});
   const [selectedDay, setSelectedDay] = useState("");
@@ -280,6 +295,7 @@ export default function WeekPage() {
   const [attendeeDialogDay, setAttendeeDialogDay] = useState(null);
   const [attendeeDialogEditable, setAttendeeDialogEditable] = useState(false);
   const [attendeeDraftIds, setAttendeeDraftIds] = useState([]);
+  const [attendeeDraftExtraGuests, setAttendeeDraftExtraGuests] = useState(0);
   const [attendeeDialogBusy, setAttendeeDialogBusy] = useState(false);
   const [attendeeDialogError, setAttendeeDialogError] = useState("");
   const [dishModalOpen, setDishModalOpen] = useState(false);
@@ -1028,24 +1044,6 @@ export default function WeekPage() {
     return true;
   };
 
-  const toggleSelfAttendance = async (day) => {
-    const dayKey = day.date.slice(0, 10);
-    setDayAttendanceBusy((prev) => ({ ...prev, [dayKey]: true }));
-    setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
-    try {
-      const mealType = dayMealType(day);
-      const data = await apiRequest(`/api/kitchen/weeks/${weekStartRef.current}/day/${dayKey}/toggle-attendance`, {
-        method: "POST",
-        body: JSON.stringify({ mealType })
-      });
-      setPlan(data?.plan || null);
-    } catch (err) {
-      setDayErrors((prev) => ({ ...prev, [dayKey]: err.message || "No se pudo actualizar asistencia." }));
-    } finally {
-      setDayAttendanceBusy((prev) => ({ ...prev, [dayKey]: false }));
-    }
-  };
-
   const removeDayAssignment = async (day) => {
     const dayKey = day.date.slice(0, 10);
     const result = await updateDay(day, {
@@ -1090,6 +1088,7 @@ export default function WeekPage() {
     setAttendeeDialogBusy(false);
     setAttendeeDialogError("");
     setAttendeeDraftIds(resolveDayAttendees(day, users));
+    setAttendeeDraftExtraGuests(resolveDayExtraGuests(day));
   };
 
   const closeAttendeeDialog = () => {
@@ -1097,6 +1096,7 @@ export default function WeekPage() {
     setAttendeeDialogDay(null);
     setAttendeeDialogEditable(false);
     setAttendeeDraftIds([]);
+    setAttendeeDraftExtraGuests(0);
     setAttendeeDialogError("");
   };
 
@@ -1117,7 +1117,10 @@ export default function WeekPage() {
     }
     setAttendeeDialogBusy(true);
     setAttendeeDialogError("");
-    const result = await updateDay(day, { attendeeIds: attendeeDraftIds }, { returnErrorObject: true });
+    const result = await updateDay(day, {
+      attendeeIds: attendeeDraftIds,
+      extraGuests: attendeeDraftExtraGuests
+    }, { returnErrorObject: true });
     setAttendeeDialogBusy(false);
     if (result?.error) {
       setAttendeeDialogError(result.error.message || "No se pudieron guardar los comensales.");
@@ -1800,6 +1803,7 @@ export default function WeekPage() {
     const selectedSet = new Set(attendeeDraftIds.map((id) => String(id)));
     return attendeeDialogMembers.filter((member) => selectedSet.has(String(member.id)));
   }, [attendeeDialogDay, attendeeDialogMembers, attendeeDraftIds]);
+  const attendeeDraftTotal = attendeeDraftIds.length + attendeeDraftExtraGuests;
 
   const handleDishSaved = async (dish) => {
     if (!dish) return;
@@ -2227,13 +2231,7 @@ export default function WeekPage() {
                   : normalizeCookUserId(day.cookUserId);
                 const effectiveCookUserId = draftCookUserId || null;
                 const cookUser = effectiveCookUserId ? userMap.get(effectiveCookUserId) : null;
-                const dayAttendeeIds = resolveDayAttendees(day, users, selectedMealType);
-                const attendeeCount = dayAttendeeIds.length;
-                const dayAttendeeNames = dayAttendeeIds
-                  .map((id) => userMap.get(id)?.displayName)
-                  .filter((name) => String(name || "").trim());
-                const currentUserId = String(user?.id || user?._id || "");
-                const isSelfAttending = Boolean(currentUserId) && dayAttendeeIds.includes(currentUserId);
+                const attendeeCount = resolveDayDinerCount(day, users, selectedMealType);
                 const cookColors = getUserColorById(cookUser?.colorId, effectiveCookUserId);
                 const isAssigned = Boolean(effectiveCookUserId);
                 const isPlanned = Boolean(day.mainDishId || day.isLeftovers);
@@ -2422,20 +2420,6 @@ export default function WeekPage() {
                     ) : null}
                     {isPlanned ? (
                       <div className="kitchen-day-footer">
-                        <label className={`kitchen-day-attendance-toggle ${dayAttendanceBusy[dayKey] ? "is-disabled" : ""}`}>
-                          <input
-                            type="checkbox"
-                            checked={isSelfAttending}
-                            disabled={dayAttendanceBusy[dayKey]}
-                            onChange={() => toggleSelfAttendance(day)}
-                          />
-                          <span className="kitchen-day-attendance-toggle-track" aria-hidden="true">
-                            <span className="kitchen-day-attendance-toggle-thumb" />
-                          </span>
-                          <span className="kitchen-day-attendance-toggle-label">
-                            {dayAttendanceBusy[dayKey] ? "Actualizando..." : isSelfAttending ? "Como" : "No como"}
-                          </span>
-                        </label>
                         <button
                           type="button"
                           className="kitchen-day-icon-action kitchen-day-recipe-action"
@@ -3015,33 +2999,67 @@ export default function WeekPage() {
             </div>
             {attendeeDialogError ? <p className="kitchen-inline-error">{attendeeDialogError}</p> : null}
             {attendeeDialogEditable ? (
-              <div className="kitchen-attendee-list" role="list">
-                {attendeeDialogMembers.map((member) => {
-                  const memberId = String(member.id);
-                  const checked = attendeeDraftIds.includes(memberId);
-                  const initials = getUserInitialsFromProfile(member.initials, member.id, member.displayName);
-                  const colors = getUserColorById(member.colorId, member.id);
-                  return (
-                    <label key={`attendee-option-${memberId}`} className="kitchen-attendee-row" role="listitem">
-                      <span
-                        className="kitchen-attendee-avatar"
-                        style={{ background: colors.background, color: colors.text }}
-                        aria-hidden="true"
-                      >
-                        {initials || "?"}
-                      </span>
-                      <span className="kitchen-attendee-name">{member.displayName || "Sin nombre"}</span>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleAttendeeDraft(memberId)}
-                        disabled={attendeeDialogBusy}
-                        aria-label={`Incluir a ${member.displayName || "usuario"} como comensal`}
-                      />
-                    </label>
-                  );
-                })}
-              </div>
+              <>
+                <div className="kitchen-attendee-list" role="list">
+                  {attendeeDialogMembers.map((member) => {
+                    const memberId = String(member.id);
+                    const checked = attendeeDraftIds.includes(memberId);
+                    const initials = getUserInitialsFromProfile(member.initials, member.id, member.displayName);
+                    const colors = getUserColorById(member.colorId, member.id);
+                    return (
+                      <label key={`attendee-option-${memberId}`} className="kitchen-attendee-row" role="listitem">
+                        <span
+                          className="kitchen-attendee-avatar"
+                          style={{ background: colors.background, color: colors.text }}
+                          aria-hidden="true"
+                        >
+                          {initials || "?"}
+                        </span>
+                        <span className="kitchen-attendee-name">{member.displayName || "Sin nombre"}</span>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleAttendeeDraft(memberId)}
+                          disabled={attendeeDialogBusy}
+                          aria-label={`Incluir a ${member.displayName || "usuario"} como comensal`}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="kitchen-extra-guests-panel">
+                  <div>
+                    <span className="kitchen-label">Invitados extra</span>
+                    <p className="kitchen-muted">Personas sin cuenta en el hogar.</p>
+                  </div>
+                  <div className="kitchen-extra-guests-stepper">
+                    <button
+                      type="button"
+                      className="kitchen-day-icon-action"
+                      onClick={() => setAttendeeDraftExtraGuests((prev) => Math.max(0, prev - 1))}
+                      disabled={attendeeDialogBusy || attendeeDraftExtraGuests <= 0}
+                      aria-label="Reducir invitados"
+                    >
+                      -
+                    </button>
+                    <span className="kitchen-extra-guests-count">{attendeeDraftExtraGuests}</span>
+                    <button
+                      type="button"
+                      className="kitchen-day-icon-action"
+                      onClick={() => setAttendeeDraftExtraGuests((prev) => Math.min(20, prev + 1))}
+                      disabled={attendeeDialogBusy || attendeeDraftExtraGuests >= 20}
+                      aria-label="Aumentar invitados"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                <div className={`kitchen-attendee-total ${attendeeDraftTotal === 0 ? "is-empty" : ""}`}>
+                  {attendeeDraftTotal === 0
+                    ? "Nadie esta asignado a este plato"
+                    : `Comen ${attendeeDraftTotal} ${attendeeDraftTotal === 1 ? "persona" : "personas"}`}
+                </div>
+              </>
             ) : (
               <div className="kitchen-attendee-list is-readonly" role="list">
                 {attendeeDialogSelectedMembers.length ? attendeeDialogSelectedMembers.map((member) => {
@@ -3059,7 +3077,15 @@ export default function WeekPage() {
                       <span className="kitchen-attendee-name">{member.displayName || "Sin nombre"}</span>
                     </div>
                   );
-                }) : <p className="kitchen-muted">Sin comensales para este dia.</p>}
+                }) : (attendeeDraftExtraGuests > 0 ? null : <p className="kitchen-muted">Sin comensales para este dia.</p>)}
+                {attendeeDraftExtraGuests > 0 ? (
+                  <div className="kitchen-attendee-row" role="listitem">
+                    <span className="kitchen-attendee-avatar" aria-hidden="true">+</span>
+                    <span className="kitchen-attendee-name">
+                      {attendeeDraftExtraGuests} invitado{attendeeDraftExtraGuests === 1 ? "" : "s"} extra
+                    </span>
+                  </div>
+                ) : null}
               </div>
             )}
             <div className="kitchen-modal-actions">
