@@ -636,6 +636,7 @@ export default function RecipeEditor({
   recipeCookMinutes = null,
   targetServings = null,
   onTargetServingsChange = null,
+  actionAfterIngredients = null,
   dishIngredientNames = [],
   dishIngredients = [],
   onAddIngredientToDish,
@@ -743,6 +744,8 @@ export default function RecipeEditor({
             />
           </div>
         ) : null}
+
+        {actionAfterIngredients ? actionAfterIngredients : null}
 
         {Array.isArray(recipeSteps) && recipeSteps.length > 0 ? (
           <div>

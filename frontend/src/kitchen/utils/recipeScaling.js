@@ -77,27 +77,68 @@ function getRoundType(unit) {
   return "fraction";
 }
 
+const KITCHEN_FRACTION_UNITS = new Set([
+  "unidad",
+  "unidades",
+  "cucharada",
+  "cucharadas",
+  "cucharadita",
+  "cucharaditas",
+  "taza",
+  "tazas",
+  "vaso",
+  "vasos",
+]);
+
+const COMMON_FRACTIONS = [
+  { value: 1 / 4, label: "1/4" },
+  { value: 1 / 3, label: "1/3" },
+  { value: 1 / 2, label: "1/2" },
+  { value: 2 / 3, label: "2/3" },
+  { value: 3 / 4, label: "3/4" },
+];
+
+function formatFractionAmount(amount) {
+  const whole = Math.floor(amount);
+  const fraction = amount - whole;
+  if (fraction < 0.01) return String(whole);
+
+  const closest = COMMON_FRACTIONS.reduce((best, item) => (
+    Math.abs(item.value - fraction) < Math.abs(best.value - fraction) ? item : best
+  ), COMMON_FRACTIONS[0]);
+
+  if (Math.abs(closest.value - fraction) <= 0.04) {
+    return whole > 0 ? `${whole} ${closest.label}` : closest.label;
+  }
+
+  return String(+amount.toFixed(2));
+}
+
 /**
  * Format a scaled amount intelligently based on its unit.
  * Returns null if amount is not a valid number.
  */
-export function formatScaledAmount(amount, unit) {
+export function formatScaledQuantityAmount(amount, unit) {
   if (amount === null || amount === undefined || isNaN(amount)) return null;
   const rt = getRoundType(unit);
 
   if (rt === "weight") {
     if (amount < 10) return String(+amount.toFixed(1));
-    if (amount < 100) return String(Math.round(amount / 5) * 5);
-    return String(Math.round(amount / 10) * 10);
+    return String(Math.round(amount));
   }
 
   if (rt === "decimal") {
     return String(+amount.toFixed(2));
   }
 
-  const q = Math.round(amount * 4) / 4;
-  return String(+q.toFixed(2));
+  if (KITCHEN_FRACTION_UNITS.has(unit)) {
+    return formatFractionAmount(amount);
+  }
+
+  return String(+amount.toFixed(2));
 }
+
+export const formatScaledAmount = formatScaledQuantityAmount;
 
 function formatDisplayUnit(unit, amount) {
   if (amount === null || amount === undefined || !unit) return unit;
@@ -110,7 +151,7 @@ function formatDisplayUnit(unit, amount) {
     taza: "tazas",
     vaso: "vasos",
   };
-  if (n !== 1 && pluralByUnit[unit]) return pluralByUnit[unit];
+  if (n > 1 && pluralByUnit[unit]) return pluralByUnit[unit];
   return unit;
 }
 
@@ -152,7 +193,7 @@ export function displayIngredientQuantity(item, baseServings, targetServings) {
       const parsed = parseQuantityText(qty);
       if (parsed && typeof parsed.amount === "number" && parsed.scalable !== false && parsed.unit) {
         const scaled = scaleIngredientQuantity(parsed, baseServings, targetServings);
-        const formatted = formatScaledAmount(scaled.amount, scaled.unit);
+        const formatted = formatScaledQuantityAmount(scaled.amount, scaled.unit);
         if (formatted !== null) {
           return [formatted, formatDisplayUnit(scaled.unit, scaled.amount), scaled.note].filter(Boolean).join(" ");
         }
@@ -170,7 +211,7 @@ export function displayIngredientQuantity(item, baseServings, targetServings) {
     return parts.join(" ") || (scaled.originalText ?? "");
   }
 
-  const formatted = formatScaledAmount(scaled.amount, scaled.unit);
+  const formatted = formatScaledQuantityAmount(scaled.amount, scaled.unit);
   return [formatted ?? String(scaled.amount), formatDisplayUnit(scaled.unit, scaled.amount), scaled.note].filter(Boolean).join(" ");
 }
 

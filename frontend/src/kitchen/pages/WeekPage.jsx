@@ -103,15 +103,6 @@ function EyeIcon(props) {
     </svg>
   );
 }
-function InfoIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M12 10.5v5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <circle cx="12" cy="7.8" r="1.1" fill="currentColor" />
-    </svg>
-  );
-}
 function SwapIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
@@ -279,7 +270,6 @@ export default function WeekPage() {
   const [leftoverLoadingByDay, setLeftoverLoadingByDay] = useState({});
   const [assigneeOpen, setAssigneeOpen] = useState({});
   const [moveTargetByDay, setMoveTargetByDay] = useState({});
-  const [infoOpenByDay, setInfoOpenByDay] = useState({});
   const [swapDialogDay, setSwapDialogDay] = useState(null);
   const [swapTargetDate, setSwapTargetDate] = useState("");
   const [swapBusy, setSwapBusy] = useState(false);
@@ -2408,57 +2398,6 @@ export default function WeekPage() {
                   <div className="kitchen-day-view">
                     <div className="kitchen-day-dish-row">
                       <div className="kitchen-day-dish-display">{displayDishName || "Sin plato"}</div>
-                      {isPlanned ? (
-                        <div className="kitchen-day-title-info-wrap">
-                          {(() => {
-                            const hasRecipe = Boolean(mainDish?.recipe && (mainDish.recipe.ingredients?.length > 0 || mainDish.recipe.steps));
-                            return hasRecipe ? (
-                              <button
-                                type="button"
-                                className="kitchen-day-title-info-action has-recipe"
-                                onClick={() => setRecipeModal({ dish: mainDish, servings: attendeeCount || null })}
-                                aria-label="Ver elaboración"
-                                title="Ver elaboración"
-                              >
-                                <BookIcon />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="kitchen-day-title-info-action"
-                                onClick={() => setInfoOpenByDay((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }))}
-                                aria-label="Ver ingredientes del plato"
-                                title="Ver ingredientes"
-                              >
-                                <InfoIcon />
-                              </button>
-                            );
-                          })()}
-                          {infoOpenByDay[dayKey] ? (
-                            <div className="kitchen-day-info-popover is-title" role="dialog" aria-label="Detalles del día">
-                              <strong>Ingredientes</strong>
-                              <ul>
-                                {baseIngredients.length ? baseIngredients.map((item) => (
-                                  <li key={item.ingredientId || item.canonicalName || item.displayName}>
-                                    {item.displayName}
-                                  </li>
-                                )) : <li>Sin ingredientes base</li>}
-                                {extraIngredients.length && extrasOn ? extraIngredients.map((item) => (
-                                  <li key={`extra-${item.ingredientId || item.canonicalName || item.displayName}`}>
-                                    + {item.displayName}
-                                  </li>
-                                )) : null}
-                              </ul>
-                              <strong>Comensales</strong>
-                              <ul>
-                                {dayAttendeeNames.length ? dayAttendeeNames.map((name, idx) => (
-                                  <li key={`attendee-${idx}-${name}`}>{name}</li>
-                                )) : <li>Sin comensales</li>}
-                              </ul>
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : null}
                     </div>
                     {!isPlanned && canShowAssignCta ? (
                       <div className="kitchen-day-assign-actions">
@@ -2497,6 +2436,15 @@ export default function WeekPage() {
                             {dayAttendanceBusy[dayKey] ? "Actualizando..." : isSelfAttending ? "Como" : "No como"}
                           </span>
                         </label>
+                        <button
+                          type="button"
+                          className="kitchen-day-icon-action kitchen-day-recipe-action"
+                          onClick={() => setRecipeModal({ dish: mainDish, servings: attendeeCount || null })}
+                          aria-label="Ver receta e ingredientes"
+                          title="Ver receta e ingredientes"
+                        >
+                          <BookIcon />
+                        </button>
                         {canEdit ? (
                           <button
                             type="button"

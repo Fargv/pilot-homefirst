@@ -7537,15 +7537,15 @@ body {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   overflow: hidden;
 }
 
 .kitchen-day-icon-action {
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
-  border-radius: 14px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.45);
   background: rgba(255, 255, 255, 0.86);
   color: #334155;
@@ -7568,6 +7568,12 @@ body {
 .kitchen-day-icon-action:hover {
   background: #ffffff;
   border-color: rgba(99, 102, 241, 0.55);
+}
+
+.kitchen-day-recipe-action {
+  color: #4338ca;
+  border-color: rgba(99, 102, 241, 0.34);
+  background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
 }
 
 .kitchen-day-info-popover {
@@ -7982,14 +7988,14 @@ body {
   }
 
   .kitchen-day-footer {
-    gap: 8px 10px;
+    gap: 7px;
     padding: 7px 0 1px;
   }
 
   .kitchen-day-icon-action {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
     border-radius: 11px;
   }
 
@@ -17927,7 +17933,7 @@ td.recipe-qty-scaled {
 
 /* ── Shared CTAs ─────────────────────────────────────────────────────────── */
 .cooking-cta {
-  background: var(--hf-brand, #4f46e5);
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 52%, #7c3aed 100%);
   color: #ffffff;
   border: none;
   border-radius: 18px;
@@ -17945,7 +17951,7 @@ td.recipe-qty-scaled {
   font-family: inherit;
 }
 .cooking-cta:hover {
-  background: var(--hf-brand-dark, #4338ca);
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 52%, #6d28d9 100%);
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
 }
@@ -18255,10 +18261,18 @@ td.recipe-qty-scaled {
 
 /* ── RecipeModal execute button ──────────────────────────────────────────── */
 .recipe-modal-execute-wrap {
-  padding: 16px 2px 8px;
+  padding: 14px 0 18px;
 }
 .recipe-modal-execute-btn {
   font-size: 16px;
+  min-height: 52px;
+}
+.recipe-modal-missing-recipe {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-muted, #f8fafc);
+  border: 1px solid var(--hf-border, #e2e8f0);
 }
 
 /* ── Dark mode ───────────────────────────────────────────────────────────── */

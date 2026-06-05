@@ -17,9 +17,30 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
 
   if (!dish) return null;
 
-  const ingredients = recipe.ingredients || [];
-  const steps = recipe.steps || null;
-  const hasContent = ingredients.length > 0 || steps;
+  const recipeIngredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+  const fallbackIngredients = recipeIngredients.length
+    ? []
+    : (Array.isArray(dish.ingredients) ? dish.ingredients : []).map((item) => ({
+        name: item.displayName || item.name || item.canonicalName || "",
+        quantity: "",
+        ingredientId: item.ingredientId || null,
+      })).filter((item) => item.name);
+  const ingredients = recipeIngredients.length ? recipeIngredients : fallbackIngredients;
+  const steps = recipe.elaboration ?? recipe.steps ?? null;
+  const hasRecipeContent = recipeIngredients.length > 0 || Boolean(steps);
+  const hasContent = ingredients.length > 0 || Boolean(steps);
+
+  const executeAction = hasRecipeContent ? (
+    <div className="recipe-modal-execute-wrap">
+      <button
+        type="button"
+        className="cooking-cta recipe-modal-execute-btn"
+        onClick={() => setShowExecution(true)}
+      >
+        Ejecutar receta
+      </button>
+    </div>
+  ) : null;
 
   return (
     <div
@@ -31,13 +52,13 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
         className="kitchen-modal recipe-modal"
         role="dialog"
         aria-modal="true"
-        aria-label={`Elaboración de ${dish.name || "plato"}`}
+        aria-label={`Elaboracion de ${dish.name || "plato"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="kitchen-modal-header">
           <div>
             <h3>{dish.name || "Receta"}</h3>
-            <p className="kitchen-muted">Elaboración del plato</p>
+            <p className="kitchen-muted">Elaboracion del plato</p>
           </div>
           <button
             type="button"
@@ -59,31 +80,27 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
 
         <div style={{ padding: "0 2px" }}>
           {hasContent ? (
-            <RecipeEditor
-              recipeIngredients={ingredients}
-              recipeSteps={steps}
-              recipeServings={recipe.servings ?? null}
-              recipeBaseServings={baseServings}
-              targetServings={selectedServings}
-              onTargetServingsChange={setSelectedServings}
-              readOnly={true}
-            />
+            <>
+              <RecipeEditor
+                recipeIngredients={ingredients}
+                recipeSteps={steps}
+                recipeServings={recipe.servings ?? null}
+                recipeBaseServings={baseServings}
+                targetServings={selectedServings}
+                onTargetServingsChange={setSelectedServings}
+                actionAfterIngredients={executeAction}
+                readOnly
+              />
+              {!hasRecipeContent ? (
+                <p className="kitchen-muted recipe-modal-missing-recipe">
+                  Este plato todavia no tiene elaboracion guardada.
+                </p>
+              ) : null}
+            </>
           ) : (
-            <p className="kitchen-muted">Este plato aún no tiene elaboración.</p>
+            <p className="kitchen-muted">Este plato todavia no tiene elaboracion guardada.</p>
           )}
         </div>
-
-        {hasContent ? (
-          <div className="recipe-modal-execute-wrap">
-            <button
-              type="button"
-              className="cooking-cta recipe-modal-execute-btn"
-              onClick={() => setShowExecution(true)}
-            >
-              🍳 Ejecutar receta
-            </button>
-          </div>
-        ) : null}
       </div>
 
       {showExecution ? (
