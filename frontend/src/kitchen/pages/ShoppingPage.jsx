@@ -653,18 +653,28 @@ export default function ShoppingPage() {
     openPurchaseSessionRef.current = openPurchaseSession;
   }, [openPurchaseSession]);
 
-  const refreshList = async () => {
-    if (isDiodGlobalMode) return;
-    setIsRefreshing(true);
+  const markCategoryPurchased = async (group) => {
+    if (isDiodGlobalMode || !group?.items?.length) return;
+    setError("");
     try {
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/rebuild`, { method: "POST" });
-      applyPayload(data);
-      setSuccess("Lista reconstruida");
+      let lastData;
+      for (const item of group.items) {
+        // eslint-disable-next-line no-await-in-loop
+        lastData = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
+          method: "PUT",
+          body: JSON.stringify({
+            canonicalName: item.canonicalName,
+            ingredientId: item.ingredientId,
+            status: "purchased",
+            storeId: selectedStoreRef.current || null
+          })
+        });
+      }
+      if (lastData) applyPayload(lastData);
+      notifyWeekly("item_purchased", { itemKey: "batch" });
     } catch (err) {
-      logShoppingApiError("refreshList", `/api/kitchen/shopping/${weekStart}/rebuild`, err);
-      setError(err.message || "No se pudo refrescar la lista.");
-    } finally {
-      setIsRefreshing(false);
+      logShoppingApiError("markCategoryPurchased", `/api/kitchen/shopping/${weekStart}/item`, err);
+      setError(err.message || "No se pudo marcar la categoría.");
     }
   };
 
@@ -1131,71 +1141,23 @@ export default function ShoppingPage() {
       <div className="shopping-page-shell">
         <div className="kitchen-card shopping-main-card">
           <div className="shopping-header-card">
-            {/* Title + icon actions */}
+            {/* Title + budget chip */}
             <div className="shopping-header-row">
-              <div className="shopping-header-title">
+              <div className="shopping-header-title-area">
                 <h1>Lista de la compra</h1>
-              </div>
-              <div className="shopping-header-actions">
-                <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
-                  <RefreshIcon className="shopping-week-arrow-icon" />
-                </button>
-                <ShareWhatsAppButton
-                  iconOnly
-                  size={20}
-                  className="kitchen-tab-share-button"
-                  buttonLabel="Compartir lista"
-                  title="Compartir en HomeFirst"
-                  items={[
-                    {
-                      id: "shopping-list",
-                      label: "Compartir esta lista",
-                      description: "Comparte la lista de la compra de esta semana con acceso protegido.",
-                      url: buildShoppingShareUrl(weekStart),
-                      message: `Here is the shopping list in HomeFirst: ${buildShoppingShareUrl(weekStart)}`
-                    }
-                  ]}
-                />
-                <div className="shopping-overflow-wrapper" ref={overflowMenuRef}>
+                {budgetFeatureEnabled === true ? (
                   <button
                     type="button"
-                    className="shopping-overflow-btn"
-                    onClick={() => setOverflowMenuOpen((v) => !v)}
-                    aria-label="Más acciones"
-                    aria-expanded={overflowMenuOpen}
+                    className="shopping-budget-title-chip"
+                    onClick={() => setBudgetExpanded((v) => !v)}
+                    aria-expanded={budgetExpanded}
                   >
-                    <DotsIcon style={{ width: 18, height: 18 }} />
+                    <span className="shopping-budget-title-chip-text">
+                      {formatCurrency(budget?.spent)} / {formatCurrency(budget?.weeklyBudget)}
+                    </span>
+                    <ChevronSmallIcon className={`shopping-budget-toggle-chevron${budgetExpanded ? " is-up" : ""}`} />
                   </button>
-                  {overflowMenuOpen ? (
-                    <div className="shopping-overflow-menu" role="menu">
-                      {tab === "pending" ? (
-                        <button
-                          type="button"
-                          className="shopping-overflow-item"
-                          role="menuitem"
-                          onClick={() => { void setAllItemsStatus("purchased"); setOverflowMenuOpen(false); }}
-                        >
-                          Marcar todo comprado
-                        </button>
-                      ) : null}
-                      {tab === "purchased" ? (
-                        <button
-                          type="button"
-                          className="shopping-overflow-item"
-                          role="menuitem"
-                          onClick={() => {
-                            if (window.confirm("¿Desmarcar todo lo comprado de esta semana?")) {
-                              void setAllItemsStatus("pending");
-                            }
-                            setOverflowMenuOpen(false);
-                          }}
-                        >
-                          Desmarcar todo
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
+                ) : null}
               </div>
             </div>
 
@@ -1239,18 +1201,9 @@ export default function ShoppingPage() {
               </div>
             </div>
 
-            {/* Budget: discrete toggle chip + collapsible (200ms ease-out) */}
+            {/* Budget: collapsible triggered by title chip */}
             {budgetFeatureEnabled === true ? (
               <div className="shopping-budget-section">
-                <button
-                  type="button"
-                  className="shopping-budget-toggle-chip"
-                  onClick={() => setBudgetExpanded((v) => !v)}
-                  aria-expanded={budgetExpanded}
-                >
-                  <span>Ver presupuesto</span>
-                  <ChevronSmallIcon className={`shopping-budget-toggle-chevron${budgetExpanded ? " is-up" : ""}`} />
-                </button>
                 <div className={`shopping-budget-collapsible${budgetExpanded ? " is-open" : ""}`}>
                   <div className="shopping-budget-collapsible-inner">
                     <div className="shopping-budget-row">
@@ -1267,6 +1220,22 @@ export default function ShoppingPage() {
                         <strong className="shopping-budget-amount">{formatCurrency(budget?.available)}</strong>
                       </button>
                     </div>
+                    <div className="shopping-budget-share-row">
+                      <ShareWhatsAppButton
+                        size={16}
+                        className="shopping-budget-share-btn"
+                        buttonLabel="Compartir lista"
+                        items={[
+                          {
+                            id: "shopping-list",
+                            label: "Compartir esta lista",
+                            description: "Comparte la lista de la compra de esta semana con acceso protegido.",
+                            url: buildShoppingShareUrl(weekStart),
+                            message: `Aquí tienes la lista de la compra en HomeFirst: ${buildShoppingShareUrl(weekStart)}`
+                          }
+                        ]}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1275,38 +1244,39 @@ export default function ShoppingPage() {
             {/* Prominent add input — primary action of the page */}
             {tab === "pending" ? (
               <div className="shopping-add-row">
-                <div className="shopping-add-wrapper" role="region" aria-label="Añadir ingrediente">
-                  <input
-                    ref={quickInputRef}
-                    className="kitchen-input shopping-add-input"
-                    value={quickQuery}
-                    onChange={(event) => setQuickQuery(event.target.value)}
-                    placeholder="¿Qué necesitas comprar?"
-                  />
+                <div className="shopping-add-split">
+                  <div className="shopping-add-wrapper" role="region" aria-label="Añadir ingrediente">
+                    <input
+                      ref={quickInputRef}
+                      className="kitchen-input shopping-add-input"
+                      value={quickQuery}
+                      onChange={(event) => setQuickQuery(event.target.value)}
+                      placeholder="¿Qué necesitas comprar?"
+                    />
+                    {quickQuery ? (
+                      <div className="shopping-quick-suggestions">
+                        {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
+                        {!quickSearching ? quickSuggestions.slice(0, 8).map((item) => (
+                          <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => handleQuickSelect(item)} disabled={quickBusy}>
+                            <span className="kitchen-suggestion-name">{item.name}</span>
+                          </button>
+                        )) : null}
+                        {!quickSearching && !hasExactSuggestion && quickQuery.trim() ? (
+                          <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={openQuickCreateModal} disabled={quickBusy}>
+                            Crear "{quickQuery.trim()}"
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
                   <button
                     type="button"
-                    className="shopping-basics-icon-btn"
+                    className="shopping-basics-btn"
                     onClick={() => setBasicsPopupOpen(true)}
-                    title="Básicos de compra"
                     aria-label="Añadir básicos de compra"
                   >
-                    🧺
+                    Añadir básicos
                   </button>
-                  {quickQuery ? (
-                    <div className="shopping-quick-suggestions">
-                      {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
-                      {!quickSearching ? quickSuggestions.slice(0, 8).map((item) => (
-                        <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => handleQuickSelect(item)} disabled={quickBusy}>
-                          <span className="kitchen-suggestion-name">{item.name}</span>
-                        </button>
-                      )) : null}
-                      {!quickSearching && !hasExactSuggestion && quickQuery.trim() ? (
-                        <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={openQuickCreateModal} disabled={quickBusy}>
-                          Crear "{quickQuery.trim()}"
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -1365,7 +1335,19 @@ export default function ShoppingPage() {
                 const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
                 return (
                   <div className="shopping-category-card" key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name} style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}>
-                    <div className="shopping-category-head"><h4>{category.name.toUpperCase()}</h4><span className="shopping-category-count">{group.items.length} items</span></div>
+                    <div className="shopping-category-head">
+                      <h4>{category.name.toUpperCase()}</h4>
+                      <div className="shopping-category-head-right">
+                        <button
+                          type="button"
+                          className="shopping-category-mark-all"
+                          onClick={() => markCategoryPurchased(group)}
+                        >
+                          Marcar todos
+                        </button>
+                        <span className="shopping-category-count">{group.items.length} items</span>
+                      </div>
+                    </div>
                     <div className="shopping-items-list">
                       {group.items.map((item) => {
                         const key = itemKey(item);

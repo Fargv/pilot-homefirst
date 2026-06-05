@@ -18226,6 +18226,152 @@ td.recipe-qty-scaled {
   color: #4f46e5;
 }
 
+/* ── Title area: h1 + inline budget chip ── */
+.shopping-header-title-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.shopping-budget-title-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(199, 210, 254, 0.7);
+  background: rgba(238, 242, 255, 0.75);
+  color: #4338ca;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.shopping-budget-title-chip:hover {
+  background: rgba(238, 242, 255, 0.98);
+  border-color: rgba(99, 102, 241, 0.42);
+}
+.shopping-budget-title-chip:active {
+  transform: scale(0.97);
+}
+.shopping-budget-title-chip:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.3);
+  outline-offset: 2px;
+}
+.shopping-budget-title-chip .shopping-budget-toggle-chevron {
+  width: 13px;
+  height: 13px;
+  opacity: 0.7;
+}
+
+@media (max-width: 600px) {
+  .shopping-header-title-area {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .shopping-budget-title-chip {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+[data-theme="dark"] .shopping-budget-title-chip {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.28);
+  color: #818cf8;
+}
+[data-theme="dark"] .shopping-budget-title-chip:hover {
+  background: rgba(99, 102, 241, 0.18);
+}
+
+/* ── Budget share row inside collapsible ── */
+.shopping-budget-share-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft, #e4e7ec);
+  display: flex;
+  justify-content: flex-start;
+}
+
+.shopping-budget-share-btn {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .shopping-budget-share-row {
+  border-top-color: var(--border-soft);
+}
+
+/* ── Add row: input + basics button side by side ── */
+.shopping-add-split {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.shopping-add-split .shopping-add-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+.shopping-add-split .shopping-basics-btn {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+/* ── Per-category "Marcar todos" ── */
+.shopping-category-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shopping-category-mark-all {
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #667085);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 7px;
+  border-radius: 7px;
+  font-family: inherit;
+  line-height: 1;
+  transition: background 0.15s ease, color 0.15s ease;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.shopping-category-mark-all:hover {
+  background: rgba(99, 102, 241, 0.09);
+  color: var(--hf-brand, #4f46e5);
+}
+.shopping-category-mark-all:active {
+  transform: scale(0.96);
+}
+.shopping-category-mark-all:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 2px;
+}
+
+[data-theme="dark"] .shopping-category-mark-all {
+  color: rgba(255, 255, 255, 0.45);
+}
+[data-theme="dark"] .shopping-category-mark-all:hover {
+  background: rgba(99, 102, 241, 0.14);
+  color: #818cf8;
+}
+
 /* ── Budget section: chip + collapsible ── */
 .shopping-budget-section {
   display: flex;
