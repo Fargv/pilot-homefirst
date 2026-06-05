@@ -134,6 +134,15 @@ function ChevronSmallIcon({ className, ...props }) {
   );
 }
 
+function EuroIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M17 6.5A7 7 0 1 0 17 17.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      <path d="M5 10h8M5 14h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
 function addDaysToISO(iso, days) {
   const date = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return getCurrentWeekStart();
@@ -285,7 +294,7 @@ export default function ShoppingPage() {
   const [basicsPopupOpen, setBasicsPopupOpen] = useState(false);
   const [basicsToast, setBasicsToast] = useState("");
   const basicsToastTimerRef = useRef(null);
-  const [budgetExpanded, setBudgetExpanded] = useState(false);
+  const [budgetModalOpen, setBudgetModalOpen] = useState(false);
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
   const overflowMenuRef = useRef(null);
   const weekDirRef = useRef(null);
@@ -1141,23 +1150,27 @@ export default function ShoppingPage() {
       <div className="shopping-page-shell">
         <div className="kitchen-card shopping-main-card">
           <div className="shopping-header-card">
-            {/* Title + budget chip */}
+            {/* Title + WhatsApp */}
             <div className="shopping-header-row">
               <div className="shopping-header-title-area">
                 <h1>Lista de la compra</h1>
-                {budgetFeatureEnabled === true ? (
-                  <button
-                    type="button"
-                    className="shopping-budget-title-chip"
-                    onClick={() => setBudgetExpanded((v) => !v)}
-                    aria-expanded={budgetExpanded}
-                  >
-                    <span className="shopping-budget-title-chip-text">
-                      {formatCurrency(budget?.spent)} / {formatCurrency(budget?.weeklyBudget)}
-                    </span>
-                    <ChevronSmallIcon className={`shopping-budget-toggle-chevron${budgetExpanded ? " is-up" : ""}`} />
-                  </button>
-                ) : null}
+              </div>
+              <div className="shopping-header-actions-right">
+                <ShareWhatsAppButton
+                  iconOnly
+                  size={20}
+                  className="shopping-header-wa-btn"
+                  buttonLabel="Compartir lista de la compra"
+                  items={[
+                    {
+                      id: "shopping-list",
+                      label: "Compartir esta lista",
+                      description: "Comparte la lista de la compra de esta semana con acceso protegido.",
+                      url: buildShoppingShareUrl(weekStart),
+                      message: `Aquí tienes la lista de la compra en HomeFirst: ${buildShoppingShareUrl(weekStart)}`
+                    }
+                  ]}
+                />
               </div>
             </div>
 
@@ -1201,43 +1214,20 @@ export default function ShoppingPage() {
               </div>
             </div>
 
-            {/* Budget: collapsible triggered by title chip */}
+            {/* Budget: subtle inline row + modal trigger */}
             {budgetFeatureEnabled === true ? (
-              <div className="shopping-budget-section">
-                <div className={`shopping-budget-collapsible${budgetExpanded ? " is-open" : ""}`}>
-                  <div className="shopping-budget-collapsible-inner">
-                    <div className="shopping-budget-row">
-                      <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
-                        <span className="shopping-budget-label">Budget semanal</span>
-                        <strong className="shopping-budget-amount">{formatCurrency(budget?.weeklyBudget)}</strong>
-                      </button>
-                      <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--spent" onClick={openWeeklyBudgetPanel}>
-                        <span className="shopping-budget-label">Gastado esta semana</span>
-                        <strong className="shopping-budget-amount">{formatCurrency(budget?.spent)}</strong>
-                      </button>
-                      <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--available" onClick={openWeeklyBudgetPanel}>
-                        <span className="shopping-budget-label">Disponible</span>
-                        <strong className="shopping-budget-amount">{formatCurrency(budget?.available)}</strong>
-                      </button>
-                    </div>
-                    <div className="shopping-budget-share-row">
-                      <ShareWhatsAppButton
-                        size={16}
-                        className="shopping-budget-share-btn"
-                        buttonLabel="Compartir lista"
-                        items={[
-                          {
-                            id: "shopping-list",
-                            label: "Compartir esta lista",
-                            description: "Comparte la lista de la compra de esta semana con acceso protegido.",
-                            url: buildShoppingShareUrl(weekStart),
-                            message: `Aquí tienes la lista de la compra en HomeFirst: ${buildShoppingShareUrl(weekStart)}`
-                          }
-                        ]}
-                      />
-                    </div>
-                  </div>
-                </div>
+              <div className="shopping-budget-inline-row">
+                <span className="shopping-budget-inline-text">
+                  Gastado: <strong>{formatCurrency(budget?.spent)}</strong> de {formatCurrency(budget?.weeklyBudget)}
+                </span>
+                <button
+                  type="button"
+                  className="shopping-budget-modal-trigger"
+                  onClick={() => setBudgetModalOpen(true)}
+                  aria-label="Ver desglose del presupuesto"
+                >
+                  <EuroIcon style={{ width: 14, height: 14 }} />
+                </button>
               </div>
             ) : null}
 
@@ -1275,7 +1265,7 @@ export default function ShoppingPage() {
                     onClick={() => setBasicsPopupOpen(true)}
                     aria-label="Añadir básicos de compra"
                   >
-                    Añadir básicos
+                    + Añadir mis básicos
                   </button>
                 </div>
               </div>
@@ -1761,6 +1751,45 @@ export default function ShoppingPage() {
       {basicsToast ? (
         <div className="basics-toast" role="status" aria-live="polite" onClick={() => setBasicsToast("")}>
           {basicsToast}
+        </div>
+      ) : null}
+
+      {/* Budget breakdown modal */}
+      {budgetModalOpen ? (
+        <div className="shopping-budget-modal-backdrop" role="presentation" onClick={() => setBudgetModalOpen(false)}>
+          <div
+            className="shopping-budget-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Desglose del presupuesto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="shopping-budget-modal-header">
+              <h3 className="shopping-budget-modal-title">Presupuesto semanal</h3>
+              <button
+                type="button"
+                className="shopping-budget-modal-close"
+                onClick={() => setBudgetModalOpen(false)}
+                aria-label="Cerrar"
+              >
+                <CloseIcon style={{ width: 18, height: 18 }} />
+              </button>
+            </div>
+            <div className="shopping-budget-row">
+              <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={() => { setBudgetModalOpen(false); openWeeklyBudgetPanel(); }}>
+                <span className="shopping-budget-label">Budget semanal</span>
+                <strong className="shopping-budget-amount">{formatCurrency(budget?.weeklyBudget)}</strong>
+              </button>
+              <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--spent" onClick={() => { setBudgetModalOpen(false); openWeeklyBudgetPanel(); }}>
+                <span className="shopping-budget-label">Gastado esta semana</span>
+                <strong className="shopping-budget-amount">{formatCurrency(budget?.spent)}</strong>
+              </button>
+              <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--available" onClick={() => { setBudgetModalOpen(false); openWeeklyBudgetPanel(); }}>
+                <span className="shopping-budget-label">Disponible</span>
+                <strong className="shopping-budget-amount">{formatCurrency(budget?.available)}</strong>
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </KitchenLayout>
