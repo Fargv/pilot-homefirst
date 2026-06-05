@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import RecipeEditor from "./RecipeEditor.jsx";
 import { useCookingSession } from "../contexts/CookingSessionContext.jsx";
-import { getInitialServings, getRecipeBaseServings } from "../utils/recipeScaling.js";
+import { getInitialServings, getRecipeBaseServings, displayIngredientQuantity } from "../utils/recipeScaling.js";
 import { estimateTotalDuration, formatDuration, parseRecipeSteps } from "../utils/recipeStepParser.js";
 
 export default function RecipeModal({ dish, targetServings = null, onClose }) {
@@ -146,7 +146,7 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
                     {ingredients.map((ing, idx) => (
                       <li key={idx} className="recipe-modal-ingredient-row">
                         {ing.quantity ? (
-                          <span className="recipe-modal-ingredient-qty">{ing.quantity}</span>
+                          <span className="recipe-modal-ingredient-qty">{displayIngredientQuantity(ing, 1, 1)}</span>
                         ) : null}
                         <span>{ing.name}</span>
                       </li>
