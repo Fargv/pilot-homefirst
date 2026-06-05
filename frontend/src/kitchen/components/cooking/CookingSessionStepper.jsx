@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useCookingSession } from "../../contexts/CookingSessionContext.jsx";
 import RecipeStepCard from "./RecipeStepCard.jsx";
 import { formatDuration } from "../../utils/recipeStepParser.js";
+import { displayIngredientQuantity } from "../../utils/recipeScaling.js";
 
 // ─── Completion screen ────────────────────────────────────────────────────────
 
@@ -83,6 +84,7 @@ function ChevronDown() {
 
 export default function CookingSessionStepper() {
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [ingredientPanelOpen, setIngredientPanelOpen] = useState(false);
   const {
     session,
     isStepperOpen,
@@ -122,7 +124,7 @@ export default function CookingSessionStepper() {
 
   if (!session || !isStepperOpen) return null;
 
-  const { steps, currentStepIndex, completedSteps, timers, isComplete, recipeName, selectedServings } = session;
+  const { steps, currentStepIndex, completedSteps, timers, isComplete, recipeName, selectedServings, ingredients, baseServings } = session;
 
   const pausedTimerCount = Object.values(timers || {}).filter((t) => t.status === "paused").length;
   const currentStep = steps[currentStepIndex];
@@ -176,6 +178,20 @@ export default function CookingSessionStepper() {
                   ⏸ {pausedTimerCount} en pausa
                 </span>
               )}
+              {ingredients && ingredients.length > 0 ? (
+                <button
+                  type="button"
+                  className="cooking-stepper-ingredients-btn"
+                  onClick={() => setIngredientPanelOpen((v) => !v)}
+                  aria-label="Ver ingredientes"
+                  aria-expanded={ingredientPanelOpen}
+                >
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 5h14M3 10h14M3 15h8" />
+                  </svg>
+                  Ver ingredientes
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="cooking-stepper-cancel"
@@ -233,6 +249,39 @@ export default function CookingSessionStepper() {
             ))}
           </div>
 
+          {/* ── Ingredient panel (timers keep running) ── */}
+          {ingredientPanelOpen && ingredients && ingredients.length > 0 ? (
+            <div className="cooking-ingredients-panel" role="dialog" aria-label="Ingredientes de la receta">
+              <div className="cooking-ingredients-panel-header">
+                <div>
+                  <h3 className="cooking-ingredients-panel-title">Ingredientes</h3>
+                  <p className="cooking-ingredients-panel-sub">Para {selectedServings} {selectedServings === 1 ? "persona" : "personas"}</p>
+                </div>
+                <button
+                  type="button"
+                  className="cooking-ingredients-panel-close"
+                  onClick={() => setIngredientPanelOpen(false)}
+                  aria-label="Cerrar panel de ingredientes"
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6l-12 12" />
+                  </svg>
+                </button>
+              </div>
+              <ul className="cooking-ingredients-panel-list">
+                {ingredients.map((ing, idx) => {
+                  const qty = displayIngredientQuantity(ing, baseServings, selectedServings);
+                  return (
+                    <li key={idx} className="cooking-ingredients-panel-row">
+                      <span className="cooking-ingredients-panel-name">{ing.name}</span>
+                      {qty ? <span className="cooking-ingredients-panel-qty">{qty}</span> : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
+
           {/* ── Step area ── */}
           <div className="cooking-step-area">
             <RecipeStepCard
@@ -243,6 +292,9 @@ export default function CookingSessionStepper() {
               timers={timers}
               onTimerAction={timerAction}
               onToggleComplete={() => toggleStepComplete(currentStepIndex)}
+              allIngredients={ingredients || []}
+              baseServings={baseServings || 4}
+              selectedServings={selectedServings || 4}
             />
           </div>
 

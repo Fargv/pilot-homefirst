@@ -229,7 +229,9 @@ export function parseRecipeSteps(steps) {
         if (s.title)  base.title = s.title;
         if (s.tips)   base.tips  = s.tips;
         if (s.order != null) base.order = s.order;
-        if (Array.isArray(s.ingredients)) base.stepIngredients = s.ingredients;
+        // Support both field names: stepIngredients (canonical) and ingredients (legacy)
+        if (Array.isArray(s.stepIngredients)) base.stepIngredients = s.stepIngredients;
+        else if (Array.isArray(s.ingredients)) base.stepIngredients = s.ingredients;
 
         // Use explicit timer data when available (overrides auto-detection)
         const durationSec = s.durationSeconds > 0

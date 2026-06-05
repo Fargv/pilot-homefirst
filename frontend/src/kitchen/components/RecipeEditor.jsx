@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { detectStepIngredients } from "../utils/detectStepIngredients.js";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { apiRequest } from "../api.js";
 import StarterKit from "@tiptap/starter-kit";
@@ -470,6 +471,29 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
     { text: "", title: "", hasTimer: false, durationMinutes: null, durationSeconds: 0, timerLabel: "", tips: "", stepIngredients: [] }
   ]);
 
+  const autodetectStep = (i) => {
+    const step = steps[i];
+    const detected = detectStepIngredients(step.text || "", dishIngredients);
+    update(i, { stepIngredients: detected });
+  };
+
+  const autodetectAll = (onlyEmpty = true) => {
+    const next = steps.map((step) => {
+      const hasRefs = Array.isArray(step.stepIngredients) && step.stepIngredients.length > 0;
+      if (onlyEmpty && hasRefs) return step;
+      const detected = detectStepIngredients(step.text || "", dishIngredients);
+      return { ...step, stepIngredients: detected };
+    });
+    onChangeSteps(next);
+  };
+
+  const autodetectableCount = steps.filter((s) => {
+    if (!(Array.isArray(s.stepIngredients) && s.stepIngredients.length > 0)) {
+      return detectStepIngredients(s.text || "", dishIngredients).length > 0;
+    }
+    return false;
+  }).length;
+
   const getDurationMinutes = (step) => {
     if (step.durationMinutes != null) return step.durationMinutes;
     if (step.durationSeconds > 0) return +(step.durationSeconds / 60).toFixed(1);
@@ -543,11 +567,31 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
             </div>
 
             {dishIngredients.length > 0 && (
-              <div style={{ marginBottom: 8 }}>
-                <span className="guided-step-field-label" style={{ display: "block", marginBottom: 4 }}>
-                  Ingredientes del paso (opcional)
-                </span>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              <div className="guided-step-ing-section">
+                <div className="guided-step-ing-header">
+                  <span className="guided-step-field-label">Ingredientes del paso</span>
+                  <div className="guided-step-ing-actions">
+                    <button
+                      type="button"
+                      className="guided-step-ing-action-btn"
+                      onClick={() => autodetectStep(i)}
+                      title="Detectar ingredientes automáticamente para este paso"
+                    >
+                      Autodetectar
+                    </button>
+                    {(step.stepIngredients || []).length > 0 && (
+                      <button
+                        type="button"
+                        className="guided-step-ing-action-btn guided-step-ing-clear-btn"
+                        onClick={() => update(i, { stepIngredients: [] })}
+                        title="Quitar todos los ingredientes de este paso"
+                      >
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="guided-step-ing-chips">
                   {dishIngredients.map((ing, ingIdx) => {
                     const stepIngs = step.stepIngredients || [];
                     const isSelected = stepIngs.some(
@@ -557,17 +601,7 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
                       <button
                         key={ingIdx}
                         type="button"
-                        style={{
-                          padding: "3px 10px",
-                          borderRadius: 999,
-                          fontSize: 12,
-                          fontWeight: isSelected ? 600 : 400,
-                          border: `1px solid ${isSelected ? "#4f46e5" : "#d1d5db"}`,
-                          background: isSelected ? "#eef2ff" : "transparent",
-                          color: isSelected ? "#4338ca" : "#6b7280",
-                          cursor: "pointer",
-                          transition: "all 0.12s",
-                        }}
+                        className={`guided-step-ing-chip${isSelected ? " is-selected" : ""}`}
                         onClick={() => {
                           const next = isSelected
                             ? stepIngs.filter((si) => si.name.toLowerCase() !== ing.name.toLowerCase())
@@ -575,7 +609,12 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
                           update(i, { stepIngredients: next });
                         }}
                       >
-                        {isSelected ? "✓ " : ""}{ing.name}
+                        {isSelected ? (
+                          <svg viewBox="0 0 12 12" width="10" height="10" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        ) : null}
+                        {ing.name}
                       </button>
                     );
                   })}
@@ -618,9 +657,22 @@ function GuidedStepsEditor({ steps, onChangeSteps, dishIngredients = [] }) {
         </div>
       ))}
 
-      <button type="button" className="guided-step-add-btn" onClick={addStep}>
-        + Añadir paso
-      </button>
+      <div className="guided-steps-footer">
+        <button type="button" className="guided-step-add-btn" onClick={addStep}>
+          + Añadir paso
+        </button>
+        {dishIngredients.length > 0 && autodetectableCount > 0 ? (
+          <button
+            type="button"
+            className="guided-steps-autodetect-all-btn"
+            onClick={() => autodetectAll(true)}
+            title="Detectar ingredientes en todos los pasos que aún no tienen asignados"
+          >
+            Autodetectar ingredientes en todos los pasos
+            <span className="guided-steps-autodetect-count">{autodetectableCount} pasos</span>
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
