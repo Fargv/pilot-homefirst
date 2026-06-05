@@ -9197,6 +9197,14 @@ td.recipe-qty-scaled {
   color: var(--hf-brand, #4f46e5);
   text-align: center;
 }
+.recipe-modal-launch {
+  display: grid;
+  gap: 10px;
+}
+.recipe-modal-summary {
+  padding: 0;
+  justify-content: center;
+}
 
 @media (min-width: 560px) {
   .recipe-control-panel {
@@ -9218,9 +9226,12 @@ td.recipe-qty-scaled {
     text-align: left;
   }
 
-  .recipe-control-panel .recipe-modal-execute-wrap {
+  .recipe-control-panel .recipe-modal-launch {
     grid-column: 2;
     grid-row: 1 / span 2;
+  }
+  .recipe-modal-summary {
+    justify-content: flex-start;
   }
 }
 .recipe-servings-ctrl-row {
@@ -17797,6 +17808,43 @@ td.recipe-qty-scaled {
 .cooking-stepper-minimize:hover {
   background: var(--border-soft, #e4e7ec);
 }
+.cooking-stepper-cancel {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(239, 68, 68, 0.26);
+  background: rgba(254, 242, 242, 0.92);
+  color: #b91c1c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 13px;
+  transition: background 0.15s, border-color 0.15s, transform 0.12s;
+  white-space: nowrap;
+}
+.cooking-stepper-cancel:hover {
+  background: #fee2e2;
+  border-color: rgba(239, 68, 68, 0.44);
+}
+.cooking-stepper-cancel:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 520px) {
+  .cooking-stepper-header {
+    align-items: flex-start;
+  }
+  .cooking-stepper-header-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 152px;
+  }
+  .cooking-stepper-cancel {
+    order: 2;
+    min-height: 34px;
+    padding: 0 11px;
+  }
+}
 
 /* ── Progress bar ────────────────────────────────────────────────────────── */
 .cooking-progress-row {
@@ -18184,10 +18232,76 @@ td.recipe-qty-scaled {
 }
 
 /* ── Cooking session banner ──────────────────────────────────────────────── */
+.cooking-cancel-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.46);
+}
+.cooking-cancel-confirm {
+  width: min(420px, 100%);
+  border-radius: 22px;
+  border: 1px solid var(--border-soft, #e4e7ec);
+  background: var(--modal-bg, #ffffff);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+  padding: 22px;
+  animation: cooking-slide-up 0.22s ease both;
+}
+.cooking-cancel-confirm h3 {
+  margin: 0;
+  color: var(--text-primary, #1e293b);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.cooking-cancel-confirm p {
+  margin: 8px 0 0;
+  color: var(--text-secondary, #475569);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.cooking-cancel-confirm-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+.cooking-danger-btn {
+  min-height: 48px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  box-shadow: 0 12px 26px rgba(185, 28, 28, 0.22);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 0 18px;
+  transition: filter 0.16s, transform 0.12s, box-shadow 0.16s;
+}
+.cooking-danger-btn:hover {
+  filter: brightness(1.04);
+  box-shadow: 0 16px 32px rgba(185, 28, 28, 0.3);
+}
+.cooking-danger-btn:active {
+  transform: translateY(1px);
+}
+@media (min-width: 560px) {
+  .cooking-cancel-confirm-backdrop {
+    align-items: center;
+  }
+  .cooking-cancel-confirm-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 .cooking-banner {
   position: fixed;
-  /* sits above BottomNav (~74px) on mobile */
-  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  top: calc(72px + env(safe-area-inset-top, 0px));
+  bottom: auto;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1500;
@@ -18212,7 +18326,10 @@ td.recipe-qty-scaled {
   transform: translateX(-50%) translateY(-2px);
 }
 @media (min-width: 900px) {
-  .cooking-banner { bottom: 20px; }
+  .cooking-banner {
+    top: auto;
+    bottom: 20px;
+  }
 }
 .cooking-banner-icon { font-size: 20px; flex-shrink: 0; }
 .cooking-banner-content {
@@ -18436,6 +18553,15 @@ td.recipe-qty-scaled {
   color: #94a3b8;
 }
 [data-theme="dark"] .cooking-stepper-minimize:hover { background: #334155; }
+[data-theme="dark"] .cooking-stepper-cancel {
+  background: rgba(127, 29, 29, 0.18);
+  border-color: rgba(248, 113, 113, 0.22);
+  color: #fca5a5;
+}
+[data-theme="dark"] .cooking-stepper-cancel:hover {
+  background: rgba(127, 29, 29, 0.28);
+  border-color: rgba(248, 113, 113, 0.36);
+}
 [data-theme="dark"] .cooking-progress-label { color: #64748b; }
 [data-theme="dark"] .cooking-progress-bar   { background: #1e293b; }
 [data-theme="dark"] .cooking-step-dot       { border-color: #334155; }
@@ -18469,6 +18595,13 @@ td.recipe-qty-scaled {
   color: #94a3b8;
 }
 [data-theme="dark"] .cooking-btn-secondary:hover { background: #334155; }
+[data-theme="dark"] .cooking-cancel-confirm {
+  background: #0f172a;
+  border-color: #334155;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.58);
+}
+[data-theme="dark"] .cooking-cancel-confirm h3 { color: #f1f5f9; }
+[data-theme="dark"] .cooking-cancel-confirm p { color: #94a3b8; }
 [data-theme="dark"] .cooking-completion-title  { color: #f1f5f9; }
 [data-theme="dark"] .cooking-completion-recipe { color: #64748b; }
 [data-theme="dark"] .recipe-timer--idle {
@@ -18553,9 +18686,9 @@ td.recipe-qty-scaled {
 [data-theme="dark"] .recipe-structured-step-tips  { color: #64748b; }
 
 /* ── FAB: lift above minimized cooking banner ──────────────────────────────── */
-@media (max-width: 900px) {
+@media (min-width: 901px) {
   .has-cooking-banner .dishes-fab {
-    bottom: calc(78px + 64px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(20px + 64px);
   }
 }
 

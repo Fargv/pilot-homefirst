@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import RecipeEditor from "./RecipeEditor.jsx";
-import RecipeExecutionModal from "./cooking/RecipeExecutionModal.jsx";
+import { useCookingSession } from "../contexts/CookingSessionContext.jsx";
 import { getInitialServings, getRecipeBaseServings } from "../utils/recipeScaling.js";
+import { estimateTotalDuration, formatDuration, parseRecipeSteps } from "../utils/recipeStepParser.js";
 
 export default function RecipeModal({ dish, targetServings = null, onClose }) {
-  const [showExecution, setShowExecution] = useState(false);
+  const { startSession } = useCookingSession();
   const recipe = dish?.recipe || {};
   const baseServings = getRecipeBaseServings(recipe);
   const initialServings = targetServings ?? getInitialServings({ recipe, dish });
@@ -12,7 +13,6 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
 
   useEffect(() => {
     setSelectedServings(initialServings);
-    setShowExecution(false);
   }, [dish?._id, initialServings]);
 
   if (!dish) return null;
@@ -20,26 +20,58 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
   const recipeIngredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const fallbackIngredients = recipeIngredients.length
     ? []
-    : (Array.isArray(dish.ingredients) ? dish.ingredients : []).map((item) => ({
-        name: item.displayName || item.name || item.canonicalName || "",
-        quantity: "",
-        ingredientId: item.ingredientId || null,
-      })).filter((item) => item.name);
+    : (Array.isArray(dish.ingredients) ? dish.ingredients : [])
+        .map((item) => ({
+          name: item.displayName || item.name || item.canonicalName || "",
+          quantity: "",
+          ingredientId: item.ingredientId || null,
+        }))
+        .filter((item) => item.name);
   const ingredients = recipeIngredients.length ? recipeIngredients : fallbackIngredients;
   const steps = recipe.elaboration ?? recipe.steps ?? null;
+  const parsedSteps = parseRecipeSteps(steps);
+  const stepCount = parsedSteps?.length || 0;
+  const estimatedSec = parsedSteps ? estimateTotalDuration(parsedSteps) : null;
   const hasRecipeContent = recipeIngredients.length > 0 || Boolean(steps);
   const hasContent = ingredients.length > 0 || Boolean(steps);
 
+  const handleExecuteRecipe = () => {
+    startSession(dish, selectedServings);
+    onClose?.();
+  };
+
   const executeAction = hasRecipeContent ? (
-    <div className="recipe-modal-execute-wrap">
-      <button
-        type="button"
-        className="cooking-cta recipe-modal-execute-btn"
-        onClick={() => setShowExecution(true)}
-      >
-        <span aria-hidden="true">🍳</span>
-        Ejecutar receta
-      </button>
+    <div className="recipe-modal-launch">
+      <div className="cooking-execution-summary recipe-modal-summary" aria-label="Resumen de cocina">
+        {ingredients.length > 0 ? (
+          <div className="cooking-execution-chip">
+            <span className="cooking-execution-chip-icon" aria-hidden="true">🥕</span>
+            {ingredients.length} ingredientes
+          </div>
+        ) : null}
+        {stepCount > 0 ? (
+          <div className="cooking-execution-chip">
+            <span className="cooking-execution-chip-icon" aria-hidden="true">📋</span>
+            {stepCount} pasos
+          </div>
+        ) : null}
+        {estimatedSec ? (
+          <div className="cooking-execution-chip">
+            <span className="cooking-execution-chip-icon" aria-hidden="true">⏱</span>
+            ~{formatDuration(estimatedSec)}
+          </div>
+        ) : null}
+      </div>
+      <div className="recipe-modal-execute-wrap">
+        <button
+          type="button"
+          className="cooking-cta recipe-modal-execute-btn"
+          onClick={handleExecuteRecipe}
+        >
+          <span aria-hidden="true">🍳</span>
+          Ejecutar receta
+        </button>
+      </div>
     </div>
   ) : null;
 
@@ -103,15 +135,6 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
           )}
         </div>
       </div>
-
-      {showExecution ? (
-        <RecipeExecutionModal
-          dish={dish}
-          initialServings={selectedServings}
-          onClose={() => setShowExecution(false)}
-          onStart={onClose}
-        />
-      ) : null}
     </div>
   );
 }

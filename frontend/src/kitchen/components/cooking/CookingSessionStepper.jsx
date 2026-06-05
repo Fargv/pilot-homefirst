@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useCookingSession } from "../../contexts/CookingSessionContext.jsx";
 import RecipeStepCard from "./RecipeStepCard.jsx";
@@ -82,6 +82,7 @@ function ChevronDown() {
 // ─── Main stepper ─────────────────────────────────────────────────────────────
 
 export default function CookingSessionStepper() {
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const {
     session,
     isStepperOpen,
@@ -113,6 +114,12 @@ export default function CookingSessionStepper() {
     return () => window.removeEventListener("keydown", handler);
   }, [isStepperOpen, session, goToStep, minimizeStepper]);
 
+  useEffect(() => {
+    if (!isStepperOpen || !session) {
+      setCancelConfirmOpen(false);
+    }
+  }, [isStepperOpen, session]);
+
   if (!session || !isStepperOpen) return null;
 
   const { steps, currentStepIndex, completedSteps, timers, isComplete, recipeName, selectedServings } = session;
@@ -123,6 +130,11 @@ export default function CookingSessionStepper() {
   const isLast  = currentStepIndex === steps.length - 1;
 
   const handlePrev = () => goToStep(currentStepIndex - 1);
+
+  const handleConfirmCancel = () => {
+    setCancelConfirmOpen(false);
+    endSession();
+  };
 
   const handleNext = () => {
     if (!completedSteps.includes(currentStepIndex)) {
@@ -164,6 +176,13 @@ export default function CookingSessionStepper() {
                   ⏸ {pausedTimerCount} en pausa
                 </span>
               )}
+              <button
+                type="button"
+                className="cooking-stepper-cancel"
+                onClick={() => setCancelConfirmOpen(true)}
+              >
+                Cancelar
+              </button>
               <button
                 type="button"
                 className="cooking-stepper-minimize"
@@ -249,6 +268,37 @@ export default function CookingSessionStepper() {
               {!isLast && <ChevronRight />}
             </button>
           </div>
+
+          {cancelConfirmOpen ? (
+            <div className="cooking-cancel-confirm-backdrop" role="presentation">
+              <div
+                className="cooking-cancel-confirm"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="cooking-cancel-title"
+                aria-describedby="cooking-cancel-body"
+              >
+                <h3 id="cooking-cancel-title">¿Cancelar receta?</h3>
+                <p id="cooking-cancel-body">Se perderá el progreso de esta elaboración.</p>
+                <div className="cooking-cancel-confirm-actions">
+                  <button
+                    type="button"
+                    className="cooking-btn-secondary"
+                    onClick={() => setCancelConfirmOpen(false)}
+                  >
+                    Seguir cocinando
+                  </button>
+                  <button
+                    type="button"
+                    className="cooking-danger-btn"
+                    onClick={handleConfirmCancel}
+                  >
+                    Cancelar receta
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </>
       )}
     </div>

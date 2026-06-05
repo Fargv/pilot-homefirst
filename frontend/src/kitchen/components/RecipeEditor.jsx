@@ -735,7 +735,7 @@ export default function RecipeEditor({
                 onChange={handleDisplayServingsChange}
               />
             ) : null}
-            <p className="recipe-control-helper">Cantidad ajustada automaticamente</p>
+            <p className="recipe-control-helper">Cantidades ajustadas automáticamente</p>
             {actionAfterIngredients ? actionAfterIngredients : null}
           </div>
         ) : null}

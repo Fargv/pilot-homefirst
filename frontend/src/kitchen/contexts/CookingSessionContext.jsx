@@ -95,7 +95,7 @@ export function CookingSessionProvider({ children }) {
 
   const startSession = useCallback((dish, servings) => {
     const recipe = dish?.recipe || {};
-    const parsedSteps = parseRecipeSteps(recipe.steps);
+    const parsedSteps = parseRecipeSteps(recipe.elaboration ?? recipe.steps);
     const steps = parsedSteps?.length
       ? parsedSteps
       : [{ index: 0, text: "Esta receta no tiene pasos definidos.", html: null, detectedTimers: [] }];
