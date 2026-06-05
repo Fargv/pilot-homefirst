@@ -12215,11 +12215,262 @@ td.recipe-qty-scaled {
 .dishes-results-count {
   margin: 2px 2px 0;
   padding: 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-muted, #9ca3af);
   letter-spacing: 0.02em;
   line-height: 1.4;
+}
+
+/* ══ FILA DE CONTROLES ═══════════════════════════════════════════════════════
+   Single visible row: tabs + sliders icon + cenas toggle
+   ──────────────────────────────────────────────────────────────────────── */
+.dishes-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dishes-filters-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Sliders icon button */
+.dishes-sliders-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--hf-border);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  color: var(--text-secondary, #475569);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.dishes-sliders-btn:hover {
+  background: #eef2ff;
+  border-color: rgba(99, 102, 241, 0.35);
+  color: var(--hf-brand);
+}
+
+.dishes-sliders-btn.is-open {
+  background: #eef2ff;
+  border-color: rgba(99, 102, 241, 0.4);
+  color: var(--hf-brand);
+}
+
+.dishes-sliders-btn:focus-visible {
+  outline: 2px solid rgba(79, 70, 229, 0.4);
+  outline-offset: 2px;
+}
+
+.dishes-sliders-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--hf-brand);
+  border: 1.5px solid var(--surface, #fff);
+}
+
+/* Cenas toggle */
+.dishes-cenas-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  height: 38px;
+  border: 1px solid var(--hf-border);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  color: var(--text-secondary, #475569);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.dishes-cenas-toggle:hover {
+  background: #f8f9ff;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.dishes-cenas-toggle.is-on {
+  border-color: rgba(79, 70, 229, 0.35);
+  color: #3730a3;
+}
+
+.dishes-cenas-toggle:focus-visible {
+  outline: 2px solid rgba(79, 70, 229, 0.4);
+  outline-offset: 2px;
+}
+
+.dishes-cenas-track {
+  display: inline-block;
+  width: 30px;
+  height: 17px;
+  border-radius: 999px;
+  background: var(--border-strong, #cbd5e1);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.dishes-cenas-track.is-on {
+  background: var(--hf-brand);
+}
+
+.dishes-cenas-thumb {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: #fff;
+  top: 2px;
+  left: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease;
+}
+
+.dishes-cenas-track.is-on .dishes-cenas-thumb {
+  transform: translateX(13px);
+}
+
+/* ══ PANEL DE FILTROS ════════════════════════════════════════════════════════ */
+.dishes-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface-muted, #f8fafc);
+  border: 1px solid var(--hf-border);
+  animation: dishFilterPanelIn 150ms ease-out both;
+}
+
+@keyframes dishFilterPanelIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dishes-filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dishes-filter-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted, #9ca3af);
+  line-height: 1;
+}
+
+.dishes-filter-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dishes-filter-pills::-webkit-scrollbar { display: none; }
+
+.dishes-filter-pills--wrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+.dishes-filter-panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 2px;
+  border-top: 1px solid var(--hf-border);
+}
+
+.dishes-filter-clear-btn {
+  background: none;
+  border: none;
+  padding: 4px 2px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hf-brand);
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.dishes-filter-clear-btn:hover {
+  opacity: 0.75;
+}
+
+.dishes-filter-clear-btn:focus-visible {
+  outline: 2px solid rgba(79, 70, 229, 0.4);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .dishes-sliders-btn,
+[data-theme="dark"] .dishes-cenas-toggle {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-soft);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .dishes-sliders-btn:hover,
+[data-theme="dark"] .dishes-sliders-btn.is-open {
+  background: rgba(99, 102, 241, 0.14);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .dishes-cenas-toggle:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+[data-theme="dark"] .dishes-cenas-toggle.is-on {
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .dishes-sliders-dot {
+  border-color: var(--surface-elevated, #1e2235);
+}
+
+[data-theme="dark"] .dishes-cenas-track {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .dishes-cenas-track.is-on {
+  background: var(--hf-brand);
+}
+
+[data-theme="dark"] .dishes-filter-panel {
+  background: var(--surface-muted);
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .dishes-filter-panel-footer {
+  border-color: var(--border-soft);
 }
 
 /* ─── PWA Install Prompt ─────────────────────────────────────── */
