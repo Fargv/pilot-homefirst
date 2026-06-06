@@ -4545,8 +4545,8 @@ body {
 
 .shopping-header-card {
   display: grid;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 6px;
 }
 
 .shopping-header-row {
@@ -4708,8 +4708,8 @@ body {
 
 .shopping-toolbar-alerts {
   display: grid;
-  gap: 10px;
-  margin: 8px 0 12px;
+  gap: 6px;
+  margin: 4px 0 8px;
 }
 
 .shopping-store-select {
@@ -5287,7 +5287,7 @@ body {
   background: rgba(79, 70, 229, 0.05);
   border: 1px solid rgba(99, 102, 241, 0.16);
   border-radius: 10px;
-  margin: 0 0 2px;
+  margin: 0 0 8px;
   animation: shoppingBannerIn 300ms cubic-bezier(0.34, 1.15, 0.64, 1);
 }
 
@@ -5402,13 +5402,18 @@ body {
   width: 100%;
   height: 22px;
   border-radius: 999px;
-  background: rgba(79, 70, 229, 0.1);
+  background: linear-gradient(135deg, var(--hf-brand) 0%, var(--hf-brand-light) 100%);
   overflow: hidden;
   border: none;
   cursor: pointer;
   padding: 0;
   font-family: inherit;
   transition: opacity 0.15s ease;
+  opacity: 0.92;
+}
+
+.shopping-budget-pill-bar:hover {
+  opacity: 1;
 }
 
 .shopping-budget-pill-bar:hover {
@@ -5424,7 +5429,7 @@ body {
   position: absolute;
   inset: 0;
   right: auto;
-  background: linear-gradient(135deg, var(--hf-brand) 0%, var(--hf-brand-light) 100%);
+  background: rgba(255, 255, 255, 0.18);
   border-radius: 999px;
   transition: width 0.5s cubic-bezier(0.25, 0.85, 0.35, 1);
   min-width: 0;
@@ -5434,30 +5439,74 @@ body {
   position: relative;
   z-index: 1;
   font-size: 12px;
-  font-weight: 700;
-  color: var(--hf-brand);
+  color: #ffffff;
   letter-spacing: 0.01em;
   pointer-events: none;
   white-space: nowrap;
-  mix-blend-mode: normal;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
 }
 
-/* When fill covers text area, text switches to white via contrast */
-.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 5"]) .shopping-budget-pill-text,
-.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 6"]) .shopping-budget-pill-text,
-.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 7"]) .shopping-budget-pill-text,
-.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 8"]) .shopping-budget-pill-text,
-.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 9"]) .shopping-budget-pill-text,
-.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 100"]) .shopping-budget-pill-text {
-  color: #ffffff;
+.shopping-budget-pill-label {
+  font-weight: 400;
+  opacity: 0.82;
 }
 
-/* ── Week date trigger ── */
+.shopping-budget-pill-amount {
+  font-weight: 600;
+}
+
+/* ── Week date trigger with visible chevrons ── */
 .shopping-header-week-area {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+.shopping-week-nav-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 10px;
+  padding: 2px 4px;
+  transition: background 0.15s ease;
+}
+
+.shopping-week-nav-strip:hover {
+  background: rgba(79, 70, 229, 0.07);
+}
+
+.shopping-week-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--hf-brand);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+  padding: 0;
+}
+
+.shopping-week-chevron:hover {
+  background: rgba(79, 70, 229, 0.12);
+}
+
+.shopping-week-chevron:active {
+  background: rgba(79, 70, 229, 0.2);
+  transform: scale(0.92);
+}
+
+.shopping-week-chevron:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.4);
+  outline-offset: 1px;
+  border-radius: 6px;
 }
 
 .shopping-week-date-trigger {
@@ -5471,19 +5520,20 @@ body {
   font-size: 13px;
   font-weight: 600;
   color: var(--hf-brand);
-  padding: 2px 0;
-  transition: opacity 0.15s ease;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
   line-height: 1.4;
 }
 
 .shopping-week-date-trigger:hover {
-  opacity: 0.75;
+  background: rgba(79, 70, 229, 0.08);
 }
 
 .shopping-week-date-trigger:focus-visible {
   outline: 2px solid rgba(99, 102, 241, 0.4);
-  outline-offset: 3px;
-  border-radius: 4px;
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 .shopping-week-date-trigger svg {
@@ -5594,6 +5644,11 @@ body {
   padding: 0 16px !important;
   white-space: nowrap;
   font-size: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: linear-gradient(135deg, var(--hf-brand) 0%, var(--hf-brand-light) 100%) !important;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
   border-radius: 999px !important;
 }
 
@@ -5770,12 +5825,12 @@ body {
   border-color: var(--border-strong);
 }
 
-[data-theme="dark"] .shopping-budget-pill-bar {
-  background: rgba(99, 102, 241, 0.15);
+[data-theme="dark"] .shopping-week-chevron {
+  color: #818cf8;
 }
 
-[data-theme="dark"] .shopping-budget-pill-text {
-  color: #a5b4fc;
+[data-theme="dark"] .shopping-week-nav-strip:hover {
+  background: rgba(99, 102, 241, 0.12);
 }
 
 [data-theme="dark"] .shopping-global-mark-all {

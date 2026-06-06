@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Calendar, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Check, Plus } from "lucide-react";
 import { UNSAFE_NavigationContext as NavigationContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
@@ -1177,18 +1177,36 @@ export default function ShoppingPage() {
             <div className="shopping-header-top">
               <div className="shopping-header-left">
                 <h1 className="shopping-header-h1">Lista de la compra</h1>
-                {/* Row 2: tappable week date range */}
+                {/* Row 2: week navigator with visible chevrons */}
                 <div className="shopping-header-week-area" ref={weekPickerRef}>
-                  <button
-                    type="button"
-                    className="shopping-week-date-trigger"
-                    onClick={() => setWeekPickerOpen((v) => !v)}
-                    aria-label="Cambiar semana"
-                    aria-expanded={weekPickerOpen}
-                  >
-                    <Calendar size={13} />
-                    <span>{formatWeekRange(weekStart)}</span>
-                  </button>
+                  <div className="shopping-week-nav-strip">
+                    <button
+                      type="button"
+                      className="shopping-week-chevron"
+                      onClick={() => updateVisibleWeek((p) => addDaysToISO(p, -7))}
+                      aria-label="Semana anterior"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className="shopping-week-date-trigger"
+                      onClick={() => setWeekPickerOpen((v) => !v)}
+                      aria-label="Seleccionar semana"
+                      aria-expanded={weekPickerOpen}
+                    >
+                      <Calendar size={13} />
+                      <span>{formatWeekRange(weekStart)}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="shopping-week-chevron"
+                      onClick={() => updateVisibleWeek((p) => addDaysToISO(p, 7))}
+                      aria-label="Semana siguiente"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
                   {!isCurrentWeek ? (
                     <button
                       type="button"
@@ -1239,8 +1257,8 @@ export default function ShoppingPage() {
               />
             </div>
 
-            {/* Budget pill progress bar — full width, text overlay */}
-            {budgetFeatureEnabled === true ? (
+            {/* Budget pill — only when feature enabled AND budget configured */}
+            {budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (
               <button
                 type="button"
                 className="shopping-budget-pill-bar"
@@ -1250,13 +1268,12 @@ export default function ShoppingPage() {
                 <div
                   className="shopping-budget-pill-fill"
                   style={{
-                    width: budget?.weeklyBudget > 0
-                      ? `${Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100))}%`
-                      : "0%"
+                    width: `${Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100))}%`
                   }}
                 />
                 <span className="shopping-budget-pill-text">
-                  {formatCurrency(budget?.spent)} / {formatCurrency(budget?.weeklyBudget)}
+                  <span className="shopping-budget-pill-label">Presupuesto · </span>
+                  <span className="shopping-budget-pill-amount">{formatCurrency(budget.spent)} / {formatCurrency(budget.weeklyBudget)}</span>
                 </span>
               </button>
             ) : null}
@@ -1294,6 +1311,7 @@ export default function ShoppingPage() {
                   onClick={() => setBasicsPopupOpen(true)}
                   aria-label="Añadir básicos de compra"
                 >
+                  <Plus size={14} />
                   Básicos
                 </button>
               </div>
