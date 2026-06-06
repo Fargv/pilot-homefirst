@@ -1263,20 +1263,16 @@ export default function ShoppingPage() {
 
           {budgetFeatureEnabled && currentPurchaseSession && !dismissedBannerIds.has(String(currentPurchaseSession.id)) && !purchaseConfirmOpen && tab !== "sessions" ? (
             <div className="shopping-confirm-banner" role="status">
-              <div className="shopping-confirm-banner-info">
-                <strong className="shopping-confirm-banner-title">¿Cuánto has gastado?</strong>
-                <span className="shopping-confirm-banner-sub">
-                  {currentPurchaseSession.itemCount} producto{currentPurchaseSession.itemCount !== 1 ? "s" : ""}
-                  {currentPurchaseSession.storeName ? ` · ${currentPurchaseSession.storeName}` : ""}
-                </span>
-              </div>
+              <span className="shopping-confirm-banner-title">
+                🧾 {currentPurchaseSession.itemCount} producto{currentPurchaseSession.itemCount !== 1 ? "s" : ""} comprado{currentPurchaseSession.itemCount !== 1 ? "s" : ""}{currentPurchaseSession.storeName ? ` · ${currentPurchaseSession.storeName}` : ""} sin gasto registrado
+              </span>
               <div className="shopping-confirm-banner-actions">
                 <button
                   type="button"
                   className="kitchen-button is-small shopping-confirm-banner-btn"
                   onClick={() => openPurchaseConfirmModal(currentPurchaseSession)}
                 >
-                  Registrar gasto
+                  Registrar
                 </button>
                 <button
                   type="button"
