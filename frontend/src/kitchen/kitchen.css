@@ -5354,6 +5354,442 @@ body {
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   SHOPPING PAGE — REDESIGNED HEADER + FLAT LIST (2026-06)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Header top row: title+WA | budget widget ── */
+.shopping-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.shopping-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.shopping-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.shopping-header-title-row h1 {
+  margin: 0;
+  color: #27336a;
+  font-size: clamp(1.05rem, 2.1vw, 1.45rem);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.shopping-header-wa-compact {
+  min-width: 36px !important;
+  min-height: 36px !important;
+  width: 36px;
+  height: 36px;
+  padding: 0 !important;
+}
+
+/* ── Budget widget (right side of header) ── */
+.shopping-budget-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.shopping-budget-widget:hover {
+  opacity: 0.75;
+}
+
+.shopping-budget-widget-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.shopping-budget-widget-amount {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* ── Week date trigger ── */
+.shopping-header-week-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shopping-week-date-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hf-brand);
+  padding: 2px 0;
+  transition: opacity 0.15s ease;
+  line-height: 1.4;
+}
+
+.shopping-week-date-trigger:hover {
+  opacity: 0.75;
+}
+
+.shopping-week-date-trigger:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.4);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.shopping-week-date-trigger svg {
+  flex-shrink: 0;
+  color: var(--hf-brand);
+  opacity: 0.7;
+}
+
+.shopping-today-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: #eef2ff;
+  color: var(--hf-brand);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.shopping-today-chip:hover {
+  background: #e0e7ff;
+  border-color: rgba(99, 102, 241, 0.65);
+}
+
+/* ── Week picker popover ── */
+.shopping-week-picker-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(190, 201, 234, 0.92);
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgba(79, 94, 170, 0.16);
+  z-index: 20;
+  white-space: nowrap;
+  animation: shoppingBannerIn 200ms cubic-bezier(0.34, 1.15, 0.64, 1);
+}
+
+.shopping-week-picker-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.shopping-week-picker-arrow:hover {
+  background: #eef2ff;
+  border-color: rgba(99, 102, 241, 0.5);
+  color: var(--hf-brand);
+}
+
+.shopping-week-picker-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  text-align: center;
+}
+
+/* ── Budget progress bar ── */
+.shopping-budget-bar-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.12);
+  overflow: hidden;
+  margin: 0 -2px;
+}
+
+.shopping-budget-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--hf-brand);
+  transition: width 0.4s cubic-bezier(0.25, 0.85, 0.35, 1);
+  min-width: 0;
+}
+
+/* ── Add row: full-width input + centered basics button ── */
+.shopping-basics-btn-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.shopping-basics-btn-centered {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 24px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(99, 102, 241, 0.35);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(79, 70, 229, 0.04) 100%);
+  color: var(--hf-brand);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.shopping-basics-btn-centered:hover {
+  background: rgba(79, 70, 229, 0.1);
+  border-color: rgba(99, 102, 241, 0.55);
+}
+
+.shopping-basics-btn-centered:active {
+  transform: scale(0.97);
+}
+
+.shopping-basics-btn-centered:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 2px;
+}
+
+/* ── Flat category list (mobile default) ── */
+.shopping-categories-flat {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.shopping-category-flat-group {
+  padding-bottom: 24px;
+}
+
+.shopping-category-flat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 4px 8px;
+}
+
+.shopping-category-flat-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.shopping-items-flat-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.shopping-item-flat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 4px;
+  border-bottom: 1px solid var(--border-soft);
+  transition: transform 220ms ease, opacity 220ms ease;
+}
+
+.shopping-item-flat:last-child {
+  border-bottom: none;
+}
+
+.shopping-item-flat.is-leaving {
+  transition: none;
+  overflow: hidden;
+  animation: shoppingItemLeave 340ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+}
+
+.shopping-item-flat.is-leaving .shopping-check {
+  transition: none;
+  background: #22c55e;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+  animation: checkPop 210ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.shopping-item-flat.is-leaving .shopping-check .shopping-check-dot {
+  transition: none;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.shopping-item-name-col {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Basics banner (bottom of pending list) ── */
+.shopping-basics-banner {
+  border-radius: var(--hf-radius-lg);
+  overflow: hidden;
+  background: linear-gradient(135deg, #312e81 0%, #4f46e5 60%, #7c3aed 100%);
+  margin-top: 8px;
+  min-height: 120px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.shopping-basics-banner-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.shopping-basics-banner-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.shopping-basics-banner-sub {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.4;
+}
+
+.shopping-basics-banner-btn {
+  align-self: flex-start;
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.18) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(8px);
+  box-shadow: none !important;
+}
+
+.shopping-basics-banner-btn:hover {
+  background: rgba(255, 255, 255, 0.28) !important;
+  border-color: rgba(255, 255, 255, 0.65) !important;
+}
+
+/* ── Desktop: 3-column grid for categories ── */
+@media (min-width: 768px) {
+  .shopping-categories-flat {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+
+  .shopping-category-flat-group {
+    padding-bottom: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--hf-radius-md);
+    padding: 16px;
+    box-shadow: var(--hf-shadow-soft);
+  }
+
+  .shopping-category-flat-head {
+    padding-bottom: 10px;
+    margin-bottom: 2px;
+  }
+
+  .shopping-item-flat {
+    padding: 9px 0;
+  }
+
+  /* Basics banner spans full width on desktop */
+  .shopping-basics-banner {
+    grid-column: 1 / -1;
+    min-height: 140px;
+  }
+}
+
+/* ── Dark mode adaptations ── */
+[data-theme="dark"] .shopping-week-date-trigger {
+  color: #818cf8;
+}
+
+[data-theme="dark"] .shopping-week-date-trigger svg {
+  color: #818cf8;
+}
+
+[data-theme="dark"] .shopping-today-chip {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #818cf8;
+}
+
+[data-theme="dark"] .shopping-week-picker-popover {
+  background: var(--modal-bg);
+  border-color: var(--border-strong);
+}
+
+[data-theme="dark"] .shopping-budget-bar-track {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .shopping-basics-btn-centered {
+  color: #818cf8;
+  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="dark"] .shopping-basics-btn-centered:hover {
+  background: rgba(99, 102, 241, 0.18);
+}
+
+[data-theme="dark"] .shopping-item-flat {
+  border-bottom-color: var(--border-soft);
+}
+
+[data-theme="dark"] .shopping-category-flat-group {
+  background: var(--card-bg);
+}
+
 /* Week slide animations (shopping + week planner) */
 /* ─── Week navigation progress shimmer ─── */
 .kitchen-week-nav-progress {
@@ -19865,7 +20301,9 @@ td.recipe-qty-scaled {
 
 /* ── Prominent add-input ── */
 .shopping-add-row {
-  /* no extra spacing needed — lives inside shopping-header-card gap */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .shopping-add-wrapper {
