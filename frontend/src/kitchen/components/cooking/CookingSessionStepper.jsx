@@ -109,12 +109,16 @@ export default function CookingSessionStepper() {
           goToStep(session.currentStepIndex - 1);
         }
       } else if (e.key === "Escape") {
-        minimizeStepper();
+        if (ingredientPanelOpen) {
+          setIngredientPanelOpen(false);
+        } else {
+          minimizeStepper();
+        }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [isStepperOpen, session, goToStep, minimizeStepper]);
+  }, [isStepperOpen, session, goToStep, minimizeStepper, ingredientPanelOpen]);
 
   useEffect(() => {
     if (!isStepperOpen || !session) {
@@ -249,39 +253,6 @@ export default function CookingSessionStepper() {
             ))}
           </div>
 
-          {/* ── Ingredient panel (timers keep running) ── */}
-          {ingredientPanelOpen && ingredients && ingredients.length > 0 ? (
-            <div className="cooking-ingredients-panel" role="dialog" aria-label="Ingredientes de la receta">
-              <div className="cooking-ingredients-panel-header">
-                <div>
-                  <h3 className="cooking-ingredients-panel-title">Ingredientes</h3>
-                  <p className="cooking-ingredients-panel-sub">Para {selectedServings} {selectedServings === 1 ? "persona" : "personas"}</p>
-                </div>
-                <button
-                  type="button"
-                  className="cooking-ingredients-panel-close"
-                  onClick={() => setIngredientPanelOpen(false)}
-                  aria-label="Cerrar panel de ingredientes"
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <path d="M6 6l12 12M18 6l-12 12" />
-                  </svg>
-                </button>
-              </div>
-              <ul className="cooking-ingredients-panel-list">
-                {ingredients.map((ing, idx) => {
-                  const qty = displayIngredientQuantity(ing, baseServings, selectedServings);
-                  return (
-                    <li key={idx} className="cooking-ingredients-panel-row">
-                      <span className="cooking-ingredients-panel-name">{ing.name}</span>
-                      {qty ? <span className="cooking-ingredients-panel-qty">{qty}</span> : null}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ) : null}
-
           {/* ── Step area ── */}
           <div className="cooking-step-area">
             <RecipeStepCard
@@ -350,6 +321,54 @@ export default function CookingSessionStepper() {
                 </div>
               </div>
             </div>
+          ) : null}
+
+          {/* ── Ingredient sheet (fixed overlay; timers keep running behind it) ── */}
+          {ingredientPanelOpen && ingredients && ingredients.length > 0 ? (
+            <>
+              <div
+                className="cooking-ing-backdrop"
+                role="presentation"
+                onClick={() => setIngredientPanelOpen(false)}
+              />
+              <div
+                className="cooking-ing-sheet"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Lista de ingredientes"
+              >
+                <div className="cooking-ing-handle" aria-hidden="true" />
+                <div className="cooking-ing-header">
+                  <div>
+                    <h3 className="cooking-ing-title">Todos los ingredientes</h3>
+                    <p className="cooking-ing-sub">
+                      Para {selectedServings} {selectedServings === 1 ? "persona" : "personas"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="cooking-ing-close"
+                    onClick={() => setIngredientPanelOpen(false)}
+                    aria-label="Cerrar lista de ingredientes"
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                      <path d="M6 6l12 12M18 6l-12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <ul className="cooking-ing-list">
+                  {ingredients.map((ing, idx) => {
+                    const qty = displayIngredientQuantity(ing, baseServings, selectedServings);
+                    return (
+                      <li key={idx} className="cooking-ing-row">
+                        <span className="cooking-ing-name">{ing.name}</span>
+                        {qty ? <span className="cooking-ing-qty">{qty}</span> : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </>
           ) : null}
         </>
       )}
