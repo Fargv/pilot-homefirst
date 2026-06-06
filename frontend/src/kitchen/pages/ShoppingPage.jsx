@@ -325,6 +325,8 @@ export default function ShoppingPage() {
   const pendingNavigationRef = useRef(null);
   const prevPendingCountRef = useRef(null);
   const openPurchaseSessionRef = useRef(null);
+  const pendingSortOrderRef = useRef(null);
+  const pendingTabRef = useRef(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
   const openPurchaseSession = currentPurchaseSession || pendingPurchaseSessions[0] || null;
@@ -1143,6 +1145,29 @@ export default function ShoppingPage() {
     return set;
   }, [pendingByCategory]);
 
+  // Stable sort: computes order once per tab session (frozen in ref), so marking items
+  // never causes card reordering. Order resets only when the tab changes.
+  const stablePendingByCategory = useMemo(() => {
+    if (!Array.isArray(pendingByCategory) || pendingByCategory.length === 0) {
+      return pendingByCategory;
+    }
+    if (pendingTabRef.current !== tab) {
+      pendingSortOrderRef.current = null;
+      pendingTabRef.current = tab;
+    }
+    if (!pendingSortOrderRef.current) {
+      pendingSortOrderRef.current = [...pendingByCategory]
+        .sort((a, b) => (b.items?.length || 0) - (a.items?.length || 0))
+        .map((g) => g.categoryId || g.categoryInfo?.slug || g.categoryInfo?.name);
+    }
+    const orderMap = new Map(pendingSortOrderRef.current.map((k, i) => [k, i]));
+    return [...pendingByCategory].sort((a, b) => {
+      const ka = a.categoryId || a.categoryInfo?.slug || a.categoryInfo?.name;
+      const kb = b.categoryId || b.categoryInfo?.slug || b.categoryInfo?.name;
+      return (orderMap.get(ka) ?? 999) - (orderMap.get(kb) ?? 999);
+    });
+  }, [pendingByCategory, tab]);
+
   if (isDiodGlobalMode) {
     return (
       <KitchenLayout>
@@ -1280,7 +1305,7 @@ export default function ShoppingPage() {
                     </button>
                   </div>
                   <div className="shopping-categories shopping-categories-grid">
-                    {[...pendingByCategory].sort((a, b) => (b.items?.length || 0) - (a.items?.length || 0)).map((group) => {
+                    {(stablePendingByCategory || []).map((group) => {
                       const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
                       return (
                         <div

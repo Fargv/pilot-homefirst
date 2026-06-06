@@ -5696,7 +5696,7 @@ body {
   padding: 0;
 }
 
-/* ── Category cards — masonry via CSS columns on desktop ── */
+/* ── Category cards — CSS Grid masonry on desktop ── */
 .shopping-categories-grid {
   /* mobile: inherits display:grid gap:10px from .shopping-categories */
 }
@@ -5708,22 +5708,21 @@ body {
 
 @media (min-width: 768px) {
   .shopping-categories-grid {
-    display: block;
-    columns: 2;
-    column-gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: start;
+    gap: 10px;
     animation: shoppingGridFadeIn 150ms ease-out both;
   }
   .shopping-categories-grid .shopping-category-card {
-    break-inside: avoid;
-    margin-bottom: 10px;
-    width: 100%;
+    align-self: start;
   }
 }
 
 @media (min-width: 1024px) {
   .shopping-categories-grid {
-    columns: 3;
-    column-gap: 14px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
   }
 }
 
@@ -5743,7 +5742,7 @@ body {
 
 .shopping-item-flat:last-child {
   border-bottom: none;
-  padding-bottom: 0;
+  padding-bottom: 4px;
 }
 
 .shopping-item-flat:first-child {
