@@ -1,12 +1,13 @@
-# Graph Report - .  (2026-06-05)
+# Graph Report - .  (2026-06-06)
 
 ## Corpus Check
-- Large corpus: 364 files � ~748,148 words. Semantic extraction will be expensive (many Claude tokens). Consider running on a subfolder.
+- 32 files · ~758,991 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 548 nodes · 150 edges · 448 communities (10 shown, 438 thin omitted)
-- Extraction: 70% EXTRACTED · 30% INFERRED · 0% AMBIGUOUS · INFERRED: 45 edges (avg confidence: 0.8)
-- Token cost: 18,500 input · 2,100 output
+- 557 nodes · 164 edges · 449 communities (12 shown, 437 thin omitted)
+- Extraction: 72% EXTRACTED · 28% INFERRED · 0% AMBIGUOUS · INFERRED: 46 edges (avg confidence: 0.79)
+- Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
 - [[_COMMUNITY_Impeccable Design Skill|Impeccable Design Skill]]
@@ -19,8 +20,8 @@
 - [[_COMMUNITY_Brand & PWA Assets|Brand & PWA Assets]]
 - [[_COMMUNITY_User Acquisition Flows|User Acquisition Flows]]
 - [[_COMMUNITY_Auth Migration Strategy|Auth Migration Strategy]]
-- [[_COMMUNITY_Plant Category Icons|Plant Category Icons]]
-- [[_COMMUNITY_Grain Category Icons|Grain Category Icons]]
+- [[_COMMUNITY_Recipe & Guided Cooking|Recipe & Guided Cooking]]
+- [[_COMMUNITY_Step Ingredient Mapping|Step Ingredient Mapping]]
 - [[_COMMUNITY_Community 12|Community 12]]
 - [[_COMMUNITY_Community 13|Community 13]]
 - [[_COMMUNITY_Community 14|Community 14]]
@@ -457,18 +458,19 @@
 - [[_COMMUNITY_Community 445|Community 445]]
 - [[_COMMUNITY_Community 446|Community 446]]
 - [[_COMMUNITY_Community 447|Community 447]]
+- [[_COMMUNITY_Community 448|Community 448]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `Impeccable Skill (SKILL.md)` - 19 edges
 2. `DESIGN.md — HomeFirst Design System` - 8 edges
 3. `PRODUCT.md — HomeFirst Product Strategy` - 8 edges
-4. `Polish — Final UI Pass Reference` - 7 edges
-5. `Live Mode Reference` - 6 edges
-6. `Ingredient Normalization Process` - 6 edges
-7. `Brand Register Reference` - 5 edges
-8. `Cognitive Load Reference` - 5 edges
-9. `Craft Flow Reference` - 5 edges
-10. `Impeccable Shared Design Laws` - 5 edges
+4. `Catalog Recipe Agent` - 8 edges
+5. `Polish — Final UI Pass Reference` - 7 edges
+6. `Live Mode Reference` - 6 edges
+7. `UI Review Skill (Lunchfy/HomeFirst)` - 6 edges
+8. `Ingredient Normalization Process` - 6 edges
+9. `Brand Register Reference` - 5 edges
+10. `Cognitive Load Reference` - 5 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Polish — Final UI Pass Reference` --references--> `PRODUCT.md — HomeFirst Product Strategy`  [INFERRED]
@@ -486,28 +488,17 @@
 - None detected.
 
 ## Hyperedges (group relationships)
-- **Craft Command Gate Sequence: Shape -> Codex -> Code** — reference_craft, reference_codex, reference_craft_production_bar [EXTRACTED 1.00]
-- **Design Quality Evaluation: Critique, Audit, Heuristics** — reference_critique, reference_audit, reference_heuristics_scoring [INFERRED 0.85]
-- **Color System: Color-and-Contrast + Colorize + Brand Color Strategy** — reference_color_and_contrast, reference_colorize, reference_brand_color_strategy [INFERRED 0.85]
-- **Impeccable Polish Convergence Pipeline** — impeccable_reference_onboard, impeccable_reference_optimize, impeccable_reference_quieter, impeccable_reference_typeset, impeccable_reference_polish [EXTRACTED 0.95]
-- **HomeFirst Design System Core Trio** — pilot_homefirst_product, pilot_homefirst_design, ui_review_skill [INFERRED 0.85]
-- **Dual-Path Auth Strategy (Legacy JWT + Clerk)** — auth_migration_plan_legacy_jwt, auth_migration_plan_clerk_auth, auth_migration_plan_mongo_authoritative [EXTRACTED 0.95]
-- **Normalization Report Series (dry-run iterations → apply → verify)** — reports_normalization_report_20260512_1552, reports_normalization_report_20260512_1556, reports_normalization_report_20260512_1558, reports_normalization_report_20260512_1604, reports_normalization_report_20260512_1619, reports_normalization_report_20260512_1621 [EXTRACTED 0.95]
-- **Signup → Onboarding → Subscription Plan Triad** — concept_signup_flow, concept_onboarding_flow, concept_subscription_plan [EXTRACTED 0.95]
-- **Ingredient Data Quality: Normalization, Taxonomy, Deduplication** — concept_ingredient_normalization, concept_ingredient_taxonomy, concept_duplicate_ingredient_dedup [EXTRACTED 0.95]
-- **Food Category Icon Taxonomy System** — category_icons_chicken_tp, category_icons_fish_tp, category_icons_legumes_tp, category_icons_meat_tp, category_icons_pasta_tp, category_icons_rice_tp, category_icons_sides_tp, category_icons_special_tp, category_icons_vegetables_tp, category_icons_eggs_tp [EXTRACTED 1.00]
-- **PWA Manifest Brand Icons** — icons_icon_192, icons_icon_512, brand_lunchfy_icon [EXTRACTED 1.00]
-- **Food UI State Illustrations** — food_empty_dish, food_main_course, food_side_dish [INFERRED 0.95]
+- **Recipe Data Model (ingredients list, structured steps, ingredientRefs)** — pilot_homefirst_general_ingredients_list, pilot_homefirst_structured_steps, pilot_homefirst_ingredient_refs, pilot_homefirst_base_servings [EXTRACTED 1.00]
 
-## Communities (448 total, 438 thin omitted)
+## Communities (449 total, 437 thin omitted)
 
 ### Community 0 - "Impeccable Design Skill"
 Cohesion: 0.12
 Nodes (28): Impeccable Skill (SKILL.md), AI Slop Test Principle, Design Register Concept (Brand vs Product), Impeccable Shared Design Laws, Adapt Reference, Animate Reference, Animation Timing and Easing Principles, Audit Reference (+20 more)
 
 ### Community 1 - "Project Design System"
-Cohesion: 0.11
-Nodes (21): Persona-Based Design Testing Reference, 5 User Persona Archetypes (Alex/Jordan/Sam/Riley/Casey), Product UI Register Reference, Responsive Design Reference, Shape — Design Brief & Discovery Reference, Design Brief Artifact, Spatial Design Reference, Teach — Project Context Setup Reference (+13 more)
+Cohesion: 0.13
+Nodes (20): Persona-Based Design Testing Reference, 5 User Persona Archetypes (Alex/Jordan/Sam/Riley/Casey), Product UI Register Reference, Responsive Design Reference, Shape — Design Brief & Discovery Reference, Design Brief Artifact, Spatial Design Reference, Teach — Project Context Setup Reference (+12 more)
 
 ### Community 2 - "UI Polish & Motion"
 Cohesion: 0.25
@@ -518,38 +509,46 @@ Cohesion: 0.25
 Nodes (9): Chicken Category Icon, Eggs Category Icon, Fish Category Icon, Meat Category Icon, Sides Category Icon, Special Category Icon, Empty Dish UI Illustration, Main Course UI Illustration (+1 more)
 
 ### Community 4 - "Ingredient Data Quality"
-Cohesion: 0.39
-Nodes (9): Duplicate Ingredient Deduplication, Ingredient Normalization Process, Ingredient Category Taxonomy, Normalization Report 20260512-1552 (dry-run, 45 manual items), Normalization Report 20260512-1556 (dry-run, 29 manual items), Normalization Report 20260512-1558 (dry-run, identical to 1556), Normalization Report 20260512-1604 (dry-run, 29 manual items), Normalization Report 20260512-1619 (apply mode — writes executed) (+1 more)
-
-### Community 5 - "Design Craft Core"
 Cohesion: 0.25
 Nodes (9): Codex Visual Direction Reference, Codex Four Stop Points Before Code, Color and Contrast Reference, OKLCH Color Space Principle, Craft Flow Reference, Craft Production Quality Bar, Harden Reference, Interaction Design Reference (+1 more)
 
+### Community 5 - "Design Craft Core"
+Cohesion: 0.46
+Nodes (8): Duplicate Ingredient Deduplication, Ingredient Normalization Process, Ingredient Category Taxonomy, Normalization Report 20260512-1552 (dry-run, 45 manual items), Normalization Report 20260512-1556 (dry-run, 29 manual items), Normalization Report 20260512-1558 (dry-run, identical to 1556), Normalization Report 20260512-1619 (apply mode — writes executed), Normalization Report 20260512-1621 (post-apply verification, 0 to create)
+
 ### Community 6 - "App Architecture"
+Cohesion: 0.32
+Nodes (8): baseServings, Catalog Recipe Agent, Catalog Recipe Rules (full rules doc), General Ingredients List, Guided Cooking Mode, ingredientRefs, seedCatalog.js Script, Structured Steps
+
+### Community 7 - "Brand & PWA Assets"
 Cohesion: 0.33
 Nodes (7): Lunchfy Fullstack Architecture (50 nodes, 65 connections), Kitchen Module (meal planning, shopping, swaps), Progressive Web App (PWA) Configuration, Frontend Entry HTML (Lunchfy PWA), Lunchfy Architecture Map (interactive SVG, 50 nodes 65 edges), Pilot Lunchfy README, Postman Collection Definition (empty stub)
 
-### Community 7 - "Brand & PWA Assets"
+### Community 8 - "User Acquisition Flows"
 Cohesion: 0.50
 Nodes (5): Lunchfy Brand Icon (src assets), Lunchfy Logo with Wordmark, Lunchfy Brand Icon (public), PWA Icon 192px, PWA Icon 512px
 
-### Community 8 - "User Acquisition Flows"
+### Community 9 - "Auth Migration Strategy"
 Cohesion: 0.80
 Nodes (5): Household Invitation Flow, ClerkOnboardingPage 3-Step Flow, Clerk-Based Signup Flow, Subscription Plan Tiers (free/basic/pro/premium), Signup Flow Technical Audit
 
-### Community 9 - "Auth Migration Strategy"
+### Community 10 - "Recipe & Guided Cooking"
 Cohesion: 0.83
 Nodes (4): Auth Migration Plan (Legacy JWT to Clerk), Clerk Identity Provider Integration, Legacy JWT / bcrypt Auth System, MongoDB as Authoritative Source for Roles/Plans
 
+### Community 11 - "Step Ingredient Mapping"
+Cohesion: 0.83
+Nodes (4): GRAPH_REPORT.md, Graphify Knowledge Graph, graphify-out/ directory, graphify-out/wiki/index.md
+
 ## Knowledge Gaps
-- **459 isolated node(s):** `findProjectRoot`, `loadLock`, `isImpeccableSkill`, `buildTargetNames`, `findSkillsDirs` (+454 more)
+- **463 isolated node(s):** `findProjectRoot`, `loadLock`, `isImpeccableSkill`, `buildTargetNames`, `findSkillsDirs` (+458 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **438 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **437 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Impeccable Skill (SKILL.md)` connect `Impeccable Design Skill` to `Design Craft Core`?**
+- **Why does `Impeccable Skill (SKILL.md)` connect `Impeccable Design Skill` to `Ingredient Data Quality`?**
   _High betweenness centrality (0.003) - this node is a cross-community bridge._
 - **Why does `PRODUCT.md — HomeFirst Product Strategy` connect `Project Design System` to `UI Polish & Motion`?**
   _High betweenness centrality (0.002) - this node is a cross-community bridge._
@@ -562,4 +561,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 2 inferred relationships involving `Polish — Final UI Pass Reference` (e.g. with `Typography Principles Reference` and `PRODUCT.md — HomeFirst Product Strategy`) actually correct?**
   _`Polish — Final UI Pass Reference` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `findProjectRoot`, `loadLock`, `isImpeccableSkill` to the rest of the system?**
-  _461 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _465 weakly-connected nodes found - possible documentation gaps or missing edges._

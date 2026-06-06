@@ -147,7 +147,12 @@
             "hasTimer": true,
             "durationMinutes": 15,
             "durationSeconds": 900,
-            "timerLabel": "15 min"
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Carcasa de pollo"
+              }
+            ]
           },
           {
             "order": 2,
@@ -156,7 +161,27 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Carcasa de pollo"
+              },
+              {
+                "name": "Hueso de jamón"
+              },
+              {
+                "name": "Zanahoria"
+              },
+              {
+                "name": "Puerro"
+              },
+              {
+                "name": "Apio"
+              },
+              {
+                "name": "Cebolla"
+              }
+            ]
           },
           {
             "order": 3,
@@ -165,7 +190,8 @@
             "hasTimer": true,
             "durationMinutes": 10,
             "durationSeconds": 600,
-            "timerLabel": "10 min"
+            "timerLabel": "10 min",
+            "ingredientRefs": []
           },
           {
             "order": 4,
@@ -174,7 +200,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Sal"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -539,7 +570,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Perejil fresco"
+              },
+              {
+                "name": "Aceite de oliva virgen extra"
+              }
+            ]
           },
           {
             "order": 2,
@@ -548,7 +590,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Langostinos"
+              }
+            ]
           },
           {
             "order": 3,
@@ -557,7 +604,12 @@
             "hasTimer": true,
             "durationMinutes": 2,
             "durationSeconds": 120,
-            "timerLabel": "2 min"
+            "timerLabel": "2 min",
+            "ingredientRefs": [
+              {
+                "name": "Sal gruesa"
+              }
+            ]
           },
           {
             "order": 4,
@@ -566,7 +618,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Limón"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -898,7 +955,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas"
+              },
+              {
+                "name": "Cebolla"
+              }
+            ]
           },
           {
             "order": 2,
@@ -907,7 +972,15 @@
             "hasTimer": true,
             "durationMinutes": 10,
             "durationSeconds": 600,
-            "timerLabel": "10 min"
+            "timerLabel": "10 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite de oliva virgen extra"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -1335,7 +1408,8 @@
             "hasTimer": true,
             "durationMinutes": 60,
             "durationSeconds": 3600,
-            "timerLabel": "1 hora"
+            "timerLabel": "1 hora",
+            "ingredientRefs": []
           },
           {
             "order": 2,
@@ -1344,7 +1418,30 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Pierna de cordero"
+              },
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Romero fresco"
+              },
+              {
+                "name": "Tomillo fresco"
+              },
+              {
+                "name": "Aceite de oliva"
+              },
+              {
+                "name": "Sal"
+              },
+              {
+                "name": "Pimienta"
+              }
+            ]
           },
           {
             "order": 3,
@@ -1353,7 +1450,27 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Aceite de oliva"
+              },
+              {
+                "name": "Vino blanco"
+              },
+              {
+                "name": "Patatas"
+              },
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -1865,7 +1982,18 @@
             "hasTimer": true,
             "durationMinutes": 8,
             "durationSeconds": 480,
-            "timerLabel": "8 min"
+            "timerLabel": "8 min",
+            "ingredientRefs": [
+              {
+                "name": "Carne picada mixta"
+              },
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Ajo"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1874,7 +2002,24 @@
             "hasTimer": true,
             "durationMinutes": 5,
             "durationSeconds": 300,
-            "timerLabel": "5 min"
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Ciruelas pasas sin hueso"
+              },
+              {
+                "name": "Orejones de albaricoque"
+              },
+              {
+                "name": "Nueces"
+              },
+              {
+                "name": "Vino de Oporto"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           }
         ],
         "baseServings": 6,

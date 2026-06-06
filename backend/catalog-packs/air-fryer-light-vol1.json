@@ -119,7 +119,12 @@
             "hasTimer": true,
             "durationMinutes": 3,
             "durationSeconds": 180,
-            "timerLabel": "3 min"
+            "timerLabel": "3 min",
+            "ingredientRefs": [
+              {
+                "name": "Muslos de pollo sin piel"
+              }
+            ]
           },
           {
             "order": 2,
@@ -128,7 +133,21 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Pimentón ahumado"
+              },
+              {
+                "name": "Ajo en polvo"
+              },
+              {
+                "name": "Aceite de oliva"
+              },
+              {
+                "name": "Sal y pimienta"
+              }
+            ]
           },
           {
             "order": 3,
@@ -137,7 +156,8 @@
             "hasTimer": true,
             "durationMinutes": 16,
             "durationSeconds": 960,
-            "timerLabel": "20-22 min"
+            "timerLabel": "20-22 min",
+            "ingredientRefs": []
           },
           {
             "order": 4,
@@ -146,7 +166,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Limón"
+              }
+            ]
           }
         ],
         "baseServings": 2,
@@ -459,7 +484,21 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Panko"
+              },
+              {
+                "name": "Tomillo fresco"
+              },
+              {
+                "name": "Aceite de oliva"
+              },
+              {
+                "name": "Sal y pimienta"
+              }
+            ]
           },
           {
             "order": 2,
@@ -468,7 +507,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mostaza de Dijon"
+              },
+              {
+                "name": "Panko"
+              }
+            ]
           },
           {
             "order": 3,
@@ -477,7 +524,12 @@
             "hasTimer": true,
             "durationMinutes": 9,
             "durationSeconds": 510,
-            "timerLabel": "10-12 min"
+            "timerLabel": "10-12 min",
+            "ingredientRefs": [
+              {
+                "name": "Filetes de salmón (con piel)"
+              }
+            ]
           },
           {
             "order": 4,
@@ -486,7 +538,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Limón"
+              }
+            ]
           }
         ],
         "baseServings": 2,
@@ -772,7 +829,21 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Orégano seco"
+              },
+              {
+                "name": "Aceite de oliva virgen extra"
+              },
+              {
+                "name": "Sal y pimienta"
+              }
+            ]
           },
           {
             "order": 2,
@@ -781,7 +852,15 @@
             "hasTimer": true,
             "durationMinutes": 11,
             "durationSeconds": 630,
-            "timerLabel": "12-15 min"
+            "timerLabel": "12-15 min",
+            "ingredientRefs": [
+              {
+                "name": "Pimiento rojo"
+              },
+              {
+                "name": "Berenjena pequeña"
+              }
+            ]
           },
           {
             "order": 3,
@@ -790,7 +869,12 @@
             "hasTimer": true,
             "durationMinutes": 4,
             "durationSeconds": 210,
-            "timerLabel": "4-5 min"
+            "timerLabel": "4-5 min",
+            "ingredientRefs": [
+              {
+                "name": "Tomates cherry"
+              }
+            ]
           }
         ],
         "baseServings": 2,
@@ -1054,7 +1138,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas (250-300 g c/u)"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1063,7 +1152,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla sin sal"
+              },
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Romero fresco"
+              }
+            ]
           },
           {
             "order": 3,
@@ -1072,7 +1172,8 @@
             "hasTimer": true,
             "durationMinutes": 25,
             "durationSeconds": 1500,
-            "timerLabel": "30-35 min"
+            "timerLabel": "30-35 min",
+            "ingredientRefs": []
           }
         ],
         "baseServings": 2,
@@ -1322,7 +1423,24 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Boniatos medianos"
+              },
+              {
+                "name": "Comino molido"
+              },
+              {
+                "name": "Pimentón"
+              },
+              {
+                "name": "Aceite de oliva"
+              },
+              {
+                "name": "Sal y pimienta"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1331,7 +1449,8 @@
             "hasTimer": true,
             "durationMinutes": 15,
             "durationSeconds": 870,
-            "timerLabel": "18-20 min"
+            "timerLabel": "18-20 min",
+            "ingredientRefs": []
           },
           {
             "order": 3,
@@ -1340,7 +1459,21 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Yogur griego natural"
+              },
+              {
+                "name": "Menta fresca"
+              },
+              {
+                "name": "Limón"
+              },
+              {
+                "name": "Sal y pimienta"
+              }
+            ]
           }
         ],
         "baseServings": 2,
@@ -1581,7 +1714,24 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Gambas peladas (crudas)"
+              },
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Aceite de oliva"
+              },
+              {
+                "name": "Guindilla seca (opcional)"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1590,7 +1740,8 @@
             "hasTimer": true,
             "durationMinutes": 6,
             "durationSeconds": 330,
-            "timerLabel": "6-8 min"
+            "timerLabel": "6-8 min",
+            "ingredientRefs": []
           },
           {
             "order": 3,
@@ -1599,7 +1750,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Limón"
+              },
+              {
+                "name": "Perejil fresco"
+              }
+            ]
           }
         ],
         "baseServings": 2,
@@ -1865,7 +2024,24 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Panko"
+              },
+              {
+                "name": "Huevo"
+              },
+              {
+                "name": "Ajo en polvo"
+              },
+              {
+                "name": "Perejil seco"
+              },
+              {
+                "name": "Sal y pimienta"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1874,7 +2050,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 3,
@@ -1883,7 +2060,12 @@
             "hasTimer": true,
             "durationMinutes": 9,
             "durationSeconds": 510,
-            "timerLabel": "10-12 min"
+            "timerLabel": "10-12 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite en spray o ½ cucharadita aceite"
+              }
+            ]
           },
           {
             "order": 4,
@@ -1892,7 +2074,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Limón"
+              }
+            ]
           }
         ],
         "baseServings": 2,
@@ -2172,7 +2359,21 @@
             "hasTimer": true,
             "durationMinutes": 2,
             "durationSeconds": 120,
-            "timerLabel": "2 min"
+            "timerLabel": "2 min",
+            "ingredientRefs": [
+              {
+                "name": "Espinacas frescas"
+              },
+              {
+                "name": "Queso crema"
+              },
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Sal y pimienta"
+              }
+            ]
           },
           {
             "order": 2,
@@ -2181,7 +2382,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Espinacas frescas"
+              }
+            ]
           },
           {
             "order": 3,
@@ -2190,7 +2396,15 @@
             "hasTimer": true,
             "durationMinutes": 15,
             "durationSeconds": 870,
-            "timerLabel": "18-20 min"
+            "timerLabel": "18-20 min",
+            "ingredientRefs": [
+              {
+                "name": "Pimentón ahumado"
+              },
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
           }
         ],
         "baseServings": 2,
@@ -2471,7 +2685,21 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Brócoli"
+              },
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Aceite de oliva"
+              },
+              {
+                "name": "Sal y pimienta"
+              }
+            ]
           },
           {
             "order": 2,
@@ -2480,7 +2708,12 @@
             "hasTimer": true,
             "durationMinutes": 8,
             "durationSeconds": 480,
-            "timerLabel": "8 min"
+            "timerLabel": "8 min",
+            "ingredientRefs": [
+              {
+                "name": "Queso parmesano rallado"
+              }
+            ]
           },
           {
             "order": 3,
@@ -2489,7 +2722,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Limón"
+              }
+            ]
           }
         ],
         "baseServings": 2,
@@ -2746,7 +2984,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 2,
@@ -2755,7 +2994,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 3,
@@ -2764,7 +3004,8 @@
             "hasTimer": true,
             "durationMinutes": 10,
             "durationSeconds": 600,
-            "timerLabel": "12-14 min"
+            "timerLabel": "12-14 min",
+            "ingredientRefs": []
           },
           {
             "order": 4,
@@ -2773,7 +3014,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           }
         ],
         "baseServings": 3,

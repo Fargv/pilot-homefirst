@@ -150,7 +150,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas"
+              }
+            ]
           },
           {
             "order": 2,
@@ -159,7 +164,12 @@
             "hasTimer": true,
             "durationMinutes": 8,
             "durationSeconds": 480,
-            "timerLabel": "8 min"
+            "timerLabel": "8 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
           },
           {
             "order": 3,
@@ -168,7 +178,27 @@
             "hasTimer": true,
             "durationMinutes": 1,
             "durationSeconds": 60,
-            "timerLabel": "1 min"
+            "timerLabel": "1 min",
+            "ingredientRefs": [
+              {
+                "name": "Pimentón picante"
+              },
+              {
+                "name": "Pimentón dulce"
+              },
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Tomate triturado"
+              },
+              {
+                "name": "Harina"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           },
           {
             "order": 4,
@@ -177,7 +207,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           }
         ],
         "baseServings": 4,
@@ -524,7 +555,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Jamón serrano"
+              },
+              {
+                "name": "Cebolla"
+              }
+            ]
           },
           {
             "order": 2,
@@ -533,7 +572,12 @@
             "hasTimer": true,
             "durationMinutes": 5,
             "durationSeconds": 300,
-            "timerLabel": "5 min"
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla"
+              }
+            ]
           },
           {
             "order": 3,
@@ -542,7 +586,12 @@
             "hasTimer": true,
             "durationMinutes": 2,
             "durationSeconds": 120,
-            "timerLabel": "2 min"
+            "timerLabel": "2 min",
+            "ingredientRefs": [
+              {
+                "name": "Harina"
+              }
+            ]
           },
           {
             "order": 4,
@@ -551,7 +600,21 @@
             "hasTimer": true,
             "durationMinutes": 9,
             "durationSeconds": 510,
-            "timerLabel": "10-12 min"
+            "timerLabel": "10-12 min",
+            "ingredientRefs": [
+              {
+                "name": "Jamón serrano"
+              },
+              {
+                "name": "Leche entera"
+              },
+              {
+                "name": "Nuez moscada"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           },
           {
             "order": 5,
@@ -560,7 +623,8 @@
             "hasTimer": true,
             "durationMinutes": 240,
             "durationSeconds": 14400,
-            "timerLabel": "4 horas"
+            "timerLabel": "4 horas",
+            "ingredientRefs": []
           }
         ],
         "baseServings": 4,
@@ -977,7 +1041,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 2,
@@ -986,7 +1051,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Ajo"
+              }
+            ]
           },
           {
             "order": 3,
@@ -995,7 +1065,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Tomate maduro"
+              }
+            ]
           },
           {
             "order": 4,
@@ -1004,7 +1079,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Aceite de oliva virgen extra"
+              },
+              {
+                "name": "Sal gruesa"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -1252,7 +1335,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Gambas"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1261,7 +1352,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Aceite de oliva virgen extra"
+              }
+            ]
           },
           {
             "order": 3,
@@ -1270,7 +1369,12 @@
             "hasTimer": true,
             "durationMinutes": 1,
             "durationSeconds": 30,
-            "timerLabel": "30 segundos"
+            "timerLabel": "30 segundos",
+            "ingredientRefs": [
+              {
+                "name": "Guindilla"
+              }
+            ]
           },
           {
             "order": 4,
@@ -1279,7 +1383,15 @@
             "hasTimer": true,
             "durationMinutes": 1,
             "durationSeconds": 75,
-            "timerLabel": "1-2 min"
+            "timerLabel": "1-2 min",
+            "ingredientRefs": [
+              {
+                "name": "Gambas"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           },
           {
             "order": 5,
@@ -1288,7 +1400,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Aceite de oliva virgen extra"
+              },
+              {
+                "name": "Perejil fresco"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -1593,7 +1713,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas"
+              },
+              {
+                "name": "Cebolla"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1602,7 +1730,12 @@
             "hasTimer": true,
             "durationMinutes": 20,
             "durationSeconds": 1200,
-            "timerLabel": "20 min"
+            "timerLabel": "20 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -1942,7 +2075,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Pimientos de padrón"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1951,7 +2089,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Aceite de oliva virgen extra"
+              }
+            ]
           },
           {
             "order": 3,
@@ -1960,7 +2103,8 @@
             "hasTimer": true,
             "durationMinutes": 3,
             "durationSeconds": 165,
-            "timerLabel": "3-4 min"
+            "timerLabel": "3-4 min",
+            "ingredientRefs": []
           },
           {
             "order": 4,
@@ -1969,7 +2113,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Sal gruesa"
+              }
+            ]
           }
         ],
         "baseServings": 4,

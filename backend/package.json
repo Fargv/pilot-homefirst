@@ -24,7 +24,10 @@
     "seed:catalog": "node scripts/seedCatalog.js",
     "migrate:recipeQuantities": "node scripts/migrateRecipeQuantities.js",
     "migrate:structuredSteps": "node scripts/migrateStructuredSteps.js",
-    "migrate:structuredSteps:dry": "node scripts/migrateStructuredSteps.js --dry-run"
+    "migrate:structuredSteps:dry": "node scripts/migrateStructuredSteps.js --dry-run",
+    "migrate:ingredientRefs": "node scripts/migrateIngredientRefs.js",
+    "migrate:ingredientRefs:dry": "node scripts/migrateIngredientRefs.js --dry-run",
+    "migrate:ingredientRefs:verbose": "node scripts/migrateIngredientRefs.js --dry-run --verbose"
   },
   "dependencies": {
     "@clerk/backend": "^3.2.8",

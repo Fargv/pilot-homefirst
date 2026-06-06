@@ -186,7 +186,15 @@
             "hasTimer": true,
             "durationMinutes": 60,
             "durationSeconds": 3600,
-            "timerLabel": "1 hora"
+            "timerLabel": "1 hora",
+            "ingredientRefs": [
+              {
+                "name": "Pavo entero"
+              },
+              {
+                "name": "Caldo de pollo o pavo"
+              }
+            ]
           },
           {
             "order": 2,
@@ -195,7 +203,24 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla sin sal, ablandada"
+              },
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Tomillo fresco"
+              },
+              {
+                "name": "Romero fresco"
+              },
+              {
+                "name": "Sal y pimienta negra"
+              }
+            ]
           },
           {
             "order": 3,
@@ -204,7 +229,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Ajo"
+              }
+            ]
           },
           {
             "order": 4,
@@ -213,7 +243,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 5,
@@ -222,7 +253,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Naranja"
+              },
+              {
+                "name": "Limón"
+              }
+            ]
           }
         ],
         "baseServings": 8,
@@ -832,7 +874,12 @@
             "hasTimer": true,
             "durationMinutes": 20,
             "durationSeconds": 1200,
-            "timerLabel": "20 min"
+            "timerLabel": "20 min",
+            "ingredientRefs": [
+              {
+                "name": "Pan del día anterior (tipo rústico o de molde)"
+              }
+            ]
           },
           {
             "order": 2,
@@ -841,7 +888,18 @@
             "hasTimer": true,
             "durationMinutes": 7,
             "durationSeconds": 420,
-            "timerLabel": "8-10 min"
+            "timerLabel": "8-10 min",
+            "ingredientRefs": [
+              {
+                "name": "Apio"
+              },
+              {
+                "name": "Cebolla grande"
+              },
+              {
+                "name": "Mantequilla sin sal"
+              }
+            ]
           },
           {
             "order": 3,
@@ -850,7 +908,12 @@
             "hasTimer": true,
             "durationMinutes": 1,
             "durationSeconds": 60,
-            "timerLabel": "1 min"
+            "timerLabel": "1 min",
+            "ingredientRefs": [
+              {
+                "name": "Salvia fresca picada"
+              }
+            ]
           },
           {
             "order": 4,
@@ -859,7 +922,18 @@
             "hasTimer": true,
             "durationMinutes": 10,
             "durationSeconds": 600,
-            "timerLabel": "10 min"
+            "timerLabel": "10 min",
+            "ingredientRefs": [
+              {
+                "name": "Cebolla grande"
+              },
+              {
+                "name": "Caldo de pollo"
+              },
+              {
+                "name": "Huevos"
+              }
+            ]
           },
           {
             "order": 5,
@@ -868,7 +942,8 @@
             "hasTimer": true,
             "durationMinutes": 29,
             "durationSeconds": 1725,
-            "timerLabel": "35-40 min"
+            "timerLabel": "35-40 min",
+            "ingredientRefs": []
           }
         ],
         "baseServings": 8,
@@ -1192,7 +1267,15 @@
             "hasTimer": true,
             "durationMinutes": 18,
             "durationSeconds": 1050,
-            "timerLabel": "20-25 min"
+            "timerLabel": "20-25 min",
+            "ingredientRefs": [
+              {
+                "name": "Patatas (tipo Monalisa o Agria)"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1201,7 +1284,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 3,
@@ -1210,7 +1294,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla sin sal"
+              },
+              {
+                "name": "Nata para cocinar (35% MG)"
+              }
+            ]
           },
           {
             "order": 4,
@@ -1219,7 +1311,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla sin sal"
+              },
+              {
+                "name": "Nata para cocinar (35% MG)"
+              }
+            ]
           },
           {
             "order": 5,
@@ -1228,7 +1328,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Pimienta blanca molida"
+              },
+              {
+                "name": "Nuez moscada"
+              }
+            ]
           }
         ],
         "baseServings": 8,
@@ -1515,7 +1623,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Jugos de la bandeja del pavo asado"
+              },
+              {
+                "name": "Caldo de pavo o pollo"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1524,7 +1640,15 @@
             "hasTimer": true,
             "durationMinutes": 2,
             "durationSeconds": 120,
-            "timerLabel": "2 min"
+            "timerLabel": "2 min",
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla sin sal"
+              },
+              {
+                "name": "Harina de trigo"
+              }
+            ]
           },
           {
             "order": 3,
@@ -1533,7 +1657,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Caldo de pavo o pollo"
+              }
+            ]
           },
           {
             "order": 4,
@@ -1542,7 +1671,12 @@
             "hasTimer": true,
             "durationMinutes": 7,
             "durationSeconds": 420,
-            "timerLabel": "8-10 min"
+            "timerLabel": "8-10 min",
+            "ingredientRefs": [
+              {
+                "name": "Sal y pimienta negra"
+              }
+            ]
           },
           {
             "order": 5,
@@ -1551,7 +1685,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           }
         ],
         "baseServings": 8,
@@ -1848,7 +1983,12 @@
             "hasTimer": true,
             "durationMinutes": 5,
             "durationSeconds": 300,
-            "timerLabel": "5 min"
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Judías verdes (frescas o congeladas)"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1857,7 +1997,12 @@
             "hasTimer": true,
             "durationMinutes": 2,
             "durationSeconds": 120,
-            "timerLabel": "2-3 min"
+            "timerLabel": "2-3 min",
+            "ingredientRefs": [
+              {
+                "name": "Almendras fileteadas"
+              }
+            ]
           },
           {
             "order": 3,
@@ -1866,7 +2011,18 @@
             "hasTimer": true,
             "durationMinutes": 4,
             "durationSeconds": 255,
-            "timerLabel": "5-6 min"
+            "timerLabel": "5-6 min",
+            "ingredientRefs": [
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Ajo"
+              },
+              {
+                "name": "Mantequilla sin sal"
+              }
+            ]
           },
           {
             "order": 4,
@@ -1875,7 +2031,12 @@
             "hasTimer": true,
             "durationMinutes": 3,
             "durationSeconds": 165,
-            "timerLabel": "3-4 min"
+            "timerLabel": "3-4 min",
+            "ingredientRefs": [
+              {
+                "name": "Judías verdes (frescas o congeladas)"
+              }
+            ]
           },
           {
             "order": 5,
@@ -1884,7 +2045,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           }
         ],
         "baseServings": 8,
@@ -2208,7 +2370,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Boniatos"
+              }
+            ]
           },
           {
             "order": 2,
@@ -2217,7 +2384,24 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Sirope de arce puro"
+              },
+              {
+                "name": "Mantequilla sin sal"
+              },
+              {
+                "name": "Canela molida"
+              },
+              {
+                "name": "Jengibre molido"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           },
           {
             "order": 3,
@@ -2226,7 +2410,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 4,
@@ -2235,7 +2420,8 @@
             "hasTimer": true,
             "durationMinutes": 20,
             "durationSeconds": 1200,
-            "timerLabel": "20 min"
+            "timerLabel": "20 min",
+            "ingredientRefs": []
           },
           {
             "order": 5,
@@ -2244,7 +2430,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           }
         ],
         "baseServings": 8,
@@ -2535,7 +2722,21 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Arándanos rojos (frescos o congelados)"
+              },
+              {
+                "name": "Azúcar"
+              },
+              {
+                "name": "Zumo de naranja fresco"
+              },
+              {
+                "name": "Ralladura de naranja"
+              }
+            ]
           },
           {
             "order": 2,
@@ -2544,7 +2745,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 3,
@@ -2553,7 +2755,8 @@
             "hasTimer": true,
             "durationMinutes": 9,
             "durationSeconds": 510,
-            "timerLabel": "10-12 min"
+            "timerLabel": "10-12 min",
+            "ingredientRefs": []
           },
           {
             "order": 4,
@@ -2562,7 +2765,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Canela molida"
+              }
+            ]
           },
           {
             "order": 5,
@@ -2571,7 +2779,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           }
         ],
         "baseServings": 8,
@@ -2892,7 +3101,12 @@
             "hasTimer": true,
             "durationMinutes": 30,
             "durationSeconds": 1800,
-            "timerLabel": "30 min"
+            "timerLabel": "30 min",
+            "ingredientRefs": [
+              {
+                "name": "Base de masa brisa (pre-hecha)"
+              }
+            ]
           },
           {
             "order": 2,
@@ -2901,7 +3115,8 @@
             "hasTimer": true,
             "durationMinutes": 15,
             "durationSeconds": 900,
-            "timerLabel": "15 min"
+            "timerLabel": "15 min",
+            "ingredientRefs": []
           }
         ],
         "baseServings": 8,

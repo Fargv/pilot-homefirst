@@ -167,7 +167,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Cebolla mediana"
+              },
+              {
+                "name": "Zanahoria"
+              },
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
           },
           {
             "order": 2,
@@ -176,7 +187,15 @@
             "hasTimer": true,
             "durationMinutes": 5,
             "durationSeconds": 300,
-            "timerLabel": "5 min"
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Carne picada mixta"
+              },
+              {
+                "name": "Ajo"
+              }
+            ]
           },
           {
             "order": 3,
@@ -185,7 +204,12 @@
             "hasTimer": true,
             "durationMinutes": 15,
             "durationSeconds": 900,
-            "timerLabel": "15 min"
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Tomate triturado"
+              }
+            ]
           },
           {
             "order": 4,
@@ -194,7 +218,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 5,
@@ -203,7 +228,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Queso parmesano rallado"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -471,7 +501,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 2,
@@ -480,7 +511,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Masa de pizza (base lista)"
+              },
+              {
+                "name": "Tomate frito"
+              }
+            ]
           },
           {
             "order": 3,
@@ -489,7 +528,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mozzarella rallada"
+              },
+              {
+                "name": "Jamón york"
+              },
+              {
+                "name": "Orégano seco"
+              }
+            ]
           },
           {
             "order": 4,
@@ -498,7 +548,12 @@
             "hasTimer": true,
             "durationMinutes": 11,
             "durationSeconds": 630,
-            "timerLabel": "12-15 min"
+            "timerLabel": "12-15 min",
+            "ingredientRefs": [
+              {
+                "name": "Masa de pizza (base lista)"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -746,7 +801,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 2,
@@ -755,7 +811,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Pechuga de pollo"
+              },
+              {
+                "name": "Sal, pimentón dulce"
+              }
+            ]
           },
           {
             "order": 3,
@@ -764,7 +828,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Huevos"
+              },
+              {
+                "name": "Pan rallado"
+              },
+              {
+                "name": "Harina"
+              }
+            ]
           },
           {
             "order": 4,
@@ -773,7 +848,12 @@
             "hasTimer": true,
             "durationMinutes": 20,
             "durationSeconds": 1200,
-            "timerLabel": "20 min"
+            "timerLabel": "20 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite en spray"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -1041,7 +1121,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Macarrones"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1050,7 +1135,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla"
+              },
+              {
+                "name": "Harina"
+              },
+              {
+                "name": "Leche entera"
+              }
+            ]
           },
           {
             "order": 3,
@@ -1059,7 +1155,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Sal, nuez moscada"
+              }
+            ]
           },
           {
             "order": 4,
@@ -1068,7 +1169,18 @@
             "hasTimer": true,
             "durationMinutes": 10,
             "durationSeconds": 600,
-            "timerLabel": "10 min"
+            "timerLabel": "10 min",
+            "ingredientRefs": [
+              {
+                "name": "Macarrones"
+              },
+              {
+                "name": "Queso cheddar rallado"
+              },
+              {
+                "name": "Mozzarella rallada"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -1284,7 +1396,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas"
+              },
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1293,7 +1416,18 @@
             "hasTimer": true,
             "durationMinutes": 5,
             "durationSeconds": 300,
-            "timerLabel": "5 min"
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Huevos"
+              },
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           },
           {
             "order": 3,
@@ -1302,7 +1436,12 @@
             "hasTimer": true,
             "durationMinutes": 3,
             "durationSeconds": 165,
-            "timerLabel": "3-4 min"
+            "timerLabel": "3-4 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -1596,7 +1735,18 @@
             "hasTimer": true,
             "durationMinutes": 2,
             "durationSeconds": 120,
-            "timerLabel": "2 min"
+            "timerLabel": "2 min",
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla"
+              },
+              {
+                "name": "Harina"
+              },
+              {
+                "name": "Leche entera caliente"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1605,7 +1755,18 @@
             "hasTimer": true,
             "durationMinutes": 3,
             "durationSeconds": 180,
-            "timerLabel": "3 min"
+            "timerLabel": "3 min",
+            "ingredientRefs": [
+              {
+                "name": "Jamón serrano picado fino"
+              },
+              {
+                "name": "Queso rallado"
+              },
+              {
+                "name": "Sal, nuez moscada"
+              }
+            ]
           },
           {
             "order": 3,
@@ -1614,7 +1775,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Huevos (para rebozar)"
+              },
+              {
+                "name": "Pan rallado (para rebozar)"
+              }
+            ]
           },
           {
             "order": 4,
@@ -1623,7 +1792,12 @@
             "hasTimer": true,
             "durationMinutes": 2,
             "durationSeconds": 120,
-            "timerLabel": "2-3 min"
+            "timerLabel": "2-3 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite de girasol (para freír)"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -1934,7 +2108,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Carne picada de ternera"
+              },
+              {
+                "name": "Panes de hamburguesa"
+              }
+            ]
           },
           {
             "order": 2,
@@ -1943,7 +2125,8 @@
             "hasTimer": true,
             "durationMinutes": 3,
             "durationSeconds": 165,
-            "timerLabel": "3-4 min"
+            "timerLabel": "3-4 min",
+            "ingredientRefs": []
           },
           {
             "order": 3,
@@ -1952,7 +2135,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Queso en lonchas"
+              }
+            ]
           },
           {
             "order": 4,
@@ -1961,7 +2149,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Panes de hamburguesa"
+              },
+              {
+                "name": "Lechuga"
+              },
+              {
+                "name": "Tomate en rodajas"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -2199,7 +2398,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas"
+              }
+            ]
           },
           {
             "order": 2,
@@ -2208,7 +2412,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla"
+              },
+              {
+                "name": "Leche caliente"
+              },
+              {
+                "name": "Sal, nuez moscada"
+              }
+            ]
           },
           {
             "order": 3,
@@ -2217,7 +2432,12 @@
             "hasTimer": true,
             "durationMinutes": 3,
             "durationSeconds": 165,
-            "timerLabel": "3-4 min"
+            "timerLabel": "3-4 min",
+            "ingredientRefs": [
+              {
+                "name": "Salchichas Frankfurt"
+              }
+            ]
           },
           {
             "order": 4,
@@ -2226,7 +2446,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           }
         ],
         "baseServings": 4,
@@ -2488,7 +2709,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Muslos de pollo deshuesados"
+              },
+              {
+                "name": "Caldo de pollo o agua"
+              }
+            ]
           },
           {
             "order": 2,
@@ -2497,7 +2726,15 @@
             "hasTimer": true,
             "durationMinutes": 5,
             "durationSeconds": 300,
-            "timerLabel": "5 min"
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Curry en polvo suave"
+              }
+            ]
           },
           {
             "order": 3,
@@ -2506,7 +2743,18 @@
             "hasTimer": true,
             "durationMinutes": 15,
             "durationSeconds": 900,
-            "timerLabel": "15 min"
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Arroz basmati"
+              },
+              {
+                "name": "Leche de coco"
+              },
+              {
+                "name": "Caldo de pollo o agua"
+              }
+            ]
           },
           {
             "order": 4,
@@ -2515,7 +2763,8 @@
             "hasTimer": true,
             "durationMinutes": 5,
             "durationSeconds": 300,
-            "timerLabel": "5 min"
+            "timerLabel": "5 min",
+            "ingredientRefs": []
           }
         ],
         "baseServings": 4,
@@ -2840,7 +3089,21 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla"
+              },
+              {
+                "name": "Harina"
+              },
+              {
+                "name": "Leche"
+              },
+              {
+                "name": "Sal, nuez moscada"
+              }
+            ]
           },
           {
             "order": 2,
@@ -2849,7 +3112,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Jamón york"
+              },
+              {
+                "name": "Queso gruyère en lonchas"
+              },
+              {
+                "name": "Queso rallado extra para gratinar"
+              }
+            ]
           },
           {
             "order": 3,
@@ -2858,7 +3132,8 @@
             "hasTimer": true,
             "durationMinutes": 7,
             "durationSeconds": 420,
-            "timerLabel": "8-10 min"
+            "timerLabel": "8-10 min",
+            "ingredientRefs": []
           }
         ],
         "baseServings": 4,
@@ -3097,7 +3372,18 @@
             "hasTimer": true,
             "durationMinutes": 3,
             "durationSeconds": 180,
-            "timerLabel": "3 min"
+            "timerLabel": "3 min",
+            "ingredientRefs": [
+              {
+                "name": "Pechuga de pollo cocida o a la plancha"
+              },
+              {
+                "name": "Maíz escurrido"
+              },
+              {
+                "name": "Pimiento rojo picado"
+              }
+            ]
           },
           {
             "order": 2,
@@ -3106,7 +3392,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 3,
@@ -3115,7 +3402,8 @@
             "hasTimer": true,
             "durationMinutes": 2,
             "durationSeconds": 120,
-            "timerLabel": "2 min"
+            "timerLabel": "2 min",
+            "ingredientRefs": []
           },
           {
             "order": 4,
@@ -3124,7 +3412,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           }
         ],
         "baseServings": 4,
@@ -3370,7 +3659,24 @@
             "hasTimer": true,
             "durationMinutes": 5,
             "durationSeconds": 300,
-            "timerLabel": "5 min"
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Calabaza pelada y troceada"
+              },
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Zanahoria"
+              },
+              {
+                "name": "Caldo de verduras"
+              },
+              {
+                "name": "Aceite de oliva, sal"
+              }
+            ]
           },
           {
             "order": 2,
@@ -3379,7 +3685,12 @@
             "hasTimer": true,
             "durationMinutes": 2,
             "durationSeconds": 120,
-            "timerLabel": "2 min"
+            "timerLabel": "2 min",
+            "ingredientRefs": [
+              {
+                "name": "Nata para cocinar"
+              }
+            ]
           },
           {
             "order": 3,
@@ -3388,7 +3699,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           },
           {
             "order": 4,
@@ -3397,7 +3709,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           }
         ],
         "baseServings": 4,
@@ -3709,7 +4022,24 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Carne picada mixta"
+              },
+              {
+                "name": "Huevo"
+              },
+              {
+                "name": "Pan rallado"
+              },
+              {
+                "name": "Ajo en polvo"
+              },
+              {
+                "name": "Sal, pimienta"
+              }
+            ]
           },
           {
             "order": 2,
@@ -3718,7 +4048,12 @@
             "hasTimer": true,
             "durationMinutes": 3,
             "durationSeconds": 165,
-            "timerLabel": "3-4 min"
+            "timerLabel": "3-4 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
           },
           {
             "order": 3,
@@ -3727,7 +4062,18 @@
             "hasTimer": true,
             "durationMinutes": 5,
             "durationSeconds": 300,
-            "timerLabel": "5 min"
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Tomate triturado"
+              },
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Azúcar"
+              }
+            ]
           },
           {
             "order": 4,
@@ -3736,7 +4082,8 @@
             "hasTimer": true,
             "durationMinutes": 10,
             "durationSeconds": 600,
-            "timerLabel": "10 min"
+            "timerLabel": "10 min",
+            "ingredientRefs": []
           }
         ],
         "baseServings": 4,
@@ -4006,7 +4353,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas"
+              },
+              {
+                "name": "Tomate en rodajas"
+              }
+            ]
           },
           {
             "order": 2,
@@ -4015,7 +4370,15 @@
             "hasTimer": true,
             "durationMinutes": 20,
             "durationSeconds": 1200,
-            "timerLabel": "20 min"
+            "timerLabel": "20 min",
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas"
+              },
+              {
+                "name": "Aceite de oliva, sal, perejil"
+              }
+            ]
           },
           {
             "order": 3,
@@ -4024,7 +4387,21 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Filetes de merluza sin piel"
+              },
+              {
+                "name": "Patatas medianas"
+              },
+              {
+                "name": "Tomate en rodajas"
+              },
+              {
+                "name": "Limón"
+              }
+            ]
           },
           {
             "order": 4,
@@ -4033,7 +4410,8 @@
             "hasTimer": true,
             "durationMinutes": 11,
             "durationSeconds": 630,
-            "timerLabel": "12-15 min"
+            "timerLabel": "12-15 min",
+            "ingredientRefs": []
           }
         ],
         "baseServings": 4,
@@ -4281,7 +4659,12 @@
             "hasTimer": true,
             "durationMinutes": 2,
             "durationSeconds": 120,
-            "timerLabel": "2-3 min"
+            "timerLabel": "2-3 min",
+            "ingredientRefs": [
+              {
+                "name": "Ñoquis de patata frescos"
+              }
+            ]
           },
           {
             "order": 2,
@@ -4290,7 +4673,12 @@
             "hasTimer": true,
             "durationMinutes": 1,
             "durationSeconds": 75,
-            "timerLabel": "1-2 min"
+            "timerLabel": "1-2 min",
+            "ingredientRefs": [
+              {
+                "name": "Tomate frito"
+              }
+            ]
           },
           {
             "order": 3,
@@ -4299,7 +4687,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mozzarella fresca"
+              },
+              {
+                "name": "Albahaca fresca o seca"
+              },
+              {
+                "name": "Aceite de oliva, sal"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -4547,7 +4946,12 @@
             "hasTimer": true,
             "durationMinutes": 4,
             "durationSeconds": 210,
-            "timerLabel": "4-5 min"
+            "timerLabel": "4-5 min",
+            "ingredientRefs": [
+              {
+                "name": "Pechuga de pollo"
+              }
+            ]
           },
           {
             "order": 2,
@@ -4556,7 +4960,12 @@
             "hasTimer": true,
             "durationMinutes": 1,
             "durationSeconds": 30,
-            "timerLabel": "30 seg"
+            "timerLabel": "30 seg",
+            "ingredientRefs": [
+              {
+                "name": "Tortillas de trigo"
+              }
+            ]
           },
           {
             "order": 3,
@@ -4565,7 +4974,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Queso en lonchas"
+              },
+              {
+                "name": "Maíz escurrido"
+              },
+              {
+                "name": "Hojas de lechuga"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -4820,7 +5240,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Huevos"
+              },
+              {
+                "name": "Leche"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           },
           {
             "order": 2,
@@ -4829,7 +5260,15 @@
             "hasTimer": true,
             "durationMinutes": 1,
             "durationSeconds": 60,
-            "timerLabel": "1 min"
+            "timerLabel": "1 min",
+            "ingredientRefs": [
+              {
+                "name": "Jamón york en taquitos"
+              },
+              {
+                "name": "Mantequilla"
+              }
+            ]
           },
           {
             "order": 3,
@@ -4838,7 +5277,12 @@
             "hasTimer": true,
             "durationMinutes": 3,
             "durationSeconds": 165,
-            "timerLabel": "3-4 min"
+            "timerLabel": "3-4 min",
+            "ingredientRefs": [
+              {
+                "name": "Huevos"
+              }
+            ]
           },
           {
             "order": 4,
@@ -4847,7 +5291,8 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": []
           }
         ],
         "baseServings": 4,
@@ -5100,7 +5545,21 @@
             "hasTimer": true,
             "durationMinutes": 25,
             "durationSeconds": 1500,
-            "timerLabel": "25 min"
+            "timerLabel": "25 min",
+            "ingredientRefs": [
+              {
+                "name": "Muslos de pollo"
+              },
+              {
+                "name": "Zanahoria"
+              },
+              {
+                "name": "Puerro"
+              },
+              {
+                "name": "Rama de apio"
+              }
+            ]
           },
           {
             "order": 2,
@@ -5109,7 +5568,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Zanahoria"
+              }
+            ]
           },
           {
             "order": 3,
@@ -5118,7 +5582,18 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Muslos de pollo"
+              },
+              {
+                "name": "Fideos del nº 2"
+              },
+              {
+                "name": "Zanahoria"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -5372,7 +5847,24 @@
             "hasTimer": true,
             "durationMinutes": 15,
             "durationSeconds": 900,
-            "timerLabel": "15 min"
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Huevos"
+              },
+              {
+                "name": "Leche"
+              },
+              {
+                "name": "Harina"
+              },
+              {
+                "name": "Mantequilla derretida"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
           },
           {
             "order": 2,
@@ -5381,7 +5873,12 @@
             "hasTimer": true,
             "durationMinutes": 1,
             "durationSeconds": 60,
-            "timerLabel": "1 min"
+            "timerLabel": "1 min",
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla derretida"
+              }
+            ]
           },
           {
             "order": 3,
@@ -5390,7 +5887,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Jamón york"
+              },
+              {
+                "name": "Queso en lonchas"
+              }
+            ]
           }
         ],
         "baseServings": 4,
@@ -5599,7 +6104,15 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas"
+              },
+              {
+                "name": "Aceite de oliva, sal, pimentón dulce"
+              }
+            ]
           },
           {
             "order": 2,
@@ -5608,7 +6121,12 @@
             "hasTimer": true,
             "durationMinutes": 15,
             "durationSeconds": 900,
-            "timerLabel": "15 min"
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas"
+              }
+            ]
           },
           {
             "order": 3,
@@ -5617,7 +6135,12 @@
             "hasTimer": true,
             "durationMinutes": 15,
             "durationSeconds": 900,
-            "timerLabel": "15 min"
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Palitos de merluza congelados"
+              }
+            ]
           },
           {
             "order": 4,
@@ -5626,7 +6149,12 @@
             "hasTimer": false,
             "durationMinutes": null,
             "durationSeconds": null,
-            "timerLabel": null
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Limón"
+              }
+            ]
           }
         ],
         "baseServings": 4,

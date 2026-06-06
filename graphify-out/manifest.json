@@ -220,14 +220,14 @@
     "semantic_hash": "529646e5d08eeaa1eddf023c093eb118"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\air-fryer-light-vol1.json": {
-    "mtime": 1780007592.6886523,
-    "ast_hash": "151a1133b5475717259ee2ff45979710",
-    "semantic_hash": "151a1133b5475717259ee2ff45979710"
+    "mtime": 1780701208.8994014,
+    "ast_hash": "a991b0698b2a005dbb994b1a20174ad7",
+    "semantic_hash": "a991b0698b2a005dbb994b1a20174ad7"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\alta-proteina-vol1.json": {
-    "mtime": 1780007593.00555,
-    "ast_hash": "cd071712ad0c55cf2ce4930464ce6107",
-    "semantic_hash": "cd071712ad0c55cf2ce4930464ce6107"
+    "mtime": 1780701209.221574,
+    "ast_hash": "f9374d3d32aed894fede6e6780ac8f20",
+    "semantic_hash": "f9374d3d32aed894fede6e6780ac8f20"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\ayuno-permanente-vol1.json": {
     "mtime": 1780007593.099887,
@@ -235,19 +235,19 @@
     "semantic_hash": "69ecf38c0ab9f57eca786a49de246f7e"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\bajo-carbohidratos-vol1.json": {
-    "mtime": 1780007593.153809,
-    "ast_hash": "00df087c88c179eb55bf17acc434c43a",
-    "semantic_hash": "00df087c88c179eb55bf17acc434c43a"
+    "mtime": 1780701209.3137958,
+    "ast_hash": "2fb97ffdaa9c79775af5bf6834c6b948",
+    "semantic_hash": "2fb97ffdaa9c79775af5bf6834c6b948"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\cenas-ninos-vol1.json": {
-    "mtime": 1780007593.233819,
-    "ast_hash": "cc2703dda158b102bec17a5ab7e05668",
-    "semantic_hash": "cc2703dda158b102bec17a5ab7e05668"
+    "mtime": 1780701209.3753173,
+    "ast_hash": "b89525dd35cbc46f19bcfc74fd7b9426",
+    "semantic_hash": "b89525dd35cbc46f19bcfc74fd7b9426"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\keto-vol1.json": {
-    "mtime": 1780007593.3338149,
-    "ast_hash": "5015f4e8bd67898ea5cd608dcaa30f49",
-    "semantic_hash": "5015f4e8bd67898ea5cd608dcaa30f49"
+    "mtime": 1780701209.4375062,
+    "ast_hash": "a32e3946fc5c975f5ba35f8c31a8757e",
+    "semantic_hash": "a32e3946fc5c975f5ba35f8c31a8757e"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\mediterranean-pack-vol1.json": {
     "mtime": 1780005757.9709358,
@@ -260,24 +260,24 @@
     "semantic_hash": "0e687a6d2b2cd552050ee854af51339e"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\navidad-espanola-vol1.json": {
-    "mtime": 1780007593.4048097,
-    "ast_hash": "adfdbb1e8b6a1b82e21a64ea56377a98",
-    "semantic_hash": "adfdbb1e8b6a1b82e21a64ea56377a98"
+    "mtime": 1780701209.4875247,
+    "ast_hash": "9f7f0cae1867ccdb7caf59bcf9b26663",
+    "semantic_hash": "9f7f0cae1867ccdb7caf59bcf9b26663"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\perdida-grasa-sostenible-vol1.json": {
-    "mtime": 1780007593.4453597,
-    "ast_hash": "666fcb5e688ba3a3a343b5fde1f9354b",
-    "semantic_hash": "666fcb5e688ba3a3a343b5fde1f9354b"
+    "mtime": 1780701209.5374389,
+    "ast_hash": "383be4cefc7b0079bcdc0225a3a1109e",
+    "semantic_hash": "383be4cefc7b0079bcdc0225a3a1109e"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\tapas-espanolas-vol1.json": {
-    "mtime": 1780007593.5162146,
-    "ast_hash": "b448fb3a7ffbdf2544b7d28d04a2828c",
-    "semantic_hash": "b448fb3a7ffbdf2544b7d28d04a2828c"
+    "mtime": 1780701209.599936,
+    "ast_hash": "9d47bb094a46f51ea00904ef12153a21",
+    "semantic_hash": "9d47bb094a46f51ea00904ef12153a21"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\catalog-packs\\thanksgiving-vol1.json": {
-    "mtime": 1780007593.567807,
-    "ast_hash": "83993c5a928d00260c589610153fd6e8",
-    "semantic_hash": "83993c5a928d00260c589610153fd6e8"
+    "mtime": 1780701209.6504595,
+    "ast_hash": "47baac7c09647ddfd2d67b63f5ce782e",
+    "semantic_hash": "47baac7c09647ddfd2d67b63f5ce782e"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\exports\\users.dev.json": {
     "mtime": 1776781182.525885,
@@ -285,9 +285,9 @@
     "semantic_hash": "49f935ba5af760340955e048e4808642"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\package.json": {
-    "mtime": 1780007547.6216688,
-    "ast_hash": "c13b237dfcceee13a3933536581ccb99",
-    "semantic_hash": "c13b237dfcceee13a3933536581ccb99"
+    "mtime": 1780699935.2569695,
+    "ast_hash": "fe7e2a4025b34f4f113eb3190a62cf3b",
+    "semantic_hash": "fe7e2a4025b34f4f113eb3190a62cf3b"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\reports\\normalization-backup-20260512-1619.json": {
     "mtime": 1778595579.9858356,
@@ -655,9 +655,9 @@
     "semantic_hash": "b1fc32593762fa4ec192466a8e501a3f"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\KitchenWeekPlan.js": {
-    "mtime": 1773141082.3429377,
-    "ast_hash": "3b16a5425a3f7d78c89a11c3a1ec4bf3",
-    "semantic_hash": "3b16a5425a3f7d78c89a11c3a1ec4bf3"
+    "mtime": 1780669805.1506958,
+    "ast_hash": "0b295efb8a260605f01956179fd2ac43",
+    "semantic_hash": "0b295efb8a260605f01956179fd2ac43"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\models\\OnboardingChallenge.js": {
     "mtime": 1779292148.0474143,
@@ -830,9 +830,9 @@
     "semantic_hash": "8ea5c326675300412595656dbd0e9c1b"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\routes\\weeks.js": {
-    "mtime": 1779920283.9634802,
-    "ast_hash": "df1852bcbe78dcc43772ed5043e3bfec",
-    "semantic_hash": "df1852bcbe78dcc43772ed5043e3bfec"
+    "mtime": 1780669839.6446095,
+    "ast_hash": "bf0d453c7ed0ec11863a7957889b3814",
+    "semantic_hash": "bf0d453c7ed0ec11863a7957889b3814"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\shoppingService.js": {
     "mtime": 1775688143.8509972,
@@ -890,9 +890,9 @@
     "semantic_hash": "83cb824b4bb517aebd8b3ddc8112729e"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\weekPlanService.js": {
-    "mtime": 1779723161.4384265,
-    "ast_hash": "2227608c95eb386340462b8a5ebd894b",
-    "semantic_hash": "2227608c95eb386340462b8a5ebd894b"
+    "mtime": 1780669728.785202,
+    "ast_hash": "a33751748420bf578b66f9f88de3310e",
+    "semantic_hash": "a33751748420bf578b66f9f88de3310e"
   },
   "C:\\APPS\\pilot-homefirst\\backend\\src\\kitchen\\weeklyEngine.js": {
     "mtime": 1780000116.8466816,
@@ -950,9 +950,9 @@
     "semantic_hash": "519565ff4000dc843fa12a07d2f3d90d"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\package.json": {
-    "mtime": 1779834759.1510928,
-    "ast_hash": "93aa90ee8f67be1886d0d1c22e7c2649",
-    "semantic_hash": "93aa90ee8f67be1886d0d1c22e7c2649"
+    "mtime": 1780666097.039375,
+    "ast_hash": "134965f93a6c3063703c5ae843c2b9a9",
+    "semantic_hash": "134965f93a6c3063703c5ae843c2b9a9"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\public\\sw.js": {
     "mtime": 1775688143.8576777,
@@ -1030,9 +1030,9 @@
     "semantic_hash": "9ef290ee22164c4c9697e8e1b7267542"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\DishModal.jsx": {
-    "mtime": 1779920368.8716252,
-    "ast_hash": "8f26bc44b54c6db8d1a6b93fd449b233",
-    "semantic_hash": "8f26bc44b54c6db8d1a6b93fd449b233"
+    "mtime": 1780667200.392148,
+    "ast_hash": "958596d702414e4dbb01837b087128e4",
+    "semantic_hash": "958596d702414e4dbb01837b087128e4"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\IngredientModal.jsx": {
     "mtime": 1779372642.50064,
@@ -1055,14 +1055,14 @@
     "semantic_hash": "08ba21a7f5a70b9d03613a57547a59d3"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\RecipeEditor.jsx": {
-    "mtime": 1780058868.2327423,
-    "ast_hash": "e3293cc202c231f0d9071f852cf2b0c9",
-    "semantic_hash": "e3293cc202c231f0d9071f852cf2b0c9"
+    "mtime": 1780690123.9662032,
+    "ast_hash": "eeb3636c7a40c06508b1adbadc693f7b",
+    "semantic_hash": "eeb3636c7a40c06508b1adbadc693f7b"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\RecipeModal.jsx": {
-    "mtime": 1780007628.4189923,
-    "ast_hash": "2e78c96a3e8f99aa2b6beb1aad0579ff",
-    "semantic_hash": "2e78c96a3e8f99aa2b6beb1aad0579ff"
+    "mtime": 1780701451.5956585,
+    "ast_hash": "1d5adc852ca99c8f381b800d88436ef7",
+    "semantic_hash": "1d5adc852ca99c8f381b800d88436ef7"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\RecipeServingsControl.jsx": {
     "mtime": 1780005219.9793177,
@@ -1115,19 +1115,14 @@
     "semantic_hash": "8e89f8c427c5b2c02a865304086b4022"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\cooking\\CookingSessionStepper.jsx": {
-    "mtime": 1780009033.2136137,
-    "ast_hash": "9ed048f5b56388a5a9772507178a8eb6",
-    "semantic_hash": "9ed048f5b56388a5a9772507178a8eb6"
-  },
-  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\cooking\\RecipeExecutionModal.jsx": {
-    "mtime": 1780007637.7436924,
-    "ast_hash": "d2e64e9c9b1d002d64cf9b8db120f296",
-    "semantic_hash": "d2e64e9c9b1d002d64cf9b8db120f296"
+    "mtime": 1780689515.4194732,
+    "ast_hash": "26ffb4b8a7e02b7ff15000c877221fdc",
+    "semantic_hash": "26ffb4b8a7e02b7ff15000c877221fdc"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\cooking\\RecipeStepCard.jsx": {
-    "mtime": 1780058879.4351838,
-    "ast_hash": "6238a2f097ab1df808af1c8d6e2fe23c",
-    "semantic_hash": "6238a2f097ab1df808af1c8d6e2fe23c"
+    "mtime": 1780689471.3872008,
+    "ast_hash": "dd78cfc338b9100c36eecb2801d51317",
+    "semantic_hash": "dd78cfc338b9100c36eecb2801d51317"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\cooking\\RecipeTimer.jsx": {
     "mtime": 1780007578.34066,
@@ -1235,9 +1230,9 @@
     "semantic_hash": "7c6fb254052aa61ce095f5cdf9257ac3"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\contexts\\CookingSessionContext.jsx": {
-    "mtime": 1780058906.5784023,
-    "ast_hash": "af9a2efe95984700ebfb0635cf745100",
-    "semantic_hash": "af9a2efe95984700ebfb0635cf745100"
+    "mtime": 1780670472.4359312,
+    "ast_hash": "9ef774b2a02854a7ada41394cb847485",
+    "semantic_hash": "9ef774b2a02854a7ada41394cb847485"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\contexts\\OnboardingContext.jsx": {
     "mtime": 1779718116.7484436,
@@ -1280,9 +1275,9 @@
     "semantic_hash": "c3dd201f02a6071317525c3feac3c907"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\AdminPanelPage.jsx": {
-    "mtime": 1780058979.9992082,
-    "ast_hash": "0df5bdb8aeee4f47813a806dd7308016",
-    "semantic_hash": "0df5bdb8aeee4f47813a806dd7308016"
+    "mtime": 1780667282.507178,
+    "ast_hash": "c3d4d643cbf31690c5ef8499154a81e1",
+    "semantic_hash": "c3d4d643cbf31690c5ef8499154a81e1"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\AdminResetPasswordPage.jsx": {
     "mtime": 1779830597.4856272,
@@ -1315,9 +1310,9 @@
     "semantic_hash": "aa7bd111b761e5f3f8130a8507a09217"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\DishesPage.jsx": {
-    "mtime": 1779920375.6555526,
-    "ast_hash": "d0d231ba7101301b5622a643ed8ce588",
-    "semantic_hash": "d0d231ba7101301b5622a643ed8ce588"
+    "mtime": 1780666281.3493118,
+    "ast_hash": "e39570871e1f06a99ddb60c435eabac5",
+    "semantic_hash": "e39570871e1f06a99ddb60c435eabac5"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\InviteLandingPage.jsx": {
     "mtime": 1779207466.3238854,
@@ -1345,9 +1340,9 @@
     "semantic_hash": "91aac52ba3f80133175ae9e6af2e6c69"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\ShoppingPage.jsx": {
-    "mtime": 1780661689.985635,
-    "ast_hash": "0d351001eba7f4cc92c3d210a05cbab5",
-    "semantic_hash": "0d351001eba7f4cc92c3d210a05cbab5"
+    "mtime": 1780663229.3915298,
+    "ast_hash": "00da56b801a562413aa5d487ccfbef6f",
+    "semantic_hash": "00da56b801a562413aa5d487ccfbef6f"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\SwapsPage.jsx": {
     "mtime": 1773141082.3873825,
@@ -1360,9 +1355,9 @@
     "semantic_hash": "19ad1196b63cdc0a91e734f4ffc07bcd"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\pages\\WeekPage.jsx": {
-    "mtime": 1780004542.2033823,
-    "ast_hash": "c5b630fce3e810663130c72e60caf631",
-    "semantic_hash": "c5b630fce3e810663130c72e60caf631"
+    "mtime": 1780669889.5176075,
+    "ast_hash": "d1ec513de9d7baab6410a8dc3bdfeab3",
+    "semantic_hash": "d1ec513de9d7baab6410a8dc3bdfeab3"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\push.js": {
     "mtime": 1775688143.875254,
@@ -1395,14 +1390,14 @@
     "semantic_hash": "41010f960c6cb3c01961ec02f51f00b2"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\recipeScaling.js": {
-    "mtime": 1780004416.1919014,
-    "ast_hash": "0db7f06670f8a5278983012c19c7ecee",
-    "semantic_hash": "0db7f06670f8a5278983012c19c7ecee"
+    "mtime": 1780668617.329155,
+    "ast_hash": "af93822b166bd69c275e4c26fc447922",
+    "semantic_hash": "af93822b166bd69c275e4c26fc447922"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\recipeStepParser.js": {
-    "mtime": 1780008704.884838,
-    "ast_hash": "19737db373a1b880469ac31c55aa5dd3",
-    "semantic_hash": "19737db373a1b880469ac31c55aa5dd3"
+    "mtime": 1780689830.5898733,
+    "ast_hash": "522df5c8c7fa930688a2c12a2fdd451e",
+    "semantic_hash": "522df5c8c7fa930688a2c12a2fdd451e"
   },
   "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\timerService.js": {
     "mtime": 1780006758.796943,
@@ -1655,9 +1650,9 @@
     "semantic_hash": "d3e6ac3e43970552cf3cd306bc5ff471"
   },
   "C:\\APPS\\pilot-homefirst\\CLAUDE.md": {
-    "mtime": 1780662127.090945,
-    "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
-    "semantic_hash": "8a6643a420fdad6bfb583523bc6cef16"
+    "mtime": 1780690019.0463197,
+    "ast_hash": "b400a170ce672c993086601437f21aa6",
+    "semantic_hash": "b400a170ce672c993086601437f21aa6"
   },
   "C:\\APPS\\pilot-homefirst\\DESIGN.md": {
     "mtime": 1779349880.4420192,
@@ -1818,5 +1813,30 @@
     "mtime": 1773141082.3716705,
     "ast_hash": "666fa2bf762b9600c775df9fe2cd2330",
     "semantic_hash": "666fa2bf762b9600c775df9fe2cd2330"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrateIngredientRefs.js": {
+    "mtime": 1780699926.8500552,
+    "ast_hash": "b39bf3257045a13336a7060cbcc9a84c",
+    "semantic_hash": "b39bf3257045a13336a7060cbcc9a84c"
+  },
+  "C:\\APPS\\pilot-homefirst\\backend\\scripts\\migrateStepIngredientRefs.js": {
+    "mtime": 1780689649.9257834,
+    "ast_hash": "073829ec3256394830e26fb48af5562f",
+    "semantic_hash": "073829ec3256394830e26fb48af5562f"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\components\\RecipeIngredientsList.jsx": {
+    "mtime": 1780667092.3079288,
+    "ast_hash": "f68f44412fe2cfa8b40306f2a3bf89a6",
+    "semantic_hash": "f68f44412fe2cfa8b40306f2a3bf89a6"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\detectStepIngredients.js": {
+    "mtime": 1780689441.1096978,
+    "ast_hash": "3613d21fc51ae0252f4b22674fc2d7e5",
+    "semantic_hash": "3613d21fc51ae0252f4b22674fc2d7e5"
+  },
+  "C:\\APPS\\pilot-homefirst\\frontend\\src\\kitchen\\utils\\recipeScaling.test.js": {
+    "mtime": 1780668630.4304578,
+    "ast_hash": "0bd6893f74883eb4aec3cd955c213618",
+    "semantic_hash": "0bd6893f74883eb4aec3cd955c213618"
   }
 }
