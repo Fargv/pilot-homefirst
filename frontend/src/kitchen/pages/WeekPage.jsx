@@ -2369,7 +2369,11 @@ export default function WeekPage() {
               {!isEditing ? (
                 isEmptyState ? (
                   <div className="kitchen-day-empty">
-                    <div className="kitchen-day-empty-spacer" aria-hidden="true" />
+                    <div className="kitchen-day-empty-body">
+                      <span className="kitchen-day-empty-icon" aria-hidden="true">🍽️</span>
+                      <p className="kitchen-day-empty-title">Sin plato asignado</p>
+                      <p className="kitchen-day-empty-sub">Planifica una comida para este día</p>
+                    </div>
                     {canShowAssignCta ? (
                       <div className="kitchen-day-empty-actions">
                         <button

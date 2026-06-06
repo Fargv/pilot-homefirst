@@ -2174,6 +2174,7 @@ body {
   min-height: auto;
   background: #f8f9ff;
   border: 1px solid #e4e7ff;
+  border-radius: var(--hf-radius-lg, 28px);
   box-shadow: 0 10px 30px rgba(99, 102, 241, 0.06);
 }
 
@@ -2287,16 +2288,46 @@ body {
 .kitchen-day-empty {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   flex: 1;
+  gap: 16px;
+  padding: 8px 0;
   min-height: 120px;
 }
 
-.kitchen-day-empty-spacer {
-  flex: 1;
+.kitchen-day-empty-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+
+.kitchen-day-empty-icon {
+  font-size: 28px;
+  line-height: 1;
+  display: block;
+  margin-bottom: 4px;
+  opacity: 0.65;
+}
+
+.kitchen-day-empty-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary, #475569);
+}
+
+.kitchen-day-empty-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted, #9ca3af);
+  line-height: 1.4;
+  max-width: 160px;
 }
 
 .kitchen-day-empty-button {
-  margin-top: auto;
   align-self: center;
   width: 100%;
 }
@@ -2310,12 +2341,7 @@ body {
   width: 100%;
 }
 
-.kitchen-day-empty-actions {
-  margin-top: auto;
-}
-
 .kitchen-day-empty-actions .kitchen-day-empty-button {
-  margin-top: 0;
   align-self: auto;
   flex: 1 1 auto;
   width: auto;
@@ -3989,7 +4015,6 @@ body {
   background: var(--hf-surface);
 }
 
-.kitchen-day-card.is-empty,
 .kitchen-ui-button-secondary,
 .kitchen-button.secondary,
 .kitchen-status-pill.planned,
@@ -12886,6 +12911,19 @@ td.recipe-qty-scaled {
 
 [data-theme="dark"] .dishes-filter-panel-footer {
   border-color: var(--border-soft);
+}
+
+/* ── Dishes filter bar — mobile: wrap to two rows, no overflow ── */
+@media (max-width: 520px) {
+  .dishes-controls-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .dishes-filters-right {
+    flex: 0 0 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
 }
 
 /* ─── PWA Install Prompt ─────────────────────────────────────── */
