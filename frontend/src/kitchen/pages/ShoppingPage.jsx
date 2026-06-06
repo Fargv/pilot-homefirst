@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus, CheckCircle, AlertCircle, X } from "lucide-react";
 import WeekDatePicker from "../components/ui/WeekDatePicker.jsx";
 import { UNSAFE_NavigationContext as NavigationContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
@@ -245,8 +245,6 @@ export default function ShoppingPage() {
   const navigationContext = React.useContext(NavigationContext);
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [tab, setTab] = useState("pending");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState("");
@@ -289,16 +287,27 @@ export default function ShoppingPage() {
   const basicsToastTimerRef = useRef(null);
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
-  const [addItemToasts, setAddItemToasts] = useState([]);
-  const addItemToastCounterRef = useRef(0);
+  const [toasts, setToasts] = useState([]);
+  const toastCounterRef = useRef(0);
+
+  const pushToast = useCallback((config) => {
+    const id = ++toastCounterRef.current;
+    const autoDismiss = config.autoDismiss !== undefined
+      ? config.autoDismiss
+      : config.actionLabel ? null : 4000;
+    setToasts((prev) => [...prev, { id, ...config, autoDismiss }]);
+    if (autoDismiss) {
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), autoDismiss);
+    }
+  }, []);
+
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const pushAddedToast = useCallback((name) => {
-    const id = ++addItemToastCounterRef.current;
-    setAddItemToasts((prev) => [...prev, { id, name }]);
-    setTimeout(() => {
-      setAddItemToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
-  }, []);
+    pushToast({ type: "success", message: `«${name}» añadido a la lista`, autoDismiss: 3000 });
+  }, [pushToast]);
   const overflowMenuRef = useRef(null);
   const weekDirRef = useRef(null);
   const [dismissedBannerIds, setDismissedBannerIds] = useState(() => {
@@ -421,7 +430,7 @@ export default function ShoppingPage() {
     setPurchaseConfirmStoreId("");
     setPurchaseConfirmAmount("");
     setLeavePromptOpen(false);
-    setError(message);
+    pushToast({ type: "error", message });
   };
 
   const logShoppingApiError = (context, endpoint, err) => {
@@ -440,7 +449,6 @@ export default function ShoppingPage() {
   const loadList = async ({ silent = false, checkBasicsPopup = false } = {}) => {
     if (isDiodGlobalMode) return;
     if (!silent) setIsRefreshing(true);
-    setError("");
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
       applyPayload(data);
@@ -469,7 +477,7 @@ export default function ShoppingPage() {
       setPendingPurchaseSessions([]);
       setCurrentPurchaseSession(null);
       setHasRestorableOpenPurchase(false);
-      setError(err.message || "No se pudo cargar la lista.");
+      pushToast({ type: "error", message: err.message || "No se pudo cargar la lista." });
     } finally {
       if (!silent) setIsRefreshing(false);
     }
@@ -668,7 +676,6 @@ export default function ShoppingPage() {
 
   const markCategoryPurchased = async (group) => {
     if (isDiodGlobalMode || !group?.items?.length) return;
-    setError("");
     try {
       let lastData;
       for (const item of group.items) {
@@ -687,7 +694,7 @@ export default function ShoppingPage() {
       notifyWeekly("item_purchased", { itemKey: "batch" });
     } catch (err) {
       logShoppingApiError("markCategoryPurchased", `/api/kitchen/shopping/${weekStart}/item`, err);
-      setError(err.message || "No se pudo marcar la categoría.");
+      pushToast({ type: "error", message: err.message || "No se pudo marcar la categoría." });
     }
   };
 
@@ -758,7 +765,6 @@ export default function ShoppingPage() {
   const handleQuickSelect = async (ingredient) => {
     if (!ingredient?._id || quickBusy) return;
     setQuickBusy(true);
-    setError("");
     try {
       await addIngredientToList(ingredient._id, ingredient.categoryId?._id || ingredient.categoryId || quickCategoryId || null);
       setQuickQuery("");
@@ -768,7 +774,7 @@ export default function ShoppingPage() {
       pushAddedToast(ingredient.name);
       notifyWeekly("manual_item_added");
     } catch (err) {
-      setError(err.message || "No se pudo añadir el ingrediente a la lista.");
+      pushToast({ type: "error", message: err.message || "No se pudo añadir el ingrediente a la lista." });
     } finally {
       setQuickBusy(false);
     }
@@ -795,7 +801,6 @@ export default function ShoppingPage() {
   const handleQuickCreate = async () => {
     if (!quickCreateName.trim() || !quickCategoryId || quickBusy) return;
     setQuickBusy(true);
-    setError("");
     try {
       const ingredient = await createHouseholdIngredient(quickCreateName, quickCategoryId);
       if (!ingredient?._id) throw new Error("No se pudo crear el ingrediente.");
@@ -811,7 +816,7 @@ export default function ShoppingPage() {
       pushAddedToast(ingredient.name);
       notifyWeekly("manual_item_added");
     } catch (err) {
-      setError(err.message || "No se pudo crear y añadir el ingrediente.");
+      pushToast({ type: "error", message: err.message || "No se pudo crear y añadir el ingrediente." });
     } finally {
       setQuickBusy(false);
     }
@@ -819,14 +824,14 @@ export default function ShoppingPage() {
 
   const removeItem = async (item) => {
     if (!item?.itemId) {
-      setError("No se pudo eliminar: falta identificador del item.");
+      pushToast({ type: "error", message: "No se pudo eliminar: falta identificador del item." });
       return;
     }
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/${item.itemId}`, { method: "DELETE" });
       applyPayload(data);
     } catch (err) {
-      setError(err.message || "No se pudo eliminar el item.");
+      pushToast({ type: "error", message: err.message || "No se pudo eliminar el item." });
     }
   };
 
@@ -839,7 +844,7 @@ export default function ShoppingPage() {
       });
       applyPayload(data);
     } catch (err) {
-      setError(err.message || "No se pudo actualizar la cantidad.");
+      pushToast({ type: "error", message: err.message || "No se pudo actualizar la cantidad." });
     }
   };
 
@@ -891,7 +896,7 @@ export default function ShoppingPage() {
       setRecentlyMovedItemKey(key);
     } catch (err) {
       logShoppingApiError("setItemStatus", `/api/kitchen/shopping/${weekStart}/item`, err);
-      setError(err.message || "No se pudo actualizar.");
+      pushToast({ type: "error", message: err.message || "No se pudo actualizar." });
     } finally {
       setTransitioningItemKey(null);
     }
@@ -906,7 +911,7 @@ export default function ShoppingPage() {
       applyPayload(data);
     } catch (err) {
       logShoppingApiError("updatePurchasedItemStore", `/api/kitchen/shopping/${weekStart}/item/store`, err);
-      setError(err.message || "No se pudo cambiar el supermercado.");
+      pushToast({ type: "error", message: err.message || "No se pudo cambiar el supermercado." });
     }
   };
 
@@ -920,7 +925,7 @@ export default function ShoppingPage() {
       setEditingGroupSessionId(null);
       await loadList({ silent: true });
     } catch (err) {
-      setError(err.message || "No se pudo actualizar el importe.");
+      pushToast({ type: "error", message: err.message || "No se pudo actualizar el importe." });
     }
   };
 
@@ -933,7 +938,7 @@ export default function ShoppingPage() {
       applyPayload(data);
     } catch (err) {
       logShoppingApiError("updateGroupStore", `/api/kitchen/shopping/${weekStart}/purchased/group-store`, err);
-      setError(err.message || "No se pudo cambiar el supermercado.");
+      pushToast({ type: "error", message: err.message || "No se pudo cambiar el supermercado." });
     }
   };
 
@@ -948,7 +953,7 @@ export default function ShoppingPage() {
       });
       applyPayload(data);
       if (status === "purchased") {
-        setSuccess(data.updated ? "Todo marcado como comprado" : "No había elementos pendientes.");
+        pushToast({ type: "success", message: data.updated ? "Todo marcado como comprado" : "No había elementos pendientes." });
         if (data.updated && (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id)) {
           setHasMarkedPurchaseInViewSession(true);
         }
@@ -960,18 +965,17 @@ export default function ShoppingPage() {
           notifyWeekly("shopping_list_completed");
         }
       } else {
-        setSuccess(data.updated ? "Todo volvió a pendiente" : "No había elementos comprados.");
+        pushToast({ type: "success", message: data.updated ? "Todo volvió a pendiente" : "No había elementos comprados." });
       }
     } catch (err) {
       logShoppingApiError("setAllItemsStatus", `/api/kitchen/shopping/${weekStart}/items/status`, err);
-      setError(err.message || "No se pudo actualizar en bloque.");
+      pushToast({ type: "error", message: err.message || "No se pudo actualizar en bloque." });
     }
   };
 
   const createStoreFromDropdown = async () => {
     const name = window.prompt("Nombre del supermercado");
     if (!name || !name.trim()) return;
-    setError("");
     try {
       await apiRequest("/api/kitchen/shopping/stores", {
         method: "POST",
@@ -980,7 +984,7 @@ export default function ShoppingPage() {
       await loadList({ silent: true });
     } catch (err) {
       logShoppingApiError("createStoreFromDropdown", "/api/kitchen/shopping/stores", err);
-      setError(err.message || "No se pudo crear el supermercado.");
+      pushToast({ type: "error", message: err.message || "No se pudo crear el supermercado." });
     }
   };
 
@@ -1000,7 +1004,6 @@ export default function ShoppingPage() {
   const postponePurchaseConfirmation = async () => {
     if (!purchaseConfirmTarget?.id || purchaseConfirmBusy) return;
     setPurchaseConfirmBusy(true);
-    setError("");
     try {
       await apiRequest(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/postpone`, {
         method: "POST"
@@ -1018,7 +1021,7 @@ export default function ShoppingPage() {
         handleBudgetFeatureUnavailable();
         return;
       }
-      setError(err.message || "No se pudo posponer la confirmación.");
+      pushToast({ type: "error", message: err.message || "No se pudo posponer la confirmación." });
     } finally {
       setPurchaseConfirmBusy(false);
     }
@@ -1027,7 +1030,6 @@ export default function ShoppingPage() {
   const completePendingPurchase = async () => {
     if (!purchaseConfirmTarget?.id || purchaseConfirmBusy) return;
     setPurchaseConfirmBusy(true);
-    setError("");
     try {
       await apiRequest(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/complete`, {
         method: "POST",
@@ -1057,13 +1059,13 @@ export default function ShoppingPage() {
       if (pendingNavigationRef.current) {
         proceedPendingNavigation();
       }
-      setSuccess("Compra registrada.");
+      pushToast({ type: "success", message: "Compra registrada." });
     } catch (err) {
       if (isBudgetFeatureUnavailableError(err)) {
         handleBudgetFeatureUnavailable();
         return;
       }
-      setError(err.message || "No se pudo guardar la compra.");
+      pushToast({ type: "error", message: err.message || "No se pudo guardar la compra." });
     } finally {
       setPurchaseConfirmBusy(false);
     }
@@ -1203,8 +1205,26 @@ export default function ShoppingPage() {
               </button>
             ) : null}
 
-            {/* Add input + basics button — inline row */}
-            {tab === "pending" ? (
+            {/* Tabs */}
+            <div className="shopping-tabs-standalone">
+              <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
+                <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
+                <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+                {budgetFeatureEnabled ? (
+                  <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
+                    Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+          <div
+            className={`shopping-week-content ${contentSlideClass}`}
+            onAnimationEnd={() => setContentSlideClass("")}
+          >
+          {tab === "pending" ? (
+            <>
+              {/* Add input + basics — below tabs, only in pending tab */}
               <div className="shopping-add-inline">
                 <div className="shopping-add-wrapper" role="region" aria-label="Añadir ingrediente">
                   <input
@@ -1240,60 +1260,7 @@ export default function ShoppingPage() {
                   Básicos
                 </button>
               </div>
-            ) : null}
-
-            {/* Tabs */}
-            <div className="shopping-tabs-standalone">
-              <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
-                <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-                <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-                {budgetFeatureEnabled ? (
-                  <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
-                    Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          </div>
-          {(success || error) ? (
-            <div className="shopping-toolbar-alerts" aria-live="polite">
-              {success ? <div className="kitchen-alert success shopping-toolbar-alert">{success}</div> : null}
-              {error ? <div className="kitchen-alert error shopping-toolbar-alert">{error}</div> : null}
-            </div>
-          ) : null}
-
-          {budgetFeatureEnabled && currentPurchaseSession && !dismissedBannerIds.has(String(currentPurchaseSession.id)) && !purchaseConfirmOpen && tab !== "sessions" ? (
-            <div className="shopping-confirm-banner" role="status">
-              <span className="shopping-confirm-banner-title">
-                🧾 {currentPurchaseSession.itemCount} producto{currentPurchaseSession.itemCount !== 1 ? "s" : ""} comprado{currentPurchaseSession.itemCount !== 1 ? "s" : ""}{currentPurchaseSession.storeName ? ` · ${currentPurchaseSession.storeName}` : ""} sin gasto registrado
-              </span>
-              <div className="shopping-confirm-banner-actions">
-                <button
-                  type="button"
-                  className="kitchen-button is-small shopping-confirm-banner-btn"
-                  onClick={() => openPurchaseConfirmModal(currentPurchaseSession)}
-                >
-                  Registrar
-                </button>
-                <button
-                  type="button"
-                  className="shopping-confirm-banner-dismiss"
-                  onClick={() => dismissBanner(currentPurchaseSession.id)}
-                  aria-label="Cerrar aviso"
-                  title="No volver a mostrar este aviso"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          <div
-            className={`shopping-week-content ${contentSlideClass}`}
-            onAnimationEnd={() => setContentSlideClass("")}
-          >
-          {tab === "pending" ? (
-            <div className="shopping-categories-wrap">
+              <div className="shopping-categories-wrap">
               {!Array.isArray(pendingByCategory) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
               ) : pendingByCategory.length === 0 ? (
@@ -1371,6 +1338,7 @@ export default function ShoppingPage() {
                 </>
               )}
             </div>
+            </>
           ) : null}
 
           {tab === "purchased" ? (
@@ -1782,17 +1750,43 @@ export default function ShoppingPage() {
           </div>
         </div>
       ) : null}
-      {addItemToasts.length > 0 ? createPortal(
-        <div className="shopping-toast-stack" aria-live="polite" aria-atomic="false">
-          {addItemToasts.map((toast) => (
-            <div key={toast.id} className="shopping-added-toast">
-              <Check size={15} className="shopping-toast-icon" />
-              <span>«{toast.name}» añadido a la lista</span>
+      {createPortal(
+        <div className="hf-toast-stack" aria-live="polite" aria-atomic="false">
+          {/* Condition-driven action toast for pending purchase session */}
+          {budgetFeatureEnabled && currentPurchaseSession && !dismissedBannerIds.has(String(currentPurchaseSession.id)) && !purchaseConfirmOpen && tab !== "sessions" ? (
+            <div className="hf-toast hf-toast--action" role="status">
+              <AlertCircle size={16} className="hf-toast-icon" aria-hidden="true" />
+              <span className="hf-toast-msg">
+                {currentPurchaseSession.itemCount} producto{currentPurchaseSession.itemCount !== 1 ? "s" : ""} comprado{currentPurchaseSession.itemCount !== 1 ? "s" : ""}{currentPurchaseSession.storeName ? ` · ${currentPurchaseSession.storeName}` : ""} sin gasto registrado
+              </span>
+              <button type="button" className="hf-toast-action-btn" onClick={() => openPurchaseConfirmModal(currentPurchaseSession)}>
+                Registrar
+              </button>
+              <button type="button" className="hf-toast-dismiss" onClick={() => dismissBanner(currentPurchaseSession.id)} aria-label="Cerrar aviso">
+                <X size={14} aria-hidden="true" />
+              </button>
+            </div>
+          ) : null}
+          {/* Push-based toasts (success, error) */}
+          {toasts.map((toast) => (
+            <div key={toast.id} className={`hf-toast hf-toast--${toast.type}`} role="status">
+              {toast.type === "success"
+                ? <CheckCircle size={16} className="hf-toast-icon" aria-hidden="true" />
+                : <AlertCircle size={16} className="hf-toast-icon" aria-hidden="true" />}
+              <span className="hf-toast-msg">{toast.message}</span>
+              {toast.actionLabel ? (
+                <button type="button" className="hf-toast-action-btn" onClick={() => { toast.onAction?.(); dismissToast(toast.id); }}>
+                  {toast.actionLabel}
+                </button>
+              ) : null}
+              <button type="button" className="hf-toast-dismiss" onClick={() => dismissToast(toast.id)} aria-label="Cerrar">
+                <X size={14} aria-hidden="true" />
+              </button>
             </div>
           ))}
         </div>,
         document.body
-      ) : null}
+      )}
     </KitchenLayout>
   );
 }
