@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Calendar, ChevronLeft, ChevronRight, Check, Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
+import WeekDatePicker from "../components/ui/WeekDatePicker.jsx";
 import { UNSAFE_NavigationContext as NavigationContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
@@ -198,15 +199,6 @@ function formatWeekLabel(iso) {
   return `Semana del ${date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}`;
 }
 
-function formatWeekRange(iso) {
-  if (!iso) return "";
-  const start = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(start.getTime())) return "";
-  const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 6);
-  const fmt = (d) => d.toLocaleDateString("es-ES", { day: "numeric", month: "short", timeZone: "UTC" });
-  return `${fmt(start)} – ${fmt(end)}`;
-}
 
 function formatCurrency(value) {
   const amount = Number(value);
@@ -297,8 +289,6 @@ export default function ShoppingPage() {
   const basicsToastTimerRef = useRef(null);
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
-  const [weekPickerOpen, setWeekPickerOpen] = useState(false);
-  const weekPickerRef = useRef(null);
   const [addItemToasts, setAddItemToasts] = useState([]);
   const addItemToastCounterRef = useRef(0);
 
@@ -613,15 +603,6 @@ export default function ShoppingPage() {
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [overflowMenuOpen]);
 
-  useEffect(() => {
-    if (!weekPickerOpen) return undefined;
-    const handlePointerDown = (event) => {
-      if (weekPickerRef.current?.contains(event.target)) return;
-      setWeekPickerOpen(false);
-    };
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [weekPickerOpen]);
 
   const updateQuickCategoryMenuPosition = useCallback(() => {
     const field = quickCategoryFieldRef.current;
@@ -1177,68 +1158,12 @@ export default function ShoppingPage() {
             <div className="shopping-header-top">
               <div className="shopping-header-left">
                 <h1 className="shopping-header-h1">Lista de la compra</h1>
-                {/* Row 2: week navigator with visible chevrons */}
-                <div className="shopping-header-week-area" ref={weekPickerRef}>
-                  <div className="shopping-week-nav-strip">
-                    <button
-                      type="button"
-                      className="shopping-week-chevron"
-                      onClick={() => updateVisibleWeek((p) => addDaysToISO(p, -7))}
-                      aria-label="Semana anterior"
-                    >
-                      <ChevronLeft size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      className="shopping-week-date-trigger"
-                      onClick={() => setWeekPickerOpen((v) => !v)}
-                      aria-label="Seleccionar semana"
-                      aria-expanded={weekPickerOpen}
-                    >
-                      <Calendar size={13} />
-                      <span>{formatWeekRange(weekStart)}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="shopping-week-chevron"
-                      onClick={() => updateVisibleWeek((p) => addDaysToISO(p, 7))}
-                      aria-label="Semana siguiente"
-                    >
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                  {!isCurrentWeek ? (
-                    <button
-                      type="button"
-                      className="shopping-today-chip"
-                      onClick={handleJumpToCurrentWeek}
-                      aria-label="Ir a la semana actual"
-                    >
-                      Hoy
-                    </button>
-                  ) : null}
-                  {weekPickerOpen ? (
-                    <div className="shopping-week-picker-popover" role="dialog" aria-label="Seleccionar semana">
-                      <button
-                        type="button"
-                        className="shopping-week-picker-arrow"
-                        onClick={() => { updateVisibleWeek((p) => addDaysToISO(p, -7)); setWeekPickerOpen(false); }}
-                        aria-label="Semana anterior"
-                      >
-                        <ChevronLeft size={16} />
-                      </button>
-                      <span className="shopping-week-picker-label">{formatWeekRange(weekStart)}</span>
-                      <button
-                        type="button"
-                        className="shopping-week-picker-arrow"
-                        onClick={() => { updateVisibleWeek((p) => addDaysToISO(p, 7)); setWeekPickerOpen(false); }}
-                        aria-label="Semana siguiente"
-                      >
-                        <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
+                {/* Row 2: week navigator */}
+                <WeekDatePicker
+                  selectedWeek={weekStart}
+                  onWeekChange={updateVisibleWeek}
+                  className="shopping-header-week-picker"
+                />
               </div>
               <ShareWhatsAppButton
                 iconOnly

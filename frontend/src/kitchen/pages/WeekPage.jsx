@@ -7,7 +7,7 @@ import IngredientPicker from "../components/IngredientPicker.jsx";
 import DishModal from "../components/DishModal.jsx";
 import RecipeModal from "../components/RecipeModal.jsx";
 import WeekPageSkeleton from "../components/WeekPageSkeleton.jsx";
-import WeekNavigator from "../components/ui/WeekNavigator.jsx";
+import WeekDatePicker from "../components/ui/WeekDatePicker.jsx";
 import KitchenLayout from "../Layout.jsx";
 import ShareWhatsAppButton from "../components/ShareWhatsAppButton.jsx";
 import { buildWeekShareUrl, normalizeWeekParam } from "../deepLinks.js";
@@ -1999,24 +1999,11 @@ export default function WeekPage() {
               <div className="kitchen-week-header-panel">
                 <div className="kitchen-week-header-row kitchen-week-header-row-nav">
                   <div className="kitchen-week-nav-row">
-                    <WeekNavigator
+                    <WeekDatePicker
+                      selectedWeek={weekStart}
+                      onWeekChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
                       className="kitchen-week-header-navigator"
-                      value={weekStart}
-                      onChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
-                      onPrevious={() => handleWeekShift(-7)}
-                      onNext={() => handleWeekShift(7)}
                     />
-                    {!isCurrentWeek ? (
-                      <button
-                        type="button"
-                        className="kitchen-week-now-button"
-                        onClick={handleJumpToCurrentPeriod}
-                        aria-label="Ir a la semana actual"
-                      >
-                        <TodayIcon className="kitchen-week-now-icon" />
-                        <span>Hoy</span>
-                      </button>
-                    ) : null}
                     {canShowWeekRandomize ? (
                       canUseFullWeekRandomization ? (
                         <button

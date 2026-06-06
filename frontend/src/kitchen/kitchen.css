@@ -5841,6 +5841,329 @@ body {
   background: rgba(99, 102, 241, 0.15);
 }
 
+/* ═══════════════════════════════════════════════
+   WeekDatePicker — reusable week selector
+   ═══════════════════════════════════════════════ */
+.wdp-container {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* ── Strip ── */
+.wdp-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 10px;
+  padding: 2px 4px;
+  transition: background 0.15s ease;
+}
+
+.wdp-strip:hover {
+  background: rgba(79, 70, 229, 0.07);
+}
+
+.wdp-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--hf-brand);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.wdp-chevron:hover {
+  background: rgba(79, 70, 229, 0.12);
+}
+
+.wdp-chevron:active {
+  background: rgba(79, 70, 229, 0.2);
+}
+
+.wdp-date-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hf-brand);
+  padding: 3px 5px;
+  border-radius: 7px;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.wdp-date-btn:hover {
+  background: rgba(79, 70, 229, 0.1);
+}
+
+.wdp-date-btn.is-open {
+  background: rgba(79, 70, 229, 0.12);
+}
+
+.wdp-date-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wdp-today-chip {
+  margin-left: 4px;
+  padding: 2px 9px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(79, 70, 229, 0.4);
+  background: rgba(79, 70, 229, 0.07);
+  color: var(--hf-brand);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.wdp-today-chip:hover {
+  background: rgba(79, 70, 229, 0.14);
+  border-color: var(--hf-brand);
+}
+
+/* ── Dropdown ── */
+.wdp-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 320;
+  min-width: 266px;
+  background: var(--hf-card-bg, #ffffff);
+  border: 1.5px solid var(--hf-border, #e5e7eb);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(79, 94, 170, 0.14), 0 2px 8px rgba(0,0,0,0.06);
+  padding: 12px 12px 10px;
+  animation: wdp-fade-in 0.18s ease-out;
+}
+
+@keyframes wdp-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Month header */
+.wdp-month-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.wdp-month-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hf-text);
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.wdp-month-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--hf-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wdp-month-arrow:hover {
+  background: rgba(79, 70, 229, 0.1);
+  color: var(--hf-brand);
+}
+
+.wdp-today-inline-btn {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(79, 70, 229, 0.35);
+  background: rgba(79, 70, 229, 0.07);
+  color: var(--hf-brand);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.wdp-today-inline-btn:hover {
+  background: rgba(79, 70, 229, 0.14);
+}
+
+/* Day-of-week labels */
+.wdp-day-labels {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.wdp-day-label {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--hf-text-muted);
+  padding: 2px 0;
+}
+
+/* Grid */
+.wdp-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wdp-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  width: 100%;
+}
+
+.wdp-week-row:hover {
+  background: rgba(79, 70, 229, 0.07);
+  border-color: rgba(79, 70, 229, 0.15);
+}
+
+.wdp-week-row.is-selected {
+  background: rgba(79, 70, 229, 0.12);
+  border-color: rgba(79, 70, 229, 0.35);
+}
+
+.wdp-week-row.is-selected:hover {
+  background: rgba(79, 70, 229, 0.16);
+}
+
+.wdp-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--hf-text);
+  border-radius: 6px;
+}
+
+.wdp-cell.is-other-month {
+  color: var(--hf-text-muted);
+  opacity: 0.45;
+}
+
+.wdp-cell.is-today {
+  font-weight: 700;
+  color: var(--hf-brand);
+}
+
+.wdp-today-dot {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--hf-brand);
+}
+
+/* Mobile: dropdown full-width */
+@media (max-width: 767px) {
+  .wdp-dropdown {
+    min-width: unset;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+  }
+}
+
+/* Dark mode */
+[data-theme="dark"] .wdp-dropdown {
+  background: var(--modal-bg, #1e1e2e);
+  border-color: var(--border-strong, rgba(255,255,255,0.12));
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+
+[data-theme="dark"] .wdp-chevron,
+[data-theme="dark"] .wdp-date-btn {
+  color: #818cf8;
+}
+
+[data-theme="dark"] .wdp-strip:hover {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+[data-theme="dark"] .wdp-chevron:hover,
+[data-theme="dark"] .wdp-date-btn:hover,
+[data-theme="dark"] .wdp-date-btn.is-open {
+  background: rgba(99, 102, 241, 0.16);
+}
+
+[data-theme="dark"] .wdp-today-chip,
+[data-theme="dark"] .wdp-today-inline-btn {
+  color: #818cf8;
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.12);
+}
+
+[data-theme="dark"] .wdp-month-arrow {
+  color: var(--hf-text-muted);
+}
+
+[data-theme="dark"] .wdp-month-arrow:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+}
+
+[data-theme="dark"] .wdp-cell.is-today {
+  color: #818cf8;
+}
+
+[data-theme="dark"] .wdp-today-dot {
+  background: #818cf8;
+}
+
+[data-theme="dark"] .wdp-week-row:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+[data-theme="dark"] .wdp-week-row.is-selected {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.45);
+}
+
+/* ═══════════════════════════════════════════════ */
+
 /* Week slide animations (shopping + week planner) */
 /* ─── Week navigation progress shimmer ─── */
 .kitchen-week-nav-progress {
