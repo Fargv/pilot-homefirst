@@ -11,6 +11,7 @@ import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
 import { KitchenSwap } from "../models/KitchenSwap.js";
 import { Store } from "../models/Store.js";
 import { ShoppingTrip } from "../models/ShoppingTrip.js";
+import { PurchaseSession } from "../models/PurchaseSession.js";
 import { Invitation } from "../models/Invitation.js";
 import { KitchenAuditLog } from "../models/KitchenAuditLog.js";
 import { requireAuth, requireRole } from "../middleware.js";
@@ -58,6 +59,80 @@ async function unassignFutureCookSlots({ householdId, userId }) {
   return {
     matchedCount: Number(result.matchedCount || 0),
     modifiedCount: Number(result.modifiedCount || 0)
+  };
+}
+
+function getTotalDiners(attendeeIds = [], extraGuests = 0) {
+  const guests = Number(extraGuests);
+  return attendeeIds.length + (Number.isFinite(guests) && guests > 0 ? Math.floor(guests) : 0);
+}
+
+async function cleanupHouseholdMemberReferences({ householdId, userId, replacementUserId = null }) {
+  const todayStart = startOfTodayUtc();
+  const userIdString = String(userId);
+  const replacement = replacementUserId ? replacementUserId : null;
+  const plans = await KitchenWeekPlan.find({
+    householdId,
+    $or: [
+      { "days.attendeeIds": userId },
+      { "days.cookUserId": userId }
+    ]
+  });
+
+  let weekPlansModified = 0;
+  let attendeeReferencesRemoved = 0;
+  let futureCookSlotsReassigned = 0;
+  for (const plan of plans) {
+    let changed = false;
+    for (const day of plan.days || []) {
+      const attendeeIds = Array.isArray(day.attendeeIds) ? day.attendeeIds : [];
+      const nextAttendeeIds = attendeeIds.filter((item) => String(item) !== userIdString);
+      if (nextAttendeeIds.length !== attendeeIds.length) {
+        attendeeReferencesRemoved += attendeeIds.length - nextAttendeeIds.length;
+        day.attendeeIds = nextAttendeeIds;
+        day.attendeeCount = getTotalDiners(nextAttendeeIds, day.extraGuests);
+        day.servings = day.attendeeCount;
+        changed = true;
+      }
+      const dayDate = day?.date ? new Date(day.date) : null;
+      if (
+        day?.cookUserId
+        && String(day.cookUserId) === userIdString
+        && dayDate
+        && dayDate >= todayStart
+      ) {
+        day.cookUserId = replacement;
+        futureCookSlotsReassigned += 1;
+        changed = true;
+      }
+    }
+    if (changed) {
+      await plan.save();
+      weekPlansModified += 1;
+    }
+  }
+
+  const [shoppingListsResult, purchaseSessionCreatedResult, purchaseSessionUpdatedResult, purchaseSessionCompletedResult] = await Promise.all([
+    KitchenShoppingList.updateMany(
+      { householdId, "items.purchasedBy": userId },
+      { $set: { "items.$[item].purchasedBy": null } },
+      { arrayFilters: [{ "item.purchasedBy": userId }] }
+    ),
+    PurchaseSession.updateMany({ householdId, createdByUserId: userId }, { $set: { createdByUserId: null } }),
+    PurchaseSession.updateMany({ householdId, updatedByUserId: userId }, { $set: { updatedByUserId: null } }),
+    PurchaseSession.updateMany({ householdId, completedByUserId: userId }, { $set: { completedByUserId: null } })
+  ]);
+
+  return {
+    weekPlansModified,
+    attendeeReferencesRemoved,
+    futureCookSlotsReassigned,
+    shoppingListsModified: Number(shoppingListsResult.modifiedCount || 0),
+    purchaseSessionsModified:
+      Number(purchaseSessionCreatedResult.modifiedCount || 0)
+      + Number(purchaseSessionUpdatedResult.modifiedCount || 0)
+      + Number(purchaseSessionCompletedResult.modifiedCount || 0),
+    dietaryPreferencesRemoved: 0
   };
 }
 
@@ -365,11 +440,7 @@ router.delete("/me", requireAuth, async (req, res) => {
       });
     }
 
-    const unassignResult = await unassignFutureCookSlots({
-      householdId: effectiveHouseholdId,
-      userId: req.kitchenUser._id
-    });
-
+    let replacementOwnerId = null;
     if (preview.isOwner) {
       const replacementOwner = await KitchenUser.findOne(
         buildScopedFilter(effectiveHouseholdId, {
@@ -380,12 +451,19 @@ router.delete("/me", requireAuth, async (req, res) => {
         .select("_id")
         .lean();
       if (replacementOwner?._id) {
+        replacementOwnerId = replacementOwner._id;
         await Household.updateOne(
           { _id: effectiveHouseholdId, ownerUserId: req.kitchenUser._id },
           { $set: { ownerUserId: replacementOwner._id } }
         );
       }
     }
+
+    const cleanupResult = await cleanupHouseholdMemberReferences({
+      householdId: effectiveHouseholdId,
+      userId: req.kitchenUser._id,
+      replacementUserId: replacementOwnerId
+    });
 
     const deletedClerkId = req.kitchenUser.clerkId || null;
     await KitchenUser.deleteOne({ _id: req.kitchenUser._id });
@@ -400,7 +478,7 @@ router.delete("/me", requireAuth, async (req, res) => {
     return res.json({
       ok: true,
       deleted: "user",
-      unassignedFutureCookSlots: unassignResult,
+      cleanup: cleanupResult,
       clerkDeletion,
       clerkDeletionWarning: clerkDeletion.ok
         ? null
@@ -514,6 +592,18 @@ router.delete("/members/:id", requireAuth, requireRole("owner"), async (req, res
       return res.status(400).json({ ok: false, error: "No puedes eliminar tu propia cuenta del hogar." });
     }
 
+    const household = await Household.findById(effectiveHouseholdId)
+      .select("_id ownerUserId")
+      .lean();
+    const replacementUserId = household?.ownerUserId && String(household.ownerUserId) !== String(member._id)
+      ? household.ownerUserId
+      : null;
+    const cleanupResult = await cleanupHouseholdMemberReferences({
+      householdId: effectiveHouseholdId,
+      userId: member._id,
+      replacementUserId
+    });
+
     const deletedClerkId = member.clerkId || null;
     await KitchenUser.deleteOne({ _id: member._id });
     const clerkDeletion = deletedClerkId
@@ -526,6 +616,7 @@ router.delete("/members/:id", requireAuth, requireRole("owner"), async (req, res
       : { ok: true, skipped: true };
     return res.json({
       ok: true,
+      cleanup: cleanupResult,
       clerkDeletion,
       clerkDeletionWarning: clerkDeletion.ok
         ? null

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BookOpen, ChevronRight, Shuffle, User as UserLucide } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import { useAuth } from "../auth";
@@ -337,10 +338,15 @@ export default function WeekPage() {
   const [randomizeMenuOpen, setRandomizeMenuOpen] = useState(false);
   const [randomizeDayContext, setRandomizeDayContext] = useState(null);
   const [catalogPickerOpen, setCatalogPickerOpen] = useState(false);
-  const [installedPacks, setInstalledPacks] = useState(null);
+  const [randomizeCatalogPanelOpen, setRandomizeCatalogPanelOpen] = useState(false);
+  const [selectedCatalogPackId, setSelectedCatalogPackId] = useState("");
+  const [installedPacks, setInstalledPacks] = useState([]);
+  const [installedPacksStatus, setInstalledPacksStatus] = useState("idle");
+  const [installedPacksError, setInstalledPacksError] = useState("");
   const ingredientCache = useRef(new Map());
   const saveTimers = useRef({});
   const carouselRef = useRef(null);
+  const weekRandomizeRef = useRef(null);
   const dayRefs = useRef(new Map());
   const mainDishRefs = useRef(new Map());
   const selectedDayRef = useRef(selectedDay);
@@ -513,18 +519,43 @@ export default function WeekPage() {
     }
   }, [selectedMealType, weekDeleteBusy]);
 
+  const closeRandomizeMenu = useCallback(() => {
+    setRandomizeMenuOpen(false);
+    setRandomizeDayContext(null);
+    setCatalogPickerOpen(false);
+    setRandomizeCatalogPanelOpen(false);
+    setSelectedCatalogPackId("");
+  }, []);
+
+  const loadInstalledPacks = useCallback(async () => {
+    setInstalledPacksStatus("loading");
+    setInstalledPacksError("");
+    try {
+      const data = await apiRequest("/api/kitchen/catalog/packs");
+      const all = Array.isArray(data?.packs) ? data.packs : (Array.isArray(data) ? data : []);
+      setInstalledPacks(all.filter((p) => p.installed || p.isInstalled || p.status === "installed" || p.entitlement?.installed));
+      setInstalledPacksStatus("success");
+    } catch (error) {
+      setInstalledPacks([]);
+      setInstalledPacksError(error?.message || "No se pudieron cargar tus colecciones");
+      setInstalledPacksStatus("error");
+    }
+  }, []);
+
   const openRandomizeMenu = useCallback((dayCtx = null) => {
     setRandomizeDayContext(dayCtx);
-    setRandomizeMenuOpen(true);
-    if (installedPacks === null) {
-      apiRequest("/api/kitchen/catalog/packs")
-        .then((data) => {
-          const all = Array.isArray(data?.packs) ? data.packs : (Array.isArray(data) ? data : []);
-          setInstalledPacks(all.filter((p) => p.installed || p.isInstalled || p.status === "installed"));
-        })
-        .catch(() => setInstalledPacks([]));
+    setRandomizeCatalogPanelOpen(false);
+    setSelectedCatalogPackId("");
+    setRandomizeMenuOpen((prev) => (dayCtx ? true : !prev));
+  }, []);
+
+  const openCatalogRandomizePanel = useCallback(() => {
+    setRandomizeCatalogPanelOpen(true);
+    setSelectedCatalogPackId("");
+    if (installedPacksStatus === "idle" || installedPacksStatus === "error") {
+      loadInstalledPacks();
     }
-  }, [installedPacks]);
+  }, [installedPacksStatus, loadInstalledPacks]);
 
   const loadData = async () => {
     const requestSeq = loadRequestSeqRef.current + 1;
@@ -629,6 +660,26 @@ export default function WeekPage() {
   useEffect(() => {
     weekStartRef.current = weekStart;
   }, [weekStart]);
+
+  useEffect(() => {
+    if (!randomizeMenuOpen || randomizeDayContext) return undefined;
+    const handlePointerDown = (event) => {
+      if (weekRandomizing) return;
+      if (weekRandomizeRef.current?.contains(event.target)) return;
+      closeRandomizeMenu();
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !weekRandomizing) {
+        closeRandomizeMenu();
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeRandomizeMenu, randomizeDayContext, randomizeMenuOpen, weekRandomizing]);
 
   useEffect(() => {
     dishesRef.current = dishes;
@@ -2020,6 +2071,150 @@ export default function WeekPage() {
     element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
   };
 
+  const runRandomizeOption = (mode, packId = null) => {
+    closeRandomizeMenu();
+    if (randomizeDayContext) {
+      handleRandomAssignCta(randomizeDayContext.day, randomizeDayContext.canEdit, randomizeDayContext.isAssigned, { mode, packId });
+      return;
+    }
+    handleConfirmWeekRandomize(mode, packId);
+  };
+
+  const renderRandomizePanel = (inline = false) => (
+    <div
+      className={["kitchen-randomize-menu", inline ? "kitchen-randomize-accordion" : ""].filter(Boolean).join(" ")}
+      role={inline ? "region" : "dialog"}
+      aria-modal={inline ? undefined : "true"}
+      id={inline ? "week-randomize-accordion" : undefined}
+      aria-label={randomizeDayContext ? "Opciones de randomizacion del dia" : "Opciones de randomizacion de semana"}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {randomizeCatalogPanelOpen ? (
+        <div className="kitchen-randomize-catalog-panel">
+          <div className="kitchen-randomize-catalog-header">
+            <button
+              type="button"
+              className="kitchen-randomize-back"
+              onClick={() => {
+                setRandomizeCatalogPanelOpen(false);
+                setSelectedCatalogPackId("");
+              }}
+            >
+              <ChevronIcon width="16" height="16" />
+              Volver
+            </button>
+            <span>Elige una coleccion</span>
+          </div>
+          <div className="kitchen-catalog-picker-list">
+            {installedPacksStatus === "loading" ? (
+              <p className="kitchen-muted kitchen-randomize-state">Cargando colecciones...</p>
+            ) : installedPacksStatus === "error" ? (
+              <div className="kitchen-randomize-state">
+                <p className="kitchen-muted">No se pudieron cargar tus colecciones</p>
+                <button type="button" className="kitchen-button secondary" onClick={loadInstalledPacks}>
+                  Reintentar
+                </button>
+              </div>
+            ) : installedPacks.length === 0 ? (
+              <div className="kitchen-randomize-state">
+                <p className="kitchen-muted">Todavia no tienes colecciones instaladas.</p>
+                <button
+                  type="button"
+                  className="kitchen-button secondary"
+                  onClick={() => window.open("/kitchen/catalogo", "_blank", "noopener,noreferrer")}
+                >
+                  Ver catalogo
+                </button>
+              </div>
+            ) : (
+              installedPacks.map((pack) => {
+                const packId = String(pack.id || pack._id || pack.packId || "");
+                const isSelected = selectedCatalogPackId === packId;
+                return (
+                  <button
+                    key={packId}
+                    type="button"
+                    className={`kitchen-catalog-picker-item ${isSelected ? "is-selected" : ""}`}
+                    onClick={() => setSelectedCatalogPackId(packId)}
+                    aria-pressed={isSelected}
+                  >
+                    <span className="kitchen-catalog-picker-name">{pack.name || pack.title}</span>
+                    {pack.subtitle || pack.dietLabel ? (
+                      <span className="kitchen-catalog-picker-meta">{pack.subtitle || pack.dietLabel}</span>
+                    ) : null}
+                  </button>
+                );
+              })
+            )}
+          </div>
+          <button
+            type="button"
+            className="kitchen-button kitchen-randomize-catalog-cta"
+            disabled={!selectedCatalogPackId || weekRandomizing}
+            onClick={() => runRandomizeOption("catalog", selectedCatalogPackId)}
+          >
+            Randomizar con esta coleccion
+          </button>
+        </div>
+      ) : (
+        <>
+          {!inline ? (
+            <div className="kitchen-randomize-menu-header">
+              <span className="kitchen-randomize-menu-title">
+                {randomizeDayContext ? "Randomizar dia" : "Randomizar semana"}
+              </span>
+              <button
+                type="button"
+                className="kitchen-randomize-menu-close"
+                onClick={closeRandomizeMenu}
+                aria-label="Cerrar"
+              >
+                <CloseIcon width="16" height="16" />
+              </button>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            className="kitchen-randomize-menu-option"
+            disabled={weekRandomizing}
+            onClick={() => runRandomizeOption("all")}
+          >
+            <Shuffle width="18" height="18" />
+            <span>
+              <strong>Randomizar todo</strong>
+              <small>Todos los platos randomizables</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            className="kitchen-randomize-menu-option"
+            disabled={weekRandomizing}
+            onClick={openCatalogRandomizePanel}
+          >
+            <BookOpen width="18" height="18" />
+            <span>
+              <strong>Del catalogo</strong>
+              <small>Elige una de tus colecciones</small>
+            </span>
+            <ChevronRight className="kitchen-randomize-menu-chevron" width="16" height="16" />
+          </button>
+          <button
+            type="button"
+            className="kitchen-randomize-menu-option"
+            disabled={weekRandomizing}
+            onClick={() => runRandomizeOption("mine")}
+          >
+            <UserLucide width="18" height="18" />
+            <span>
+              <strong>Solo mis platos</strong>
+              <small>Platos creados por tu household</small>
+            </span>
+          </button>
+        </>
+      )}
+    </div>
+  );
+
   if (isDiodGlobalMode) {
     return (
       <KitchenLayout>
@@ -2043,16 +2238,26 @@ export default function WeekPage() {
               primaryAction={
                 canShowWeekRandomize ? (
                   canUseFullWeekRandomization ? (
-                    <button
-                      type="button"
-                      className="kitchen-week-randomize-btn"
-                      onClick={() => openRandomizeMenu(null)}
-                      disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                      title={!dishesReadyForCurrentHousehold ? "Actualizando platos..." : "Randomizar semana"}
-                      aria-label="Randomizar semana"
-                    >
-                      <DiceIcon /> Randomizar
-                    </button>
+                    <div className="kitchen-week-randomize-wrap" ref={weekRandomizeRef}>
+                      <button
+                        type="button"
+                        className="kitchen-week-randomize-btn"
+                        onClick={() => openRandomizeMenu(null)}
+                        disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+                        title={!dishesReadyForCurrentHousehold ? "Actualizando platos..." : "Randomizar semana"}
+                        aria-label="Randomizar semana"
+                        aria-expanded={randomizeMenuOpen && !randomizeDayContext}
+                        aria-controls="week-randomize-accordion"
+                      >
+                        <DiceIcon /> Randomizar
+                        <ChevronDownIcon className={`kitchen-week-randomize-chevron ${randomizeMenuOpen && !randomizeDayContext ? "is-open" : ""}`} width="14" height="14" />
+                      </button>
+                      <div className={`kitchen-randomize-accordion-shell ${randomizeMenuOpen && !randomizeDayContext ? "is-open" : ""}`}>
+                        <div className="kitchen-randomize-accordion-inner">
+                          {renderRandomizePanel(true)}
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <ProGateButton className="kitchen-week-randomize-btn">
                       <DiceIcon /> Randomizar
@@ -3177,11 +3382,11 @@ export default function WeekPage() {
           </div>
         </div>
       ) : null}
-      {randomizeMenuOpen ? (
+      {randomizeMenuOpen && randomizeDayContext ? (
         <div
           className="kitchen-modal-backdrop kitchen-randomize-menu-backdrop"
           role="presentation"
-          onClick={() => { if (!weekRandomizing) { setRandomizeMenuOpen(false); setRandomizeDayContext(null); } }}
+          onClick={() => { if (!weekRandomizing) closeRandomizeMenu(); }}
         >
           <div
             className="kitchen-randomize-menu"
@@ -3226,7 +3431,10 @@ export default function WeekPage() {
               type="button"
               className="kitchen-randomize-menu-option"
               disabled={weekRandomizing}
-              onClick={() => setCatalogPickerOpen(true)}
+              onClick={() => {
+                setCatalogPickerOpen(true);
+                loadInstalledPacks();
+              }}
             >
               <PackageIcon width="18" height="18" />
               <span>Del catálogo...</span>
@@ -3269,8 +3477,10 @@ export default function WeekPage() {
               <p className="kitchen-muted">Elige una colección instalada para randomizar.</p>
             </div>
             <div className="kitchen-catalog-picker-list">
-              {installedPacks === null ? (
+              {installedPacksStatus === "loading" ? (
                 <p className="kitchen-muted">Cargando colecciones...</p>
+              ) : installedPacksStatus === "error" ? (
+                <p className="kitchen-muted">{installedPacksError || "No se pudieron cargar tus colecciones"}</p>
               ) : installedPacks.length === 0 ? (
                 <p className="kitchen-muted">No tienes colecciones instaladas.</p>
               ) : (

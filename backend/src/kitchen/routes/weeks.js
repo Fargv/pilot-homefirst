@@ -257,6 +257,33 @@ async function loadHouseholdMembers(effectiveHouseholdId) {
     .lean();
 }
 
+async function cleanupGhostAttendeesInPlan(plan, members = [], effectiveHouseholdId) {
+  if (!plan || !Array.isArray(plan.days)) return { cleaned: false, removedCount: 0 };
+  const validMemberIds = new Set(members.map((member) => String(member?._id)).filter(Boolean));
+  let removedCount = 0;
+  let cleaned = false;
+  for (const day of plan.days) {
+    if (!Array.isArray(day?.attendeeIds) || day.attendeeIds.length === 0) continue;
+    const originalLength = day.attendeeIds.length;
+    const nextAttendeeIds = day.attendeeIds.filter((item) => validMemberIds.has(String(item)));
+    if (nextAttendeeIds.length === originalLength) continue;
+    removedCount += originalLength - nextAttendeeIds.length;
+    day.attendeeIds = nextAttendeeIds;
+    day.attendeeCount = getTotalDiners(nextAttendeeIds, day.extraGuests);
+    day.servings = day.attendeeCount;
+    cleaned = true;
+  }
+  if (cleaned) {
+    console.warn("[kitchen][weeks] ghost attendees removed from plan", {
+      householdId: String(effectiveHouseholdId),
+      weekStart: formatDateISO(plan.weekStart),
+      removedCount
+    });
+    await plan.save();
+  }
+  return { cleaned, removedCount };
+}
+
 async function hydrateLeftoversDishNames(plan, effectiveHouseholdId) {
   if (!plan) return;
   const leftoversDishIds = dedupeIds(
@@ -349,6 +376,7 @@ router.get("/:weekStart", requireAuth, async (req, res) => {
     const plan = await findWeekPlan(monday, effectiveHouseholdId);
     if (plan) {
       const members = await loadHouseholdMembers(effectiveHouseholdId);
+      await cleanupGhostAttendeesInPlan(plan, members, effectiveHouseholdId);
       for (const day of plan.days || []) {
         const mealType = dayMealType(day);
         const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);

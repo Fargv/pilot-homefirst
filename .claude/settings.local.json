@@ -10,7 +10,8 @@
       "WebFetch",
       "Skill",
       "Bash(git commit *)",
-      "Bash(rm -f \".git/COMMIT_EDITMSG_TEMP.txt\")"
+      "Bash(rm -f \".git/COMMIT_EDITMSG_TEMP.txt\")",
+      "Bash(git add *)"
     ],
     "deny": [
       "Read(./.env)",

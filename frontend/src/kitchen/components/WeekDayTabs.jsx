@@ -77,7 +77,7 @@ export default function WeekDayTabs({
               + Sáb
             </button>
           )}
-          {hasSat && !hasSun ? (
+          {!hasSun ? (
             <button
               type="button"
               className="kitchen-weekend-chip kitchen-weekend-chip-add"
@@ -88,7 +88,7 @@ export default function WeekDayTabs({
             >
               + Dom
             </button>
-          ) : hasSat && hasSun ? (
+          ) : (
             <span
               className="kitchen-weekend-chip kitchen-weekend-chip-active"
               aria-label="Domingo añadido"
@@ -96,7 +96,7 @@ export default function WeekDayTabs({
             >
               Dom ✓
             </span>
-          ) : null}
+          )}
         </>
       ) : null}
     </div>

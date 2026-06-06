@@ -21050,6 +21050,22 @@ td.recipe-qty-scaled {
   height: 15px;
 }
 
+.kitchen-week-randomize-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.kitchen-week-randomize-chevron {
+  transition: transform 150ms ease;
+}
+
+.kitchen-week-randomize-chevron.is-open {
+  transform: rotate(180deg);
+}
+
 .kitchen-week-randomize-btn:hover {
   background: linear-gradient(180deg, rgba(238, 242, 255, 1) 0%, rgba(224, 231, 255, 0.98) 100%);
   border-color: rgba(147, 163, 221, 0.9);
@@ -21095,10 +21111,13 @@ td.recipe-qty-scaled {
 .kitchen-weekend-chip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   font-size: 11px;
   font-weight: 600;
   border-radius: 999px;
-  padding: 2px 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
   white-space: nowrap;
   transition: background 150ms ease, color 150ms ease;
 }
@@ -21138,6 +21157,26 @@ td.recipe-qty-scaled {
   color: var(--hf-brand, #818cf8);
 }
 
+.kitchen-randomize-accordion-shell {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: grid-template-rows 200ms ease-out, opacity 200ms ease-out;
+  width: min(330px, calc(100vw - 32px));
+}
+
+.kitchen-randomize-accordion-shell.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.kitchen-randomize-accordion-inner {
+  min-height: 0;
+}
+
 /* ── Randomize menu (bottom sheet on mobile, compact on desktop) ── */
 .kitchen-randomize-menu-backdrop {
   z-index: 320;
@@ -21153,6 +21192,18 @@ td.recipe-qty-scaled {
   padding: 0 0 env(safe-area-inset-bottom, 0);
   z-index: 321;
   animation: slideUpSheet 200ms cubic-bezier(0.25, 0.85, 0.35, 1) both;
+}
+
+.kitchen-randomize-menu.kitchen-randomize-accordion {
+  position: static;
+  inset: auto;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft, rgba(0, 0, 0, 0.08));
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.14);
+  padding: 0;
+  overflow: hidden;
+  animation: none;
 }
 @keyframes slideUpSheet {
   from { transform: translateY(100%); }
@@ -21187,7 +21238,8 @@ td.recipe-qty-scaled {
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 14px 16px;
+  min-height: 62px;
+  padding: 12px 14px;
   background: none;
   border: none;
   border-bottom: 1px solid var(--border-soft, rgba(0, 0, 0, 0.05));
@@ -21197,6 +21249,30 @@ td.recipe-qty-scaled {
   color: var(--text-primary, #0f172a);
   cursor: pointer;
   transition: background 120ms ease;
+}
+
+.kitchen-randomize-menu-option > span {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kitchen-randomize-menu-option strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.kitchen-randomize-menu-option small {
+  color: var(--text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.kitchen-randomize-menu-chevron {
+  margin-left: auto;
 }
 .kitchen-randomize-menu-option:last-child {
   border-bottom: none;
@@ -21213,7 +21289,7 @@ td.recipe-qty-scaled {
   color: var(--text-secondary, #64748b);
 }
 @media (min-width: 640px) {
-  .kitchen-randomize-menu {
+  .kitchen-randomize-menu:not(.kitchen-randomize-accordion) {
     position: fixed;
     bottom: auto;
     left: 50%;
@@ -21244,6 +21320,58 @@ td.recipe-qty-scaled {
 }
 [data-theme="dark"] .kitchen-randomize-menu-option:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.05);
+}
+
+.kitchen-randomize-catalog-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.kitchen-randomize-catalog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-primary, #0f172a);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.kitchen-randomize-back {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.kitchen-randomize-back:hover,
+.kitchen-randomize-back:focus-visible {
+  background: var(--surface-elevated, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+
+.kitchen-randomize-state {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 2px;
+}
+
+.kitchen-randomize-catalog-cta {
+  width: 100%;
+  justify-content: center;
 }
 
 /* ── Per-day ChevronDown expand button ── */
@@ -21296,11 +21424,15 @@ td.recipe-qty-scaled {
   overflow-y: auto;
 }
 .kitchen-catalog-picker-item {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   width: 100%;
-  padding: 12px 20px;
+  min-height: 52px;
+  padding: 10px 12px;
   background: none;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
   text-align: left;
   font-size: 14px;
   font-weight: 500;
@@ -21310,6 +21442,16 @@ td.recipe-qty-scaled {
 }
 .kitchen-catalog-picker-item:hover {
   background: var(--surface-elevated, #f8fafc);
+}
+.kitchen-catalog-picker-item.is-selected {
+  border-color: var(--hf-brand, #4f46e5);
+  background: color-mix(in srgb, var(--hf-brand, #4f46e5) 10%, transparent);
+}
+
+.kitchen-catalog-picker-meta {
+  color: var(--text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 500;
 }
 [data-theme="dark"] .kitchen-catalog-picker-item {
   color: var(--text-primary, #f1f5f9);
