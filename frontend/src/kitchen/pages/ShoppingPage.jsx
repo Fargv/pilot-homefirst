@@ -1280,7 +1280,7 @@ export default function ShoppingPage() {
                     </button>
                   </div>
                   <div className="shopping-categories shopping-categories-grid">
-                    {pendingByCategory.map((group) => {
+                    {[...pendingByCategory].sort((a, b) => (b.items?.length || 0) - (a.items?.length || 0)).map((group) => {
                       const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
                       return (
                         <div

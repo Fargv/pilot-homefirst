@@ -5696,16 +5696,34 @@ body {
   padding: 0;
 }
 
-/* ── Category cards — tinted card style (restored) ── */
+/* ── Category cards — masonry via CSS columns on desktop ── */
 .shopping-categories-grid {
-  display: grid;
-  gap: 10px;
+  /* mobile: inherits display:grid gap:10px from .shopping-categories */
+}
+
+@keyframes shoppingGridFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @media (min-width: 768px) {
   .shopping-categories-grid {
-    grid-template-columns: repeat(3, 1fr);
-    align-items: start;
+    display: block;
+    columns: 2;
+    column-gap: 12px;
+    animation: shoppingGridFadeIn 150ms ease-out both;
+  }
+  .shopping-categories-grid .shopping-category-card {
+    break-inside: avoid;
+    margin-bottom: 10px;
+    width: 100%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .shopping-categories-grid {
+    columns: 3;
+    column-gap: 14px;
   }
 }
 
