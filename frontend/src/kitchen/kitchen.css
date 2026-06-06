@@ -5358,7 +5358,7 @@ body {
    SHOPPING PAGE — REDESIGNED HEADER + FLAT LIST (2026-06)
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Header top row: title+WA | budget widget ── */
+/* ── Header top row: title | WA icon ── */
 .shopping-header-top {
   display: flex;
   align-items: flex-start;
@@ -5375,62 +5375,81 @@ body {
   flex: 1;
 }
 
-.shopping-header-title-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.shopping-header-title-row h1 {
+.shopping-header-h1 {
   margin: 0;
   color: #27336a;
   font-size: clamp(1.05rem, 2.1vw, 1.45rem);
   line-height: 1.2;
-  white-space: nowrap;
 }
 
-.shopping-header-wa-compact {
+/* WA icon repositioned to top-right — discrete, no title intrusion */
+.shopping-header-wa-top {
   min-width: 36px !important;
   min-height: 36px !important;
-  width: 36px;
-  height: 36px;
+  width: 36px !important;
+  height: 36px !important;
   padding: 0 !important;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
-/* ── Budget widget (right side of header) ── */
-.shopping-budget-widget {
+/* ── Budget pill progress bar ── */
+.shopping-budget-pill-bar {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-  flex-shrink: 0;
-  background: transparent;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.1);
+  overflow: hidden;
   border: none;
   cursor: pointer;
-  padding: 4px 0;
+  padding: 0;
   font-family: inherit;
   transition: opacity 0.15s ease;
 }
 
-.shopping-budget-widget:hover {
-  opacity: 0.75;
+.shopping-budget-pill-bar:hover {
+  opacity: 0.85;
 }
 
-.shopping-budget-widget-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  letter-spacing: 0.01em;
-  line-height: 1.3;
+.shopping-budget-pill-bar:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.45);
+  outline-offset: 2px;
 }
 
-.shopping-budget-widget-amount {
-  font-size: 14px;
+.shopping-budget-pill-fill {
+  position: absolute;
+  inset: 0;
+  right: auto;
+  background: linear-gradient(135deg, var(--hf-brand) 0%, var(--hf-brand-light) 100%);
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.25, 0.85, 0.35, 1);
+  min-width: 0;
+}
+
+.shopping-budget-pill-text {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.3;
+  color: var(--hf-brand);
+  letter-spacing: 0.01em;
+  pointer-events: none;
   white-space: nowrap;
+  mix-blend-mode: normal;
+}
+
+/* When fill covers text area, text switches to white via contrast */
+.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 5"]) .shopping-budget-pill-text,
+.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 6"]) .shopping-budget-pill-text,
+.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 7"]) .shopping-budget-pill-text,
+.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 8"]) .shopping-budget-pill-text,
+.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 9"]) .shopping-budget-pill-text,
+.shopping-budget-pill-bar:has(.shopping-budget-pill-fill[style*="width: 100"]) .shopping-budget-pill-text {
+  color: #ffffff;
 }
 
 /* ── Week date trigger ── */
@@ -5557,69 +5576,81 @@ body {
   min-width: 0;
 }
 
-/* ── Add row: full-width input + centered basics button ── */
-.shopping-basics-btn-row {
+/* ── Add row: input + basics button inline ── */
+.shopping-add-inline {
   display: flex;
-  justify-content: center;
-  margin-top: 4px;
-}
-
-.shopping-basics-btn-centered {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 24px;
-  border-radius: 999px;
-  border: 1.5px solid rgba(99, 102, 241, 0.35);
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(79, 70, 229, 0.04) 100%);
-  color: var(--hf-brand);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
-  white-space: nowrap;
-}
-
-.shopping-basics-btn-centered:hover {
-  background: rgba(79, 70, 229, 0.1);
-  border-color: rgba(99, 102, 241, 0.55);
-}
-
-.shopping-basics-btn-centered:active {
-  transform: scale(0.97);
-}
-
-.shopping-basics-btn-centered:focus-visible {
-  outline: 2px solid rgba(99, 102, 241, 0.35);
-  outline-offset: 2px;
-}
-
-/* ── Flat category list (mobile default) ── */
-.shopping-categories-flat {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.shopping-category-flat-group {
-  padding-bottom: 24px;
-}
-
-.shopping-category-flat-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: 8px;
-  padding: 0 4px 8px;
+  align-items: flex-start;
 }
 
-.shopping-category-flat-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  color: var(--text-muted);
-  text-transform: uppercase;
+.shopping-add-inline .shopping-add-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.shopping-basics-btn-inline {
+  flex-shrink: 0;
+  height: var(--input-height, 44px);
+  padding: 0 16px !important;
+  white-space: nowrap;
+  font-size: 13px !important;
+  border-radius: 999px !important;
+}
+
+/* Mobile: stack when < 480px */
+@media (max-width: 479px) {
+  .shopping-add-inline {
+    flex-wrap: wrap;
+  }
+  .shopping-add-inline .shopping-add-wrapper {
+    width: 100%;
+  }
+  .shopping-basics-btn-inline {
+    align-self: center;
+    margin: 0 auto;
+  }
+}
+
+/* ── Global mark-all row (above categories grid) ── */
+.shopping-global-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 8px;
+}
+
+.shopping-global-mark-all {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--hf-brand);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.shopping-global-mark-all:hover {
+  background: rgba(79, 70, 229, 0.08);
+}
+
+/* ── Categories wrapper ── */
+.shopping-categories-wrap {
+  padding: 0;
+}
+
+/* ── Category cards — tinted card style (restored) ── */
+.shopping-categories-grid {
+  display: grid;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .shopping-categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+  }
 }
 
 .shopping-items-flat-list {
@@ -5631,13 +5662,18 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 4px;
-  border-bottom: 1px solid var(--border-soft);
+  padding: 9px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--category-text, #64748b) 12%, #e2e8f0);
   transition: transform 220ms ease, opacity 220ms ease;
 }
 
 .shopping-item-flat:last-child {
   border-bottom: none;
+  padding-bottom: 0;
+}
+
+.shopping-item-flat:first-child {
+  padding-top: 4px;
 }
 
 .shopping-item-flat.is-leaving {
@@ -5666,85 +5702,51 @@ body {
   min-width: 0;
 }
 
-/* ── Basics banner (bottom of pending list) ── */
-.shopping-basics-banner {
-  border-radius: var(--hf-radius-lg);
-  overflow: hidden;
-  background: linear-gradient(135deg, #312e81 0%, #4f46e5 60%, #7c3aed 100%);
-  margin-top: 8px;
-  min-height: 120px;
-  display: flex;
-  align-items: flex-end;
-}
-
-.shopping-basics-banner-content {
-  padding: 20px;
+/* ── Added-item toast stack ── */
+.shopping-toast-stack {
+  position: fixed;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 100%;
+  gap: 8px;
+  align-items: center;
+  z-index: 9999;
+  pointer-events: none;
 }
 
-.shopping-basics-banner-title {
-  font-size: 18px;
-  font-weight: 700;
+.shopping-added-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.88);
   color: #ffffff;
-  line-height: 1.25;
-}
-
-.shopping-basics-banner-sub {
-  margin: 0;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.78);
-  line-height: 1.4;
-}
-
-.shopping-basics-banner-btn {
-  align-self: flex-start;
-  margin-top: 8px;
-  background: rgba(255, 255, 255, 0.18) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
-  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
   backdrop-filter: blur(8px);
-  box-shadow: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  animation: toastSlideIn 150ms ease-out both;
 }
 
-.shopping-basics-banner-btn:hover {
-  background: rgba(255, 255, 255, 0.28) !important;
-  border-color: rgba(255, 255, 255, 0.65) !important;
+.shopping-toast-icon {
+  color: #4ade80;
+  flex-shrink: 0;
 }
 
-/* ── Desktop: 3-column grid for categories ── */
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @media (min-width: 768px) {
-  .shopping-categories-flat {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    align-items: start;
-  }
-
-  .shopping-category-flat-group {
-    padding-bottom: 0;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: var(--hf-radius-md);
-    padding: 16px;
-    box-shadow: var(--hf-shadow-soft);
-  }
-
-  .shopping-category-flat-head {
-    padding-bottom: 10px;
-    margin-bottom: 2px;
-  }
-
-  .shopping-item-flat {
-    padding: 9px 0;
-  }
-
-  /* Basics banner spans full width on desktop */
-  .shopping-basics-banner {
-    grid-column: 1 / -1;
-    min-height: 140px;
+  .shopping-toast-stack {
+    left: 24px;
+    transform: none;
+    align-items: flex-start;
   }
 }
 
@@ -5768,26 +5770,20 @@ body {
   border-color: var(--border-strong);
 }
 
-[data-theme="dark"] .shopping-budget-bar-track {
+[data-theme="dark"] .shopping-budget-pill-bar {
   background: rgba(99, 102, 241, 0.15);
 }
 
-[data-theme="dark"] .shopping-basics-btn-centered {
+[data-theme="dark"] .shopping-budget-pill-text {
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .shopping-global-mark-all {
   color: #818cf8;
-  border-color: rgba(99, 102, 241, 0.35);
-  background: rgba(99, 102, 241, 0.1);
 }
 
-[data-theme="dark"] .shopping-basics-btn-centered:hover {
-  background: rgba(99, 102, 241, 0.18);
-}
-
-[data-theme="dark"] .shopping-item-flat {
-  border-bottom-color: var(--border-soft);
-}
-
-[data-theme="dark"] .shopping-category-flat-group {
-  background: var(--card-bg);
+[data-theme="dark"] .shopping-global-mark-all:hover {
+  background: rgba(99, 102, 241, 0.15);
 }
 
 /* Week slide animations (shopping + week planner) */
@@ -20301,9 +20297,7 @@ td.recipe-qty-scaled {
 
 /* ── Prominent add-input ── */
 .shopping-add-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  /* container — layout handled by shopping-add-inline child */
 }
 
 .shopping-add-wrapper {

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { UNSAFE_NavigationContext as NavigationContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
@@ -299,6 +299,16 @@ export default function ShoppingPage() {
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
   const [weekPickerOpen, setWeekPickerOpen] = useState(false);
   const weekPickerRef = useRef(null);
+  const [addItemToasts, setAddItemToasts] = useState([]);
+  const addItemToastCounterRef = useRef(0);
+
+  const pushAddedToast = useCallback((name) => {
+    const id = ++addItemToastCounterRef.current;
+    setAddItemToasts((prev) => [...prev, { id, name }]);
+    setTimeout(() => {
+      setAddItemToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  }, []);
   const overflowMenuRef = useRef(null);
   const weekDirRef = useRef(null);
   const [dismissedBannerIds, setDismissedBannerIds] = useState(() => {
@@ -774,7 +784,7 @@ export default function ShoppingPage() {
       setQuickSuggestions([]);
       setQuickCategoryId("");
       quickInputRef.current?.focus();
-      // Selecting an existing item manually (not from a recipe) also counts as a manual add
+      pushAddedToast(ingredient.name);
       notifyWeekly("manual_item_added");
     } catch (err) {
       setError(err.message || "No se pudo añadir el ingrediente a la lista.");
@@ -817,7 +827,7 @@ export default function ShoppingPage() {
       setQuickCategoryMenuOpen(false);
       setQuickCreateOpen(false);
       quickInputRef.current?.focus();
-      setSuccess(`Creado y añadido: ${ingredient.name}`);
+      pushAddedToast(ingredient.name);
       notifyWeekly("manual_item_added");
     } catch (err) {
       setError(err.message || "No se pudo crear y añadir el ingrediente.");
@@ -1163,27 +1173,10 @@ export default function ShoppingPage() {
       <div className="shopping-page-shell">
         <div className="kitchen-card shopping-main-card">
           <div className="shopping-header-card">
-            {/* Row 1: title + WA icon | budget widget */}
+            {/* Row 1: title | WA share icon */}
             <div className="shopping-header-top">
               <div className="shopping-header-left">
-                <div className="shopping-header-title-row">
-                  <h1>Lista de la compra</h1>
-                  <ShareWhatsAppButton
-                    iconOnly
-                    size={18}
-                    className="shopping-header-wa-btn shopping-header-wa-compact"
-                    buttonLabel="Compartir lista de la compra"
-                    items={[
-                      {
-                        id: "shopping-list",
-                        label: "Compartir esta lista",
-                        description: "Comparte la lista de la compra de esta semana con acceso protegido.",
-                        url: buildShoppingShareUrl(weekStart),
-                        message: `Aquí tienes la lista de la compra en HomeFirst: ${buildShoppingShareUrl(weekStart)}`
-                      }
-                    ]}
-                  />
-                </div>
+                <h1 className="shopping-header-h1">Lista de la compra</h1>
                 {/* Row 2: tappable week date range */}
                 <div className="shopping-header-week-area" ref={weekPickerRef}>
                   <button
@@ -1229,36 +1222,48 @@ export default function ShoppingPage() {
                   ) : null}
                 </div>
               </div>
-              {budgetFeatureEnabled === true ? (
-                <button
-                  type="button"
-                  className="shopping-budget-widget"
-                  onClick={() => setBudgetModalOpen(true)}
-                  aria-label="Ver desglose del presupuesto"
-                >
-                  <span className="shopping-budget-widget-label">Gasto estimado</span>
-                  <span className="shopping-budget-widget-amount">
-                    {formatCurrency(budget?.spent)} / {formatCurrency(budget?.weeklyBudget)}
-                  </span>
-                </button>
-              ) : null}
-            </div>
-
-            {/* Row 3: full-width budget progress bar */}
-            <div className="shopping-budget-bar-track">
-              <div
-                className="shopping-budget-bar-fill"
-                style={{
-                  width: budget?.weeklyBudget > 0
-                    ? `${Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100))}%`
-                    : "0%"
-                }}
+              <ShareWhatsAppButton
+                iconOnly
+                size={18}
+                className="shopping-header-wa-btn shopping-header-wa-top"
+                buttonLabel="Compartir lista de la compra"
+                items={[
+                  {
+                    id: "shopping-list",
+                    label: "Compartir esta lista",
+                    description: "Comparte la lista de la compra de esta semana con acceso protegido.",
+                    url: buildShoppingShareUrl(weekStart),
+                    message: `Aquí tienes la lista de la compra en HomeFirst: ${buildShoppingShareUrl(weekStart)}`
+                  }
+                ]}
               />
             </div>
 
-            {/* Add input + basics button */}
+            {/* Budget pill progress bar — full width, text overlay */}
+            {budgetFeatureEnabled === true ? (
+              <button
+                type="button"
+                className="shopping-budget-pill-bar"
+                onClick={() => setBudgetModalOpen(true)}
+                aria-label="Ver desglose del presupuesto"
+              >
+                <div
+                  className="shopping-budget-pill-fill"
+                  style={{
+                    width: budget?.weeklyBudget > 0
+                      ? `${Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100))}%`
+                      : "0%"
+                  }}
+                />
+                <span className="shopping-budget-pill-text">
+                  {formatCurrency(budget?.spent)} / {formatCurrency(budget?.weeklyBudget)}
+                </span>
+              </button>
+            ) : null}
+
+            {/* Add input + basics button — inline row */}
             {tab === "pending" ? (
-              <div className="shopping-add-row">
+              <div className="shopping-add-inline">
                 <div className="shopping-add-wrapper" role="region" aria-label="Añadir ingrediente">
                   <input
                     ref={quickInputRef}
@@ -1283,16 +1288,14 @@ export default function ShoppingPage() {
                     </div>
                   ) : null}
                 </div>
-                <div className="shopping-basics-btn-row">
-                  <button
-                    type="button"
-                    className="shopping-basics-btn-centered"
-                    onClick={() => setBasicsPopupOpen(true)}
-                    aria-label="Añadir básicos de compra"
-                  >
-                    Añadir mis básicos
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="kitchen-button shopping-basics-btn-inline"
+                  onClick={() => setBasicsPopupOpen(true)}
+                  aria-label="Añadir básicos de compra"
+                >
+                  Básicos
+                </button>
               </div>
             ) : null}
 
@@ -1347,7 +1350,7 @@ export default function ShoppingPage() {
             onAnimationEnd={() => setContentSlideClass("")}
           >
           {tab === "pending" ? (
-            <div className="shopping-categories shopping-categories-flat">
+            <div className="shopping-categories-wrap">
               {!Array.isArray(pendingByCategory) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
               ) : pendingByCategory.length === 0 ? (
@@ -1355,84 +1358,75 @@ export default function ShoppingPage() {
                   {purchasedCount ? <EmptyCheckIcon /> : <EmptyListIcon />}
                   <h4>{purchasedCount ? "Todo comprado por esta semana." : "No hay nada por comprar todavía."}</h4>
                 </div>
-              ) : pendingByCategory.map((group) => {
-                const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
-                return (
-                  <div
-                    className="shopping-category-flat-group"
-                    key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name}
-                    style={{ "--category-text": category.colorText }}
-                  >
-                    <div className="shopping-category-flat-head">
-                      <span className="shopping-category-flat-label">{category.name.toUpperCase()}</span>
-                      <div className="shopping-category-head-right">
-                        <button
-                          type="button"
-                          className="shopping-category-mark-all"
-                          onClick={() => markCategoryPurchased(group)}
-                        >
-                          Marcar todos
-                        </button>
-                        <span className="shopping-category-count">{group.items.length}</span>
-                      </div>
-                    </div>
-                    <div className="shopping-items-flat-list">
-                      {group.items.map((item) => {
-                        const key = itemKey(item);
-                        return (
-                          <div className={`shopping-item-flat ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
-                            <button
-                              className="shopping-check"
-                              type="button"
-                              onClick={(e) => setItemStatus(item, "purchased", e.currentTarget)}
-                              aria-label={`Marcar ${item.displayName} como comprado`}
-                            >
-                              <span className="shopping-check-dot">✓</span>
-                            </button>
-                            <div className="shopping-item-name-col">
-                              <span className="shopping-item-text">{item.displayName}</span>
-                            </div>
-                            <div className="shopping-item-controls">
-                              <button
-                                className="shopping-qty-button"
-                                type="button"
-                                onClick={() => adjustItemOccurrences(item, -1)}
-                                aria-label={`Reducir cantidad de ${item.displayName}`}
-                              >
-                                <MinusIcon />
-                              </button>
-                              <span className="shopping-item-amount">{Math.max(1, Number(item.occurrences || 1))}</span>
-                              <button
-                                className="shopping-qty-button"
-                                type="button"
-                                onClick={() => adjustItemOccurrences(item, 1)}
-                                aria-label={`Aumentar cantidad de ${item.displayName}`}
-                              >
-                                <PlusIcon />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-              {Array.isArray(pendingByCategory) && pendingByCategory.length > 0 ? (
-                <div className="shopping-basics-banner" role="complementary">
-                  <div className="shopping-basics-banner-content">
-                    <strong className="shopping-basics-banner-title">Mantén tu despensa llena</strong>
-                    <p className="shopping-basics-banner-sub">Organiza tus productos básicos y nunca te quedes sin stock</p>
+              ) : (
+                <>
+                  <div className="shopping-global-actions-row">
                     <button
                       type="button"
-                      className="kitchen-button shopping-basics-banner-btn"
-                      onClick={() => setBasicsPopupOpen(true)}
+                      className="shopping-global-mark-all"
+                      onClick={() => setAllItemsStatus("purchased")}
                     >
-                      Ver básicos
+                      Marcar todo
                     </button>
                   </div>
-                </div>
-              ) : null}
+                  <div className="shopping-categories shopping-categories-grid">
+                    {pendingByCategory.map((group) => {
+                      const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
+                      return (
+                        <div
+                          className="shopping-category-card"
+                          key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name}
+                          style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}
+                        >
+                          <div className="shopping-category-head">
+                            <h4>{category.name.toUpperCase()}</h4>
+                            <span className="shopping-category-count">{group.items.length}</span>
+                          </div>
+                          <div className="shopping-items-flat-list">
+                            {group.items.map((item) => {
+                              const key = itemKey(item);
+                              return (
+                                <div className={`shopping-item-flat ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
+                                  <button
+                                    className="shopping-check"
+                                    type="button"
+                                    onClick={(e) => setItemStatus(item, "purchased", e.currentTarget)}
+                                    aria-label={`Marcar ${item.displayName} como comprado`}
+                                  >
+                                    <span className="shopping-check-dot">✓</span>
+                                  </button>
+                                  <div className="shopping-item-name-col">
+                                    <span className="shopping-item-text">{item.displayName}</span>
+                                  </div>
+                                  <div className="shopping-item-controls">
+                                    <button
+                                      className="shopping-qty-button"
+                                      type="button"
+                                      onClick={() => adjustItemOccurrences(item, -1)}
+                                      aria-label={`Reducir cantidad de ${item.displayName}`}
+                                    >
+                                      <MinusIcon />
+                                    </button>
+                                    <span className="shopping-item-amount">{Math.max(1, Number(item.occurrences || 1))}</span>
+                                    <button
+                                      className="shopping-qty-button"
+                                      type="button"
+                                      onClick={() => adjustItemOccurrences(item, 1)}
+                                      aria-label={`Aumentar cantidad de ${item.displayName}`}
+                                    >
+                                      <PlusIcon />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           ) : null}
 
@@ -1844,6 +1838,17 @@ export default function ShoppingPage() {
             </div>
           </div>
         </div>
+      ) : null}
+      {addItemToasts.length > 0 ? createPortal(
+        <div className="shopping-toast-stack" aria-live="polite" aria-atomic="false">
+          {addItemToasts.map((toast) => (
+            <div key={toast.id} className="shopping-added-toast">
+              <Check size={15} className="shopping-toast-icon" />
+              <span>«{toast.name}» añadido a la lista</span>
+            </div>
+          ))}
+        </div>,
+        document.body
       ) : null}
     </KitchenLayout>
   );
