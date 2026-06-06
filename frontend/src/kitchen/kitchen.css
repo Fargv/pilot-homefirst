@@ -12838,6 +12838,39 @@ td.recipe-qty-scaled {
   overflow-x: visible;
 }
 
+/* ── Filter panel: visibilidad checkboxes ── */
+.dishes-filter-panel-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dishes-filter-check-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #1e293b);
+  cursor: pointer;
+  user-select: none;
+  line-height: 1;
+}
+
+.dishes-filter-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  accent-color: var(--hf-brand, #4f46e5);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+[data-theme="dark"] .dishes-filter-check-row {
+  color: var(--text-primary);
+}
+
 .dishes-filter-panel-footer {
   display: flex;
   justify-content: flex-end;

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, Moon } from "lucide-react";
+import { SlidersHorizontal, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import KitchenLayout from "../Layout.jsx";
@@ -86,18 +86,7 @@ function isDishFromCatalog(dish) {
   return dish.source === "catalog" || Boolean(dish.sourcePackId);
 }
 
-const DISH_ORIGIN = {
-  ALL: "all",
-  MINE: "mine",
-  CATALOG: "catalog"
-};
-
 export default function DishesPage() {
-  const MEAL_FILTERS = {
-    ALL: "all",
-    LUNCH: "lunch",
-    DINNER: "dinner"
-  };
   const { user } = useAuth();
   const navigate = useNavigate();
   const { notify: notifyOnboarding, state: onboardingState } = useOnboarding();
@@ -132,9 +121,10 @@ export default function DishesPage() {
   const [activeDish, setActiveDish] = useState(null);
   const [dishSearchTerm, setDishSearchTerm] = useState("");
   const [selectedDishCategoryId, setSelectedDishCategoryId] = useState("");
-  const [selectedMealFilter, setSelectedMealFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("main");
-  const [dishOriginFilter, setDishOriginFilter] = useState(DISH_ORIGIN.ALL);
+  const [catalogOnly, setCatalogOnly] = useState(false);
+  const [mineOnly, setMineOnly] = useState(false);
+  const [dinnerOnly, setDinnerOnly] = useState(false);
   const [ingredients, setIngredients] = useState([]);
   const [ingredientsLoading, setIngredientsLoading] = useState(false);
   const [ingredientsError, setIngredientsError] = useState("");
@@ -368,12 +358,9 @@ export default function DishesPage() {
   );
   const tabFilteredDishes = useMemo(() => dishes, [dishes]);
   const mealFilteredDishes = useMemo(() => {
-    if (selectedMealFilter === MEAL_FILTERS.ALL) return tabFilteredDishes;
-    if (selectedMealFilter === MEAL_FILTERS.DINNER) {
-      return tabFilteredDishes.filter((dish) => dish.isDinner === true);
-    }
-    return tabFilteredDishes.filter((dish) => dish.isDinner !== true);
-  }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, selectedMealFilter, tabFilteredDishes]);
+    if (dinnerOnly) return tabFilteredDishes.filter((dish) => dish.isDinner === true);
+    return tabFilteredDishes;
+  }, [dinnerOnly, tabFilteredDishes]);
   const categoryFilteredDishes = useMemo(() => {
     if (!selectedDishCategoryId) return mealFilteredDishes;
     return mealFilteredDishes.filter((dish) => {
@@ -382,14 +369,10 @@ export default function DishesPage() {
     });
   }, [mealFilteredDishes, selectedDishCategoryId]);
   const originFilteredDishes = useMemo(() => {
-    if (dishOriginFilter === DISH_ORIGIN.MINE) {
-      return categoryFilteredDishes.filter((d) => !isDishFromCatalog(d));
-    }
-    if (dishOriginFilter === DISH_ORIGIN.CATALOG) {
-      return categoryFilteredDishes.filter(isDishFromCatalog);
-    }
+    if (catalogOnly) return categoryFilteredDishes.filter(isDishFromCatalog);
+    if (mineOnly) return categoryFilteredDishes.filter((d) => !isDishFromCatalog(d));
     return categoryFilteredDishes;
-  }, [categoryFilteredDishes, dishOriginFilter]);
+  }, [categoryFilteredDishes, catalogOnly, mineOnly]);
 
   const visibleDishes = useMemo(() => {
     if (!normalizedSearch) return originFilteredDishes;
@@ -462,24 +445,22 @@ export default function DishesPage() {
       if (dishSearchTerm.trim()) {
         return "No encontramos platos con ese criterio.";
       }
-      if (dishOriginFilter === DISH_ORIGIN.MINE) {
+      if (mineOnly) {
         return "No hay platos creados por tu hogar aún. ¡Crea el primero!";
       }
-      if (dishOriginFilter === DISH_ORIGIN.CATALOG) {
+      if (catalogOnly) {
         return "No hay platos del catálogo con este filtro. Instala un pack desde Catálogo.";
       }
       if (selectedDishCategoryId) {
         return "No hay platos en la categoría seleccionada.";
       }
-      if (selectedMealFilter !== MEAL_FILTERS.ALL) {
-        return selectedMealFilter === MEAL_FILTERS.DINNER
-          ? "No hay cenas disponibles con este filtro."
-          : "No hay comidas disponibles con este filtro.";
+      if (dinnerOnly) {
+        return "No hay cenas disponibles con este filtro.";
       }
       return "No hay platos aún. Crea el primero.";
     }
     return "";
-  }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, dishOriginFilter, dishSearchTerm, dishes.length, selectedDishCategoryId, selectedMealFilter, visibleDishes.length]);
+  }, [catalogOnly, mineOnly, dinnerOnly, dishSearchTerm, dishes.length, selectedDishCategoryId, visibleDishes.length]);
 
   useEffect(() => {
     setSelectedDishCategoryId((previous) => {
@@ -492,14 +473,15 @@ export default function DishesPage() {
   useEffect(() => {
     if (activeTab === "ingredients") {
       setSelectedDishCategoryId("");
-      setSelectedMealFilter(MEAL_FILTERS.ALL);
-      setDishOriginFilter(DISH_ORIGIN.ALL);
+      setCatalogOnly(false);
+      setMineOnly(false);
+      setDinnerOnly(false);
       setShowAllDishCategories(false);
     } else {
       setSelectedIngredientCategoryId("");
       setShowAllIngredientCategories(false);
     }
-  }, [MEAL_FILTERS.ALL, activeTab]);
+  }, [activeTab]);
 
   const loadIngredients = useCallback(async () => {
     setIngredientsLoading(true);
@@ -974,24 +956,26 @@ export default function DishesPage() {
                 aria-expanded={filterPanelOpen}
               >
                 <SlidersHorizontal size={18} />
-                {(isIngredientsTab ? selectedIngredientCategoryId !== "" : dishOriginFilter !== DISH_ORIGIN.ALL || selectedDishCategoryId !== "") ? (
+                {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "") ? (
                   <span className="dishes-sliders-dot" aria-hidden="true" />
                 ) : null}
               </button>
               {!isIngredientsTab ? (
                 <button
                   type="button"
-                  className={`dishes-cenas-toggle${selectedMealFilter === MEAL_FILTERS.DINNER ? " is-on" : ""}`}
+                  className={`dishes-cenas-toggle${catalogOnly ? " is-on" : ""}`}
                   onClick={() => {
-                    if (!canUseDinners) { setDinnerGateOpen((v) => !v); return; }
-                    setSelectedMealFilter(selectedMealFilter === MEAL_FILTERS.DINNER ? MEAL_FILTERS.ALL : MEAL_FILTERS.DINNER);
+                    setCatalogOnly((v) => {
+                      if (!v) setMineOnly(false);
+                      return !v;
+                    });
                   }}
-                  aria-label="Solo cenas"
-                  aria-pressed={selectedMealFilter === MEAL_FILTERS.DINNER}
+                  aria-label="Solo catálogo"
+                  aria-pressed={catalogOnly}
                 >
-                  <Moon size={14} aria-hidden="true" />
-                  <span>Solo cenas</span>
-                  <span className={`dishes-cenas-track${selectedMealFilter === MEAL_FILTERS.DINNER ? " is-on" : ""}`} aria-hidden="true">
+                  <BookOpen size={14} aria-hidden="true" />
+                  <span>Solo catálogo</span>
+                  <span className={`dishes-cenas-track${catalogOnly ? " is-on" : ""}`} aria-hidden="true">
                     <span className="dishes-cenas-thumb" />
                   </span>
                 </button>
@@ -1010,25 +994,39 @@ export default function DishesPage() {
           {/* ── PANEL DE FILTROS (colapsable) ── */}
           {filterPanelOpen ? (
             <div className="dishes-filter-panel">
-              {/* Sección Origen (dishes only, non-diod) */}
-              {!isIngredientsTab && !isDiodGlobalMode ? (
+              {/* Sección Visibilidad: Solo cenas + Mis platos */}
+              {!isIngredientsTab ? (
                 <div className="dishes-filter-section">
-                  <span className="dishes-filter-section-title">Origen</span>
-                  <div className="dishes-filter-pills">
-                    {[
-                      { key: DISH_ORIGIN.ALL,     label: "Todos" },
-                      { key: DISH_ORIGIN.MINE,    label: "Mis platos" },
-                      { key: DISH_ORIGIN.CATALOG, label: "Catálogo" },
-                    ].map(({ key, label }) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className={`kitchen-filter-chip${dishOriginFilter === key ? " is-active" + (key === DISH_ORIGIN.ALL ? " is-all" : "") : ""}`}
-                        onClick={() => setDishOriginFilter(key)}
-                      >
-                        {label}
-                      </button>
-                    ))}
+                  <span className="dishes-filter-section-title">Visibilidad</span>
+                  <div className="dishes-filter-panel-checks">
+                    <label className="dishes-filter-check-row">
+                      <input
+                        type="checkbox"
+                        className="dishes-filter-check"
+                        checked={dinnerOnly}
+                        onChange={() => {
+                          if (!canUseDinners) { setDinnerGateOpen((v) => !v); return; }
+                          setDinnerOnly((v) => !v);
+                        }}
+                      />
+                      <span>Solo cenas</span>
+                    </label>
+                    {!isDiodGlobalMode ? (
+                      <label className="dishes-filter-check-row">
+                        <input
+                          type="checkbox"
+                          className="dishes-filter-check"
+                          checked={mineOnly}
+                          onChange={() => {
+                            setMineOnly((v) => {
+                              if (!v) setCatalogOnly(false);
+                              return !v;
+                            });
+                          }}
+                        />
+                        <span>Mis platos</span>
+                      </label>
+                    ) : null}
                   </div>
                 </div>
               ) : null}
@@ -1115,13 +1113,14 @@ export default function DishesPage() {
               ) : null}
 
               {/* Limpiar filtros */}
-              {(isIngredientsTab ? selectedIngredientCategoryId !== "" : dishOriginFilter !== DISH_ORIGIN.ALL || selectedDishCategoryId !== "") ? (
+              {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "") ? (
                 <div className="dishes-filter-panel-footer">
                   <button
                     type="button"
                     className="dishes-filter-clear-btn"
                     onClick={() => {
-                      setDishOriginFilter(DISH_ORIGIN.ALL);
+                      setMineOnly(false);
+                      setDinnerOnly(false);
                       setSelectedDishCategoryId("");
                       setSelectedIngredientCategoryId("");
                     }}
