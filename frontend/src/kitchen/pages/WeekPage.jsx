@@ -152,6 +152,29 @@ function BookIcon(props) {
     </svg>
   );
 }
+function PackageIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+function UserIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ChevronDownIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 const MAX_DISH_RESULTS = 8;
 const WEEK_MEAL_TAB_KEY = "kitchen_week_meal_tab";
@@ -304,13 +327,16 @@ export default function WeekPage() {
   const [dishModalMode, setDishModalMode] = useState("main");
   const [dishModalMealType, setDishModalMealType] = useState("lunch");
   const [dinnerShoppingChoiceDialog, setDinnerShoppingChoiceDialog] = useState(null);
-  const [weekRandomizeConfirmOpen, setWeekRandomizeConfirmOpen] = useState(false);
   const [weekRandomizing, setWeekRandomizing] = useState(false);
   const [weekDeleteConfirmOpen, setWeekDeleteConfirmOpen] = useState(false);
   const [weekDeleteBusy, setWeekDeleteBusy] = useState(false);
   const [weekendDialogOpen, setWeekendDialogOpen] = useState(false);
   const [recipeModal, setRecipeModal] = useState(null);
   const [weekendBusy, setWeekendBusy] = useState(false);
+  const [randomizeMenuOpen, setRandomizeMenuOpen] = useState(false);
+  const [randomizeDayContext, setRandomizeDayContext] = useState(null);
+  const [catalogPickerOpen, setCatalogPickerOpen] = useState(false);
+  const [installedPacks, setInstalledPacks] = useState(null);
   const ingredientCache = useRef(new Map());
   const saveTimers = useRef({});
   const carouselRef = useRef(null);
@@ -403,24 +429,25 @@ export default function WeekPage() {
     }
   }, [getCurrentHouseholdId, selectedMealType]);
 
-  const handleConfirmWeekRandomize = useCallback(async () => {
+  const handleConfirmWeekRandomize = useCallback(async (mode = "all", packId = null) => {
     if (!canUseFullWeekRandomization) {
       setWeekNotice({
         type: "error",
         message: "Full week randomization is included in Pro and Premium plans."
       });
-      setWeekRandomizeConfirmOpen(false);
       return;
     }
     setWeekRandomizing(true);
     setWeekNotice(null);
     try {
+      const reqBody = { overwriteAll: false, mealType: selectedMealType };
+      if (mode === "mine") reqBody.myDishesOnly = true;
+      if (mode === "catalog" && packId) reqBody.packId = packId;
       const data = await apiRequest(`/api/kitchen/weeks/${weekStartRef.current}/randomize`, {
         method: "POST",
-        body: JSON.stringify({ overwriteAll: false, mealType: selectedMealType })
+        body: JSON.stringify(reqBody)
       });
       setPlan(data.plan || null);
-      // Weekly challenge: full-week randomization used
       notifyWeekly("week_randomized", { randomizedWeekStart: weekStartRef.current });
       const warningMessages = Array.isArray(data.warnings)
         ? data.warnings.filter((item) => String(item || "").trim())
@@ -442,21 +469,18 @@ export default function WeekPage() {
       } else {
         setWeekNotice({ type: "success", message: "Semana randomizada" });
       }
-      setWeekRandomizeConfirmOpen(false);
     } catch (err) {
       if (isWeekRandomizationUnavailableError(err)) {
         setWeekNotice({
           type: "error",
           message: "Full week randomization is included in Pro and Premium plans."
         });
-        setWeekRandomizeConfirmOpen(false);
         return;
       }
       setWeekNotice({
         type: "error",
         message: err.message || "No se pudo randomizar la semana."
       });
-      setWeekRandomizeConfirmOpen(false);
     } finally {
       setWeekRandomizing(false);
     }
@@ -487,6 +511,19 @@ export default function WeekPage() {
       setWeekDeleteBusy(false);
     }
   }, [selectedMealType, weekDeleteBusy]);
+
+  const openRandomizeMenu = useCallback((dayCtx = null) => {
+    setRandomizeDayContext(dayCtx);
+    setRandomizeMenuOpen(true);
+    if (installedPacks === null) {
+      apiRequest("/api/kitchen/catalog/packs")
+        .then((data) => {
+          const all = Array.isArray(data?.packs) ? data.packs : (Array.isArray(data) ? data : []);
+          setInstalledPacks(all.filter((p) => p.installed || p.isInstalled || p.status === "installed"));
+        })
+        .catch(() => setInstalledPacks([]));
+    }
+  }, [installedPacks]);
 
   const loadData = async () => {
     const requestSeq = loadRequestSeqRef.current + 1;
@@ -1648,7 +1685,8 @@ export default function WeekPage() {
     }
   };
 
-  const handleRandomAssignCta = async (day, canEdit, isAssigned) => {
+  const handleRandomAssignCta = async (day, canEdit, isAssigned, options = {}) => {
+    const { mode = "all", packId = null } = options;
     const dayKey = day.date.slice(0, 10);
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
 
@@ -1681,9 +1719,12 @@ export default function WeekPage() {
 
     const fetchRandomCandidate = async () => {
       const mealType = dayMealType(day);
+      const randBody = { mealType };
+      if (mode === "mine") randBody.myDishesOnly = true;
+      if (mode === "catalog" && packId) randBody.packId = packId;
       return apiRequest(`/api/kitchen/weeks/${clickWeekStart}/day/${dayKey}/random-main`, {
         method: "POST",
-        body: JSON.stringify({ mealType })
+        body: JSON.stringify(randBody)
       });
     };
 
@@ -2009,7 +2050,7 @@ export default function WeekPage() {
                         <button
                           type="button"
                           className="kitchen-week-randomize-mobile"
-                          onClick={() => setWeekRandomizeConfirmOpen(true)}
+                          onClick={() => openRandomizeMenu(null)}
                           disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
                           title={!dishesReadyForCurrentHousehold ? "Actualizando platos..." : "Randomizar semana"}
                           aria-label="Randomizar semana"
@@ -2028,23 +2069,21 @@ export default function WeekPage() {
                   days={visibleDays}
                   selectedDay={selectedDay}
                   onSelectDay={handleSelectDay}
-                  weekendAction={{
-                    disabled: weekendOptionState.availableDays.length === 0,
-                    title: weekendOptionState.availableDays.length
-                      ? "Añadir sábado o domingo"
-                      : "Sábado y domingo ya añadidos esta semana",
-                    ariaLabel: weekendOptionState.availableDays.length
-                      ? "Añadir fin de semana a esta semana"
-                      : "Fin de semana ya añadido para esta semana",
-                    onClick: () => setWeekendDialogOpen(true)
+                  weekendChips={{
+                    hasSaturday: weekendOptionState.hasSaturday,
+                    hasSunday: weekendOptionState.hasSunday,
+                    onAddSat: () => handleAddWeekendDays(["saturday"]),
+                    onAddSun: () => handleAddWeekendDays(["sunday"]),
+                    busy: weekendBusy,
                   }}
                 />
 
-                {/* Tab bar with dinner state */}
+                {/* Tab bar — only shown when dinners are a real option */}
                 <>
+                  {canUseDinners ? (
                   <div className="kitchen-week-header-row kitchen-week-header-row-tabs">
                     <div className="kitchen-tab-share-row">
-                      <div className="kitchen-meal-tabs kitchen-meal-tabs-with-link" role="group" aria-label="Navegación semanal">
+                      <div className="kitchen-meal-tabs" role="group" aria-label="Tipo de comida">
                       <button
                         type="button"
                         className={`kitchen-meal-tab ${selectedMealType === "lunch" ? "is-active" : ""}`}
@@ -2053,7 +2092,7 @@ export default function WeekPage() {
                       >
                         Comidas
                       </button>
-                      {canUseDinners && dinnersEnabled ? (
+                      {dinnersEnabled ? (
                         <button
                           type="button"
                           className={`kitchen-meal-tab ${selectedMealType === "dinner" ? "is-active" : ""}`}
@@ -2062,40 +2101,16 @@ export default function WeekPage() {
                         >
                           Cenas
                         </button>
-                      ) : canUseDinners && !dinnersEnabled ? (
-                        /* Pro/Beta Pro with dinners off — subtle tab links to Household Settings */
+                      ) : (
                         <button
                           type="button"
                           className="kitchen-meal-tab dinner-gate-tab dinner-gate-tab-settings"
                           title="Activa las cenas en Configuración del hogar"
                           onClick={() => navigate("/kitchen/configuracion?section=household-members")}
                         >
-                          🌙 Cenas
-                        </button>
-                      ) : (
-                        /* Basic — locked upgrade prompt */
-                        <button
-                          type="button"
-                          className="kitchen-meal-tab dinner-gate-tab"
-                          aria-disabled="true"
-                          title="Las cenas están disponibles en Pro y Premium"
-                          onClick={() => setDinnerUpgradeOpen((v) => !v)}
-                        >
-                          <svg className="dinner-gate-lock" viewBox="0 0 12 14" width="10" height="12" fill="none" aria-hidden="true">
-                            <rect x="1.5" y="6" width="9" height="7.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-                            <path d="M4 6V4.5a2 2 0 014 0V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                          </svg>
                           Cenas
-                          <span className="dinner-gate-pro-badge">PRO</span>
                         </button>
                       )}
-                      <button
-                        type="button"
-                        className="kitchen-meal-tab kitchen-meal-tab-link"
-                        onClick={handleOpenCurrentShoppingList}
-                      >
-                        Compra
-                      </button>
                       </div>
                       <ShareWhatsAppButton
                         iconOnly
@@ -2115,11 +2130,6 @@ export default function WeekPage() {
                       />
                     </div>
                   </div>
-                  {!canUseDinners && dinnerUpgradeOpen ? (
-                    <DinnerUpgradeBanner
-                      className="dinner-upgrade-banner-week"
-                      onClose={() => setDinnerUpgradeOpen(false)}
-                    />
                   ) : null}
                 </>
 
@@ -2131,7 +2141,7 @@ export default function WeekPage() {
                       <button
                         type="button"
                         className="kitchen-week-randomize-desktop"
-                        onClick={() => setWeekRandomizeConfirmOpen(true)}
+                        onClick={() => openRandomizeMenu(null)}
                         disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
                         title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar semana"}
                       >
@@ -2143,18 +2153,6 @@ export default function WeekPage() {
                       </ProGateButton>
                     )
                   ) : null}
-                  <button
-                    type="button"
-                    className="kitchen-week-finde-desktop"
-                    onClick={() => setWeekendDialogOpen(true)}
-                    disabled={weekendOptionState.availableDays.length === 0}
-                    title={weekendOptionState.availableDays.length
-                      ? "Añadir sábado o domingo"
-                      : "Sábado y domingo ya añadidos esta semana"}
-                    aria-label="Añadir fin de semana a esta semana"
-                  >
-                    + Finde
-                  </button>
                 </div>
 
               </div>
@@ -2380,6 +2378,18 @@ export default function WeekPage() {
                         >
                           <DiceIcon />
                         </button>
+                        {canUseFullWeekRandomization ? (
+                          <button
+                            type="button"
+                            className="kitchen-day-random-expand"
+                            onClick={() => openRandomizeMenu({ day, canEdit, isAssigned })}
+                            disabled={randomDisabled}
+                            aria-label="Opciones de randomización"
+                            title="Más opciones"
+                          >
+                            <ChevronDownIcon width="14" height="14" />
+                          </button>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
@@ -2407,6 +2417,18 @@ export default function WeekPage() {
                           >
                             <DiceIcon />
                           </button>
+                          {canUseFullWeekRandomization ? (
+                            <button
+                              type="button"
+                              className="kitchen-day-random-expand"
+                              onClick={() => openRandomizeMenu({ day, canEdit, isAssigned })}
+                              disabled={randomDisabled}
+                              aria-label="Opciones de randomización"
+                              title="Más opciones"
+                            >
+                              <ChevronDownIcon width="14" height="14" />
+                            </button>
+                          ) : null}
                       </div>
                     ) : null}
                     {isPlanned ? (
@@ -2640,6 +2662,18 @@ export default function WeekPage() {
                       >
                         <DiceIcon />
                       </button>
+                      {canUseFullWeekRandomization ? (
+                        <button
+                          type="button"
+                          className="kitchen-day-icon-action kitchen-day-random-expand-inline"
+                          onClick={() => openRandomizeMenu({ day, canEdit, isAssigned })}
+                          disabled={randomDisabled}
+                          aria-label="Opciones de randomización"
+                          title="Más opciones"
+                        >
+                          <ChevronDownIcon width="13" height="13" />
+                        </button>
+                      ) : null}
                       </div>
                     </label>
                   ) : null}
@@ -3166,42 +3200,134 @@ export default function WeekPage() {
           </div>
         </div>
       ) : null}
-      {weekRandomizeConfirmOpen ? (
+      {randomizeMenuOpen ? (
+        <div
+          className="kitchen-modal-backdrop kitchen-randomize-menu-backdrop"
+          role="presentation"
+          onClick={() => { if (!weekRandomizing) { setRandomizeMenuOpen(false); setRandomizeDayContext(null); } }}
+        >
+          <div
+            className="kitchen-randomize-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-label={randomizeDayContext ? "Opciones de randomización del día" : "Opciones de randomización de semana"}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="kitchen-randomize-menu-header">
+              <span className="kitchen-randomize-menu-title">
+                {randomizeDayContext ? "Randomizar día" : "Randomizar semana"}
+              </span>
+              <button
+                type="button"
+                className="kitchen-randomize-menu-close"
+                onClick={() => { setRandomizeMenuOpen(false); setRandomizeDayContext(null); }}
+                aria-label="Cerrar"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6l-12 12" />
+                </svg>
+              </button>
+            </div>
+            <button
+              type="button"
+              className="kitchen-randomize-menu-option"
+              disabled={weekRandomizing}
+              onClick={() => {
+                setRandomizeMenuOpen(false);
+                if (randomizeDayContext) {
+                  handleRandomAssignCta(randomizeDayContext.day, randomizeDayContext.canEdit, randomizeDayContext.isAssigned, { mode: "all" });
+                  setRandomizeDayContext(null);
+                } else {
+                  handleConfirmWeekRandomize("all");
+                }
+              }}
+            >
+              <DiceIcon width="18" height="18" />
+              <span>Randomizar todo</span>
+            </button>
+            <button
+              type="button"
+              className="kitchen-randomize-menu-option"
+              disabled={weekRandomizing}
+              onClick={() => setCatalogPickerOpen(true)}
+            >
+              <PackageIcon width="18" height="18" />
+              <span>Del catálogo...</span>
+            </button>
+            <button
+              type="button"
+              className="kitchen-randomize-menu-option"
+              disabled={weekRandomizing}
+              onClick={() => {
+                setRandomizeMenuOpen(false);
+                if (randomizeDayContext) {
+                  handleRandomAssignCta(randomizeDayContext.day, randomizeDayContext.canEdit, randomizeDayContext.isAssigned, { mode: "mine" });
+                  setRandomizeDayContext(null);
+                } else {
+                  handleConfirmWeekRandomize("mine");
+                }
+              }}
+            >
+              <UserIcon width="18" height="18" />
+              <span>Solo mis platos</span>
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {catalogPickerOpen ? (
         <div
           className="kitchen-modal-backdrop"
           role="presentation"
-          onClick={() => {
-            if (weekRandomizing) return;
-            setWeekRandomizeConfirmOpen(false);
-          }}
+          onClick={() => setCatalogPickerOpen(false)}
         >
           <div
             className="kitchen-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Randomizar semana"
-            onClick={(event) => event.stopPropagation()}
+            aria-label="Seleccionar colección"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="kitchen-modal-header">
-              <h3>¿Quieres randomizar la semana?</h3>
-              <p className="kitchen-muted">Se asignarán platos aleatorios a los días libres.</p>
+              <h3>Seleccionar colección</h3>
+              <p className="kitchen-muted">Elige una colección instalada para randomizar.</p>
+            </div>
+            <div className="kitchen-catalog-picker-list">
+              {installedPacks === null ? (
+                <p className="kitchen-muted">Cargando colecciones...</p>
+              ) : installedPacks.length === 0 ? (
+                <p className="kitchen-muted">No tienes colecciones instaladas.</p>
+              ) : (
+                installedPacks.map((pack) => {
+                  const packId = pack.id || pack._id || pack.packId;
+                  return (
+                    <button
+                      key={packId}
+                      type="button"
+                      className="kitchen-catalog-picker-item"
+                      onClick={() => {
+                        setCatalogPickerOpen(false);
+                        setRandomizeMenuOpen(false);
+                        if (randomizeDayContext) {
+                          handleRandomAssignCta(randomizeDayContext.day, randomizeDayContext.canEdit, randomizeDayContext.isAssigned, { mode: "catalog", packId });
+                          setRandomizeDayContext(null);
+                        } else {
+                          handleConfirmWeekRandomize("catalog", packId);
+                        }
+                      }}
+                    >
+                      <span className="kitchen-catalog-picker-name">{pack.name || pack.title}</span>
+                    </button>
+                  );
+                })
+              )}
             </div>
             <div className="kitchen-modal-actions">
               <button
                 type="button"
                 className="kitchen-button secondary"
-                onClick={() => setWeekRandomizeConfirmOpen(false)}
-                disabled={weekRandomizing}
+                onClick={() => setCatalogPickerOpen(false)}
               >
                 Cancelar
-              </button>
-              <button
-                type="button"
-                className="kitchen-button"
-                onClick={handleConfirmWeekRandomize}
-                disabled={weekRandomizing}
-              >
-                {weekRandomizing ? "Randomizando..." : "Randomizar semana"}
               </button>
             </div>
           </div>

@@ -22,20 +22,16 @@ function getDayLong(isoKey) {
   return date ? DAY_LONG[date.getDay()] : "";
 }
 
-function PlusIcon(props) {
-  return (
-    <svg viewBox="0 0 14 14" fill="none" aria-hidden="true" {...props}>
-      <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export default function WeekDayTabs({
   days = [],
   selectedDay,
   onSelectDay,
-  weekendAction = null
+  weekendChips = null,
 }) {
+  const hasSat = weekendChips?.hasSaturday ?? false;
+  const hasSun = weekendChips?.hasSunday ?? false;
+  const busy = weekendChips?.busy ?? false;
+
   return (
     <div className="kitchen-weekday-tabs" role="tablist" aria-label="Días de la semana">
       {days.map((day) => {
@@ -59,19 +55,49 @@ export default function WeekDayTabs({
           </button>
         );
       })}
-      {weekendAction ? (
-        <button
-          type="button"
-          role="tab"
-          aria-selected={false}
-          className={`kitchen-weekday-tab kitchen-weekday-tab-finde${weekendAction.disabled ? " is-disabled" : ""}`}
-          onClick={weekendAction.disabled ? undefined : weekendAction.onClick}
-          disabled={weekendAction.disabled}
-          title={weekendAction.title || "Añadir fin de semana"}
-          aria-label={weekendAction.ariaLabel || "Añadir fin de semana"}
-        >
-          <PlusIcon className="kitchen-weekday-tab-finde-icon" />
-        </button>
+      {weekendChips ? (
+        <>
+          {hasSat ? (
+            <span
+              className="kitchen-weekend-chip kitchen-weekend-chip-active"
+              aria-label="Sábado añadido"
+              title="Sábado añadido"
+            >
+              Sáb ✓
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="kitchen-weekend-chip kitchen-weekend-chip-add"
+              onClick={weekendChips.onAddSat}
+              disabled={busy}
+              aria-label="Añadir sábado"
+              title="Añadir sábado"
+            >
+              + Sáb
+            </button>
+          )}
+          {hasSat && !hasSun ? (
+            <button
+              type="button"
+              className="kitchen-weekend-chip kitchen-weekend-chip-add"
+              onClick={weekendChips.onAddSun}
+              disabled={busy}
+              aria-label="Añadir domingo"
+              title="Añadir domingo"
+            >
+              + Dom
+            </button>
+          ) : hasSat && hasSun ? (
+            <span
+              className="kitchen-weekend-chip kitchen-weekend-chip-active"
+              aria-label="Domingo añadido"
+              title="Domingo añadido"
+            >
+              Dom ✓
+            </span>
+          ) : null}
+        </>
       ) : null}
     </div>
   );

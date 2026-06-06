@@ -20952,3 +20952,230 @@ td.recipe-qty-scaled {
 [data-theme="dark"] .shopping-budget-pill-chevron {
   color: var(--text-muted, rgba(255, 255, 255, 0.4));
 }
+
+/* ── Weekend chips (Sáb/Dom) in day tab bar ── */
+.kitchen-weekend-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  transition: background 150ms ease, color 150ms ease;
+}
+.kitchen-weekend-chip-add {
+  background: transparent;
+  border: 1.5px dashed var(--border-soft, rgba(0, 0, 0, 0.18));
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+}
+.kitchen-weekend-chip-add:hover:not(:disabled) {
+  background: var(--surface-elevated, #f8fafc);
+  border-color: var(--hf-brand, #4f46e5);
+  color: var(--hf-brand, #4f46e5);
+}
+.kitchen-weekend-chip-add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.kitchen-weekend-chip-active {
+  background: color-mix(in srgb, var(--hf-brand, #4f46e5) 12%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--hf-brand, #4f46e5) 30%, transparent);
+  color: var(--hf-brand, #4f46e5);
+  cursor: default;
+}
+[data-theme="dark"] .kitchen-weekend-chip-add {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.55);
+}
+[data-theme="dark"] .kitchen-weekend-chip-add:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--hf-brand, #818cf8);
+  color: var(--hf-brand, #818cf8);
+}
+[data-theme="dark"] .kitchen-weekend-chip-active {
+  background: color-mix(in srgb, var(--hf-brand, #818cf8) 18%, transparent);
+  border-color: color-mix(in srgb, var(--hf-brand, #818cf8) 40%, transparent);
+  color: var(--hf-brand, #818cf8);
+}
+
+/* ── Randomize menu (bottom sheet on mobile, compact on desktop) ── */
+.kitchen-randomize-menu-backdrop {
+  z-index: 320;
+}
+.kitchen-randomize-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface-page, #ffffff);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.14);
+  padding: 0 0 env(safe-area-inset-bottom, 0);
+  z-index: 321;
+  animation: slideUpSheet 200ms cubic-bezier(0.25, 0.85, 0.35, 1) both;
+}
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.kitchen-randomize-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 8px;
+  border-bottom: 1px solid var(--border-soft, rgba(0, 0, 0, 0.08));
+}
+.kitchen-randomize-menu-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+}
+.kitchen-randomize-menu-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  border-radius: 6px;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  line-height: 0;
+}
+.kitchen-randomize-menu-close:hover {
+  background: var(--surface-elevated, #f1f5f9);
+}
+.kitchen-randomize-menu-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-soft, rgba(0, 0, 0, 0.05));
+  text-align: left;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary, #0f172a);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.kitchen-randomize-menu-option:last-child {
+  border-bottom: none;
+}
+.kitchen-randomize-menu-option:hover:not(:disabled) {
+  background: var(--surface-elevated, #f8fafc);
+}
+.kitchen-randomize-menu-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.kitchen-randomize-menu-option svg {
+  flex-shrink: 0;
+  color: var(--text-secondary, #64748b);
+}
+@media (min-width: 640px) {
+  .kitchen-randomize-menu {
+    position: fixed;
+    bottom: auto;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px;
+    border-radius: 14px;
+    animation: fadeInScale 180ms ease both;
+  }
+  @keyframes fadeInScale {
+    from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+}
+[data-theme="dark"] .kitchen-randomize-menu {
+  background: var(--surface-page, #1e1e2e);
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .kitchen-randomize-menu-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .kitchen-randomize-menu-title {
+  color: var(--text-primary, #f1f5f9);
+}
+[data-theme="dark"] .kitchen-randomize-menu-option {
+  color: var(--text-primary, #f1f5f9);
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+[data-theme="dark"] .kitchen-randomize-menu-option:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ── Per-day ChevronDown expand button ── */
+.kitchen-day-random-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 4px;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+  flex-shrink: 0;
+}
+.kitchen-day-random-expand:hover:not(:disabled) {
+  background: var(--surface-elevated, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+.kitchen-day-random-expand:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.kitchen-day-random-expand-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 3px;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.kitchen-day-random-expand-inline:hover:not(:disabled) {
+  background: var(--surface-elevated, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+.kitchen-day-random-expand-inline:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Catalog picker modal list ── */
+.kitchen-catalog-picker-list {
+  padding: 8px 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.kitchen-catalog-picker-item {
+  display: block;
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #0f172a);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.kitchen-catalog-picker-item:hover {
+  background: var(--surface-elevated, #f8fafc);
+}
+[data-theme="dark"] .kitchen-catalog-picker-item {
+  color: var(--text-primary, #f1f5f9);
+}
+[data-theme="dark"] .kitchen-catalog-picker-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
