@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import PageHeader from "../components/PageHeader.jsx";
 import { apiRequest, createCheckoutSession } from "../api.js";
 
 const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
@@ -768,10 +769,34 @@ export default function CatalogPage() {
   return (
     <KitchenLayout>
       <div className="catalog-page">
-        <div className="catalog-header">
-          <h1 className="catalog-title">Catálogo</h1>
-          <p className="catalog-subtitle">Packs de platos listos para añadir a tu hogar</p>
-        </div>
+        <PageHeader
+          title="Catálogo"
+          subtitle="Packs de platos listos para añadir a tu hogar"
+          secondaryLeft={
+            <div className="catalog-tabs catalog-tabs-inline">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`catalog-tab ${activeTab === tab.id ? "active" : ""}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          }
+          secondaryRight={
+            <input
+              type="search"
+              className="kitchen-input catalog-search-input"
+              placeholder="Buscar packs..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Buscar packs"
+            />
+          }
+        />
 
         <CatalogBitesWallet
           wallet={wallet}
@@ -779,30 +804,6 @@ export default function CatalogPage() {
           bitesConfig={bitesConfig}
           onBuyBites={() => setBitesStoreOpen(true)}
         />
-
-        <div className="catalog-search-row">
-          <input
-            type="search"
-            className="kitchen-input catalog-search-input"
-            placeholder="Buscar packs..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Buscar packs"
-          />
-        </div>
-
-        <div className="catalog-tabs">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`catalog-tab ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
 
         {loading && (
           <div className="catalog-loading">

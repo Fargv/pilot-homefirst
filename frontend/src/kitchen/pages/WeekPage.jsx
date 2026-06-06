@@ -18,6 +18,7 @@ import { useActiveWeek } from "../weekContext.jsx";
 import { canRandomizeFullWeek, canUseDinnersFeature, isWeekRandomizationUnavailableError } from "../subscription.js";
 import { ProGateButton } from "../components/ui/ProBadge.jsx";
 import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
+import PageHeader from "../components/PageHeader.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 
@@ -2036,54 +2037,40 @@ export default function WeekPage() {
         <div className="kitchen-week-mobile-frame">
           {isNavLoading ? <div className="kitchen-week-nav-progress" aria-hidden="true" /> : null}
           <section className="kitchen-week-header">
-            <div className="kitchen-week-header-actions">
-              <div className="kitchen-week-header-panel">
-                <div className="kitchen-week-header-row kitchen-week-header-row-nav">
-                  <div className="kitchen-week-nav-row">
-                    <WeekDatePicker
-                      selectedWeek={weekStart}
-                      onWeekChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
-                      className="kitchen-week-header-navigator"
-                    />
-                    {canShowWeekRandomize ? (
-                      canUseFullWeekRandomization ? (
-                        <button
-                          type="button"
-                          className="kitchen-week-randomize-mobile"
-                          onClick={() => openRandomizeMenu(null)}
-                          disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                          title={!dishesReadyForCurrentHousehold ? "Actualizando platos..." : "Randomizar semana"}
-                          aria-label="Randomizar semana"
-                        >
-                          <DiceIcon />
-                        </button>
-                      ) : (
-                        <ProGateButton className="kitchen-week-randomize-mobile" aria-label="Randomizar semana">
-                          <DiceIcon />
-                        </ProGateButton>
-                      )
-                    ) : null}
-                  </div>
-                </div>
-                <WeekDayTabs
-                  days={visibleDays}
-                  selectedDay={selectedDay}
-                  onSelectDay={handleSelectDay}
-                  weekendChips={{
-                    hasSaturday: weekendOptionState.hasSaturday,
-                    hasSunday: weekendOptionState.hasSunday,
-                    onAddSat: () => handleAddWeekendDays(["saturday"]),
-                    onAddSun: () => handleAddWeekendDays(["sunday"]),
-                    busy: weekendBusy,
-                  }}
+            <PageHeader
+              title="Planificación"
+              subtitle="Organiza tus comidas de la semana"
+              primaryAction={
+                canShowWeekRandomize ? (
+                  canUseFullWeekRandomization ? (
+                    <button
+                      type="button"
+                      className="kitchen-week-randomize-btn"
+                      onClick={() => openRandomizeMenu(null)}
+                      disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+                      title={!dishesReadyForCurrentHousehold ? "Actualizando platos..." : "Randomizar semana"}
+                      aria-label="Randomizar semana"
+                    >
+                      <DiceIcon /> Randomizar
+                    </button>
+                  ) : (
+                    <ProGateButton className="kitchen-week-randomize-btn">
+                      <DiceIcon /> Randomizar
+                    </ProGateButton>
+                  )
+                ) : null
+              }
+              secondaryLeft={
+                <WeekDatePicker
+                  selectedWeek={weekStart}
+                  onWeekChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
+                  className="kitchen-week-header-navigator"
                 />
-
-                {/* Tab bar — only shown when dinners are a real option */}
-                <>
-                  {canUseDinners ? (
-                  <div className="kitchen-week-header-row kitchen-week-header-row-tabs">
-                    <div className="kitchen-tab-share-row">
-                      <div className="kitchen-meal-tabs" role="group" aria-label="Tipo de comida">
+              }
+              secondaryRight={
+                canUseDinners ? (
+                  <div className="kitchen-week-header-tabs-row">
+                    <div className="kitchen-meal-tabs" role="group" aria-label="Tipo de comida">
                       <button
                         type="button"
                         className={`kitchen-meal-tab ${selectedMealType === "lunch" ? "is-active" : ""}`}
@@ -2111,58 +2098,48 @@ export default function WeekPage() {
                           Cenas
                         </button>
                       )}
-                      </div>
-                      <ShareWhatsAppButton
-                        iconOnly
-                        size={22}
-                        className="kitchen-tab-share-button"
-                        buttonLabel="Compartir semana por WhatsApp"
-                        title="Compartir en HomeFirst"
-                        items={[
-                          {
-                            id: "week",
-                            label: "Compartir esta semana",
-                            description: "Envia un enlace directo a esta semana. La otra persona tendra que iniciar sesion para verla.",
-                            url: buildWeekShareUrl(weekStart),
-                            message: `Take a look at this week in HomeFirst: ${buildWeekShareUrl(weekStart)}`
-                          }
-                        ]}
-                      />
                     </div>
+                    <ShareWhatsAppButton
+                      iconOnly
+                      size={22}
+                      className="kitchen-tab-share-button"
+                      buttonLabel="Compartir semana por WhatsApp"
+                      title="Compartir en HomeFirst"
+                      items={[
+                        {
+                          id: "week",
+                          label: "Compartir esta semana",
+                          description: "Envia un enlace directo a esta semana. La otra persona tendra que iniciar sesion para verla.",
+                          url: buildWeekShareUrl(weekStart),
+                          message: `Take a look at this week in HomeFirst: ${buildWeekShareUrl(weekStart)}`
+                        }
+                      ]}
+                    />
                   </div>
-                  ) : null}
-                </>
-
-                {/* Desktop-only: action buttons grouped at the right of the bar */}
-                <div className="kitchen-week-header-actions-right">
-                  <span className="kitchen-week-controls-divider" aria-hidden="true" />
-                  {canShowWeekRandomize ? (
-                    canUseFullWeekRandomization ? (
-                      <button
-                        type="button"
-                        className="kitchen-week-randomize-desktop"
-                        onClick={() => openRandomizeMenu(null)}
-                        disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                        title={!dishesReadyForCurrentHousehold ? "Actualizando platos del hogar..." : "Randomizar semana"}
-                      >
-                        <DiceIcon /> Randomizar
-                      </button>
-                    ) : (
-                      <ProGateButton className="kitchen-week-randomize-desktop">
-                        <DiceIcon /> Randomizar
-                      </ProGateButton>
-                    )
-                  ) : null}
-                </div>
-
-              </div>
+                ) : null
+              }
+              footer={
+                <WeekDayTabs
+                  days={visibleDays}
+                  selectedDay={selectedDay}
+                  onSelectDay={handleSelectDay}
+                  weekendChips={{
+                    hasSaturday: weekendOptionState.hasSaturday,
+                    hasSunday: weekendOptionState.hasSunday,
+                    onAddSat: () => handleAddWeekendDays(["saturday"]),
+                    onAddSun: () => handleAddWeekendDays(["sunday"]),
+                    busy: weekendBusy,
+                  }}
+                />
+              }
+            >
               {weekNotice ? (
                 <div className={`kitchen-alert ${weekNotice.type === "success" ? "success" : "error"}`}>
                   {weekNotice.message}
                 </div>
               ) : null}
               {loadError ? <p className="kitchen-inline-error">{loadError}</p> : null}
-            </div>
+            </PageHeader>
           </section>
 
           <div className="kitchen-week-carousel">

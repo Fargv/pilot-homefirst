@@ -26,6 +26,7 @@ import { ProBadge } from "../components/ui/ProBadge.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { IngredientSearchAdd } from "../components/BasicsPopup.jsx";
+import PageHeader from "../components/PageHeader.jsx";
 
 function initialsFromName(name = "") {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
@@ -2083,14 +2084,20 @@ export default function SettingsPage() {
   return (
     <KitchenLayout>
       <div className="kitchen-card kitchen-block-gap">
-        <div className="settings-header">
-          <div className="settings-header-avatar" style={{ background: selectedColor.background, color: selectedColor.text }}>{userInitials}</div>
-          <div className="settings-header-body">
-            <h1>Configuración</h1>
-            <p className="settings-header-name">{user?.displayName || "Usuario"}</p>
-            <p className="settings-header-meta">{roleLabel(user, isOwner, householdName || user?.householdName || "Mi household")}</p>
-          </div>
-        </div>
+        <PageHeader
+          noCard
+          title="Configuración"
+          subtitle="Gestiona tu cuenta y preferencias"
+          leading={
+            <div
+              className="settings-header-avatar"
+              style={{ background: selectedColor.background, color: selectedColor.text }}
+            >
+              {userInitials}
+            </div>
+          }
+          className="settings-header"
+        />
 
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}

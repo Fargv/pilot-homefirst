@@ -13,6 +13,7 @@ import { useActiveWeek } from "../weekContext.jsx";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
+import PageHeader from "../components/PageHeader.jsx";
 import BasicsPopup from "../components/BasicsPopup.jsx";
 import { burstParticles, triggerMilestone } from "../hooks/useRewardAnimation.js";
 
@@ -1180,22 +1181,13 @@ export default function ShoppingPage() {
     <KitchenLayout>
       <div className="shopping-page-shell">
         <div className="kitchen-card shopping-main-card">
-          <div className="shopping-header-card">
-            {/* Row 1: title | WA share icon */}
-            <div className="shopping-header-top">
-              <div className="shopping-header-left">
-                <h1 className="shopping-header-h1">Lista de la compra</h1>
-                {/* Row 2: week navigator */}
-                <WeekDatePicker
-                  selectedWeek={weekStart}
-                  onWeekChange={updateVisibleWeek}
-                  className="shopping-header-week-picker"
-                />
-              </div>
+          <PageHeader
+            title="Lista de la compra"
+            primaryAction={
               <ShareWhatsAppButton
                 iconOnly
                 size={18}
-                className="shopping-header-wa-btn shopping-header-wa-top"
+                className="shopping-header-wa-btn"
                 buttonLabel="Compartir lista de la compra"
                 items={[
                   {
@@ -1207,34 +1199,42 @@ export default function ShoppingPage() {
                   }
                 ]}
               />
-            </div>
-
-            {/* Budget bar — only when feature enabled AND budget configured */}
-            {budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (() => {
-              const pct = Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100));
-              const isOver = budget.spent > budget.weeklyBudget;
-              const label = `Presupuesto · ${formatCurrency(budget.spent)} / ${formatCurrency(budget.weeklyBudget)}`;
-              return (
-                <button
-                  type="button"
-                  className={`shopping-budget-pill-bar${isOver ? " is-over" : ""}`}
-                  onClick={openWeeklyBudgetPanel}
-                  aria-label="Ver desglose del presupuesto"
-                >
-                  <div className="shopping-budget-pill-fill" style={{ width: `${pct}%` }} />
-                  <span className="shopping-budget-pill-text-dark">{label}</span>
-                  <span
-                    className="shopping-budget-pill-text-light"
-                    style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }}
-                    aria-hidden="true"
+            }
+            secondaryLeft={
+              <WeekDatePicker
+                selectedWeek={weekStart}
+                onWeekChange={updateVisibleWeek}
+                className="shopping-header-week-picker"
+              />
+            }
+            footer={
+              budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (() => {
+                const pct = Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100));
+                const isOver = budget.spent > budget.weeklyBudget;
+                const label = `Presupuesto · ${formatCurrency(budget.spent)} / ${formatCurrency(budget.weeklyBudget)}`;
+                return (
+                  <button
+                    type="button"
+                    className={`shopping-budget-pill-bar${isOver ? " is-over" : ""}`}
+                    onClick={openWeeklyBudgetPanel}
+                    aria-label="Ver desglose del presupuesto"
                   >
-                    {label}
-                  </span>
-                  <ChevronRight size={12} className="shopping-budget-pill-chevron" aria-hidden="true" />
-                </button>
-              );
-            })() : null}
-
+                    <div className="shopping-budget-pill-fill" style={{ width: `${pct}%` }} />
+                    <span className="shopping-budget-pill-text-dark">{label}</span>
+                    <span
+                      className="shopping-budget-pill-text-light"
+                      style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }}
+                      aria-hidden="true"
+                    >
+                      {label}
+                    </span>
+                    <ChevronRight size={12} className="shopping-budget-pill-chevron" aria-hidden="true" />
+                  </button>
+                );
+              })() : null
+            }
+            className="shopping-header-card"
+          >
             {/* Tabs */}
             <div className="shopping-tabs-standalone">
               <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
@@ -1247,7 +1247,7 @@ export default function ShoppingPage() {
                 ) : null}
               </div>
             </div>
-          </div>
+          </PageHeader>
           <div
             className={`shopping-week-content ${contentSlideClass}`}
             onAnimationEnd={() => setContentSlideClass("")}

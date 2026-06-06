@@ -14,6 +14,7 @@ import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { canUseDinnersFeature } from "../subscription.js";
 import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
+import PageHeader from "../components/PageHeader.jsx";
 
 const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
 
@@ -914,17 +915,17 @@ export default function DishesPage() {
           </div>
         )}
         {/* ── Unified Explorer Panel ──────────────────────────────────── */}
-        <div className="dishes-explorer-panel">
-          {/* Heading: title + subtitle + desktop new-dish button */}
-          <div className="dishes-explorer-heading" ref={panelHeadingRef}>
-            <div className="dishes-explorer-text">
-              <h2 className="dishes-explorer-title">{headerTitle}</h2>
-              <p className="dishes-explorer-subtitle">{headerDescription}</p>
-            </div>
+        <PageHeader
+          title={headerTitle}
+          subtitle={headerDescription}
+          primaryAction={
             <button className="kitchen-button dishes-new-button" type="button" onClick={headerActionHandler}>
               + {headerActionLabel}
             </button>
-          </div>
+          }
+          topRef={panelHeadingRef}
+          className="dishes-explorer-panel"
+        >
           {/* ── FILA DE CONTROLES: tabs + sliders + cenas toggle ── */}
           <div className="dishes-controls-row">
             <div className="dishes-explorer-nav" role="tablist" aria-label="Secciones de cocina">
@@ -1152,7 +1153,7 @@ export default function DishesPage() {
                 : `${visibleDishes.length} ${visibleDishes.length === 1 ? "plato encontrado" : "platos encontrados"}`}
             </p>
           ) : null}
-        </div>
+        </PageHeader>
         {/* Onboarding suggestions (outside panel, above grid) */}
         {(isIngredientsTab ? filteredIngredientSuggestions : (activeTab === "main" ? filteredDishSuggestions : [])).length > 0 && (
           <div style={{ padding: "4px 4px 0" }}>
