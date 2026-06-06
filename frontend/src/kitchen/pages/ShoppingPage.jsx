@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Plus, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Check, Plus, CheckCircle, AlertCircle, X, ChevronRight } from "lucide-react";
 import WeekDatePicker from "../components/ui/WeekDatePicker.jsx";
 import { UNSAFE_NavigationContext as NavigationContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
@@ -1209,26 +1209,31 @@ export default function ShoppingPage() {
               />
             </div>
 
-            {/* Budget pill — only when feature enabled AND budget configured */}
-            {budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (
-              <button
-                type="button"
-                className="shopping-budget-pill-bar"
-                onClick={() => setBudgetModalOpen(true)}
-                aria-label="Ver desglose del presupuesto"
-              >
-                <div
-                  className="shopping-budget-pill-fill"
-                  style={{
-                    width: `${Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100))}%`
-                  }}
-                />
-                <span className="shopping-budget-pill-text">
-                  <span className="shopping-budget-pill-label">Presupuesto · </span>
-                  <span className="shopping-budget-pill-amount">{formatCurrency(budget.spent)} / {formatCurrency(budget.weeklyBudget)}</span>
-                </span>
-              </button>
-            ) : null}
+            {/* Budget bar — only when feature enabled AND budget configured */}
+            {budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (() => {
+              const pct = Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100));
+              const isOver = budget.spent > budget.weeklyBudget;
+              const label = `Presupuesto · ${formatCurrency(budget.spent)} / ${formatCurrency(budget.weeklyBudget)}`;
+              return (
+                <button
+                  type="button"
+                  className={`shopping-budget-pill-bar${isOver ? " is-over" : ""}`}
+                  onClick={openWeeklyBudgetPanel}
+                  aria-label="Ver desglose del presupuesto"
+                >
+                  <div className="shopping-budget-pill-fill" style={{ width: `${pct}%` }} />
+                  <span className="shopping-budget-pill-text-dark">{label}</span>
+                  <span
+                    className="shopping-budget-pill-text-light"
+                    style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }}
+                    aria-hidden="true"
+                  >
+                    {label}
+                  </span>
+                  <ChevronRight size={12} className="shopping-budget-pill-chevron" aria-hidden="true" />
+                </button>
+              );
+            })() : null}
 
             {/* Tabs */}
             <div className="shopping-tabs-standalone">

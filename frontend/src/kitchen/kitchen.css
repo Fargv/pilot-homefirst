@@ -5398,26 +5398,26 @@ body {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
   width: 100%;
-  height: 22px;
+  height: 26px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--hf-brand) 0%, var(--hf-brand-light) 100%);
+  background: rgba(30, 30, 40, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.09);
   overflow: hidden;
-  border: none;
   cursor: pointer;
-  padding: 0;
+  padding: 0 10px;
   font-family: inherit;
-  transition: opacity 0.15s ease;
-  opacity: 0.92;
+  transition: filter 150ms ease;
+  gap: 4px;
 }
 
 .shopping-budget-pill-bar:hover {
-  opacity: 1;
+  filter: brightness(0.94);
 }
 
-.shopping-budget-pill-bar:hover {
-  opacity: 0.85;
+.shopping-budget-pill-bar:active {
+  transform: scale(0.99);
+  transition: transform 100ms ease;
 }
 
 .shopping-budget-pill-bar:focus-visible {
@@ -5427,34 +5427,57 @@ body {
 
 .shopping-budget-pill-fill {
   position: absolute;
-  inset: 0;
-  right: auto;
-  background: rgba(255, 255, 255, 0.18);
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(30, 30, 40, 0.14);
   border-radius: 999px;
-  transition: width 0.5s cubic-bezier(0.25, 0.85, 0.35, 1);
+  transition: width 500ms cubic-bezier(0.25, 0.85, 0.35, 1);
   min-width: 0;
 }
 
-.shopping-budget-pill-text {
+.shopping-budget-pill-bar.is-over .shopping-budget-pill-fill {
+  background: rgba(239, 68, 68, 0.22);
+}
+
+.shopping-budget-pill-text-dark {
   position: relative;
   z-index: 1;
+  flex: 1;
   font-size: 12px;
-  color: #ffffff;
+  font-weight: 500;
+  color: var(--text-primary, #0f172a);
   letter-spacing: 0.01em;
   pointer-events: none;
   white-space: nowrap;
-  display: inline-flex;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shopping-budget-pill-text-light {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
   align-items: center;
-  gap: 0;
+  padding: 0 30px 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: clip-path 300ms ease;
 }
 
-.shopping-budget-pill-label {
-  font-weight: 400;
-  opacity: 0.82;
-}
-
-.shopping-budget-pill-amount {
-  font-weight: 600;
+.shopping-budget-pill-chevron {
+  position: relative;
+  z-index: 3;
+  flex-shrink: 0;
+  opacity: 0.45;
+  pointer-events: none;
+  color: var(--text-secondary, #64748b);
 }
 
 /* ── Week date trigger with visible chevrons ── */
@@ -20907,4 +20930,25 @@ td.recipe-qty-scaled {
   background: color-mix(in srgb, var(--category-bg, var(--surface-elevated)) 8%, var(--surface-elevated));
   border-color: color-mix(in srgb, var(--category-text, var(--hf-brand)) 22%, var(--border-soft));
   box-shadow: none;
+}
+
+/* ── Shopping: budget bar dark mode ── */
+[data-theme="dark"] .shopping-budget-pill-bar {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+[data-theme="dark"] .shopping-budget-pill-fill {
+  background: rgba(255, 255, 255, 0.14);
+}
+[data-theme="dark"] .shopping-budget-pill-bar.is-over .shopping-budget-pill-fill {
+  background: rgba(239, 68, 68, 0.3);
+}
+[data-theme="dark"] .shopping-budget-pill-text-dark {
+  color: var(--text-primary, #f1f5f9);
+}
+[data-theme="dark"] .shopping-budget-pill-text-light {
+  color: rgba(15, 23, 42, 0.85);
+}
+[data-theme="dark"] .shopping-budget-pill-chevron {
+  color: var(--text-muted, rgba(255, 255, 255, 0.4));
 }
