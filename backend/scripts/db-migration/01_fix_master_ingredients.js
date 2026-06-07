@@ -172,6 +172,11 @@ const QUALITY_FIXES = [
     _id: "6973b42e35b74eb3bc1d93c1",
     set: { canonicalName: "chile", updatedAt: NOW },
   },
+  // Pilpil — archivar (no es un ingrediente de uso común en el catálogo)
+  {
+    _id: "6973ad1bf0be64baf46b0e90",
+    set: { isArchived: true, active: false, updatedAt: NOW },
+  },
 ];
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────

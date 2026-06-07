@@ -11387,6 +11387,35 @@ td.recipe-qty-scaled {
   padding-top: 14px;
 }
 
+.dish-modal-origin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: -2px 0 12px;
+  padding: 9px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.dish-modal-revert-button {
+  min-height: 34px;
+  border: 1px solid #dbeafe;
+  border-radius: 9px;
+  padding: 0 10px;
+  background: #fff;
+  color: var(--hf-brand, #4f46e5);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dish-modal-revert-button:hover {
+  border-color: var(--hf-brand-light, #6366f1);
+  background: #eef2ff;
+}
+
 .dish-modal-advanced-label {
   margin: 0 0 10px;
   font-size: 11px;
@@ -12594,6 +12623,43 @@ td.recipe-qty-scaled {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.kitchen-dish-origin-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  max-width: 100%;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: rgba(248, 250, 252, 0.9);
+  color: #64748b;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.kitchen-dish-origin-badge.is-override {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #c2410c;
+}
+.kitchen-dish-origin-badge.is-user {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+.kitchen-dish-origin-badge.is-catalog {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+  color: var(--hf-brand-light);
+}
+.kitchen-dish-origin-badge.is-master {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 .kitchen-tab-catalog {
   display: inline-flex;
@@ -17481,6 +17547,47 @@ td.recipe-qty-scaled {
   background: color-mix(in srgb, var(--dish-pack-color) 12%, var(--surface-elevated));
   border: 1px solid color-mix(in srgb, var(--dish-pack-color) 28%, var(--border-soft));
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+[data-theme="dark"] .kitchen-dish-origin-badge {
+  background: var(--surface-muted);
+  border-color: var(--border-soft);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .kitchen-dish-origin-badge.is-override {
+  background: rgba(251, 146, 60, 0.12);
+  border-color: rgba(251, 146, 60, 0.34);
+  color: #fed7aa;
+}
+
+[data-theme="dark"] .kitchen-dish-origin-badge.is-user {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.34);
+  color: #bbf7d0;
+}
+
+[data-theme="dark"] .kitchen-dish-origin-badge.is-catalog {
+  background: rgba(129, 140, 248, 0.14);
+  border-color: rgba(129, 140, 248, 0.36);
+  color: #c7d2fe;
+}
+
+[data-theme="dark"] .kitchen-dish-origin-badge.is-master {
+  background: rgba(96, 165, 250, 0.13);
+  border-color: rgba(96, 165, 250, 0.35);
+  color: #bfdbfe;
+}
+
+[data-theme="dark"] .dish-modal-origin-row {
+  background: var(--surface-muted);
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .dish-modal-revert-button {
+  background: var(--surface-elevated);
+  border-color: var(--border-soft);
+  color: var(--hf-brand-light);
 }
 
 /* Dark mode polish: targeted contrast and surface hierarchy fixes. */

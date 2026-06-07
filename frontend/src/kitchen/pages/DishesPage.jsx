@@ -10,6 +10,7 @@ import RecipeModal from "../components/RecipeModal.jsx";
 import CategoryIcon from "../components/CategoryIcon.jsx";
 import { resolveCategoryCode } from "../components/categoryIconMap.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
+import { getDishOrigin, isDishFromCatalog, isUserCreatedDish } from "../utils/dishOrigin.js";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { canUseDinnersFeature } from "../subscription.js";
@@ -83,11 +84,6 @@ function ChevronIcon(props) {
 //   scope:"household" + source:"catalog"  → pack-installed (standard)
 //   scope:"household" + sourcePackId set  → legacy pack-installed (missing source field)
 //   everything else                       → household-created ("Mis platos")
-function isDishFromCatalog(dish) {
-  if (!dish || dish.scope !== "household") return false;
-  return dish.source === "catalog" || Boolean(dish.sourcePackId);
-}
-
 export default function DishesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -141,6 +137,7 @@ export default function DishesPage() {
   const [assignDish, setAssignDish] = useState(null);
   const [assignDate, setAssignDate] = useState("");
   const [deleteDishModal, setDeleteDishModal] = useState({ open: false, dish: null, deleting: false });
+  const [revertDishModal, setRevertDishModal] = useState({ open: false, dish: null, reverting: false });
   const [dishInfoOpenId, setDishInfoOpenId] = useState(null);
   const [recipeModalDish, setRecipeModalDish] = useState(null);
   const [dishTogglePendingId, setDishTogglePendingId] = useState("");
@@ -372,7 +369,7 @@ export default function DishesPage() {
   }, [mealFilteredDishes, selectedDishCategoryId]);
   const originFilteredDishes = useMemo(() => {
     if (catalogOnly) return categoryFilteredDishes.filter(isDishFromCatalog);
-    if (mineOnly) return categoryFilteredDishes.filter((d) => !isDishFromCatalog(d));
+    if (mineOnly) return categoryFilteredDishes.filter(isUserCreatedDish);
     return categoryFilteredDishes;
   }, [categoryFilteredDishes, catalogOnly, mineOnly]);
 
@@ -656,6 +653,39 @@ export default function DishesPage() {
   const askDeleteDish = (dish) => {
     if (!dish?._id) return;
     setDeleteDishModal({ open: true, dish, deleting: false });
+  };
+
+  const askRevertDish = (dish) => {
+    if (!dish?._id || !getDishOrigin(dish).canRevert) return;
+    setRevertDishModal({ open: true, dish, reverting: false });
+  };
+
+  const closeRevertDishModal = () => {
+    setRevertDishModal({ open: false, dish: null, reverting: false });
+  };
+
+  const confirmRevertDish = async () => {
+    if (!revertDishModal.dish?._id || revertDishModal.reverting) return;
+    try {
+      setRevertDishModal((prev) => ({ ...prev, reverting: true }));
+      const revertedId = String(revertDishModal.dish._id);
+      const data = await apiRequest(`/api/kitchen/dishes/${revertedId}/revert-override`, { method: "POST" });
+      if (data?.removedOverrideId) {
+        setDishes((prev) => prev.filter((item) => String(item?._id) !== String(data.removedOverrideId)));
+      }
+      if (data?.dish?._id) {
+        setDishes((prev) => prev.map((item) => (String(item?._id) === String(data.dish._id) ? data.dish : item)));
+      }
+      if (activeDish?._id && String(activeDish._id) === revertedId) closeModal();
+      if (dishInfoOpenId === revertedId) closeDishInfo();
+      setDishError("");
+      setDishSuccess(data?.warning || "Plato restaurado al original");
+      closeRevertDishModal();
+      await loadDishes();
+    } catch (err) {
+      setDishError(err.message || "No se pudo volver al plato original.");
+      setRevertDishModal((prev) => ({ ...prev, reverting: false }));
+    }
   };
 
   const confirmDeleteDish = async () => {
@@ -1360,11 +1390,12 @@ export default function DishesPage() {
               const showCategoryIcon = Boolean(dishCategoryCode);
               const randomEnabled = dish.allowRandom !== false;
               const toggleDisabled = dishTogglePendingId === dish._id;
-              const isCatalogDish = dish.source === "catalog";
+              const dishOrigin = getDishOrigin(dish);
+              const isCatalogDish = isDishFromCatalog(dish);
               const packColor = isCatalogDish && dish.sourcePackColor ? dish.sourcePackColor : null;
               return (
                 <article
-                  className={`kitchen-dish-card ${isCatalogDish ? "is-catalog" : ""}`}
+                  className={`kitchen-dish-card ${isCatalogDish ? "is-catalog" : ""} is-origin-${dishOrigin.type}`}
                   key={dish._id}
                   style={packColor ? { "--dish-pack-color": packColor } : undefined}
                 >
@@ -1392,6 +1423,7 @@ export default function DishesPage() {
                         />
                       ) : null}
                       <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
+                      <span className={`kitchen-dish-origin-badge is-${dishOrigin.type}`}>{dishOrigin.label}</span>
                     </div>
                     {isCatalogDish && dish.sourcePackTitle ? (
                       <div className="kitchen-dish-catalog-origin">
@@ -1610,6 +1642,8 @@ export default function DishesPage() {
         initialName={dishSuggestionName}
         initialIsDinner={Boolean(activeDish?.isDinner)}
         scope={isDiodGlobalMode ? "master" : undefined}
+        originInfo={activeDish ? getDishOrigin(activeDish) : null}
+        onRevertOriginal={() => askRevertDish(activeDish)}
       />
       <IngredientModal
         isOpen={isIngredientModalOpen}
@@ -1785,6 +1819,44 @@ export default function DishesPage() {
               </button>
               <button className="kitchen-button secondary" type="button" onClick={closeAssignModal}>
                 Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {revertDishModal.open ? (
+        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeRevertDishModal}>
+          <div
+            className="kitchen-modal kitchen-context-modal small"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Volver al plato original"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <div>
+                <h3>¿Volver al plato original?</h3>
+                <p className="kitchen-muted">
+                  Se eliminarán tus cambios personalizados y volverás a ver la versión original del catálogo.
+                </p>
+              </div>
+            </div>
+            <div className="kitchen-modal-actions">
+              <button
+                type="button"
+                className="kitchen-button ghost"
+                onClick={closeRevertDishModal}
+                disabled={revertDishModal.reverting}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="kitchen-button"
+                onClick={confirmRevertDish}
+                disabled={revertDishModal.reverting}
+              >
+                {revertDishModal.reverting ? "Restaurando..." : "Volver al original"}
               </button>
             </div>
           </div>

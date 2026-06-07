@@ -1,10 +1,12 @@
 import express from "express";
 import mongoose from "mongoose";
+import crypto from "crypto";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { Household } from "../models/Household.js";
 import { canRandomizeFullWeek, canUseDinnersFeature } from "../subscriptionService.js";
 import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
-import { normalizeIngredientList } from "../utils/normalize.js";
+import { CatalogPack } from "../models/CatalogPack.js";
+import { normalizeIngredientList, normalizeIngredientName } from "../utils/normalize.js";
 import { combineDayIngredients } from "../utils/ingredients.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
@@ -29,6 +31,65 @@ function parseBooleanField(value, fallback = false) {
     if (normalized === "false") return false;
   }
   return fallback;
+}
+
+function normalizeCatalogTemplateId(value) {
+  return String(value || "").trim();
+}
+
+function normalizeDishTemplateForHash(template = {}) {
+  return {
+    name: String(template.name || "").trim(),
+    teaser: String(template.teaser || "").trim(),
+    isDinner: Boolean(template.isDinner),
+    special: Boolean(template.special),
+    allowRandom: template.allowRandom !== false,
+    dishCategoryId: template.dishCategoryId ? String(template.dishCategoryId) : null,
+    ingredients: (template.ingredients || []).map((item) => ({
+      ingredientId: item?.ingredientId ? String(item.ingredientId) : null,
+      categoryId: item?.categoryId ? String(item.categoryId) : null,
+      displayName: String(item?.displayName || "").trim(),
+      canonicalName: normalizeIngredientName(item?.canonicalName || item?.displayName || "")
+    })),
+    recipe: {
+      ingredients: (template.recipe?.ingredients || []).map((item) => ({
+        name: String(item?.name || "").trim(),
+        quantity: String(item?.quantity || "").trim(),
+        ingredientId: item?.ingredientId ? String(item.ingredientId) : null
+      })),
+      steps: template.recipe?.steps ?? null,
+      servings: template.recipe?.servings || null
+    }
+  };
+}
+
+function catalogContentHash(template) {
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(normalizeDishTemplateForHash(template)))
+    .digest("hex");
+}
+
+function dishFieldsFromCatalogTemplate(template) {
+  return {
+    name: template.name,
+    isDinner: Boolean(template.isDinner),
+    special: Boolean(template.special),
+    allowRandom: template.allowRandom !== false,
+    dishCategoryId: template.dishCategoryId || null,
+    ingredients: (template.ingredients || []).map((ing) => ({
+      displayName: ing.displayName,
+      canonicalName: ing.canonicalName || normalizeIngredientName(ing.displayName || ""),
+      ingredientId: ing.ingredientId || null
+    })),
+    recipe: {
+      ingredients: Array.isArray(template.recipe?.ingredients) ? template.recipe.ingredients : [],
+      steps: template.recipe?.steps ?? null,
+      servings: template.recipe?.servings || null,
+      prepMinutes: template.recipe?.prepMinutes || null,
+      cookMinutes: template.recipe?.cookMinutes || null
+    }
+  };
 }
 
 async function resolveDishCategoryId(rawValue) {
@@ -148,6 +209,49 @@ async function unassignDishFromCurrentAndFutureWeeks({ householdId, dishId }) {
         day.leftoversSourceDishId = null;
         day.leftoversSourceDate = null;
         day.leftoversSourceMealType = null;
+        dayChanged = true;
+      }
+      if (dayChanged) {
+        planChanged = true;
+        changedDays += 1;
+      }
+    }
+    if (planChanged) {
+      await plan.save();
+      await rebuildShoppingListForPlan(plan, householdId);
+      affectedWeeks += 1;
+    }
+  }
+  return { affectedWeeks, changedDays };
+}
+
+async function repointDishInPlans({ householdId, fromDishId, toDishId }) {
+  if (!householdId || !fromDishId || !toDishId) return { affectedWeeks: 0, changedDays: 0 };
+  const plans = await KitchenWeekPlan.find({
+    householdId,
+    $or: [
+      { "days.mainDishId": fromDishId },
+      { "days.sideDishId": fromDishId },
+      { "days.leftoversSourceDishId": fromDishId }
+    ]
+  });
+
+  let affectedWeeks = 0;
+  let changedDays = 0;
+  for (const plan of plans) {
+    let planChanged = false;
+    for (const day of plan.days) {
+      let dayChanged = false;
+      if (day.mainDishId && String(day.mainDishId) === String(fromDishId)) {
+        day.mainDishId = toDishId;
+        dayChanged = true;
+      }
+      if (day.sideDishId && String(day.sideDishId) === String(fromDishId)) {
+        day.sideDishId = toDishId;
+        dayChanged = true;
+      }
+      if (day.leftoversSourceDishId && String(day.leftoversSourceDishId) === String(fromDishId)) {
+        day.leftoversSourceDishId = toDishId;
         dayChanged = true;
       }
       if (dayChanged) {
@@ -432,6 +536,123 @@ router.put("/:id", requireAuth, async (req, res) => {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el plato." });
+  }
+});
+
+router.post("/:id/revert-override", requireAuth, async (req, res) => {
+  try {
+    const householdId = getEffectiveHouseholdId(req.user);
+    const dish = await KitchenDish.findById(req.params.id);
+    if (!dish || dish.isArchived || dish.deletedAt) {
+      return res.status(404).json({ ok: false, error: "Plato no encontrado." });
+    }
+
+    if (!dish.householdId || String(dish.householdId) !== String(householdId)) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para modificar este plato." });
+    }
+
+    if (dish.scope === CATALOG_SCOPES.OVERRIDE) {
+      if (!dish.masterId) {
+        return res.status(400).json({ ok: false, error: "No se encontro el plato original." });
+      }
+      const master = await KitchenDish.findOne({
+        _id: dish.masterId,
+        scope: CATALOG_SCOPES.MASTER,
+        isArchived: { $ne: true },
+        deletedAt: null
+      });
+      if (!master) {
+        return res.status(404).json({ ok: false, error: "No se encontro el plato original." });
+      }
+
+      let planning = { affectedWeeks: 0, changedDays: 0 };
+      try {
+        planning = await repointDishInPlans({
+          householdId,
+          fromDishId: dish._id,
+          toDishId: master._id
+        });
+      } catch (planningError) {
+        console.error("[kitchen/dishes] revert override planning cascade failed", {
+          householdId: String(householdId || ""),
+          overrideId: String(dish._id || ""),
+          masterId: String(master._id || ""),
+          message: planningError?.message,
+          stack: planningError?.stack
+        });
+        return res.status(500).json({ ok: false, error: "No se pudo volver al plato original." });
+      }
+
+      await clearHiddenMasterForHousehold({
+        householdId,
+        type: getDishHiddenMasterType(master),
+        masterId: master._id
+      });
+      await KitchenDish.deleteOne({ _id: dish._id, householdId, scope: CATALOG_SCOPES.OVERRIDE });
+
+      return res.json({
+        ok: true,
+        reverted: true,
+        dish: master,
+        removedOverrideId: String(dish._id),
+        planning
+      });
+    }
+
+    const isCatalogCopy = dish.scope === CATALOG_SCOPES.HOUSEHOLD
+      && (dish.source === "catalog" || dish.sourcePackId)
+      && dish.userModified === true;
+    if (!isCatalogCopy) {
+      return res.status(400).json({ ok: false, error: "Este plato ya muestra su version original." });
+    }
+
+    const templateId = normalizeCatalogTemplateId(dish.sourceDishTemplateId);
+    if (!dish.sourcePackId || !templateId) {
+      return res.status(400).json({ ok: false, error: "No se encontro la version original del catalogo." });
+    }
+    const pack = await CatalogPack.findOne({
+      _id: dish.sourcePackId,
+      active: { $ne: false },
+      status: "published"
+    }).lean();
+    const template = (pack?.dishes || []).find((item) => normalizeCatalogTemplateId(item.dishTemplateId) === templateId);
+    if (!template) {
+      return res.status(404).json({ ok: false, error: "No se encontro la version original del catalogo." });
+    }
+
+    const now = new Date();
+    Object.assign(dish, dishFieldsFromCatalogTemplate(template), {
+      source: "catalog",
+      sourcePackSlug: pack.slug,
+      sourcePackTitle: pack.title,
+      sourcePackColor: pack.color || null,
+      sourcePackIsDietPack: Boolean(pack.isDietPack),
+      sourceDishTemplateId: templateId,
+      catalogSyncedAt: now,
+      catalogContentHash: catalogContentHash(template),
+      userModified: false,
+      userModifiedAt: null,
+      active: true,
+      deletedAt: null
+    });
+    await dish.save();
+    const warning = await rebuildFutureShoppingListsSafe({
+      householdId,
+      dishId: dish._id,
+      context: "revert-catalog-dish"
+    });
+
+    return res.json({
+      ok: true,
+      reverted: true,
+      dish,
+      planning: { affectedWeeks: 0, changedDays: 0 },
+      ...(warning ? { warning } : {})
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo volver al plato original." });
   }
 });
 

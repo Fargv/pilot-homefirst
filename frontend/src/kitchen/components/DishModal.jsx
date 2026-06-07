@@ -31,7 +31,9 @@ export default function DishModal({
   initialDish = null,
   initialName = "",
   initialIsDinner = false,
-  scope = undefined
+  scope = undefined,
+  originInfo = null,
+  onRevertOriginal = undefined
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -304,6 +306,15 @@ export default function DishModal({
         </div>
 
         {/* ── ELABORACIÓN TAB ──────────────────────────────────────── */}
+        {editingId && originInfo?.canRevert ? (
+          <div className="dish-modal-origin-row">
+            <span className={`kitchen-dish-origin-badge is-${originInfo.type}`}>{originInfo.label}</span>
+            <button type="button" className="dish-modal-revert-button" onClick={onRevertOriginal}>
+              Volver al original
+            </button>
+          </div>
+        ) : null}
+
         {activeTab === "receta" ? (
           <div className="recipe-tab-content">
             {hasExistingRecipe ? (
