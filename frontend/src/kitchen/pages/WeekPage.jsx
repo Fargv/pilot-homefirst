@@ -2273,8 +2273,8 @@ export default function WeekPage() {
                 />
               }
               secondaryRight={(() => {
-                const hasFindeAction = !weekendOptionState.hasSaturday || !weekendOptionState.hasSunday;
-                if (!canUseDinners && !hasFindeAction) return null;
+                if (!canUseDinners) return null;
+                const hasFindeAction = false;
                 return (
                   <div className="kitchen-week-header-tabs-row">
                     {canUseDinners && (

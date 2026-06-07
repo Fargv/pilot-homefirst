@@ -21673,8 +21673,8 @@ body,
     padding: 10px 14px;
     min-height: 58px;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 10px;
+    grid-template-columns: 44px minmax(0, 1fr) 48px;
+    gap: 8px;
   }
 
   .kitchen-ui-header-inner > div {
@@ -21716,11 +21716,15 @@ body,
 
   .kitchen-mobile-header-extra {
     display: block;
-    padding: 0 14px 10px;
+    padding: 0;
+    min-width: 0;
+    width: 100%;
   }
 
   .kitchen-mobile-progress-stack {
     max-width: 100%;
+    min-width: 0;
+    position: relative;
   }
 
   .kitchen-mobile-progress-stack .weekly-challenge-done-chip,
@@ -21728,11 +21732,38 @@ body,
   .kitchen-mobile-progress-stack .onboarding-guide-slim {
     margin: 0;
     width: 100%;
+    min-height: 40px;
+    padding: 7px 9px;
     box-sizing: border-box;
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-done-chip-text,
+  .kitchen-mobile-progress-stack .weekly-challenge-slim-title,
+  .kitchen-mobile-progress-stack .onboarding-guide-slim-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-done-chip-text {
+    max-width: 100%;
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-done-chip-week,
+  .kitchen-mobile-progress-stack .weekly-challenge-slim-count,
+  .kitchen-mobile-progress-stack .onboarding-guide-slim-count {
+    flex-shrink: 0;
+    font-size: 10px;
   }
 
   .kitchen-mobile-progress-stack .weekly-challenge-card,
   .kitchen-mobile-progress-stack .onboarding-guide-card {
+    position: absolute;
+    left: min(-52px, calc((100vw - 100%) / -2 + 14px));
+    right: min(-56px, calc((100vw - 100%) / -2 + 14px));
+    top: calc(100% + 8px);
+    z-index: 35;
     margin: 0;
     border-radius: 12px;
     padding: 12px;
@@ -21795,10 +21826,47 @@ body,
     overflow: visible;
   }
 
+  .kitchen-week-header .page-header-controls {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-areas:
+      "date share"
+      "meal meal";
+    align-items: center;
+  }
+
   .page-header-controls-left,
   .page-header-controls-right,
   .kitchen-week-header-tabs-row {
     min-width: 0;
+  }
+
+  .kitchen-week-header .page-header-controls-left {
+    grid-area: date;
+    overflow: hidden;
+  }
+
+  .kitchen-week-header .page-header-controls-right,
+  .kitchen-week-header .kitchen-week-header-tabs-row {
+    display: contents;
+  }
+
+  .kitchen-week-header .kitchen-meal-tabs {
+    grid-area: meal;
+    width: min(100%, 176px);
+    justify-self: center;
+  }
+
+  .kitchen-week-header .kitchen-tab-share-button {
+    grid-area: share;
+    justify-self: end;
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .kitchen-week-header .kitchen-week-header-navigator {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .kitchen-week-header-tabs-row {
