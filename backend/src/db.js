@@ -99,11 +99,8 @@ export async function connectDb() {
   const masterDishSeed = await ensureStarterMasterDishes();
   const match = config.mongodbUri.match(/\/([^/?]+)(\?|$)/);
   const dbName = match ? match[1] : "desconocida";
-  console.log("MongoDB conectado");
+  console.log(`[db] Conectado — db: ${dbName}`);
   if (masterDishSeed.createdCount > 0) {
     console.log(`[db] Seeded ${masterDishSeed.createdCount} starter master dishes.`);
-  }
-  if (config.nodeEnv === "development") {
-    console.log(`MongoDB DB: ${dbName}`);
   }
 }

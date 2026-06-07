@@ -13,6 +13,12 @@ function parseOriginList(...values) {
   );
 }
 
+function extractDbName(uri) {
+  if (!uri) return null;
+  const match = String(uri).match(/\/([^/?]+)(\?|$)/);
+  return match ? match[1] : null;
+}
+
 export const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT || 3000),
@@ -66,20 +72,47 @@ export const config = {
   }
 };
 
+// ── Detect environment ────────────────────────────────────────────────────────
+// Both NODE_ENV and APP_ENV can signal production. NODE_ENV is the Node.js
+// convention; APP_ENV is an explicit override used by Render.
+const _isProduction = config.nodeEnv === "production" || process.env.APP_ENV === "production";
+config.isProduction = _isProduction;
+
+// ── CORS origins ──────────────────────────────────────────────────────────────
+// localhost is only added in non-production to avoid widening the attack surface.
 config.corsOrigins = parseOriginList(
   process.env.CORS_ORIGIN,
   process.env.APP_URL,
   process.env.FRONTEND_URL,
-  "http://localhost:5173"
+  _isProduction ? null : "http://localhost:5173"
 );
-config.corsOrigin = config.corsOrigins[0] || "http://localhost:5173";
+config.corsOrigin = config.corsOrigins[0] || (_isProduction ? "" : "http://localhost:5173");
 
-if (!config.mongodbUri) {
-  console.warn("Warning: MONGODB_URI is missing.");
-}
+// ── DB name (for assertions and startup log) ──────────────────────────────────
+const _dbName = extractDbName(config.mongodbUri);
+const _stripeKey = process.env.STRIPE_SECRET_KEY || "";
 
 // ── Startup assertions ────────────────────────────────────────────────────────
-const _isProduction = config.nodeEnv === "production" || process.env.APP_ENV === "production";
+
+// B-0: MongoDB URI — must be set in production and must never point to pilot_dev.
+if (!config.mongodbUri) {
+  if (_isProduction) {
+    console.error("[startup] FATAL: MONGODB_URI is not set in production. Exiting.");
+    process.exit(1);
+  } else {
+    console.warn("[startup] WARNING: MONGODB_URI is missing.");
+  }
+}
+if (_dbName === "pilot_dev" && _isProduction) {
+  console.error("[startup] FATAL: MONGODB_URI points to 'pilot_dev' in production. Set MONGODB_URI to the production database. Exiting.");
+  process.exit(1);
+}
+// Extra safety net: live Stripe key paired with dev DB is never acceptable,
+// even if NODE_ENV/APP_ENV are misconfigured.
+if (_stripeKey.startsWith("sk_live_") && _dbName === "pilot_dev") {
+  console.error("[startup] FATAL: STRIPE_SECRET_KEY is a live key but MONGODB_URI points to 'pilot_dev'. Refusing to start.");
+  process.exit(1);
+}
 
 // B-5: JWT_SECRET — fatal in production, warn with dev fallback otherwise.
 if (!process.env.JWT_SECRET) {
@@ -92,7 +125,6 @@ if (!process.env.JWT_SECRET) {
 }
 
 // B-1: Stripe key/mode mismatch — always fatal regardless of environment.
-const _stripeKey = process.env.STRIPE_SECRET_KEY || "";
 if (_stripeKey.startsWith("sk_live_") && process.env.STRIPE_MODE !== "live") {
   console.error("[startup] FATAL: STRIPE_SECRET_KEY is a live key but STRIPE_MODE is not 'live'. Refusing to start.");
   process.exit(1);
@@ -112,8 +144,6 @@ if (process.env.STRIPE_MODE === "live" && process.env.ALLOW_TEST_PAYMENT_ENTITLE
 // These are warnings only — neither prevents the server from starting.
 
 // B-3: Contradictory beta settings.
-// PRIVATE_BETA_ENABLED=true AND PUBLIC_REGISTRATION_ENABLED=true cancel each other
-// out (isBetaModeEnabled returns false). Warn the operator to avoid confusion.
 if (process.env.PRIVATE_BETA_ENABLED === "true" && process.env.PUBLIC_REGISTRATION_ENABLED === "true") {
   console.warn(
     "[startup] WARNING: PRIVATE_BETA_ENABLED=true is overridden by PUBLIC_REGISTRATION_ENABLED=true. " +
@@ -142,3 +172,8 @@ if (process.env.BETA_PRO_ENABLED === "true" && process.env.PRIVATE_BETA_ENABLED 
     );
   }
 }
+
+// ── Startup summary (safe — no secrets) ──────────────────────────────────────
+console.info(
+  `[startup] env=${config.nodeEnv}${process.env.APP_ENV ? `/${process.env.APP_ENV}` : ""} | db=${_dbName || "(none)"} | frontend=${config.frontendUrl}`
+);
