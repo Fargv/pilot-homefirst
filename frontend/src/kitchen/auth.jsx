@@ -260,9 +260,48 @@ export function useAuth() {
   return context;
 }
 
+// ── Clerk load error fallback ─────────────────────────────────────────────────
+function ClerkErrorScreen() {
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center",
+      justifyContent: "center", minHeight: "100dvh", padding: "24px",
+      textAlign: "center", background: "var(--hf-surface, #f8fafc)", gap: "16px"
+    }}>
+      <div style={{
+        width: 52, height: 52, borderRadius: "50%",
+        background: "rgba(239,68,68,0.1)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "22px"
+      }}>⚠️</div>
+      <p style={{
+        margin: 0, fontSize: "15px", lineHeight: "1.6",
+        color: "var(--hf-text-muted, #64748b)", maxWidth: 340
+      }}>
+        No se ha podido cargar la sesión. Revisa la configuración de Clerk o vuelve a intentarlo.
+      </p>
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        style={{
+          padding: "10px 22px", borderRadius: "999px",
+          background: "var(--hf-brand, #4f46e5)", color: "#fff",
+          border: "none", fontSize: "14px", fontWeight: 600, cursor: "pointer"
+        }}
+      >
+        Reintentar
+      </button>
+    </div>
+  );
+}
+
+const CLERK_INIT_TIMEOUT_MS = 10000;
+
 export function ClerkEnabledAuthProvider({ children }) {
   const { getToken, isLoaded, isSignedIn } = useClerkAuth();
   const clerk = useClerk();
+  const [clerkLoadError, setClerkLoadError] = useState(false);
+
   const clerkAuth = useMemo(
     () => ({
       getToken,
@@ -272,6 +311,27 @@ export function ClerkEnabledAuthProvider({ children }) {
     }),
     [clerk, getToken, isLoaded, isSignedIn]
   );
+
+  // If Clerk never signals isLoaded=true the app stays stuck in skeleton forever.
+  // This happens when the Clerk FAPI rejects the origin (403 subdomain error),
+  // when the publishable key is wrong, or when there is a network failure.
+  // The timeout bails out gracefully and shows a user-facing error instead.
+  useEffect(() => {
+    if (isLoaded) return undefined;
+    const timer = setTimeout(() => {
+      console.error(
+        "[clerk] Initialization timed out after " + CLERK_INIT_TIMEOUT_MS / 1000 + "s. " +
+        "Possible causes: domain not configured in Clerk dashboard, " +
+        "invalid VITE_CLERK_PUBLISHABLE_KEY, or FAPI network error."
+      );
+      setClerkLoadError(true);
+    }, CLERK_INIT_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [isLoaded]);
+
+  if (clerkLoadError) {
+    return <ClerkErrorScreen />;
+  }
 
   return (
     <AuthProvider clerk={clerkAuth}>
