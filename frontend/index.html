@@ -20,6 +20,16 @@
     <link rel="icon" type="image/png" href="/brand/Lunchfy_icon.png" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>Lunchfy</title>
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem("hf-theme");
+          var resolved = (t === "light" || t === "dark") ? t
+            : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          document.documentElement.setAttribute("data-theme", resolved);
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,8 +1,12 @@
 import express from "express";
 import mongoose from "mongoose";
+import crypto from "crypto";
 import { KitchenDish } from "../models/KitchenDish.js";
+import { Household } from "../models/Household.js";
+import { canRandomizeFullWeek, canUseDinnersFeature } from "../subscriptionService.js";
 import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
-import { normalizeIngredientList } from "../utils/normalize.js";
+import { CatalogPack } from "../models/CatalogPack.js";
+import { normalizeIngredientList, normalizeIngredientName } from "../utils/normalize.js";
 import { combineDayIngredients } from "../utils/ingredients.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
@@ -15,10 +19,9 @@ import {
   hideMasterForHousehold,
   isDiodUser
 } from "../utils/catalogScopes.js";
-import { getDishHiddenMasterType, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
+import { buildManualPlanningDishFilter, getDishHiddenMasterType, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 
 const router = express.Router();
-const GUARNICIONES_FALLBACK_ID = "69ac7016c0755cd97c6a9b63";
 
 function parseBooleanField(value, fallback = false) {
   if (typeof value === "boolean") return value;
@@ -28,6 +31,65 @@ function parseBooleanField(value, fallback = false) {
     if (normalized === "false") return false;
   }
   return fallback;
+}
+
+function normalizeCatalogTemplateId(value) {
+  return String(value || "").trim();
+}
+
+function normalizeDishTemplateForHash(template = {}) {
+  return {
+    name: String(template.name || "").trim(),
+    teaser: String(template.teaser || "").trim(),
+    isDinner: Boolean(template.isDinner),
+    special: Boolean(template.special),
+    allowRandom: template.allowRandom !== false,
+    dishCategoryId: template.dishCategoryId ? String(template.dishCategoryId) : null,
+    ingredients: (template.ingredients || []).map((item) => ({
+      ingredientId: item?.ingredientId ? String(item.ingredientId) : null,
+      categoryId: item?.categoryId ? String(item.categoryId) : null,
+      displayName: String(item?.displayName || "").trim(),
+      canonicalName: normalizeIngredientName(item?.canonicalName || item?.displayName || "")
+    })),
+    recipe: {
+      ingredients: (template.recipe?.ingredients || []).map((item) => ({
+        name: String(item?.name || "").trim(),
+        quantity: String(item?.quantity || "").trim(),
+        ingredientId: item?.ingredientId ? String(item.ingredientId) : null
+      })),
+      steps: template.recipe?.steps ?? null,
+      servings: template.recipe?.servings || null
+    }
+  };
+}
+
+function catalogContentHash(template) {
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(normalizeDishTemplateForHash(template)))
+    .digest("hex");
+}
+
+function dishFieldsFromCatalogTemplate(template) {
+  return {
+    name: template.name,
+    isDinner: Boolean(template.isDinner),
+    special: Boolean(template.special),
+    allowRandom: template.allowRandom !== false,
+    dishCategoryId: template.dishCategoryId || null,
+    ingredients: (template.ingredients || []).map((ing) => ({
+      displayName: ing.displayName,
+      canonicalName: ing.canonicalName || normalizeIngredientName(ing.displayName || ""),
+      ingredientId: ing.ingredientId || null
+    })),
+    recipe: {
+      ingredients: Array.isArray(template.recipe?.ingredients) ? template.recipe.ingredients : [],
+      steps: template.recipe?.steps ?? null,
+      servings: template.recipe?.servings || null,
+      prepMinutes: template.recipe?.prepMinutes || null,
+      cookMinutes: template.recipe?.cookMinutes || null
+    }
+  };
 }
 
 async function resolveDishCategoryId(rawValue) {
@@ -45,20 +107,6 @@ async function resolveDishCategoryId(rawValue) {
     throw new Error("La categoría de plato seleccionada no existe.");
   }
   return category._id;
-}
-
-async function resolveGuarnicionesCategoryId() {
-  const byCode = await KitchenDishCategory.findOne({ code: "guarniciones", active: { $ne: false } })
-    .select("_id")
-    .lean();
-  if (byCode?._id) return byCode._id;
-  if (mongoose.isValidObjectId(GUARNICIONES_FALLBACK_ID)) {
-    const byFallbackId = await KitchenDishCategory.findOne({ _id: GUARNICIONES_FALLBACK_ID, active: { $ne: false } })
-      .select("_id")
-      .lean();
-    if (byFallbackId?._id) return byFallbackId._id;
-  }
-  throw new Error("La categoría 'Guarniciones' no existe o está inactiva.");
 }
 
 function shouldIncludeMainInShopping(day) {
@@ -177,6 +225,49 @@ async function unassignDishFromCurrentAndFutureWeeks({ householdId, dishId }) {
   return { affectedWeeks, changedDays };
 }
 
+async function repointDishInPlans({ householdId, fromDishId, toDishId }) {
+  if (!householdId || !fromDishId || !toDishId) return { affectedWeeks: 0, changedDays: 0 };
+  const plans = await KitchenWeekPlan.find({
+    householdId,
+    $or: [
+      { "days.mainDishId": fromDishId },
+      { "days.sideDishId": fromDishId },
+      { "days.leftoversSourceDishId": fromDishId }
+    ]
+  });
+
+  let affectedWeeks = 0;
+  let changedDays = 0;
+  for (const plan of plans) {
+    let planChanged = false;
+    for (const day of plan.days) {
+      let dayChanged = false;
+      if (day.mainDishId && String(day.mainDishId) === String(fromDishId)) {
+        day.mainDishId = toDishId;
+        dayChanged = true;
+      }
+      if (day.sideDishId && String(day.sideDishId) === String(fromDishId)) {
+        day.sideDishId = toDishId;
+        dayChanged = true;
+      }
+      if (day.leftoversSourceDishId && String(day.leftoversSourceDishId) === String(fromDishId)) {
+        day.leftoversSourceDishId = toDishId;
+        dayChanged = true;
+      }
+      if (dayChanged) {
+        planChanged = true;
+        changedDays += 1;
+      }
+    }
+    if (planChanged) {
+      await plan.save();
+      await rebuildShoppingListForPlan(plan, householdId);
+      affectedWeeks += 1;
+    }
+  }
+  return { affectedWeeks, changedDays };
+}
+
 
 async function rebuildFutureShoppingLists({ householdId, dishId }) {
   if (!householdId || !dishId) return;
@@ -236,40 +327,33 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
 
 router.get("/", requireAuth, async (req, res) => {
   try {
-    const { sidedish, includeInactive, isDinner } = req.query;
-    const optionalHouseholdId = getOptionalHouseholdId(req.user);
+    const { includeInactive, isDinner } = req.query;
+    // ?global=1 forces master-only results (DIOD admin catalog view)
+    const forceMaster = isDiodUser(req.kitchenUser) && req.query.global === "1";
+    const optionalHouseholdId = forceMaster ? null : getOptionalHouseholdId(req.user);
     const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
-    const activeFilter = shouldIncludeInactive ? {} : { active: true };
     const hasIsDinnerFilter = isDinner === "true" || isDinner === "false";
-    const isDinnerFilter = hasIsDinnerFilter ? { isDinner: isDinner === "true" } : {};
-
-    if (sidedish === "true") {
-      const dishes = await resolveDishCatalogForHousehold({
-        Model: KitchenDish,
-        householdId: optionalHouseholdId,
-        filter: { sidedish: true, ...isDinnerFilter, ...activeFilter },
-        sort: { createdAt: -1 }
-      });
-      return res.json({ ok: true, dishes });
-    }
+    const listFilter = shouldIncludeInactive
+      ? {
+          sidedish: { $ne: true },
+          isArchived: { $ne: true },
+          deletedAt: null,
+          ...(hasIsDinnerFilter ? { isDinner: isDinner === "true" } : {})
+        }
+      : buildManualPlanningDishFilter({
+          isDinner: hasIsDinnerFilter ? isDinner === "true" : null
+        });
 
     const dishes = optionalHouseholdId
       ? await resolveDishCatalogForHousehold({
           Model: KitchenDish,
           householdId: optionalHouseholdId,
-          filter: {
-            sidedish: { $ne: true },
-            ...isDinnerFilter,
-            ...activeFilter
-          },
+          filter: listFilter,
           sort: { createdAt: -1 }
         })
       : await KitchenDish.find({
           scope: CATALOG_SCOPES.MASTER,
-          sidedish: { $ne: true },
-          isArchived: { $ne: true },
-          ...isDinnerFilter,
-          ...activeFilter
+          ...listFilter
         }).sort({ createdAt: -1 });
 
     res.json({ ok: true, dishes });
@@ -283,12 +367,11 @@ router.get("/", requireAuth, async (req, res) => {
 router.post("/", requireAuth, async (req, res) => {
   try {
     const body = req.body || {};
-    const { name, ingredients, sidedish, special, isDinner, scope, active, isArchived, allowRandom } = body;
+    const { name, ingredients, special, isDinner, scope, active, isArchived, allowRandom } = body;
     const dishCategoryId = body?.dishCategoryId ?? null;
     if (!name) return res.status(400).json({ ok: false, error: "El nombre del plato es obligatorio." });
 
     const normalizedIngredients = normalizeIngredientList(ingredients || []);
-    const isSideDish = parseBooleanField(sidedish, false);
     const isSpecial = parseBooleanField(special, false);
     const dinnerDish = parseBooleanField(isDinner, false);
     const randomAllowed = parseBooleanField(allowRandom, true);
@@ -301,16 +384,24 @@ router.post("/", requireAuth, async (req, res) => {
     if (isMasterWrite && !isDiod) {
       return res.status(403).json({ ok: false, error: "Solo DIOD puede crear platos master." });
     }
+    if (dinnerDish && !isDiod) {
+      const household = await Household.findById(effectiveHouseholdId).lean();
+      if (!canUseDinnersFeature(household)) {
+        return res.status(403).json({
+          ok: false,
+          error: "La creación de platos de cena requiere un plan Pro o Premium.",
+          code: "DINNER_FEATURE_NOT_AVAILABLE"
+        });
+      }
+    }
     const resolvedDishCategoryId = dishCategoryId
       ? await resolveDishCategoryId(dishCategoryId)
       : null;
-    const guarnicionesCategoryId = isSideDish ? await resolveGuarnicionesCategoryId() : null;
 
     const dish = await KitchenDish.create({
       name: String(name).trim(),
       ingredients: normalizedIngredients,
-      dishCategoryId: isSideDish ? guarnicionesCategoryId : (resolvedDishCategoryId ?? null),
-      sidedish: isSideDish,
+      dishCategoryId: resolvedDishCategoryId ?? null,
       isDinner: dinnerDish,
       special: isSpecial,
       allowRandom: randomAllowed,
@@ -322,16 +413,11 @@ router.post("/", requireAuth, async (req, res) => {
       householdId: isMasterWrite ? undefined : effectiveHouseholdId
     });
 
-    if (!isMasterWrite && isSideDish) {
-      await clearHiddenMasterForHousehold({ householdId: effectiveHouseholdId, type: "side", masterId: dish._id });
-    }
-
     return res.status(201).json({ ok: true, dish });
   } catch (error) {
     if (
       error?.message === "Categoría de plato no válida."
       || error?.message === "La categoría de plato seleccionada no existe."
-      || error?.message === "La categoría 'Guarniciones' no existe o está inactiva."
     ) {
       return res.status(400).json({ ok: false, error: error.message });
     }
@@ -344,7 +430,7 @@ router.post("/", requireAuth, async (req, res) => {
 router.put("/:id", requireAuth, async (req, res) => {
   try {
     const body = req.body || {};
-    const { name, ingredients, sidedish, special, isDinner, active, isArchived, allowRandom } = body;
+    const { name, ingredients, special, isDinner, active, isArchived, allowRandom } = body;
     const hasDishCategoryInput = Object.prototype.hasOwnProperty.call(body, "dishCategoryId");
     const dishCategoryId = hasDishCategoryInput ? body.dishCategoryId : undefined;
     const optionalHouseholdId = getOptionalHouseholdId(req.user);
@@ -357,7 +443,6 @@ router.put("/:id", requireAuth, async (req, res) => {
       active: parseBooleanField(active, dish.active !== false),
       special: parseBooleanField(special, Boolean(dish.special)),
       isDinner: parseBooleanField(isDinner, Boolean(dish.isDinner)),
-      sidedish: parseBooleanField(sidedish, Boolean(dish.sidedish)),
       allowRandom: parseBooleanField(allowRandom, dish.allowRandom !== false),
       isArchived: parseBooleanField(isArchived, Boolean(dish.isArchived))
     };
@@ -368,12 +453,8 @@ router.put("/:id", requireAuth, async (req, res) => {
     else nextData.name = dish.name;
     if (Array.isArray(ingredients)) nextData.ingredients = normalizeIngredientList(ingredients);
     else nextData.ingredients = dish.ingredients;
-    if (nextData.sidedish) {
-      nextData.dishCategoryId = await resolveGuarnicionesCategoryId();
-    } else if (resolvedDishCategoryId !== undefined) {
+    if (resolvedDishCategoryId !== undefined) {
       nextData.dishCategoryId = resolvedDishCategoryId;
-    } else if (dish.sidedish && !nextData.sidedish) {
-      nextData.dishCategoryId = null;
     } else {
       nextData.dishCategoryId = dish.dishCategoryId || null;
     }
@@ -391,6 +472,19 @@ router.put("/:id", requireAuth, async (req, res) => {
       }
 
       const requiredHouseholdId = getEffectiveHouseholdId(req.user);
+      const overrideSetData = {
+        ...nextData,
+        scope: CATALOG_SCOPES.OVERRIDE,
+        masterId: dish._id,
+        householdId: requiredHouseholdId,
+        isDinner: nextData.isDinner,
+        dishCategoryId: nextData.dishCategoryId,
+        active: nextData.active,
+        special: nextData.special,
+        isArchived: nextData.isArchived
+      };
+      // On INSERT (new override): inherit the master's recipe so it is not lost.
+      // On UPDATE (existing override): recipe is left untouched ($setOnInsert is ignored).
       const override = await KitchenDish.findOneAndUpdate(
         {
           householdId: requiredHouseholdId,
@@ -398,18 +492,10 @@ router.put("/:id", requireAuth, async (req, res) => {
           masterId: dish._id
         },
         {
-          ...nextData,
-          scope: CATALOG_SCOPES.OVERRIDE,
-          masterId: dish._id,
-          householdId: requiredHouseholdId,
-          sidedish: nextData.sidedish,
-          isDinner: nextData.isDinner,
-          dishCategoryId: nextData.dishCategoryId,
-          active: nextData.active,
-          special: nextData.special,
-          isArchived: nextData.isArchived
+          $set: overrideSetData,
+          $setOnInsert: { recipe: dish.recipe || null }
         },
-        { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true }
       );
       await clearHiddenMasterForHousehold({
         householdId: requiredHouseholdId,
@@ -429,6 +515,10 @@ router.put("/:id", requireAuth, async (req, res) => {
     }
 
     Object.assign(dish, nextData);
+    if (dish.source === "catalog") {
+      dish.userModified = true;
+      dish.userModifiedAt = new Date();
+    }
     await dish.save();
     const warning = await rebuildFutureShoppingListsSafe({
       householdId: getEffectiveHouseholdId(req.user),
@@ -440,13 +530,129 @@ router.put("/:id", requireAuth, async (req, res) => {
     if (
       error?.message === "Categoría de plato no válida."
       || error?.message === "La categoría de plato seleccionada no existe."
-      || error?.message === "La categoría 'Guarniciones' no existe o está inactiva."
     ) {
       return res.status(400).json({ ok: false, error: error.message });
     }
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el plato." });
+  }
+});
+
+router.post("/:id/revert-override", requireAuth, async (req, res) => {
+  try {
+    const householdId = getEffectiveHouseholdId(req.user);
+    const dish = await KitchenDish.findById(req.params.id);
+    if (!dish || dish.isArchived || dish.deletedAt) {
+      return res.status(404).json({ ok: false, error: "Plato no encontrado." });
+    }
+
+    if (!dish.householdId || String(dish.householdId) !== String(householdId)) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para modificar este plato." });
+    }
+
+    if (dish.scope === CATALOG_SCOPES.OVERRIDE) {
+      if (!dish.masterId) {
+        return res.status(400).json({ ok: false, error: "No se encontro el plato original." });
+      }
+      const master = await KitchenDish.findOne({
+        _id: dish.masterId,
+        scope: CATALOG_SCOPES.MASTER,
+        isArchived: { $ne: true },
+        deletedAt: null
+      });
+      if (!master) {
+        return res.status(404).json({ ok: false, error: "No se encontro el plato original." });
+      }
+
+      let planning = { affectedWeeks: 0, changedDays: 0 };
+      try {
+        planning = await repointDishInPlans({
+          householdId,
+          fromDishId: dish._id,
+          toDishId: master._id
+        });
+      } catch (planningError) {
+        console.error("[kitchen/dishes] revert override planning cascade failed", {
+          householdId: String(householdId || ""),
+          overrideId: String(dish._id || ""),
+          masterId: String(master._id || ""),
+          message: planningError?.message,
+          stack: planningError?.stack
+        });
+        return res.status(500).json({ ok: false, error: "No se pudo volver al plato original." });
+      }
+
+      await clearHiddenMasterForHousehold({
+        householdId,
+        type: getDishHiddenMasterType(master),
+        masterId: master._id
+      });
+      await KitchenDish.deleteOne({ _id: dish._id, householdId, scope: CATALOG_SCOPES.OVERRIDE });
+
+      return res.json({
+        ok: true,
+        reverted: true,
+        dish: master,
+        removedOverrideId: String(dish._id),
+        planning
+      });
+    }
+
+    const isCatalogCopy = dish.scope === CATALOG_SCOPES.HOUSEHOLD
+      && (dish.source === "catalog" || dish.sourcePackId)
+      && dish.userModified === true;
+    if (!isCatalogCopy) {
+      return res.status(400).json({ ok: false, error: "Este plato ya muestra su version original." });
+    }
+
+    const templateId = normalizeCatalogTemplateId(dish.sourceDishTemplateId);
+    if (!dish.sourcePackId || !templateId) {
+      return res.status(400).json({ ok: false, error: "No se encontro la version original del catalogo." });
+    }
+    const pack = await CatalogPack.findOne({
+      _id: dish.sourcePackId,
+      active: { $ne: false },
+      status: "published"
+    }).lean();
+    const template = (pack?.dishes || []).find((item) => normalizeCatalogTemplateId(item.dishTemplateId) === templateId);
+    if (!template) {
+      return res.status(404).json({ ok: false, error: "No se encontro la version original del catalogo." });
+    }
+
+    const now = new Date();
+    Object.assign(dish, dishFieldsFromCatalogTemplate(template), {
+      source: "catalog",
+      sourcePackSlug: pack.slug,
+      sourcePackTitle: pack.title,
+      sourcePackColor: pack.color || null,
+      sourcePackIsDietPack: Boolean(pack.isDietPack),
+      sourceDishTemplateId: templateId,
+      catalogSyncedAt: now,
+      catalogContentHash: catalogContentHash(template),
+      userModified: false,
+      userModifiedAt: null,
+      active: true,
+      deletedAt: null
+    });
+    await dish.save();
+    const warning = await rebuildFutureShoppingListsSafe({
+      householdId,
+      dishId: dish._id,
+      context: "revert-catalog-dish"
+    });
+
+    return res.json({
+      ok: true,
+      reverted: true,
+      dish,
+      planning: { affectedWeeks: 0, changedDays: 0 },
+      ...(warning ? { warning } : {})
+    });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo volver al plato original." });
   }
 });
 
@@ -551,6 +757,109 @@ router.post("/:id/restore", requireAuth, async (req, res) => {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo recuperar el plato." });
+  }
+});
+
+router.put("/:id/recipe", requireAuth, async (req, res) => {
+  try {
+    const isDiod = isDiodUser(req.kitchenUser);
+    const dish = await KitchenDish.findById(req.params.id);
+    if (!dish || dish.isArchived) {
+      return res.status(404).json({ ok: false, error: "Plato no encontrado." });
+    }
+
+    const { ingredients, steps, servings, baseServings, prepMinutes, cookMinutes } = req.body || {};
+    const normalizedIngredients = Array.isArray(ingredients)
+      ? ingredients
+          .filter((item) => item && String(item.name || "").trim())
+          .map((item) => {
+            // Accept structured quantity object or legacy string
+            const qty = item.quantity;
+            const normalizedQty = qty !== null && typeof qty === "object"
+              ? qty
+              : String(qty || "").trim();
+            return {
+              name: String(item.name || "").trim(),
+              quantity: normalizedQty,
+              ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
+            };
+          })
+      : [];
+    const rawServings = baseServings ?? servings;
+    const normalizedServings = rawServings != null && Number.isFinite(Number(rawServings)) ? Number(rawServings) : null;
+    const normalizedPrepMinutes = prepMinutes != null && Number.isFinite(Number(prepMinutes)) ? Number(prepMinutes) : null;
+    const normalizedCookMinutes = cookMinutes != null && Number.isFinite(Number(cookMinutes)) ? Number(cookMinutes) : null;
+    const recipeData = {
+      ingredients: normalizedIngredients,
+      steps: steps ?? null,
+      servings: normalizedServings,
+      prepMinutes: normalizedPrepMinutes,
+      cookMinutes: normalizedCookMinutes,
+    };
+
+    if (dish.scope === CATALOG_SCOPES.MASTER) {
+      if (isDiod) {
+        dish.recipe = recipeData;
+        await dish.save();
+        return res.json({ ok: true, dish: { id: String(dish._id), recipe: dish.recipe } });
+      }
+
+      const requiredHouseholdId = getEffectiveHouseholdId(req.user);
+      const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan planSource betaPro").lean();
+      if (!household || !canRandomizeFullWeek(household)) {
+        return res.status(403).json({ ok: false, error: "Esta funcionalidad requiere un plan PRO o superior.", code: "PRO_REQUIRED" });
+      }
+
+      let override = await KitchenDish.findOne({
+        householdId: requiredHouseholdId,
+        scope: CATALOG_SCOPES.OVERRIDE,
+        masterId: dish._id
+      });
+      if (!override) {
+        override = new KitchenDish({
+          name: dish.name,
+          ingredients: dish.ingredients,
+          isDinner: dish.isDinner,
+          dishCategoryId: dish.dishCategoryId,
+          active: dish.active !== false,
+          special: Boolean(dish.special),
+          allowRandom: dish.allowRandom !== false,
+          isArchived: false,
+          scope: CATALOG_SCOPES.OVERRIDE,
+          masterId: dish._id,
+          householdId: requiredHouseholdId,
+          createdBy: req.kitchenUser._id
+        });
+      }
+      override.recipe = recipeData;
+      await override.save();
+      await clearHiddenMasterForHousehold({ householdId: requiredHouseholdId, type: getDishHiddenMasterType(dish), masterId: dish._id });
+
+      return res.json({ ok: true, overridden: true, dish: { id: String(override._id), recipe: override.recipe } });
+    }
+
+    const requiredHouseholdId = getEffectiveHouseholdId(req.user);
+    if (!dish.householdId || String(dish.householdId) !== String(requiredHouseholdId)) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para editar la receta de este plato." });
+    }
+    if (!isDiod) {
+      const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan planSource betaPro").lean();
+      if (!household || !canRandomizeFullWeek(household)) {
+        return res.status(403).json({ ok: false, error: "Esta funcionalidad requiere un plan PRO o superior.", code: "PRO_REQUIRED" });
+      }
+    }
+
+    dish.recipe = recipeData;
+    if (dish.source === "catalog") {
+      dish.userModified = true;
+      dish.userModifiedAt = new Date();
+    }
+    await dish.save();
+    return res.json({ ok: true, dish: { id: String(dish._id), recipe: dish.recipe } });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo guardar la receta." });
   }
 });
 

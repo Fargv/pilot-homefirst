@@ -1,0 +1,673 @@
+{
+  "slug": "mediterranean-pack-vol1",
+  "title": "8 platos mediterráneos",
+  "subtitle": "Frescura y sabor del Mediterráneo",
+  "description": "Un pack con 8 platos ligeros y sabrosos de la cocina mediterránea. Ingredientes frescos, recetas sencillas y mucha variedad para tus almuerzos y cenas.",
+  "coverImage": null,
+  "tags": [
+    "mediterráneo",
+    "saludable",
+    "ligero",
+    "rápido"
+  ],
+  "cuisineType": "mediterránea",
+  "active": true,
+  "featured": false,
+  "priceBasic": 1.99,
+  "includedPlans": [
+    "pro",
+    "premium"
+  ],
+  "monthlyCreditCost": 100,
+  "sortOrder": 20,
+  "dishes": [
+    {
+      "name": "Ensalada griega",
+      "sidedish": true,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        {
+          "displayName": "Tomate",
+          "canonicalName": "tomate"
+        },
+        {
+          "displayName": "Pepino",
+          "canonicalName": "pepino"
+        },
+        {
+          "displayName": "Cebolla roja",
+          "canonicalName": "cebolla roja"
+        },
+        {
+          "displayName": "Aceitunas negras",
+          "canonicalName": "aceitunas negras"
+        },
+        {
+          "displayName": "Queso feta",
+          "canonicalName": "queso feta"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Tomate",
+            "quantity": {
+              "amount": 3,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "3 unidades"
+            }
+          },
+          {
+            "name": "Pepino",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Cebolla roja",
+            "quantity": {
+              "amount": 0.5,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1/2 unidad"
+            }
+          },
+          {
+            "name": "Aceitunas negras",
+            "quantity": {
+              "amount": 100,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "100 g"
+            }
+          },
+          {
+            "name": "Queso feta",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          }
+        ],
+        "steps": null,
+        "baseServings": 4
+      }
+    },
+    {
+      "name": "Hummus con pan de pita",
+      "sidedish": true,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        {
+          "displayName": "Garbanzos cocidos",
+          "canonicalName": "garbanzos"
+        },
+        {
+          "displayName": "Tahini",
+          "canonicalName": "tahini"
+        },
+        {
+          "displayName": "Limón",
+          "canonicalName": "limón"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        },
+        {
+          "displayName": "Pan de pita",
+          "canonicalName": "pan de pita"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Garbanzos cocidos",
+            "quantity": {
+              "amount": 400,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "400 g"
+            }
+          },
+          {
+            "name": "Tahini",
+            "quantity": {
+              "amount": 3,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "3 cucharadas"
+            }
+          },
+          {
+            "name": "Limón",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "2 dientes"
+            }
+          },
+          {
+            "name": "Pan de pita",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "4 unidades"
+            }
+          }
+        ],
+        "steps": null,
+        "baseServings": 4
+      }
+    },
+    {
+      "name": "Pasta al pesto",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        {
+          "displayName": "Pasta",
+          "canonicalName": "pasta"
+        },
+        {
+          "displayName": "Albahaca fresca",
+          "canonicalName": "albahaca"
+        },
+        {
+          "displayName": "Piñones",
+          "canonicalName": "piñones"
+        },
+        {
+          "displayName": "Parmesano",
+          "canonicalName": "parmesano"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Pasta",
+            "quantity": {
+              "amount": 400,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "400 g"
+            }
+          },
+          {
+            "name": "Albahaca fresca",
+            "quantity": {
+              "amount": 50,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "50 g"
+            }
+          },
+          {
+            "name": "Piñones",
+            "quantity": {
+              "amount": 30,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "30 g"
+            }
+          },
+          {
+            "name": "Parmesano rallado",
+            "quantity": {
+              "amount": 50,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "50 g"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "2 dientes"
+            }
+          }
+        ],
+        "steps": null,
+        "baseServings": 4
+      }
+    },
+    {
+      "name": "Pollo al limón con orégano",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        {
+          "displayName": "Pollo",
+          "canonicalName": "pollo"
+        },
+        {
+          "displayName": "Limón",
+          "canonicalName": "limón"
+        },
+        {
+          "displayName": "Orégano",
+          "canonicalName": "orégano"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        },
+        {
+          "displayName": "Aceite de oliva",
+          "canonicalName": "aceite de oliva"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Pollo en piezas",
+            "quantity": {
+              "amount": 1,
+              "unit": "kg",
+              "scalable": true,
+              "originalText": "1 kg"
+            }
+          },
+          {
+            "name": "Limón",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 unidades"
+            }
+          },
+          {
+            "name": "Orégano seco",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharada",
+              "scalable": true,
+              "originalText": "1 cucharada"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "4 dientes"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 3,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "3 cucharadas"
+            }
+          }
+        ],
+        "steps": null,
+        "baseServings": 4
+      }
+    },
+    {
+      "name": "Shakshuka",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        {
+          "displayName": "Huevos",
+          "canonicalName": "huevo"
+        },
+        {
+          "displayName": "Tomate triturado",
+          "canonicalName": "tomate triturado"
+        },
+        {
+          "displayName": "Pimiento rojo",
+          "canonicalName": "pimiento rojo"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla"
+        },
+        {
+          "displayName": "Comino",
+          "canonicalName": "comino"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Huevos",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "4 unidades"
+            }
+          },
+          {
+            "name": "Tomate triturado",
+            "quantity": {
+              "amount": 400,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "400 g"
+            }
+          },
+          {
+            "name": "Pimiento rojo",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Cebolla",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Comino molido",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cucharadita"
+            }
+          }
+        ],
+        "steps": null,
+        "baseServings": 2
+      }
+    },
+    {
+      "name": "Risotto de setas",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "ingredients": [
+        {
+          "displayName": "Arroz arbóreo",
+          "canonicalName": "arroz arbóreo"
+        },
+        {
+          "displayName": "Setas",
+          "canonicalName": "setas"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla"
+        },
+        {
+          "displayName": "Caldo de verduras",
+          "canonicalName": "caldo de verduras"
+        },
+        {
+          "displayName": "Parmesano",
+          "canonicalName": "parmesano"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Arroz arbóreo",
+            "quantity": {
+              "amount": 320,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "320 g"
+            }
+          },
+          {
+            "name": "Setas variadas",
+            "quantity": {
+              "amount": 300,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "300 g"
+            }
+          },
+          {
+            "name": "Cebolla",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Caldo de verduras",
+            "quantity": {
+              "amount": 1,
+              "unit": "l",
+              "scalable": true,
+              "originalText": "1 litro"
+            }
+          },
+          {
+            "name": "Parmesano rallado",
+            "quantity": {
+              "amount": 80,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "80 g"
+            }
+          }
+        ],
+        "steps": null,
+        "baseServings": 4
+      }
+    },
+    {
+      "name": "Merluza al horno con tomate",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        {
+          "displayName": "Merluza",
+          "canonicalName": "merluza"
+        },
+        {
+          "displayName": "Tomate",
+          "canonicalName": "tomate"
+        },
+        {
+          "displayName": "Ajo",
+          "canonicalName": "ajo"
+        },
+        {
+          "displayName": "Aceitunas",
+          "canonicalName": "aceitunas"
+        },
+        {
+          "displayName": "Aceite de oliva",
+          "canonicalName": "aceite de oliva"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Lomos de merluza",
+            "quantity": {
+              "amount": 600,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "600 g"
+            }
+          },
+          {
+            "name": "Tomates cherry",
+            "quantity": {
+              "amount": 200,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "200 g"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 3,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "3 dientes"
+            }
+          },
+          {
+            "name": "Aceitunas negras",
+            "quantity": {
+              "amount": 80,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "80 g"
+            }
+          },
+          {
+            "name": "Aceite de oliva virgen extra",
+            "quantity": {
+              "amount": 3,
+              "unit": "cucharada",
+              "displayUnit": "cucharadas",
+              "scalable": true,
+              "originalText": "3 cucharadas"
+            }
+          }
+        ],
+        "steps": null,
+        "baseServings": 3
+      }
+    },
+    {
+      "name": "Lentejas con verduras",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": true,
+      "ingredients": [
+        {
+          "displayName": "Lentejas",
+          "canonicalName": "lentejas"
+        },
+        {
+          "displayName": "Zanahoria",
+          "canonicalName": "zanahoria"
+        },
+        {
+          "displayName": "Apio",
+          "canonicalName": "apio"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla"
+        },
+        {
+          "displayName": "Tomate triturado",
+          "canonicalName": "tomate triturado"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Lentejas",
+            "quantity": {
+              "amount": 300,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "300 g"
+            }
+          },
+          {
+            "name": "Zanahoria",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 unidades"
+            }
+          },
+          {
+            "name": "Apio",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "displayUnit": "tallos",
+              "scalable": true,
+              "originalText": "2 tallos"
+            }
+          },
+          {
+            "name": "Cebolla",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 unidad"
+            }
+          },
+          {
+            "name": "Tomate triturado",
+            "quantity": {
+              "amount": 200,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "200 g"
+            }
+          }
+        ],
+        "steps": null,
+        "baseServings": 4
+      }
+    }
+  ]
+}

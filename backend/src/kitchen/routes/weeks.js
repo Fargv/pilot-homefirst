@@ -1,7 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
 import { KitchenDish } from "../models/KitchenDish.js";
-import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { KitchenUser } from "../models/KitchenUser.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
 import { Household } from "../models/Household.js";
@@ -15,9 +14,9 @@ import {
 import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
 import { rebuildShoppingList } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
-import { resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
+import { buildManualPlanningDishFilter, buildRandomizableMainDishFilter, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 import { notifyCookAssignments } from "../assignmentPushService.js";
-import { canRandomizeFullWeek } from "../subscriptionService.js";
+import { canRandomizeFullWeek, canUseDietRandomization, canUseDinnersFeature } from "../subscriptionService.js";
 
 const router = express.Router();
 
@@ -43,16 +42,6 @@ function normalizeIngredientOverrides(ingredientOverrides = []) {
     canonicalName: String(item?.canonicalName || "").trim(),
     ...(item?.ingredientId ? { ingredientId: item.ingredientId } : {})
   }));
-}
-
-function buildRandomizableMainDishFilter(mealType) {
-  return {
-    sidedish: { $ne: true },
-    special: { $ne: true },
-    allowRandom: { $ne: false },
-    isDinner: isDinnerMeal(mealType),
-    active: true
-  };
 }
 
 function normalizeBaseIngredientExclusions(values = []) {
@@ -164,37 +153,33 @@ function dishCategoryKey(dish) {
   return String(dish.dishCategoryId);
 }
 
-async function resolveExcludedGuarnicionesCategoryIds(dishes = []) {
-  const categoryIds = dedupeIds(
-    dishes
-      .map((dish) => dishCategoryKey(dish))
-      .filter(Boolean)
-  );
-  if (!categoryIds.length) return new Set();
-  const categories = await KitchenDishCategory.find({
-    _id: { $in: categoryIds },
-    code: "guarniciones"
-  })
-    .select("_id")
-    .lean();
-  return new Set(categories.map((category) => String(category._id)));
-}
-
 function resolveDayAttendeeIds(day, defaultAttendeeIds = [], mealType = "lunch") {
   const normalizedMeal = normalizeMealType(mealType);
   const dayType = dayMealType(day);
   if (dayType !== normalizedMeal) {
     return [...defaultAttendeeIds];
   }
-  if (Array.isArray(day?.attendeeIds)) {
+  if (Array.isArray(day?.attendeeIds) && day.attendeeIds.length > 0) {
     return dedupeIds(day.attendeeIds);
   }
+  if (Array.isArray(day?.attendeeIds) && Number(day?.attendeeCount ?? 0) === 0) return [];
   return [...defaultAttendeeIds];
 }
 
-function applyAttendeesToDay(day, attendeeIds) {
+function normalizeExtraGuests(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+function getTotalDiners(attendeeIds = [], extraGuests = 0) {
+  return dedupeIds(attendeeIds).length + normalizeExtraGuests(extraGuests);
+}
+
+function applyAttendeesToDay(day, attendeeIds, extraGuests = day?.extraGuests ?? 0) {
   day.attendeeIds = dedupeIds(attendeeIds);
-  day.attendeeCount = day.attendeeIds.length;
+  day.extraGuests = normalizeExtraGuests(extraGuests);
+  day.attendeeCount = getTotalDiners(day.attendeeIds, day.extraGuests);
+  day.servings = day.attendeeCount;
 }
 
 function getWeekOffset(monday, date) {
@@ -214,9 +199,10 @@ function createDefaultDaySlot(date, mealType, attendeeIds = []) {
     date,
     mealType,
     attendeeIds: [...attendeeIds],
+    extraGuests: 0,
     attendeeCount: attendeeIds.length,
     cookTiming: isDinner ? "same_day" : "previous_day",
-    servings: 4,
+    servings: attendeeIds.length,
     includeMainIngredients: !isDinner,
     includeSideIngredients: !isDinner,
     isLeftovers: false,
@@ -233,6 +219,7 @@ function resetDayPlanning(day, attendeeIds = []) {
   const defaults = createDefaultDaySlot(day.date, dayMealType(day), attendeeIds);
   day.cookUserId = null;
   day.attendeeIds = [...defaults.attendeeIds];
+  day.extraGuests = defaults.extraGuests;
   day.attendeeCount = defaults.attendeeCount;
   day.cookTiming = defaults.cookTiming;
   day.servings = defaults.servings;
@@ -256,6 +243,7 @@ function snapshotAssignment(day) {
     mainDishId: day?.mainDishId || null,
     attendeeCount: typeof day?.attendeeCount === "number" ? day.attendeeCount : null,
     attendeeIds: Array.isArray(day?.attendeeIds) ? dedupeIds(day.attendeeIds) : [],
+    extraGuests: normalizeExtraGuests(day?.extraGuests),
     servings: day?.servings || null,
     date: day?.date ? new Date(day.date) : null,
     mealType: dayMealType(day),
@@ -267,6 +255,33 @@ async function loadHouseholdMembers(effectiveHouseholdId) {
   return KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}))
     .select("_id active canCook dinnerActive dinnerCanCook isPlaceholder type")
     .lean();
+}
+
+async function cleanupGhostAttendeesInPlan(plan, members = [], effectiveHouseholdId) {
+  if (!plan || !Array.isArray(plan.days)) return { cleaned: false, removedCount: 0 };
+  const validMemberIds = new Set(members.map((member) => String(member?._id)).filter(Boolean));
+  let removedCount = 0;
+  let cleaned = false;
+  for (const day of plan.days) {
+    if (!Array.isArray(day?.attendeeIds) || day.attendeeIds.length === 0) continue;
+    const originalLength = day.attendeeIds.length;
+    const nextAttendeeIds = day.attendeeIds.filter((item) => validMemberIds.has(String(item)));
+    if (nextAttendeeIds.length === originalLength) continue;
+    removedCount += originalLength - nextAttendeeIds.length;
+    day.attendeeIds = nextAttendeeIds;
+    day.attendeeCount = getTotalDiners(nextAttendeeIds, day.extraGuests);
+    day.servings = day.attendeeCount;
+    cleaned = true;
+  }
+  if (cleaned) {
+    console.warn("[kitchen][weeks] ghost attendees removed from plan", {
+      householdId: String(effectiveHouseholdId),
+      weekStart: formatDateISO(plan.weekStart),
+      removedCount
+    });
+    await plan.save();
+  }
+  return { cleaned, removedCount };
 }
 
 async function hydrateLeftoversDishNames(plan, effectiveHouseholdId) {
@@ -361,6 +376,7 @@ router.get("/:weekStart", requireAuth, async (req, res) => {
     const plan = await findWeekPlan(monday, effectiveHouseholdId);
     if (plan) {
       const members = await loadHouseholdMembers(effectiveHouseholdId);
+      await cleanupGhostAttendeesInPlan(plan, members, effectiveHouseholdId);
       for (const day of plan.days || []) {
         const mealType = dayMealType(day);
         const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);
@@ -420,9 +436,10 @@ router.post("/:weekStart/weekend", requireAuth, async (req, res) => {
         date: targetDate,
         mealType,
         attendeeIds: [...defaultAttendeeIds],
+        extraGuests: 0,
         attendeeCount: defaultAttendeeIds.length,
         cookTiming: isDinner ? "same_day" : "previous_day",
-        servings: 4,
+        servings: defaultAttendeeIds.length,
         includeMainIngredients: !isDinner,
         includeSideIngredients: !isDinner,
         ingredientOverrides: []
@@ -521,17 +538,32 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
     const mealType = normalizeMealType(req.query?.mealType || req.body?.mealType || "lunch");
 
+    let householdDinnersIncludeInShopping = false;
+    if (isDinnerMeal(mealType)) {
+      const household = await Household.findById(effectiveHouseholdId)
+        .select("subscriptionPlan planSource betaPro dinnersIncludeInShopping")
+        .lean();
+      if (!canUseDinnersFeature(household)) {
+        return res.status(403).json({
+          ok: false,
+          error: "La planificación de cenas requiere un plan Pro o Premium.",
+          code: "DINNER_FEATURE_NOT_AVAILABLE"
+        });
+      }
+      householdDinnersIncludeInShopping = Boolean(household?.dinnersIncludeInShopping);
+    }
+
     const day = findDayByDateAndMeal(plan, date, mealType);
     if (!day) return res.status(404).json({ ok: false, error: "Dia fuera de la semana." });
 
     const {
       cookUserId,
       cookTiming,
-      servings,
       mainDishId,
       sideDishId,
       ingredientOverrides,
       attendeeIds,
+      extraGuests,
       baseIngredientExclusions,
       includeMainIngredients,
       includeSideIngredients,
@@ -568,6 +600,12 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
         return res.status(400).json({ ok: false, error: "Algun attendeeId no es valido." });
       }
     }
+    if (extraGuests !== undefined) {
+      const parsedExtraGuests = Number(extraGuests);
+      if (!Number.isFinite(parsedExtraGuests) || parsedExtraGuests < 0) {
+        return res.status(400).json({ ok: false, error: "extraGuests debe ser un numero positivo." });
+      }
+    }
     if (baseIngredientExclusions !== undefined && !Array.isArray(baseIngredientExclusions)) {
       return res.status(400).json({ ok: false, error: "baseIngredientExclusions debe ser una lista." });
     }
@@ -593,32 +631,13 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
         Model: KitchenDish,
         householdId: effectiveHouseholdId,
         ids: [mainDishId],
-        filter: {
-          sidedish: { $ne: true },
-          isDinner: isDinnerMeal(mealType),
-          active: true
-        }
+        filter: buildManualPlanningDishFilter({ isDinner: isDinnerMeal(mealType) })
       });
       if (!mainDish) {
         return res.status(400).json({ ok: false, error: "El plato principal no pertenece a este hogar." });
       }
     }
 
-    if (sideDishId) {
-      const [sideDish] = await resolveDishCatalogForHousehold({
-        Model: KitchenDish,
-        householdId: effectiveHouseholdId,
-        ids: [sideDishId],
-        filter: {
-          sidedish: true,
-          isDinner: isDinnerMeal(mealType),
-          active: true
-        }
-      });
-      if (!sideDish) {
-        return res.status(400).json({ ok: false, error: "La guarnicion no pertenece a este hogar." });
-      }
-    }
 
     const members = await loadHouseholdMembers(effectiveHouseholdId);
     const validMemberIdSet = new Set(dedupeIds(members.map((member) => member._id)));
@@ -652,7 +671,6 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       day.cookUserId = req.kitchenUser._id;
     }
     if (cookTiming) day.cookTiming = cookTiming === "same_day" ? "same_day" : "previous_day";
-    if (servings) day.servings = Number(servings) || 4;
     if (mainDishId !== undefined) day.mainDishId = mainDishId || null;
     if (sideDishId !== undefined) day.sideDishId = sideDishId || null;
     if (typeof includeMainIngredients === "boolean") {
@@ -668,11 +686,11 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       day.leftoversSourceDishId = null;
       day.leftoversSourceDishName = null;
       if (isDinnerMeal(mealType) && typeof includeMainIngredients !== "boolean") {
-        day.includeMainIngredients = false;
+        day.includeMainIngredients = householdDinnersIncludeInShopping;
       }
     }
     if (sideDishId && isDinnerMeal(mealType) && typeof includeSideIngredients !== "boolean") {
-      day.includeSideIngredients = false;
+      day.includeSideIngredients = householdDinnersIncludeInShopping;
     }
     if (typeof isLeftovers === "boolean" && isDinnerMeal(mealType)) {
       day.isLeftovers = isLeftovers;
@@ -714,14 +732,9 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     if (Array.isArray(ingredientOverrides)) day.ingredientOverrides = normalizeIngredientOverrides(ingredientOverrides);
     if (Array.isArray(baseIngredientExclusions)) {
       day.baseIngredientExclusions = normalizeBaseIngredientExclusions(baseIngredientExclusions);
-      if (process.env.NODE_ENV !== "production") {
-        console.debug("[kitchen][weeks][update-day] base exclusions", {
-          day: req.params.date,
-          baseIngredientExclusions: day.baseIngredientExclusions
-        });
-      }
     }
-    applyAttendeesToDay(day, nextAttendeeIds);
+    const nextExtraGuests = extraGuests !== undefined ? normalizeExtraGuests(extraGuests) : normalizeExtraGuests(day.extraGuests);
+    applyAttendeesToDay(day, nextAttendeeIds, nextExtraGuests);
 
     await plan.save();
     await notifyCookAssignments({
@@ -753,49 +766,6 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Datos invalidos al actualizar el dia del plan." });
     }
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el dia del plan." });
-  }
-});
-
-router.post("/:weekStart/day/:date/toggle-attendance", requireAuth, async (req, res) => {
-  try {
-    const weekStart = parseISODate(req.params.weekStart);
-    const date = parseISODate(req.params.date);
-    if (!weekStart || !date) return res.status(400).json({ ok: false, error: "Fecha invalida." });
-
-    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
-    const monday = getWeekStart(weekStart);
-    const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
-    const mealType = normalizeMealType(req.query?.mealType || req.body?.mealType || "lunch");
-    const day = findDayByDateAndMeal(plan, date, mealType);
-    if (!day) return res.status(404).json({ ok: false, error: "Dia fuera de la semana." });
-
-    const members = await loadHouseholdMembers(effectiveHouseholdId);
-    const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);
-    const selfId = String(req.kitchenUser?._id || "");
-    const nextAttendeeIds = resolveDayAttendeeIds(day, defaultAttendeeIds, mealType);
-    const isPresent = nextAttendeeIds.includes(selfId);
-    const toggledAttendees = isPresent
-      ? nextAttendeeIds.filter((id) => id !== selfId)
-      : [...nextAttendeeIds, selfId];
-
-    applyAttendeesToDay(day, toggledAttendees);
-    await plan.save();
-    return res.json({
-      ok: true,
-      plan,
-      attending: !isPresent,
-      attendeeIds: day.attendeeIds,
-      attendeeCount: day.attendeeCount
-    });
-  } catch (error) {
-    const handled = handleHouseholdError(res, error);
-    if (handled) return handled;
-    logKitchenError("toggle-attendance", error, {
-      weekStart: req.params.weekStart,
-      date: req.params.date,
-      userId: String(req.kitchenUser?._id || "")
-    });
-    return res.status(500).json({ ok: false, error: "No se pudo actualizar asistencia." });
   }
 });
 
@@ -831,18 +801,14 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
     const allEligibleRaw = await resolveDishCatalogForHousehold({
       Model: KitchenDish,
       householdId: effectiveHouseholdId,
-      filter: buildRandomizableMainDishFilter(mealType)
+      filter: buildRandomizableMainDishFilter({ isDinner: isDinnerMeal(mealType) })
     });
-    const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(allEligibleRaw);
-    const allEligible = allEligibleRaw.filter((dish) => {
-      const categoryId = dishCategoryKey(dish);
-      return !categoryId || !excludedGuarnicionesCategoryIds.has(categoryId);
-    });
+    const allEligible = allEligibleRaw;
     if (!allEligible.length) {
       const allVisible = await resolveDishCatalogForHousehold({
         Model: KitchenDish,
         householdId: effectiveHouseholdId,
-        filter: buildRandomizableMainDishFilter(mealType)
+        filter: buildRandomizableMainDishFilter({ isDinner: isDinnerMeal(mealType) })
       });
       const allVisibleCount = allVisible.length;
       if (allVisibleCount > 0) {
@@ -852,13 +818,30 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
     }
 
     const household = await Household.findById(effectiveHouseholdId)
-      .select("avoidRepeatsEnabled avoidRepeatsWeeks")
+      .select("avoidRepeatsEnabled avoidRepeatsWeeks randomizationUseDietFilter randomizationDefaultDietPackIds subscriptionPlan planSource betaPro")
       .lean();
     const avoidRepeatsEnabled = Boolean(household?.avoidRepeatsEnabled);
     const avoidRepeatsWeeks = normalizeAvoidRepeatsWeeks(household?.avoidRepeatsWeeks);
     const recentDishIds = avoidRepeatsEnabled
       ? await getRecentWeeksDishIds(effectiveHouseholdId, monday, avoidRepeatsWeeks, mealType)
       : new Set();
+
+    // Apply diet filter for single-day randomization
+    const singleDayDietEnabled = canUseDietRandomization(household)
+      && Boolean(household?.randomizationUseDietFilter);
+    const singleDayDietPackIds = singleDayDietEnabled
+      ? (Array.isArray(household?.randomizationDefaultDietPackIds) ? household.randomizationDefaultDietPackIds.map(String) : [])
+      : [];
+    let effectiveEligible = allEligible;
+    if (singleDayDietEnabled && singleDayDietPackIds.length > 0) {
+      const dietEligible = allEligible.filter(
+        (d) => d.sourcePackId && singleDayDietPackIds.includes(String(d.sourcePackId))
+      );
+      if (dietEligible.length === 0) {
+        return res.json({ ok: true, dish: null, reason: "diet_filter_no_candidates" });
+      }
+      effectiveEligible = dietEligible;
+    }
 
     const previouslyAssignedDishes = previouslyAssignedDishIds.length
       ? await resolveDishCatalogForHousehold({
@@ -873,7 +856,7 @@ router.post("/:weekStart/day/:date/random-main", requireAuth, async (req, res) =
         .filter(Boolean)
     );
 
-    const candidatesNoDishRepeat = allEligible.filter((dish) => !usedMainDishIds.has(String(dish._id)));
+    const candidatesNoDishRepeat = effectiveEligible.filter((dish) => !usedMainDishIds.has(String(dish._id)));
     const candidatesNoDishAndCategoryAndRecent = candidatesNoDishRepeat.filter((dish) => {
       const categoryId = dishCategoryKey(dish);
       if (categoryId && usedCategoryIds.has(categoryId)) return false;
@@ -945,12 +928,12 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const monday = getWeekStart(weekStart);
     const householdForAccess = await Household.findById(effectiveHouseholdId)
-      .select("_id subscriptionPlan")
+      .select("_id subscriptionPlan planSource betaPro")
       .lean();
     if (!householdForAccess) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-    if (!canRandomizeFullWeek(householdForAccess.subscriptionPlan)) {
+    if (!canRandomizeFullWeek(householdForAccess)) {
       return res.status(403).json({
         ok: false,
         code: "WEEK_RANDOMIZATION_NOT_AVAILABLE",
@@ -985,21 +968,15 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     const candidatesRaw = await resolveDishCatalogForHousehold({
       Model: KitchenDish,
       householdId: effectiveHouseholdId,
-      filter: buildRandomizableMainDishFilter(mealType)
+      filter: buildRandomizableMainDishFilter({ isDinner: isDinnerMeal(mealType) })
     });
-    const excludedGuarnicionesCategoryIds = await resolveExcludedGuarnicionesCategoryIds(candidatesRaw);
-    const candidates = candidatesRaw.filter((dish) => {
-      const categoryId = dishCategoryKey(dish);
-      return !categoryId || !excludedGuarnicionesCategoryIds.has(categoryId);
-    });
+    const candidatesAll = candidatesRaw;
 
-    const allDishIds = candidates.map((dish) => String(dish._id));
-    const candidateById = new Map(candidates.map((dish) => [String(dish._id), dish]));
-    if (!allDishIds.length) {
+    if (!candidatesAll.length) {
       const allVisible = await resolveDishCatalogForHousehold({
         Model: KitchenDish,
         householdId: effectiveHouseholdId,
-        filter: buildRandomizableMainDishFilter(mealType)
+        filter: buildRandomizableMainDishFilter({ isDinner: isDinnerMeal(mealType) })
       });
       const allVisibleCount = allVisible.length;
       if (allVisibleCount > 0) {
@@ -1025,13 +1002,42 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
     }
 
     const household = await Household.findById(effectiveHouseholdId)
-      .select("avoidRepeatsEnabled avoidRepeatsWeeks")
+      .select("avoidRepeatsEnabled avoidRepeatsWeeks randomizationUseDietFilter randomizationDefaultDietPackIds dinnersIncludeInShopping")
       .lean();
     const avoidRepeatsEnabled = Boolean(household?.avoidRepeatsEnabled);
+    const dinnerIncludeInShopping = Boolean(household?.dinnersIncludeInShopping);
     const avoidRepeatsWeeks = normalizeAvoidRepeatsWeeks(household?.avoidRepeatsWeeks);
     const recentDishIds = avoidRepeatsEnabled
       ? await getRecentWeeksDishIds(effectiveHouseholdId, monday, avoidRepeatsWeeks, mealType)
       : new Set();
+
+    // Apply diet filter if Pro/Premium and preference is enabled
+    const householdDietEnabled = canUseDietRandomization(householdForAccess)
+      && Boolean(household?.randomizationUseDietFilter);
+    const householdDietPackIds = householdDietEnabled
+      ? (Array.isArray(household?.randomizationDefaultDietPackIds) ? household.randomizationDefaultDietPackIds.map(String) : [])
+      : [];
+    let candidates = candidatesAll;
+    if (householdDietEnabled && householdDietPackIds.length > 0) {
+      const dietCandidates = candidatesAll.filter(
+        (d) => d.sourcePackId && householdDietPackIds.includes(String(d.sourcePackId))
+      );
+      if (dietCandidates.length === 0) {
+        return res.json({
+          ok: true,
+          plan,
+          assignedCount: 0,
+          targetCount: targetDays.length,
+          insufficient: true,
+          warnings: ["No hay platos disponibles para las dietas seleccionadas con las reglas actuales."],
+          warningCodes: ["diet_filter_no_candidates"]
+        });
+      }
+      candidates = dietCandidates;
+    }
+
+    const allDishIds = candidates.map((dish) => String(dish._id));
+    const candidateById = new Map(candidates.map((dish) => [String(dish._id), dish]));
 
     const alreadyAssignedDishes = alreadyAssignedDishIds.length
       ? await resolveDishCatalogForHousehold({
@@ -1105,8 +1111,8 @@ router.post("/:weekStart/randomize", requireAuth, async (req, res) => {
       day.leftoversSourceMealType = null;
       day.leftoversSourceDishId = null;
       day.leftoversSourceDishName = null;
-      day.includeMainIngredients = isDinnerMeal(mealType) ? false : true;
-      day.includeSideIngredients = isDinnerMeal(mealType) ? false : true;
+      day.includeMainIngredients = isDinnerMeal(mealType) ? dinnerIncludeInShopping : true;
+      day.includeSideIngredients = isDinnerMeal(mealType) ? dinnerIncludeInShopping : true;
       applyAttendeesToDay(day, resolveDayAttendeeIds(day, defaultAttendeeIds, mealType));
       usedInCurrentWeek.add(pickedDishId);
       const pickedCategoryId = dishCategoryKey(candidateById.get(pickedDishId));
@@ -1206,11 +1212,10 @@ router.post("/:weekStart/copy-from/:otherWeekStart", requireAuth, requireRole("a
       mealType: dayMealType(day),
       cookUserId: day.cookUserId,
       attendeeIds: Array.isArray(day.attendeeIds) ? dedupeIds(day.attendeeIds) : undefined,
-      attendeeCount: Array.isArray(day.attendeeIds)
-        ? dedupeIds(day.attendeeIds).length
-        : (typeof day.attendeeCount === "number" ? day.attendeeCount : undefined),
+      extraGuests: normalizeExtraGuests(day.extraGuests),
+      attendeeCount: getTotalDiners(day.attendeeIds, day.extraGuests),
       cookTiming: day.cookTiming,
-      servings: day.servings,
+      servings: getTotalDiners(day.attendeeIds, day.extraGuests),
       mainDishId: day.mainDishId,
       includeMainIngredients: typeof day.includeMainIngredients === "boolean"
         ? day.includeMainIngredients
@@ -1400,7 +1405,8 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       leftoversSourceDishName: sourceDay.leftoversSourceDishName || null,
       ingredientOverrides: cloneIngredientOverrides(sourceDay.ingredientOverrides),
       baseIngredientExclusions: normalizeBaseIngredientExclusions(sourceDay.baseIngredientExclusions),
-      attendeeIds: cloneAttendeeIds(sourceDay.attendeeIds)
+      attendeeIds: cloneAttendeeIds(sourceDay.attendeeIds),
+      extraGuests: normalizeExtraGuests(sourceDay.extraGuests)
     };
     const targetSnapshot = {
       ...snapshotAssignment(targetDay),
@@ -1420,7 +1426,8 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
       leftoversSourceDishName: targetDay.leftoversSourceDishName || null,
       ingredientOverrides: cloneIngredientOverrides(targetDay.ingredientOverrides),
       baseIngredientExclusions: normalizeBaseIngredientExclusions(targetDay.baseIngredientExclusions),
-      attendeeIds: cloneAttendeeIds(targetDay.attendeeIds)
+      attendeeIds: cloneAttendeeIds(targetDay.attendeeIds),
+      extraGuests: normalizeExtraGuests(targetDay.extraGuests)
     };
 
     sourceDay.cookUserId = targetSnapshot.cookUserId;
@@ -1437,7 +1444,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     sourceDay.leftoversSourceDishName = targetSnapshot.leftoversSourceDishName;
     sourceDay.ingredientOverrides = targetSnapshot.ingredientOverrides;
     sourceDay.baseIngredientExclusions = targetSnapshot.baseIngredientExclusions;
-    applyAttendeesToDay(sourceDay, targetSnapshot.attendeeIds);
+    applyAttendeesToDay(sourceDay, targetSnapshot.attendeeIds, targetSnapshot.extraGuests);
 
     targetDay.cookUserId = sourceSnapshot.cookUserId;
     targetDay.cookTiming = sourceSnapshot.cookTiming;
@@ -1453,7 +1460,7 @@ router.post("/:weekStart/day/:date/move", requireAuth, async (req, res) => {
     targetDay.leftoversSourceDishName = sourceSnapshot.leftoversSourceDishName;
     targetDay.ingredientOverrides = sourceSnapshot.ingredientOverrides;
     targetDay.baseIngredientExclusions = sourceSnapshot.baseIngredientExclusions;
-    applyAttendeesToDay(targetDay, sourceSnapshot.attendeeIds);
+    applyAttendeesToDay(targetDay, sourceSnapshot.attendeeIds, sourceSnapshot.extraGuests);
 
     await plan.save();
     await notifyCookAssignments({
@@ -1521,5 +1528,3 @@ router.get("/:weekStart/summary", requireAuth, async (req, res) => {
 });
 
 export default router;
-
-

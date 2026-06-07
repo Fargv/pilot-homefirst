@@ -17,6 +17,11 @@ export function buildInvitationLink(token) {
   return `${frontendBaseUrl}/invite/${token}`;
 }
 
+export function buildClerkInvitationLink(token) {
+  const frontendBaseUrl = String(config.frontendUrl || "").replace(/\/$/, "");
+  return `${frontendBaseUrl}/auth/clerk/sign-up?inviteToken=${encodeURIComponent(String(token || ""))}`;
+}
+
 export function getInvitationStatus(invitation) {
   if (!invitation) return "invalid";
   if (invitation.status === "revoked") return "revoked";
@@ -46,7 +51,8 @@ export async function createHouseholdInvitation({
   return {
     invitation,
     rawToken,
-    inviteLink: buildInvitationLink(rawToken)
+    inviteLink: buildInvitationLink(rawToken),
+    clerkInviteLink: buildClerkInvitationLink(rawToken)
   };
 }
 
@@ -67,4 +73,22 @@ export async function findInvitationByToken(token) {
   return Invitation.findOne({
     tokenHash: hashInvitationToken(token)
   });
+}
+
+export async function atomicClaimInvitation(invitationId, userId) {
+  const now = new Date();
+  return Invitation.findOneAndUpdate(
+    {
+      _id: invitationId,
+      $or: [
+        { status: "active" },
+        { status: { $exists: false } },
+        { status: null }
+      ],
+      usedAt: null,
+      expiresAt: { $gt: now }
+    },
+    { $set: { status: "used", usedAt: now, usedByUserId: userId } },
+    { new: true }
+  );
 }

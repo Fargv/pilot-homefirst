@@ -15,17 +15,34 @@
     "migrate:removeShoppingTripAmount": "node scripts/migrate-remove-shopping-trip-amount.js",
     "migrate:userEmailPartialIndex": "node scripts/migrate-user-email-partial-index.js",
     "migrate:userFlags": "node scripts/migrate-user-flags.js",
-    "migrate:purchaseSessions": "node scripts/migrate-purchase-sessions.js"
+    "migrate:purchaseSessions": "node scripts/migrate-purchase-sessions.js",
+    "normalize:db": "node scripts/normalizeMasterData.js",
+    "clerk:dev-export:dry-run": "node scripts/export-clerk-dev-users.js --dry-run",
+    "clerk:dev-export": "node scripts/export-clerk-dev-users.js --export",
+    "clerk:dev-validate": "node scripts/validate-clerk-dev-import.js",
+    "clerk:dev-reconcile-id": "node scripts/reconcile-dev-clerk-id.js",
+    "seed:catalog": "node scripts/seedCatalog.js",
+    "migrate:recipeQuantities": "node scripts/migrateRecipeQuantities.js",
+    "migrate:structuredSteps": "node scripts/migrateStructuredSteps.js",
+    "migrate:structuredSteps:dry": "node scripts/migrateStructuredSteps.js --dry-run",
+    "migrate:ingredientRefs": "node scripts/migrateIngredientRefs.js",
+    "migrate:ingredientRefs:dry": "node scripts/migrateIngredientRefs.js --dry-run",
+    "migrate:ingredientRefs:verbose": "node scripts/migrateIngredientRefs.js --dry-run --verbose"
   },
   "dependencies": {
+    "@clerk/backend": "^3.2.8",
     "@getbrevo/brevo": "^4.0.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.1",
+    "multer": "^2.1.1",
     "nodemailer": "^6.9.14",
+    "stripe": "^22.1.1",
     "web-push": "^3.6.7"
   }
 }

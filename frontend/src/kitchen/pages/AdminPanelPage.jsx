@@ -1,0 +1,7459 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { apiRequest, buildApiUrl, getToken, getPlansAdminConfig, hasLegacyToken, savePlansAdminConfig } from "../api.js";
+import { useAuth } from "../auth.jsx";
+import { useTheme } from "../../context/ThemeContext.jsx";
+import Card from "../components/ui/Card.jsx";
+import Button from "../components/ui/Button.jsx";
+import Input from "../components/ui/Input.jsx";
+import RecipeEditor from "../components/RecipeEditor.jsx";
+import { normalizeIngredientName } from "../utils/normalize.js";
+import { resolvePackCoverImageUrl } from "../utils/packImages.js";
+import BitesIcon from "../components/BitesIcon.jsx";
+
+// ── Shared admin button styles — use CSS vars so they adapt to light/dark mode ─
+const ABT = {  // admin button themes
+  edit:   { fontSize: 12, padding: "3px 12px", borderRadius: 6, border: "1px solid var(--hf-border, #cbd5e1)", background: "var(--surface-muted, #f8fafc)", color: "var(--input-text, #374151)", cursor: "pointer", fontWeight: 500 },
+  del:    { fontSize: 12, padding: "3px 12px", borderRadius: 6, border: "1px solid #fca5a5", background: "#fff8f8", color: "#b42318", cursor: "pointer", fontWeight: 500 },
+  save:   { fontSize: 13, padding: "7px 18px", borderRadius: 6, border: "none", background: "#4338ca", color: "#fff", cursor: "pointer", fontWeight: 600 },
+  cancel: { fontSize: 13, padding: "7px 14px", borderRadius: 6, border: "1px solid var(--hf-border, #e2e8f0)", background: "var(--surface-muted, #f1f5f9)", color: "var(--input-text, #374151)", cursor: "pointer" },
+  green:  { fontSize: 12, padding: "3px 12px", borderRadius: 6, border: "1px solid #86efac", background: "#f0fdf4", color: "#15803d", cursor: "pointer", fontWeight: 500 }
+};
+
+const PLANS = ["basic", "pro", "premium"];
+
+const PLAN_BADGE = {
+  free:    { label: "free",    color: "#6b7280" },
+  basic:   { label: "basic",   color: "#3b82f6" },
+  pro:     { label: "PRO",     color: "#7c3aed" },
+  premium: { label: "PREMIUM", color: "#d97706" }
+};
+
+const STATUS_BADGE = {
+  inactive: { label: "inactivo", color: "#6b7280" },
+  trial:    { label: "trial",    color: "#0891b2" },
+  active:   { label: "activo",   color: "#16a34a" },
+  pending:  { label: "pendiente",color: "#d97706" }
+};
+
+function PlanBadge({ plan }) {
+  const b = PLAN_BADGE[plan] || PLAN_BADGE.basic;
+  return (
+    <span style={{
+      display: "inline-block",
+      padding: "2px 8px",
+      borderRadius: "999px",
+      background: b.color,
+      color: "#fff",
+      fontSize: "11px",
+      fontWeight: 700,
+      letterSpacing: "0.05em",
+      textTransform: "uppercase"
+    }}>
+      {b.label}
+    </span>
+  );
+}
+
+function StatusBadge({ status }) {
+  const b = STATUS_BADGE[status] || STATUS_BADGE.inactive;
+  return (
+    <span style={{
+      display: "inline-block",
+      padding: "2px 8px",
+      borderRadius: "999px",
+      border: `1px solid ${b.color}`,
+      color: b.color,
+      fontSize: "11px",
+      fontWeight: 600,
+      textTransform: "lowercase"
+    }}>
+      {b.label}
+    </span>
+  );
+}
+
+// ── Catalog admin helpers ──────────────────────────────────────────────────────
+
+const OBJECT_ID_RE = /^[a-f0-9]{24}$/i;
+
+function isMongoObjectId(value) {
+  return OBJECT_ID_RE.test(String(value || "").trim());
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  try {
+    return new Date(value).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return "-";
+  }
+}
+
+function AdminPill({ children, tone = "slate" }) {
+  const tones = {
+    slate: ["#f8fafc", "#cbd5e1", "#475569"],
+    green: ["#f0fdf4", "#86efac", "#15803d"],
+    amber: ["#fffbeb", "#fcd34d", "#92400e"],
+    indigo: ["#eef2ff", "#c7d2fe", "#4338ca"],
+    red: ["#fff8f8", "#fca5a5", "#b42318"]
+  };
+  const [background, border, color] = tones[tone] || tones.slate;
+  return (
+    <span style={{
+      display: "inline-flex",
+      alignItems: "center",
+      borderRadius: 999,
+      border: `1px solid ${border}`,
+      background,
+      color,
+      padding: "2px 8px",
+      fontSize: 11,
+      fontWeight: 700,
+      whiteSpace: "nowrap"
+    }}>
+      {children}
+    </span>
+  );
+}
+
+function ObjectIdChip({ id, onCopy }) {
+  const objectId = String(id || "");
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+      <code style={{
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        fontSize: 11,
+        color: "#334155",
+        background: "var(--surface-muted, #f8fafc)",
+        border: "1px solid var(--hf-border, #e2e8f0)",
+        borderRadius: 6,
+        padding: "2px 6px",
+        maxWidth: 190,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap"
+      }}>
+        {objectId || "-"}
+      </code>
+      {objectId ? (
+        <button type="button" style={{ ...ABT.edit, padding: "2px 8px" }} onClick={() => onCopy?.(objectId)} title="Copiar ObjectId">
+          Copiar
+        </button>
+      ) : null}
+    </span>
+  );
+}
+
+function AdminHouseholdContextBanner({ household, onClear }) {
+  if (!household?.id) return null;
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      flexWrap: "wrap",
+      background: "#eef2ff",
+      border: "1px solid #c7d2fe",
+      color: "#312e81",
+      borderRadius: 8,
+      padding: "9px 12px",
+      marginBottom: 12
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <strong>Viendo datos de: {household.name || "Hogar"}</strong>
+        <span style={{ marginLeft: 8, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 11 }}>
+          {household.id}
+        </span>
+      </div>
+      <button type="button" style={ABT.cancel} onClick={onClear}>Limpiar filtro</button>
+    </div>
+  );
+}
+
+const ARCHITECTURE_AREAS = [
+  {
+    title: "Cliente React",
+    tone: "#4ea1ff",
+    items: ["App routes", "Admin shell", "Kitchen views", "Feature gates"]
+  },
+  {
+    title: "Auth y hogares",
+    tone: "#38bdf8",
+    items: ["Clerk / legacy auth", "DIOD admin", "Household scope", "Plan helpers"]
+  },
+  {
+    title: "API Express",
+    tone: "#7bd389",
+    items: ["Kitchen routes", "Admin routes", "Weekly engine", "Beta Pro service"]
+  },
+  {
+    title: "Datos MongoDB",
+    tone: "#ffb86b",
+    items: ["Households", "Users", "Week plans", "Shopping lists"]
+  },
+  {
+    title: "Pagos y Bites",
+    tone: "#ff6b9d",
+    items: ["Stripe", "Bites ledger", "Catalog packs", "Subscriptions"]
+  }
+];
+
+function AdminArchitecturePanel({ onBack }) {
+  return (
+    <div style={{
+      minHeight: "calc(100dvh - 108px)",
+      width: "100%",
+      background: "#0f0f0f",
+      color: "#e8e8e8",
+      display: "flex",
+      flexDirection: "column"
+    }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 12,
+        flexWrap: "wrap",
+        padding: "14px 22px",
+        borderBottom: "1px solid #2a2a2a",
+        background: "#161616"
+      }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 18, letterSpacing: 0 }}>Architecture Map</h1>
+          <p style={{ margin: "4px 0 0", color: "#8a8a8a", fontSize: 12 }}>
+            Lunchfy fullstack overview · React, Express, MongoDB, Clerk, Stripe
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" style={{ ...ABT.cancel, background: "#252525", color: "#e8e8e8", borderColor: "#444" }} onClick={onBack}>
+            Volver al Admin
+          </button>
+          <a
+            href="/architecture-map.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 12, color: "#f5b942", textDecoration: "none", padding: "7px 14px", border: "1px solid #f5b942", borderRadius: 6 }}
+          >
+            Abrir mapa legacy
+          </a>
+        </div>
+      </div>
+
+      <div style={{
+        flex: 1,
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 0,
+        minHeight: 0
+      }}>
+        <div style={{ flex: "1 1 680px", minWidth: 0, padding: "24px clamp(16px, 3vw, 34px)", overflow: "auto" }}>
+          <div style={{
+            minHeight: 520,
+            border: "1px solid #2a2a2a",
+            borderRadius: 12,
+            background: "radial-gradient(circle at 25% 20%, rgba(78,161,255,0.16), transparent 24%), #111",
+            padding: "28px clamp(18px, 3vw, 34px)"
+          }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14, alignItems: "stretch" }}>
+              {ARCHITECTURE_AREAS.map((area, index) => (
+                <div key={area.title} style={{
+                  border: `1px solid ${area.tone}`,
+                  background: "#161616",
+                  borderRadius: 10,
+                  padding: 14,
+                  boxShadow: `0 0 24px ${area.tone}22`,
+                  minHeight: 184
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 999, background: area.tone, boxShadow: `0 0 14px ${area.tone}` }} />
+                    <strong style={{ fontSize: 13 }}>{area.title}</strong>
+                  </div>
+                  <div style={{ display: "grid", gap: 7 }}>
+                    {area.items.map((item) => (
+                      <div key={item} style={{ fontSize: 11, color: "#c9c9c9", border: "1px solid #292929", borderRadius: 7, padding: "7px 8px", background: "#111" }}>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                  {index < ARCHITECTURE_AREAS.length - 1 ? (
+                    <div style={{ display: "none" }} aria-hidden="true">→</div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+              {[
+                ["Request path", "React route -> apiRequest -> Express route -> service/model -> MongoDB"],
+                ["Admin isolation", "DIOD checks protect admin tools; household actions use real Mongo ObjectIds."],
+                ["Plan access", "Pro-like access is centralized through plan helpers for paid, Premium and active Beta Pro."],
+                ["Critical flows", "Weekly challenges, Beta Pro eligibility, basics, dinners, budget, shopping and catalog packs."]
+              ].map(([title, body]) => (
+                <section key={title} style={{ border: "1px solid #2a2a2a", borderRadius: 10, padding: 14, background: "#151515" }}>
+                  <h2 style={{ margin: "0 0 7px", fontSize: 13, color: "#f5b942" }}>{title}</h2>
+                  <p style={{ margin: 0, fontSize: 12, color: "#bdbdbd", lineHeight: 1.55 }}>{body}</p>
+                </section>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <aside style={{ flex: "1 1 320px", borderLeft: "1px solid #2a2a2a", background: "#161616", padding: 20, overflow: "auto" }}>
+          <h2 style={{ margin: "0 0 12px", fontSize: 13, color: "#f5b942", textTransform: "uppercase", letterSpacing: ".08em" }}>
+            Admin Notes
+          </h2>
+          <div style={{ display: "grid", gap: 12 }}>
+            {[
+              ["Scope", "Esta vista vive dentro del router React de Admin y conserva header, tabs y auth DIOD."],
+              ["Legacy map", "El mapa HTML interactivo queda disponible como referencia externa, pero ya no define el layout admin."],
+              ["Refresh", "La ruta /admin/architecture es una ruta SPA real, por lo que F5 mantiene el panel abierto."],
+              ["Support", "Usa el control center de Households para copiar ObjectIds, revisar Beta Pro, onboarding y retos."]
+            ].map(([title, body]) => (
+              <div key={title} style={{ borderBottom: "1px solid #252525", paddingBottom: 11 }}>
+                <h3 style={{ margin: "0 0 4px", fontSize: 12 }}>{title}</h3>
+                <p style={{ margin: 0, color: "#8a8a8a", fontSize: 12, lineHeight: 1.55 }}>{body}</p>
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function formatDaysSince(dateStr) {
+  if (!dateStr) return null;
+  const ms = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(ms / 86_400_000);
+  if (days < 0) return "futuro";
+  if (days === 0) return "hoy";
+  if (days === 1) return "ayer";
+  if (days < 7) return `${days}d`;
+  if (days < 30) return `${Math.floor(days / 7)}sem`;
+  if (days < 365) return `${Math.floor(days / 30)}m`;
+  return `${Math.floor(days / 365)}a`;
+}
+
+function getStripeStatus(pack) {
+  const isFree = !pack.priceBasic || Number(pack.priceBasic) <= 0;
+  if (!pack.isPaid && isFree) return { code: "free", label: "Gratis", color: "#15803d", bg: "#dcfce7" };
+  if (!pack.isPaid) return { code: "na", label: "No aplica", color: "#6b7280", bg: "#f1f5f9" };
+  const hasProduct = Boolean(pack.stripeProductId);
+  const hasPrice = Boolean(pack.stripePriceId);
+  if (pack.paymentMode === "stripe" && hasProduct && hasPrice) {
+    return { code: "connected", label: "✓ Stripe", color: "#047857", bg: "#ecfdf5" };
+  }
+  if (!hasPrice) return { code: "missing", label: "Sin Price ID", color: "#b45309", bg: "#fffbeb" };
+  if (!hasProduct) return { code: "missing", label: "Sin Product ID", color: "#b45309", bg: "#fffbeb" };
+  return { code: "pending", label: "Pendiente", color: "#b45309", bg: "#fffbeb" };
+}
+
+function getPackHealth(pack) {
+  const issues = [];
+  if (!pack.status) issues.push("Sin estado de revisión");
+  if (pack.dishCount === 0) issues.push("Sin platos");
+  const unresolved = Number(pack.validationSummary?.unresolvedIssues || 0);
+  if (unresolved > 0) issues.push(`${unresolved} ingrediente(s) sin mapear`);
+  if (pack.isPaid && pack.paymentMode === "stripe" && !pack.stripePriceId) issues.push("Stripe Price ID faltante");
+  if (pack.isPaid && pack.paymentMode === "stripe" && !pack.stripeProductId) issues.push("Stripe Product ID faltante");
+  if (pack.status === "published" && pack.active === false) issues.push("Publicado pero desactivado");
+  if (issues.length === 0) return { level: "ok", label: "OK", issues: [] };
+  if (issues.length === 1 && !pack.status) return { level: "legacy", label: "Legacy", issues };
+  return { level: "review", label: "Revisar", issues };
+}
+
+// ── PackInstallationsModal ─────────────────────────────────────────────────────
+
+function PackInstallationsModal({ pack, onClose }) {
+  const [ownerships, setOwnerships] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    apiRequest(`/api/kitchen/catalog/packs/${pack.id}/admin-ownerships`)
+      .then((d) => setOwnerships(d.ownerships || []))
+      .catch((err) => setLoadError(err.message || "Error al cargar."))
+      .finally(() => setLoading(false));
+  }, [pack.id]);
+
+  const installed = ownerships.filter((o) => o.isInstalled).length;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ background: "var(--modal-bg, #fff)", border: "1px solid var(--modal-border, transparent)", borderRadius: 12, width: 740, maxWidth: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "88vh", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "18px 24px 14px", borderBottom: "1px solid var(--hf-border, #e5e7eb)", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Instalaciones — {pack.title}</h3>
+            <p style={{ margin: "5px 0 0", fontSize: 12, color: "#6b7280", display: "flex", gap: 10 }}>
+              <span><strong style={{ color: "#374151" }}>{ownerships.length}</strong> hogar(es) con acceso</span>
+              {installed > 0 && <span><strong style={{ color: "#16a34a" }}>{installed}</strong> instalado(s)</span>}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} style={{ ...ABT.cancel, padding: "4px 12px", flexShrink: 0 }}>✕ Cerrar</button>
+        </div>
+        <div style={{ overflowY: "auto", flex: 1, padding: "14px 24px 20px" }}>
+          {loading ? (
+            <p className="kitchen-muted">Cargando...</p>
+          ) : loadError ? (
+            <div className="kitchen-alert error">{loadError}</div>
+          ) : ownerships.length === 0 ? (
+            <p className="kitchen-muted">Ningún hogar tiene este pack aún.</p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="kitchen-table">
+                <thead>
+                  <tr>
+                    <th>Hogar</th>
+                    <th style={{ fontSize: 11 }}>Email dueño</th>
+                    <th style={{ textAlign: "center" }}>Plan</th>
+                    <th style={{ textAlign: "center" }}>Vía</th>
+                    <th style={{ textAlign: "center" }}>Estado</th>
+                    <th style={{ textAlign: "center" }}>Adquirido</th>
+                    <th style={{ textAlign: "center" }}>Instalado</th>
+                    <th style={{ textAlign: "center" }}>Actividad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ownerships.map((o) => (
+                    <tr key={String(o.householdId)}>
+                      <td style={{ fontWeight: 600, fontSize: 13, maxWidth: 180, wordBreak: "break-word" }}>{o.householdName}</td>
+                      <td style={{ fontSize: 11, color: "#6b7280", maxWidth: 160, wordBreak: "break-word" }}>{o.ownerEmail || "—"}</td>
+                      <td style={{ textAlign: "center" }}><PlanBadge plan={o.subscriptionPlan} /></td>
+                      <td style={{ textAlign: "center" }}>
+                        <span style={{ fontSize: 10, background: "#f1f5f9", color: "#475569", borderRadius: 4, padding: "1px 6px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{o.acquiredVia}</span>
+                      </td>
+                      <td style={{ textAlign: "center", fontSize: 11, whiteSpace: "nowrap" }}>
+                        {o.isInstalled
+                          ? <span style={{ color: "#16a34a", fontWeight: 700 }}>● instalado</span>
+                          : <span style={{ color: "#94a3b8" }}>○ adquirido</span>}
+                      </td>
+                      <td style={{ textAlign: "center", fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" }}>
+                        {formatDaysSince(o.acquiredAt) || "—"}
+                      </td>
+                      <td style={{ textAlign: "center", fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" }}>
+                        {o.installedAt ? (formatDaysSince(o.installedAt) || "—") : "—"}
+                      </td>
+                      <td style={{ textAlign: "center", fontSize: 11, color: o.lastMeaningfulActivityAt ? "#374151" : "#94a3b8", whiteSpace: "nowrap" }}>
+                        {formatDaysSince(o.lastMeaningfulActivityAt) || "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HouseholdControlCenter({ household, onClose, onNavigate, onRefresh }) {
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!household?.id) return;
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest(`/api/admin/households/${household.id}/control-center`);
+      setDetail(data);
+    } catch (err) {
+      setError(err.message || "No se pudo cargar el hogar.");
+    } finally {
+      setLoading(false);
+    }
+  }, [household?.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const copyText = async (text, label = "Copiado") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setMsg(label);
+      setTimeout(() => setMsg(""), 2500);
+    } catch {
+      setMsg("No se pudo copiar.");
+    }
+  };
+
+  const runAction = async (type, extra = {}) => {
+    if (!household?.id) return;
+    setSaving(true);
+    setMsg("");
+    setError("");
+    try {
+      if (type === "assign-onboarding") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/assign`, { method: "POST" });
+        setMsg("Onboarding asignado.");
+      } else if (type === "reset-onboarding") {
+        const reason = window.prompt("Razon del reset (opcional):") || "";
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/reset`, { method: "POST", body: JSON.stringify({ reason }) });
+        setMsg("Onboarding reseteado.");
+      } else if (type === "enable-onboarding") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/status`, { method: "POST", body: JSON.stringify({ status: "active" }) });
+        setMsg("Onboarding activado.");
+      } else if (type === "disable-onboarding") {
+        if (!window.confirm("Desactivar onboarding para este hogar?")) return;
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/status`, { method: "POST", body: JSON.stringify({ status: "disabled" }) });
+        setMsg("Onboarding desactivado.");
+      } else if (type === "reset-weekly") {
+        if (!window.confirm("Resetear el progreso semanal actual?")) return;
+        await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/reset`, { method: "POST" });
+        setMsg("Progreso semanal reseteado.");
+      } else if (type === "reset-cycle") {
+        if (!window.confirm("¿Reset completo? Se elimina TODO el progreso de retos, se borra Beta Pro (si activo) y el plan vuelve a Basic. Los planes Stripe de pago NO se tocan.")) return;
+        const data = await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/reset-cycle`, { method: "POST" });
+        if (data.ok === false) {
+          setMsg(`Reset bloqueado: ${data.reason || "error"}`);
+        } else {
+          setMsg(`Ciclo reiniciado.${data.betaProCleared ? " Beta Pro eliminado." : ""}`);
+        }
+      } else if (type === "set-cycle-week") {
+        await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/set-cycle-week`, { method: "POST", body: JSON.stringify({ week: extra.week }) });
+        setMsg(`Ciclo forzado a semana ${extra.week}.`);
+      } else if (type === "check-beta-pro") {
+        const data = await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/check-beta-pro`, { method: "POST" });
+        setMsg(`Beta Pro: ${data.betaPro?.result || "revisado"}.`);
+      } else if (type === "grant-beta-pro") {
+        await apiRequest(`/api/admin/beta-insights/${household.id}/grant-beta-pro`, { method: "POST", body: JSON.stringify({ daysFromNow: 30 }) });
+        setMsg("Beta Pro concedido 30 dias.");
+      } else if (type === "revoke-beta-pro") {
+        if (!window.confirm("Revocar Beta Pro? No se tocaran planes pagados.")) return;
+        await apiRequest(`/api/admin/beta-insights/${household.id}/revoke-beta-pro`, { method: "POST" });
+        setMsg("Beta Pro revocado.");
+      }
+      await load();
+      onRefresh?.();
+    } catch (err) {
+      setError(err.message || "No se pudo ejecutar la accion.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const h = detail?.household || household;
+  const debugSummary = detail?.debugSummary || {};
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(15,23,42,0.42)", display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ width: "min(980px, 100%)", height: "100%", overflow: "auto", background: "var(--bg-card, #fff)", boxShadow: "-20px 0 60px rgba(15,23,42,0.22)" }}>
+        <div style={{ position: "sticky", top: 0, zIndex: 1, background: "var(--bg-card, #fff)", borderBottom: "1px solid var(--hf-border, #e2e8f0)", padding: "16px 20px", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 21 }}>Gestionar hogar</h2>
+            <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <strong>{h.name || "Hogar"}</strong>
+              <ObjectIdChip id={h.objectId || h.id} onCopy={(value) => copyText(value, "ObjectId copiado.")} />
+              <PlanBadge plan={h.subscriptionPlan || h.plan || "basic"} />
+              {h.betaPro?.active ? <AdminPill tone="amber">Beta Pro</AdminPill> : null}
+              {h.paidPlanProtected ? <AdminPill tone="green">Pago protegido</AdminPill> : null}
+            </div>
+          </div>
+          <button type="button" style={ABT.cancel} onClick={onClose}>Cerrar</button>
+        </div>
+
+        <div style={{ padding: 20 }}>
+          {error ? <div className="kitchen-alert error">{error}</div> : null}
+          {msg ? <div className="kitchen-alert success">{msg}</div> : null}
+          {loading ? <p className="kitchen-muted">Cargando centro de control...</p> : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Overview</h3>
+                <table style={{ width: "100%", fontSize: 12 }}>
+                  <tbody>
+                    {[
+                      ["Plan source", h.planSource || "-"],
+                      ["Owner", h.ownerEmail || "-"],
+                      ["Creado", formatDateTime(h.createdAt)],
+                      ["Ultima actividad", formatDateTime(h.lastMeaningfulActivityAt)],
+                      ["Miembros", detail?.users?.length ?? household.memberCount ?? 0],
+                      ["Invite code", h.inviteCode || "-"]
+                    ].map(([k, v]) => (
+                      <tr key={k}><td style={{ color: "#64748b", padding: "4px 0" }}>{k}</td><td style={{ fontWeight: 700, textAlign: "right" }}>{String(v)}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Usuarios</h3>
+                <p className="kitchen-muted">{detail?.users?.length || 0} usuarios en este hogar</p>
+                <div style={{ display: "grid", gap: 6, maxHeight: 155, overflow: "auto" }}>
+                  {(detail?.users || []).slice(0, 8).map((u) => (
+                    <div key={u.id} style={{ fontSize: 12, display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{u.email || u.displayName || u.id}</span>
+                      <AdminPill>{u.role || "member"}</AdminPill>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" style={{ ...ABT.edit, marginTop: 12 }} onClick={() => onNavigate("users", h)}>Ver usuarios</button>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Onboarding</h3>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                  <AdminPill tone={detail?.onboarding?.status === "completed" ? "green" : "amber"}>{detail?.onboarding?.status || "not_started"}</AdminPill>
+                  <AdminPill>{detail?.onboarding?.completedCount || 0} completados</AdminPill>
+                  <AdminPill>{detail?.onboarding?.totalBitesEarned || 0} bites</AdminPill>
+                </div>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                  <button type="button" style={ABT.green} disabled={saving} onClick={() => runAction("assign-onboarding")}>Asignar</button>
+                  <button type="button" style={ABT.edit} disabled={saving} onClick={() => runAction("reset-onboarding")}>Reset</button>
+                  <button type="button" style={ABT.edit} disabled={saving} onClick={() => runAction("enable-onboarding")}>Activar</button>
+                  <button type="button" style={ABT.del} disabled={saving} onClick={() => runAction("disable-onboarding")}>Desactivar</button>
+                  <button type="button" style={ABT.edit} onClick={() => onNavigate("onboarding", h)}>Abrir tools</button>
+                </div>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Retos semanales</h3>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                  <AdminPill tone="indigo">Ciclo {detail?.weekly?.cycleState?.cycleWeekIndex || "-"}</AdminPill>
+                  <AdminPill>{detail?.weekly?.progress?.[0]?.completedCount || 0} retos semana</AdminPill>
+                  {detail?.weekly?.progress?.[0]?.weekRandomized ? <AdminPill tone="green">Semana randomizada</AdminPill> : null}
+                </div>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                  <button type="button" style={ABT.edit} disabled={saving} onClick={() => onNavigate("weekly", h)}>Ver progreso</button>
+                  <button type="button" style={ABT.del} disabled={saving} onClick={() => runAction("reset-weekly")}>Reset progreso</button>
+                  <button type="button" style={ABT.del} disabled={saving} onClick={() => runAction("reset-cycle")}>Reset completo</button>
+                  {[1, 2, 3, 4].map((week) => (
+                    <button key={week} type="button" style={ABT.edit} disabled={saving} onClick={() => runAction("set-cycle-week", { week })}>Forzar {week}</button>
+                  ))}
+                </div>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Beta Pro</h3>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                  <AdminPill tone={detail?.betaPro?.active ? "green" : "slate"}>{detail?.betaPro?.active ? "Concedido" : "No activo"}</AdminPill>
+                  <AdminPill tone={detail?.betaPro?.eligible ? "green" : "amber"}>{detail?.betaPro?.eligibilityResult || "sin evaluacion"}</AdminPill>
+                </div>
+                <p className="kitchen-muted" style={{ marginTop: 0 }}>Expira: {formatDateTime(detail?.betaPro?.expiresAt)}</p>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                  <button type="button" style={ABT.save} disabled={saving} onClick={() => runAction("check-beta-pro")}>Reevaluar</button>
+                  <button type="button" style={ABT.green} disabled={saving || h.paidPlanProtected} onClick={() => runAction("grant-beta-pro")}>Grant 30d</button>
+                  <button type="button" style={ABT.del} disabled={saving || h.paidPlanProtected} onClick={() => runAction("revoke-beta-pro")}>Revocar</button>
+                </div>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Actividad</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, fontSize: 12 }}>
+                  <div><strong>{detail?.planningWeeks?.length || 0}</strong><br />semanas recientes</div>
+                  <div><strong>{detail?.shoppingActivity?.reduce((n, x) => n + (x.itemsCount || 0), 0) || 0}</strong><br />items lista</div>
+                  <div><strong>{detail?.packs?.length || 0}</strong><br />packs</div>
+                  <div><strong>{detail?.biteLedger?.length || 0}</strong><br />movimientos bites</div>
+                </div>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 12 }}>
+                  <button type="button" style={ABT.edit} onClick={() => onNavigate("insights", h)}>Beta Insights</button>
+                  <button type="button" style={ABT.edit} onClick={() => onNavigate("catalog_packs", h)}>Catalogo</button>
+                  <button type="button" style={ABT.edit} onClick={() => onNavigate("bites_economy", h)}>Bites</button>
+                </div>
+              </Card>
+
+              <Card>
+                <h3 style={{ marginTop: 0 }}>Advanced</h3>
+                <button type="button" style={ABT.edit} onClick={() => copyText(JSON.stringify(debugSummary, null, 2), "Debug summary copiado.")}>Copiar debug summary</button>
+                <pre style={{ marginTop: 10, maxHeight: 180, overflow: "auto", fontSize: 11, background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: 10 }}>
+                  {JSON.stringify(debugSummary, null, 2)}
+                </pre>
+              </Card>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HouseholdRow({ household, activeHouseholdId, onSetActive, onChangePlan, onOpenPacks, onOpenDetails, onCopyId }) {
+  const [localPlan, setLocalPlan] = useState(household.subscriptionPlan || "basic");
+  const [saving, setSaving] = useState(false);
+  const [rowError, setRowError] = useState("");
+
+  useEffect(() => {
+    setLocalPlan(household.subscriptionPlan || "basic");
+  }, [household.subscriptionPlan]);
+
+  const isActive = String(household.id) === String(activeHouseholdId || "");
+
+  const applyPlan = async (plan) => {
+    setSaving(true);
+    setRowError("");
+    try {
+      await onChangePlan(household.id, plan);
+      if (plan !== "off") setLocalPlan(plan);
+    } catch (err) {
+      setRowError(err.message || "Error al cambiar plan");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const downgradeDate = household.pendingDowngradeAt
+    ? new Date(household.pendingDowngradeAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })
+    : null;
+
+  const planContent = (
+    <div style={{ padding: "10px 14px 12px" }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Cambiar plan</div>
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <select
+          className="kitchen-select"
+          style={{ fontSize: 12, padding: "3px 6px", flex: 1 }}
+          value={localPlan}
+          disabled={saving}
+          onChange={(e) => setLocalPlan(e.target.value)}
+        >
+          {PLANS.map((p) => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <button
+          type="button"
+          style={{ ...ABT.save, fontSize: 11, padding: "4px 10px", opacity: (saving || localPlan === (household.subscriptionPlan || "basic")) ? 0.55 : 1 }}
+          disabled={saving || localPlan === (household.subscriptionPlan || "basic")}
+          onClick={() => applyPlan(localPlan)}
+        >
+          {saving ? "..." : "Aplicar"}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <tr style={{ background: isActive ? "rgba(99,102,241,0.06)" : undefined }}>
+      <td style={{ fontWeight: isActive ? 700 : 400 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          {household.name}
+          {isActive ? <span style={{ fontSize: 11, color: "#6366f1" }}>● activo</span> : null}
+          {downgradeDate ? (
+            <span title={household.pendingDowngradeReason || "Sin motivo"} style={{
+              fontSize: 10, padding: "1px 6px", borderRadius: 999,
+              background: "#fef9c3", border: "1px solid #fbbf24", color: "#92400e",
+              cursor: "help", fontWeight: 600, whiteSpace: "nowrap"
+            }}>
+              ↓ cancela {downgradeDate}
+            </span>
+          ) : null}
+        </div>
+        {household.inviteCode ? (
+          <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: "monospace", marginTop: 2 }}>
+            codigo corto: {household.inviteCode}
+          </div>
+        ) : null}
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 3 }}>
+          {household.ownerEmail || "Sin owner visible"} · creado {formatDaysSince(household.createdAt) || "-"}
+        </div>
+        {household.pendingDowngradeReason ? (
+          <div style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic", marginTop: 2, maxWidth: 260 }}>
+            "{household.pendingDowngradeReason}"
+          </div>
+        ) : null}
+      </td>
+      <td>
+        <ObjectIdChip id={household.objectId || household.id} onCopy={onCopyId} />
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+          <PlanBadge plan={localPlan} />
+          {household.planSource === "beta_pro" || household.betaPro?.active ? (
+            <span style={{
+              fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em",
+              padding: "1px 6px", borderRadius: 999,
+              background: household.betaPro?.active ? "#fef3c7" : "#f3f4f6",
+              color: household.betaPro?.active ? "#92400e" : "#9ca3af",
+              border: `1px solid ${household.betaPro?.active ? "#fde68a" : "#e5e7eb"}`,
+              whiteSpace: "nowrap"
+            }}>
+              {household.betaPro?.active ? "⭐ Pro Beta" : "Pro Beta (exp.)"}
+            </span>
+          ) : null}
+        </div>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center" }}>
+          <StatusBadge status={household.subscriptionStatus} />
+          <AdminPill tone={household.onboardingStatus === "completed" ? "green" : "amber"}>
+            onboarding {household.onboardingStatus || "not_started"}
+          </AdminPill>
+          <AdminPill tone={household.weeklyStatus?.active ? "indigo" : "slate"}>
+            retos {household.weeklyStatus?.completedCount || 0}
+          </AdminPill>
+        </div>
+      </td>
+      <td style={{ textAlign: "center" }}>{household.memberCount || 0}</td>
+      <td>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            style={{ fontSize: 12, padding: "4px 13px", borderRadius: 6, border: "none", background: "#0f172a", color: "#fff", cursor: "pointer", fontWeight: 600 }}
+            onClick={() => onOpenDetails(household)}
+          >
+            Gestionar hogar
+          </button>
+          <button
+            type="button"
+            style={{ fontSize: 12, padding: "4px 13px", borderRadius: 6, border: "none", background: "#4338ca", color: "#fff", cursor: "pointer", fontWeight: 600 }}
+            onClick={() => onOpenPacks(household)}
+          >
+            Packs
+          </button>
+          <ActionsMenu
+            items={[
+              {
+                label: isActive ? "Deseleccionar activo" : "Usar como activo",
+                highlight: !isActive,
+                onClick: () => onSetActive(isActive ? null : household.id)
+              },
+              { divider: true },
+              { key: "plan-change", content: planContent },
+              { divider: true },
+              {
+                label: "Desactivar suscripción",
+                danger: true,
+                disabled: saving,
+                onClick: () => applyPlan("off")
+              }
+            ]}
+          />
+        </div>
+        {rowError ? <div style={{ color: "red", fontSize: 12, marginTop: 2 }}>{rowError}</div> : null}
+      </td>
+    </tr>
+  );
+}
+
+function HouseholdsSection({ activeHouseholdId, onActiveHouseholdChange, onNavigateWithHousehold, onSetHouseholdContext }) {
+  const [households, setHouseholds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [packsModalHousehold, setPacksModalHousehold] = useState(null);
+  const [detailsHousehold, setDetailsHousehold] = useState(null);
+  const [copyMsg, setCopyMsg] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest("/api/admin/households");
+      setHouseholds(data.households || []);
+    } catch (err) {
+      setError(err.message || "No se pudieron cargar los hogares.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return households;
+    return households.filter((h) =>
+      (h.name || "").toLowerCase().includes(needle) ||
+      (h.id || "").toLowerCase().includes(needle) ||
+      (h.objectId || "").toLowerCase().includes(needle) ||
+      (h.inviteCode || "").toLowerCase().includes(needle) ||
+      (h.ownerEmail || "").toLowerCase().includes(needle)
+    );
+  }, [households, query]);
+
+  const copyId = async (value) => {
+    try {
+      await navigator.clipboard.writeText(String(value || ""));
+      setCopyMsg("ObjectId copiado.");
+      setTimeout(() => setCopyMsg(""), 2500);
+    } catch {
+      setCopyMsg("No se pudo copiar el ObjectId.");
+    }
+  };
+
+  const onChangePlan = async (householdId, plan) => {
+    if (plan === "off") {
+      const data = await apiRequest("/api/admin/subscription/deactivate", {
+        method: "POST",
+        body: JSON.stringify({ householdId })
+      });
+      setHouseholds((prev) => prev.map((h) =>
+        String(h.id) === String(householdId)
+          ? { ...h, subscriptionPlan: data.household.subscriptionPlan, subscriptionStatus: data.household.subscriptionStatus }
+          : h
+      ));
+    } else {
+      const data = await apiRequest("/api/admin/subscription/activate", {
+        method: "POST",
+        body: JSON.stringify({ householdId, plan })
+      });
+      setHouseholds((prev) => prev.map((h) =>
+        String(h.id) === String(householdId)
+          ? { ...h, subscriptionPlan: data.household.subscriptionPlan, subscriptionStatus: data.household.subscriptionStatus }
+          : h
+      ));
+    }
+  };
+
+  const onSetActive = async (householdId) => {
+    await apiRequest("/api/admin/active-household", {
+      method: "POST",
+      body: JSON.stringify({ activeHouseholdId: householdId || null })
+    });
+    onActiveHouseholdChange(householdId || null);
+  };
+
+  return (<>
+    <Card className="kitchen-block-gap">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <h2 className="kitchen-title-no-margin">Households</h2>
+          <p className="kitchen-muted">{households.length} hogares registrados</p>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <Input
+            id="hh-search"
+            placeholder="Buscar household..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            style={{ width: 200 }}
+          />
+          <Button variant="secondary" onClick={load} disabled={loading}>
+            {loading ? "..." : "Recargar"}
+          </Button>
+        </div>
+      </div>
+
+      {error ? <div className="kitchen-alert error">{error}</div> : null}
+      {copyMsg ? <div className="kitchen-alert success">{copyMsg}</div> : null}
+
+      {loading ? (
+        <p className="kitchen-muted">Cargando...</p>
+      ) : filtered.length === 0 ? (
+        <p className="kitchen-muted">No hay hogares.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="kitchen-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>ObjectId real</th>
+                <th style={{ textAlign: "center" }}>Plan</th>
+                <th style={{ textAlign: "center" }}>Estado</th>
+                <th style={{ textAlign: "center" }}>Miembros</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((h) => (
+                <HouseholdRow
+                  key={h.id}
+                  household={h}
+                  activeHouseholdId={activeHouseholdId}
+                  onSetActive={onSetActive}
+                  onChangePlan={onChangePlan}
+                  onOpenPacks={setPacksModalHousehold}
+                  onOpenDetails={(hh) => {
+                    setDetailsHousehold(hh);
+                    onSetHouseholdContext?.(hh);
+                  }}
+                  onCopyId={copyId}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+    {packsModalHousehold && (
+      <HouseholdPacksModal
+        household={packsModalHousehold}
+        onClose={() => setPacksModalHousehold(null)}
+      />
+    )}
+    {detailsHousehold && (
+      <HouseholdControlCenter
+        household={detailsHousehold}
+        onClose={() => setDetailsHousehold(null)}
+        onRefresh={load}
+        onNavigate={(nextTab, hh) => {
+          setDetailsHousehold(null);
+          onNavigateWithHousehold?.(nextTab, hh);
+        }}
+      />
+    )}
+  </>
+  );
+}
+
+function UsersSection({ householdContext, onClearHouseholdContext }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [onboardingMsg, setOnboardingMsg] = useState("");
+
+  useEffect(() => {
+    apiRequest("/api/admin/users")
+      .then((data) => setUsers(data.users || []))
+      .catch((err) => setError(err.message || "No se pudieron cargar usuarios."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    let list = users;
+    if (householdContext?.id) {
+      list = list.filter((u) => String(u.householdId || "") === String(householdContext.id));
+    }
+    if (!needle) return list;
+    return list.filter((u) =>
+      (u.email || "").toLowerCase().includes(needle) ||
+      (u.displayName || "").toLowerCase().includes(needle) ||
+      (u.householdId || "").toLowerCase().includes(needle)
+    );
+  }, [users, query, householdContext?.id]);
+
+  const onboardingAction = async (householdId, action) => {
+    if (!householdId) { setOnboardingMsg("Este usuario no tiene household asignado."); return; }
+    try {
+      if (action === "assign") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/assign`, { method: "POST" });
+        setOnboardingMsg("Onboarding asignado correctamente.");
+      } else if (action === "reset") {
+        const reason = window.prompt("Razón del reset (opcional):") || "";
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/reset`, { method: "POST", body: JSON.stringify({ reason }) });
+        setOnboardingMsg("Onboarding reseteado.");
+      } else if (action === "remove") {
+        if (!window.confirm("¿Desactivar onboarding para este usuario?")) return;
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/remove`, { method: "POST" });
+        setOnboardingMsg("Onboarding desactivado.");
+      }
+      setTimeout(() => setOnboardingMsg(""), 3000);
+    } catch (e) { setOnboardingMsg(`Error: ${e.message}`); }
+  };
+
+  return (
+    <Card className="kitchen-block-gap">
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <h2 className="kitchen-title-no-margin">Usuarios</h2>
+          <p className="kitchen-muted">{users.length} usuarios registrados</p>
+        </div>
+        <Input
+          id="user-search"
+          placeholder="Buscar usuario..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={{ width: 200 }}
+        />
+      </div>
+      {error ? <div className="kitchen-alert error">{error}</div> : null}
+      {onboardingMsg && (
+        <div style={{ padding: "6px 12px", background: "#f0fdf4", borderRadius: 6, fontSize: 12, color: "#15803d", marginBottom: 8 }}>
+          {onboardingMsg}
+        </div>
+      )}
+      {loading ? (
+        <p className="kitchen-muted">Cargando...</p>
+      ) : filtered.length === 0 ? (
+        <p className="kitchen-muted">Sin resultados.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="kitchen-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Global</th>
+                <th>Onboarding</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.displayName || "—"}</td>
+                  <td style={{ fontSize: 13, color: "#6b7280" }}>{u.email || "—"}</td>
+                  <td>{u.role || "member"}</td>
+                  <td>{u.globalRole || "—"}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" style={ABT.green} onClick={() => onboardingAction(u.householdId, "assign")} title="Asignar onboarding (fresh start)">Asignar</button>
+                      <button type="button" style={ABT.edit} onClick={() => onboardingAction(u.householdId, "reset")} title="Resetear progreso">Reset</button>
+                      <button type="button" style={ABT.del} onClick={() => onboardingAction(u.householdId, "remove")} title="Desactivar onboarding">Quitar</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function QuickSubscriptionPanel() {
+  const [householdId, setHouseholdId] = useState("");
+  const [plan, setPlan] = useState("pro");
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
+
+  const apply = async (e) => {
+    e.preventDefault();
+    if (!householdId.trim()) { setError("Introduce el ID del household."); return; }
+    setSaving(true);
+    setError("");
+    setResult(null);
+    try {
+      let data;
+      if (plan === "off") {
+        data = await apiRequest("/api/admin/subscription/deactivate", {
+          method: "POST",
+          body: JSON.stringify({ householdId: householdId.trim() })
+        });
+      } else {
+        data = await apiRequest("/api/admin/subscription/activate", {
+          method: "POST",
+          body: JSON.stringify({ householdId: householdId.trim(), plan })
+        });
+      }
+      setResult(data.household);
+    } catch (err) {
+      setError(err.message || "Error al aplicar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="kitchen-block-gap">
+      <h2 className="kitchen-title-no-margin">Cambio rápido de suscripción</h2>
+      <p className="kitchen-muted">Introduce el ID del household directamente si ya lo tienes.</p>
+      <form onSubmit={apply} className="kitchen-form kitchen-form-compact">
+        <div className="kitchen-grid">
+          <Input
+            id="quick-hh-id"
+            label="Household ID (MongoDB ObjectId)"
+            value={householdId}
+            onChange={(e) => setHouseholdId(e.target.value)}
+            placeholder="6649a..."
+          />
+          <label>
+            <span className="kitchen-label">Plan</span>
+            <select
+              className="kitchen-select"
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
+            >
+              {PLANS.map((p) => <option key={p} value={p}>{p}</option>)}
+              <option value="off">— desactivar</option>
+            </select>
+          </label>
+        </div>
+        {error ? <div className="kitchen-alert error">{error}</div> : null}
+        {result ? (
+          <div className="kitchen-alert success">
+            ✓ {result.name} → <strong>{result.subscriptionPlan}</strong> ({result.subscriptionStatus})
+          </div>
+        ) : null}
+        <div className="kitchen-actions">
+          <Button type="submit" disabled={saving}>{saving ? "Aplicando..." : "Aplicar"}</Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+// ─── Master Catalog ──────────────────────────────────────────────────────────
+
+function DishForm({ item, dishCategories, onSave, onCancel }) {
+  const isEdit = Boolean(item._id);
+
+  // ── Basic fields ────────────────────────────────────────────────────────────
+  const [form, setForm] = useState({
+    name: item.name || "",
+    active: item.active !== false,
+    isDinner: Boolean(item.isDinner),
+    special: Boolean(item.special),
+    allowRandom: item.allowRandom !== false,
+    dishCategoryId: item.dishCategoryId?._id || item.dishCategoryId || ""
+  });
+
+  // ── Dish-level ingredients (shopping list) ──────────────────────────────────
+  const [dishIngredients, setDishIngredients] = useState(
+    (item.ingredients || []).map((i) => ({
+      ingredientId: i.ingredientId,
+      displayName: i.displayName || i.name || "",
+      canonicalName: i.canonicalName || ""
+    }))
+  );
+  const [ingSearch, setIngSearch] = useState("");
+  const [ingResults, setIngResults] = useState([]);
+  const [ingSearching, setIngSearching] = useState(false);
+  const [showCreateIng, setShowCreateIng] = useState(false);
+  const [newIngName, setNewIngName] = useState("");
+  const [createIngErr, setCreateIngErr] = useState("");
+  const [creatingIng, setCreatingIng] = useState(false);
+  const ingDropdownRef = useRef(null);
+
+  // ── Recipe ──────────────────────────────────────────────────────────────────
+  const [showRecipe, setShowRecipe] = useState(false);
+  const [recipe, setRecipe] = useState({
+    ingredients: item.recipe?.ingredients || [],
+    // Prefer elaboration (legacy Tiptap preserved by migration); preserve structured array steps
+    steps: item.recipe?.elaboration ?? item.recipe?.steps ?? null,
+    baseServings: item.recipe?.baseServings ?? item.recipe?.servings ?? null,
+    servings: item.recipe?.baseServings ?? item.recipe?.servings ?? null,
+    prepMinutes: item.recipe?.prepMinutes ?? null,
+    cookMinutes: item.recipe?.cookMinutes ?? null,
+  });
+
+  // ── Save state ──────────────────────────────────────────────────────────────
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  // ── Ingredient search ───────────────────────────────────────────────────────
+  useEffect(() => {
+    const q = ingSearch.trim();
+    if (!q) { setIngResults([]); return; }
+    const t = setTimeout(async () => {
+      setIngSearching(true);
+      try {
+        const d = await apiRequest(`/api/kitchenIngredients?global=1&q=${encodeURIComponent(q)}&limit=10`);
+        setIngResults(d.ingredients || []);
+      } catch { setIngResults([]); } finally { setIngSearching(false); }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [ingSearch]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const h = (e) => {
+      if (ingDropdownRef.current && !ingDropdownRef.current.contains(e.target)) setIngSearch("");
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const addIngredient = (ing) => {
+    const name = ing.displayName || ing.canonicalName;
+    if (dishIngredients.some((i) => (i.displayName || "").toLowerCase() === name.toLowerCase())) return;
+    setDishIngredients((prev) => [...prev, {
+      ingredientId: ing._id,
+      displayName: name,
+      canonicalName: ing.canonicalName || name.toLowerCase()
+    }]);
+    setIngSearch(""); setIngResults([]);
+  };
+
+  const createAndAdd = async () => {
+    if (!newIngName.trim() || creatingIng) return;
+    setCreatingIng(true); setCreateIngErr("");
+    try {
+      const d = await apiRequest("/api/kitchenIngredients", {
+        method: "POST",
+        body: JSON.stringify({ name: newIngName.trim(), scope: "master" })
+      });
+      const ing = d.ingredient;
+      addIngredient({ _id: ing._id, displayName: ing.displayName || ing.canonicalName, canonicalName: ing.canonicalName });
+      setNewIngName(""); setShowCreateIng(false);
+    } catch (err) { setCreateIngErr(err.message || "Error al crear."); }
+    finally { setCreatingIng(false); }
+  };
+
+  // ── Submit ──────────────────────────────────────────────────────────────────
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
+    if (Array.isArray(recipe.steps)) {
+      if (recipe.steps.some((s) => !String(s.text || "").trim())) {
+        setError("Todos los pasos deben tener instrucción."); return;
+      }
+      if (recipe.steps.some((s) => s.hasTimer && !(s.durationSeconds > 0))) {
+        setError("Los pasos con temporizador deben tener una duración válida (minutos > 0)."); return;
+      }
+    }
+    setSaving(true); setError("");
+    try {
+      await onSave({
+        _id: item._id,
+        ...form,
+        ingredients: dishIngredients,
+        recipe: { ...recipe, baseServings: recipe.servings || recipe.baseServings || null }
+      });
+    } catch (err) { setError(err.message || "Error al guardar."); }
+    finally { setSaving(false); }
+  };
+
+  const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+  const dishIngredientNames = dishIngredients.map((i) => (i.displayName || "").toLowerCase());
+
+  return (
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 14px", fontSize: 15, color: "var(--input-text, #1e293b)", fontWeight: 700 }}>
+        {isEdit ? `✏️ Editar: ${item.name}` : "➕ Nuevo plato master"}
+      </h4>
+      <form onSubmit={handleSubmit}>
+
+        {/* ── Basic info ── */}
+        <div style={{ background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8, padding: 14, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Información básica</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "flex-end" }}>
+            <div style={{ flex: "1 1 200px" }}>
+              <Input id="df-name" label="Nombre" value={form.name} onChange={set("name")} required />
+            </div>
+            <div style={{ flex: "1 1 160px" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <span className="kitchen-label">Categoría de plato</span>
+                <select className="kitchen-select" value={form.dishCategoryId} onChange={set("dishCategoryId")}>
+                  <option value="">Sin categoría</option>
+                  {dishCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+                </select>
+              </label>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 13 }}>
+            {[
+              ["active", "Activo"],
+              ["isDinner", "Es cena"],
+              ["special", "Especial (no random)"],
+              ["allowRandom", "Permitir random"]
+            ].map(([key, label]) => (
+              <label key={key} style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer", color: "#374151" }}>
+                <input type="checkbox" checked={Boolean(form[key])} onChange={set(key)} />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Dish ingredients ── */}
+        <div style={{ background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8, padding: 14, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            Ingredientes del plato <span style={{ fontWeight: 400, color: "var(--input-text, #9ca3af)", opacity: 0.55, fontSize: 11 }}>(lista de la compra)</span>
+          </div>
+
+          {/* Chips */}
+          {dishIngredients.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+              {dishIngredients.map((ing, idx) => (
+                <span key={idx} style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  background: "#eff6ff", border: "1px solid #bfdbfe",
+                  color: "#1d4ed8", borderRadius: 999, padding: "3px 10px", fontSize: 12, fontWeight: 500
+                }}>
+                  {ing.displayName}
+                  <button
+                    type="button"
+                    onClick={() => setDishIngredients((prev) => prev.filter((_, i) => i !== idx))}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#93c5fd", padding: 0, marginLeft: 2, fontSize: 15, lineHeight: 1 }}
+                  >×</button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Search */}
+          <div ref={ingDropdownRef} style={{ position: "relative" }}>
+            <input
+              type="text"
+              value={ingSearch}
+              onChange={(e) => { setIngSearch(e.target.value); setShowCreateIng(false); }}
+              placeholder="🔍 Buscar ingrediente para añadir..."
+              style={{ width: "100%", boxSizing: "border-box", padding: "7px 11px", fontSize: 13, borderRadius: 6, border: "1px solid var(--input-border, #d1d5db)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)", outline: "none" }}
+            />
+            {ingSearch.trim() && (
+              <div style={{
+                position: "absolute", top: "100%", left: 0, right: 0, marginTop: 2,
+                background: "var(--dropdown-bg, #fff)", border: "1px solid var(--hf-border, #e5e7eb)", borderRadius: 8,
+                boxShadow: "0 6px 20px rgba(0,0,0,0.12)", zIndex: 50, maxHeight: 200, overflowY: "auto"
+              }}>
+                {ingSearching && <div style={{ padding: "10px 14px", fontSize: 12, color: "#9ca3af" }}>Buscando...</div>}
+                {!ingSearching && ingResults.map((ing) => (
+                  <button
+                    key={ing._id}
+                    type="button"
+                    onMouseDown={() => addIngredient(ing)}
+                    style={{ width: "100%", textAlign: "left", padding: "8px 14px", border: "none", background: "none", cursor: "pointer", fontSize: 13, color: "#1e293b", display: "block" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "#f1f5f9"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+                  >
+                    {ing.displayName || ing.canonicalName}
+                  </button>
+                ))}
+                {!ingSearching && ingResults.length === 0 && (
+                  <div style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>Sin resultados</span>
+                    <button
+                      type="button"
+                      onMouseDown={() => { setShowCreateIng(true); setNewIngName(ingSearch.trim()); setIngSearch(""); setIngResults([]); }}
+                      style={ABT.green}
+                    >+ Crear "{ingSearch.trim()}"</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Create inline form */}
+          {showCreateIng && (
+            <div style={{ marginTop: 8, display: "flex", gap: 6, alignItems: "center", padding: 10, background: "#f0fdf4", borderRadius: 6, border: "1px solid #86efac" }}>
+              <input
+                type="text"
+                value={newIngName}
+                onChange={(e) => setNewIngName(e.target.value)}
+                placeholder="Nombre del ingrediente"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createAndAdd(); } }}
+                style={{ flex: 1, padding: "5px 8px", fontSize: 13, borderRadius: 5, border: "1px solid #d1d5db", outline: "none" }}
+              />
+              <button type="button" onClick={createAndAdd} disabled={creatingIng || !newIngName.trim()}
+                style={{ ...ABT.save, padding: "5px 12px", fontSize: 12, background: "#16a34a" }}>
+                {creatingIng ? "..." : "Crear y añadir"}
+              </button>
+              <button type="button" onClick={() => setShowCreateIng(false)}
+                style={{ ...ABT.del, padding: "5px 10px" }}>✕</button>
+              {createIngErr && <span style={{ fontSize: 11, color: "#dc2626" }}>{createIngErr}</span>}
+            </div>
+          )}
+        </div>
+
+        {/* ── Recipe ── */}
+        <div style={{ marginBottom: 14 }}>
+          <button
+            type="button"
+            onClick={() => setShowRecipe((v) => !v)}
+            style={{
+              fontSize: 13, fontWeight: 600, color: showRecipe ? "#3730a3" : "#4338ca",
+              background: showRecipe ? "#e0e7ff" : "#eef2ff",
+              border: "1px solid #c7d2fe", borderRadius: 7,
+              padding: "7px 16px", cursor: "pointer",
+              width: "100%", textAlign: "left"
+            }}
+          >
+            {showRecipe ? "▲ Ocultar elaboración" : "▼ Editar elaboración"}
+            {(item.recipe?.elaboration || item.recipe?.steps || (item.recipe?.ingredients?.length > 0)) && (
+              <span style={{ marginLeft: 8, fontSize: 11, background: "#818cf8", color: "#fff", borderRadius: 4, padding: "1px 6px" }}>tiene elaboración</span>
+            )}
+          </button>
+
+          {showRecipe && (
+            <div style={{ background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: "0 0 8px 8px", padding: 14, borderTop: "none" }}>
+              <RecipeEditor
+                recipeIngredients={recipe.ingredients || []}
+                recipeSteps={recipe.steps}
+                recipeServings={recipe.servings}
+                recipeBaseServings={recipe.baseServings}
+                recipePrepMinutes={recipe.prepMinutes}
+                recipeCookMinutes={recipe.cookMinutes}
+                dishIngredientNames={dishIngredientNames}
+                dishIngredients={dishIngredients.map((i) => ({
+                  name: i.displayName || i.canonicalName || "",
+                  ingredientId: i.ingredientId || null,
+                }))}
+                onAddIngredientToDish={(name) => {
+                  if (!name) return;
+                  if (dishIngredients.some((i) => (i.displayName || "").toLowerCase() === name.toLowerCase())) return;
+                  setDishIngredients((prev) => [...prev, { displayName: name, canonicalName: name.toLowerCase() }]);
+                }}
+                onChange={setRecipe}
+                readOnly={false}
+              />
+              {(recipe.ingredients || []).length > 0 ? (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--hf-border, #e2e8f0)" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>
+                    Vista previa
+                  </div>
+                  <RecipeEditor
+                    recipeIngredients={recipe.ingredients || []}
+                    recipeSteps={recipe.steps}
+                    recipeServings={recipe.servings}
+                    recipeBaseServings={recipe.servings || recipe.baseServings}
+                    targetServings={recipe.servings}
+                    readOnly
+                  />
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
+
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 10 }}>{error}</div> : null}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="submit" disabled={saving} style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear"}
+          </button>
+          <button type="button" onClick={onCancel} style={ABT.cancel}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function MasterDishesPanel({ dishCategories }) {
+  const [dishes, setDishes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [editItem, setEditItem] = useState(null);
+  const [search, setSearch] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest("/api/kitchen/dishes?global=1&includeInactive=true");
+      setDishes(data.dishes || []);
+    } catch (err) {
+      setError(err.message || "Error al cargar.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return q ? dishes.filter((d) => d.name.toLowerCase().includes(q)) : dishes;
+  }, [dishes, search]);
+
+  const handleSave = async (form) => {
+    const body = {
+      name: form.name,
+      scope: "master",
+      active: form.active,
+      isDinner: form.isDinner,
+      special: form.special,
+      allowRandom: form.allowRandom,
+      dishCategoryId: form.dishCategoryId || null,
+      ingredients: (form.ingredients || []).map((i) => ({
+        displayName: i.displayName || i.name || "",
+        canonicalName: i.canonicalName || (i.displayName || i.name || "").toLowerCase(),
+        ...(i.ingredientId ? { ingredientId: i.ingredientId } : {})
+      }))
+    };
+
+    let dishId = form._id;
+    if (form._id) {
+      const result = await apiRequest(`/api/kitchen/dishes/${form._id}`, { method: "PUT", body: JSON.stringify(body) });
+      dishId = result.dish?._id || form._id;
+    } else {
+      const result = await apiRequest("/api/kitchen/dishes", { method: "POST", body: JSON.stringify(body) });
+      dishId = result.dish?._id;
+    }
+
+    // Save recipe separately via /recipe endpoint
+    if (form.recipe && dishId) {
+      await apiRequest(`/api/kitchen/dishes/${dishId}/recipe`, {
+        method: "PUT",
+        body: JSON.stringify(form.recipe)
+      });
+    }
+
+    setEditItem(null);
+    await load();
+  };
+
+  const handleDelete = async (dish) => {
+    if (!window.confirm(`¿Eliminar "${dish.name}"? Se ocultará para todos los hogares.`)) return;
+    setDeletingId(dish._id);
+    try {
+      await apiRequest(`/api/kitchen/dishes/${dish._id}`, { method: "DELETE" });
+      await load();
+    } catch (err) {
+      setError(err.message || "Error al eliminar.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+        <Input
+          id="dish-search"
+          placeholder="Buscar..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ width: 200, fontSize: 13 }}
+        />
+        <button type="button" style={{ ...ABT.save, padding: "6px 14px", fontSize: 13 }} onClick={() => setEditItem({})}>
+          + Nuevo plato
+        </button>
+        <button type="button" style={ABT.edit} onClick={load} disabled={loading}>
+          {loading ? "..." : "↺ Recargar"}
+        </button>
+      </div>
+
+      {editItem !== null && (
+        <DishForm
+          item={editItem}
+          dishCategories={dishCategories}
+          onSave={handleSave}
+          onCancel={() => setEditItem(null)}
+        />
+      )}
+
+      {error ? <div className="kitchen-alert error">{error}</div> : null}
+
+      {loading ? <p className="kitchen-muted">Cargando...</p> : filtered.length === 0 ? (
+        <p className="kitchen-muted">No hay platos master.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="kitchen-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th style={{ textAlign: "center" }}>Activo</th>
+                <th style={{ textAlign: "center" }}>Cena</th>
+                <th style={{ textAlign: "center" }}>Special</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((dish) => (
+                <tr key={dish._id} style={{ opacity: dish.active === false ? 0.5 : 1 }}>
+                  <td style={{ fontWeight: 500 }}>{dish.name}</td>
+                  <td style={{ fontSize: 12, color: "#6b7280" }}>{dish.dishCategoryId?.name || "—"}</td>
+                  <td style={{ textAlign: "center" }}>{dish.active !== false ? "✓" : "✗"}</td>
+                  <td style={{ textAlign: "center" }}>{dish.isDinner ? "✓" : "—"}</td>
+                  <td style={{ textAlign: "center" }}>{dish.special ? "★" : "—"}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" style={ABT.edit} onClick={() => setEditItem(dish)}>Editar</button>
+                      <button
+                        type="button"
+                        style={{ ...ABT.del, opacity: deletingId === dish._id ? 0.6 : 1 }}
+                        disabled={deletingId === dish._id}
+                        onClick={() => handleDelete(dish)}
+                      >
+                        {deletingId === dish._id ? "..." : "Eliminar"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="kitchen-muted" style={{ fontSize: 12, marginTop: 6 }}>{filtered.length} resultado{filtered.length !== 1 ? "s" : ""}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IngredientForm({ item, ingredientCategories, onSave, onCancel }) {
+  const isEdit = Boolean(item._id);
+  const [form, setForm] = useState({
+    name: item.name || "",
+    active: item.active !== false,
+    categoryId: item.categoryId?._id || item.categoryId || ""
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
+    setSaving(true);
+    setError("");
+    try {
+      await onSave({ _id: item._id, ...form });
+    } catch (err) {
+      setError(err.message || "Error al guardar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+
+  return (
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 12px", fontSize: 14, color: "var(--input-text, #1e293b)" }}>
+        {isEdit ? `Editar: ${item.name}` : "Nuevo ingrediente master"}
+      </h4>
+      <form onSubmit={handleSubmit}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, alignItems: "flex-end" }}>
+          <div style={{ flex: "1 1 200px" }}>
+            <Input id="if-name" label="Nombre" value={form.name} onChange={set("name")} required />
+          </div>
+          <div style={{ flex: "1 1 160px" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <span className="kitchen-label">Categoría</span>
+              <select className="kitchen-select" value={form.categoryId} onChange={set("categoryId")}>
+                <option value="">Sin categoría</option>
+                {ingredientCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+              </select>
+            </label>
+          </div>
+          <label style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 13, cursor: "pointer", paddingBottom: 4 }}>
+            <input type="checkbox" checked={Boolean(form.active)} onChange={set("active")} />
+            Activo
+          </label>
+        </div>
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 8 }}>{error}</div> : null}
+        <div style={{ display: "flex", gap: 6 }}>
+          <button type="submit" disabled={saving} style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear"}
+          </button>
+          <button type="button" onClick={onCancel} style={ABT.cancel}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function MasterIngredientsPanel({ ingredientCategories }) {
+  const [ingredients, setIngredients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [editItem, setEditItem] = useState(null);
+  const [search, setSearch] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest(`/api/kitchenIngredients?global=1&limit=0${search.trim() ? `&q=${encodeURIComponent(search.trim())}` : ""}`);
+      setIngredients(data.ingredients || []);
+    } catch (err) {
+      setError(err.message || "Error al cargar.");
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
+
+  useEffect(() => {
+    const t = setTimeout(() => load(), 250);
+    return () => clearTimeout(t);
+  }, [load]);
+
+  const handleSave = async (form) => {
+    if (form._id) {
+      await apiRequest(`/api/kitchenIngredients/${form._id}`, {
+        method: "PUT",
+        body: JSON.stringify({ name: form.name, categoryId: form.categoryId || undefined, active: form.active })
+      });
+    } else {
+      await apiRequest("/api/kitchenIngredients", {
+        method: "POST",
+        body: JSON.stringify({ name: form.name, categoryId: form.categoryId || undefined, scope: "master" })
+      });
+    }
+    setEditItem(null);
+    await load();
+  };
+
+  const handleDelete = async (ingredient) => {
+    if (!window.confirm(`¿Eliminar "${ingredient.name}"? Se desactivará para todos los hogares.`)) return;
+    setDeletingId(ingredient._id);
+    try {
+      await apiRequest(`/api/kitchenIngredients/${ingredient._id}`, { method: "DELETE" });
+      await load();
+    } catch (err) {
+      setError(err.message || "Error al eliminar.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+        <Input
+          id="ing-search"
+          placeholder="Buscar ingrediente..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ width: 220, fontSize: 13 }}
+        />
+        <button type="button" style={{ ...ABT.save, padding: "6px 14px", fontSize: 13 }} onClick={() => setEditItem({})}>+ Nuevo ingrediente</button>
+        <button type="button" style={ABT.edit} onClick={load} disabled={loading}>{loading ? "..." : "↺ Recargar"}</button>
+      </div>
+
+      {editItem !== null && (
+        <IngredientForm
+          item={editItem}
+          ingredientCategories={ingredientCategories}
+          onSave={handleSave}
+          onCancel={() => setEditItem(null)}
+        />
+      )}
+
+      {error ? <div className="kitchen-alert error">{error}</div> : null}
+
+      {loading ? <p className="kitchen-muted">Cargando...</p> : ingredients.length === 0 ? (
+        <p className="kitchen-muted">No hay ingredientes master{search.trim() ? " con ese criterio" : ""}.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="kitchen-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th style={{ textAlign: "center" }}>Activo</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ingredients.map((ing) => (
+                <tr key={ing._id} style={{ opacity: ing.active === false ? 0.45 : 1 }}>
+                  <td style={{ fontWeight: 500 }}>{ing.name}</td>
+                  <td style={{ fontSize: 12, color: "#6b7280" }}>{ing.categoryId?.name || "—"}</td>
+                  <td style={{ textAlign: "center" }}>{ing.active !== false ? "✓" : "✗"}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" style={ABT.edit} onClick={() => setEditItem(ing)}>Editar</button>
+                      <button
+                        type="button"
+                        style={{ ...ABT.del, opacity: deletingId === ing._id ? 0.6 : 1 }}
+                        disabled={deletingId === ing._id}
+                        onClick={() => handleDelete(ing)}
+                      >
+                        {deletingId === ing._id ? "..." : "Eliminar"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="kitchen-muted" style={{ fontSize: 12, marginTop: 6 }}>{ingredients.length} ingrediente{ingredients.length !== 1 ? "s" : ""}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MasterCatalogSection() {
+  const [subTab, setSubTab] = useState("dishes");
+  const [dishCategories, setDishCategories] = useState([]);
+  const [ingredientCategories, setIngredientCategories] = useState([]);
+
+  useEffect(() => {
+    apiRequest("/api/kitchen/dish-categories")
+      .then((d) => setDishCategories(d.categories || []))
+      .catch(() => {});
+    apiRequest("/api/categories")
+      .then((d) => setIngredientCategories(d.categories || []))
+      .catch(() => {});
+  }, []);
+
+  const subTabs = [
+    { key: "dishes", label: "Platos" },
+    { key: "ingredients", label: "Productos" }
+  ];
+
+  return (
+    <Card className="kitchen-block-gap">
+      <div style={{ marginBottom: 16 }}>
+        <h2 className="kitchen-title-no-margin">Catálogo Master</h2>
+        <p className="kitchen-muted">Platos y productos que aparecen en todos los hogares. Los cambios aquí afectan a todo el mundo.</p>
+      </div>
+
+      <div style={{
+        display: "inline-flex", background: "#f1f5f9", borderRadius: 8, padding: 3, gap: 2, marginBottom: 20
+      }}>
+        {subTabs.map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setSubTab(key)}
+            style={{
+              padding: "5px 16px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+              background: subTab === key ? "#fff" : "transparent",
+              color: subTab === key ? "#1e293b" : "#64748b",
+              boxShadow: subTab === key ? "0 1px 3px rgba(0,0,0,0.1)" : "none"
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {subTab === "dishes" && <MasterDishesPanel dishCategories={dishCategories} />}
+      {subTab === "ingredients" && <MasterIngredientsPanel ingredientCategories={ingredientCategories} />}
+    </Card>
+  );
+}
+
+// ─── Catalog Packs Admin ─────────────────────────────────────────────────────
+
+const INCLUDED_PLANS_OPTIONS = ["basic", "pro", "premium"];
+
+const FS = { width: "100%", boxSizing: "border-box", padding: "5px 8px", fontSize: 12, borderRadius: 4, border: "1px solid var(--input-border, #d1d5db)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)" };
+
+function IngredientSearchInput({ value, onChange }) {
+  const [query, setQuery] = useState(value?.displayName || "");
+  const [results, setResults] = useState([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [ingCategories, setIngCategories] = useState([]);
+  const [createName, setCreateName] = useState(value?.displayName || "");
+  const [newCategoryId, setNewCategoryId] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [createSuccess, setCreateSuccess] = useState("");
+  const [duplicateIngredient, setDuplicateIngredient] = useState(null);
+  const timerRef = useRef(null);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    apiRequest("/api/kitchen/catalog/master/ingredient-categories")
+      .then((d) => setIngCategories(d.categories || []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const onDown = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) { setResults([]); setShowCreate(false); } };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  const search = (q) => {
+    setQuery(q);
+    setCreateError("");
+    setCreateSuccess("");
+    setDuplicateIngredient(null);
+    clearTimeout(timerRef.current);
+    if (!q.trim()) { setResults([]); return; }
+    timerRef.current = setTimeout(async () => {
+      try {
+        const data = await apiRequest(`/api/kitchen/catalog/master/ingredients?q=${encodeURIComponent(q)}`);
+        setResults(data.ingredients || []);
+      } catch { setResults([]); }
+    }, 280);
+  };
+
+  const select = (ing) => {
+    onChange({ displayName: ing.name, canonicalName: ing.canonicalName, ingredientId: ing.id, categoryId: ing.categoryId || null });
+    setQuery(ing.name);
+    setResults([]);
+    setShowCreate(false);
+    setCreateError("");
+    setDuplicateIngredient(null);
+    setCreateSuccess(`Vinculado a ${ing.name}`);
+  };
+
+  const createNew = async () => {
+    const name = createName.trim();
+    setCreateError("");
+    setCreateSuccess("");
+    setDuplicateIngredient(null);
+    if (!name) { setCreateError("El nombre del ingrediente es obligatorio."); return; }
+    if (!newCategoryId) { setCreateError("Selecciona una categoria para continuar."); return; }
+    setCreating(true);
+    try {
+      const data = await apiRequest("/api/kitchen/catalog/master/ingredients", { method: "POST", body: JSON.stringify({ name, categoryId: newCategoryId }) });
+      select(data.ingredient);
+      setCreateSuccess(`Ingrediente creado y vinculado a ${data.ingredient.name}`);
+      setNewCategoryId("");
+    } catch (e) {
+      const existing = e?.body?.ingredient;
+      if (e?.body?.code === "DUPLICATE_MASTER_INGREDIENT" && existing) {
+        setDuplicateIngredient(existing);
+        setCreateError(`Ya existe "${existing.name}" con el mismo nombre normalizado. Puedes vincularlo sin crear duplicados.`);
+      } else {
+        setCreateError(e.message || "No se pudo crear el ingrediente.");
+      }
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const isLinked = Boolean(value?.ingredientId);
+  const hasName = Boolean(value?.canonicalName);
+  const isSelected = isLinked || results.some((ing) => String(ing.id) === String(value?.ingredientId || ""));
+  const borderColor = isLinked ? "#6366f1" : (hasName ? "#f59e0b" : "var(--input-border, #d1d5db)");
+  const bgColor = isLinked ? "#f5f3ff" : (hasName ? "#fffbeb" : "var(--input-bg, #fff)");
+
+  return (
+    <div ref={containerRef} style={{ position: "relative" }}>
+      <input
+        style={{ ...FS, borderColor, background: bgColor }}
+        placeholder="Buscar ingrediente master..."
+        value={query}
+        onChange={(e) => { search(e.target.value); if (isLinked || hasName) onChange({ displayName: e.target.value, canonicalName: "", ingredientId: null }); }}
+      />
+      {isLinked && <span style={{ fontSize: 10, color: "#6366f1", display: "block", marginTop: 1 }}>✓ {value.canonicalName}</span>}
+      {!isLinked && hasName && <span style={{ fontSize: 10, color: "#b45309", display: "block", marginTop: 1 }}>⚠ sin vincular al master</span>}
+      {createSuccess ? <span style={{ fontSize: 10, color: "#047857", display: "block", marginTop: 2 }}>{createSuccess}</span> : null}
+      {results.length > 0 && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--dropdown-bg, #fff)", border: "1px solid var(--hf-border, #d1d5db)", borderRadius: 6, zIndex: 20, maxHeight: 160, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}>
+          {results.map((ing) => (
+            <div key={String(ing.id)} onMouseDown={() => select(ing)}
+              style={{ padding: "6px 10px", cursor: "pointer", fontSize: 12, borderBottom: "1px solid var(--hf-border, #f3f4f6)", color: "var(--input-text, #111827)" }}>
+              <strong>{ing.name}</strong> <span style={{ color: "var(--input-text, #9ca3af)", opacity: 0.55, fontSize: 11 }}>{ing.canonicalName}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {query.trim() && results.length === 0 && !isSelected && !showCreate && (
+        <button type="button" onMouseDown={(event) => { event.preventDefault(); setCreateName(query.trim()); setShowCreate(true); setCreateError(""); setCreateSuccess(""); setDuplicateIngredient(null); }}
+          style={{ fontSize: 11, marginTop: 3, padding: "2px 8px", background: "#fef3c7", border: "1px solid #fbbf24", color: "#92400e", borderRadius: 4, cursor: "pointer", display: "block" }}>
+          No encontrado — Crear &quot;{query}&quot;
+        </button>
+      )}
+      {showCreate && (
+        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, padding: 8, marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>Crear ingrediente master</div>
+          <input
+            style={{ ...FS, marginBottom: 4 }}
+            value={createName}
+            onChange={(e) => setCreateName(e.target.value)}
+            placeholder="Nombre del ingrediente"
+          />
+          <select style={{ ...FS, marginBottom: 4 }} value={newCategoryId} onChange={(e) => setNewCategoryId(e.target.value)}>
+            <option value="">— Categoría de ingrediente —</option>
+            {ingCategories.map((c) => <option key={String(c.id)} value={String(c.id)}>{c.name}</option>)}
+          </select>
+          {createError ? <div style={{ color: "#b42318", fontSize: 11, marginBottom: 5 }}>{createError}</div> : null}
+          {duplicateIngredient ? (
+            <button type="button" onMouseDown={(event) => { event.preventDefault(); select(duplicateIngredient); }}
+              style={{ fontSize: 11, padding: "3px 10px", background: "var(--card-bg, #fff)", color: "#4338ca", border: "1px solid #c7d2fe", borderRadius: 4, cursor: "pointer", marginBottom: 5 }}>
+              Vincular a {duplicateIngredient.name}
+            </button>
+          ) : null}
+          <div style={{ display: "flex", gap: 6 }}>
+            <button type="button" disabled={creating || !newCategoryId || !createName.trim()} onMouseDown={(event) => { event.preventDefault(); createNew(); }}
+              style={{ fontSize: 11, padding: "3px 10px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", opacity: (!newCategoryId || !createName.trim()) ? 0.5 : 1 }}>
+              {creating ? "Creando..." : "Crear"}
+            </button>
+            <button type="button" onMouseDown={(event) => { event.preventDefault(); setShowCreate(false); setCreateError(""); setDuplicateIngredient(null); }}
+              style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer" }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DishTemplateEditor({ dishes, onChange, defaults = {}, compositionLocked = false }) {
+  const [expanded, setExpanded] = useState(null);
+  const [dishCategories, setDishCategories] = useState([]);
+
+  useEffect(() => {
+    apiRequest("/api/kitchen/dish-categories")
+      .then((d) => setDishCategories(d.categories || []))
+      .catch(() => {});
+  }, []);
+
+  const addDish = () => {
+    const next = [...dishes, {
+      name: "", teaser: "", isDinner: false,
+      special: Boolean(defaults.defaultSpecial),
+      allowRandom: defaults.defaultAllowRandom !== false,
+      dishCategoryId: null, ingredients: [],
+      recipe: { ingredients: [], steps: null, servings: null, baseServings: null }
+    }];
+    onChange(next);
+    setExpanded(next.length - 1);
+  };
+
+  const removeDish = (i) => {
+    onChange(dishes.filter((_, idx) => idx !== i));
+    setExpanded((ex) => ex === i ? null : ex > i ? ex - 1 : ex);
+  };
+
+  const updateDish = (i, updates) => onChange(dishes.map((d, idx) => idx === i ? { ...d, ...updates } : d));
+
+  const addIng = (i) => updateDish(i, { ingredients: [...dishes[i].ingredients, { displayName: "", canonicalName: "" }] });
+  const removeIng = (i, j) => updateDish(i, { ingredients: dishes[i].ingredients.filter((_, idx) => idx !== j) });
+  const setIng = (i, j, newIng) => {
+    const current = dishes[i]?.ingredients?.[j] || {};
+    const currentKey = normalizeIngredientName(current.canonicalName || current.displayName || "");
+    if (newIng?.ingredientId && currentKey) {
+      onChange(dishes.map((dish) => ({
+        ...dish,
+        ingredients: (dish.ingredients || []).map((item, index) => {
+          const itemKey = normalizeIngredientName(item.canonicalName || item.displayName || "");
+          if (itemKey === currentKey) return { ...item, ...newIng };
+          return item;
+        })
+      })));
+      return;
+    }
+    updateDish(i, { ingredients: dishes[i].ingredients.map((x, idx) => idx === j ? newIng : x) });
+  };
+
+  return (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          Platos del pack ({dishes.length})
+        </div>
+        {!compositionLocked ? (
+          <button type="button" onClick={addDish}
+            style={{ fontSize: 12, padding: "4px 10px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>
+            + Añadir plato
+          </button>
+        ) : null}
+      </div>
+      {dishes.length === 0 && (
+        <div style={{ padding: "10px 0", color: "#9ca3af", fontSize: 12, textAlign: "center" }}>
+          {compositionLocked ? "Este pack publicado no tiene platos." : "Sin platos - pulsa \"+ Añadir plato\" para empezar"}
+        </div>
+      )}
+      {dishes.map((dish, i) => (
+        <div key={i} style={{ border: "1px solid var(--hf-border, #e0e7ff)", borderRadius: 8, marginBottom: 6, background: "var(--card-bg, #fafbff)" }}>
+          <div style={{ display: "flex", alignItems: "center", padding: "8px 12px", cursor: "pointer", gap: 8 }}
+            onClick={() => setExpanded((ex) => ex === i ? null : i)}>
+            <span style={{ flex: 1, fontWeight: 600, fontSize: 13, color: expanded === i ? "#6366f1" : "var(--input-text, #1e293b)" }}>
+              {dish.name || <em style={{ color: "#9ca3af" }}>Plato sin nombre</em>}
+            </span>
+            <span style={{ fontSize: 11, color: "#9ca3af" }}>
+              {(dish.ingredients || []).length} ing.
+            </span>
+            {!compositionLocked ? (
+              <button type="button" onClick={(e) => { e.stopPropagation(); removeDish(i); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700, fontSize: 16, padding: "0 4px" }}>×</button>
+            ) : null}
+          </div>
+          {expanded === i && (
+            <div style={{ padding: "0 12px 12px", borderTop: "1px solid var(--hf-border, #e0e7ff)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10, marginBottom: 6 }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500 }}>
+                  Nombre del plato *
+                  <input style={FS} value={dish.name} onChange={(e) => updateDish(i, { name: e.target.value })} placeholder="Tacos de pollo" />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500 }}>
+                  Categoría de plato
+                  <select style={FS} value={dish.dishCategoryId || ""} onChange={(e) => updateDish(i, { dishCategoryId: e.target.value || null })}>
+                    <option value="">— Sin categoría —</option>
+                    {dishCategories.map((c) => <option key={String(c._id || c.id)} value={String(c._id || c.id)}>{c.name}</option>)}
+                  </select>
+                </label>
+              </div>
+              <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, fontWeight: 500, marginBottom: 8 }}>
+                Teaser (descripción corta visible antes de instalar)
+                <input style={FS} value={dish.teaser || ""} onChange={(e) => updateDish(i, { teaser: e.target.value })} placeholder="Ensalada fresca con tomate, pepino y aceitunas" maxLength={120} />
+                <span style={{ fontSize: 10, color: "#9ca3af" }}>Máx. 120 caracteres. Se muestra como preview comercial — no reveles la elaboración completa.</span>
+              </label>
+              <div style={{ display: "flex", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
+                {[["isDinner", "Cena"], ["special", "Especial"], ["allowRandom", "Aleatorio"]].map(([key, label]) => (
+                  <label key={key} style={{ display: "flex", gap: 4, alignItems: "center", fontSize: 12, cursor: "pointer" }}>
+                    <input type="checkbox" checked={Boolean(dish[key])} onChange={(e) => updateDish(i, { [key]: e.target.checked })} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
+                  Ingredientes — lista de la compra
+                </div>
+                {(dish.ingredients || []).map((ing, j) => (
+                  <div key={j} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 4, marginBottom: 4 }}>
+                    <IngredientSearchInput value={ing} onChange={(newIng) => setIng(i, j, newIng)} />
+                    <button type="button" onClick={() => removeIng(i, j)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontWeight: 700, alignSelf: "start", paddingTop: 6 }}>×</button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => addIng(i)}
+                  style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #6366f1", color: "#6366f1", borderRadius: 4, cursor: "pointer", marginTop: 4 }}>
+                  + Ingrediente
+                </button>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>Elaboración</div>
+                <RecipeEditor
+                  recipeIngredients={dish.recipe?.ingredients || []}
+                  recipeSteps={dish.recipe?.elaboration ?? dish.recipe?.steps ?? null}
+                  recipeServings={dish.recipe?.baseServings ?? dish.recipe?.servings ?? null}
+                  recipeBaseServings={dish.recipe?.baseServings ?? dish.recipe?.servings ?? null}
+                  recipePrepMinutes={dish.recipe?.prepMinutes ?? null}
+                  recipeCookMinutes={dish.recipe?.cookMinutes ?? null}
+                  onChange={(updater) => {
+                    const prev = dish.recipe || { ingredients: [], steps: null, baseServings: null, servings: null, prepMinutes: null, cookMinutes: null };
+                    const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
+                    updateDish(i, { recipe: next });
+                  }}
+                />
+                {(dish.recipe?.ingredients || []).length > 0 ? (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--hf-border, #e2e8f0)" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>Vista previa</div>
+                    <RecipeEditor
+                      recipeIngredients={dish.recipe?.ingredients || []}
+                      recipeSteps={dish.recipe?.elaboration ?? dish.recipe?.steps ?? null}
+                      recipeServings={dish.recipe?.servings ?? dish.recipe?.baseServings ?? null}
+                      recipeBaseServings={dish.recipe?.servings ?? dish.recipe?.baseServings ?? null}
+                      targetServings={dish.recipe?.servings ?? dish.recipe?.baseServings ?? null}
+                      readOnly
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PackForm({ item, onSave, onCancel, onPaymentSaved, onSaved, baseBitePrice = 1.99, formRef, onDirty }) {
+  const isEdit = Boolean(item.id || item._id);
+  const dirtyFired = useRef(false);
+  const isPublished = item.status === "published";
+
+  const freeUntilDefault = item.freeUntil ? new Date(item.freeUntil).toISOString().split("T")[0] : "";
+
+  const toDateStr = (v) => (v ? new Date(v).toISOString().split("T")[0] : "");
+
+  const normDishes = (raw) => (raw || []).map((d) => ({
+    dishTemplateId: d.dishTemplateId || null,
+    name: d.name || "",
+    teaser: d.teaser || "",
+    isDinner: Boolean(d.isDinner),
+    special: Boolean(d.special),
+    allowRandom: d.allowRandom !== false,
+    dishCategoryId: d.dishCategoryId ? String(d.dishCategoryId) : null,
+    ingredients: Array.isArray(d.ingredients) ? d.ingredients.map((ing) => ({
+      displayName: ing.displayName || "",
+      canonicalName: ing.canonicalName || "",
+      ingredientId: ing.ingredientId || null,
+      categoryId: ing.categoryId || null
+    })) : [],
+    recipe: {
+      ingredients: Array.isArray(d.recipe?.ingredients) ? d.recipe.ingredients : [],
+      // Prefer elaboration (legacy Tiptap); preserve structured array steps
+      steps: d.recipe?.elaboration ?? d.recipe?.steps ?? null,
+      baseServings: d.recipe?.baseServings ?? d.recipe?.servings ?? null,
+      servings: d.recipe?.baseServings ?? d.recipe?.servings ?? null,
+      prepMinutes: d.recipe?.prepMinutes ?? null,
+      cookMinutes: d.recipe?.cookMinutes ?? null,
+    }
+  }));
+
+  const [form, setForm] = useState({
+    slug: item.slug || "",
+    title: item.title || "",
+    subtitle: item.subtitle || "",
+    description: item.description || "",
+    coverImage: item.coverImage || "",
+    tags: (item.tags || []).join(", "),
+    cuisineType: item.cuisineType || "",
+    active: item.active !== false,
+    featured: Boolean(item.featured),
+    priceBasic: item.priceBasic != null ? String(item.priceBasic) : "1.99",
+    includedPlans: item.includedPlans || ["pro", "premium"],
+    monthlyCreditCost: item.monthlyCreditCost != null ? String(item.monthlyCreditCost) : "100",
+    sortOrder: item.sortOrder != null ? String(item.sortOrder) : "0",
+    freeUntil: freeUntilDefault,
+    activeFrom: toDateStr(item.activeFrom),
+    activeUntil: toDateStr(item.activeUntil),
+    color: item.color || "#6366f1",
+    defaultSpecial: Boolean(item.defaultSpecial),
+    defaultAllowRandom: item.defaultAllowRandom !== false,
+    isDietPack: Boolean(item.isDietPack),
+    dietLabel: item.dietLabel || ""
+  });
+  const [dishes, setDishes] = useState(() => normDishes(item.dishes));
+  const [propagateCatalogUpdates, setPropagateCatalogUpdates] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  // Payment config (separate save via PATCH)
+  const [paymentForm, setPaymentForm] = useState({
+    isPaid: Boolean(item.isPaid),
+    priceAmount: item.priceAmount != null ? String(item.priceAmount) : "",
+    currency: item.currency || "eur",
+    stripeProductId: item.stripeProductId || "",
+    stripePriceId: item.stripePriceId || "",
+    paymentMode: item.paymentMode || "none",
+    purchasedCount: item.purchasedCount || 0,
+    stripeError: null
+  });
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState("");
+  // pricing sync: track which field was last manually edited; stop auto-sync once both touched
+  const [pricingSync, setPricingSync] = useState({ priceTouched: false, bitesTouched: false, lastField: null });
+
+  const packId = item.id || item._id;
+
+  const handleCoverUpload = async (file) => {
+    if (!file || !packId) return;
+    setCoverUploading(true);
+    setCoverUploadError("");
+    try {
+      const fd = new FormData();
+      fd.append("cover", file);
+      const token = getToken();
+      const resp = await fetch(buildApiUrl(`/api/kitchen/catalog/packs/${packId}/cover`), {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data?.error || "Error al subir imagen.");
+      setForm((p) => ({ ...p, coverImage: data.coverImage }));
+    } catch (err) {
+      setCoverUploadError(err.message || "Error al subir imagen.");
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const handleCoverRemove = async () => {
+    if (!packId) { setForm((p) => ({ ...p, coverImage: "" })); return; }
+    try {
+      await apiRequest(`/api/kitchen/catalog/packs/${packId}/cover`, { method: "DELETE" });
+      setForm((p) => ({ ...p, coverImage: "" }));
+    } catch (err) {
+      setCoverUploadError(err.message || "Error al eliminar imagen.");
+    }
+  };
+
+  const set = (key) => (e) => setForm((p) => ({
+    ...p,
+    [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value
+  }));
+
+  const togglePlan = (plan) => setForm((p) => ({
+    ...p,
+    includedPlans: p.includedPlans.includes(plan)
+      ? p.includedPlans.filter((x) => x !== plan)
+      : [...p.includedPlans, plan]
+  }));
+
+  const serializeDishes = () => dishes.map((d) => ({
+    dishTemplateId: d.dishTemplateId || null,
+    name: d.name.trim(),
+    teaser: d.teaser?.trim() || "",
+    isDinner: d.isDinner,
+    special: d.special,
+    allowRandom: d.allowRandom,
+    dishCategoryId: d.dishCategoryId || null,
+    ingredients: (d.ingredients || []).filter((x) => x.displayName?.trim() || x.canonicalName?.trim()),
+    recipe: {
+      ingredients: (d.recipe?.ingredients || []).filter((x) => x.name?.trim()),
+      steps: d.recipe?.steps ?? null,
+      baseServings: d.recipe?.servings ? parseInt(d.recipe.servings, 10) : null,
+      servings: d.recipe?.servings ? parseInt(d.recipe.servings, 10) : null,
+      prepMinutes: d.recipe?.prepMinutes ? parseInt(d.recipe.prepMinutes, 10) : null,
+      cookMinutes: d.recipe?.cookMinutes ? parseInt(d.recipe.cookMinutes, 10) : null,
+    }
+  })).filter((d) => d.name);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.slug.trim() || !form.title.trim()) { setError("slug y título son obligatorios."); return; }
+    setSaving(true); setError("");
+    try {
+      await onSave({
+        ...form,
+        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        priceBasic: parseFloat(form.priceBasic) || 0,
+        monthlyCreditCost: parseInt(form.monthlyCreditCost, 10) || 1,
+        sortOrder: parseInt(form.sortOrder, 10) || 0,
+        coverImage: form.coverImage.trim() || null,
+        freeUntil: form.freeUntil || null,
+        activeFrom: form.activeFrom || null,
+        activeUntil: form.activeUntil || null,
+        color: form.color || null,
+        defaultSpecial: form.defaultSpecial,
+        defaultAllowRandom: form.defaultAllowRandom,
+        isDietPack: form.isDietPack,
+        dietLabel: form.isDietPack ? form.dietLabel.trim() : "",
+        dishes: serializeDishes(),
+        propagateCatalogUpdates
+      });
+      if (isEdit) {
+        const paymentRes = await apiRequest(`/api/kitchen/catalog/packs/${packId}/payment`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            isPaid: paymentForm.isPaid,
+            priceAmount: Math.round((parseFloat(form.priceBasic) || 0) * 100),
+            currency: paymentForm.currency || "eur",
+            paymentMode: paymentForm.paymentMode
+          })
+        });
+        if (paymentRes?.payment) {
+          setPaymentForm((p) => ({
+            ...p,
+            stripeProductId: paymentRes.payment.stripeProductId || p.stripeProductId,
+            stripePriceId: paymentRes.payment.stripePriceId || p.stripePriceId,
+            stripeError: paymentRes.stripeError || null
+          }));
+        }
+        if (onPaymentSaved) onPaymentSaved();
+        onSaved?.(paymentRes?.stripeError || null);
+      } else {
+        onSaved?.(null);
+      }
+    } catch (err) { setError(err.message || "Error al guardar."); }
+    finally { setSaving(false); }
+  };
+
+  const fieldStyle = { width: "100%", boxSizing: "border-box", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--input-border, #d1d5db)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)", outline: "none" };
+  const labelStyle = { display: "flex", flexDirection: "column", gap: 3, fontSize: 13, color: "var(--input-text, #374151)", fontWeight: 500 };
+  const coverPreviewUrl = resolvePackCoverImageUrl(form.coverImage);
+
+  return (
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 16px", fontSize: 15, color: "var(--input-text, #1e293b)", fontWeight: 700 }}>
+        {isEdit ? `✏️ Editar: ${item.title}` : "➕ Nuevo pack de catálogo"}
+      </h4>
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        onChange={() => { if (!dirtyFired.current) { dirtyFired.current = true; onDirty?.(); } }}
+      >
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 14 }}>
+          <label style={labelStyle}>
+            Slug (único)
+            <input style={fieldStyle} value={form.slug} onChange={set("slug")} placeholder="mexican-pack-vol1" required disabled={isEdit} />
+          </label>
+          <label style={labelStyle}>
+            Título
+            <input style={fieldStyle} value={form.title} onChange={set("title")} placeholder="10 platos mexicanos" required />
+          </label>
+          <label style={labelStyle}>
+            Subtítulo
+            <input style={fieldStyle} value={form.subtitle} onChange={set("subtitle")} placeholder="Sabores auténticos de México" />
+          </label>
+          <label style={labelStyle}>
+            Tipo de cocina
+            <input style={fieldStyle} value={form.cuisineType} onChange={set("cuisineType")} placeholder="mexicana" />
+          </label>
+          <label style={labelStyle}>
+            Precio (€)
+            <input
+              style={fieldStyle}
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.priceBasic}
+              onChange={(e) => {
+                const newPrice = e.target.value;
+                setPricingSync((ps) => ({ ...ps, priceTouched: true, lastField: "price" }));
+                if (!pricingSync.bitesTouched) {
+                  const parsed = parseFloat(newPrice) || 0;
+                  // baseBitePrice is price per 100 Bites; divide by 100 to get EUR/Bite
+                  const calcBites = parsed > 0 ? Math.max(1, Math.round(parsed * 100 / baseBitePrice)) : parseInt(form.monthlyCreditCost, 10) || 100;
+                  setForm((p) => ({ ...p, priceBasic: newPrice, monthlyCreditCost: String(calcBites) }));
+                } else {
+                  setForm((p) => ({ ...p, priceBasic: newPrice }));
+                }
+              }}
+            />
+          </label>
+          <label style={labelStyle}>
+            Coste en Bites
+            <input
+              style={fieldStyle}
+              type="number"
+              min="1"
+              value={form.monthlyCreditCost}
+              onChange={(e) => {
+                const newBites = e.target.value;
+                setPricingSync((ps) => ({ ...ps, bitesTouched: true, lastField: "bites" }));
+                if (!pricingSync.priceTouched) {
+                  const parsed = parseInt(newBites, 10) || 0;
+                  // baseBitePrice is price per 100 Bites; multiply bites by (baseBitePrice/100)
+                  const calcPrice = parsed > 0 ? parseFloat((parsed * baseBitePrice / 100).toFixed(2)) : parseFloat(form.priceBasic) || 0;
+                  setForm((p) => ({ ...p, monthlyCreditCost: newBites, priceBasic: String(calcPrice) }));
+                } else {
+                  setForm((p) => ({ ...p, monthlyCreditCost: newBites }));
+                }
+              }}
+            />
+            <span style={{ fontSize: 11, color: "#6b7280" }}>
+              Se calcula usando {Number(baseBitePrice).toFixed(2).replace(".", ",")} €/100 Bites. Puedes ajustar ambos valores manualmente.
+            </span>
+          </label>
+          <label style={labelStyle}>
+            Orden (sortOrder)
+            <input style={fieldStyle} type="number" value={form.sortOrder} onChange={set("sortOrder")} />
+          </label>
+
+          {isEdit && (
+            <>
+              <label style={{ ...labelStyle, gridColumn: "1 / -1", borderTop: "1px dashed #e0e7ff", paddingTop: 10, marginTop: 4 }}>
+                <span style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer" }}>
+                  <input type="checkbox" checked={paymentForm.isPaid} onChange={(e) => setPaymentForm((p) => ({ ...p, isPaid: e.target.checked, paymentMode: e.target.checked ? (p.paymentMode === "none" ? "stripe" : p.paymentMode) : "none" }))} />
+                  <span style={{ fontWeight: 600 }}>💳 Paquete de pago (Stripe)</span>
+                </span>
+              </label>
+              <label style={labelStyle}>
+                Modo de pago
+                <select style={fieldStyle} value={paymentForm.paymentMode} onChange={(e) => setPaymentForm((p) => ({ ...p, paymentMode: e.target.value, isPaid: e.target.value === "stripe" ? true : p.isPaid }))}>
+                  <option value="none">Ninguno</option>
+                  <option value="stripe">Stripe</option>
+                </select>
+              </label>
+              {paymentForm.paymentMode === "stripe" && (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  {paymentForm.stripeError && (
+                    <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, padding: "8px 12px", marginBottom: 8, fontSize: 12, color: "#b91c1c" }}>
+                      ⚠ Error al sincronizar con Stripe: {paymentForm.stripeError}
+                    </div>
+                  )}
+                  {paymentForm.stripeProductId ? (
+                    <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "10px 14px" }}>
+                      <div style={{ fontWeight: 700, color: "#15803d", marginBottom: 6, fontSize: 13 }}>✓ Sincronizado con Stripe</div>
+                      <div style={{ fontSize: 11, fontFamily: "monospace", color: "#374151", lineHeight: 1.7 }}>
+                        <span style={{ color: "#6b7280" }}>Producto: </span>{paymentForm.stripeProductId}
+                      </div>
+                      {paymentForm.stripePriceId && (
+                        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#374151", lineHeight: 1.7 }}>
+                          <span style={{ color: "#6b7280" }}>Precio: </span>{paymentForm.stripePriceId}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6 }}>
+                        Se resincroniza automáticamente al guardar si cambias el precio.
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ background: "#fffbeb", border: "1px solid #fbbf24", borderRadius: 6, padding: "10px 14px" }}>
+                      <div style={{ fontWeight: 600, color: "#92400e", fontSize: 13 }}>⏳ Pendiente de sincronización</div>
+                      <div style={{ fontSize: 11, color: "#78350f", marginTop: 4 }}>
+                        Al guardar se creará automáticamente el producto y el precio en Stripe.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <label style={{ ...labelStyle, marginBottom: 12 }}>
+          Descripción
+          <textarea style={{ ...fieldStyle, minHeight: 64, resize: "vertical" }} value={form.description} onChange={set("description")} placeholder="Descripción del pack..." />
+        </label>
+
+        <label style={{ ...labelStyle, marginBottom: 12 }}>
+          Tags (separados por coma)
+          <input style={fieldStyle} value={form.tags} onChange={set("tags")} placeholder="mexicano, familia, picante" />
+        </label>
+
+        <div style={{ marginBottom: 14 }}>
+          <span style={{ ...labelStyle, marginBottom: 6 }}>Imagen de portada</span>
+          {coverPreviewUrl && (
+            <div style={{ marginBottom: 8, display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <img
+                src={coverPreviewUrl}
+                alt="portada"
+                style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 6, border: "1px solid #d1d5db" }}
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+              <button type="button" onClick={handleCoverRemove} style={{ ...ABT.del, alignSelf: "flex-start" }}>Quitar</button>
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <input style={{ ...fieldStyle, flex: 1, minWidth: 160 }} value={form.coverImage} onChange={set("coverImage")} placeholder="https://... o sube un archivo" />
+            {isEdit && (
+              <label style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, ...ABT.edit }}>
+                {coverUploading ? "Subiendo…" : "📁 Subir"}
+                <input type="file" accept="image/*" style={{ display: "none" }} disabled={coverUploading} onChange={(e) => handleCoverUpload(e.target.files?.[0])} />
+              </label>
+            )}
+          </div>
+          {coverUploadError && <p style={{ color: "#b42318", fontSize: 11, margin: "4px 0 0" }}>{coverUploadError}</p>}
+          {!isEdit && <p style={{ fontSize: 11, color: "#64748b", margin: "3px 0 0" }}>Guarda el pack primero para poder subir una imagen.</p>}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+          <label style={labelStyle}>
+            Gratis hasta (fecha)
+            <input style={fieldStyle} type="date" value={form.freeUntil} onChange={set("freeUntil")} />
+          </label>
+          <label style={labelStyle}>
+            Activo desde
+            <input style={fieldStyle} type="date" value={form.activeFrom} onChange={set("activeFrom")} />
+          </label>
+          <label style={labelStyle}>
+            Activo hasta
+            <input style={fieldStyle} type="date" value={form.activeUntil} onChange={set("activeUntil")} />
+          </label>
+        </div>
+        <p style={{ fontSize: 11, color: "#64748b", margin: "-8px 0 14px" }}>
+          Activo desde/hasta: programa cuándo aparece en el catálogo (ej. pack navideño del 1-dic al 6-ene). Vacío = siempre activo.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr 1fr", gap: 12, alignItems: "start", marginBottom: 14 }}>
+          <label style={labelStyle}>
+            Color del pack
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input type="color" value={form.color || "#6366f1"} onChange={set("color")} style={{ width: 36, height: 32, padding: 2, border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer" }} />
+              <span style={{ fontSize: 12, color: "#64748b" }}>{form.color || "#6366f1"}</span>
+            </div>
+          </label>
+          <label style={{ ...labelStyle, justifyContent: "flex-end", paddingBottom: 6 }}>
+            <span style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+              <input type="checkbox" checked={Boolean(form.defaultSpecial)} onChange={set("defaultSpecial")} />
+              Especiales por defecto (excluidos del plan automático)
+            </span>
+          </label>
+          <label style={{ ...labelStyle, justifyContent: "flex-end", paddingBottom: 6 }}>
+            <span style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+              <input type="checkbox" checked={Boolean(form.defaultAllowRandom)} onChange={set("defaultAllowRandom")} />
+              Aleatorios por defecto
+            </span>
+          </label>
+        </div>
+
+        <div style={{ background: "#fdf4ff", border: "1px solid #e9d5ff", borderRadius: 8, padding: 12, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Dieta / Régimen</div>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer", marginBottom: 8 }}>
+            <input type="checkbox" checked={Boolean(form.isDietPack)} onChange={set("isDietPack")} />
+            <span>Pack de dieta / régimen</span>
+          </label>
+          {form.isDietPack ? (
+            <label style={labelStyle}>
+              Nombre de la dieta (visible para el usuario)
+              <input
+                style={fieldStyle}
+                value={form.dietLabel}
+                onChange={set("dietLabel")}
+                placeholder="Ej: Dieta mediterránea, Keto, etc."
+              />
+            </label>
+          ) : null}
+        </div>
+
+        {isPublished ? (
+          <div className="kitchen-alert warning" style={{ marginBottom: 12 }}>
+            Este pack ya está publicado. Puedes corregir recetas y preferencias de los platos, pero no añadir ni eliminar platos del pack.
+          </div>
+        ) : null}
+
+        <DishTemplateEditor
+          dishes={dishes}
+          onChange={setDishes}
+          defaults={{ defaultSpecial: form.defaultSpecial, defaultAllowRandom: form.defaultAllowRandom }}
+          compositionLocked={isPublished}
+        />
+
+        {isPublished ? (
+          <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer", margin: "12px 0 14px" }}>
+            <input type="checkbox" checked={propagateCatalogUpdates} onChange={(e) => setPropagateCatalogUpdates(e.target.checked)} />
+            Actualizar también en hogares donde no se haya personalizado
+          </label>
+        ) : null}
+
+        <div style={{ marginBottom: 14, marginTop: 18 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Planes incluidos</div>
+          <div style={{ display: "flex", gap: 12 }}>
+            {INCLUDED_PLANS_OPTIONS.map((plan) => (
+              <label key={plan} style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={form.includedPlans.includes(plan)}
+                  onChange={() => togglePlan(plan)}
+                />
+                {plan}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
+          {[["active", "Activo"], ["featured", "Destacado"]].map(([key, label]) => (
+            <label key={key} style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+              <input type="checkbox" checked={Boolean(form[key])} onChange={set(key)} />
+              {label}
+            </label>
+          ))}
+        </div>
+
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 10 }}>{error}</div> : null}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="submit" disabled={saving} style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear pack"}
+          </button>
+          <button type="button" onClick={onCancel} style={ABT.cancel}>Cancelar</button>
+        </div>
+      </form>
+
+    </div>
+  );
+}
+
+function PackStatusBadge({ status }) {
+  const map = {
+    none: { label: "Sin estado", bg: "#f8fafc", color: "#64748b" },
+    draft: { label: "draft", bg: "#f1f5f9", color: "#475569" },
+    needs_review: { label: "needs review", bg: "#fff7ed", color: "#c2410c" },
+    ready: { label: "ready", bg: "#ecfdf5", color: "#047857" },
+    published: { label: "published", bg: "#eef2ff", color: "#4338ca" }
+  };
+  const item = status ? (map[status] || map.needs_review) : map.none;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 800, background: item.bg, color: item.color, textTransform: "uppercase" }}>
+      {item.label}
+    </span>
+  );
+}
+
+function IngredientSearchSelector({ onSelect, disabled }) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const debounceRef = useRef(null);
+
+  const search = (value) => {
+    setQ(value);
+    clearTimeout(debounceRef.current);
+    if (value.trim().length < 2) { setResults([]); setOpen(false); return; }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = await apiRequest(`/api/kitchen/catalog/master/ingredients?q=${encodeURIComponent(value.trim())}`);
+        setResults(data.ingredients || []);
+        setOpen(true);
+      } catch { setResults([]); }
+      finally { setLoading(false); }
+    }, 300);
+  };
+
+  const pick = (ing) => {
+    setQ("");
+    setResults([]);
+    setOpen(false);
+    onSelect(ing);
+  };
+
+  return (
+    <div style={{ position: "relative", minWidth: 160 }}>
+      <input
+        style={{ ...FS, paddingRight: loading ? 24 : 8 }}
+        placeholder="Buscar en BD..."
+        value={q}
+        onChange={(e) => search(e.target.value)}
+        onBlur={() => setTimeout(() => setOpen(false), 160)}
+        disabled={disabled}
+      />
+      {loading && <span style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: "#94a3b8" }}>...</span>}
+      {open && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--dropdown-bg, #fff)", border: "1px solid var(--hf-border, #d1d5db)", borderRadius: 6, zIndex: 20, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}>
+          {results.length === 0
+            ? <div style={{ padding: "8px 10px", fontSize: 12, color: "var(--input-text, #94a3b8)", opacity: 0.6 }}>Sin resultados</div>
+            : results.map((ing) => (
+              <button
+                key={ing.id}
+                type="button"
+                style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 10px", fontSize: 12, background: "none", border: "none", borderBottom: "1px solid var(--hf-border, #f3f4f6)", cursor: "pointer", color: "var(--input-text, #1e293b)" }}
+                onMouseDown={() => pick(ing)}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--dropdown-hover-bg, #f5f7ff)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+              >
+                {ing.name} <span style={{ color: "var(--input-text, #94a3b8)", opacity: 0.55, fontSize: 11 }}>{ing.canonicalName}</span>
+              </button>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PackReviewPanel({ pack, onClose, onPackUpdated }) {
+  const [ingredientCategories, setIngredientCategories] = useState([]);
+  const [dishCategories, setDishCategories] = useState([]);
+  const [creating, setCreating] = useState({});
+  const [busyKeys, setBusyKeys] = useState({});
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const setRowBusy = (key, val) => setBusyKeys((prev) => ({ ...prev, [key]: Boolean(val) }));
+  const isRowBusy = (key) => Boolean(busyKeys[key]);
+  const anyBusy = Object.values(busyKeys).some(Boolean);
+
+  useEffect(() => {
+    apiRequest("/api/kitchen/catalog/master/ingredient-categories")
+      .then((d) => setIngredientCategories(d.categories || []))
+      .catch(() => {});
+    apiRequest("/api/kitchen/catalog/master/dish-categories")
+      .then((d) => setDishCategories(d.categories || []))
+      .catch(() => {});
+  }, []);
+
+  const summary = pack.validationSummary || {};
+  const issues = pack.reviewIssues || [];
+  const ingredientIssues = useMemo(() => {
+    const relevant = issues.filter((issue) => ["missing_ingredient_mapping", "ambiguous_ingredient_match", "invalid_ingredient_mapping", "missing_ingredient_category"].includes(issue.type));
+    const byName = new Map();
+    relevant.forEach((issue) => {
+      const key = issue.normalizedName || issue.key;
+      if (!byName.has(key)) byName.set(key, issue);
+    });
+    return [...byName.values()];
+  }, [issues]);
+  const dishIssues = issues.filter((issue) => issue.type === "missing_dish_category");
+  const duplicateIssues = issues.filter((issue) => issue.type === "duplicate_ingredient_name");
+  const unresolved = Number(summary.unresolvedIssues || 0);
+  const canPublish = pack.status !== "published" && unresolved === 0;
+
+  const updatePack = (nextPack) => {
+    if (nextPack) onPackUpdated(nextPack);
+  };
+
+  const revalidate = async () => {
+    setRowBusy("revalidate", true); setError(""); setNotice("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/revalidate`, { method: "POST" });
+      updatePack(data.pack);
+    } catch (err) { setError(err.message || "No se pudo validar."); }
+    finally { setRowBusy("revalidate", false); }
+  };
+
+  const mapIngredient = async (issue, ingredientId) => {
+    const busyKey = `map-${issue.key}`;
+    setRowBusy(busyKey, true); setError(""); setNotice("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/ingredient`, {
+        method: "POST",
+        body: JSON.stringify({ normalizedName: issue.normalizedName, ingredientId })
+      });
+      updatePack(data.pack);
+      setNotice(`Vinculado a ${data.ingredient?.name || "ingrediente master"}.`);
+    } catch (err) { setError(err.message || "No se pudo mapear el ingrediente."); }
+    finally { setRowBusy(busyKey, false); }
+  };
+
+  const createIngredient = async (issue) => {
+    const form = creating[issue.normalizedName] || {};
+    if (!form.name?.trim() || !form.categoryId) {
+      setError("Nombre y categoria son obligatorios para crear ingrediente master.");
+      return;
+    }
+    const busyKey = `create-${issue.key}`;
+    setRowBusy(busyKey, true); setError(""); setNotice("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/ingredient`, {
+        method: "POST",
+        body: JSON.stringify({
+          normalizedName: issue.normalizedName,
+          create: { name: form.name.trim(), categoryId: form.categoryId }
+        })
+      });
+      updatePack(data.pack);
+      setNotice(data.duplicateMatched
+        ? `Ya existia "${data.ingredient?.name}". Se ha vinculado sin crear duplicados.`
+        : `Ingrediente creado y vinculado a ${data.ingredient?.name || form.name.trim()}.`);
+    } catch (err) { setError(err.message || "No se pudo crear el ingrediente."); }
+    finally { setRowBusy(busyKey, false); }
+  };
+
+  const setDishCategory = async (issue, categoryId) => {
+    if (!categoryId) return;
+    const busyKey = `dish-${issue.key}`;
+    setRowBusy(busyKey, true); setError(""); setNotice("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/normalize/dish-category`, {
+        method: "POST",
+        body: JSON.stringify({ dishIndex: issue.dishIndex, categoryId })
+      });
+      updatePack(data.pack);
+      setNotice("Categoria de plato asignada.");
+    } catch (err) { setError(err.message || "No se pudo asignar categoria."); }
+    finally { setRowBusy(busyKey, false); }
+  };
+
+  const publish = async () => {
+    setRowBusy("publish", true); setError(""); setNotice("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/publish`, { method: "POST" });
+      updatePack(data.pack);
+    } catch (err) { setError(err.message || "No se pudo publicar."); }
+    finally { setRowBusy("publish", false); }
+  };
+
+  const metricStyle = { padding: "10px 12px", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8, background: "var(--card-bg, #fff)" };
+  const labelStyle = { fontSize: 11, color: "var(--input-text, #64748b)", opacity: 0.65, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.04em" };
+  const valueStyle = { fontSize: 20, color: "var(--input-text, #111827)", fontWeight: 800, marginTop: 3 };
+
+  return (
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 10, padding: 18, marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
+        <div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+            <h3 style={{ margin: 0, fontSize: 17 }}>Revision editorial: {pack.title}</h3>
+            <PackStatusBadge status={pack.status} />
+          </div>
+          <p style={{ margin: 0, fontSize: 12, color: "#64748b" }}>{pack.slug}</p>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <button type="button" style={ABT.edit} onClick={revalidate} disabled={anyBusy}>{isRowBusy("revalidate") ? "Validando..." : "Revalidar"}</button>
+          <button type="button" style={{ ...ABT.green, opacity: canPublish ? 1 : 0.45 }} onClick={publish} disabled={!canPublish || anyBusy}>
+            {pack.status === "published" ? "Publicado" : isRowBusy("publish") ? "Publicando..." : "Publicar"}
+          </button>
+          <button type="button" style={ABT.cancel} onClick={onClose}>Cerrar</button>
+        </div>
+      </div>
+
+      <div style={{ height: 8, borderRadius: 999, background: "#e5e7eb", overflow: "hidden", marginBottom: 12 }}>
+        <div style={{ height: "100%", width: `${summary.totalIngredients ? Math.round((Number(summary.normalizedIngredients || 0) / Number(summary.totalIngredients || 1)) * 100) : 0}%`, background: unresolved ? "#f59e0b" : "#16a34a" }} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginBottom: 14 }}>
+        <div style={metricStyle}><div style={labelStyle}>Normalizados</div><div style={valueStyle}>{summary.normalizedIngredients || 0}/{summary.totalIngredients || 0}</div></div>
+        <div style={metricStyle}><div style={labelStyle}>Mapeos pendientes</div><div style={valueStyle}>{summary.missingIngredientMappings || 0}</div></div>
+        <div style={metricStyle}><div style={labelStyle}>Ambiguos</div><div style={valueStyle}>{summary.ambiguousMatches || 0}</div></div>
+        <div style={metricStyle}><div style={labelStyle}>Categorias ing.</div><div style={valueStyle}>{summary.missingIngredientCategories || 0}</div></div>
+        <div style={metricStyle}><div style={labelStyle}>Categorias plato</div><div style={valueStyle}>{summary.missingDishCategories || 0}</div></div>
+      </div>
+
+      {error ? <div className="kitchen-alert error" style={{ marginBottom: 12 }}>{error}</div> : null}
+      {notice ? <div className="kitchen-alert success" style={{ marginBottom: 12 }}>{notice}</div> : null}
+      {unresolved === 0 ? <div className="kitchen-alert success" style={{ marginBottom: 12 }}>Validacion limpia. El pack puede publicarse.</div> : null}
+
+      {ingredientIssues.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Ingredientes por resolver</h4>
+          <div style={{ overflowX: "auto" }}>
+            <table className="kitchen-table">
+              <thead><tr><th>Original</th><th>Asignar existente</th><th>Crear nuevo master</th></tr></thead>
+              <tbody>
+                {ingredientIssues.map((issue) => {
+                  const rowKey = `map-${issue.key}`;
+                  const createKey = `create-${issue.key}`;
+                  const rowBusy = isRowBusy(rowKey) || isRowBusy(createKey);
+                  const createForm = creating[issue.normalizedName] || { name: issue.originalName || issue.normalizedName, categoryId: "" };
+                  return (
+                    <tr key={issue.key}>
+                      <td>
+                        <div style={{ fontWeight: 700, fontSize: 13 }}>{issue.originalName || issue.normalizedName}</div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>{issue.normalizedName}</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8" }}>{issue.message}</div>
+                      </td>
+                      <td>
+                        {(issue.suggestedMatches || []).length > 0 && (
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+                            {issue.suggestedMatches.map((match) => (
+                              <button key={match.id} type="button" style={ABT.edit} disabled={rowBusy} onClick={() => mapIngredient(issue, match.id)}>
+                                {match.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <IngredientSearchSelector
+                          disabled={rowBusy}
+                          onSelect={(ing) => mapIngredient(issue, ing.id)}
+                        />
+                        {rowBusy && isRowBusy(rowKey) && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3 }}>Vinculando...</div>}
+                      </td>
+                      <td>
+                        <div style={{ display: "grid", gridTemplateColumns: "minmax(140px, 1fr) minmax(130px, 1fr) auto", gap: 6 }}>
+                          <input style={FS} value={createForm.name || ""} onChange={(e) => setCreating((prev) => ({ ...prev, [issue.normalizedName]: { ...createForm, name: e.target.value } }))} />
+                          <select style={FS} value={createForm.categoryId || ""} onChange={(e) => setCreating((prev) => ({ ...prev, [issue.normalizedName]: { ...createForm, categoryId: e.target.value } }))}>
+                            <option value="">Categoria</option>
+                            {ingredientCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                          </select>
+                          <button type="button" style={{ ...ABT.save, padding: "5px 10px", opacity: createForm.categoryId && !rowBusy ? 1 : 0.5 }} disabled={!createForm.categoryId || rowBusy} onClick={() => createIngredient(issue)}>
+                            {isRowBusy(createKey) ? "..." : "Crear"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {dishIssues.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Categorias de plato pendientes</h4>
+          <div style={{ display: "grid", gap: 8 }}>
+            {dishIssues.map((issue) => {
+              const dishBusy = isRowBusy(`dish-${issue.key}`);
+              return (
+                <div key={issue.key} style={{ display: "grid", gridTemplateColumns: "1fr minmax(180px, 260px)", gap: 10, alignItems: "center", padding: 10, border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8, background: "var(--card-bg, #fff)" }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{issue.dishName}</div>
+                    <div style={{ fontSize: 11, color: "#64748b" }}>Plato #{Number(issue.dishIndex) + 1}</div>
+                  </div>
+                  <select className="kitchen-select" defaultValue="" disabled={dishBusy} onChange={(e) => setDishCategory(issue, e.target.value)}>
+                    <option value="">{dishBusy ? "Guardando..." : "Asignar categoria"}</option>
+                    {dishCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {duplicateIssues.length > 0 && (
+        <div>
+          <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Avisos de nombres inconsistentes</h4>
+          {duplicateIssues.map((issue) => (
+            <div key={issue.key} style={{ padding: 10, border: "1px solid #fde68a", borderRadius: 8, background: "#fffbeb", fontSize: 12, color: "#92400e", marginBottom: 6 }}>
+              {issue.normalizedName}: {(issue.names || []).join(", ")}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ActionsMenu ─────────────────────────────────────────────────────────────
+// items: [{ label, onClick, disabled?, danger?, highlight?, divider?, key?, content? }]
+
+function ActionsMenu({ label = "Acciones", items = [], disabled = false }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        type="button"
+        style={{ ...ABT.edit, paddingRight: 9 }}
+        disabled={disabled}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {label} <span style={{ fontSize: 9, marginLeft: 3, opacity: 0.7 }}>▾</span>
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", right: 0, top: "calc(100% + 4px)",
+          background: "var(--dropdown-bg, #fff)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8,
+          boxShadow: "0 8px 28px rgba(0,0,0,0.13)", minWidth: 200, zIndex: 200, overflow: "hidden"
+        }}>
+          {items.map((item, i) =>
+            item.divider ? (
+              <div key={`div-${i}`} style={{ borderTop: "1px solid var(--hf-border, #f1f5f9)", margin: "2px 0" }} />
+            ) : item.content ? (
+              <div key={item.key || `content-${i}`}>{item.content}</div>
+            ) : (
+              <button
+                key={item.label || i}
+                type="button"
+                disabled={item.disabled}
+                onClick={() => { item.onClick(); setOpen(false); }}
+                style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  padding: "9px 14px", fontSize: 13,
+                  fontWeight: item.danger ? 600 : 400,
+                  color: item.disabled ? "var(--input-text, #9ca3af)" : item.danger ? "#b42318" : item.highlight ? "#4338ca" : "var(--input-text, #374151)",
+                  opacity: item.disabled ? 0.45 : 1,
+                  background: "none", border: "none",
+                  cursor: item.disabled ? "not-allowed" : "pointer",
+                }}
+                onMouseEnter={(e) => { if (!item.disabled) e.currentTarget.style.background = "var(--dropdown-hover-bg, #f8fafc)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+              >
+                {item.label}
+              </button>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ConfirmModal ─────────────────────────────────────────────────────────────
+
+function ConfirmModal({ title, body, confirmLabel = "Confirmar", danger = false, onConfirm, onCancel }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "var(--modal-bg, #fff)", border: "1px solid var(--modal-border, transparent)", borderRadius: 12, padding: 28, width: 380, maxWidth: "95vw", boxShadow: "0 16px 48px rgba(0,0,0,0.18)" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 15, color: "var(--input-text, #111827)" }}>{title}</h3>
+        {body ? <p style={{ margin: "0 0 20px", fontSize: 13, color: "var(--input-text, #6b7280)", opacity: 0.7, lineHeight: 1.5 }}>{body}</p> : null}
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button type="button" style={ABT.cancel} onClick={onCancel}>Cancelar</button>
+          <button
+            type="button"
+            style={danger ? { ...ABT.del, fontSize: 13, padding: "7px 16px" } : { ...ABT.save }}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── HouseholdPacksModal ──────────────────────────────────────────────────────
+
+const ACQVIA_LABEL = { purchase: "comprado", subscription: "suscripción", admin_grant: "concedido", free: "gratis" };
+
+function HouseholdPacksModal({ household, onClose }) {
+  const [packs, setPacks] = useState([]);
+  const [allPacks, setAllPacks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [confirmRevokeId, setConfirmRevokeId] = useState(null);
+  const [revokingId, setRevokingId] = useState(null);
+  const [notice, setNotice] = useState({ type: "", msg: "" });
+  const [grantPackId, setGrantPackId] = useState("");
+  const [granting, setGranting] = useState(false);
+
+  const reloadPacks = useCallback(async () => {
+    const data = await apiRequest(`/api/admin/households/${household.id}/packs`);
+    setPacks(data.packs || []);
+  }, [household.id]);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      apiRequest(`/api/admin/households/${household.id}/packs`),
+      apiRequest("/api/kitchen/catalog/packs/admin-all")
+    ]).then(([hhData, allData]) => {
+      setPacks(hhData.packs || []);
+      setAllPacks(allData.packs || []);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [household.id]);
+
+  const handleRevoke = async (pack) => {
+    setRevokingId(pack.packId);
+    setNotice({ type: "", msg: "" });
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.packId}/admin-revoke`, {
+        method: "POST",
+        body: JSON.stringify({ targetHouseholdId: String(household.id) })
+      });
+      setPacks((prev) => prev.filter((p) => p.packId !== pack.packId));
+      setNotice({ type: "success", msg: data.message || "Pack revocado." });
+    } catch (err) {
+      setNotice({ type: "error", msg: err.message || "No se pudo revocar." });
+    } finally {
+      setRevokingId(null);
+      setConfirmRevokeId(null);
+    }
+  };
+
+  const handleGrant = async () => {
+    if (!grantPackId) return;
+    setGranting(true);
+    setNotice({ type: "", msg: "" });
+    try {
+      await apiRequest(`/api/kitchen/catalog/packs/${grantPackId}/admin-grant`, {
+        method: "POST",
+        body: JSON.stringify({ targetHouseholdId: String(household.id) })
+      });
+      await reloadPacks();
+      setGrantPackId("");
+      setNotice({ type: "success", msg: "Pack concedido." });
+    } catch (err) {
+      setNotice({ type: "error", msg: err.message || "No se pudo conceder." });
+    } finally {
+      setGranting(false);
+    }
+  };
+
+  const ownedIds = new Set(packs.map((p) => p.packId));
+  const grantableOptions = allPacks.filter((p) => !ownedIds.has(String(p.id)));
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "var(--modal-bg, #fff)", border: "1px solid var(--modal-border, transparent)", borderRadius: 12, width: 620, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "88vh", display: "flex", flexDirection: "column" }}>
+
+        <div style={{ padding: "20px 24px 14px", borderBottom: "1px solid var(--hf-border, #e5e7eb)", flexShrink: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 16 }}>Packs — {household.name}</h3>
+              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280", display: "flex", alignItems: "center", gap: 6 }}>
+                <PlanBadge plan={household.subscriptionPlan} />
+                <span>{household.memberCount || 0} miembros</span>
+                <span>·</span>
+                <span style={{ fontWeight: 600, color: "#374151" }}>{packs.length} packs asignados</span>
+              </p>
+            </div>
+            <button type="button" onClick={onClose} style={{ ...ABT.cancel, padding: "5px 13px", fontSize: 13 }}>✕ Cerrar</button>
+          </div>
+        </div>
+
+        <div style={{ overflowY: "auto", padding: "16px 24px 24px", flex: 1 }}>
+          {notice.msg ? (
+            <div className={`kitchen-alert ${notice.type}`} style={{ marginBottom: 12 }}>{notice.msg}</div>
+          ) : null}
+
+          <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "#374151", fontWeight: 600 }}>Packs asignados</h4>
+
+          {loading ? (
+            <p style={{ fontSize: 12, color: "#9ca3af" }}>Cargando...</p>
+          ) : packs.length === 0 ? (
+            <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 20 }}>Este hogar no tiene ningún pack asignado.</p>
+          ) : (
+            <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse", marginBottom: 20 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
+                  <th style={{ textAlign: "left", padding: "4px 8px", fontWeight: 600, color: "#6b7280" }}>Pack</th>
+                  <th style={{ textAlign: "center", padding: "4px 8px", fontWeight: 600, color: "#6b7280" }}>Tipo</th>
+                  <th style={{ textAlign: "center", padding: "4px 8px", fontWeight: 600, color: "#6b7280" }}>Instalado</th>
+                  <th style={{ padding: "4px 8px" }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {packs.map((p) => (
+                  <tr key={p.packId} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <td style={{ padding: "8px 8px" }}>
+                      <div style={{ fontWeight: 600 }}>{p.packTitle}</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: "monospace" }}>{p.packSlug}</div>
+                    </td>
+                    <td style={{ padding: "8px 8px", textAlign: "center" }}>
+                      <span style={{
+                        fontSize: 10, padding: "2px 7px", borderRadius: 999, fontWeight: 700,
+                        background: p.isPaid ? "#dbeafe" : "#d1fae5",
+                        color: p.isPaid ? "#1d4ed8" : "#065f46"
+                      }}>
+                        {ACQVIA_LABEL[p.acquiredVia] || p.acquiredVia}
+                      </span>
+                    </td>
+                    <td style={{ padding: "8px 8px", textAlign: "center", color: p.isInstalled ? "#16a34a" : "#9ca3af", fontWeight: p.isInstalled ? 600 : 400 }}>
+                      {p.isInstalled ? "✓ sí" : "— no"}
+                    </td>
+                    <td style={{ padding: "8px 8px", textAlign: "right", minWidth: 170 }}>
+                      {p.isPaid && p.isInstalled ? (
+                        <span style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic" }} title="Pagado e instalado — no se puede revocar">🔒 protegido</span>
+                      ) : confirmRevokeId === p.packId ? (
+                        <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "flex-end" }}>
+                          <span style={{ fontSize: 10, color: "#92400e", fontWeight: 600 }}>
+                            {p.isPaid ? "¿Pagado. Confirmar?" : p.isInstalled ? "¿Eliminar platos?" : "¿Confirmar?"}
+                          </span>
+                          <button type="button" style={{ ...ABT.del, fontSize: 11, padding: "2px 8px" }} disabled={Boolean(revokingId)} onClick={() => handleRevoke(p)}>
+                            {revokingId === p.packId ? "..." : "Sí, revocar"}
+                          </button>
+                          <button type="button" style={{ ...ABT.cancel, fontSize: 11, padding: "2px 8px" }} onClick={() => setConfirmRevokeId(null)}>No</button>
+                        </div>
+                      ) : (
+                        <button type="button" style={{ ...ABT.del, fontSize: 11, padding: "2px 8px" }} disabled={Boolean(revokingId)} onClick={() => setConfirmRevokeId(p.packId)}>
+                          Revocar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "0 0 16px" }} />
+
+          <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "#374151", fontWeight: 600 }}>Conceder pack a este hogar</h4>
+          {loading ? null : grantableOptions.length === 0 ? (
+            <p style={{ fontSize: 12, color: "#9ca3af" }}>Este hogar ya tiene todos los packs disponibles.</p>
+          ) : (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <select
+                className="kitchen-select"
+                value={grantPackId}
+                onChange={(e) => setGrantPackId(e.target.value)}
+                style={{ flex: 1, fontSize: 13 }}
+              >
+                <option value="">— Selecciona un pack —</option>
+                {grantableOptions.map((p) => (
+                  <option key={p.id} value={p.id}>{p.title}</option>
+                ))}
+              </select>
+              <button type="button" style={{ ...ABT.save, opacity: grantPackId && !granting ? 1 : 0.55 }} disabled={!grantPackId || granting} onClick={handleGrant}>
+                {granting ? "Concediendo..." : "Conceder"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GrantModal({ pack, households, onGrant, onClose }) {
+  const [householdId, setHouseholdId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handle = async () => {
+    if (!householdId.trim()) { setError("Selecciona o introduce un household ID."); return; }
+    setSaving(true); setError(""); setSuccess("");
+    try {
+      await onGrant(String(pack.id), householdId.trim());
+      setSuccess("Pack concedido correctamente.");
+      setHouseholdId("");
+    } catch (err) { setError(err.message || "Error al conceder."); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "var(--modal-bg, #fff)", border: "1px solid var(--modal-border, transparent)", borderRadius: 12, padding: 28, width: 420, maxWidth: "95vw", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <h3 style={{ margin: "0 0 4px", fontSize: 16, color: "var(--input-text, #111827)" }}>Conceder acceso al pack</h3>
+        <p style={{ margin: "0 0 18px", fontSize: 13, color: "var(--input-text, #64748b)", opacity: 0.7 }}>Pack: <strong>{pack.title}</strong></p>
+
+        <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, marginBottom: 10 }}>
+          Seleccionar household
+          <select
+            className="kitchen-select"
+            value={householdId}
+            onChange={(e) => setHouseholdId(e.target.value)}
+          >
+            <option value="">— Elige un hogar —</option>
+            {(households || []).map((h) => (
+              <option key={h.id} value={h.id}>{h.name} ({h.subscriptionPlan})</option>
+            ))}
+          </select>
+        </label>
+        <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, marginBottom: 14 }}>
+          O introduce el ID directamente
+          <input
+            style={{ padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--input-border, #d1d5db)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)", outline: "none" }}
+            value={householdId}
+            onChange={(e) => setHouseholdId(e.target.value)}
+            placeholder="MongoDB ObjectId..."
+          />
+        </label>
+
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 8 }}>{error}</div> : null}
+        {success ? <div className="kitchen-alert success" style={{ marginBottom: 8 }}>{success}</div> : null}
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" disabled={saving} onClick={handle} style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Concediendo..." : "Conceder"}
+          </button>
+          <button type="button" onClick={onClose} style={ABT.cancel}>Cerrar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CatalogPacksSection({ householdContext, onClearHouseholdContext }) {
+  const [packs, setPacks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState(() => ({
+    packType: window.localStorage.getItem("lunchfy.admin.catalog.packType") === "diet" ? "diet" : "all"
+  }));
+  const [deletingId, setDeletingId] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
+  const [grantModal, setGrantModal] = useState(null);
+  const [deleteConfirmPack, setDeleteConfirmPack] = useState(null);
+  const [installationsModal, setInstallationsModal] = useState(null);
+  const [households, setHouseholds] = useState([]);
+  const [saveNotice, setSaveNotice] = useState("");
+  const [baseBitePrice, setBaseBitePrice] = useState(1.99);
+
+  // ── Filters + sort ──────────────────────────────────────────────────────────
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterPriceType, setFilterPriceType] = useState("all");
+  const [filterStripe, setFilterStripe] = useState("all");
+  const [filterHealth, setFilterHealth] = useState("all");
+  const [filterPlan, setFilterPlan] = useState("all");
+  const [sortBy, setSortBy] = useState("sortOrder");
+
+  // ── Panel state (edit / review — mutually exclusive full-screen overlays) ──
+  const [panelState, setPanelState] = useState(null); // { mode: "edit"|"review", pack }
+  const [isDirty, setIsDirty] = useState(false);
+  const [closeConfirm, setCloseConfirm] = useState(false);
+  const pendingPanelRef = useRef(null);
+  const packFormRef = useRef(null);
+
+  const closePanel = useCallback(() => {
+    setPanelState(null);
+    setIsDirty(false);
+    setCloseConfirm(false);
+  }, []);
+
+  const openPanel = useCallback((mode, pack) => {
+    setPanelState((cur) => {
+      if (cur?.mode === "edit" && isDirty) {
+        pendingPanelRef.current = { mode, pack };
+        setCloseConfirm(true);
+        return cur;
+      }
+      setIsDirty(false);
+      return { mode, pack };
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty]);
+
+  const handleConfirmDiscard = useCallback(() => {
+    const pending = pendingPanelRef.current;
+    pendingPanelRef.current = null;
+    setPanelState(pending || null);
+    setIsDirty(false);
+    setCloseConfirm(false);
+  }, []);
+
+  const syncPanelPack = useCallback((updatedPack) => {
+    setPanelState((prev) =>
+      prev && String(prev.pack?.id) === String(updatedPack.id)
+        ? { ...prev, pack: updatedPack }
+        : prev
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!panelState) return;
+    const handle = (e) => {
+      if (e.key !== "Escape") return;
+      if (panelState.mode === "edit" && isDirty) setCloseConfirm(true);
+      else closePanel();
+    };
+    window.addEventListener("keydown", handle);
+    return () => window.removeEventListener("keydown", handle);
+  }, [panelState, isDirty, closePanel]);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const params = new URLSearchParams();
+      if (filters.packType === "diet") params.set("isDietPack", "true");
+      const query = params.toString();
+      const data = await apiRequest(`/api/kitchen/catalog/packs/admin-all${query ? `?${query}` : ""}`);
+      setPacks(data.packs || []);
+    } catch (err) { setError(err.message || "Error al cargar packs."); }
+    finally { setLoading(false); }
+  }, [filters.packType]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    window.localStorage.setItem("lunchfy.admin.catalog.packType", filters.packType);
+  }, [filters.packType]);
+
+  useEffect(() => {
+    apiRequest("/api/admin/households")
+      .then((d) => setHouseholds(d.households || []))
+      .catch(() => {});
+    apiRequest("/api/kitchen/bites/admin/config")
+      .then((d) => setBaseBitePrice(d.config?.baseBitePrice ?? 1.99))
+      .catch(() => {});
+  }, []);
+
+  const filtered = useMemo(() => {
+    let items = packs;
+
+    // Text search
+    const q = search.trim().toLowerCase();
+    if (q) items = items.filter((p) => String(p.title || "").toLowerCase().includes(q) || String(p.slug || "").toLowerCase().includes(q));
+
+    // Status / active filter
+    if (filterStatus === "active") items = items.filter((p) => p.active !== false);
+    else if (filterStatus === "inactive") items = items.filter((p) => p.active === false);
+    else if (filterStatus !== "all") items = items.filter((p) => p.status === filterStatus);
+
+    // Price type filter
+    if (filterPriceType === "free") items = items.filter((p) => !p.priceBasic || Number(p.priceBasic) <= 0);
+    else if (filterPriceType === "paid_eur") items = items.filter((p) => Number(p.priceBasic) > 0);
+    else if (filterPriceType === "paid_stripe") items = items.filter((p) => p.isPaid);
+    else if (filterPriceType === "bites") items = items.filter((p) => Number(p.monthlyCreditCost || 0) > 0);
+
+    // Stripe status filter
+    if (filterStripe !== "all") items = items.filter((p) => getStripeStatus(p).code === filterStripe);
+
+    // Health filter
+    if (filterHealth !== "all") items = items.filter((p) => getPackHealth(p).level === filterHealth);
+
+    // Plan filter
+    if (filterPlan !== "all") items = items.filter((p) => (p.includedPlans || []).includes(filterPlan));
+
+    // Sort
+    const sorted = [...items];
+    if (sortBy === "most_installed") sorted.sort((a, b) => (b.ownedByCount || 0) - (a.ownedByCount || 0));
+    else if (sortBy === "least_installed") sorted.sort((a, b) => (a.ownedByCount || 0) - (b.ownedByCount || 0));
+    else if (sortBy === "newest") sorted.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    else if (sortBy === "recently_installed") sorted.sort((a, b) => new Date(b.lastAcquiredAt || 0) - new Date(a.lastAcquiredAt || 0));
+    else if (sortBy === "price_asc") sorted.sort((a, b) => Number(a.priceBasic || 0) - Number(b.priceBasic || 0));
+    else if (sortBy === "price_desc") sorted.sort((a, b) => Number(b.priceBasic || 0) - Number(a.priceBasic || 0));
+    else if (sortBy === "bites_desc") sorted.sort((a, b) => Number(b.monthlyCreditCost || 0) - Number(a.monthlyCreditCost || 0));
+    else sorted.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    return sorted;
+  }, [packs, search, filterStatus, filterPriceType, filterStripe, filterHealth, filterPlan, sortBy]);
+
+  const onlyDiets = filters.packType === "diet";
+
+  const handleSave = async (form) => {
+    const packId = panelState?.pack?.id;
+    setSaveNotice("");
+    if (packId) {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${packId}`, {
+        method: "PUT",
+        body: JSON.stringify(form)
+      });
+      if (data.syncSummary) {
+        const s = data.syncSummary;
+        setSaveNotice(`Pack actualizado. ${s.synced || 0} platos instalados sincronizados, ${s.skippedCustomized || 0} omitidos por personalizacion, ${s.skippedAmbiguous || 0} omitidos por coincidencia ambigua.`);
+      }
+    } else {
+      await apiRequest("/api/kitchen/catalog/packs", {
+        method: "POST",
+        body: JSON.stringify(form)
+      });
+    }
+    await load();
+    // closePanel is called by PackForm.handleSubmit after PATCH (Stripe sync) completes
+  };
+
+  const handleToggle = async (pack, field) => {
+    if (togglingId) return;
+    setTogglingId(`${pack.id}-${field}`);
+    try {
+      await apiRequest(`/api/kitchen/catalog/packs/${pack.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ [field]: field === "active" ? !(pack.active !== false) : !pack[field] })
+      });
+      await load();
+    } catch (err) { setError(err.message || "Error."); }
+    finally { setTogglingId(null); }
+  };
+
+  const handleSetFree = async (pack) => {
+    if (togglingId) return;
+    const newPrice = pack.priceBasic > 0 ? 0 : 1.99;
+    setTogglingId(`${pack.id}-price`);
+    try {
+      await apiRequest(`/api/kitchen/catalog/packs/${pack.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ priceBasic: newPrice, includedPlans: newPrice === 0 ? ["basic", "pro", "premium"] : ["pro", "premium"] })
+      });
+      await load();
+    } catch (err) { setError(err.message || "Error."); }
+    finally { setTogglingId(null); }
+  };
+
+  const handleDelete = async (pack) => {
+    setDeleteConfirmPack(pack);
+  };
+
+  const confirmDelete = async () => {
+    const pack = deleteConfirmPack;
+    setDeleteConfirmPack(null);
+    setDeletingId(pack.id);
+    try {
+      await apiRequest(`/api/kitchen/catalog/packs/${pack.id}`, { method: "DELETE" });
+      await load();
+    } catch (err) { setError(err.message || "Error al eliminar."); }
+    finally { setDeletingId(null); }
+  };
+
+  const handleGrant = async (packId, targetHouseholdId) => {
+    await apiRequest(`/api/kitchen/catalog/packs/${packId}/admin-grant`, {
+      method: "POST",
+      body: JSON.stringify({ targetHouseholdId })
+    });
+  };
+
+  const handlePublish = async (pack) => {
+    if (togglingId) return;
+    setTogglingId(`${pack.id}-publish`);
+    setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/publish`, { method: "POST" });
+      setPacks((prev) => prev.map((item) => String(item.id) === String(data.pack.id) ? data.pack : item));
+      syncPanelPack(data.pack);
+    } catch (err) {
+      setError(err.message || "No se pudo publicar el pack.");
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleSetStatus = async (pack, status) => {
+    if (togglingId) return;
+    setTogglingId(`${pack.id}-status-${status}`);
+    setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/status`, {
+        method: "POST",
+        body: JSON.stringify({ status })
+      });
+      setPacks((prev) => prev.map((item) => String(item.id) === String(data.pack.id) ? data.pack : item));
+      syncPanelPack(data.pack);
+    } catch (err) {
+      setError(err.message || "No se pudo cambiar el estado del pack.");
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const replacePack = (nextPack) => {
+    setPacks((prev) => prev.map((pack) => String(pack.id) === String(nextPack.id) ? nextPack : pack));
+    syncPanelPack(nextPack);
+  };
+
+  return (<>
+    <Card className="kitchen-block-gap">
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
+      <div style={{ marginBottom: 16 }}>
+        <h2 className="kitchen-title-no-margin">Catálogo de packs</h2>
+        <p className="kitchen-muted">Crea, edita y gestiona los packs de platos del catálogo de Lunchfy.</p>
+      </div>
+
+      {/* ── Toolbar row 1: search + primary actions ────────────────────────── */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+        <input
+          style={{ padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", width: 210, outline: "none", background: "var(--input-bg,#fff)", color: "var(--input-text,#374151)" }}
+          placeholder="Buscar por título o slug..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          style={{ fontSize: 12, padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", background: "var(--surface-muted,#f8fafc)", color: "var(--input-text,#374151)", cursor: "pointer", outline: "none" }}
+        >
+          <option value="sortOrder">Ordenar: posición</option>
+          <option value="most_installed">Más instalados</option>
+          <option value="least_installed">Menos instalados</option>
+          <option value="recently_installed">Últ. instalación</option>
+          <option value="newest">Más recientes</option>
+          <option value="price_asc">Precio ↑</option>
+          <option value="price_desc">Precio ↓</option>
+          <option value="bites_desc">Bites ↓</option>
+        </select>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+          <button type="button" style={{ ...ABT.save, padding: "6px 14px", fontSize: 12 }} onClick={() => openPanel("edit", {})}>
+            + Nuevo pack
+          </button>
+          <button type="button" style={ABT.edit} onClick={load} disabled={loading}>
+            {loading ? "..." : "↺"}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Toolbar row 2: filters ──────────────────────────────────────────── */}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+        {/* Status */}
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
+          style={{ fontSize: 12, padding: "5px 8px", borderRadius: 6, border: `1px solid ${filterStatus !== "all" ? "#6366f1" : "#d1d5db"}`, background: filterStatus !== "all" ? "#eef2ff" : "var(--surface-muted,#f8fafc)", color: filterStatus !== "all" ? "#4338ca" : "var(--input-text,#374151)", cursor: "pointer", outline: "none", fontWeight: filterStatus !== "all" ? 700 : 400 }}
+        >
+          <option value="all">Estado: todos</option>
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+          <option value="published">published</option>
+          <option value="ready">ready</option>
+          <option value="needs_review">needs review</option>
+          <option value="draft">draft</option>
+        </select>
+
+        {/* Price type */}
+        <select value={filterPriceType} onChange={(e) => setFilterPriceType(e.target.value)}
+          style={{ fontSize: 12, padding: "5px 8px", borderRadius: 6, border: `1px solid ${filterPriceType !== "all" ? "#6366f1" : "#d1d5db"}`, background: filterPriceType !== "all" ? "#eef2ff" : "var(--surface-muted,#f8fafc)", color: filterPriceType !== "all" ? "#4338ca" : "var(--input-text,#374151)", cursor: "pointer", outline: "none", fontWeight: filterPriceType !== "all" ? 700 : 400 }}
+        >
+          <option value="all">Precio: todos</option>
+          <option value="free">Gratis</option>
+          <option value="paid_eur">De pago (€)</option>
+          <option value="paid_stripe">Stripe activo</option>
+          <option value="bites">Con Bites</option>
+        </select>
+
+        {/* Stripe */}
+        <select value={filterStripe} onChange={(e) => setFilterStripe(e.target.value)}
+          style={{ fontSize: 12, padding: "5px 8px", borderRadius: 6, border: `1px solid ${filterStripe !== "all" ? "#6366f1" : "#d1d5db"}`, background: filterStripe !== "all" ? "#eef2ff" : "var(--surface-muted,#f8fafc)", color: filterStripe !== "all" ? "#4338ca" : "var(--input-text,#374151)", cursor: "pointer", outline: "none", fontWeight: filterStripe !== "all" ? 700 : 400 }}
+        >
+          <option value="all">Stripe: todos</option>
+          <option value="connected">Conectado</option>
+          <option value="missing">Sin IDs</option>
+          <option value="pending">Pendiente</option>
+          <option value="free">Gratis</option>
+          <option value="na">No aplica</option>
+        </select>
+
+        {/* Health */}
+        <select value={filterHealth} onChange={(e) => setFilterHealth(e.target.value)}
+          style={{ fontSize: 12, padding: "5px 8px", borderRadius: 6, border: `1px solid ${filterHealth !== "all" ? "#6366f1" : "#d1d5db"}`, background: filterHealth !== "all" ? "#eef2ff" : "var(--surface-muted,#f8fafc)", color: filterHealth !== "all" ? "#4338ca" : "var(--input-text,#374151)", cursor: "pointer", outline: "none", fontWeight: filterHealth !== "all" ? 700 : 400 }}
+        >
+          <option value="all">Salud: todos</option>
+          <option value="ok">OK</option>
+          <option value="review">Revisar</option>
+          <option value="legacy">Legacy</option>
+        </select>
+
+        {/* Plan */}
+        <select value={filterPlan} onChange={(e) => setFilterPlan(e.target.value)}
+          style={{ fontSize: 12, padding: "5px 8px", borderRadius: 6, border: `1px solid ${filterPlan !== "all" ? "#6366f1" : "#d1d5db"}`, background: filterPlan !== "all" ? "#eef2ff" : "var(--surface-muted,#f8fafc)", color: filterPlan !== "all" ? "#4338ca" : "var(--input-text,#374151)", cursor: "pointer", outline: "none", fontWeight: filterPlan !== "all" ? 700 : 400 }}
+        >
+          <option value="all">Plan: todos</option>
+          <option value="basic">basic</option>
+          <option value="pro">pro</option>
+          <option value="premium">premium</option>
+        </select>
+
+        {/* Diet toggle */}
+        <button
+          type="button"
+          aria-pressed={onlyDiets}
+          onClick={() => setFilters((prev) => ({ ...prev, packType: prev.packType === "diet" ? "all" : "diet" }))}
+          style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: `1px solid ${onlyDiets ? "#86efac" : "#d1d5db"}`, background: onlyDiets ? "#f0fdf4" : "var(--surface-muted,#f8fafc)", color: onlyDiets ? "#15803d" : "var(--input-text,#374151)", cursor: "pointer", fontWeight: onlyDiets ? 700 : 400 }}
+        >
+          {onlyDiets ? "✓ " : ""}Dieta
+        </button>
+
+        {/* Reset filters */}
+        {(filterStatus !== "all" || filterPriceType !== "all" || filterStripe !== "all" || filterHealth !== "all" || filterPlan !== "all" || search.trim() || onlyDiets) && (
+          <button
+            type="button"
+            onClick={() => { setFilterStatus("all"); setFilterPriceType("all"); setFilterStripe("all"); setFilterHealth("all"); setFilterPlan("all"); setSearch(""); setFilters({ packType: "all" }); setSortBy("sortOrder"); }}
+            style={{ fontSize: 11, padding: "4px 9px", borderRadius: 6, border: "1px solid #fca5a5", background: "#fff8f8", color: "#b42318", cursor: "pointer" }}
+          >
+            ✕ Limpiar
+          </button>
+        )}
+
+        <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 2 }}>
+          {filtered.length}{filtered.length !== packs.length ? ` / ${packs.length}` : ""} packs
+        </span>
+      </div>
+
+      {error ? <div className="kitchen-alert error">{error}</div> : null}
+      {saveNotice ? <div className="kitchen-alert success">{saveNotice}</div> : null}
+
+      {loading ? <p className="kitchen-muted">Cargando packs...</p> : filtered.length === 0 ? (
+        <p className="kitchen-muted">No hay packs{search.trim() || filterStatus !== "all" || filterPriceType !== "all" ? " con esos filtros" : ". Crea el primero."}.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="kitchen-table">
+            <thead>
+              <tr>
+                <th>Pack</th>
+                <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Precio / Bites</th>
+                <th style={{ textAlign: "center" }}>Stripe</th>
+                <th style={{ textAlign: "center" }}>Planes</th>
+                <th style={{ textAlign: "center" }}>Estado</th>
+                <th style={{ textAlign: "center" }}>Salud</th>
+                <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Hogares</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((pack) => {
+                const isFree = !pack.priceBasic || Number(pack.priceBasic) <= 0;
+                const bites = Number(pack.monthlyCreditCost || 0);
+                const togId = togglingId;
+                const unresolved = Number(pack.validationSummary?.unresolvedIssues || 0);
+                const canPublishPack = pack.status !== "published" && unresolved === 0;
+                const stripeStatus = getStripeStatus(pack);
+                const health = getPackHealth(pack);
+                const isEditing = panelState?.mode === "edit" && String(panelState.pack?.id) === String(pack.id);
+                const isReviewing = panelState?.mode === "review" && String(panelState.pack?.id) === String(pack.id);
+                return (
+                  <tr key={pack.id} style={{ opacity: pack.active !== false ? 1 : 0.45, background: (isEditing || isReviewing) ? "rgba(99,102,241,0.07)" : undefined }}>
+                    {/* Pack */}
+                    <td style={{ minWidth: 160 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+                        {pack.featured ? <span style={{ color: "#f59e0b" }}>★</span> : null}
+                        {pack.active === false ? <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700 }}>OFF</span> : null}
+                        <span>{pack.title}</span>
+                      </div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: "monospace", marginTop: 1 }}>{pack.slug}</div>
+                      <div style={{ display: "flex", gap: 4, marginTop: 3, alignItems: "center", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 10, color: "#6b7280", fontWeight: 600 }}>{pack.dishCount}p</span>
+                        {pack.isDietPack && <span style={{ fontSize: 10, background: "#f0fdf4", color: "#15803d", borderRadius: 4, padding: "0 4px", fontWeight: 700 }}>dieta</span>}
+                        {pack.tags?.slice(0, 2).map((t) => (
+                          <span key={t} style={{ fontSize: 10, background: "#eef2ff", color: "#6366f1", borderRadius: 4, padding: "0 4px" }}>{t}</span>
+                        ))}
+                      </div>
+                    </td>
+
+                    {/* Precio / Bites */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      {isFree ? (
+                        <span style={{ fontSize: 11, background: "#dcfce7", color: "#166534", borderRadius: 5, padding: "2px 7px", fontWeight: 700 }}>Gratis</span>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--input-text,#374151)" }}>{Number(pack.priceBasic).toFixed(2)} €</span>
+                          {bites > 0 && (
+                            <span style={{ fontSize: 10, color: "#7c3aed", fontWeight: 700, display: "flex", alignItems: "center", gap: 2 }}>
+                              <BitesIcon size={10} />
+                              {bites}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {!isFree && bites > 0 && false /* already shown above */ }
+                    </td>
+
+                    {/* Stripe */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <span
+                        title={pack.isPaid ? `Product: ${pack.stripeProductId || "—"}  |  Price: ${pack.stripePriceId || "—"}  |  mode: ${pack.paymentMode}` : undefined}
+                        style={{ display: "inline-block", fontSize: 10, fontWeight: 700, background: stripeStatus.bg, color: stripeStatus.color, borderRadius: 5, padding: "2px 7px", cursor: pack.isPaid ? "help" : "default", whiteSpace: "nowrap" }}
+                      >
+                        {stripeStatus.label}
+                      </span>
+                    </td>
+
+                    {/* Planes */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", gap: 2, justifyContent: "center", flexWrap: "wrap" }}>
+                        {(pack.includedPlans || []).map((p) => (
+                          <span key={p} style={{ fontSize: 10, background: "#f0f4ff", color: "#4338ca", borderRadius: 4, padding: "1px 5px", fontWeight: 600 }}>{p}</span>
+                        ))}
+                        {(pack.includedPlans || []).length === 0 && <span style={{ fontSize: 11, color: "#94a3b8" }}>—</span>}
+                      </div>
+                    </td>
+
+                    {/* Estado: active + status badge */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                        <PackStatusBadge status={pack.status} />
+                        {pack.active === false
+                          ? <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600 }}>inactivo</span>
+                          : unresolved > 0
+                            ? <span style={{ fontSize: 10, color: "#c2410c", fontWeight: 700 }}>{unresolved}✗</span>
+                            : pack.status === "published"
+                              ? <span style={{ fontSize: 10, color: "#16a34a", fontWeight: 600 }}>✓ válido</span>
+                              : null}
+                      </div>
+                    </td>
+
+                    {/* Salud */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <span
+                        title={health.issues.length > 0 ? health.issues.join(" · ") : undefined}
+                        style={{
+                          display: "inline-block",
+                          fontSize: 10, fontWeight: 700,
+                          borderRadius: 5, padding: "2px 7px",
+                          cursor: health.issues.length > 0 ? "help" : "default",
+                          background: health.level === "ok" ? "#ecfdf5" : health.level === "legacy" ? "#f8fafc" : "#fffbeb",
+                          color: health.level === "ok" ? "#047857" : health.level === "legacy" ? "#64748b" : "#b45309"
+                        }}
+                      >
+                        {health.level === "ok" ? "✓ OK" : health.level === "legacy" ? "Legacy" : "⚠ Revisar"}
+                      </span>
+                    </td>
+
+                    {/* Hogares */}
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      {pack.ownedByCount > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setInstallationsModal(pack)}
+                          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "center" }}
+                        >
+                          <div style={{ fontWeight: 700, fontSize: 13, color: "#4338ca" }}>{pack.ownedByCount}</div>
+                          {pack.installedCount > 0 && (
+                            <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 600 }}>{pack.installedCount} inst.</div>
+                          )}
+                          {pack.lastAcquiredAt && (
+                            <div style={{ fontSize: 10, color: "#94a3b8" }}>{formatDaysSince(pack.lastAcquiredAt)}</div>
+                          )}
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 12, color: "#d1d5db" }}>—</span>
+                      )}
+                    </td>
+
+                    {/* Acciones */}
+                    <td style={{ verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
+                        <button
+                          type="button"
+                          style={{ ...ABT.edit, ...(isEditing ? { background: "#4338ca", color: "#fff", borderColor: "#4338ca" } : {}) }}
+                          onClick={() => openPanel("edit", pack)}
+                        >
+                          {isEditing ? "✏️" : "Editar"}
+                        </button>
+                        <button
+                          type="button"
+                          style={{ ...ABT.edit, color: "#4338ca", borderColor: "#c7d2fe", ...(isReviewing ? { background: "#4338ca", color: "#fff", borderColor: "#4338ca" } : {}) }}
+                          onClick={() => openPanel("review", pack)}
+                        >
+                          {isReviewing ? "🔍" : "Revisar"}
+                        </button>
+                        <ActionsMenu
+                          disabled={Boolean(togId)}
+                          items={[
+                            {
+                              label: pack.active !== false ? "Desactivar" : "Activar",
+                              disabled: togId === `${pack.id}-active`,
+                              onClick: () => handleToggle(pack, "active")
+                            },
+                            {
+                              label: pack.featured ? "Quitar destaque" : "Destacar",
+                              disabled: togId === `${pack.id}-featured`,
+                              onClick: () => handleToggle(pack, "featured")
+                            },
+                            {
+                              label: isFree ? "Poner precio" : "Poner gratis",
+                              disabled: togId === `${pack.id}-price`,
+                              onClick: () => handleSetFree(pack)
+                            },
+                            { divider: true },
+                            pack.status === "published"
+                              ? {
+                                  label: "Despublicar",
+                                  disabled: togId === `${pack.id}-status-ready`,
+                                  onClick: () => handleSetStatus(pack, "ready")
+                                }
+                              : {
+                                  label: canPublishPack ? "Publicar" : "Publicar (revisar antes)",
+                                  disabled: !canPublishPack || togId === `${pack.id}-publish`,
+                                  highlight: canPublishPack,
+                                  onClick: () => handlePublish(pack)
+                                },
+                            ...(pack.status !== "needs_review" ? [{
+                              label: "Mandar a revisión",
+                              disabled: togId === `${pack.id}-status-needs_review`,
+                              onClick: () => handleSetStatus(pack, "needs_review")
+                            }] : []),
+                            { divider: true },
+                            {
+                              label: "Ver instalaciones",
+                              onClick: () => setInstallationsModal(pack)
+                            },
+                            {
+                              label: "Conceder a hogar",
+                              highlight: true,
+                              onClick: () => setGrantModal(pack)
+                            },
+                            { divider: true },
+                            {
+                              label: deletingId === pack.id ? "Eliminando..." : "Eliminar",
+                              danger: true,
+                              disabled: Boolean(deletingId),
+                              onClick: () => handleDelete(pack)
+                            }
+                          ]}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {installationsModal && (
+        <PackInstallationsModal
+          pack={installationsModal}
+          onClose={() => setInstallationsModal(null)}
+        />
+      )}
+      {grantModal && (
+        <GrantModal
+          pack={grantModal}
+          households={households}
+          onGrant={handleGrant}
+          onClose={() => setGrantModal(null)}
+        />
+      )}
+      {deleteConfirmPack && (
+        <ConfirmModal
+          title={`¿Eliminar "${deleteConfirmPack.title}"?`}
+          body="Esta acción no se puede deshacer. El pack y toda su configuración serán eliminados permanentemente."
+          confirmLabel="Eliminar"
+          danger
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteConfirmPack(null)}
+        />
+      )}
+    </Card>
+
+    {/* ── Edit overlay ────────────────────────────────────────────────────── */}
+    {panelState?.mode === "edit" && (
+      <div style={{ position: "fixed", inset: 0, zIndex: 800, display: "flex", flexDirection: "column", background: "var(--surface-muted, #f8fafc)" }}>
+        <div style={{ background: "#1e1b4b", color: "#e0e7ff", padding: "0 20px", height: 50, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
+            <span style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {panelState.pack?.id ? `✏️ ${panelState.pack.title || "Pack"}` : "➕ Nuevo pack"}
+            </span>
+            {isDirty && (
+              <span style={{ fontSize: 11, background: "#f59e0b", color: "#1c1917", padding: "2px 8px", borderRadius: 4, fontWeight: 700, flexShrink: 0 }}>
+                Sin guardar
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={() => packFormRef.current?.requestSubmit()}
+              style={{ background: "#4338ca", color: "#fff", border: "none", padding: "6px 18px", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 13 }}
+            >
+              💾 Guardar
+            </button>
+            <button
+              type="button"
+              onClick={() => isDirty ? setCloseConfirm(true) : closePanel()}
+              style={{ background: "rgba(255,255,255,0.1)", color: "#e0e7ff", border: "1px solid rgba(255,255,255,0.2)", padding: "5px 14px", borderRadius: 6, cursor: "pointer", fontSize: 13 }}
+            >
+              ✕ Cerrar
+            </button>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ maxWidth: 960, margin: "0 auto", padding: "20px" }}>
+            <PackForm
+              item={panelState.pack || {}}
+              onSave={handleSave}
+              onCancel={() => isDirty ? setCloseConfirm(true) : closePanel()}
+              onPaymentSaved={() => load()}
+              onSaved={(stripeErr) => {
+                if (stripeErr) setSaveNotice((prev) => (prev ? `${prev} ⚠ Stripe: ${stripeErr}` : `⚠ Stripe: ${stripeErr}`));
+                closePanel();
+              }}
+              baseBitePrice={baseBitePrice}
+              formRef={packFormRef}
+              onDirty={() => setIsDirty(true)}
+            />
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── Review overlay ───────────────────────────────────────────────────── */}
+    {panelState?.mode === "review" && (
+      <div style={{ position: "fixed", inset: 0, zIndex: 800, display: "flex", flexDirection: "column", background: "var(--surface-muted, #f8fafc)" }}>
+        <div style={{ background: "#312e81", color: "#c7d2fe", padding: "0 20px", height: 38, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ opacity: 0.6 }}>Catálogo</span>
+            <span style={{ opacity: 0.4 }}>›</span>
+            <span style={{ fontWeight: 600, color: "#e0e7ff" }}>{panelState.pack?.title}</span>
+            <PackStatusBadge status={panelState.pack?.status} />
+          </div>
+          <button
+            type="button"
+            onClick={closePanel}
+            style={{ background: "rgba(255,255,255,0.1)", color: "#e0e7ff", border: "none", padding: "3px 12px", borderRadius: 5, cursor: "pointer", fontSize: 12 }}
+          >
+            ✕ Volver al catálogo
+          </button>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ maxWidth: 960, margin: "0 auto", padding: "20px 20px 60px" }}>
+            <PackReviewPanel
+              pack={panelState.pack}
+              onClose={closePanel}
+              onPackUpdated={replacePack}
+            />
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── Discard-changes confirmation ─────────────────────────────────────── */}
+    {closeConfirm && (
+      <ConfirmModal
+        title="¿Cerrar sin guardar?"
+        body="Tienes cambios sin guardar en este pack. Si cierras ahora se perderán."
+        confirmLabel="Cerrar sin guardar"
+        danger
+        onConfirm={handleConfirmDiscard}
+        onCancel={() => { pendingPanelRef.current = null; setCloseConfirm(false); }}
+      />
+    )}
+  </>);
+}
+
+// ─── Bites Economy section ───────────────────────────────────────────────────
+
+function BitesEconomySection({ householdContext, onClearHouseholdContext }) {
+  const [config, setConfig] = useState(null);
+  const [bundles, setBundles] = useState([]);
+  const [households, setHouseholds] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [configDraft, setConfigDraft] = useState(null);
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  const [bundleForm, setBundleForm] = useState(null);
+  const [savingBundle, setSavingBundle] = useState(false);
+
+  const [grantForm, setGrantForm] = useState({ householdId: "", amount: 1, bucket: "free", reason: "" });
+  const [savingGrant, setSavingGrant] = useState(false);
+  const [grantMsg, setGrantMsg] = useState("");
+  const [resettingFree, setResettingFree] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [cfgRes, hhRes, txRes] = await Promise.all([
+        apiRequest("/api/kitchen/bites/admin/config"),
+        apiRequest("/api/admin/households"),
+        apiRequest("/api/kitchen/bites/admin/transactions?limit=20")
+      ]);
+      const c = cfgRes.config || {};
+      setConfig(c);
+      setConfigDraft({
+        basic: c.monthlyGrantByPlan?.basic ?? 100,
+        pro: c.monthlyGrantByPlan?.pro ?? 300,
+        premium: c.monthlyGrantByPlan?.premium ?? 1000,
+        maxBasic: c.maxFreeCarryOverByPlan?.basic ?? 500,
+        maxPro: c.maxFreeCarryOverByPlan?.pro ?? 1000,
+        maxPremium: c.maxFreeCarryOverByPlan?.premium ?? 5000,
+        baseBitePrice: c.baseBitePrice ?? 1.99
+      });
+      setBundles(c.bundles || []);
+      setHouseholds(hhRes.households || []);
+      setTransactions(txRes.transactions || []);
+    } catch (err) {
+      setError(err.message || "Error al cargar la economía de Bites.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (householdContext?.id) {
+      setGrantForm((form) => ({ ...form, householdId: householdContext.id }));
+    }
+  }, [householdContext?.id]);
+
+  const saveConfig = async () => {
+    setSavingConfig(true);
+    try {
+      await apiRequest("/api/kitchen/bites/admin/config", {
+        method: "PUT",
+        body: JSON.stringify({
+          monthlyGrantByPlan: { basic: Number(configDraft.basic), pro: Number(configDraft.pro), premium: Number(configDraft.premium) },
+          maxFreeCarryOverByPlan: { basic: Number(configDraft.maxBasic), pro: Number(configDraft.maxPro), premium: Number(configDraft.maxPremium) },
+          baseBitePrice: Number(configDraft.baseBitePrice)
+        })
+      });
+      await load();
+    } catch (err) {
+      setError(err.message || "Error al guardar la configuración.");
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  const saveBundle = async () => {
+    setSavingBundle(true);
+    try {
+      let res;
+      if (bundleForm._id) {
+        res = await apiRequest(`/api/kitchen/bites/admin/bundles/${bundleForm._id}`, {
+          method: "PUT",
+          body: JSON.stringify(bundleForm)
+        });
+      } else {
+        res = await apiRequest("/api/kitchen/bites/admin/bundles", {
+          method: "POST",
+          body: JSON.stringify(bundleForm)
+        });
+      }
+      if (res?.stripeError) {
+        setBundleForm((f) => ({
+          ...f,
+          stripeProductId: res.bundle?.stripeProductId || f.stripeProductId,
+          stripePriceId: res.bundle?.stripePriceId || f.stripePriceId,
+          stripeError: res.stripeError
+        }));
+        await load();
+      } else {
+        setBundleForm(null);
+        await load();
+      }
+    } catch (err) {
+      setError(err.message || "Error al guardar el bundle.");
+    } finally {
+      setSavingBundle(false);
+    }
+  };
+
+  const deleteBundle = async (bundleId) => {
+    if (!window.confirm("¿Eliminar este bundle?")) return;
+    try {
+      await apiRequest(`/api/kitchen/bites/admin/bundles/${bundleId}`, { method: "DELETE" });
+      await load();
+    } catch (err) {
+      setError(err.message || "Error al eliminar.");
+    }
+  };
+
+  const submitGrant = async () => {
+    setSavingGrant(true);
+    setGrantMsg("");
+    try {
+      const res = await apiRequest("/api/kitchen/bites/admin/grant", {
+        method: "POST",
+        body: JSON.stringify({
+          householdId: grantForm.householdId,
+          amount: Number(grantForm.amount),
+          bucket: grantForm.bucket,
+          reason: grantForm.reason
+        })
+      });
+      const w = res.wallet;
+      setGrantMsg(`OK — gratuitos: ${w?.freeBitesBalance ?? "?"} | de compra: ${w?.purchasedBitesBalance ?? "?"}`);
+      await load();
+    } catch (err) {
+      setGrantMsg(`Error: ${err.message}`);
+    } finally {
+      setSavingGrant(false);
+    }
+  };
+
+  const resetFreeBites = async (householdId) => {
+    const hh = households.find((h) => String(h.id) === String(householdId));
+    const current = hh?.freeBitesBalance ?? 0;
+    if (current === 0) { setGrantMsg("Ese hogar ya tiene 0 bites gratuitos."); return; }
+    if (!window.confirm(`¿Vaciar ${current} bites gratuitos de "${hh?.name}"? Esta acción no se puede deshacer.`)) return;
+    setResettingFree(true);
+    setGrantMsg("");
+    try {
+      const res = await apiRequest("/api/kitchen/bites/admin/grant", {
+        method: "POST",
+        body: JSON.stringify({ householdId, amount: -current, bucket: "free", reason: "Reset bites gratuitos (admin)" })
+      });
+      const w = res.wallet;
+      setGrantMsg(`Vaciado — gratuitos: ${w?.freeBitesBalance ?? 0} | de compra: ${w?.purchasedBitesBalance ?? "?"}`);
+      await load();
+    } catch (err) {
+      setGrantMsg(`Error: ${err.message}`);
+    } finally {
+      setResettingFree(false);
+    }
+  };
+
+  if (loading) return <div style={{ padding: 24 }}>Cargando...</div>;
+
+  const cdNum = (key) => Number(configDraft?.[key] ?? 0);
+
+  return (
+    <Card style={{ maxWidth: 900 }}>
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
+      <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+        <BitesIcon size={22} decorative /> Bites Economy
+      </h2>
+
+      {error && <div style={{ color: "#b91c1c", background: "#fef2f2", padding: "8px 12px", borderRadius: 6, marginBottom: 16, fontSize: 13 }}>{error}</div>}
+
+      {/* ── Base price ── */}
+      <section style={{ marginBottom: 24, background: "#f0f4ff", border: "1px solid #c7d2fe", borderRadius: 8, padding: "14px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <BitesIcon size={15} decorative /> Precio base por 100 Bites
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              className="kitchen-input"
+              style={{ fontSize: 14, fontWeight: 700, padding: "5px 10px", width: 90, textAlign: "right" }}
+              value={configDraft?.baseBitePrice ?? 1.99}
+              onChange={(e) => setConfigDraft((d) => ({ ...d, baseBitePrice: e.target.value }))}
+            />
+            <span style={{ fontSize: 13, color: "#6b7280" }}>€ / 100 Bites</span>
+          </div>
+          <span style={{ fontSize: 12, color: "#6366f1" }}>
+            Equivalencia base: 100 Bites = {Number(configDraft?.baseBitePrice ?? 1.99).toFixed(2).replace(".", ",")} €. Usado para sugerir precios en packs y bundles. No modifica precios guardados existentes.
+          </span>
+        </div>
+      </section>
+
+      {/* ── Plan config ── */}
+      <section style={{ marginBottom: 32 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#374151", display: "flex", alignItems: "center", gap: 6 }}>
+          <BitesIcon size={16} decorative /> Bites mensuales por plan
+        </h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 12 }}>
+          {[
+            { key: "basic", label: "Basic", maxKey: "maxBasic" },
+            { key: "pro", label: "Pro", maxKey: "maxPro" },
+            { key: "premium", label: "Premium", maxKey: "maxPremium" }
+          ].map(({ key, label, maxKey }) => (
+            <div key={key} style={{ background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "12px 14px", border: "1px solid var(--hf-border, #e2e8f0)" }}>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>{label}</div>
+              <label style={{ fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><BitesIcon size={13} decorative /> Bites/mes</label>
+              <input
+                type="number"
+                min="0"
+                className="kitchen-input"
+                style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                value={cdNum(key)}
+                onChange={(e) => setConfigDraft((d) => ({ ...d, [key]: e.target.value }))}
+              />
+              <label style={{ fontSize: 12, color: "#64748b", display: "block", marginTop: 8, marginBottom: 4 }}>Máx. acumulados</label>
+              <input
+                type="number"
+                min="0"
+                className="kitchen-input"
+                style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                value={cdNum(maxKey)}
+                onChange={(e) => setConfigDraft((d) => ({ ...d, [maxKey]: e.target.value }))}
+              />
+            </div>
+          ))}
+        </div>
+        <button type="button" style={ABT.save} onClick={saveConfig} disabled={savingConfig}>
+          {savingConfig ? "Guardando..." : "Guardar configuración"}
+        </button>
+      </section>
+
+      {/* ── Bundles ── */}
+      <section style={{ marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+            <BitesIcon size={16} decorative /> Bundles de Bites
+          </h3>
+          <button
+            type="button"
+            style={ABT.save}
+            onClick={() => {
+              const bbp = Number(configDraft?.baseBitePrice ?? 1.99);
+              const amt = 1000;
+              const disc = 25;
+              // bbp is price per 100 Bites; divide by 100 to get EUR/Bite
+              const suggestedPrice = parseFloat((amt * (bbp / 100) * (1 - disc / 100)).toFixed(2));
+              setBundleForm({ name: "", bitesAmount: amt, price: suggestedPrice, discountPercent: disc, badge: "", highlighted: false, active: true, sortOrder: 0, isPaid: false, paymentMode: "none", currency: "eur", stripeProductId: "", stripePriceId: "", stripeError: null, _priceManuallySet: false });
+            }}
+          >
+            + Nuevo bundle
+          </button>
+        </div>
+
+        {bundleForm && (() => {
+          const bbp = Number(configDraft?.baseBitePrice ?? 1.99);
+          // bbp is price per 100 Bites; eurPerBite = bbp / 100
+          const eurPerBite = bbp / 100;
+          const bundleAmt = Number(bundleForm.bitesAmount) || 0;
+          const bundleDisc = Number(bundleForm.discountPercent ?? 0);
+          const baseValue = parseFloat((bundleAmt * eurPerBite).toFixed(2));
+          const suggestedPrice = bundleAmt > 0 ? parseFloat((baseValue * (1 - bundleDisc / 100)).toFixed(2)) : 0;
+          const finalPrice = Number(bundleForm.price) || 0;
+          const perBite = bundleAmt > 0 ? (finalPrice / bundleAmt).toFixed(4) : "—";
+          const per100Bites = bundleAmt > 0 ? (finalPrice / bundleAmt * 100).toFixed(2) : "—";
+          const actualDiscount = baseValue > 0 ? Math.round((1 - finalPrice / baseValue) * 100) : 0;
+
+          const handleBundleBitesChange = (e) => {
+            const newAmt = Number(e.target.value);
+            setBundleForm((f) => {
+              if (f._priceManuallySet) return { ...f, bitesAmount: newAmt };
+              const newPrice = parseFloat((newAmt * eurPerBite * (1 - (f.discountPercent ?? 0) / 100)).toFixed(2));
+              return { ...f, bitesAmount: newAmt, price: newPrice };
+            });
+          };
+
+          const handleBundleDiscountChange = (e) => {
+            const newDisc = Number(e.target.value);
+            setBundleForm((f) => {
+              if (f._priceManuallySet) return { ...f, discountPercent: newDisc };
+              const newPrice = parseFloat((Number(f.bitesAmount) * eurPerBite * (1 - newDisc / 100)).toFixed(2));
+              return { ...f, discountPercent: newDisc, price: newPrice };
+            });
+          };
+
+          const handleBundlePriceChange = (e) => {
+            setBundleForm((f) => ({ ...f, price: Number(e.target.value), _priceManuallySet: true }));
+          };
+
+          return (
+            <div style={{ background: "#f0f4ff", border: "1px solid #c7d2fe", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Nombre</label>
+                  <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.name} onChange={(e) => setBundleForm((f) => ({ ...f, name: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}><BitesIcon size={13} decorative /> Bites</label>
+                  <input type="number" min="1" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.bitesAmount} onChange={handleBundleBitesChange} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>
+                    Descuento (%)
+                  </label>
+                  <input type="number" min="0" max="95" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.discountPercent ?? 0} onChange={handleBundleDiscountChange} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>
+                    Precio final (€)
+                    {!bundleForm._priceManuallySet && bundleAmt > 0 && (
+                      <span style={{ fontSize: 11, color: "#6366f1", marginLeft: 4 }}>auto</span>
+                    )}
+                  </label>
+                  <input type="number" step="0.01" min="0" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.price} onChange={handleBundlePriceChange} />
+                  {bundleForm._priceManuallySet && (
+                    <button type="button" style={{ fontSize: 11, color: "#6366f1", background: "none", border: "none", cursor: "pointer", padding: "2px 0" }}
+                      onClick={() => setBundleForm((f) => ({ ...f, price: suggestedPrice, _priceManuallySet: false }))}>
+                      ↺ Recalcular
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Badge</label>
+                  <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.badge} onChange={(e) => setBundleForm((f) => ({ ...f, badge: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Sort order</label>
+                  <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                    value={bundleForm.sortOrder} onChange={(e) => setBundleForm((f) => ({ ...f, sortOrder: Number(e.target.value) }))} />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, paddingTop: 18 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                    <input type="checkbox" checked={bundleForm.highlighted} onChange={(e) => setBundleForm((f) => ({ ...f, highlighted: e.target.checked }))} />
+                    Destacado
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                    <input type="checkbox" checked={bundleForm.active} onChange={(e) => setBundleForm((f) => ({ ...f, active: e.target.checked }))} />
+                    Activo
+                  </label>
+                </div>
+                <div style={{ gridColumn: "1 / -1", background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #e0e7ff)", borderRadius: 6, padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700 }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(bundleForm.isPaid)}
+                      onChange={(e) => setBundleForm((f) => ({
+                        ...f,
+                        isPaid: e.target.checked,
+                        paymentMode: e.target.checked ? (f.paymentMode === "none" ? "stripe" : f.paymentMode) : "none"
+                      }))}
+                    />
+                    Este bundle es de pago
+                  </label>
+                  <div>
+                    <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Modo de pago</label>
+                    <select
+                      className="kitchen-select"
+                      style={{ fontSize: 13, padding: "4px 6px", width: "100%" }}
+                      value={bundleForm.paymentMode || "none"}
+                      onChange={(e) => setBundleForm((f) => ({ ...f, paymentMode: e.target.value, isPaid: e.target.value === "stripe" ? true : f.isPaid }))}
+                    >
+                      <option value="none">none</option>
+                      <option value="stripe">stripe</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Moneda</label>
+                    <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+                      value={bundleForm.currency || "eur"} onChange={(e) => setBundleForm((f) => ({ ...f, currency: e.target.value }))} />
+                  </div>
+                  {bundleForm.isPaid && bundleForm.paymentMode !== "stripe" && (
+                    <div style={{ gridColumn: "1 / -1", fontSize: 11, color: "#b45309" }}>
+                      Para vender este bundle, activa el bundle de pago y selecciona Stripe como modo de pago.
+                    </div>
+                  )}
+                </div>
+                {bundleForm.paymentMode === "stripe" && (
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    {bundleForm.stripeError && (
+                      <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, padding: "8px 12px", marginBottom: 6, fontSize: 12, color: "#b91c1c" }}>
+                        ⚠ Error al sincronizar con Stripe: {bundleForm.stripeError}
+                      </div>
+                    )}
+                    {bundleForm.stripeProductId ? (
+                      <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "10px 14px" }}>
+                        <div style={{ fontWeight: 700, color: "#15803d", marginBottom: 4, fontSize: 13 }}>✓ Sincronizado con Stripe</div>
+                        <div style={{ fontSize: 11, fontFamily: "monospace", color: "#374151", lineHeight: 1.7 }}>
+                          <span style={{ color: "#6b7280" }}>Producto: </span>{bundleForm.stripeProductId}
+                        </div>
+                        {bundleForm.stripePriceId && (
+                          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#374151", lineHeight: 1.7 }}>
+                            <span style={{ color: "#6b7280" }}>Precio: </span>{bundleForm.stripePriceId}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>Se resincroniza automáticamente al guardar.</div>
+                      </div>
+                    ) : (
+                      <div style={{ background: "#fffbeb", border: "1px solid #fbbf24", borderRadius: 6, padding: "10px 14px" }}>
+                        <div style={{ fontWeight: 600, color: "#92400e", fontSize: 13 }}>⏳ Se sincronizará con Stripe al guardar</div>
+                        <div style={{ fontSize: 11, color: "#78350f", marginTop: 4 }}>Al guardar se creará automáticamente el producto y precio en Stripe.</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {bundleAmt > 0 && (
+                  <div style={{ gridColumn: "1 / -1", background: "var(--card-bg, #fff)", border: "1px solid var(--hf-border, #e0e7ff)", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "var(--input-text, #374151)", display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    <span><strong>{bundleAmt} Bites</strong></span>
+                    <span>Valor base: <strong>{baseValue.toFixed(2).replace(".", ",")} €</strong></span>
+                    <span>Precio final: <strong>{finalPrice.toFixed(2).replace(".", ",")} €</strong></span>
+                    <span>€/100 Bites: <strong>{per100Bites.replace(".", ",")} €</strong></span>
+                    {actualDiscount > 0 && <span style={{ color: "#16a34a", fontWeight: 700 }}>Ahorra {actualDiscount}%</span>}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" style={ABT.save} disabled={savingBundle} onClick={saveBundle}>
+                  {savingBundle ? "..." : "Guardar"}
+                </button>
+                <button type="button" style={ABT.cancel} onClick={() => setBundleForm(null)}>Cancelar</button>
+              </div>
+            </div>
+          );
+        })()}
+
+        <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Nombre</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}><BitesIcon size={13} decorative /> Bites</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Precio</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>€/100 Bites</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Descuento</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Badge</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }}>Activo</th>
+              <th style={{ padding: "6px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 12 }} />
+            </tr>
+          </thead>
+          <tbody>
+            {bundles.map((b) => {
+              const bbp = Number(configDraft?.baseBitePrice ?? 1.99);
+              // bbp is price per 100 Bites
+              const baseVal = Number(b.bitesAmount) * (bbp / 100);
+              const discPct = Number(b.discountPercent ?? 0);
+              const actualSaving = baseVal > 0 ? Math.round((1 - Number(b.price) / baseVal) * 100) : 0;
+              return (
+                <tr key={String(b._id)} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "6px 8px", fontWeight: b.highlighted ? 700 : 400 }}>{b.name}</td>
+                  <td style={{ padding: "6px 8px" }}><BitesIcon size={14} decorative /> {b.bitesAmount}</td>
+                  <td style={{ padding: "6px 8px" }}>
+                    <div>{Number(b.price).toFixed(2).replace(".", ",")} €</div>
+                    {baseVal > 0 && <div style={{ fontSize: 11, color: "#9ca3af" }}>base {baseVal.toFixed(2).replace(".", ",")} €</div>}
+                  </td>
+                  <td style={{ padding: "6px 8px", color: "#6b7280" }}>{Number(b.bitesAmount) > 0 ? (b.price / b.bitesAmount * 100).toFixed(2).replace(".", ",") : "—"} €</td>
+                  <td style={{ padding: "6px 8px" }}>
+                    {discPct > 0 && <span style={{ fontSize: 11, background: "#dcfce7", color: "#166534", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>-{discPct}%</span>}
+                    {actualSaving > 0 && actualSaving !== discPct && <span style={{ fontSize: 11, color: "#16a34a", marginLeft: 4 }}>({actualSaving}% real)</span>}
+                    {discPct === 0 && "—"}
+                  </td>
+                  <td style={{ padding: "6px 8px" }}>{b.badge || "—"}</td>
+                  <td style={{ padding: "6px 8px" }}>
+                    <span style={{ color: b.active ? "#16a34a" : "#9ca3af", fontWeight: 600 }}>{b.active ? "Sí" : "No"}</span>
+                  </td>
+                  <td style={{ padding: "6px 8px" }}>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" style={ABT.edit} onClick={() => setBundleForm({ ...b, _id: b._id, _priceManuallySet: true })}>Editar</button>
+                      <button type="button" style={ABT.del} onClick={() => deleteBundle(b._id)}>Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {bundles.length === 0 && (
+              <tr><td colSpan={8} style={{ padding: 16, color: "#9ca3af", textAlign: "center" }}>Sin bundles configurados</td></tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      {/* ── Manual grant ── */}
+      <section style={{ marginBottom: 32 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+          <BitesIcon size={16} decorative /> Conceder / quitar Bites manualmente
+        </h3>
+        <p style={{ fontSize: 11, color: "#9ca3af", marginBottom: 12 }}>
+          <strong>Bites gratuitos</strong> = ganados (onboarding, recompensas, recarga mensual del plan). &nbsp;
+          <strong>Bites de compra</strong> = adquiridos con dinero real.
+        </p>
+
+        {/* Balance preview for selected household */}
+        {grantForm.householdId && (() => {
+          const hh = households.find((h) => String(h.id) === String(grantForm.householdId));
+          if (!hh) return null;
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 10, padding: "8px 12px", background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 8 }}>
+              <span style={{ fontSize: 12, color: "var(--input-text, #374151)" }}><strong>{hh.name}</strong> — saldo actual:</span>
+              <span style={{ fontSize: 12, color: "#4f46e5", fontWeight: 600 }}>
+                <BitesIcon size={12} decorative /> {hh.freeBitesBalance ?? 0} gratuitos
+              </span>
+              <span style={{ fontSize: 12, color: "#0284c7", fontWeight: 600 }}>
+                <BitesIcon size={12} decorative /> {hh.purchasedBitesBalance ?? 0} de compra
+              </span>
+              <button
+                type="button"
+                style={{ ...ABT.del, marginLeft: "auto", fontSize: 11 }}
+                disabled={resettingFree || (hh.freeBitesBalance ?? 0) === 0}
+                onClick={() => resetFreeBites(hh.id)}
+              >
+                {resettingFree ? "..." : "Vaciar gratuitos"}
+              </button>
+            </div>
+          );
+        })()}
+
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 2fr", gap: 10, marginBottom: 10 }}>
+          <div>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Hogar</label>
+            <select
+              className="kitchen-select"
+              style={{ fontSize: 13, padding: "4px 6px", width: "100%" }}
+              value={grantForm.householdId}
+              onChange={(e) => setGrantForm((f) => ({ ...f, householdId: e.target.value }))}
+            >
+              <option value="">Seleccionar hogar...</option>
+              {households.map((h) => (
+                <option key={h.id} value={h.id}>{h.name} ({h.subscriptionPlan}) — {h.freeBitesBalance ?? 0}g / {h.purchasedBitesBalance ?? 0}c</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Cantidad (+/-)</label>
+            <input type="number" className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+              value={grantForm.amount} onChange={(e) => setGrantForm((f) => ({ ...f, amount: Number(e.target.value) }))} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Tipo de bites</label>
+            <select className="kitchen-select" style={{ fontSize: 13, padding: "4px 6px", width: "100%" }}
+              value={grantForm.bucket} onChange={(e) => setGrantForm((f) => ({ ...f, bucket: e.target.value }))}>
+              <option value="free">Gratuitos (onboarding/plan)</option>
+              <option value="purchased">De compra (dinero real)</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 3 }}>Razón (obligatorio)</label>
+            <input className="kitchen-input" style={{ fontSize: 13, padding: "4px 8px", width: "100%" }}
+              value={grantForm.reason} onChange={(e) => setGrantForm((f) => ({ ...f, reason: e.target.value }))} />
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button type="button" style={ABT.save} disabled={savingGrant || !grantForm.householdId || !grantForm.reason} onClick={submitGrant}>
+            {savingGrant ? "..." : "Aplicar"}
+          </button>
+          {grantMsg && <span style={{ fontSize: 12, color: grantMsg.startsWith("Error") ? "#b91c1c" : "#16a34a" }}>{grantMsg}</span>}
+        </div>
+      </section>
+
+      {/* ── Recent transactions ── */}
+      <section>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          <BitesIcon size={16} decorative /> Últimas transacciones
+        </h3>
+        <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+              {["Fecha", "Hogar", "Tipo", "Cantidad", "Gratuitos tras", "Compra tras", "Razón"].map((h) => (
+                <th key={h} style={{ padding: "5px 8px", textAlign: "left", fontWeight: 600, color: "#6b7280", fontSize: 11 }}>
+                  {["Cantidad", "Gratuitos tras", "Compra tras"].includes(h) ? <BitesIcon size={12} decorative /> : null} {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((tx) => (
+              <tr key={String(tx._id)} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                <td style={{ padding: "5px 8px", color: "#6b7280" }}>
+                  {new Date(tx.createdAt).toLocaleDateString("es", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                </td>
+                <td style={{ padding: "5px 8px", color: "#6b7280", fontFamily: "monospace", fontSize: 10 }}>
+                  {String(tx.householdId).slice(-6)}
+                </td>
+                <td style={{ padding: "5px 8px" }}>
+                  <span style={{
+                    padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 600,
+                    background: tx.type === "monthly_grant" ? "#ede9fe" : tx.type === "pack_unlock" ? "#fef9c3" : tx.type.includes("admin") ? "#dcfce7" : "#f1f5f9",
+                    color: tx.type === "monthly_grant" ? "#6d28d9" : tx.type === "pack_unlock" ? "#854d0e" : tx.type.includes("admin") ? "#166534" : "#374151"
+                  }}>
+                    {tx.type}
+                  </span>
+                </td>
+                <td style={{ padding: "5px 8px", fontWeight: 600, color: tx.amount > 0 ? "#16a34a" : "#b91c1c" }}>
+                  {tx.amount > 0 ? "+" : ""}<BitesIcon size={13} decorative /> {tx.amount}
+                </td>
+                <td style={{ padding: "5px 8px" }}><BitesIcon size={13} decorative /> {tx.balanceAfterFree}</td>
+                <td style={{ padding: "5px 8px" }}><BitesIcon size={13} decorative /> {tx.balanceAfterPurchased}</td>
+                <td style={{ padding: "5px 8px", color: "#6b7280", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {tx.reason || "—"}
+                </td>
+              </tr>
+            ))}
+            {transactions.length === 0 && (
+              <tr><td colSpan={7} style={{ padding: 16, color: "#9ca3af", textAlign: "center" }}>Sin transacciones aún</td></tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+    </Card>
+  );
+}
+
+// ─── PlansSection ─────────────────────────────────────────────────────────────
+
+const PLAN_KEYS = ["basic", "pro", "premium"];
+const PLAN_DISPLAY = { basic: "Basic", pro: "Pro", premium: "Premium" };
+
+const fieldStyle = {
+  width: "100%", padding: "6px 10px", borderRadius: 6,
+  border: "1px solid #e2e8f0", fontSize: 13, boxSizing: "border-box"
+};
+
+function PlansSection() {
+  const [cfg, setCfg] = useState(null);
+  const [env, setEnv] = useState(null);
+  const [form, setForm] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await getPlansAdminConfig();
+        setCfg(data.config);
+        setEnv(data.env);
+        setForm({
+          basic: { ...data.config.basic },
+          pro: { ...data.config.pro },
+          premium: { ...data.config.premium }
+        });
+      } catch (err) {
+        setError(err.message || "Error cargando configuración de planes.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      await savePlansAdminConfig(form);
+      setSuccess("Configuración guardada.");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err.message || "Error guardando configuración.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const setField = (planKey, field, value) => {
+    setForm((prev) => ({ ...prev, [planKey]: { ...prev[planKey], [field]: value } }));
+  };
+
+  if (loading) return <div style={{ padding: 32, color: "#6366f1" }}>Cargando...</div>;
+  if (!form) return <div style={{ padding: 32, color: "#ef4444" }}>{error || "Error."}</div>;
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Planes de suscripción</h2>
+      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}>
+        Configura el precio y plataforma de pago para cada plan. Los Price IDs de suscripción se configuran con variables de entorno en Render (<code>STRIPE_PRO_PRICE_ID</code>, <code>STRIPE_PREMIUM_PRICE_ID</code>).
+      </p>
+
+      {env && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+          <span style={{ fontSize: 12, padding: "3px 10px", borderRadius: 999, background: env.paymentsEnabled ? "#dcfce7" : "#fee2e2", color: env.paymentsEnabled ? "#15803d" : "#b91c1c", fontWeight: 600 }}>
+            Pagos: {env.paymentsEnabled ? "ON" : "OFF"}
+          </span>
+          <span style={{ fontSize: 12, padding: "3px 10px", borderRadius: 999, background: "#e0e7ff", color: "#3730a3", fontWeight: 600 }}>
+            Modo: {env.stripeMode || "—"}
+          </span>
+          {env.allowTestEntitlements && (
+            <span style={{ fontSize: 12, padding: "3px 10px", borderRadius: 999, background: "#fef9c3", color: "#854d0e", fontWeight: 600 }}>
+              Test entitlements ON
+            </span>
+          )}
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
+        {PLAN_KEYS.map((planKey) => {
+          const entry = form[planKey];
+          const envPriceId = cfg?.[planKey]?.envStripePriceId || "";
+          return (
+            <div key={planKey} style={{ border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 10, padding: 18, background: "var(--card-bg, #fafafa)" }}>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14, color: "#312e81" }}>
+                {PLAN_DISPLAY[planKey]}
+              </div>
+
+              <label style={{ display: "block", marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 3 }}>Precio visible</div>
+                <input
+                  style={fieldStyle}
+                  value={entry.displayPrice}
+                  onChange={(e) => setField(planKey, "displayPrice", e.target.value)}
+                  placeholder="Gratis / €4.99/mes..."
+                />
+              </label>
+
+              <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={entry.isPaid}
+                  onChange={(e) => setField(planKey, "isPaid", e.target.checked)}
+                />
+                <span style={{ fontSize: 13, fontWeight: 600 }}>Plan de pago</span>
+              </label>
+
+              <label style={{ display: "block", marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 3 }}>Plataforma</div>
+                <select style={fieldStyle} value={entry.paymentMode} onChange={(e) => setField(planKey, "paymentMode", e.target.value)}>
+                  <option value="none">Ninguna</option>
+                  <option value="stripe">Stripe</option>
+                </select>
+              </label>
+
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Price ID activo</div>
+                {(envPriceId || entry.stripePriceId) ? (
+                  <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "8px 10px" }}>
+                    <div style={{ fontSize: 11, color: "#15803d", fontWeight: 700, marginBottom: 2 }}>✓ Configurado</div>
+                    <div style={{ fontSize: 11, fontFamily: "monospace", color: "#374151", wordBreak: "break-all" }}>
+                      {envPriceId || entry.stripePriceId}
+                    </div>
+                    {envPriceId && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>Desde variable de entorno</div>}
+                  </div>
+                ) : (
+                  <div style={{ background: "#fef9c3", border: "1px solid #fbbf24", borderRadius: 6, padding: "8px 10px" }}>
+                    <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600 }}>⚠ Sin configurar</div>
+                    <div style={{ fontSize: 11, color: "#78350f", marginTop: 2 }}>
+                      Añade <code>STRIPE_{planKey.toUpperCase()}_PRICE_ID</code> en las variables de entorno de Render.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {error && <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 8 }}>{error}</div>}
+      {success && <div style={{ color: "#16a34a", fontSize: 13, marginBottom: 8 }}>{success}</div>}
+
+      <button
+        type="button"
+        style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }}
+        disabled={saving}
+        onClick={handleSave}
+      >
+        {saving ? "Guardando..." : "Guardar planes"}
+      </button>
+    </div>
+  );
+}
+
+// ─── Category helpers ─────────────────────────────────────────────────────────
+
+function ColorPill({ bg, text, label }) {
+  return (
+    <span style={{
+      display: "inline-block", padding: "2px 10px", borderRadius: 999,
+      background: bg || "#E8F1FF", color: text || "#1D4ED8",
+      fontSize: 12, fontWeight: 600, whiteSpace: "nowrap"
+    }}>
+      {label}
+    </span>
+  );
+}
+
+function ColorField({ label, value, onChange }) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, minWidth: 140 }}>
+      <span className="kitchen-label">{label}</span>
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <input
+          type="color"
+          value={value || "#000000"}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ width: 30, height: 28, padding: 2, border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer", flexShrink: 0 }}
+        />
+        <input
+          type="text"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ flex: 1, padding: "5px 8px", fontSize: 12, borderRadius: 6, border: "1px solid #d1d5db", outline: "none", fontFamily: "monospace", minWidth: 0 }}
+          placeholder="#rrggbb"
+          maxLength={7}
+        />
+      </div>
+    </label>
+  );
+}
+
+// ─── Dish Categories ──────────────────────────────────────────────────────────
+
+function DishCategoryForm({ item, onSave, onCancel }) {
+  const isNew = !item._id;
+  const [form, setForm] = useState({
+    name: item.name || "",
+    code: item.code || "",
+    colorBg: item.colorBg || "#E8F1FF",
+    colorText: item.colorText || "#1D4ED8",
+    active: item.active !== false
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (key) => (val) => setForm((p) => ({ ...p, [key]: val }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
+    setSaving(true); setError("");
+    try {
+      await onSave({ ...form, _id: item._id });
+    } catch (err) {
+      setError(err.message || "Error al guardar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 10, padding: 18, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 14px", fontSize: 14, color: "var(--input-text, #1e293b)", fontWeight: 700 }}>
+        {isNew ? "Nueva categoría de plato" : `Editar: ${item.name}`}
+      </h4>
+      <form onSubmit={handleSubmit}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+          <div style={{ flex: "2 1 180px" }}>
+            <Input id="dc-name" label="Nombre" value={form.name} onChange={(e) => set("name")(e.target.value)} required />
+          </div>
+          <div style={{ flex: "1 1 140px" }}>
+            <Input
+              id="dc-code"
+              label="Código (auto si vacío)"
+              value={form.code}
+              onChange={(e) => set("code")(e.target.value)}
+              placeholder="pollo, carne_roja..."
+              style={{ fontFamily: "monospace", fontSize: 13 }}
+            />
+          </div>
+          <ColorField label="Color fondo" value={form.colorBg} onChange={set("colorBg")} />
+          <ColorField label="Color texto" value={form.colorText} onChange={set("colorText")} />
+        </div>
+        <div style={{ display: "flex", gap: 20, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+            <input type="checkbox" checked={form.active} onChange={(e) => set("active")(e.target.checked)} />
+            Activa
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#6b7280" }}>
+            Previsualización:
+            <ColorPill bg={form.colorBg} text={form.colorText} label={form.name || "Ejemplo"} />
+          </div>
+        </div>
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 8 }}>{error}</div> : null}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="submit" style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }} disabled={saving}>
+            {saving ? "Guardando..." : "Guardar"}
+          </button>
+          <button type="button" style={ABT.cancel} onClick={onCancel}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function DishCategoriesSection() {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [editItem, setEditItem] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const data = await apiRequest("/api/admin/dish-categories");
+      setCategories(data.categories || []);
+    } catch (err) {
+      setError(err.message || "Error al cargar categorías de plato.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSave = async (form) => {
+    const body = JSON.stringify({
+      name: form.name,
+      ...(form.code ? { code: form.code } : {}),
+      colorBg: form.colorBg,
+      colorText: form.colorText,
+      active: form.active
+    });
+    if (form._id) {
+      const data = await apiRequest(`/api/kitchen/dish-categories/${form._id}`, { method: "PUT", body });
+      setCategories((prev) => prev.map((c) => String(c._id) === String(data.category._id) ? data.category : c));
+    } else {
+      const data = await apiRequest("/api/kitchen/dish-categories", { method: "POST", body });
+      setCategories((prev) => [...prev, data.category]);
+    }
+    setEditItem(null);
+  };
+
+  const handleToggle = async (cat) => {
+    const data = await apiRequest(`/api/kitchen/dish-categories/${cat._id}`, {
+      method: "PUT",
+      body: JSON.stringify({ name: cat.name, code: cat.code, colorBg: cat.colorBg, colorText: cat.colorText, active: !cat.active })
+    });
+    setCategories((prev) => prev.map((c) => String(c._id) === String(data.category._id) ? data.category : c));
+  };
+
+  return (
+    <Card className="kitchen-block-gap">
+      <div style={{ background: "#eef2ff", border: "1px solid #c7d2fe", borderRadius: 8, padding: "10px 14px", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#4338ca", marginBottom: 3 }}>¿Qué son las categorías de plato?</div>
+        <div style={{ fontSize: 12, color: "#3730a3", lineHeight: 1.6 }}>
+          Clasifican el plato según su ingrediente o tipo principal: <strong>Pollo</strong>, <strong>Carne roja</strong>, <strong>Pasta</strong>, <strong>Pescado</strong>, <strong>Legumbres</strong>...
+          Se muestran como etiquetas y filtros visuales en el plan semanal. Al editar el nombre o color, el cambio se refleja
+          automáticamente en todos los platos que la usan (no hace falta migrar nada).
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+        <h2 className="kitchen-title-no-margin">Categorías de plato</h2>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" style={ABT.edit} onClick={load} disabled={loading}>{loading ? "..." : "↺ Recargar"}</button>
+          <button type="button" style={{ ...ABT.save, padding: "5px 14px" }} onClick={() => setEditItem({})}>+ Nueva</button>
+        </div>
+      </div>
+
+      {editItem !== null && (
+        <DishCategoryForm item={editItem} onSave={handleSave} onCancel={() => setEditItem(null)} />
+      )}
+
+      {error ? <div className="kitchen-alert error">{error}</div> : null}
+
+      {loading ? <p className="kitchen-muted">Cargando...</p> : categories.length === 0 ? (
+        <p className="kitchen-muted">No hay categorías. Crea la primera.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="kitchen-table">
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th style={{ textAlign: "center" }}>Código</th>
+                <th style={{ textAlign: "center" }}>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((cat) => (
+                <tr key={cat._id} style={{ opacity: cat.active !== false ? 1 : 0.45 }}>
+                  <td><ColorPill bg={cat.colorBg} text={cat.colorText} label={cat.name} /></td>
+                  <td style={{ textAlign: "center", fontFamily: "monospace", fontSize: 12, color: "#6b7280" }}>{cat.code || "—"}</td>
+                  <td style={{ textAlign: "center" }}>
+                    {cat.active !== false
+                      ? <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>● Activa</span>
+                      : <span style={{ fontSize: 11, color: "#94a3b8" }}>○ Inactiva</span>}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" style={ABT.edit} onClick={() => setEditItem(cat)}>Editar</button>
+                      <button
+                        type="button"
+                        style={{ ...ABT.edit, color: cat.active !== false ? "#b45309" : "#166534", borderColor: cat.active !== false ? "#fcd34d" : "#86efac" }}
+                        onClick={() => handleToggle(cat)}
+                      >
+                        {cat.active !== false ? "Desactivar" : "Activar"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ─── Ingredient Categories ────────────────────────────────────────────────────
+
+function IngredientCategoryForm({ item, onSave, onCancel }) {
+  const isNew = !item._id;
+  const [form, setForm] = useState({
+    name: item.name || "",
+    colorBg: item.colorBg || "#E8F1FF",
+    colorText: item.colorText || "#1D4ED8",
+    order: item.order ?? 0,
+    forRecipes: item.forRecipes !== false,
+    active: item.active !== false
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (key) => (val) => setForm((p) => ({ ...p, [key]: val }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
+    setSaving(true); setError("");
+    try {
+      await onSave({ ...form, _id: item._id });
+    } catch (err) {
+      setError(err.message || "Error al guardar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #c7d2fe)", borderRadius: 10, padding: 18, marginBottom: 16 }}>
+      <h4 style={{ margin: "0 0 14px", fontSize: 14, color: "var(--input-text, #1e293b)", fontWeight: 700 }}>
+        {isNew ? "Nueva categoría de ingrediente" : `Editar: ${item.name}`}
+      </h4>
+      <form onSubmit={handleSubmit}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+          <div style={{ flex: "2 1 180px" }}>
+            <Input id="ic-name" label="Nombre" value={form.name} onChange={(e) => set("name")(e.target.value)} required />
+          </div>
+          <div style={{ flex: "0 0 100px" }}>
+            <Input
+              id="ic-order"
+              label="Orden"
+              type="number"
+              value={String(form.order)}
+              onChange={(e) => set("order")(Number(e.target.value))}
+              style={{ fontFamily: "monospace" }}
+            />
+          </div>
+          <ColorField label="Color fondo" value={form.colorBg} onChange={set("colorBg")} />
+          <ColorField label="Color texto" value={form.colorText} onChange={set("colorText")} />
+        </div>
+        <div style={{ display: "flex", gap: 20, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+            <input type="checkbox" checked={form.active} onChange={(e) => set("active")(e.target.checked)} />
+            Activa
+          </label>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+            <input type="checkbox" checked={form.forRecipes} onChange={(e) => set("forRecipes")(e.target.checked)} />
+            Usar en recetas
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#6b7280" }}>
+            Previsualización:
+            <ColorPill bg={form.colorBg} text={form.colorText} label={form.name || "Ejemplo"} />
+          </div>
+        </div>
+        {error ? <div className="kitchen-alert error" style={{ marginBottom: 8 }}>{error}</div> : null}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="submit" style={{ ...ABT.save, opacity: saving ? 0.7 : 1 }} disabled={saving}>
+            {saving ? "Guardando..." : "Guardar"}
+          </button>
+          <button type="button" style={ABT.cancel} onClick={onCancel}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function IngredientCategoriesSection() {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [editItem, setEditItem] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const data = await apiRequest("/api/admin/ingredient-categories");
+      setCategories(data.categories || []);
+    } catch (err) {
+      setError(err.message || "Error al cargar categorías de ingrediente.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSave = async (form) => {
+    const body = JSON.stringify({
+      name: form.name,
+      colorBg: form.colorBg,
+      colorText: form.colorText,
+      order: form.order,
+      forRecipes: form.forRecipes,
+      active: form.active,
+      scope: "master"
+    });
+    if (form._id) {
+      const data = await apiRequest(`/api/categories/${form._id}`, { method: "PUT", body });
+      setCategories((prev) => prev.map((c) => String(c._id) === String(data.category._id) ? data.category : c));
+    } else {
+      const data = await apiRequest("/api/categories", { method: "POST", body });
+      setCategories((prev) => [...prev, data.category]);
+    }
+    setEditItem(null);
+  };
+
+  const handleToggle = async (cat) => {
+    const data = await apiRequest(`/api/categories/${cat._id}`, {
+      method: "PUT",
+      body: JSON.stringify({ name: cat.name, colorBg: cat.colorBg, colorText: cat.colorText, order: cat.order, forRecipes: cat.forRecipes, active: !cat.active })
+    });
+    setCategories((prev) => prev.map((c) => String(c._id) === String(data.category._id) ? data.category : c));
+  };
+
+  return (
+    <Card className="kitchen-block-gap">
+      <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#065f46", marginBottom: 3 }}>¿Qué son las categorías de ingrediente?</div>
+        <div style={{ fontSize: 12, color: "#047857", lineHeight: 1.6 }}>
+          Representan la <strong>sección del supermercado</strong> donde se encuentra el producto: <strong>Frutas y verduras</strong>,
+          <strong> Carnes y pollos</strong>, <strong>Congelados</strong>, <strong>Lácteos</strong>...
+          Se usan para agrupar la lista de la compra por pasillo. Son categorías <strong>master</strong> (globales para todos los hogares).
+          Al editar nombre o color, el cambio se propaga automáticamente a todos los ingredientes que la referencian.
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+        <h2 className="kitchen-title-no-margin">Categorías de ingrediente</h2>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" style={ABT.edit} onClick={load} disabled={loading}>{loading ? "..." : "↺ Recargar"}</button>
+          <button type="button" style={{ ...ABT.save, padding: "5px 14px" }} onClick={() => setEditItem({})}>+ Nueva</button>
+        </div>
+      </div>
+
+      {editItem !== null && (
+        <IngredientCategoryForm item={editItem} onSave={handleSave} onCancel={() => setEditItem(null)} />
+      )}
+
+      {error ? <div className="kitchen-alert error">{error}</div> : null}
+
+      {loading ? <p className="kitchen-muted">Cargando...</p> : categories.length === 0 ? (
+        <p className="kitchen-muted">No hay categorías de ingrediente. Crea la primera.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="kitchen-table">
+            <thead>
+              <tr>
+                <th style={{ textAlign: "center" }}>Orden</th>
+                <th>Categoría</th>
+                <th style={{ textAlign: "center" }}>Elaboraciones</th>
+                <th style={{ textAlign: "center" }}>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((cat) => (
+                <tr key={cat._id} style={{ opacity: cat.active !== false ? 1 : 0.45 }}>
+                  <td style={{ textAlign: "center", fontFamily: "monospace", fontSize: 12, color: "#6b7280" }}>{cat.order ?? 0}</td>
+                  <td><ColorPill bg={cat.colorBg} text={cat.colorText} label={cat.name} /></td>
+                  <td style={{ textAlign: "center", fontSize: 12 }}>
+                    {cat.forRecipes !== false ? <span style={{ color: "#16a34a" }}>✓</span> : <span style={{ color: "#9ca3af" }}>—</span>}
+                  </td>
+                  <td style={{ textAlign: "center" }}>
+                    {cat.active !== false
+                      ? <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>● Activa</span>
+                      : <span style={{ fontSize: 11, color: "#94a3b8" }}>○ Inactiva</span>}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" style={ABT.edit} onClick={() => setEditItem(cat)}>Editar</button>
+                      <button
+                        type="button"
+                        style={{ ...ABT.edit, color: cat.active !== false ? "#b45309" : "#166534", borderColor: cat.active !== false ? "#fcd34d" : "#86efac" }}
+                        onClick={() => handleToggle(cat)}
+                      >
+                        {cat.active !== false ? "Desactivar" : "Activar"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ─── Admin: Onboarding section ────────────────────────────────────────────────
+
+const ONBOARDING_ECONOMY_TARGET = 105; // welcome(20) + challenges(85) = 105
+
+function OnboardingSection({ householdContext, onClearHouseholdContext }) {
+  const [challenges, setChallenges] = useState([]);
+  const [households, setHouseholds] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [editingChallenge, setEditingChallenge] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [householdSearch, setHouseholdSearch] = useState("");
+  const [suggTab, setSuggTab] = useState("ingredient");
+  const [newSuggText, setNewSuggText] = useState("");
+  const [addingSugg, setAddingSugg] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [cData, hData, aData, sData] = await Promise.all([
+        apiRequest("/api/kitchen/onboarding/admin/challenges"),
+        apiRequest("/api/kitchen/onboarding/admin/households"),
+        apiRequest("/api/kitchen/onboarding/admin/analytics"),
+        apiRequest("/api/kitchen/onboarding/admin/suggestions")
+      ]);
+      setChallenges(cData.challenges || []);
+      setHouseholds(hData.records || []);
+      setAnalytics(aData.analytics || null);
+      setSuggestions(sData.suggestions || []);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const startEdit = (c) => {
+    setEditingChallenge(c._id);
+    setEditForm({ title: c.title, description: c.description, howTo: c.howTo, rewardBites: c.rewardBites, order: c.order, active: c.active });
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    try {
+      await apiRequest(`/api/kitchen/onboarding/admin/challenges/${editingChallenge}`, {
+        method: "PUT", body: JSON.stringify(editForm)
+      });
+      setEditingChallenge(null);
+      await load();
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const householdAction = async (householdId, action) => {
+    try {
+      if (action === "reset") {
+        const reason = window.prompt("Razón del reset (opcional):") || "";
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/reset`, { method: "POST", body: JSON.stringify({ reason }) });
+      } else if (action === "assign") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/assign`, { method: "POST" });
+      } else if (action === "remove") {
+        if (!window.confirm("¿Desactivar onboarding para este hogar?")) return;
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/remove`, { method: "POST" });
+      } else if (action === "complete") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/status`, { method: "POST", body: JSON.stringify({ status: "completed" }) });
+      } else if (action === "enable") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/status`, { method: "POST", body: JSON.stringify({ status: "active" }) });
+      } else if (action === "disable") {
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/status`, { method: "POST", body: JSON.stringify({ status: "disabled" }) });
+      }
+      await load();
+    } catch (e) { setError(e.message); }
+  };
+
+  const toggleSuggActive = async (s) => {
+    try {
+      await apiRequest(`/api/kitchen/onboarding/admin/suggestions/${s._id}`, {
+        method: "PUT", body: JSON.stringify({ active: !s.active })
+      });
+      setSuggestions((prev) => prev.map((x) => x._id === s._id ? { ...x, active: !s.active } : x));
+    } catch (e) { setError(e.message); }
+  };
+
+  const deleteSugg = async (id) => {
+    if (!window.confirm("¿Eliminar sugerencia?")) return;
+    try {
+      await apiRequest(`/api/kitchen/onboarding/admin/suggestions/${id}`, { method: "DELETE" });
+      setSuggestions((prev) => prev.filter((x) => x._id !== id));
+    } catch (e) { setError(e.message); }
+  };
+
+  const addSugg = async () => {
+    if (!newSuggText.trim()) return;
+    setAddingSugg(true);
+    try {
+      const data = await apiRequest("/api/kitchen/onboarding/admin/suggestions", {
+        method: "POST", body: JSON.stringify({ type: suggTab, text: newSuggText.trim() })
+      });
+      setSuggestions((prev) => [...prev, data.suggestion]);
+      setNewSuggText("");
+    } catch (e) { setError(e.message); }
+    finally { setAddingSugg(false); }
+  };
+
+  const th = { padding: "6px 10px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #e5e7eb" };
+  const td = { padding: "7px 10px", fontSize: 12, borderBottom: "1px solid #f3f4f6", verticalAlign: "middle" };
+  const fieldStyle = { width: "100%", boxSizing: "border-box", padding: "5px 8px", fontSize: 12, borderRadius: 5, border: "1px solid #d1d5db" };
+
+  if (loading) return <div style={{ padding: 24, color: "#6b7280" }}>Cargando onboarding...</div>;
+
+  const filteredHouseholds = households.filter((h) => {
+    if (householdContext?.id && String(h.householdId) !== String(householdContext.id)) return false;
+    return !householdSearch ||
+      String(h.householdId).toLowerCase().includes(householdSearch.toLowerCase()) ||
+      (h.status || "").toLowerCase().includes(householdSearch.toLowerCase());
+  });
+
+  const activeChallenges = challenges.filter((c) => c.active);
+  const totalChallengeBites = activeChallenges.reduce((s, c) => s + (c.rewardBites || 0), 0);
+  const welcomeBites = analytics?.welcomeBites ?? 20;
+  const grandTotal = totalChallengeBites + welcomeBites;
+  const economyOk = grandTotal === ONBOARDING_ECONOMY_TARGET;
+
+  const filteredSuggestions = suggestions.filter((s) => s.type === suggTab);
+
+  return (
+    <div>
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
+      {error && <div style={{ background: "#fee2e2", color: "#b42318", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 13 }}>{error}</div>}
+
+      {/* Economy balance card */}
+      <Card style={{ marginBottom: 20, padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Balance de Bites</h4>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>Bienvenida: <strong>+{welcomeBites}</strong></span>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>Retos: <strong>+{totalChallengeBites}</strong></span>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 999, fontSize: 13, fontWeight: 700,
+              background: economyOk ? "#dcfce7" : "#fee2e2",
+              color: economyOk ? "#15803d" : "#b42318"
+            }}>
+              {economyOk ? "✓" : "⚠"} Total: {grandTotal} / {ONBOARDING_ECONOMY_TARGET} bites
+            </span>
+          </div>
+        </div>
+        {!economyOk && (
+          <div style={{ marginTop: 10, padding: "8px 12px", background: "#fef9c3", borderRadius: 7, fontSize: 12, color: "#713f12" }}>
+            El total de bites ({grandTotal}) no coincide con el objetivo ({ONBOARDING_ECONOMY_TARGET}).
+            El pack de bienvenida cuesta 80 bites → usuario debe quedar con 25 bites al finalizar.
+          </div>
+        )}
+      </Card>
+
+      {/* Analytics */}
+      {analytics && (
+        <Card style={{ marginBottom: 20, padding: 16 }}>
+          <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Analíticas</h4>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            {[
+              { label: "Total hogares", value: analytics.total },
+              { label: "Activos", value: analytics.byStatus?.active || 0 },
+              { label: "Completados", value: analytics.byStatus?.completed || 0 },
+              { label: "Desactivados", value: analytics.byStatus?.disabled || 0 },
+              { label: "Bites promedio", value: Math.round(analytics.avgBitesEarned || 0) },
+              { label: "Bites máximo", value: analytics.maxBitesEarned || 0 }
+            ].map(({ label, value }) => (
+              <div key={label} style={{ background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "10px 16px", minWidth: 100 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#4338ca" }}>{value}</div>
+                <div style={{ fontSize: 11, color: "var(--input-text, #6b7280)", opacity: 0.65 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Challenges editor */}
+      <Card style={{ marginBottom: 20 }}>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>
+          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Retos de onboarding</h4>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["#", "Clave", "Título", "Bites", "Fase", "Activo", ""].map((h) => <th key={h} style={th}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {challenges.map((c) => (
+                <React.Fragment key={c._id}>
+                  <tr style={{ background: editingChallenge === c._id ? "#f8fafc" : "transparent" }}>
+                    <td style={td}>{c.order}</td>
+                    <td style={{ ...td, fontFamily: "monospace", color: "#6366f1", fontSize: 11 }}>{c.key}</td>
+                    <td style={td}>{editingChallenge === c._id
+                      ? <input style={fieldStyle} value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))} />
+                      : c.title}
+                    </td>
+                    <td style={td}>{editingChallenge === c._id
+                      ? <input style={{ ...fieldStyle, width: 60 }} type="number" value={editForm.rewardBites} onChange={(e) => setEditForm((p) => ({ ...p, rewardBites: Number(e.target.value) }))} />
+                      : <strong style={{ color: "#4338ca" }}>+{c.rewardBites}</strong>}
+                    </td>
+                    <td style={td}>{c.phase} — {c.phaseLabel}</td>
+                    <td style={td}>
+                      {editingChallenge === c._id
+                        ? <input type="checkbox" checked={editForm.active} onChange={(e) => setEditForm((p) => ({ ...p, active: e.target.checked }))} />
+                        : <span style={{ color: c.active ? "#16a34a" : "#9ca3af" }}>{c.active ? "✓" : "✗"}</span>}
+                    </td>
+                    <td style={td}>
+                      {editingChallenge === c._id ? (
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button type="button" style={ABT.save} onClick={saveEdit} disabled={saving}>{saving ? "..." : "Guardar"}</button>
+                          <button type="button" style={ABT.cancel} onClick={() => setEditingChallenge(null)}>×</button>
+                        </div>
+                      ) : (
+                        <button type="button" style={ABT.edit} onClick={() => startEdit(c)}>Editar</button>
+                      )}
+                    </td>
+                  </tr>
+                  {editingChallenge === c._id && (
+                    <tr>
+                      <td colSpan={7} style={{ ...td, background: "#f8fafc" }}>
+                        <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, marginBottom: 6 }}>
+                          Descripción
+                          <textarea style={{ ...fieldStyle, minHeight: 50 }} value={editForm.description} onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))} />
+                        </label>
+                        <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12 }}>
+                          Cómo hacerlo
+                          <textarea style={{ ...fieldStyle, minHeight: 40 }} value={editForm.howTo} onChange={(e) => setEditForm((p) => ({ ...p, howTo: e.target.value }))} />
+                        </label>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Suggestions editor */}
+      <Card style={{ marginBottom: 20 }}>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12 }}>
+          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b", flex: 1 }}>Sugerencias</h4>
+          <div style={{ display: "flex", gap: 4 }}>
+            {["ingredient", "dish"].map((t) => (
+              <button key={t} type="button" style={{
+                padding: "3px 12px", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 600,
+                background: suggTab === t ? "#4338ca" : "#f1f5f9",
+                color: suggTab === t ? "#fff" : "#374151",
+                border: "none"
+              }} onClick={() => setSuggTab(t)}>
+                {t === "ingredient" ? "Productos" : "Platos"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding: 16 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <input
+              style={{ flex: 1, ...fieldStyle }}
+              placeholder={`Nueva sugerencia de ${suggTab === "ingredient" ? "ingrediente" : "plato"}...`}
+              value={newSuggText}
+              onChange={(e) => setNewSuggText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addSugg()}
+            />
+            <button type="button" style={ABT.save} onClick={addSugg} disabled={addingSugg || !newSuggText.trim()}>
+              {addingSugg ? "..." : "+ Añadir"}
+            </button>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {filteredSuggestions.map((s) => (
+              <div key={s._id} style={{
+                display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999,
+                background: s.active ? "#eef2ff" : "#f3f4f6", border: `1px solid ${s.active ? "#c7d2fe" : "#d1d5db"}`
+              }}>
+                <span style={{ fontSize: 12, color: s.active ? "#4338ca" : "#9ca3af" }}>{s.text}</span>
+                <button type="button" onClick={() => toggleSuggActive(s)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#6b7280", padding: 0, lineHeight: 1 }}>
+                  {s.active ? "●" : "○"}
+                </button>
+                <button type="button" onClick={() => deleteSugg(s._id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#ef4444", padding: 0, lineHeight: 1 }}>
+                  ×
+                </button>
+              </div>
+            ))}
+            {filteredSuggestions.length === 0 && (
+              <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>Sin sugerencias aún.</p>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Household states */}
+      <Card>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12 }}>
+          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b", flex: 1 }}>Estado por hogar</h4>
+          <input
+            style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 12, width: 200 }}
+            placeholder="Buscar por ID o estado..."
+            value={householdSearch}
+            onChange={(e) => setHouseholdSearch(e.target.value)}
+          />
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["Household ID", "Estado", "Completados", "Bites", "Iniciado", "Acciones"].map((h) => <th key={h} style={th}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredHouseholds.slice(0, 30).map((h) => (
+                <tr key={h._id}>
+                  <td style={{ ...td, fontFamily: "monospace", fontSize: 11 }}>{String(h.householdId).slice(-8)}</td>
+                  <td style={td}>
+                    <span style={{
+                      display: "inline-block", padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 600,
+                      background: h.status === "completed" ? "#dcfce7" : h.status === "active" ? "#e0e7ff" : h.status === "disabled" ? "#f3f4f6" : "#fef9c3",
+                      color: h.status === "completed" ? "#15803d" : h.status === "active" ? "#4338ca" : h.status === "disabled" ? "#9ca3af" : "#713f12"
+                    }}>
+                      {h.status}
+                    </span>
+                  </td>
+                  <td style={td}>{(h.completedChallenges || []).length}</td>
+                  <td style={td}>{h.totalBitesEarned || 0}</td>
+                  <td style={td}>{h.startedAt ? new Date(h.startedAt).toLocaleDateString("es-ES") : "—"}</td>
+                  <td style={td}>
+                    <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                      <button type="button" style={ABT.edit} onClick={() => householdAction(h.householdId, "reset")}>Reset</button>
+                      <button type="button" style={ABT.green} onClick={() => householdAction(h.householdId, "assign")}>Asignar</button>
+                      {h.status !== "completed" && <button type="button" style={ABT.green} onClick={() => householdAction(h.householdId, "complete")}>Completar</button>}
+                      {h.status !== "active" && <button type="button" style={ABT.edit} onClick={() => householdAction(h.householdId, "enable")}>Activar</button>}
+                      {h.status !== "disabled" && <button type="button" style={ABT.del} onClick={() => householdAction(h.householdId, "disable")}>Desactivar</button>}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredHouseholds.length === 0 && (
+                <tr><td colSpan={6} style={{ ...td, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>Sin registros.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ─── Weekly Challenges Admin Section ────────────────────────────────────────
+
+function WeeklySection({ householdContext, onClearHouseholdContext }) {
+  const wcFieldStyle = { display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 };
+  const wcLabelStyle = { fontSize: 12, fontWeight: 600, color: "#374151" };
+  const [subTab, setSubTab] = useState("config");
+  const [config, setConfig] = useState(null);
+  const [configForm, setConfigForm] = useState({});
+  const [challenges, setChallenges] = useState([]);
+  const [editingChallenge, setEditingChallenge] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [newChallengeForm, setNewChallengeForm] = useState({ key: "", title: "", description: "", guidance: "", rewardBites: 10, triggerType: "", triggerCount: 1, cycleWeek: "", cycleOrder: 0, active: true, curriculum: "basic" });
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [householdId, setHouseholdId] = useState("");
+  const [adminHouseholds, setAdminHouseholds] = useState([]);
+  const [householdProgress, setHouseholdProgress] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
+
+  // Ciclo testing state
+  const [cycleHouseholdId, setCycleHouseholdId] = useState("");
+  const [cycleState, setCycleState] = useState(null);
+  const [cycleLoading, setCycleLoading] = useState(false);
+  const [cycleMsg, setCycleMsg] = useState("");
+  const [cycleError, setCycleError] = useState("");
+  const [betaProCheckResult, setBetaProCheckResult] = useState(null);
+  const [forceCycleWeek, setForceCycleWeek] = useState("1");
+
+  const loadAdminHouseholds = useCallback(async () => {
+    try {
+      const data = await apiRequest("/api/admin/households");
+      setAdminHouseholds(data.households || []);
+    } catch {
+      setAdminHouseholds([]);
+    }
+  }, []);
+
+  const loadConfig = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest("/api/kitchen/weekly/admin/config");
+      setConfig(data.config || {});
+      setConfigForm(data.config || {});
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const loadChallenges = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest("/api/kitchen/weekly/admin/challenges");
+      setChallenges(data.challenges || []);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    if (subTab === "config") loadConfig();
+    else if (subTab === "challenges") loadChallenges();
+  }, [subTab]);
+
+  useEffect(() => { loadAdminHouseholds(); }, [loadAdminHouseholds]);
+
+  useEffect(() => {
+    if (householdContext?.id) {
+      setHouseholdId(householdContext.id);
+      setCycleHouseholdId(householdContext.id);
+      setSubTab("ciclo");
+    }
+  }, [householdContext?.id]);
+
+  const saveConfig = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const data = await apiRequest("/api/kitchen/weekly/admin/config", {
+        method: "PUT", body: JSON.stringify(configForm)
+      });
+      setConfig(data.config || configForm);
+      setMsg("Configuración guardada");
+      setTimeout(() => setMsg(""), 3000);
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const startEditChallenge = (c) => {
+    setEditingChallenge(c._id);
+    setEditForm({ key: c.key, title: c.title, description: c.description, guidance: c.guidance, rewardBites: c.rewardBites, triggerType: c.triggerType, triggerCount: c.triggerCount, cycleWeek: c.cycleWeek ?? "", cycleOrder: c.cycleOrder ?? 0, active: c.active, curriculum: c.curriculum || "basic" });
+  };
+
+  const saveEditChallenge = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      await apiRequest(`/api/kitchen/weekly/admin/challenges/${editingChallenge}`, {
+        method: "PUT", body: JSON.stringify({ ...editForm, cycleWeek: editForm.cycleWeek === "" ? null : Number(editForm.cycleWeek) })
+      });
+      setEditingChallenge(null);
+      await loadChallenges();
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const deleteChallenge = async (id) => {
+    if (!window.confirm("¿Eliminar este reto semanal?")) return;
+    try {
+      await apiRequest(`/api/kitchen/weekly/admin/challenges/${id}`, { method: "DELETE" });
+      await loadChallenges();
+    } catch (e) { setError(e.message); }
+  };
+
+  const createChallenge = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      await apiRequest("/api/kitchen/weekly/admin/challenges", {
+        method: "POST", body: JSON.stringify({ ...newChallengeForm, cycleWeek: newChallengeForm.cycleWeek === "" ? null : Number(newChallengeForm.cycleWeek) })
+      });
+      setShowNewForm(false);
+      setNewChallengeForm({ key: "", title: "", description: "", guidance: "", rewardBites: 10, triggerType: "", triggerCount: 1, cycleWeek: "", cycleOrder: 0, active: true, curriculum: "basic" });
+      await loadChallenges();
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const seedChallenges = async () => {
+    if (!window.confirm("¿Sembrar retos por defecto? Esto no sobreescribe los existentes.")) return;
+    try {
+      const data = await apiRequest("/api/kitchen/weekly/admin/seed", { method: "POST" });
+      setMsg(`Sembrado: ${data.created || 0} creados`);
+      setTimeout(() => setMsg(""), 4000);
+      await loadChallenges();
+    } catch (e) { setError(e.message); }
+  };
+
+  const loadHouseholdProgress = async () => {
+    if (!householdId.trim()) return;
+    if (!isMongoObjectId(householdId)) {
+      setError("Selecciona el ObjectId real del hogar. Los codigos cortos no son validos para estas herramientas.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest(`/api/kitchen/weekly/admin/households/${householdId.trim()}/progress`);
+      setHouseholdProgress(data);
+    } catch (e) { setError(e.message); setHouseholdProgress(null); }
+    finally { setLoading(false); }
+  };
+
+  const householdAction = async (action, extra = {}) => {
+    if (!householdId.trim()) return;
+    if (!isMongoObjectId(householdId)) {
+      setError("Selecciona el ObjectId real del hogar. Los codigos cortos no son validos para estas herramientas.");
+      return;
+    }
+    try {
+      if (action === "reset") {
+        if (!window.confirm("¿Resetear progreso semanal de este hogar?")) return;
+        await apiRequest(`/api/kitchen/weekly/admin/households/${householdId.trim()}/reset`, { method: "POST" });
+      } else if (action === "complete-challenge") {
+        const key = window.prompt("Clave del reto a completar (challengeKey):");
+        if (!key) return;
+        await apiRequest(`/api/kitchen/weekly/admin/households/${householdId.trim()}/complete-challenge`, {
+          method: "POST", body: JSON.stringify({ challengeKey: key })
+        });
+      }
+      await loadHouseholdProgress();
+      setMsg(`Acción '${action}' ejecutada`);
+      setTimeout(() => setMsg(""), 3000);
+    } catch (e) { setError(e.message); }
+  };
+
+  const loadCycleState = async () => {
+    if (!cycleHouseholdId.trim()) return;
+    if (!isMongoObjectId(cycleHouseholdId)) {
+      setCycleError("Selecciona el ObjectId real del hogar. Los codigos cortos no son validos para estas herramientas.");
+      return;
+    }
+    setCycleLoading(true); setCycleError(""); setCycleState(null); setBetaProCheckResult(null);
+    try {
+      const data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/cycle-state`);
+      setCycleState(data.state || null);
+    } catch (e) { setCycleError(e.message); }
+    finally { setCycleLoading(false); }
+  };
+
+  const cycleAction = async (action) => {
+    if (!cycleHouseholdId.trim()) return;
+    if (!isMongoObjectId(cycleHouseholdId)) {
+      setCycleError("Selecciona el ObjectId real del hogar. Los codigos cortos no son validos para estas herramientas.");
+      return;
+    }
+    setCycleLoading(true); setCycleError(""); setCycleMsg("");
+    try {
+      let data;
+      if (action === "reset-cycle") {
+        if (!window.confirm("¿Reset completo? Se eliminará TODO el progreso de retos, se borrará Beta Pro (si estaba activo) y el plan volverá a Basic. Los planes Stripe de pago NO se tocan.")) { setCycleLoading(false); return; }
+        data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/reset-cycle`, { method: "POST" });
+        if (data.ok === false) {
+          setCycleError(`Reset bloqueado: ${data.reason || "error"}`);
+          setCycleLoading(false);
+          return;
+        }
+        setCycleMsg(`Ciclo reiniciado${data.betaProCleared ? " — Beta Pro eliminado" : ""}.`);
+      } else if (action === "set-cycle-week") {
+        const week = Number(forceCycleWeek);
+        if (!week || week < 1 || week > 4) { setCycleError("Semana debe ser 1-4."); setCycleLoading(false); return; }
+        if (!window.confirm(`¿Forzar semana del ciclo a ${week}? Se eliminará el progreso de la semana actual.`)) { setCycleLoading(false); return; }
+        data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/set-cycle-week`, {
+          method: "POST", body: JSON.stringify({ week })
+        });
+        setCycleMsg(`Semana del ciclo forzada a ${week}.`);
+      } else if (action === "check-beta-pro") {
+        data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/check-beta-pro`, { method: "POST" });
+        setBetaProCheckResult(data.betaPro || null);
+        const r = data.betaPro?.result;
+        if (r === "granted") setCycleMsg("✅ Beta Pro concedido.");
+        else if (r === "already_beta_pro") setCycleMsg("ℹ️ Ya tiene Beta Pro activo.");
+        else if (r === "already_paid_plan") setCycleMsg("ℹ️ Plan de pago — no se sobreescribe.");
+        else if (r === "onboarding_incomplete") setCycleMsg("⚠️ Onboarding incompleto.");
+        else if (r === "first_week_incomplete") setCycleMsg("⚠️ Primera semana de retos no completada.");
+        else if (r === "beta_pro_disabled") setCycleMsg("⚠️ BETA_PRO_ENABLED no está activo.");
+        else if (r === "missing_cycle_anchor") setCycleMsg("⚠️ Sin anclaje de ciclo — el hogar no ha iniciado retos.");
+        else setCycleMsg(`Resultado: ${r || "error"}`);
+      } else if (action === "reset-progress") {
+        if (!window.confirm("¿Resetear el progreso de retos de esta semana? No borra el historial de Bites.")) { setCycleLoading(false); return; }
+        data = await apiRequest(`/api/kitchen/weekly/admin/households/${cycleHouseholdId.trim()}/reset`, { method: "POST" });
+        setCycleMsg("Progreso semanal eliminado.");
+      }
+      setTimeout(() => setCycleMsg(""), 6000);
+      await loadCycleState();
+    } catch (e) { setCycleError(e.message); }
+    finally { setCycleLoading(false); }
+  };
+
+  const inputStyle = { fontSize: 13, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--input-border, #e2e8f0)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)", width: "100%", boxSizing: "border-box" };
+  const sectionStyle = { background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "14px 16px", border: "1px solid var(--hf-border, #e2e8f0)", marginBottom: 12 };
+  const householdOptions = adminHouseholds.filter((h) => isMongoObjectId(h.id));
+  const selectedCycleHousehold = householdOptions.find((h) => String(h.id) === String(cycleHouseholdId));
+  const householdSelect = (value, setValue) => (
+    <select style={{ ...inputStyle, width: 340, maxWidth: "100%" }} value={value} onChange={(e) => setValue(e.target.value)}>
+      <option value="">Selecciona hogar...</option>
+      {householdOptions.map((h) => (
+        <option key={h.id} value={h.id}>{h.name || "Hogar"} - {h.id}</option>
+      ))}
+    </select>
+  );
+
+  const subTabs = [
+    { key: "config", label: "Configuración" },
+    { key: "challenges", label: "Retos" },
+    { key: "households", label: "Hogares" },
+    { key: "ciclo", label: "🔬 Ciclo Testing" }
+  ];
+
+  // Group by curriculum + cycleWeek: Basic W1-4, then Pro W1-4, then unassigned each
+  const groupedChallenges = ["basic", "pro"].flatMap((curriculum) =>
+    [1, 2, 3, 4, null].map((week) => ({
+      curriculum,
+      week,
+      items: challenges.filter((c) => (c.curriculum || "basic") === curriculum && (c.cycleWeek ?? null) === week)
+    }))
+  ).filter((g) => g.items.length > 0);
+
+  return (
+    <div style={{ maxWidth: 900 }}>
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {subTabs.map(({ key, label }) => (
+          <button key={key} type="button" onClick={() => setSubTab(key)} style={{ ...ABT.edit, background: subTab === key ? "#e0e7ff" : "#f8fafc", color: subTab === key ? "#312e81" : "#374151", fontWeight: subTab === key ? 700 : 500 }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {error && <div style={{ color: "#b42318", background: "#fff8f8", border: "1px solid #fca5a5", borderRadius: 6, padding: "8px 12px", marginBottom: 12 }}>{error}</div>}
+      {msg && <div style={{ color: "#15803d", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "8px 12px", marginBottom: 12 }}>{msg}</div>}
+      {loading && <p style={{ color: "#6b7280", fontSize: 13 }}>Cargando...</p>}
+
+      {subTab === "config" && !loading && config && (
+        <div style={sectionStyle}>
+          <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Configuración del ciclo semanal</p>
+          <div style={wcFieldStyle}>
+            <label style={wcLabelStyle}>Fecha inicio ciclo (cycleStartDate)</label>
+            <input style={inputStyle} type="date" value={configForm.cycleStartDate ? String(configForm.cycleStartDate).slice(0, 10) : ""} onChange={(e) => setConfigForm((p) => ({ ...p, cycleStartDate: e.target.value }))} />
+          </div>
+          <div style={wcFieldStyle}>
+            <label style={wcLabelStyle}>Bonus bites</label>
+            <input style={inputStyle} type="number" value={configForm.bonusBites ?? 5} onChange={(e) => setConfigForm((p) => ({ ...p, bonusBites: Number(e.target.value) }))} />
+          </div>
+          <div style={wcFieldStyle}>
+            <label style={wcLabelStyle}>Semanas por ciclo (totalCycleWeeks)</label>
+            <input style={inputStyle} type="number" min="1" max="12" value={configForm.totalCycleWeeks ?? 4} onChange={(e) => setConfigForm((p) => ({ ...p, totalCycleWeeks: Number(e.target.value) }))} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <input type="checkbox" id="wc-paused" checked={!!configForm.paused} onChange={(e) => setConfigForm((p) => ({ ...p, paused: e.target.checked }))} />
+            <label htmlFor="wc-paused" style={wcLabelStyle}>Pausado</label>
+          </div>
+          <button type="button" style={ABT.save} onClick={saveConfig} disabled={saving}>{saving ? "Guardando..." : "Guardar"}</button>
+        </div>
+      )}
+
+      {subTab === "challenges" && !loading && (
+        <div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <button type="button" style={ABT.green} onClick={() => setShowNewForm((v) => !v)}>+ Nuevo reto</button>
+            <button type="button" style={ABT.edit} onClick={seedChallenges}>Sembrar defaults</button>
+          </div>
+
+          {showNewForm && (
+            <div style={{ ...sectionStyle, borderColor: "#86efac" }}>
+              <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Nuevo reto</p>
+              {["key", "title", "description", "guidance", "triggerType"].map((f) => (
+                <div key={f} style={wcFieldStyle}>
+                  <label style={wcLabelStyle}>{f}</label>
+                  <input style={inputStyle} value={newChallengeForm[f] ?? ""} onChange={(e) => setNewChallengeForm((p) => ({ ...p, [f]: e.target.value }))} />
+                </div>
+              ))}
+              {["rewardBites", "triggerCount", "cycleOrder"].map((f) => (
+                <div key={f} style={wcFieldStyle}>
+                  <label style={wcLabelStyle}>{f}</label>
+                  <input style={inputStyle} type="number" value={newChallengeForm[f] ?? 0} onChange={(e) => setNewChallengeForm((p) => ({ ...p, [f]: Number(e.target.value) }))} />
+                </div>
+              ))}
+              <div style={wcFieldStyle}>
+                <label style={wcLabelStyle}>cycleWeek (1-4 o vacío=sin asignar)</label>
+                <input style={inputStyle} type="number" min="1" max="4" value={newChallengeForm.cycleWeek ?? ""} onChange={(e) => setNewChallengeForm((p) => ({ ...p, cycleWeek: e.target.value }))} />
+              </div>
+              <div style={wcFieldStyle}>
+                <label style={wcLabelStyle}>curriculum</label>
+                <select style={inputStyle} value={newChallengeForm.curriculum || "basic"} onChange={(e) => setNewChallengeForm((p) => ({ ...p, curriculum: e.target.value }))}>
+                  <option value="basic">basic</option>
+                  <option value="pro">pro</option>
+                </select>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" style={ABT.save} onClick={createChallenge} disabled={saving}>{saving ? "..." : "Crear"}</button>
+                <button type="button" style={ABT.cancel} onClick={() => setShowNewForm(false)}>Cancelar</button>
+              </div>
+            </div>
+          )}
+
+          {groupedChallenges.map(({ curriculum, week, items }) => (
+            <div key={`${curriculum}-${week ?? "unassigned"}`} style={{ marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <p style={{ fontWeight: 700, fontSize: 13, color: "#374151", margin: 0 }}>
+                  {week ? `Semana ${week}` : "Sin semana asignada"}
+                </p>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4,
+                  background: curriculum === "pro" ? "#312e81" : "#e2e8f0",
+                  color: curriculum === "pro" ? "#fff" : "#374151",
+                  letterSpacing: "0.05em"
+                }}>
+                  {curriculum === "pro" ? "PRO" : "BASIC"}
+                </span>
+              </div>
+              {items.map((c) => (
+                <div key={c._id} style={{ ...sectionStyle, marginBottom: 8 }}>
+                  {editingChallenge === c._id ? (
+                    <div>
+                      {["key", "title", "description", "guidance", "triggerType"].map((f) => (
+                        <div key={f} style={wcFieldStyle}>
+                          <label style={wcLabelStyle}>{f}</label>
+                          <input style={inputStyle} value={editForm[f] ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, [f]: e.target.value }))} />
+                        </div>
+                      ))}
+                      {["rewardBites", "triggerCount", "cycleOrder"].map((f) => (
+                        <div key={f} style={wcFieldStyle}>
+                          <label style={wcLabelStyle}>{f}</label>
+                          <input style={inputStyle} type="number" value={editForm[f] ?? 0} onChange={(e) => setEditForm((p) => ({ ...p, [f]: Number(e.target.value) }))} />
+                        </div>
+                      ))}
+                      <div style={wcFieldStyle}>
+                        <label style={wcLabelStyle}>cycleWeek (1-4 o vacío)</label>
+                        <input style={inputStyle} type="number" min="1" max="4" value={editForm.cycleWeek ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, cycleWeek: e.target.value }))} />
+                      </div>
+                      <div style={wcFieldStyle}>
+                        <label style={wcLabelStyle}>curriculum</label>
+                        <select style={inputStyle} value={editForm.curriculum || "basic"} onChange={(e) => setEditForm((p) => ({ ...p, curriculum: e.target.value }))}>
+                          <option value="basic">basic</option>
+                          <option value="pro">pro</option>
+                        </select>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                        <input type="checkbox" checked={!!editForm.active} onChange={(e) => setEditForm((p) => ({ ...p, active: e.target.checked }))} />
+                        <label style={wcLabelStyle}>Activo</label>
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button type="button" style={ABT.save} onClick={saveEditChallenge} disabled={saving}>{saving ? "..." : "Guardar"}</button>
+                        <button type="button" style={ABT.cancel} onClick={() => setEditingChallenge(null)}>Cancelar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        <span style={{ fontWeight: 600, fontSize: 13 }}>{c.title}</span>
+                        <span style={{ fontSize: 11, color: "#6b7280", marginLeft: 8 }}>({c.key})</span>
+                        <span style={{
+                          display: "inline-block",
+                          fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 3,
+                          marginLeft: 6, letterSpacing: "0.06em",
+                          background: (c.curriculum || "basic") === "pro" ? "#312e81" : "#e2e8f0",
+                          color: (c.curriculum || "basic") === "pro" ? "#fff" : "#374151",
+                          verticalAlign: "middle"
+                        }}>
+                          {(c.curriculum || "basic") === "pro" ? "PRO" : "BASIC"}
+                        </span>
+                        {!c.active && <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 6 }}>[inactivo]</span>}
+                        <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>trigger: {c.triggerType} x{c.triggerCount} · +{c.rewardBites} bites</p>
+                      </div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button type="button" style={ABT.edit} onClick={() => startEditChallenge(c)}>Editar</button>
+                        <button type="button" style={ABT.del} onClick={() => deleteChallenge(c._id)}>Eliminar</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {subTab === "households" && (
+        <div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {householdSelect(householdId, setHouseholdId)}
+            <button type="button" style={ABT.edit} onClick={loadHouseholdProgress}>Cargar</button>
+          </div>
+          {householdId && <p style={{ fontSize: 12, color: "#64748b", marginTop: -4 }}>Usando ObjectId real: <code>{householdId}</code></p>}
+          {householdProgress && (
+            <div style={sectionStyle}>
+              <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Progreso: {householdId}</p>
+              <pre style={{ fontSize: 11, background: "var(--surface-muted, #f1f5f9)", color: "var(--input-text, #1e293b)", padding: 10, borderRadius: 6, overflow: "auto", maxHeight: 300 }}>
+                {JSON.stringify(householdProgress, null, 2)}
+              </pre>
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <button type="button" style={ABT.del} onClick={() => householdAction("reset")}>Reset progreso</button>
+                <button type="button" style={ABT.green} onClick={() => householdAction("complete-challenge")}>Completar reto</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {subTab === "ciclo" && (
+        <div style={{ maxWidth: 720 }}>
+          <div style={{ ...sectionStyle, borderColor: "#c7d2fe", background: "#eef2ff" }}>
+            <p style={{ fontWeight: 700, fontSize: 14, margin: "0 0 4px", color: "#312e81" }}>🔬 Herramientas de Testing de Ciclo Semanal</p>
+            <p style={{ fontSize: 12, color: "#4338ca", margin: 0 }}>
+              Inspecciona y ajusta el estado del ciclo de retos semanales de un hogar. Solo para DEV/Admin.
+            </p>
+          </div>
+
+          {cycleError && <div style={{ color: "#b42318", background: "#fff8f8", border: "1px solid #fca5a5", borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>{cycleError}</div>}
+          {cycleMsg && <div style={{ color: "#15803d", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>{cycleMsg}</div>}
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            {householdSelect(cycleHouseholdId, setCycleHouseholdId)}
+            <button type="button" style={ABT.edit} onClick={loadCycleState} disabled={cycleLoading}>
+              {cycleLoading ? "..." : "Ver estado del ciclo"}
+            </button>
+          </div>
+          {selectedCycleHousehold ? (
+            <div style={{ ...sectionStyle, padding: "10px 12px" }}>
+              <strong>{selectedCycleHousehold.name}</strong>
+              <div style={{ marginTop: 4 }}><ObjectIdChip id={selectedCycleHousehold.id} onCopy={(id) => navigator.clipboard.writeText(id)} /></div>
+            </div>
+          ) : null}
+
+          {cycleState && (
+            <>
+              {/* ── Cycle state overview ── */}
+              <div style={sectionStyle}>
+                <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Estado actual del ciclo</p>
+                <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                  <tbody>
+                    {[
+                      ["Onboarding", cycleState.onboardingStatus ?? "—"],
+                      ["Ciclo anclado el", cycleState.weeklyChallengeCycleStartedAt
+                        ? new Date(cycleState.weeklyChallengeCycleStartedAt).toLocaleDateString("es-ES")
+                        : "Sin anclaje"],
+                      ["Semana de participación", cycleState.participationWeek ?? "—"],
+                      ["Semana del ciclo (cycleWeekIndex)", cycleState.cycleWeekIndex ?? "—"],
+                      ["Semana actual (inicio)", cycleState.currentWeekStart],
+                      ["Plan del hogar", cycleState.betaPro?.active ? "Pro Beta ✅" : (cycleState.betaPro?.expiredAt ? "Beta Pro (expirado)" : "Basic")]
+                    ].map(([label, value]) => (
+                      <tr key={label} style={{ borderBottom: "1px solid var(--hf-border, #f1f5f9)" }}>
+                        <td style={{ padding: "5px 8px", fontWeight: 600, color: "#6b7280", width: "45%" }}>{label}</td>
+                        <td style={{ padding: "5px 8px", color: "var(--input-text, #1e293b)" }}>{String(value)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ── Current week progress ── */}
+              {cycleState.currentProgress && (
+                <div style={sectionStyle}>
+                  <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>
+                    Progreso semana actual (cycleWeek almacenado: {cycleState.currentProgress.cycleWeekIndex})
+                  </p>
+                  {cycleState.currentProgress.completedChallenges.length === 0 ? (
+                    <p style={{ fontSize: 12, color: "#9ca3af" }}>Sin retos completados esta semana.</p>
+                  ) : (
+                    <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ background: "var(--surface-muted, #f1f5f9)" }}>
+                          <th style={{ padding: "4px 8px", textAlign: "left" }}>Clave del reto</th>
+                          <th style={{ padding: "4px 8px", textAlign: "center" }}>Recompensa</th>
+                          <th style={{ padding: "4px 8px", textAlign: "center" }}>Completado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cycleState.currentProgress.completedChallenges.map((c) => (
+                          <tr key={c.key} style={{ borderBottom: "1px solid var(--hf-border, #f1f5f9)" }}>
+                            <td style={{ padding: "4px 8px", fontFamily: "monospace" }}>{c.key}</td>
+                            <td style={{ padding: "4px 8px", textAlign: "center" }}>
+                              <span style={{ color: c.rewardGranted ? "#15803d" : "#b42318", fontWeight: 700 }}>
+                                {c.rewardGranted ? "✓ Concedida" : "✗ Pendiente"}
+                              </span>
+                            </td>
+                            <td style={{ padding: "4px 8px", textAlign: "center", color: "#6b7280" }}>
+                              {c.completedAt ? new Date(c.completedAt).toLocaleString("es-ES") : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  {cycleState.currentProgress.bonusGranted && (
+                    <p style={{ fontSize: 12, color: "#15803d", marginTop: 6, fontWeight: 600 }}>⭐ Bonus concedido</p>
+                  )}
+                </div>
+              )}
+              {!cycleState.currentProgress && (
+                <div style={{ ...sectionStyle, color: "#9ca3af", fontSize: 12 }}>Sin progreso registrado esta semana.</div>
+              )}
+
+              {/* ── Beta Pro eligibility ── */}
+              <div style={{ ...sectionStyle, borderColor: betaProCheckResult?.result === "granted" ? "#86efac" : betaProCheckResult?.result === "already_beta_pro" ? "#c7d2fe" : "#fcd34d" }}>
+                <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>Elegibilidad Beta Pro</p>
+                <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 10 }}>
+                  Eligibilidad calculada en tiempo real: <strong>{cycleState.betaProEligibility?.result ?? "—"}</strong>
+                  {cycleState.betaProEligibility?.cycleWeekIndex && ` (cycleWeek ${cycleState.betaProEligibility.cycleWeekIndex})`}
+                </p>
+                <button
+                  type="button"
+                  style={{ ...ABT.save, background: "#7c3aed" }}
+                  onClick={() => cycleAction("check-beta-pro")}
+                  disabled={cycleLoading}
+                >
+                  {cycleLoading ? "..." : "Reevaluar Beta Pro"}
+                </button>
+                {betaProCheckResult && (
+                  <p style={{ fontSize: 12, marginTop: 8, fontWeight: 600,
+                    color: betaProCheckResult.result === "granted" ? "#15803d" : "#b42318"
+                  }}>
+                    Resultado: {betaProCheckResult.result}
+                    {betaProCheckResult.expiresAt && ` (expira: ${new Date(betaProCheckResult.expiresAt).toLocaleDateString("es-ES")})`}
+                  </p>
+                )}
+              </div>
+
+              {/* ── Cycle actions ── */}
+              <div style={sectionStyle}>
+                <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Acciones del ciclo</p>
+
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    style={{ ...ABT.del, padding: "6px 14px" }}
+                    onClick={() => cycleAction("reset-cycle")}
+                    disabled={cycleLoading}
+                  >
+                    Reset completo (+ Beta Pro)
+                  </button>
+                  <span style={{ fontSize: 11, color: "#9ca3af" }}>
+                    Borra anclaje, TODO el progreso de retos y Beta Pro (si activo). Plan pasa a Free. Planes Stripe no se tocan.
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+                  <select
+                    value={forceCycleWeek}
+                    onChange={(e) => setForceCycleWeek(e.target.value)}
+                    style={{ ...inputStyle, width: 120 }}
+                  >
+                    <option value="1">Semana 1</option>
+                    <option value="2">Semana 2</option>
+                    <option value="3">Semana 3</option>
+                    <option value="4">Semana 4</option>
+                  </select>
+                  <button
+                    type="button"
+                    style={{ ...ABT.edit, padding: "6px 14px" }}
+                    onClick={() => cycleAction("set-cycle-week")}
+                    disabled={cycleLoading}
+                  >
+                    Forzar semana del ciclo
+                  </button>
+                  <span style={{ fontSize: 11, color: "#9ca3af" }}>
+                    Ajusta el anclaje para que esta semana corresponda a la semana seleccionada.
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    style={{ ...ABT.del, padding: "6px 14px" }}
+                    onClick={() => cycleAction("reset-progress")}
+                    disabled={cycleLoading}
+                  >
+                    Recalcular progreso semanal
+                  </button>
+                  <span style={{ fontSize: 11, color: "#9ca3af" }}>
+                    Borra el doc de progreso de esta semana. No elimina el historial de Bites.
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Beta Invites ─────────────────────────────────────────────────────────────
+
+function BetaInvitesSection() {
+  const [subTab, setSubTab] = useState("list");
+  const [invites, setInvites] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [betaEnabled, setBetaEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const [createMode, setCreateMode] = useState("single");
+  const [singleEmail, setSingleEmail] = useState("");
+  const [bulkEmails, setBulkEmails] = useState("");
+  const [expiresInDays, setExpiresInDays] = useState("30");
+  const [note, setNote] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [lastCreatedResults, setLastCreatedResults] = useState([]);
+
+  const loadInvites = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiRequest("/api/kitchen/beta/admin/invites");
+      setInvites(data.invites || []);
+      setTotal(data.total || 0);
+      setBetaEnabled(data.betaEnabled || false);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { if (subTab === "list") loadInvites(); }, [subTab]);
+
+  const handleCreate = async () => {
+    setCreating(true); setError(""); setLastCreatedResults([]);
+    try {
+      const body = createMode === "bulk"
+        ? { emails: bulkEmails, expiresInDays: Number(expiresInDays) || 30, note }
+        : { email: singleEmail, expiresInDays: Number(expiresInDays) || 30, note };
+      const data = await apiRequest("/api/kitchen/beta/admin/invites", { method: "POST", body: JSON.stringify(body) });
+      setLastCreatedResults(data.results || []);
+      setMsg("Invitación(es) creada(s)");
+      setTimeout(() => setMsg(""), 5000);
+      setSingleEmail(""); setBulkEmails(""); setNote("");
+    } catch (e) { setError(e.message); }
+    finally { setCreating(false); }
+  };
+
+  const handleRevoke = async (id) => {
+    if (!window.confirm("¿Revocar esta invitación?")) return;
+    try {
+      await apiRequest(`/api/kitchen/beta/admin/invites/${id}/revoke`, { method: "POST" });
+      setMsg("Invitación revocada");
+      setTimeout(() => setMsg(""), 3000);
+      loadInvites();
+    } catch (e) { setError(e.message); }
+  };
+
+  const handleResend = async (id) => {
+    try {
+      const data = await apiRequest(`/api/kitchen/beta/admin/invites/${id}/resend`, { method: "POST" });
+      setMsg(data.sent ? "Email reenviado" : "No hay email configurado — copia el enlace manualmente");
+      setTimeout(() => setMsg(""), 4000);
+      loadInvites();
+    } catch (e) { setError(e.message); }
+  };
+
+  const copyLink = (link) => {
+    navigator.clipboard.writeText(link).then(
+      () => { setMsg("Enlace copiado"); setTimeout(() => setMsg(""), 2000); },
+      () => { setMsg("No se pudo copiar — copia manualmente: " + link); }
+    );
+  };
+
+  const STATUS_COLOR = {
+    pending: "#6b7280",
+    sent: "#0891b2",
+    used: "#16a34a",
+    revoked: "#dc2626",
+    expired: "#d97706",
+  };
+
+  const fStyle = { width: "100%", boxSizing: "border-box", padding: "7px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--input-border, #d1d5db)", background: "var(--input-bg, #fff)", color: "var(--input-text, #1e293b)" };
+  const sectionStyle = { background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 10, padding: 20, marginBottom: 16 };
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Beta Invites</h2>
+        <span style={{
+          padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700,
+          background: betaEnabled ? "#dcfce7" : "#fef2f2",
+          color: betaEnabled ? "#15803d" : "#b91c1c",
+          border: `1px solid ${betaEnabled ? "#86efac" : "#fca5a5"}`
+        }}>
+          {betaEnabled ? "BETA ACTIVA" : "BETA INACTIVA"}
+        </span>
+        {!betaEnabled && (
+          <span style={{ fontSize: 12, color: "#6b7280" }}>
+            (Activa PRIVATE_BETA_ENABLED=true para restringir el registro)
+          </span>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+        {[["list", "Invitaciones"], ["create", "Crear invitación"]].map(([key, label]) => (
+          <button key={key} type="button" onClick={() => setSubTab(key)} style={{
+            padding: "6px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: subTab === key ? 700 : 400,
+            background: subTab === key ? "#4338ca" : "#f1f5f9",
+            color: subTab === key ? "#fff" : "#374151",
+            border: "none"
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {error && <div style={{ padding: "8px 12px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, color: "#b91c1c", fontSize: 13, marginBottom: 12 }}>{error}</div>}
+      {msg && <div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, color: "#15803d", fontSize: 13, marginBottom: 12 }}>{msg}</div>}
+
+      {subTab === "list" && (
+        <div>
+          {/* Status filter chips */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+            {[
+              { key: "all",     label: "Todas" },
+              { key: "pending", label: "Pendiente" },
+              { key: "sent",    label: "Enviada" },
+              { key: "used",    label: "Usada" },
+              { key: "revoked", label: "Revocada" },
+              { key: "expired", label: "Expirada" },
+            ].map(({ key, label }) => {
+              const active = statusFilter === key;
+              const chipColor = key === "all" ? "#4338ca" : (STATUS_COLOR[key] || "#4338ca");
+              return (
+                <button key={key} type="button" onClick={() => setStatusFilter(key)} style={{
+                  padding: "4px 12px", borderRadius: 999, cursor: "pointer", fontSize: 12, fontWeight: active ? 700 : 500,
+                  background: active ? chipColor : "#f1f5f9",
+                  color: active ? "#fff" : "#374151",
+                  border: active ? `1px solid ${chipColor}` : "1px solid #e2e8f0",
+                  transition: "all 0.1s"
+                }}>
+                  {label}
+                  {key !== "all" && (
+                    <span style={{ marginLeft: 4, opacity: 0.75 }}>
+                      ({invites.filter(inv => (inv.computedStatus || inv.status) === key).length})
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+            <span style={{ fontSize: 13, color: "#6b7280" }}>
+              {statusFilter === "all"
+                ? `${total} invitaciones en total`
+                : `${invites.filter(inv => (inv.computedStatus || inv.status) === statusFilter).length} de ${total}`}
+            </span>
+            <button type="button" onClick={loadInvites} style={{ ...ABT.edit }}>Recargar</button>
+          </div>
+          {loading ? <p style={{ color: "#6b7280", fontSize: 13 }}>Cargando...</p> : (() => {
+            const filtered = statusFilter === "all"
+              ? invites
+              : invites.filter(inv => (inv.computedStatus || inv.status) === statusFilter);
+            return filtered.length === 0
+              ? <p style={{ color: "#6b7280", fontSize: 13 }}>
+                  {statusFilter === "all" ? "No hay invitaciones." : `No hay invitaciones con estado "${statusFilter}".`}
+                </p>
+              : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
+                      {["Email", "Estado", "Creada", "Expira", "Usado el", "Nota", "Acciones"].map((h) => (
+                        <th key={h} style={{ padding: "8px 12px", fontWeight: 700, color: "#374151", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((inv) => (
+                      <tr key={inv._id} style={{ borderTop: "1px solid #e2e8f0" }}>
+                        <td style={{ padding: "8px 12px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{inv.email}</td>
+                        <td style={{ padding: "8px 12px" }}>
+                          <span style={{
+                            padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 700,
+                            background: `${STATUS_COLOR[inv.computedStatus]}22`,
+                            color: STATUS_COLOR[inv.computedStatus]
+                          }}>
+                            {(inv.computedStatus || inv.status || "").toUpperCase()}
+                          </span>
+                        </td>
+                        <td style={{ padding: "8px 12px", color: "#6b7280", whiteSpace: "nowrap" }}>
+                          {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("es-ES") : "—"}
+                        </td>
+                        <td style={{ padding: "8px 12px", color: "#6b7280", whiteSpace: "nowrap" }}>
+                          {inv.expiresAt ? new Date(inv.expiresAt).toLocaleDateString("es-ES") : "—"}
+                        </td>
+                        <td style={{ padding: "8px 12px", color: "#6b7280", whiteSpace: "nowrap" }}>
+                          {inv.usedAt ? new Date(inv.usedAt).toLocaleDateString("es-ES") : "—"}
+                        </td>
+                        <td style={{ padding: "8px 12px", color: "#6b7280", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={inv.note || ""}>
+                          {inv.note || <span style={{ opacity: 0.4 }}>—</span>}
+                        </td>
+                        <td style={{ padding: "8px 12px" }}>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {inv.link && inv.computedStatus !== "used" && inv.computedStatus !== "revoked" && (
+                              <button type="button" onClick={() => copyLink(inv.link)} style={{ ...ABT.edit }}>Copiar enlace</button>
+                            )}
+                            {(inv.computedStatus === "pending" || inv.computedStatus === "sent") && (
+                              <button type="button" onClick={() => handleResend(inv._id)} style={{ ...ABT.green }}>Reenviar</button>
+                            )}
+                            {inv.computedStatus !== "used" && inv.computedStatus !== "revoked" && (
+                              <button type="button" onClick={() => handleRevoke(inv._id)} style={{ ...ABT.del }}>Revocar</button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {subTab === "create" && (
+        <div style={sectionStyle}>
+          <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700 }}>Crear invitación beta</h3>
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <button type="button" onClick={() => setCreateMode("single")} style={{
+              padding: "6px 14px", borderRadius: 6, border: "1px solid #d1d5db", cursor: "pointer", fontSize: 13,
+              background: createMode === "single" ? "#e0e7ff" : "#fff", fontWeight: createMode === "single" ? 700 : 400, color: createMode === "single" ? "#4338ca" : "#374151"
+            }}>Email único</button>
+            <button type="button" onClick={() => setCreateMode("bulk")} style={{
+              padding: "6px 14px", borderRadius: 6, border: "1px solid #d1d5db", cursor: "pointer", fontSize: 13,
+              background: createMode === "bulk" ? "#e0e7ff" : "#fff", fontWeight: createMode === "bulk" ? 700 : 400, color: createMode === "bulk" ? "#4338ca" : "#374151"
+            }}>Múltiples emails</button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+            {createMode === "single" ? (
+              <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
+                Email
+                <input type="email" style={fStyle} value={singleEmail} onChange={(e) => setSingleEmail(e.target.value)} placeholder="user@example.com" />
+              </label>
+            ) : (
+              <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500, gridColumn: "1 / -1" }}>
+                Emails (uno por línea)
+                <textarea style={{ ...fStyle, minHeight: 100, resize: "vertical" }} value={bulkEmails} onChange={(e) => setBulkEmails(e.target.value)} placeholder={"user1@example.com\nuser2@example.com\nuser3@example.com"} />
+              </label>
+            )}
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
+              Expira en (días)
+              <input type="number" style={fStyle} value={expiresInDays} onChange={(e) => setExpiresInDays(e.target.value)} min="1" max="365" />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
+              Nota (opcional)
+              <input style={fStyle} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota interna" />
+            </label>
+          </div>
+
+          <button type="button" onClick={handleCreate} disabled={creating || (createMode === "single" ? !singleEmail.trim() : !bulkEmails.trim())} style={{ ...ABT.save }}>
+            {creating ? "Creando..." : "Crear invitación"}
+          </button>
+
+          {lastCreatedResults.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Resultados:</p>
+              {lastCreatedResults.map((r, i) => (
+                <div key={i} style={{ marginBottom: 8, padding: "10px 12px", background: r.error ? "#fef2f2" : "#f0fdf4", borderRadius: 6, border: `1px solid ${r.error ? "#fca5a5" : "#86efac"}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>{r.email}</span>
+                    {r.sent && <span style={{ fontSize: 12, color: "#15803d" }}>Email enviado</span>}
+                    {!r.sent && !r.error && <span style={{ fontSize: 12, color: "#d97706" }}>Email no enviado — copia el enlace</span>}
+                    {r.error && <span style={{ fontSize: 12, color: "#b91c1c" }}>{r.error}</span>}
+                  </div>
+                  {r.link && !r.error && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                      <span style={{ fontSize: 11, color: "#6b7280", wordBreak: "break-all", flex: 1 }}>{r.link}</span>
+                      <button type="button" onClick={() => copyLink(r.link)} style={{ ...ABT.edit, flexShrink: 0 }}>Copiar</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Beta Insights ───────────────────────────────────────────────────────────
+
+function healthLevel(score) {
+  if (score >= 80) return { label: "Muy activo", color: "#16a34a", bg: "#f0fdf4", border: "#86efac" };
+  if (score >= 50) return { label: "Activo",     color: "#0891b2", bg: "#f0f9ff", border: "#7dd3fc" };
+  if (score >= 20) return { label: "En riesgo",  color: "#d97706", bg: "#fffbeb", border: "#fcd34d" };
+  return               { label: "Inactivo",   color: "#dc2626", bg: "#fff1f2", border: "#fca5a5" };
+}
+
+function fmtDate(date) {
+  if (!date) return "—";
+  return new Date(date).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "2-digit" });
+}
+
+function InsightsDetailModal({ h, onClose, onAction, msg, saving }) {
+  const hl = healthLevel(h.healthScore);
+  const bp = h.betaPro;
+  const rows = [
+    ["📅 Creado", fmtDate(h.createdAt)],
+    ["⚡ Última actividad", fmtDate(h.lastMeaningfulActivityAt)],
+    ["📋 Onboarding", h.onboardingStatus === "completed"
+      ? `✓ completado ${fmtDate(h.onboardingCompletedAt)}`
+      : h.onboardingStatus],
+    ["🏆 Retos semana / total", `${h.weekCompletedCount} / ${h.totalChallengesCompleted} totales`],
+    ["📅 Días activos 7d / 30d", `${h.activeDays7} / ${h.activeDays30}`],
+    ["🍽️ Comidas planif. (7d)", h.meals7],
+    ["🧑‍🍳 Platos creados (30d)", h.dishes30],
+    ["🥦 Ingredientes creados (30d)", h.ingredients30],
+    ["🛒 Items comprados (7d)", h.shoppingItems7],
+    ["✅ Listas completadas (30d)", h.shoppingListsCompleted],
+    ["📦 Packs instalados", h.packsInstalled],
+    ["🍪 Bites balance / ganado / gast.", `${h.bitesBalance} / +${h.bitesEarned} / −${h.bitesSpent}`],
+  ];
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "var(--bg-card, #fff)", borderRadius: 16, width: "100%", maxWidth: 640, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid var(--border-soft, #e2e8f0)", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary, #111)" }}>{h.name}</div>
+            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{h.ownerEmail || "—"}</div>
+            <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <PlanBadge plan={h.plan} />
+              {bp?.active && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 8px", borderRadius: 999, background: "#fef3c7", color: "#92400e", fontSize: 11, fontWeight: 700, border: "1px solid #fcd34d" }}>⭐ Beta Pro</span>
+              )}
+              <span style={{ padding: "2px 8px", borderRadius: 999, background: hl.bg, color: hl.color, fontSize: 11, fontWeight: 600, border: `1px solid ${hl.border}` }}>
+                {hl.label} · {h.healthScore}/100
+              </span>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} style={{ ...ABT.cancel, fontSize: 20, padding: "0 10px", lineHeight: "32px", flexShrink: 0 }}>×</button>
+        </div>
+
+        {/* Metrics grid */}
+        <div style={{ padding: "16px 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {rows.map(([label, value]) => (
+            <div key={label} style={{ background: "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "10px 12px" }}>
+              <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 3 }}>{label}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary, #111)" }}>{value}</div>
+            </div>
+          ))}
+          {/* Beta Pro full-width row */}
+          {bp && (
+            <div style={{ gridColumn: "span 2", background: bp.active ? "#fffbeb" : "var(--surface-muted, #f8fafc)", borderRadius: 8, padding: "10px 12px", border: bp.active ? "1px solid #fcd34d" : "none" }}>
+              <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 3 }}>⭐ Beta Pro</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>
+                {bp.active
+                  ? `Activo · expira ${fmtDate(bp.expiresAt)}`
+                  : bp.expiredAt
+                    ? `Expirado (${bp.expirationReason || "—"}) · ${fmtDate(bp.expiredAt)}`
+                    : "No activo"}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Admin actions */}
+        <div style={{ padding: "0 24px 22px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Acciones Admin</div>
+          {msg && <div style={{ padding: "6px 12px", borderRadius: 6, background: msg.startsWith("Error") ? "#fff1f2" : "#f0fdf4", color: msg.startsWith("Error") ? "#b91c1c" : "#15803d", fontSize: 12, marginBottom: 10 }}>{msg}</div>}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {!bp?.active ? (
+              <>
+                <button type="button" style={ABT.green} disabled={saving} onClick={() => onAction("grant", 30)}>+30d Beta Pro</button>
+                <button type="button" style={ABT.green} disabled={saving} onClick={() => onAction("grant", 60)}>+60d Beta Pro</button>
+                <button type="button" style={ABT.green} disabled={saving} onClick={() => {
+                  const d = parseInt(window.prompt("Días de Beta Pro:", "30") || "", 10);
+                  if (d > 0) onAction("grant", d);
+                }}>Días custom…</button>
+              </>
+            ) : (
+              <>
+                <button type="button" style={ABT.green} disabled={saving} onClick={() => onAction("grant", 30)}>Extender +30d</button>
+                <button type="button" style={ABT.del}   disabled={saving} onClick={() => onAction("revoke")}>Revocar Beta Pro</button>
+              </>
+            )}
+            <button type="button" style={ABT.edit} disabled={saving} onClick={() => onAction("reset_onboarding")}>Reset onboarding</button>
+            <button type="button" style={ABT.edit} disabled={saving} onClick={() => onAction("reset_weekly")}>Reset retos semanales</button>
+            <button type="button" style={ABT.edit} disabled={saving} onClick={() => onAction("copy")}>📋 Copiar diagnóstico</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BetaInsightsSection({ householdContext, onClearHouseholdContext }) {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [actionMsg, setActionMsg] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const d = await apiRequest("/api/admin/beta-insights");
+      const households = d.households || [];
+      setData(households);
+      setSelected((prev) => prev ? (households.find((h) => h.id === prev.id) || null) : null);
+    } catch (e) {
+      setError(e.message || "Error al cargar métricas.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const stats = useMemo(() => ({
+    total:         data.length,
+    betaPro:       data.filter((h) => h.betaPro?.active).length,
+    veryActive:    data.filter((h) => h.healthScore >= 80).length,
+    active:        data.filter((h) => h.healthScore >= 50 && h.healthScore < 80).length,
+    atRisk:        data.filter((h) => h.healthScore >= 20 && h.healthScore < 50).length,
+    inactive:      data.filter((h) => h.healthScore < 20).length,
+    noOnboarding:  data.filter((h) => h.onboardingStatus !== "completed").length,
+  }), [data]);
+
+  const chips = useMemo(() => [
+    { key: "all",           label: `Todos (${stats.total})`,                color: "#4338ca" },
+    { key: "very_active",   label: `Muy activo (${stats.veryActive})`,      color: "#16a34a" },
+    { key: "active",        label: `Activo (${stats.active})`,              color: "#0891b2" },
+    { key: "at_risk",       label: `En riesgo (${stats.atRisk})`,           color: "#d97706" },
+    { key: "inactive",      label: `Inactivo (${stats.inactive})`,          color: "#dc2626" },
+    { key: "beta_pro",      label: `Beta Pro (${stats.betaPro})`,           color: "#7c3aed" },
+    { key: "no_onboarding", label: `Sin onboarding (${stats.noOnboarding})`,color: "#6b7280" },
+  ], [stats]);
+
+  const filtered = useMemo(() => {
+    let list = data;
+    if (householdContext?.id) {
+      list = list.filter((h) => String(h.id) === String(householdContext.id));
+    }
+    if (filter === "very_active")   list = list.filter((h) => h.healthScore >= 80);
+    else if (filter === "active")   list = list.filter((h) => h.healthScore >= 50 && h.healthScore < 80);
+    else if (filter === "at_risk")  list = list.filter((h) => h.healthScore >= 20 && h.healthScore < 50);
+    else if (filter === "inactive") list = list.filter((h) => h.healthScore < 20);
+    else if (filter === "beta_pro") list = list.filter((h) => h.betaPro?.active);
+    else if (filter === "no_onboarding") list = list.filter((h) => h.onboardingStatus !== "completed");
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter((h) => h.name.toLowerCase().includes(q) || (h.ownerEmail || "").toLowerCase().includes(q) || String(h.id || "").toLowerCase().includes(q));
+    }
+    return list;
+  }, [data, filter, search, householdContext?.id]);
+
+  const handleAction = useCallback(async (type, arg) => {
+    if (!selected) return;
+    const id = selected.id;
+
+    if (type === "copy") {
+      try { await navigator.clipboard.writeText(JSON.stringify(selected, null, 2)); } catch { /* ignore */ }
+      setActionMsg("Diagnóstico copiado al portapapeles.");
+      setTimeout(() => setActionMsg(""), 3000);
+      return;
+    }
+
+    setSaving(true);
+    setActionMsg("");
+    try {
+      if (type === "grant") {
+        await apiRequest(`/api/admin/beta-insights/${id}/grant-beta-pro`, {
+          method: "POST",
+          body: JSON.stringify({ daysFromNow: arg })
+        });
+        setActionMsg(`Beta Pro concedido por ${arg} días. ✓`);
+      } else if (type === "revoke") {
+        if (!window.confirm("¿Revocar Beta Pro de este hogar?")) return;
+        await apiRequest(`/api/admin/beta-insights/${id}/revoke-beta-pro`, { method: "POST" });
+        setActionMsg("Beta Pro revocado. ✓");
+      } else if (type === "reset_onboarding") {
+        if (!window.confirm("¿Resetear onboarding de este hogar?")) return;
+        const reason = window.prompt("Razón del reset (opcional):") || "";
+        await apiRequest(`/api/kitchen/onboarding/admin/households/${id}/reset`, {
+          method: "POST",
+          body: JSON.stringify({ reason })
+        });
+        setActionMsg("Onboarding reseteado. ✓");
+      } else if (type === "reset_weekly") {
+        if (!window.confirm("¿Resetear el progreso de retos semanales de este hogar? Se perderá el progreso actual.")) return;
+        await apiRequest(`/api/kitchen/weekly/admin/households/${id}/reset`, { method: "POST" });
+        setActionMsg("Retos semanales reseteados. ✓");
+      }
+      setTimeout(() => setActionMsg(""), 4000);
+      loadData();
+    } catch (e) {
+      setActionMsg(`Error: ${e.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }, [selected, loadData]);
+
+  return (
+    <div>
+      <AdminHouseholdContextBanner household={householdContext} onClear={onClearHouseholdContext} />
+      <Card className="kitchen-block-gap">
+        {/* Section header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+          <div>
+            <h2 className="kitchen-title-no-margin">Beta Insights</h2>
+            <p className="kitchen-muted">Engagement por hogar · {data.length} hogares</p>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <Input
+              id="insights-search"
+              placeholder="Buscar por nombre o email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: 220 }}
+            />
+            <button type="button" style={ABT.edit} onClick={loadData} disabled={loading}>
+              {loading ? "…" : "↻ Actualizar"}
+            </button>
+          </div>
+        </div>
+
+        {/* Filter chips */}
+        <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>
+          {chips.map((chip) => {
+            const active = filter === chip.key;
+            return (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setFilter(chip.key)}
+                style={{
+                  padding: "5px 13px",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: active ? 700 : 500,
+                  cursor: "pointer",
+                  border: `1.5px solid ${active ? chip.color : "#e2e8f0"}`,
+                  background: active ? chip.color : "transparent",
+                  color: active ? "#fff" : chip.color,
+                  transition: "all 0.12s"
+                }}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {error && <div className="kitchen-alert error">{error}</div>}
+
+        {loading ? (
+          <p className="kitchen-muted">Calculando métricas…</p>
+        ) : filtered.length === 0 ? (
+          <p className="kitchen-muted">Sin resultados para este filtro.</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(295px, 1fr))", gap: 12 }}>
+            {filtered.map((h) => {
+              const hl = healthLevel(h.healthScore);
+              return (
+                <div
+                  key={h.id}
+                  onClick={() => { setSelected(h); setActionMsg(""); }}
+                  style={{ background: "var(--bg-card, #fff)", border: "1.5px solid var(--border-soft, #e2e8f0)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", transition: "box-shadow 0.14s, border-color 0.14s" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 18px rgba(0,0,0,0.09)"; e.currentTarget.style.borderColor = hl.border; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "var(--border-soft, #e2e8f0)"; }}
+                >
+                  {/* Card header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary, #111)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.name}</div>
+                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.ownerEmail || "—"}</div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0, marginLeft: 8 }}>
+                      <PlanBadge plan={h.plan} />
+                      {h.betaPro?.active && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#92400e", background: "#fef3c7", padding: "1px 6px", borderRadius: 999, border: "1px solid #fcd34d" }}>⭐ Beta</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Health score ring */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 7 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: hl.bg, border: `2px solid ${hl.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, color: hl.color, flexShrink: 0 }}>
+                      {h.healthScore}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: hl.color, lineHeight: 1.2 }}>{hl.label}</div>
+                      <div style={{ fontSize: 10, color: "#9ca3af" }}>health score</div>
+                    </div>
+                  </div>
+
+                  {/* Score bar */}
+                  <div style={{ height: 4, background: "#f1f5f9", borderRadius: 2, marginBottom: 11, overflow: "hidden" }}>
+                    <div style={{ width: `${h.healthScore}%`, height: "100%", background: hl.color, borderRadius: 2 }} />
+                  </div>
+
+                  {/* Key metrics */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 5 }}>
+                    {[
+                      ["📅", `${h.activeDays7}d`, "activos 7d"],
+                      ["🍽️", h.meals7,          "comidas 7d"],
+                      ["🏆", h.weekCompletedCount, "retos"],
+                      ["🛒", h.shoppingItems7,  "compras 7d"],
+                      ["🧑‍🍳", h.dishes30,        "platos 30d"],
+                      ["🍪", h.bitesBalance,     "bites"],
+                    ].map(([icon, val, lbl]) => (
+                      <div key={lbl} style={{ background: "var(--surface-muted, #f8fafc)", borderRadius: 6, padding: "5px 4px", textAlign: "center" }}>
+                        <div style={{ fontSize: 13 }}>{icon}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary, #111)" }}>{val}</div>
+                        <div style={{ fontSize: 9, color: "#9ca3af", lineHeight: 1.2 }}>{lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Onboarding tag + last activity */}
+                  <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{
+                      fontSize: 10, padding: "2px 7px", borderRadius: 4, fontWeight: 600,
+                      background: h.onboardingStatus === "completed" ? "#f0fdf4" : "#f9fafb",
+                      color: h.onboardingStatus === "completed" ? "#16a34a" : "#6b7280",
+                      border: `1px solid ${h.onboardingStatus === "completed" ? "#86efac" : "#e2e8f0"}`
+                    }}>
+                      {h.onboardingStatus === "completed" ? "✓ Onboarding" : h.onboardingStatus === "not_started" ? "○ Sin onboarding" : `↻ ${h.onboardingStatus}`}
+                    </span>
+                    {h.lastMeaningfulActivityAt && (
+                      <span style={{ fontSize: 10, color: "#9ca3af" }}>act. {fmtDate(h.lastMeaningfulActivityAt)}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      {selected && (
+        <InsightsDetailModal
+          h={selected}
+          onClose={() => setSelected(null)}
+          onAction={handleAction}
+          msg={actionMsg}
+          saving={saving}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Admin Account Security Panel ────────────────────────────────────────────
+
+function AdminAccountSecurityPanel() {
+  const [account, setAccount] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  // Recovery email form state
+  const [recEmail, setRecEmail] = useState("");
+  const [recCurrentPw, setRecCurrentPw] = useState("");
+  const [recSaving, setRecSaving] = useState(false);
+  const [recMsg, setRecMsg] = useState(null); // { ok, text }
+
+  // Password change form state
+  const [pwCurrent, setPwCurrent] = useState("");
+  const [pwNew, setPwNew] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState(null); // { ok, text }
+
+  useEffect(() => {
+    apiRequest("/api/kitchen/admin/account")
+      .then((d) => {
+        setAccount(d.account);
+        setRecEmail("");
+      })
+      .catch((err) => setLoadError(err.message || "Error al cargar la cuenta."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  function checkPasswordStrengthLocal(password) {
+    const pw = String(password || "");
+    if (pw.length < 10) return { valid: false };
+    const groups = [/[A-Z]/.test(pw), /[a-z]/.test(pw), /[0-9]/.test(pw), /[^A-Za-z0-9]/.test(pw)];
+    return { valid: groups.filter(Boolean).length >= 2 };
+  }
+
+  const handleRecoveryEmailSave = async (e) => {
+    e.preventDefault();
+    setRecMsg(null);
+    setRecSaving(true);
+    try {
+      const res = await fetch(buildApiUrl("/api/kitchen/admin/account/recovery-email"), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ currentPassword: recCurrentPw, recoveryEmail: recEmail.trim() })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setRecMsg({ ok: false, text: data.error || "Error al actualizar el email de recuperación." });
+        return;
+      }
+      setAccount((prev) => ({ ...prev, recoveryEmailMasked: data.recoveryEmailMasked, hasRecoveryEmail: data.hasRecoveryEmail }));
+      setRecEmail("");
+      setRecCurrentPw("");
+      setRecMsg({ ok: true, text: "Email de recuperación actualizado correctamente." });
+    } catch {
+      setRecMsg({ ok: false, text: "No se pudo conectar con el servidor." });
+    } finally {
+      setRecSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPwMsg(null);
+    if (pwNew !== pwConfirm) {
+      setPwMsg({ ok: false, text: "Las contraseñas nuevas no coinciden." });
+      return;
+    }
+    if (!checkPasswordStrengthLocal(pwNew).valid) {
+      setPwMsg({ ok: false, text: "La contraseña debe tener mínimo 10 caracteres e incluir al menos 2 grupos: mayúsculas, minúsculas, números, símbolos." });
+      return;
+    }
+    setPwSaving(true);
+    try {
+      const res = await fetch(buildApiUrl("/api/kitchen/admin/account/password"), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ currentPassword: pwCurrent, newPassword: pwNew })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setPwMsg({ ok: false, text: data.error || "Error al cambiar la contraseña." });
+        return;
+      }
+      setPwCurrent("");
+      setPwNew("");
+      setPwConfirm("");
+      setPwMsg({ ok: true, text: "Contraseña actualizada correctamente." });
+    } catch {
+      setPwMsg({ ok: false, text: "No se pudo conectar con el servidor." });
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
+  const pwStrengthOk = checkPasswordStrengthLocal(pwNew).valid;
+  const pwReady = pwCurrent && pwNew && pwConfirm && pwNew === pwConfirm && pwStrengthOk;
+
+  if (loading) return <p style={{ color: "#6b7280", padding: 24 }}>Cargando...</p>;
+  if (loadError) return <p style={{ color: "#ef4444", padding: 24 }}>{loadError}</p>;
+
+  return (
+    <div style={{ maxWidth: 540, margin: "0 auto" }}>
+      {/* ── Current access info ── */}
+      <section style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          🔐 Cuenta admin
+        </h3>
+        <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 10, padding: "14px 18px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Email de acceso</span>
+          </div>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#111827", fontFamily: "monospace" }}>{account?.email || "—"}</p>
+          <p style={{ margin: "6px 0 0", fontSize: 11, color: "#9ca3af" }}>Este email es el identificador de acceso al panel admin y no puede cambiarse aquí.</p>
+        </div>
+      </section>
+
+      {/* ── Recovery email ── */}
+      <section style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+          ✉️ Email de recuperación
+        </h3>
+        <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12, lineHeight: 1.5 }}>
+          Se usa <strong>únicamente</strong> para recibir el enlace de recuperación de contraseña.
+          No es el email de acceso al panel y no afecta a Clerk.
+        </p>
+
+        <div style={{ background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--hf-border, #e2e8f0)", borderRadius: 10, padding: "14px 18px", marginBottom: 14 }}>
+          <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Email configurado</div>
+          {account?.hasRecoveryEmail ? (
+            <p style={{ margin: 0, fontFamily: "monospace", fontSize: 14, color: "#374151" }}>
+              {account.recoveryEmailMasked}
+              <span style={{ fontSize: 11, color: "#16a34a", marginLeft: 8, fontFamily: "sans-serif" }}>✓ configurado</span>
+            </p>
+          ) : (
+            <p style={{ margin: 0, fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>
+              No hay email de recuperación configurado. Sin él, no podrás recuperar la contraseña si la pierdes.
+            </p>
+          )}
+        </div>
+
+        {recMsg && (
+          <div style={{ background: recMsg.ok ? "#f0fdf4" : "#fef2f2", border: `1px solid ${recMsg.ok ? "#86efac" : "#fca5a5"}`, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: recMsg.ok ? "#166534" : "#b91c1c" }}>
+            {recMsg.text}
+          </div>
+        )}
+
+        <form onSubmit={handleRecoveryEmailSave}>
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 12, color: "#374151", fontWeight: 600, display: "block", marginBottom: 4 }}>
+              Nuevo email de recuperación <span style={{ fontWeight: 400, color: "#9ca3af" }}>(vacío para eliminar)</span>
+            </label>
+            <input
+              type="email"
+              className="kitchen-input"
+              value={recEmail}
+              onChange={(e) => setRecEmail(e.target.value)}
+              placeholder="recovery@example.com"
+              style={{ width: "100%", fontSize: 14 }}
+              autoComplete="email"
+            />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, color: "#374151", fontWeight: 600, display: "block", marginBottom: 4 }}>
+              Contraseña actual <span style={{ color: "#ef4444" }}>*</span>
+            </label>
+            <input
+              type="password"
+              className="kitchen-input"
+              value={recCurrentPw}
+              onChange={(e) => setRecCurrentPw(e.target.value)}
+              placeholder="Contraseña actual"
+              required
+              style={{ width: "100%", fontSize: 14 }}
+              autoComplete="current-password"
+            />
+            <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>Necesaria para confirmar el cambio.</p>
+          </div>
+          <button type="submit" style={ABT.save} disabled={recSaving || !recCurrentPw}>
+            {recSaving ? "Guardando..." : "Guardar email de recuperación"}
+          </button>
+        </form>
+      </section>
+
+      {/* ── Change password ── */}
+      <section style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+          🔑 Cambiar contraseña
+        </h3>
+        <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12, lineHeight: 1.5 }}>
+          Mínimo 10 caracteres con al menos 2 grupos: mayúsculas, minúsculas, números, símbolos.
+        </p>
+
+        {pwMsg && (
+          <div style={{ background: pwMsg.ok ? "#f0fdf4" : "#fef2f2", border: `1px solid ${pwMsg.ok ? "#86efac" : "#fca5a5"}`, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: pwMsg.ok ? "#166534" : "#b91c1c" }}>
+            {pwMsg.text}
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordChange}>
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 12, color: "#374151", fontWeight: 600, display: "block", marginBottom: 4 }}>
+              Contraseña actual <span style={{ color: "#ef4444" }}>*</span>
+            </label>
+            <input
+              type="password"
+              className="kitchen-input"
+              value={pwCurrent}
+              onChange={(e) => setPwCurrent(e.target.value)}
+              placeholder="Contraseña actual"
+              required
+              style={{ width: "100%", fontSize: 14 }}
+              autoComplete="current-password"
+            />
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 12, color: "#374151", fontWeight: 600, display: "block", marginBottom: 4 }}>
+              Nueva contraseña <span style={{ color: "#ef4444" }}>*</span>
+            </label>
+            <input
+              type="password"
+              className="kitchen-input"
+              value={pwNew}
+              onChange={(e) => setPwNew(e.target.value)}
+              placeholder="Mínimo 10 caracteres"
+              required
+              style={{ width: "100%", fontSize: 14 }}
+              autoComplete="new-password"
+            />
+            {pwNew && (
+              <div style={{ marginTop: 4, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, color: pwNew.length >= 10 ? "#16a34a" : "#9ca3af" }}>
+                  {pwNew.length >= 10 ? "✓" : "○"} Mínimo 10 caracteres
+                </span>
+                <span style={{ fontSize: 11, color: pwStrengthOk ? "#16a34a" : "#9ca3af" }}>
+                  {pwStrengthOk ? "✓" : "○"} 2+ grupos de caracteres
+                </span>
+              </div>
+            )}
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, color: "#374151", fontWeight: 600, display: "block", marginBottom: 4 }}>
+              Confirmar nueva contraseña <span style={{ color: "#ef4444" }}>*</span>
+            </label>
+            <input
+              type="password"
+              className="kitchen-input"
+              value={pwConfirm}
+              onChange={(e) => setPwConfirm(e.target.value)}
+              placeholder="Repite la nueva contraseña"
+              required
+              style={{ width: "100%", fontSize: 14 }}
+              autoComplete="new-password"
+            />
+            {pwConfirm && pwNew !== pwConfirm && (
+              <p style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>Las contraseñas no coinciden.</p>
+            )}
+            {pwConfirm && pwNew === pwConfirm && (
+              <p style={{ fontSize: 11, color: "#16a34a", marginTop: 4 }}>✓ Las contraseñas coinciden.</p>
+            )}
+          </div>
+          <button type="submit" style={ABT.save} disabled={pwSaving || !pwReady}>
+            {pwSaving ? "Guardando..." : "Cambiar contraseña"}
+          </button>
+        </form>
+      </section>
+
+      {/* ── Security notes ── */}
+      <section>
+        <details style={{ fontSize: 12, color: "#6b7280" }}>
+          <summary style={{ cursor: "pointer", fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+            🛡 Notas de seguridad y verificación manual
+          </summary>
+          <ul style={{ lineHeight: 1.8, paddingLeft: 18, marginTop: 8 }}>
+            <li>La solicitud de recuperación siempre devuelve un mensaje genérico (no revela si existe cuenta).</li>
+            <li>El enlace de recuperación expira en <strong>15 minutos</strong> desde su generación.</li>
+            <li>El enlace se invalida después de su primer uso.</li>
+            <li>El email de recuperación solo puede actualizarse introduciendo la contraseña actual.</li>
+            <li>La contraseña actual sigue siendo válida hasta que se cambie explícitamente aquí.</li>
+            <li>Todos los cambios de contraseña y email de recuperación quedan registrados en el audit log.</li>
+            <li>El admin puede seguir iniciando sesión con la contraseña existente sin afectar a Clerk.</li>
+            <li>El email de recuperación nunca se usa como identificador de acceso al panel.</li>
+          </ul>
+        </details>
+      </section>
+    </div>
+  );
+}
+
+// ─── Main page ───────────────────────────────────────────────────────────────
+
+export default function AdminPanelPage() {
+  const { user, loading, logout, refreshUser } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeHouseholdId, setActiveHouseholdId] = useState(null);
+  const [tab, setTab] = useState(location.pathname === "/admin/architecture" ? "arquitectura" : "households");
+  const [householdContext, setHouseholdContext] = useState(null);
+  const adminLegacyRetryRef = useRef(false);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      const next = `${location.pathname}${location.search || ""}`;
+      navigate(`/admin/login?next=${encodeURIComponent(next)}`, { replace: true });
+      return;
+    }
+    if (user.globalRole !== "diod") {
+      if (!adminLegacyRetryRef.current && hasLegacyToken()) {
+        adminLegacyRetryRef.current = true;
+        refreshUser({ authMode: "auto" });
+        return;
+      }
+    }
+  }, [loading, location.pathname, location.search, navigate, refreshUser, user]);
+
+  useEffect(() => {
+    if (location.pathname === "/admin/architecture") {
+      setTab("arquitectura");
+    } else if (location.pathname === "/admin" && tab === "arquitectura") {
+      setTab("households");
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (user?.activeHouseholdId !== undefined) {
+      setActiveHouseholdId(user.activeHouseholdId);
+    }
+  }, [user?.activeHouseholdId]);
+
+  const onLogout = async () => {
+    await logout();
+    navigate("/admin/login", { replace: true });
+  };
+
+  if (loading || !user) return null;
+
+  if (user.globalRole !== "diod") {
+    return (
+      <div className="kitchen-app" style={{ minHeight: "100dvh", display: "grid", placeItems: "center", background: "#f8fafc", padding: 24 }}>
+        <Card style={{ maxWidth: 440, textAlign: "center" }}>
+          <h1 style={{ margin: "0 0 8px", fontSize: 20 }}>Acceso admin no autorizado</h1>
+          <p className="kitchen-muted" style={{ marginBottom: 18 }}>
+            Esta sesion no tiene permisos DIOD/admin para abrir el panel.
+          </p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+            <button type="button" style={ABT.edit} onClick={() => navigate("/admin/login", { replace: true })}>Ir al login admin</button>
+            <button type="button" style={ABT.cancel} onClick={onLogout}>Cerrar sesion</button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  const navigateWithHousehold = (nextTab, household) => {
+    setHouseholdContext(household?.id ? { id: String(household.id), name: household.name || "Hogar" } : null);
+    handleTabChange(nextTab);
+  };
+
+  const clearHouseholdContext = () => setHouseholdContext(null);
+
+  const handleTabChange = (nextTab) => {
+    setTab(nextTab);
+    if (nextTab === "arquitectura") {
+      if (location.pathname !== "/admin/architecture") navigate("/admin/architecture");
+      return;
+    }
+    if (location.pathname !== "/admin") navigate("/admin");
+  };
+
+  return (
+    <div className="kitchen-app">
+      <div style={{
+        background: "#1e1b4b",
+        color: "#e0e7ff",
+        padding: "12px 24px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.02em" }}>
+            🛠 Lunchfy Admin
+          </span>
+          <span style={{ fontSize: 12, opacity: 0.6 }}>
+            {user?.email || user?.displayName}
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            title={resolvedTheme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#e0e7ff", padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontSize: 16, lineHeight: 1 }}
+          >
+            {resolvedTheme === "dark" ? "☀️" : "🌙"}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/kitchen/semana")}
+            style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#e0e7ff", padding: "4px 12px", borderRadius: 6, cursor: "pointer", fontSize: 13 }}
+          >
+            ← Volver a la app
+          </button>
+          <button
+            type="button"
+            onClick={onLogout}
+            style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "#e0e7ff", padding: "4px 12px", borderRadius: 6, cursor: "pointer", fontSize: 13 }}
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+
+      <div style={{ padding: "0 0 8px", background: "#312e81" }}>
+        {(() => {
+          const ADMIN_TABS = [
+            { key: "households",   label: "Households" },
+            { key: "users",        label: "Usuarios" },
+            { key: "quick",        label: "Cambio rápido" },
+            { key: "master",       label: "Master" },
+            { key: "catalog_packs",label: "Catálogo" },
+            { key: "bites_economy",label: "Bites" },
+            { key: "plans",        label: "Planes" },
+            { key: "categories",   label: "Categorías" },
+            { key: "onboarding",   label: "Onboarding" },
+            { key: "weekly",       label: "Retos Semanales" },
+            { key: "beta",         label: "Beta Invites" },
+            { key: "insights",     label: "Beta Insights" },
+            { key: "cuenta_admin", label: "🔐 Cuenta" },
+            { key: "arquitectura",  label: "🗺 Arquitectura" }
+          ];
+          return (
+            <>
+              {/* Desktop: scrollable tab strip */}
+              <div className="admin-tabs-desktop">
+                {ADMIN_TABS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleTabChange(key)}
+                    style={{
+                      background: tab === key ? "#fff" : "transparent",
+                      color: tab === key ? "#312e81" : "#c7d2fe",
+                      border: "none",
+                      padding: "8px 18px",
+                      cursor: "pointer",
+                      fontWeight: tab === key ? 700 : 400,
+                      fontSize: 14,
+                      borderRadius: "6px 6px 0 0",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {/* Mobile: compact dropdown selector */}
+              <div className="admin-tab-selector-mobile">
+                <select
+                  value={tab}
+                  onChange={(e) => handleTabChange(e.target.value)}
+                  aria-label="Sección admin"
+                >
+                  {ADMIN_TABS.map(({ key, label }) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          );
+        })()}
+      </div>
+
+      {tab === "arquitectura" ? (
+        <AdminArchitecturePanel onBack={() => handleTabChange("households")} />
+      ) : (
+      <div className="kitchen-container" style={{ paddingTop: 24 }}>
+        {tab === "households" ? (
+          <HouseholdsSection
+            activeHouseholdId={activeHouseholdId}
+            onActiveHouseholdChange={setActiveHouseholdId}
+            onNavigateWithHousehold={navigateWithHousehold}
+            onSetHouseholdContext={(household) => setHouseholdContext(household?.id ? { id: String(household.id), name: household.name || "Hogar" } : null)}
+          />
+        ) : tab === "users" ? (
+          <UsersSection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
+        ) : tab === "master" ? (
+          <MasterCatalogSection />
+        ) : tab === "catalog_packs" ? (
+          <CatalogPacksSection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
+        ) : tab === "bites_economy" ? (
+          <BitesEconomySection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
+        ) : tab === "plans" ? (
+          <PlansSection />
+        ) : tab === "categories" ? (
+          <>
+            <DishCategoriesSection />
+            <IngredientCategoriesSection />
+          </>
+        ) : tab === "onboarding" ? (
+          <OnboardingSection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
+        ) : tab === "weekly" ? (
+          <WeeklySection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
+        ) : tab === "beta" ? (
+          <BetaInvitesSection />
+        ) : tab === "insights" ? (
+          <BetaInsightsSection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
+        ) : tab === "cuenta_admin" ? (
+          <AdminAccountSecurityPanel />
+        ) : (
+          <QuickSubscriptionPanel />
+        )}
+      </div>
+      )}
+    </div>
+  );
+}

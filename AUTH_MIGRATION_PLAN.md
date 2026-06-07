@@ -1,0 +1,355 @@
+# AUTH_MIGRATION_PLAN
+
+## Current Auth Architecture
+
+### Frontend
+
+- The Vite frontend stores a legacy JWT in `localStorage` or `sessionStorage` under `kitchen_token` in [frontend/src/kitchen/api.js](/C:/APPS/pilot-homefirst/frontend/src/kitchen/api.js).
+- [frontend/src/kitchen/auth.jsx](/C:/APPS/pilot-homefirst/frontend/src/kitchen/auth.jsx) restores the session by calling `GET /api/kitchen/auth/me` when a token exists, exposes `login()` and `logout()`, and keeps the authenticated user in React context.
+- [frontend/src/kitchen/RequireAuth.jsx](/C:/APPS/pilot-homefirst/frontend/src/kitchen/RequireAuth.jsx) protects routes by checking whether the React auth context has a user. Optional route-role checks currently use `user.role` from the backend response.
+- Route protection is applied in [frontend/src/App.jsx](/C:/APPS/pilot-homefirst/frontend/src/App.jsx). The current login, signup, forgot-password, and reset-password pages remain in place.
+
+### Backend
+
+- Login, registration, invitation acceptance, forgot-password, reset-password, and `me` are implemented in [backend/src/kitchen/routes/auth.js](/C:/APPS/pilot-homefirst/backend/src/kitchen/routes/auth.js).
+- Legacy authentication uses a custom JWT created by `createToken()` in [backend/src/kitchen/middleware.js](/C:/APPS/pilot-homefirst/backend/src/kitchen/middleware.js).
+- Protected backend routes call `requireAuth`, which loads the Mongo user into `req.kitchenUser` and derives `req.user`.
+- Role enforcement uses Mongo data only:
+  - `requireRole()` and `requireDiod()` read `req.kitchenUser.role` and `req.kitchenUser.globalRole`.
+- Household and tenant isolation use Mongo data only:
+  - [backend/src/kitchen/householdScope.js](/C:/APPS/pilot-homefirst/backend/src/kitchen/householdScope.js) derives the effective household from the authenticated Mongo user.
+  - Route filters across kitchen routes use `buildScopedFilter()` / `getEffectiveHouseholdId()`.
+- Plan enforcement uses Mongo `Household` data only:
+  - [backend/src/kitchen/subscriptionService.js](/C:/APPS/pilot-homefirst/backend/src/kitchen/subscriptionService.js) contains the feature gates.
+  - Routes such as [backend/src/kitchen/routes/household.js](/C:/APPS/pilot-homefirst/backend/src/kitchen/routes/household.js), [backend/src/kitchen/routes/shopping.js](/C:/APPS/pilot-homefirst/backend/src/kitchen/routes/shopping.js), and [backend/src/kitchen/routes/weeks.js](/C:/APPS/pilot-homefirst/backend/src/kitchen/routes/weeks.js) read the household plan from Mongo before allowing premium behavior.
+
+## Current Password Hashing Method
+
+- Passwords are hashed with `bcryptjs.hash(password, 10)` in:
+  - [backend/src/kitchen/routes/auth.js](/C:/APPS/pilot-homefirst/backend/src/kitchen/routes/auth.js)
+  - [backend/src/users/index.js](/C:/APPS/pilot-homefirst/backend/src/users/index.js)
+- Password verification uses `bcrypt.compare(...)` from `bcryptjs`.
+- Reset-password also writes a new bcrypt hash in [backend/src/kitchen/routes/auth.js](/C:/APPS/pilot-homefirst/backend/src/kitchen/routes/auth.js).
+
+## Target Architecture With Clerk
+
+- Clerk manages identity and session authentication only.
+- MongoDB remains the source of truth for:
+  - role
+  - plan
+  - household / tenant linkage
+  - profile and business data
+  - feature access
+- Frontend:
+  - The app is wrapped with `ClerkProvider` in [frontend/src/main.jsx](/C:/APPS/pilot-homefirst/frontend/src/main.jsx) when `VITE_CLERK_PUBLISHABLE_KEY` is configured.
+  - The existing auth provider remains active and can still use the legacy JWT flow.
+  - If a Clerk session exists, frontend API calls can now send the Clerk bearer token instead of the legacy JWT.
+- `/auth/clerk` now redirects to the secure sign-in screen by default.
+- `/auth/clerk/sign-up` and `/auth/clerk/sign-in` are dedicated path-routed Clerk component routes.
+- `/auth/clerk/sign-in` now renders the embedded Clerk `<SignIn />` component inside the Lunchfy auth shell.
+- `/auth/clerk/sign-up` now renders the embedded Clerk `<SignUp />` component inside the Lunchfy auth shell.
+- `/auth/clerk/reset-password` now forwards back into the embedded Clerk sign-in flow instead of mounting a separate custom reset form.
+- `/auth/clerk/complete` is the post-Clerk return route that bootstraps the Mongo app profile or sends the user to onboarding.
+  - `/onboarding/clerk` collects app-specific profile and household data after Clerk identity is established. It supports fallback new-household creation, optional six-digit household invite code joins, and Clerk deep links with `inviteToken`.
+  - `/auth/clerk/reset-password` exposes Clerk's reset-password path via the Clerk sign-in flow. `/forgot-password` remains the legacy Mongo password-reset page.
+  - A temporary development-only route exists at `/dev/clerk-auth` in [frontend/src/kitchen/pages/ClerkDevAuthPage.jsx](/C:/APPS/pilot-homefirst/frontend/src/kitchen/pages/ClerkDevAuthPage.jsx). This is now a diagnostics and launcher page; it does not mount competing Clerk sign-up and sign-in widgets.
+  - The existing `/register` page still posts only to the legacy Mongo endpoint and does not create Clerk users.
+- Backend:
+  - `requireAuth` first tries the legacy JWT.
+  - If legacy JWT auth fails, it verifies the Clerk token using `CLERK_SECRET_KEY`.
+  - Clerk-authenticated requests are mapped back to a Mongo `KitchenUser` by normalized email.
+  - If the Mongo user exists and `clerkId` is empty, the backend stores the Clerk user ID.
+  - If the Mongo user exists and `clerkId` is already set, the backend verifies it matches.
+  - If there is no mapped Mongo user, `/api/kitchen/auth/me` reports that app onboarding is required.
+  - `POST /api/kitchen/auth/clerk/onboarding` requires a valid Clerk bearer token and creates or completes the Mongo `KitchenUser` plus `Household` with safe household-scoped defaults.
+  - Clerk onboarding joins households only through validated invite codes or invitation tokens. It never trusts client-provided household IDs.
+  - When a Mongo user with `clerkId` is deleted through the app delete flows, the backend also attempts to delete the Clerk identity and returns/logs a clear warning if Clerk cleanup fails after Mongo deletion.
+  - Clerk onboarding never assigns `globalRole`, `admin`, or `diod` privileges.
+
+## Product Clerk Auth Flow
+
+- Users can enter through `/auth/clerk`, which opens the secure sign-in screen by default, and from there switch to `/auth/clerk/sign-up` when they need a new account.
+- Clerk handles identity and session creation.
+- Dashboard settings expected for the intended UX:
+  - `User & authentication` -> `Email`: enable `Sign-up with email`.
+  - `User & authentication` -> `Email`: keep `Require email address` enabled.
+  - `User & authentication` -> `Email`: keep `Verify at sign-up` enabled with `Email verification code`.
+  - `User & authentication` -> `Email`: enable `Sign in with email`.
+  - `User & authentication` -> `Password`: enable password authentication for sign-in.
+- If you want login to stay password-only, do not enable email-code or email-link sign-in as the intended normal login path.
+- If you want login to avoid unexpected verification codes on new devices, disable `Client Trust` in the Clerk Dashboard `Updates` page.
+- MFA should stay disabled unless the app is intentionally updated to handle it.
+- Clerk redirects are configured to return to `/auth/clerk/complete`, which stays visually quiet and then continues to `/kitchen/semana` or `/onboarding/clerk`.
+- `/auth/clerk/complete` is the normal post-auth handoff route for both sign-in and sign-up.
+- When sign-up starts from an invite-aware Clerk route, the app now preserves `inviteToken` and `inviteCode` through the redirect back to `/auth/clerk/complete`, so the handoff does not depend on same-tab `sessionStorage`.
+- After Clerk returns to the app, the shared frontend auth provider resolves Clerk-backed `/api/kitchen/auth/me`.
+- The shared auth provider dedupes Clerk `/me` bootstrap requests locally and across immediate remounts, so route effects and provider effects do not create overlapping Mongo mapping attempts.
+- Any fallback completion route is intentionally quiet: it shows only the branded loading state during normal bootstrap, routes directly to `/kitchen/semana` or `/onboarding/clerk`, and delays any user-facing error until the failure is final instead of flashing transient mapping states.
+- If a Mongo app profile and household already exist, the user enters `/kitchen/semana`.
+- If Mongo app onboarding is missing, the user is sent to `/onboarding/clerk`.
+- `/onboarding/clerk` receives any pending invite context from `/auth/clerk/complete` and uses it to decide whether the user is joining an existing household or creating a new one.
+- `/onboarding/clerk` collects first name, last name, initials, household name, diner/cook defaults, optional invite code, optional invite token from a Clerk deep link, and initial household preferences.
+- If an invite token is present, onboarding shows the target household and does not ask for a new household name.
+- If only an invite code is present, onboarding can validate that code and then joins the matching household on submit.
+- Submitting onboarding calls `POST /api/kitchen/auth/clerk/onboarding`, which creates or completes the safe Mongo business records.
+- The Clerk sign-in and sign-up pages now rely on Clerk's embedded prebuilt components instead of custom low-level `useSignIn()` / `useSignUp()` submit handlers.
+- Normal sign-in stays email + password only, as determined by the Clerk widget and Dashboard configuration.
+- Sign-up still requires email verification, and the verification step is now owned by Clerk's `<SignUp />` flow instead of app-managed verification requests.
+- The chosen verification mode is `email_code` during sign-up. Normal sign-in stays on email + password and does not intentionally request a verification code.
+- The prior duplicate verification issue had two frontend causes:
+  - the app previously orchestrated low-level sign-up and verification calls in parallel with Clerk-managed UI
+  - the sign-up widget could mount more than once in development and could be reinitialized when invite-prefill data arrived late
+- The current fix removes manual verification calls from the app shell, delays the Clerk widget until invite context is ready, and removes the React `StrictMode` double-mount around the app entry so one sign-up action maps to one Clerk verification flow.
+- If login still asks for a verification code after this change, the remaining cause is Clerk instance configuration, most notably `Client Trust` or an intentionally enabled second-factor setting in the Clerk Dashboard rather than the app choosing an email-code login path.
+- The earlier broken Clerk login UX had two code-level causes:
+  - the app was checking for a legacy-style `setActive` from `useSignIn()` / `useSignUp()`, which no longer exists in Clerk's current signal-based hooks, so the login form could appear disabled or never become ready
+  - the forgot-password route still mounted a prebuilt Clerk `SignIn` flow, which could route users into generic alternate-method screens instead of a dedicated password recovery experience
+- Protected app routes recognize an active Clerk session as a bootstrap-in-progress state. They show the branded loading state while `/me` resolves, send incomplete profiles to `/onboarding/clerk`, and only use `/auth/clerk/complete` as a fallback for confirmed bootstrap errors.
+
+## Temporary DEV Clerk Auth Entry Point
+
+- Visit `/dev/clerk-auth` for development diagnostics and links to the real Clerk routes.
+- Visit `/auth/clerk/sign-up` to create a real Clerk user.
+- Visit `/auth/clerk/sign-in` to sign in as an existing Clerk user.
+- Visit `/auth/clerk/reset-password` for the Clerk password-reset flow.
+- This page is intentionally separate from `/login` and `/register`.
+- `/login` and `/register` remain the legacy Mongo/JWT screens.
+- The reason legacy Register does not create Clerk users is that it still posts to `/api/kitchen/auth/register`, hashes the password locally with bcrypt, creates a Mongo `KitchenUser`, and receives a legacy JWT. It does not call Clerk's sign-up APIs or render Clerk's `<SignUp />`.
+- The `/auth/clerk/sign-up` page is now the UI path in this repo that creates Clerk users.
+- After a successful Clerk sign-in, `/dev/clerk-auth` may not show any sign-in form because the Clerk session is already active; testers should sign out from that DEV page to test another Clerk login.
+- Later migration of existing Mongo users should happen via Clerk import using their existing bcrypt password digests, followed by email-based first sign-in mapping and persisted `clerkId` linking.
+
+## Clerk Household Invites
+
+- Owners can still share the existing six-digit household invite code.
+- Owners can also share a Clerk-friendly link in the form `/auth/clerk/sign-up?inviteToken=...` or `/auth/clerk/sign-up?inviteCode=...`.
+- The app also accepts the generic alias `/auth/clerk/sign-up?invite=...`, which is interpreted as an invite token first and as a six-digit invite code when numeric.
+- The frontend stores pending Clerk invite context only long enough to complete `/onboarding/clerk`.
+- The Clerk sign-up and sign-in pages reuse the invite-aware query string when switching between each other, and the sign-up page prefills the invited email when the invitation is email-specific.
+- The backend resolves invite tokens through the existing `Invitation` model and invite-code joins through `Household.inviteCode`.
+- Recipient-email restrictions, invite expiration, license/user-limit checks, and household scoping remain enforced on the backend.
+
+## Required Environment Variables
+
+### Frontend
+
+- `VITE_CLERK_PUBLISHABLE_KEY`
+- `VITE_API_URL`
+
+### Backend
+
+- `CLERK_SECRET_KEY`
+- `CLERK_JWT_KEY`
+  - Optional in functionality, recommended for networkless verification and more predictable backend behavior.
+- `CLERK_AUTHORIZED_PARTIES`
+  - Comma-separated allowed frontend origins, for example `http://localhost:5173`.
+- Existing variables still required:
+  - `MONGODB_URI`
+  - `JWT_SECRET`
+  - existing app/mail/push variables
+
+## User Mapping Strategy
+
+- Clerk identity is resolved from the verified Clerk session token.
+- The backend fetches the Clerk user and reads the primary email address.
+- The email is normalized to lowercase and matched against `KitchenUser.email`.
+- `KitchenUser.clerkId` is the permanent link field.
+- Mapping rules:
+  - matched Mongo user + empty `clerkId`: attach `clerkId`
+  - matched Mongo user + same `clerkId`: continue
+  - matched Mongo user + different `clerkId`: reject
+  - no matched Mongo user: reject unless an existing business flow explicitly creates a safe Mongo user
+  - DEV-only exception: if a Mongo user is matched by normalized email and its `clerkId` still points to an older DEV test/import identity, the backend may reconcile `clerkId` to the currently authenticated Clerk user. Production still rejects mismatches.
+
+## Phased Rollout Plan
+
+### Phase 0: Current Safe State
+
+- Keep all legacy login, registration, invitations, JWT issuance, password reset, and protected routes unchanged.
+- Deploy the optional Clerk-aware code with no Clerk keys set. This keeps runtime behavior on the old auth path.
+
+### Phase 1: Development Wiring
+
+- Create a Clerk application.
+- Enable email/password in Clerk.
+- Set:
+  - `VITE_CLERK_PUBLISHABLE_KEY` in the frontend environment
+  - `CLERK_SECRET_KEY` in the backend environment
+  - `CLERK_JWT_KEY` in the backend environment
+  - `CLERK_AUTHORIZED_PARTIES` to the frontend origin
+- Verify that:
+  - legacy login still works
+  - Clerk-authenticated `GET /api/kitchen/auth/me` resolves the correct Mongo user
+  - role, plan, and household isolation still come from Mongo
+
+### Phase 2: Controlled Internal Migration
+
+- Provision Clerk identities only for known internal or test users first.
+- Let those users authenticate with Clerk while their Mongo records remain authoritative.
+- Do not remove legacy login yet.
+- Monitor:
+  - missing email mappings
+  - `clerkId` mismatches
+  - any route returning a Mongo authorization error after a valid Clerk sign-in
+
+### Phase 3: User Import / Trickle Migration
+
+- Existing users can be migrated to Clerk by importing password digests because the app currently stores bcrypt hashes and Clerk supports imported password digests with `passwordHasher: "bcrypt"`.
+- Even though direct hash migration is technically feasible, a staged rollout is still safer:
+  - import a small cohort first
+  - verify sign-in and Mongo mapping
+  - then migrate the broader user base
+- Keep password reset available as a fallback for any import anomalies.
+
+### Phase 4: Production Cutover
+
+- Add Clerk UI or a Clerk-backed sign-in path once internal validation is complete.
+- Keep backend authorization unchanged.
+- Only after stable operation:
+  - deprecate legacy JWT issuance
+  - deprecate old password-based login endpoints
+  - eventually remove legacy auth code in a separate change
+
+## Rollback Plan
+
+- Remove or unset `VITE_CLERK_PUBLISHABLE_KEY` on the frontend to stop sending Clerk tokens.
+- Remove or unset `CLERK_SECRET_KEY` on the backend to disable Clerk verification.
+- Legacy JWT login remains available because it is still the first auth path in `requireAuth`.
+- `clerkId` values can remain in Mongo without affecting legacy login.
+- If a rollout issue appears, revert to legacy login only while keeping business data intact.
+
+## Risks And Mitigations
+
+- Risk: a valid Clerk identity maps to the wrong internal user by email.
+  - Mitigation: normalized email lookup plus persisted `clerkId` consistency checks.
+- Risk: onboarding-created users could bypass household, role, or plan rules.
+  - Mitigation: onboarding requires a valid Clerk session, ignores client-provided role/plan/household IDs, creates only a normal household-scoped user, and never assigns `globalRole`, `admin`, or `diod`.
+- Risk: frontend authorization drift.
+  - Mitigation: backend still loads the Mongo user and enforces authorization from Mongo data only.
+- Risk: tenant leakage.
+  - Mitigation: household scoping still uses `req.kitchenUser` and `householdScope.js`.
+- Risk: deployment breakage from missing Clerk keys.
+  - Mitigation: frontend Clerk wiring is conditional on `VITE_CLERK_PUBLISHABLE_KEY`; legacy auth remains intact without Clerk configuration.
+- Risk: imported password hashes behave unexpectedly for some accounts.
+  - Mitigation: test imports on a small sample first and keep password reset as fallback.
+
+## Direct Migration Feasibility
+
+- Direct migration of existing users into Clerk is technically possible based on the current codebase.
+- Reason:
+  - the application stores bcrypt password hashes in `KitchenUser.passwordHash` using `bcryptjs.hash(password, 10)`
+  - Clerk supports imported password digests with the `bcrypt` hasher
+- This means a forced password reset is not inherently required for every user.
+- Operationally, a gradual migration is still recommended before a broad production import.
+
+## DEV-Only Mongo To Clerk Import
+
+- Scope:
+  - This import path is only for the Clerk Development instance.
+  - Do not run this against Clerk Production.
+  - Legacy Mongo/JWT auth remains available before, during, and after this DEV import.
+  - Mongo remains authoritative for role, household/tenant linkage, plan, app profile data, and feature access.
+- Source collection:
+  - The kitchen app uses `KitchenUser` in Mongo.
+  - The legacy password hash field is `passwordHash`, not `password`.
+  - Login verifies `KitchenUser.passwordHash` with `bcrypt.compare(...)` from `bcryptjs`.
+- Export script:
+  - [backend/scripts/export-clerk-dev-users.js](/C:/APPS/pilot-homefirst/backend/scripts/export-clerk-dev-users.js)
+  - Dry-run command from the repo root: `npm --workspace backend run clerk:dev-export:dry-run`
+  - Export command from the repo root: `npm --workspace backend run clerk:dev-export`
+  - Default output: [backend/exports/users.dev.json](/C:/APPS/pilot-homefirst/backend/exports/users.dev.json)
+  - The script reads `backend/.env` and accepts `MONGODB_URI`; it also accepts the local legacy env name `MONGODB_URL`.
+- Eligibility rules:
+  - Exclude users without email.
+  - Exclude malformed emails.
+  - Exclude users without `passwordHash`.
+  - Exclude duplicate emails case-insensitively.
+  - Exclude malformed bcrypt hashes.
+  - Exclude inactive users unless `--include-inactive` is passed.
+  - Exclude placeholders or users without login unless `--include-placeholders` is passed.
+- Clerk migration-tool JSON mapping:
+  - `userId`: Mongo `_id` as a string
+  - `externalId`: Mongo `_id` as a string
+  - `email`: normalized lowercase Mongo email
+  - `firstName`: `firstName` if present, otherwise derived from the first token of `displayName`
+  - `lastName`: `lastName` if present, otherwise derived from remaining `displayName` tokens when available
+  - `passwordDigest`: Mongo `passwordHash`
+  - `passwordHasher`: `bcrypt`
+  - Role, plan, household, tenant, and premium flags are intentionally not exported into Clerk as authority.
+- Example output item:
+
+```json
+{
+  "userId": "665f0f000000000000000001",
+  "externalId": "665f0f000000000000000001",
+  "email": "person@example.com",
+  "firstName": "Person",
+  "lastName": "Example",
+  "passwordDigest": "$2a$10$exampleexampleexampleexampleexampleexampleexampleexampleex",
+  "passwordHasher": "bcrypt"
+}
+```
+
+- Clerk Development import process:
+  - Clone Clerk's migration tool: `git clone https://github.com/clerk/migration-tool`
+  - Install the migration tool dependencies as instructed by that repository.
+  - Copy `backend/exports/users.dev.json` into the migration tool workspace.
+  - Create the migration tool `.env` with the Clerk Development secret key only:
+  - `CLERK_SECRET_KEY=sk_test_...`
+  - `IMPORT_TO_DEV_INSTANCE=true`
+  - Run the migration tool against `users.dev.json`.
+  - If the migration tool version expects a slightly different transformer/schema, adapt the migration tool transformer to read this repo's `passwordDigest` and `passwordHasher` fields rather than changing Mongo source fields.
+- Post-import validation:
+  - [backend/scripts/validate-clerk-dev-import.js](/C:/APPS/pilot-homefirst/backend/scripts/validate-clerk-dev-import.js)
+  - Command from the repo root: `IMPORT_TO_DEV_INSTANCE=true npm --workspace backend run clerk:dev-validate`
+  - The validator reads `backend/exports/users.dev.json`, fetches users from the configured Clerk instance, and compares expected count, primary email, and `externalId`.
+- Runtime mapping after import:
+  - Mongo `_id` remains unchanged.
+  - Clerk `externalId` preserves the Mongo `_id` for traceability.
+  - `KitchenUser.clerkId` remains the persistent local link field.
+  - The existing runtime mapping still links by normalized email on first Clerk sign-in and persists `clerkId`.
+  - Imported DEV users can conflict with earlier DEV Clerk test accounts that already wrote a stale `KitchenUser.clerkId`. The backend now reconciles those stale DEV `clerkId` values on successful email-matched Clerk sign-in only in development.
+  - The import scripts do not mutate Mongo users.
+- DEV reconciliation utility:
+  - [backend/scripts/reconcile-dev-clerk-id.js](/C:/APPS/pilot-homefirst/backend/scripts/reconcile-dev-clerk-id.js)
+  - Preview a manual reconciliation without changing Mongo:
+  - `npm --workspace backend run clerk:dev-reconcile-id -- --email user@example.com --clerk-id user_xxx --dry-run`
+  - Force-set a DEV `clerkId` manually if needed:
+  - `npm --workspace backend run clerk:dev-reconcile-id -- --email user@example.com --clerk-id user_xxx`
+  - Clear a stale DEV `clerkId` manually if needed:
+  - `npm --workspace backend run clerk:dev-reconcile-id -- --email user@example.com --clear`
+- Duplicate email handling:
+  - Any case-insensitive duplicate email excludes every user in that duplicate group.
+  - Resolve duplicates manually in Mongo before export, or leave those users on legacy auth until a safe account merge decision is made.
+- Rollback / fallback:
+  - If the DEV import is bad, delete the imported users from the Clerk Development dashboard or recreate the Development instance.
+  - Leave Mongo untouched.
+  - Unset `VITE_CLERK_PUBLISHABLE_KEY` and/or `CLERK_SECRET_KEY` to fall back to legacy Mongo/JWT auth.
+  - Do not copy Development Clerk users into Production; Clerk documentation states Development users cannot be migrated to Production.
+
+## Manual Setup Still Required
+
+- Clerk dashboard:
+  - create the Clerk app
+  - enable the desired sign-in methods
+  - configure allowed origins / redirect URLs
+  - obtain the publishable key, secret key, and JWT public key
+- Frontend hosting:
+  - set `VITE_CLERK_PUBLISHABLE_KEY`
+- Backend hosting:
+  - set `CLERK_SECRET_KEY`
+  - set `CLERK_JWT_KEY`
+  - set `CLERK_AUTHORIZED_PARTIES`
+- Product decision still pending:
+  - whether to keep the existing custom login pages during migration
+  - or replace them later with Clerk UI/components after the backend mapping path is validated
+
+## Tests
+
+- No automated test infrastructure was present in this repository at inspection time.
+- Because of that, no new automated tests were added in this change.
+- Recommended first tests once test infrastructure exists:
+  - Clerk-authenticated request resolves to the expected Mongo user
+  - `requireRole` still enforces Mongo roles
+  - paid-plan gates still read Mongo household plan
+  - household-scoped routes still reject cross-household access

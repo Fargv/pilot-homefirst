@@ -22,14 +22,43 @@ const KitchenDishSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     dishCategoryId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDishCategory", default: null, index: true },
     ingredients: { type: [IngredientSchema], default: [] },
-    sidedish: { type: Boolean, default: false },
     isDinner: { type: Boolean, default: false },
     special: { type: Boolean, default: false },
     allowRandom: { type: Boolean, default: true },
     active: { type: Boolean, default: true },
     deletedAt: { type: Date, default: null },
     isArchived: { type: Boolean, default: false },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" }
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser" },
+    source: { type: String, default: null },
+    sourcePackId: { type: mongoose.Schema.Types.ObjectId, ref: "CatalogPack", default: null },
+    sourcePackSlug: { type: String, default: null },
+    sourcePackTitle: { type: String, default: null },
+    sourceDishTemplateId: { type: String, default: null, index: true },
+    catalogSyncedAt: { type: Date, default: null },
+    catalogContentHash: { type: String, default: null },
+    userModified: { type: Boolean, default: false, index: true },
+    userModifiedAt: { type: Date, default: null },
+    importedAt: { type: Date, default: null },
+    importedBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },
+    sourcePackColor: { type: String, default: null },
+    sourcePackIsDietPack: { type: Boolean, default: false },
+    recipe: {
+      ingredients: {
+        type: [{
+          name: { type: String },
+          // Mixed: accepts legacy string ("100 g") or structured object
+          // { amount, unit, scalable, note?, originalText? }
+          quantity: { type: mongoose.Schema.Types.Mixed },
+          ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient", default: null },
+          _id: false
+        }],
+        default: []
+      },
+      steps: { type: mongoose.Schema.Types.Mixed, default: null },
+      servings: { type: Number, default: null },
+      prepMinutes: { type: Number, default: null },
+      cookMinutes: { type: Number, default: null }
+    }
   },
   { timestamps: true }
 );

@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../api.js";
-import CategoryChip from "./CategoryChip.jsx";
+import SearchableSelect from "./ui/SearchableSelect.jsx";
 import { emptyCategory, PASTEL_PALETTE, resolveCategoryColors } from "./categoryUtils.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
@@ -18,30 +18,29 @@ export default function IngredientModal({
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [categoryQuery, setCategoryQuery] = useState("");
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [categoryDraftName, setCategoryDraftName] = useState("");
   const [categoryColor, setCategoryColor] = useState(null);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [canonicalTouched, setCanonicalTouched] = useState(false);
+  const dupCheckTimer = useRef(null);
 
   const editingId = initialIngredient?._id || null;
 
   useEffect(() => {
     if (!isOpen) return;
     setError("");
-    setCategoryQuery("");
+    setDuplicateWarning(null);
     setShowCategoryModal(false);
     setCategoryDraftName("");
     setCategoryColor(null);
     setCanonicalTouched(false);
     if (initialIngredient) {
-      const initialCategoryId =
-        initialIngredient.categoryId?._id || initialIngredient.categoryId || "";
       setForm({
         name: initialIngredient.name || "",
         canonicalName: initialIngredient.canonicalName || "",
-        categoryId: initialCategoryId,
+        categoryId: initialIngredient.categoryId?._id || initialIngredient.categoryId || "",
         active: typeof initialIngredient.active === "boolean" ? initialIngredient.active : true
       });
     } else {
@@ -49,46 +48,41 @@ export default function IngredientModal({
     }
   }, [initialIngredient, isOpen]);
 
-  const filteredCategories = useMemo(() => {
-    if (!categoryQuery) return categories;
-    const lower = categoryQuery.toLowerCase();
-    return categories.filter((category) => category.name.toLowerCase().includes(lower));
-  }, [categories, categoryQuery]);
-
-  const normalizedCategoryQuery = useMemo(
-    () => normalizeIngredientName(categoryQuery),
-    [categoryQuery]
-  );
-
-  const hasExactCategory = useMemo(
-    () =>
-      Boolean(
-        normalizedCategoryQuery &&
-          categories.some(
-            (category) => normalizeIngredientName(category.name) === normalizedCategoryQuery
-          )
-      ),
-    [categories, normalizedCategoryQuery]
-  );
-
-  const selectedCategory = useMemo(
-    () => categories.find((category) => category._id === form.categoryId) || null,
-    [categories, form.categoryId]
+  const categoryOptions = useMemo(
+    () => categories.map((c) => {
+      const colors = resolveCategoryColors(c);
+      return { value: c._id, label: c.name, dotColor: colors.colorText || "#344054" };
+    }),
+    [categories]
   );
 
   const onNameChange = (event) => {
     const nextName = event.target.value;
-    setForm((prev) => ({
-      ...prev,
-      name: nextName,
-      canonicalName: canonicalTouched ? prev.canonicalName : normalizeIngredientName(nextName)
-    }));
+    const nextCanonical = canonicalTouched ? form.canonicalName : normalizeIngredientName(nextName);
+    setForm((prev) => ({ ...prev, name: nextName, canonicalName: nextCanonical }));
+    setDuplicateWarning(null);
+    clearTimeout(dupCheckTimer.current);
+    if (nextName.trim()) {
+      const canonical = normalizeIngredientName(nextName);
+      dupCheckTimer.current = setTimeout(() => {
+        apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(canonical)}`)
+          .then((data) => {
+            const match = (data.ingredients || []).find((i) => i.canonicalName === canonical);
+            if (match && (!editingId || String(match._id) !== String(editingId))) {
+              setDuplicateWarning(match.name);
+            }
+          })
+          .catch(() => {});
+      }, 450);
+    }
   };
+
+  useEffect(() => () => clearTimeout(dupCheckTimer.current), []);
 
   const closeModal = () => {
     setForm(EMPTY_FORM);
     setError("");
-    setCategoryQuery("");
+    setDuplicateWarning(null);
     setShowCategoryModal(false);
     setCategoryDraftName("");
     setCategoryColor(null);
@@ -97,13 +91,11 @@ export default function IngredientModal({
   };
 
   const handleCreateCategory = async () => {
-    if (!onCategoryCreated) return;
-    if (!categoryDraftName.trim()) return;
+    if (!onCategoryCreated || !categoryDraftName.trim()) return;
     setCreatingCategory(true);
     try {
       const category = await onCategoryCreated(categoryDraftName.trim(), categoryColor);
       setForm((prev) => ({ ...prev, categoryId: category._id }));
-      setCategoryQuery("");
       setShowCategoryModal(false);
       setCategoryDraftName("");
       setCategoryColor(null);
@@ -135,17 +127,9 @@ export default function IngredientModal({
         ...(scope ? { scope } : {})
       };
       const data = editingId
-        ? await apiRequest(`/api/kitchenIngredients/${editingId}`, {
-            method: "PUT",
-            body: JSON.stringify(payload)
-          })
-        : await apiRequest("/api/kitchenIngredients", {
-            method: "POST",
-            body: JSON.stringify(payload)
-          });
-      if (data?.ingredient) {
-        await onSaved?.(data.ingredient);
-      }
+        ? await apiRequest(`/api/kitchenIngredients/${editingId}`, { method: "PUT", body: JSON.stringify(payload) })
+        : await apiRequest("/api/kitchenIngredients", { method: "POST", body: JSON.stringify(payload) });
+      if (data?.ingredient) await onSaved?.(data.ingredient);
       closeModal();
     } catch (err) {
       setError(err.message || "No se pudo guardar el ingrediente.");
@@ -165,26 +149,24 @@ export default function IngredientModal({
         aria-label={editingId ? "Editar ingrediente" : "Crear ingrediente"}
         onClick={(event) => event.stopPropagation()}
       >
+        {/* Header */}
         <div className="kitchen-modal-header">
           <div>
-            <h3>{editingId ? "Editar ingrediente" : "Crear ingrediente"}</h3>
+            <h3>{editingId ? "Editar ingrediente" : "Nuevo ingrediente"}</h3>
             <p className="kitchen-muted">
-              Ajusta los datos del ingrediente y define su categoría en el catálogo.
+              {editingId ? "Modifica los datos del ingrediente." : "Define el nombre y selecciona su sección de supermercado."}
             </p>
           </div>
           <button className="kitchen-icon-button" type="button" onClick={closeModal} aria-label="Cerrar">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M6 6l12 12M18 6l-12 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
+              <path d="M6 6l12 12M18 6l-12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
         </div>
+
         <form onSubmit={onSave} className="kitchen-form">
+
+          {/* Name */}
           <label className="kitchen-field">
             <span className="kitchen-label">Nombre del ingrediente</span>
             <input
@@ -194,71 +176,35 @@ export default function IngredientModal({
               required
               placeholder="Ej. Tomate"
             />
-          </label>
-          <label className="kitchen-field">
-            <span className="kitchen-label">Canonical name</span>
-            <input
-              className="kitchen-input"
-              value={form.canonicalName}
-              onChange={(event) => {
-                setCanonicalTouched(true);
-                setForm((prev) => ({ ...prev, canonicalName: event.target.value }));
-              }}
-              placeholder={normalizeIngredientName(form.name)}
-            />
-          </label>
-          <div className="kitchen-field">
-            <span className="kitchen-label">Categoría</span>
-            <input
-              className="kitchen-input"
-              placeholder="Busca una categoría…"
-              value={categoryQuery}
-              onChange={(event) => setCategoryQuery(event.target.value)}
-            />
-            <div className="kitchen-category-list">
-              {filteredCategories.map((category) => {
-                const colors = resolveCategoryColors(category);
-                const isSelected = form.categoryId === category._id;
-                return (
-                  <button
-                    key={category._id}
-                    className={`kitchen-category-option ${isSelected ? "selected" : ""}`}
-                    type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, categoryId: category._id }))}
-                  >
-                    <CategoryChip
-                      label={category.name}
-                      colorBg={colors.colorBg}
-                      colorText={colors.colorText}
-                    />
-                    {isSelected ? <span className="kitchen-category-check" aria-hidden="true">✓</span> : null}
-                  </button>
-                );
-              })}
-              {!hasExactCategory && categoryQuery ? (
-                <button
-                  className="kitchen-button ghost"
-                  type="button"
-                  onClick={() => {
-                    setCategoryDraftName(categoryQuery.trim());
-                    setShowCategoryModal(true);
-                  }}
-                >
-                  Crear categoría “{categoryQuery}”
-                </button>
-              ) : null}
-            </div>
-            {selectedCategory ? (
-              <div className="kitchen-ingredient-selected-category">
-                <span className="kitchen-muted">Seleccionada:</span>
-                <CategoryChip
-                  label={selectedCategory.name}
-                  colorBg={selectedCategory.colorBg || emptyCategory.colorBg}
-                  colorText={selectedCategory.colorText || emptyCategory.colorText}
-                />
+            {duplicateWarning ? (
+              <div className="ingredient-duplicate-warning">
+                <svg viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M8 5v3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <circle cx="8" cy="11" r="0.8" fill="currentColor" />
+                </svg>
+                El ingrediente <strong>{duplicateWarning}</strong> ya existe en el catálogo.
               </div>
             ) : null}
+          </label>
+
+          {/* Category */}
+          <div className="kitchen-field">
+            <span className="kitchen-label">Sección del supermercado</span>
+            <p className="ingredient-category-hint">
+              Indica dónde encuentras normalmente este ingrediente en el supermercado.
+            </p>
+            <SearchableSelect
+              options={categoryOptions}
+              value={form.categoryId}
+              onChange={(val) => setForm((prev) => ({ ...prev, categoryId: val }))}
+              emptyLabel="Seleccionar sección..."
+              placeholder="Buscar sección..."
+              onCreate={onCategoryCreated ? (query) => { setCategoryDraftName(query); setShowCategoryModal(true); } : undefined}
+            />
           </div>
+
+          {/* Active toggle */}
           <div className="kitchen-field kitchen-toggle-field">
             <div className="kitchen-toggle-row">
               <span className="kitchen-label">Activo</span>
@@ -268,32 +214,29 @@ export default function IngredientModal({
                   type="checkbox"
                   className="kitchen-toggle-input"
                   checked={form.active}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, active: event.target.checked }))
-                  }
+                  onChange={(event) => setForm((prev) => ({ ...prev, active: event.target.checked }))}
                 />
                 <span className="kitchen-toggle-track" aria-hidden="true" />
               </label>
             </div>
           </div>
+
           {error ? <div className="kitchen-alert error">{error}</div> : null}
+
           <div className="kitchen-modal-actions">
             <button className="kitchen-button" type="submit" disabled={saving}>
               {saving ? "Guardando..." : "Guardar"}
             </button>
-            <button className="kitchen-button ghost" type="button" onClick={closeModal}>
-              Cancelar
-            </button>
+            <button className="kitchen-button ghost" type="button" onClick={closeModal}>Cancelar</button>
           </div>
         </form>
+
+        {/* Category creation sub-modal */}
         {showCategoryModal ? (
           <div
             className="kitchen-context-modal-backdrop inner"
             role="presentation"
-            onClick={(event) => {
-              event.stopPropagation();
-              setShowCategoryModal(false);
-            }}
+            onClick={(event) => { event.stopPropagation(); setShowCategoryModal(false); }}
           >
             <div
               className="kitchen-context-modal small"
@@ -304,29 +247,18 @@ export default function IngredientModal({
             >
               <div className="kitchen-context-modal-header">
                 <div>
-                  <h4>Crear categoría</h4>
+                  <h4>Nueva sección</h4>
                   <p className="kitchen-muted">Define el nombre y elige un color si quieres.</p>
                 </div>
-                <button
-                  className="kitchen-icon-button"
-                  type="button"
-                  onClick={() => setShowCategoryModal(false)}
-                  aria-label="Cerrar"
-                >
+                <button className="kitchen-icon-button" type="button" onClick={() => setShowCategoryModal(false)} aria-label="Cerrar">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M6 6l12 12M18 6l-12 12"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
+                    <path d="M6 6l12 12M18 6l-12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 </button>
               </div>
               <div className="kitchen-context-modal-body">
                 <label className="kitchen-field">
-                  <span className="kitchen-label">Nombre de categoría</span>
+                  <span className="kitchen-label">Nombre de sección</span>
                   <input
                     className="kitchen-input"
                     value={categoryDraftName}
@@ -336,26 +268,17 @@ export default function IngredientModal({
                 <div className="kitchen-field">
                   <span className="kitchen-label">Color (opcional)</span>
                   <div className="kitchen-color-grid">
-                    <button
-                      className={`kitchen-color-option ${categoryColor ? "" : "selected"}`}
-                      type="button"
-                      onClick={() => setCategoryColor(null)}
-                    >
+                    <button className={`kitchen-color-option ${categoryColor ? "" : "selected"}`} type="button" onClick={() => setCategoryColor(null)}>
                       Automático
                     </button>
                     {PASTEL_PALETTE.map((palette) => (
                       <button
                         key={`${palette.colorBg}-${palette.colorText}`}
-                        className={`kitchen-color-option swatch ${
-                          categoryColor?.colorBg === palette.colorBg ? "selected" : ""
-                        }`}
+                        className={`kitchen-color-option swatch ${categoryColor?.colorBg === palette.colorBg ? "selected" : ""}`}
                         type="button"
                         onClick={() => setCategoryColor(palette)}
                         aria-label={`Color ${palette.colorBg}`}
-                        style={{
-                          background: palette.colorBg,
-                          color: palette.colorText
-                        }}
+                        style={{ background: palette.colorBg, color: palette.colorText }}
                       >
                         Aa
                       </button>
@@ -364,21 +287,10 @@ export default function IngredientModal({
                 </div>
               </div>
               <div className="kitchen-context-modal-actions">
-                <button
-                  className="kitchen-button"
-                  type="button"
-                  onClick={handleCreateCategory}
-                  disabled={creatingCategory}
-                >
-                  {creatingCategory ? "Guardando..." : "Guardar categoría"}
+                <button className="kitchen-button" type="button" onClick={handleCreateCategory} disabled={creatingCategory}>
+                  {creatingCategory ? "Guardando..." : "Guardar sección"}
                 </button>
-                <button
-                  className="kitchen-button secondary"
-                  type="button"
-                  onClick={() => setShowCategoryModal(false)}
-                >
-                  Cancelar
-                </button>
+                <button className="kitchen-button secondary" type="button" onClick={() => setShowCategoryModal(false)}>Cancelar</button>
               </div>
             </div>
           </div>
@@ -387,4 +299,3 @@ export default function IngredientModal({
     </div>
   );
 }
-

@@ -1,13 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SlidersHorizontal, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import DishModal from "../components/DishModal.jsx";
 import IngredientModal from "../components/IngredientModal.jsx";
+import RecipeModal from "../components/RecipeModal.jsx";
 import CategoryIcon from "../components/CategoryIcon.jsx";
 import { resolveCategoryCode } from "../components/categoryIconMap.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
+import { getDishOrigin, isDishFromCatalog, isUserCreatedDish } from "../utils/dishOrigin.js";
+import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
+import { canUseDinnersFeature } from "../subscription.js";
+import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
+import PageHeader from "../components/PageHeader.jsx";
+import { DishGridSkeleton, DishesPageSkeleton } from "../components/ScreenSkeletons.jsx";
 
 const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
 
@@ -69,14 +78,37 @@ function ChevronIcon(props) {
   );
 }
 
+// ── Origin classifier ─────────────────────────────────────────────────────────
+// Returns true only for household dishes installed from a catalog pack.
+// scope:"master" and scope:"override" are global/override dishes, NOT pack-installs.
+//   scope:"household" + source:"catalog"  → pack-installed (standard)
+//   scope:"household" + sourcePackId set  → legacy pack-installed (missing source field)
+//   everything else                       → household-created ("Mis platos")
 export default function DishesPage() {
-  const MEAL_FILTERS = {
-    ALL: "all",
-    LUNCH: "lunch",
-    DINNER: "dinner"
-  };
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { notify: notifyOnboarding, state: onboardingState } = useOnboarding();
+  const { notify: notifyWeekly } = useWeeklyChallenge();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { notifyOnboarding("visit_dishes"); }, []);
+
+  const [ingredientSuggestions, setIngredientSuggestions] = useState([]);
+  const [dishSuggestions, setDishSuggestions] = useState([]);
+  const [ingredientSuggestionName, setIngredientSuggestionName] = useState("");
+  const [dishSuggestionName, setDishSuggestionName] = useState("");
+
+  useEffect(() => {
+    const key = onboardingState?.nextChallenge?.key;
+    if (key === "create_ingredient" || key === "create_second_ingredient") {
+      apiRequest("/api/kitchen/onboarding/suggestions?type=ingredient")
+        .then((d) => setIngredientSuggestions(d.suggestions || []))
+        .catch(() => {});
+    } else if (key === "create_dish") {
+      apiRequest("/api/kitchen/onboarding/suggestions?type=dish")
+        .then((d) => setDishSuggestions(d.suggestions || []))
+        .catch(() => {});
+    }
+  }, [onboardingState?.nextChallenge?.key]);
   const [dishes, setDishes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [dishCategories, setDishCategories] = useState([]);
@@ -87,9 +119,10 @@ export default function DishesPage() {
   const [activeDish, setActiveDish] = useState(null);
   const [dishSearchTerm, setDishSearchTerm] = useState("");
   const [selectedDishCategoryId, setSelectedDishCategoryId] = useState("");
-  const [selectedMealFilter, setSelectedMealFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("main");
-  const [initialSidedish, setInitialSidedish] = useState(false);
+  const [catalogOnly, setCatalogOnly] = useState(false);
+  const [mineOnly, setMineOnly] = useState(false);
+  const [dinnerOnly, setDinnerOnly] = useState(false);
   const [ingredients, setIngredients] = useState([]);
   const [ingredientsLoading, setIngredientsLoading] = useState(false);
   const [ingredientsError, setIngredientsError] = useState("");
@@ -97,17 +130,26 @@ export default function DishesPage() {
   const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
   const [activeIngredient, setActiveIngredient] = useState(null);
   const [ingredientInfoOpenId, setIngredientInfoOpenId] = useState(null);
+  const [selectedIngredientCategoryId, setSelectedIngredientCategoryId] = useState("");
+  const [showAllIngredientCategories, setShowAllIngredientCategories] = useState(false);
+  const [showAllDishCategories, setShowAllDishCategories] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignDish, setAssignDish] = useState(null);
   const [assignDate, setAssignDate] = useState("");
   const [deleteDishModal, setDeleteDishModal] = useState({ open: false, dish: null, deleting: false });
+  const [revertDishModal, setRevertDishModal] = useState({ open: false, dish: null, reverting: false });
   const [dishInfoOpenId, setDishInfoOpenId] = useState(null);
+  const [recipeModalDish, setRecipeModalDish] = useState(null);
   const [dishTogglePendingId, setDishTogglePendingId] = useState("");
   const [isInfoMobile, setIsInfoMobile] = useState(false);
   const infoPopoverRef = useRef(null);
   const ingredientInfoPopoverRef = useRef(null);
   const infoButtonRefs = useRef(new Map());
   const ingredientInfoButtonRefs = useRef(new Map());
+  const panelHeadingRef = useRef(null);
+  const [showStickyAction, setShowStickyAction] = useState(false);
+  const [dinnerGateOpen, setDinnerGateOpen] = useState(false);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const todayKey = new Date().toISOString().slice(0, 10);
   const currentWeekStart = useMemo(
     () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
@@ -120,6 +162,7 @@ export default function DishesPage() {
     dishNames: {}
   });
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
+  const canUseDinners = isDiodGlobalMode || canUseDinnersFeature(user);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
@@ -136,24 +179,23 @@ export default function DishesPage() {
     return () => mediaQuery.removeListener(updateMediaState);
   }, []);
 
+  useEffect(() => {
+    const el = panelHeadingRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyAction(!entry.isIntersecting),
+      { threshold: 0, rootMargin: "-72px 0px 0px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const loadDishes = async () => {
-    if (isDiodGlobalMode) {
-      setDishes([]);
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setDishError("");
     try {
-      const [mainData, sideData] = await Promise.all([
-        apiRequest("/api/kitchen/dishes"),
-        apiRequest("/api/kitchen/dishes?sidedish=true")
-      ]);
-      const merged = new Map();
-      [...(mainData.dishes || []), ...(sideData.dishes || [])].forEach((dish) => {
-        if (dish?._id) merged.set(dish._id, dish);
-      });
-      setDishes(Array.from(merged.values()));
+      const data = await apiRequest("/api/kitchen/dishes");
+      setDishes(data.dishes || []);
     } catch (err) {
       setDishError(err.message || "No se pudieron cargar los platos.");
     } finally {
@@ -209,13 +251,21 @@ export default function DishesPage() {
   const startCreate = () => {
     setActiveDish(null);
     setDishError("");
-    setInitialSidedish(activeTab === "side");
+    setDishSuggestionName("");
+    setIsModalOpen(true);
+  };
+
+  const openDishWithSuggestion = (name) => {
+    setActiveDish(null);
+    setDishError("");
+    setDishSuggestionName(name);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setActiveDish(null);
+    setDishSuggestionName("");
   };
 
   const persistDishUpdate = useCallback(
@@ -226,8 +276,7 @@ export default function DishesPage() {
         scope: dish.scope || "household",
         active: dish.active !== false,
         isArchived: Boolean(dish.isArchived),
-        dishCategoryId: dish.sidedish ? null : (dish?.dishCategoryId?._id || dish?.dishCategoryId || null),
-        sidedish: Boolean(dish.sidedish),
+        dishCategoryId: dish?.dishCategoryId?._id || dish?.dishCategoryId || null,
         isDinner: Boolean(dish.isDinner),
         special: Boolean(dish.special),
         allowRandom: dish.allowRandom !== false,
@@ -266,6 +315,7 @@ export default function DishesPage() {
           if (activeDish?._id === savedDish._id) {
             setActiveDish(savedDish);
           }
+          notifyOnboarding("randomization_customized");
         } else {
           await loadDishes();
         }
@@ -274,12 +324,12 @@ export default function DishesPage() {
         if (activeDish?._id === dish._id) {
           setActiveDish(dish);
         }
-        setDishError(err.message || "No se pudo actualizar la randomización del plato.");
+        setDishError(err.message || "No se pudo actualizar la configuración del plato.");
       } finally {
         setDishTogglePendingId("");
       }
     },
-    [activeDish, dishTogglePendingId, dishes, persistDishUpdate]
+    [activeDish, dishTogglePendingId, dishes, notifyOnboarding, persistDishUpdate]
   );
 
   const onCategoryCreated = async (name, colors = null) => {
@@ -305,17 +355,11 @@ export default function DishesPage() {
     () => normalizeIngredientName(dishSearchTerm),
     [dishSearchTerm]
   );
-  const tabFilteredDishes = useMemo(() => {
-    const shouldShowSide = activeTab === "side";
-    return dishes.filter((dish) => Boolean(dish.sidedish) === shouldShowSide);
-  }, [activeTab, dishes]);
+  const tabFilteredDishes = useMemo(() => dishes, [dishes]);
   const mealFilteredDishes = useMemo(() => {
-    if (selectedMealFilter === MEAL_FILTERS.ALL) return tabFilteredDishes;
-    if (selectedMealFilter === MEAL_FILTERS.DINNER) {
-      return tabFilteredDishes.filter((dish) => dish.isDinner === true);
-    }
-    return tabFilteredDishes.filter((dish) => dish.isDinner !== true);
-  }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, selectedMealFilter, tabFilteredDishes]);
+    if (dinnerOnly) return tabFilteredDishes.filter((dish) => dish.isDinner === true);
+    return tabFilteredDishes;
+  }, [dinnerOnly, tabFilteredDishes]);
   const categoryFilteredDishes = useMemo(() => {
     if (!selectedDishCategoryId) return mealFilteredDishes;
     return mealFilteredDishes.filter((dish) => {
@@ -323,9 +367,15 @@ export default function DishesPage() {
       return categoryId ? String(categoryId) === String(selectedDishCategoryId) : false;
     });
   }, [mealFilteredDishes, selectedDishCategoryId]);
+  const originFilteredDishes = useMemo(() => {
+    if (catalogOnly) return categoryFilteredDishes.filter(isDishFromCatalog);
+    if (mineOnly) return categoryFilteredDishes.filter(isUserCreatedDish);
+    return categoryFilteredDishes;
+  }, [categoryFilteredDishes, catalogOnly, mineOnly]);
+
   const visibleDishes = useMemo(() => {
-    if (!normalizedSearch) return categoryFilteredDishes;
-    return categoryFilteredDishes.filter((dish) => {
+    if (!normalizedSearch) return originFilteredDishes;
+    return originFilteredDishes.filter((dish) => {
       const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
       if (nameMatch) return true;
       return (dish.ingredients || []).some((item) => {
@@ -334,7 +384,7 @@ export default function DishesPage() {
         return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
       });
     });
-  }, [categoryFilteredDishes, normalizedSearch]);
+  }, [originFilteredDishes, normalizedSearch]);
   const dishMap = useMemo(() => {
     const map = new Map();
     dishes.forEach((dish) => {
@@ -364,6 +414,28 @@ export default function DishesPage() {
     return scoped.length ? scoped : activeCategories;
   }, [dishCategories, mealFilteredDishes, selectedDishCategoryId]);
 
+  const TOP_DISH_CATS = 5;
+
+  const extraDishCategories = useMemo(
+    () => filterChips.slice(TOP_DISH_CATS),
+    [filterChips]
+  );
+
+  const visibleDishCategoryChips = useMemo(() => {
+    const base = showAllDishCategories
+      ? filterChips
+      : filterChips.slice(0, TOP_DISH_CATS);
+    // Always show the active category even if it fell outside the truncated window
+    if (
+      selectedDishCategoryId &&
+      !base.some((c) => String(c._id) === selectedDishCategoryId)
+    ) {
+      const pinned = filterChips.find((c) => String(c._id) === selectedDishCategoryId);
+      if (pinned) return [pinned, ...base];
+    }
+    return base;
+  }, [showAllDishCategories, filterChips, selectedDishCategoryId]);
+
   const emptyMessage = useMemo(() => {
     if (dishes.length === 0) {
       return "No hay platos aún. Crea el primero.";
@@ -372,20 +444,22 @@ export default function DishesPage() {
       if (dishSearchTerm.trim()) {
         return "No encontramos platos con ese criterio.";
       }
+      if (mineOnly) {
+        return "No hay platos creados por tu hogar aún. ¡Crea el primero!";
+      }
+      if (catalogOnly) {
+        return "No hay platos del catálogo con este filtro. Instala un pack desde Catálogo.";
+      }
       if (selectedDishCategoryId) {
         return "No hay platos en la categoría seleccionada.";
       }
-      if (selectedMealFilter !== MEAL_FILTERS.ALL) {
-        return selectedMealFilter === MEAL_FILTERS.DINNER
-          ? "No hay cenas disponibles con este filtro."
-          : "No hay comidas disponibles con este filtro.";
+      if (dinnerOnly) {
+        return "No hay cenas disponibles con este filtro.";
       }
-      return activeTab === "side"
-        ? "No hay guarniciones aún. Crea la primera."
-        : "No hay platos principales aún. Crea el primero.";
+      return "No hay platos aún. Crea el primero.";
     }
     return "";
-  }, [MEAL_FILTERS.ALL, MEAL_FILTERS.DINNER, activeTab, dishSearchTerm, dishes.length, selectedDishCategoryId, selectedMealFilter, visibleDishes.length]);
+  }, [catalogOnly, mineOnly, dinnerOnly, dishSearchTerm, dishes.length, selectedDishCategoryId, visibleDishes.length]);
 
   useEffect(() => {
     setSelectedDishCategoryId((previous) => {
@@ -398,17 +472,21 @@ export default function DishesPage() {
   useEffect(() => {
     if (activeTab === "ingredients") {
       setSelectedDishCategoryId("");
-      setSelectedMealFilter(MEAL_FILTERS.ALL);
+      setCatalogOnly(false);
+      setMineOnly(false);
+      setDinnerOnly(false);
+      setShowAllDishCategories(false);
+    } else {
+      setSelectedIngredientCategoryId("");
+      setShowAllIngredientCategories(false);
     }
-  }, [MEAL_FILTERS.ALL, activeTab]);
+  }, [activeTab]);
 
-  const loadIngredients = useCallback(async (query = "") => {
+  const loadIngredients = useCallback(async () => {
     setIngredientsLoading(true);
     setIngredientsError("");
     try {
-      const params = new URLSearchParams({ limit: "0" });
-      if (query.trim()) params.set("q", query.trim());
-      const data = await apiRequest(`/api/kitchenIngredients?${params.toString()}`);
+      const data = await apiRequest("/api/kitchenIngredients?limit=0");
       setIngredients(data.ingredients || []);
     } catch (err) {
       setIngredientsError(err.message || "No se pudieron cargar los ingredientes.");
@@ -419,11 +497,8 @@ export default function DishesPage() {
 
   useEffect(() => {
     if (activeTab !== "ingredients") return;
-    const timeout = setTimeout(() => {
-      loadIngredients(ingredientSearchTerm);
-    }, 250);
-    return () => clearTimeout(timeout);
-  }, [activeTab, ingredientSearchTerm, loadIngredients]);
+    void loadIngredients();
+  }, [activeTab, loadIngredients]);
 
   useEffect(() => {
     const onCatalogInvalidated = () => {
@@ -434,10 +509,18 @@ export default function DishesPage() {
     };
     window.addEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
     return () => window.removeEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
-  }, [activeTab, ingredientSearchTerm, loadIngredients]);
+  }, [activeTab, loadIngredients]);
 
   const startIngredientCreate = () => {
     setActiveIngredient(null);
+    setIngredientSuggestionName("");
+    setIngredientsError("");
+    setIsIngredientModalOpen(true);
+  };
+
+  const openIngredientWithSuggestion = (name) => {
+    setActiveIngredient(null);
+    setIngredientSuggestionName(name);
     setIngredientsError("");
     setIsIngredientModalOpen(true);
   };
@@ -459,7 +542,7 @@ export default function DishesPage() {
         categoryId: ingredient.categoryId?._id || ingredient.categoryId || undefined
       })
     });
-    await loadIngredients(ingredientSearchTerm);
+    await loadIngredients();
   };
 
   const deleteIngredient = async (ingredient) => {
@@ -469,11 +552,12 @@ export default function DishesPage() {
     await apiRequest(`/api/kitchenIngredients/${ingredient._id}`, { method: "DELETE" });
     if (activeIngredient?._id === ingredient._id) closeIngredientModal();
     if (ingredientInfoOpenId === ingredient._id) setIngredientInfoOpenId(null);
-    await loadIngredients(ingredientSearchTerm);
+    await loadIngredients();
   };
   const closeIngredientModal = () => {
     setIsIngredientModalOpen(false);
     setActiveIngredient(null);
+    setIngredientSuggestionName("");
   };
 
   const assignDays = useMemo(() => {
@@ -569,6 +653,39 @@ export default function DishesPage() {
   const askDeleteDish = (dish) => {
     if (!dish?._id) return;
     setDeleteDishModal({ open: true, dish, deleting: false });
+  };
+
+  const askRevertDish = (dish) => {
+    if (!dish?._id || !getDishOrigin(dish).canRevert) return;
+    setRevertDishModal({ open: true, dish, reverting: false });
+  };
+
+  const closeRevertDishModal = () => {
+    setRevertDishModal({ open: false, dish: null, reverting: false });
+  };
+
+  const confirmRevertDish = async () => {
+    if (!revertDishModal.dish?._id || revertDishModal.reverting) return;
+    try {
+      setRevertDishModal((prev) => ({ ...prev, reverting: true }));
+      const revertedId = String(revertDishModal.dish._id);
+      const data = await apiRequest(`/api/kitchen/dishes/${revertedId}/revert-override`, { method: "POST" });
+      if (data?.removedOverrideId) {
+        setDishes((prev) => prev.filter((item) => String(item?._id) !== String(data.removedOverrideId)));
+      }
+      if (data?.dish?._id) {
+        setDishes((prev) => prev.map((item) => (String(item?._id) === String(data.dish._id) ? data.dish : item)));
+      }
+      if (activeDish?._id && String(activeDish._id) === revertedId) closeModal();
+      if (dishInfoOpenId === revertedId) closeDishInfo();
+      setDishError("");
+      setDishSuccess(data?.warning || "Plato restaurado al original");
+      closeRevertDishModal();
+      await loadDishes();
+    } catch (err) {
+      setDishError(err.message || "No se pudo volver al plato original.");
+      setRevertDishModal((prev) => ({ ...prev, reverting: false }));
+    }
   };
 
   const confirmDeleteDish = async () => {
@@ -712,86 +829,353 @@ export default function DishesPage() {
     () => dishes.find((dish) => dish?._id === dishInfoOpenId) || null,
     [dishInfoOpenId, dishes]
   );
-  if (isDiodGlobalMode) {
-    return (
-      <KitchenLayout>
-        <div className="kitchen-card">
-          <h3>Selecciona un hogar para gestionar platos</h3>
-          <p className="kitchen-muted">En modo global DIOD solo está disponible el catálogo master.</p>
-        </div>
-      </KitchenLayout>
+  const ingredientCategories = useMemo(() => {
+    const catMap = new Map();
+    ingredients.forEach((ing) => {
+      const cat = ing.categoryId;
+      if (cat?._id && cat.name) catMap.set(String(cat._id), cat);
+    });
+    return Array.from(catMap.values());
+  }, [ingredients]);
+
+  const ingredientCategoryCount = useMemo(() => {
+    const counts = {};
+    ingredients.forEach((ing) => {
+      const catId = String(ing.categoryId?._id || "");
+      if (catId) counts[catId] = (counts[catId] || 0) + 1;
+    });
+    return counts;
+  }, [ingredients]);
+
+  const sortedIngredientCategories = useMemo(() => {
+    return [...ingredientCategories].sort(
+      (a, b) => (ingredientCategoryCount[String(b._id)] || 0) - (ingredientCategoryCount[String(a._id)] || 0)
     );
-  }
+  }, [ingredientCategories, ingredientCategoryCount]);
+
+  const TOP_INGREDIENT_CATS = 6;
+
+  const extraIngredientCategories = useMemo(
+    () => sortedIngredientCategories.slice(TOP_INGREDIENT_CATS),
+    [sortedIngredientCategories]
+  );
+
+  const visibleIngredientCategoryChips = useMemo(() => {
+    const base = showAllIngredientCategories
+      ? sortedIngredientCategories
+      : sortedIngredientCategories.slice(0, TOP_INGREDIENT_CATS);
+    if (
+      selectedIngredientCategoryId &&
+      !base.some((c) => String(c._id) === selectedIngredientCategoryId)
+    ) {
+      const pinned = ingredientCategories.find((c) => String(c._id) === selectedIngredientCategoryId);
+      if (pinned) return [pinned, ...base];
+    }
+    return base;
+  }, [showAllIngredientCategories, sortedIngredientCategories, selectedIngredientCategoryId, ingredientCategories]);
+
+  const normalizedIngredientSearch = useMemo(
+    () => normalizeIngredientName(ingredientSearchTerm),
+    [ingredientSearchTerm]
+  );
+
+  const visibleIngredients = useMemo(() => {
+    let result = ingredients;
+    if (selectedIngredientCategoryId) {
+      result = result.filter(
+        (ing) => String(ing.categoryId?._id || "") === selectedIngredientCategoryId
+      );
+    }
+    if (normalizedIngredientSearch) {
+      result = result.filter((ing) => {
+        const nameMatch = normalizeIngredientName(ing.name || "").includes(normalizedIngredientSearch);
+        const catMatch = normalizeIngredientName(ing.categoryId?.name || "").includes(normalizedIngredientSearch);
+        return nameMatch || catMatch;
+      });
+    }
+    return result;
+  }, [ingredients, selectedIngredientCategoryId, normalizedIngredientSearch]);
 
   const ingredientEmptyMessage = useMemo(() => {
     if (ingredients.length === 0) {
       return "No hay ingredientes aún. Crea el primero.";
     }
-    if (ingredientSearchTerm.trim()) {
+    if (ingredientSearchTerm.trim() || selectedIngredientCategoryId) {
       return "No encontramos ingredientes con ese criterio.";
     }
     return "";
-  }, [ingredientSearchTerm, ingredients.length]);
+  }, [ingredientSearchTerm, ingredients.length, selectedIngredientCategoryId]);
+
+  const nextChallengeKey = onboardingState?.nextChallenge?.key;
+  const filteredIngredientSuggestions = useMemo(() => {
+    if (nextChallengeKey !== "create_ingredient" && nextChallengeKey !== "create_second_ingredient") return [];
+    const existing = new Set(ingredients.map((i) => normalizeIngredientName(i.name || "").toLowerCase()));
+    return ingredientSuggestions.filter((s) => !existing.has(normalizeIngredientName(s.text || "").toLowerCase()));
+  }, [nextChallengeKey, ingredientSuggestions, ingredients]);
+
+  const filteredDishSuggestions = useMemo(() => {
+    if (nextChallengeKey !== "create_dish") return [];
+    const existing = new Set(dishes.map((d) => normalizeIngredientName(d.name || "").toLowerCase()));
+    return dishSuggestions.filter((s) => !existing.has(normalizeIngredientName(s.text || "").toLowerCase()));
+  }, [nextChallengeKey, dishSuggestions, dishes]);
 
   const isIngredientsTab = activeTab === "ingredients";
-  const headerTitle = isIngredientsTab ? "Ingredientes" : "Platos";
+  const headerTitle = "Cocina";
   const headerDescription = isIngredientsTab
-    ? "Gestiona el catálogo de ingredientes con sus categorías y estado."
-    : "Administra tus platos y sus ingredientes en un solo lugar.";
+    ? isDiodGlobalMode
+      ? "Catálogo master de productos — visibles en todos los hogares."
+      : "Gestiona el catálogo de productos: ingredientes, artículos del hogar y todo lo que usas."
+    : isDiodGlobalMode
+      ? "Catálogo master de platos — visibles en todos los hogares."
+      : "Gestiona tu cocina: platos, productos y todo lo que usas para planificar.";
   const headerActionLabel = isIngredientsTab
-    ? "Nuevo ingrediente"
-    : activeTab === "side"
-      ? "Nueva guarnición"
-      : "Nuevo plato";
+    ? isDiodGlobalMode ? "Nuevo producto master" : "Nuevo producto"
+    : isDiodGlobalMode ? "Nuevo plato master" : "Nuevo plato";
   const headerActionHandler = isIngredientsTab ? startIngredientCreate : startCreate;
+
+  if (loading && !isIngredientsTab) {
+    return (
+      <KitchenLayout>
+        <DishesPageSkeleton />
+      </KitchenLayout>
+    );
+  }
 
   return (
     <KitchenLayout>
       <div className="kitchen-dishes-page">
-        <div className="kitchen-dishes-header">
-          <div>
-            <h2>{headerTitle}</h2>
-            <p className="kitchen-muted">{headerDescription}</p>
+        {isDiodGlobalMode && (
+          <div className="kitchen-master-mode-banner">
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+              <circle cx="10" cy="10" r="8" />
+              <path d="M10 6v4l2.5 2.5" />
+            </svg>
+            <span>Modo catálogo master · Los cambios afectan a <strong>todos los hogares</strong></span>
           </div>
-          <button className="kitchen-button" type="button" onClick={headerActionHandler}>
-            {headerActionLabel}
-          </button>
-        </div>
-        <div className="kitchen-dishes-tabs" role="tablist" aria-label="Secciones de cocina">
-          <button
-            className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "main"}
-            onClick={() => setActiveTab("main")}
-          >
-            Platos
-          </button>
-          <button
-            className={`kitchen-tab-button ${activeTab === "side" ? "is-active" : ""}`}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "side"}
-            onClick={() => setActiveTab("side")}
-          >
-            Guarniciones
-          </button>
-          <button
-            className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "ingredients"}
-            onClick={() => setActiveTab("ingredients")}
-          >
-            Ingredientes
-          </button>
-        </div>
-        <div className="kitchen-dishes-search">
+        )}
+        {/* ── Unified Explorer Panel ──────────────────────────────────── */}
+        <PageHeader
+          title={headerTitle}
+          subtitle={headerDescription}
+          primaryAction={
+            <button className="kitchen-button dishes-new-button" type="button" onClick={headerActionHandler}>
+              + {headerActionLabel}
+            </button>
+          }
+          topRef={panelHeadingRef}
+          className="dishes-explorer-panel"
+        >
+          {/* ── FILA DE CONTROLES: tabs + sliders + cenas toggle ── */}
+          <div className="dishes-controls-row">
+            <div className="dishes-explorer-nav" role="tablist" aria-label="Secciones de cocina">
+              <button
+                className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "main"}
+                onClick={() => setActiveTab("main")}
+              >
+                Platos
+              </button>
+              <button
+                className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "ingredients"}
+                onClick={() => setActiveTab("ingredients")}
+              >
+                Productos
+              </button>
+            </div>
+            <div className="dishes-filters-right">
+              <button
+                type="button"
+                className={`dishes-sliders-btn${filterPanelOpen ? " is-open" : ""}`}
+                onClick={() => setFilterPanelOpen((v) => !v)}
+                aria-label="Filtros avanzados"
+                aria-expanded={filterPanelOpen}
+              >
+                <SlidersHorizontal size={18} />
+                {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "") ? (
+                  <span className="dishes-sliders-dot" aria-hidden="true" />
+                ) : null}
+              </button>
+              {!isIngredientsTab ? (
+                <button
+                  type="button"
+                  className={`dishes-cenas-toggle${catalogOnly ? " is-on" : ""}`}
+                  onClick={() => {
+                    setCatalogOnly((v) => {
+                      if (!v) setMineOnly(false);
+                      return !v;
+                    });
+                  }}
+                  aria-label="Solo catálogo"
+                  aria-pressed={catalogOnly}
+                >
+                  <BookOpen size={14} aria-hidden="true" />
+                  <span>Solo catálogo</span>
+                  <span className={`dishes-cenas-track${catalogOnly ? " is-on" : ""}`} aria-hidden="true">
+                    <span className="dishes-cenas-thumb" />
+                  </span>
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Dinner gate banner (outside panel) */}
+          {!canUseDinners && dinnerGateOpen ? (
+            <DinnerUpgradeBanner
+              className="dinner-upgrade-banner-dishes"
+              onClose={() => setDinnerGateOpen(false)}
+            />
+          ) : null}
+
+          {/* ── PANEL DE FILTROS (colapsable) ── */}
+          {filterPanelOpen ? (
+            <div className="dishes-filter-panel">
+              {/* Sección Visibilidad: Solo cenas + Mis platos */}
+              {!isIngredientsTab ? (
+                <div className="dishes-filter-section">
+                  <span className="dishes-filter-section-title">Visibilidad</span>
+                  <div className="dishes-filter-panel-checks">
+                    <label className="dishes-filter-check-row">
+                      <input
+                        type="checkbox"
+                        className="dishes-filter-check"
+                        checked={dinnerOnly}
+                        onChange={() => {
+                          if (!canUseDinners) { setDinnerGateOpen((v) => !v); return; }
+                          setDinnerOnly((v) => !v);
+                        }}
+                      />
+                      <span>Solo cenas</span>
+                    </label>
+                    {!isDiodGlobalMode ? (
+                      <label className="dishes-filter-check-row">
+                        <input
+                          type="checkbox"
+                          className="dishes-filter-check"
+                          checked={mineOnly}
+                          onChange={() => {
+                            setMineOnly((v) => {
+                              if (!v) setCatalogOnly(false);
+                              return !v;
+                            });
+                          }}
+                        />
+                        <span>Mis platos</span>
+                      </label>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Sección Ingrediente (dishes tab) */}
+              {!isIngredientsTab ? (
+                <div className="dishes-filter-section">
+                  <span className="dishes-filter-section-title">Ingrediente</span>
+                  <div className="dishes-filter-pills dishes-filter-pills--wrap">
+                    <button
+                      type="button"
+                      className={`kitchen-filter-chip${!selectedDishCategoryId ? " is-active is-all" : ""}`}
+                      onClick={() => setSelectedDishCategoryId("")}
+                    >
+                      Todos
+                    </button>
+                    {visibleDishCategoryChips.map((category) => {
+                      const categoryId = String(category?._id || "");
+                      const selected = String(selectedDishCategoryId || "") === categoryId;
+                      return (
+                        <button
+                          key={categoryId}
+                          type="button"
+                          className={`kitchen-filter-chip${selected ? " is-active" : ""}`}
+                          onClick={() => setSelectedDishCategoryId((prev) => (String(prev || "") === categoryId ? "" : categoryId))}
+                        >
+                          <span className="kitchen-filter-chip-dot" style={{ background: category.colorText || "#475467" }} />
+                          <span>{category.name}</span>
+                        </button>
+                      );
+                    })}
+                    {extraDishCategories.length > 0 ? (
+                      <button
+                        type="button"
+                        className="kitchen-filter-chip dishes-cat-more"
+                        onClick={() => setShowAllDishCategories((v) => !v)}
+                      >
+                        {showAllDishCategories ? "Menos" : `+${extraDishCategories.length} más`}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Sección Categoría (ingredients tab) */}
+              {isIngredientsTab && !ingredientsLoading && ingredientCategories.length > 0 ? (
+                <div className="dishes-filter-section">
+                  <span className="dishes-filter-section-title">Categoría</span>
+                  <div className="dishes-filter-pills dishes-filter-pills--wrap">
+                    <button
+                      type="button"
+                      className={`kitchen-filter-chip${!selectedIngredientCategoryId ? " is-active is-all" : ""}`}
+                      onClick={() => setSelectedIngredientCategoryId("")}
+                    >
+                      Todos
+                    </button>
+                    {visibleIngredientCategoryChips.map((cat) => {
+                      const catId = String(cat._id || "");
+                      const selected = selectedIngredientCategoryId === catId;
+                      return (
+                        <button
+                          key={catId}
+                          type="button"
+                          className={`kitchen-filter-chip${selected ? " is-active" : ""}`}
+                          onClick={() => setSelectedIngredientCategoryId((prev) => (prev === catId ? "" : catId))}
+                        >
+                          {cat.colorText ? <span className="kitchen-filter-chip-dot" style={{ background: cat.colorText }} /> : null}
+                          {cat.name}
+                          <span className="dishes-cat-count">{ingredientCategoryCount[catId] || 0}</span>
+                        </button>
+                      );
+                    })}
+                    {extraIngredientCategories.length > 0 ? (
+                      <button
+                        type="button"
+                        className="kitchen-filter-chip dishes-cat-more"
+                        onClick={() => setShowAllIngredientCategories((v) => !v)}
+                      >
+                        {showAllIngredientCategories ? "Menos" : `+${extraIngredientCategories.length} más`}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Limpiar filtros */}
+              {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "") ? (
+                <div className="dishes-filter-panel-footer">
+                  <button
+                    type="button"
+                    className="dishes-filter-clear-btn"
+                    onClick={() => {
+                      setMineOnly(false);
+                      setDinnerOnly(false);
+                      setSelectedDishCategoryId("");
+                      setSelectedIngredientCategoryId("");
+                    }}
+                  >
+                    Limpiar filtros
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Buscador */}
           <input
-            className="kitchen-input"
-            placeholder={
-              isIngredientsTab ? "Buscar ingrediente…" : "Buscar por plato o ingrediente…"
-            }
+            className="kitchen-input dishes-search-input"
+            placeholder={isIngredientsTab ? "Buscar producto…" : "Buscar por plato o producto…"}
             value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
             onChange={(event) =>
               isIngredientsTab
@@ -799,69 +1183,52 @@ export default function DishesPage() {
                 : setDishSearchTerm(event.target.value)
             }
           />
-        </div>
-        {!isIngredientsTab ? (
-          <>
-            <div className="kitchen-dishes-tabs kitchen-dishes-subtabs" role="tablist" aria-label="Filtrar por tipo de comida">
-              <button
-                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.ALL ? "is-active" : ""}`}
-                type="button"
-                onClick={() => setSelectedMealFilter(MEAL_FILTERS.ALL)}
-              >
-                Todos
-              </button>
-              <button
-                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.LUNCH ? "is-active" : ""}`}
-                type="button"
-                onClick={() => setSelectedMealFilter(MEAL_FILTERS.LUNCH)}
-              >
-                Comidas
-              </button>
-              <button
-                className={`kitchen-tab-button ${selectedMealFilter === MEAL_FILTERS.DINNER ? "is-active" : ""}`}
-                type="button"
-                onClick={() => setSelectedMealFilter(MEAL_FILTERS.DINNER)}
-              >
-                Cenas
-              </button>
-            </div>
-            <div className="kitchen-dish-category-filters" role="toolbar" aria-label="Filtrar por categoría">
-            <button
-              type="button"
-              className={`kitchen-filter-chip ${!selectedDishCategoryId ? "is-active is-all" : ""}`}
-              onClick={() => setSelectedDishCategoryId("")}
-            >
-              Todos
-            </button>
-            {filterChips.map((category) => {
-              const categoryId = String(category?._id || "");
-              const selected = String(selectedDishCategoryId || "") === categoryId;
-              return (
+
+          {/* Contador resultados */}
+          {!loading && !ingredientsLoading ? (
+            <p className="dishes-results-count">
+              {isIngredientsTab
+                ? `${visibleIngredients.length} ${visibleIngredients.length === 1 ? "producto encontrado" : "productos encontrados"}`
+                : `${visibleDishes.length} ${visibleDishes.length === 1 ? "plato encontrado" : "platos encontrados"}`}
+            </p>
+          ) : null}
+        </PageHeader>
+        {/* Onboarding suggestions (outside panel, above grid) */}
+        {(isIngredientsTab ? filteredIngredientSuggestions : (activeTab === "main" ? filteredDishSuggestions : [])).length > 0 && (
+          <div style={{ padding: "4px 4px 0" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "var(--hf-brand-darker)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Sugerencias para ti
+            </p>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {(isIngredientsTab ? filteredIngredientSuggestions : filteredDishSuggestions).map((s) => (
                 <button
-                  key={categoryId}
+                  key={s.id}
                   type="button"
-                  className={`kitchen-filter-chip ${selected ? "is-active" : ""}`}
-                  style={selected ? { background: category.colorBg || "#eef2ff", borderColor: category.colorText || "#667085" } : undefined}
-                  onClick={() => setSelectedDishCategoryId((previous) => (String(previous || "") === categoryId ? "" : categoryId))}
+                  onClick={() => isIngredientsTab ? openIngredientWithSuggestion(s.text) : openDishWithSuggestion(s.text)}
+                  style={{
+                    fontSize: 12, padding: "4px 12px", borderRadius: 999,
+                    background: "#eef2ff", border: "1.5px solid #c7d2fe",
+                    color: "#4338ca", cursor: "pointer", fontWeight: 600,
+                    transition: "background 0.15s"
+                  }}
                 >
-                  <span className="kitchen-filter-chip-dot" style={{ background: category.colorText || "#475467" }} />
-                  <span>{category.name}</span>
+                  + {s.text}
                 </button>
-              );
-            })}
-          </div>
-          </>
-        ) : null}
-        {isIngredientsTab ? (
-          ingredientsLoading ? (
-            <div className="kitchen-card kitchen-dishes-loading">Cargando ingredientes...</div>
-          ) : ingredients.length === 0 ? (
-            <div className="kitchen-card kitchen-empty">
-              <p>{ingredientEmptyMessage}</p>
+              ))}
             </div>
-          ) : (
+          </div>
+        )}
+        {isIngredientsTab ? (
+          <>
+            {ingredientsLoading ? (
+              <DishGridSkeleton ingredients />
+            ) : visibleIngredients.length === 0 ? (
+              <div className="kitchen-card kitchen-empty">
+                <p>{ingredientEmptyMessage}</p>
+              </div>
+            ) : (
             <div className="kitchen-dishes-grid">
-              {ingredients.map((ingredient) => {
+              {visibleIngredients.map((ingredient) => {
                 const categoryName = ingredient.categoryId?.name || "Sin categoría";
                 const isInfoOpen = ingredientInfoOpenId === ingredient._id && !isInfoMobile;
                 return (
@@ -918,7 +1285,7 @@ export default function DishesPage() {
                           ) : null}
                         </div>
                         <button
-                          className="kitchen-icon-button"
+                          className="kitchen-icon-button edit"
                           type="button"
                           onClick={() => startIngredientEdit(ingredient)}
                           aria-label={`Editar ${ingredient.name}`}
@@ -943,7 +1310,7 @@ export default function DishesPage() {
                           </svg>
                         </button>
                         <button
-                          className="kitchen-icon-button"
+                          className="kitchen-icon-button duplicate"
                           type="button"
                           onClick={() => duplicateIngredient(ingredient)}
                           aria-label={`Duplicar ${ingredient.name}`}
@@ -1002,9 +1369,10 @@ export default function DishesPage() {
                 );
               })}
             </div>
-          )
+            )}
+          </>
         ) : loading ? (
-          <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
+          <DishGridSkeleton />
         ) : visibleDishes.length === 0 ? (
           <div className="kitchen-card kitchen-empty">
             <p>{emptyMessage}</p>
@@ -1019,13 +1387,17 @@ export default function DishesPage() {
               const categoryKey = dish?.dishCategoryId?._id || dish?.dishCategoryId || "";
               const dishCategory = categoryKey ? dishCategoryMap.get(String(categoryKey)) : null;
               const dishCategoryCode = resolveCategoryCode(dishCategory);
-              const showCategoryIcon = !dish.sidedish && Boolean(dishCategoryCode);
+              const showCategoryIcon = Boolean(dishCategoryCode);
               const randomEnabled = dish.allowRandom !== false;
               const toggleDisabled = dishTogglePendingId === dish._id;
+              const dishOrigin = getDishOrigin(dish);
+              const isCatalogDish = isDishFromCatalog(dish);
+              const packColor = isCatalogDish && dish.sourcePackColor ? dish.sourcePackColor : null;
               return (
                 <article
-                  className={`kitchen-dish-card ${dish.sidedish ? "is-sidedish" : ""}`}
+                  className={`kitchen-dish-card ${isCatalogDish ? "is-catalog" : ""} is-origin-${dishOrigin.type}`}
                   key={dish._id}
+                  style={packColor ? { "--dish-pack-color": packColor } : undefined}
                 >
                   <div className="kitchen-dish-main">
                     <div className="kitchen-dish-title-row">
@@ -1034,7 +1406,7 @@ export default function DishesPage() {
                         {dish.special ? (
                           <span
                             className="kitchen-dish-special-inline-star"
-                            title="Plato especial (excluido de randomización)"
+                            title="Plato especial — excluido del plan automático"
                             aria-label="Plato especial"
                           >
                             ★
@@ -1042,83 +1414,100 @@ export default function DishesPage() {
                         ) : null}
                       </div>
                     </div>
-                    {!dish.sidedish ? (
-                      <div className="kitchen-dish-category-meta">
-                        {showCategoryIcon ? (
-                          <CategoryIcon
-                            categoryCode={dishCategoryCode}
-                            className="kitchen-dish-category-icon"
-                            title={dishCategory?.name || dishCategoryCode}
-                          />
-                        ) : null}
-                        <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
+                    <div className="kitchen-dish-category-meta">
+                      {showCategoryIcon ? (
+                        <CategoryIcon
+                          categoryCode={dishCategoryCode}
+                          className="kitchen-dish-category-icon"
+                          title={dishCategory?.name || dishCategoryCode}
+                        />
+                      ) : null}
+                      <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
+                      <span className={`kitchen-dish-origin-badge is-${dishOrigin.type}`}>{dishOrigin.label}</span>
+                    </div>
+                    {isCatalogDish && dish.sourcePackTitle ? (
+                      <div className="kitchen-dish-catalog-origin">
+                        <svg viewBox="0 0 14 14" aria-hidden="true" style={{ width: 11, height: 11, flexShrink: 0 }}>
+                          <rect x="0.75" y="0.75" width="12.5" height="12.5" rx="2.25" strokeWidth="1.4" fill="none" stroke="currentColor" />
+                          <path d="M3 4h8M3 7h5M3 10h6" strokeWidth="1.2" strokeLinecap="round" stroke="currentColor" />
+                        </svg>
+                        <span>{dish.sourcePackTitle}</span>
                       </div>
                     ) : null}
                   </div>
                   <div className="kitchen-dish-actions-bar">
-                    <label className={`kitchen-dish-random-toggle ${toggleDisabled ? "is-loading" : ""}`}>
-                      <span className="kitchen-dish-random-toggle-copy">Permitir en randomización</span>
-                      <span className="kitchen-toggle">
-                        <input
-                          type="checkbox"
-                          className="kitchen-toggle-input"
-                          checked={randomEnabled}
-                          disabled={toggleDisabled}
-                          onChange={(event) => toggleDishAllowRandom(dish, event.target.checked)}
-                        />
-                        <span className="kitchen-toggle-track" aria-hidden="true" />
-                      </span>
+                    <label
+                      className={`kitchen-dish-random-checkbox${toggleDisabled ? " is-loading" : ""}${dish.special ? " is-special" : ""}`}
+                      title={dish.special ? "Plato especial — excluido del plan automático" : (randomEnabled ? "Excluir de randomización" : "Incluir en randomización")}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={randomEnabled}
+                        disabled={toggleDisabled || Boolean(dish.special)}
+                        onChange={() => toggleDishAllowRandom(dish, !randomEnabled)}
+                      />
+                      <span>Incluir en randomización</span>
                     </label>
                     <div className="kitchen-dish-actions">
                       <div className="kitchen-dish-info-wrap">
-                        <button
-                          ref={(node) => registerInfoButton(dish._id, node)}
-                          className="kitchen-icon-button info"
-                          type="button"
-                          onClick={() => toggleDishInfo(dish._id)}
-                          aria-label={`Ver ingredientes de ${dish.name}`}
-                          aria-expanded={dishInfoOpenId === dish._id}
-                          aria-controls={`dish-info-${dish._id}`}
-                          title="Ingredientes"
-                        >
-                          <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              d="M12 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"
-                              fill="currentColor"
-                            />
-                            <path
-                              d="M12 11v6m9-5a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
-                        {isInfoOpen ? (
-                          <div
-                            id={`dish-info-${dish._id}`}
-                            className="kitchen-dish-info-popover"
-                            role="dialog"
-                            aria-label={`Ingredientes de ${dish.name}`}
-                            ref={infoPopoverRef}
-                          >
-                            <h4 className="kitchen-dish-info-heading">Ingredientes</h4>
-                            {ingredientNames.length > 0 ? (
-                              <ul className="kitchen-dish-info-list">
-                                {ingredientNames.map((name, index) => (
-                                  <li key={`${dish._id}-ingredient-${index}`}>{name}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
-                            )}
-                          </div>
-                        ) : null}
+                        {(() => {
+                          const hasRecipe = Boolean(dish.recipe && (dish.recipe.ingredients?.length > 0 || dish.recipe.steps));
+                          return (
+                            <>
+                              <button
+                                ref={(node) => registerInfoButton(dish._id, node)}
+                                className={`kitchen-icon-button info${hasRecipe ? " has-recipe" : ""}`}
+                                type="button"
+                                onClick={() => {
+                                  if (hasRecipe) { setRecipeModalDish(dish); }
+                                  else { toggleDishInfo(dish._id); }
+                                }}
+                                aria-label={hasRecipe ? `Ver elaboración de ${dish.name}` : `Ver ingredientes de ${dish.name}`}
+                                aria-expanded={dishInfoOpenId === dish._id}
+                                aria-controls={`dish-info-${dish._id}`}
+                                title={hasRecipe ? "Ver elaboración" : "Ingredientes"}
+                              >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path
+                                    d="M12 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"
+                                    fill="currentColor"
+                                  />
+                                  <path
+                                    d="M12 11v6m9-5a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </button>
+                              {isInfoOpen ? (
+                                <div
+                                  id={`dish-info-${dish._id}`}
+                                  className="kitchen-dish-info-popover"
+                                  role="dialog"
+                                  aria-label={`Ingredientes de ${dish.name}`}
+                                  ref={infoPopoverRef}
+                                >
+                                  <h4 className="kitchen-dish-info-heading">Ingredientes</h4>
+                                  {ingredientNames.length > 0 ? (
+                                    <ul className="kitchen-dish-info-list">
+                                      {ingredientNames.map((name, index) => (
+                                        <li key={`${dish._id}-ingredient-${index}`}>{name}</li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
+                                  )}
+                                </div>
+                              ) : null}
+                            </>
+                          );
+                        })()}
                       </div>
                       <button
-                        className="kitchen-icon-button"
+                        className="kitchen-icon-button edit"
                         type="button"
                         onClick={() => startEdit(dish)}
                         aria-label={`Editar ${dish.name}`}
@@ -1169,7 +1558,7 @@ export default function DishesPage() {
                           </svg>
                         </button>
                       ) : null}
-                      {dish.sidedish || user?.role === "admin" || user?.role === "owner" || user?.globalRole === "diod" ? (
+                      {user?.role === "admin" || user?.role === "owner" || user?.globalRole === "diod" ? (
                         <button
                           className="kitchen-icon-button danger"
                           type="button"
@@ -1203,6 +1592,16 @@ export default function DishesPage() {
             })}
           </div>
         )}
+        <button
+          className="dishes-fab"
+          type="button"
+          onClick={headerActionHandler}
+          aria-label={`+ ${headerActionLabel}`}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+          </svg>
+        </button>
         {dishError ? <div className="kitchen-alert error">{dishError}</div> : null}
         {dishSuccess ? <div className="kitchen-alert success">{dishSuccess}</div> : null}
         {ingredientsError && isIngredientsTab ? (
@@ -1210,29 +1609,56 @@ export default function DishesPage() {
         ) : null}
       </div>
 
+      {showStickyAction && (
+        <div className="dishes-sticky-action">
+          <button className="kitchen-button dishes-sticky-action-btn" type="button" onClick={headerActionHandler}>
+            + {headerActionLabel}
+          </button>
+        </div>
+      )}
+
+      {recipeModalDish ? (
+        <RecipeModal dish={recipeModalDish} onClose={() => setRecipeModalDish(null)} />
+      ) : null}
       <DishModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        onSaved={async () => {
+        onSaved={async (savedDish) => {
           await loadDishes();
+          if (!activeDish) {
+            notifyOnboarding("create_dish");
+            notifyWeekly("dish_created");
+            if ((savedDish?.ingredients?.length ?? 0) > 0) notifyOnboarding("add_ingredient_to_dish");
+          } else if ((savedDish?.ingredients?.length ?? 0) > 0) {
+            notifyOnboarding("add_ingredient_to_dish");
+          }
+          setDishSuggestionName("");
         }}
+        onRecipeSaved={async () => { await loadDishes(); }}
         categories={categories}
         dishCategories={dishCategories}
         onCategoryCreated={onCategoryCreated}
         initialDish={activeDish}
-        initialSidedish={initialSidedish}
+        initialName={dishSuggestionName}
         initialIsDinner={Boolean(activeDish?.isDinner)}
         scope={isDiodGlobalMode ? "master" : undefined}
+        originInfo={activeDish ? getDishOrigin(activeDish) : null}
+        onRevertOriginal={() => askRevertDish(activeDish)}
       />
       <IngredientModal
         isOpen={isIngredientModalOpen}
         onClose={closeIngredientModal}
         onSaved={async () => {
           await loadIngredients(ingredientSearchTerm);
+          if (!activeIngredient) {
+            notifyOnboarding("create_ingredient");
+            notifyWeekly("ingredient_created");
+          }
+          setIngredientSuggestionName("");
         }}
         categories={categories}
         onCategoryCreated={onCategoryCreated}
-        initialIngredient={activeIngredient}
+        initialIngredient={ingredientSuggestionName ? { name: ingredientSuggestionName } : activeIngredient}
         scope={isDiodGlobalMode ? "master" : undefined}
       />
       {isInfoMobile && (activeInfoDish || activeInfoIngredient) ? (
@@ -1393,6 +1819,44 @@ export default function DishesPage() {
               </button>
               <button className="kitchen-button secondary" type="button" onClick={closeAssignModal}>
                 Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {revertDishModal.open ? (
+        <div className="kitchen-modal-backdrop" role="presentation" onClick={closeRevertDishModal}>
+          <div
+            className="kitchen-modal kitchen-context-modal small"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Volver al plato original"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="kitchen-modal-header">
+              <div>
+                <h3>¿Volver al plato original?</h3>
+                <p className="kitchen-muted">
+                  Se eliminarán tus cambios personalizados y volverás a ver la versión original del catálogo.
+                </p>
+              </div>
+            </div>
+            <div className="kitchen-modal-actions">
+              <button
+                type="button"
+                className="kitchen-button ghost"
+                onClick={closeRevertDishModal}
+                disabled={revertDishModal.reverting}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="kitchen-button"
+                onClick={confirmRevertDish}
+                disabled={revertDishModal.reverting}
+              >
+                {revertDishModal.reverting ? "Restaurando..." : "Volver al original"}
               </button>
             </div>
           </div>

@@ -10,12 +10,14 @@ function escapeHtml(value) {
 export function buildHouseholdInvitationEmail({
   householdName,
   inviteLink,
+  clerkInviteLink,
   inviteCode,
   inviterName,
   recipientEmail
 }) {
   const safeHouseholdName = escapeHtml(householdName || "your household");
   const safeInviteLink = escapeHtml(inviteLink || "");
+  const safeClerkInviteLink = escapeHtml(clerkInviteLink || inviteLink || "");
   const safeInviteCode = escapeHtml(inviteCode || "");
   const safeInviterName = escapeHtml(inviterName || "Someone from Lunchfy");
   const safeRecipientEmail = escapeHtml(recipientEmail || "");
@@ -45,12 +47,12 @@ export function buildHouseholdInvitationEmail({
                   <div style="padding:28px 32px 10px;">
                     <h2 style="margin:0 0 10px;font-size:18px;line-height:1.4;color:#182230;">Option 1: join with one click</h2>
                     <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#475467;">
-                      Click the button below to open your Lunchfy invitation. If you do not have an account yet, we will guide you through signup and connect you to the right household automatically.
+                      Click the button below to create or sign in with the secure account flow and connect to the right household automatically.
                     </p>
                     <table role="presentation" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 16px;">
                       <tr>
                         <td style="border-radius:999px;background:#3f5bd8;text-align:center;">
-                          <a href="${safeInviteLink}" style="display:inline-block;padding:14px 24px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;">
+                          <a href="${safeClerkInviteLink}" style="display:inline-block;padding:14px 24px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;">
                             Join this household
                           </a>
                         </td>
@@ -60,7 +62,7 @@ export function buildHouseholdInvitationEmail({
                       If the button does not open, use this link:
                     </p>
                     <p style="margin:0 0 26px;font-size:13px;line-height:1.6;word-break:break-word;">
-                      <a href="${safeInviteLink}" style="color:#3f5bd8;text-decoration:underline;">${safeInviteLink}</a>
+                      <a href="${safeClerkInviteLink}" style="color:#3f5bd8;text-decoration:underline;">${safeClerkInviteLink}</a>
                     </p>
                     <div style="border-top:1px solid #edf1ff;padding-top:24px;">
                       <h2 style="margin:0 0 10px;font-size:18px;line-height:1.4;color:#182230;">Option 2: sign up manually with this household code</h2>

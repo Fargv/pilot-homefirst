@@ -1,46 +1,23 @@
 import React from "react";
 import KitchenLayout from "../Layout.jsx";
 import Skeleton from "./ui/Skeleton.jsx";
-
-function WeekDayStripSkeleton({ chipCount = 7 }) {
-  return (
-    <section className="kitchen-weekdays-strip kitchen-card kitchen-skeleton-panel" aria-label="Cargando panel de dias">
-      <div className="kitchen-weekdays-list kitchen-skeleton-weekdays-list">
-        {Array.from({ length: chipCount }).map((_, index) => (
-          <div key={`weekday-skeleton-${index}`} className="kitchen-skeleton-weekday">
-            <Skeleton className="kitchen-skeleton-weekday-circle" />
-            <Skeleton className="kitchen-skeleton-weekday-label" />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
+import { DayTabsSkeleton, MealTabsSkeleton, PageHeaderSkeleton, WeekControlsSkeleton } from "./ScreenSkeletons.jsx";
 
 function WeekHeaderSkeleton({ showTabs = true }) {
   return (
     <section className="kitchen-week-header">
-      <div className="kitchen-week-header-actions">
-        <div className="kitchen-week-nav-row">
-          <div className="kitchen-week-nav kitchen-skeleton-week-nav" aria-hidden="true">
-            <Skeleton className="kitchen-skeleton-week-arrow" />
-            <Skeleton className="kitchen-skeleton-week-input" />
-            <Skeleton className="kitchen-skeleton-week-arrow" />
-          </div>
-          <Skeleton className="kitchen-skeleton-now-button" />
-        </div>
-        {showTabs ? (
-          <div className="kitchen-meal-tabs kitchen-meal-tabs-with-link kitchen-skeleton-tabs" aria-hidden="true">
-            <Skeleton className="kitchen-skeleton-tab is-active" />
-            <Skeleton className="kitchen-skeleton-tab" />
-            <Skeleton className="kitchen-skeleton-tab kitchen-skeleton-tab-link" />
+      <PageHeaderSkeleton
+        className="kitchen-week-skeleton-header"
+        primaryAction
+        secondaryLeft={<WeekControlsSkeleton />}
+        secondaryRight={showTabs ? (
+          <div className="kitchen-week-header-tabs-row skeleton-week-tabs-row">
+            <MealTabsSkeleton />
+            <Skeleton className="skeleton-icon-button kitchen-tab-share-button" />
           </div>
         ) : null}
-        <div className="kitchen-week-header-utility-row">
-          <Skeleton className="kitchen-skeleton-utility-pill" />
-        </div>
-        <Skeleton className="kitchen-skeleton-inline-copy" />
-      </div>
+        footer={<DayTabsSkeleton />}
+      />
     </section>
   );
 }
@@ -98,7 +75,6 @@ export default function WeekPageSkeleton({
 }) {
   return (
     <div className={["kitchen-week-controls", className].filter(Boolean).join(" ")}>
-      <WeekDayStripSkeleton chipCount={chipCount} />
       <div className="kitchen-week-mobile-frame">
         <WeekHeaderSkeleton showTabs={showTabs} />
         <div className="kitchen-week-carousel kitchen-skeleton-carousel">

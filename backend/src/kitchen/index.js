@@ -9,6 +9,13 @@ import adminRoutes from "./routes/admin.js";
 import householdRoutes from "./routes/household.js";
 import dishCategoryRoutes from "./routes/dishCategories.js";
 import pushRoutes from "./routes/push.js";
+import catalogRoutes from "./routes/catalog.js";
+import bitesRoutes from "./routes/bites.js";
+import plansRoutes from "./routes/plans.js";
+import onboardingRoutes from "./routes/onboarding.js";
+import weeklyRoutes from "./routes/weekly.js";
+import betaRoutes from "./routes/beta.js";
+import basicsRoutes from "./routes/basics.js";
 
 const router = express.Router();
 
@@ -22,5 +29,12 @@ router.use("/admin", adminRoutes);
 router.use("/household", householdRoutes);
 router.use("/dish-categories", dishCategoryRoutes);
 router.use("/push", pushRoutes);
+router.use("/catalog", catalogRoutes);
+router.use("/bites", bitesRoutes);
+router.use("/plans", plansRoutes);
+router.use("/onboarding", onboardingRoutes);
+router.use("/weekly", weeklyRoutes);
+router.use("/beta", betaRoutes);
+router.use("/basics", basicsRoutes);
 
 export default router;

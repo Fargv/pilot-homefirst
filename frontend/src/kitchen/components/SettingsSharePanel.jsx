@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../api.js";
-import { buildInviteShareUrl } from "../deepLinks.js";
+import { buildClerkInviteCodeShareUrl, buildClerkInviteShareUrl, buildInviteShareUrl } from "../deepLinks.js";
 import ShareWhatsAppButton from "./ShareWhatsAppButton.jsx";
 import { isUserLimitReachedError } from "../subscription.js";
 
@@ -35,6 +35,7 @@ export default function SettingsSharePanel({
   const [householdCode, setHouseholdCode] = useState(initialHouseholdCode || "");
   const [loadingCode, setLoadingCode] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedClerkLink, setCopiedClerkLink] = useState(false);
   const [recentInvitations, setRecentInvitations] = useState([]);
   const [shareInvite, setShareInvite] = useState(null);
 
@@ -168,6 +169,12 @@ export default function SettingsSharePanel({
     return () => clearTimeout(timer);
   }, [copiedCode]);
 
+  useEffect(() => {
+    if (!copiedClerkLink) return;
+    const timer = setTimeout(() => setCopiedClerkLink(false), 900);
+    return () => clearTimeout(timer);
+  }, [copiedClerkLink]);
+
   const generateCode = async () => {
     if (!shareHouseholdId) {
       setSubmitError("Selecciona primero el household al que quieres invitar.");
@@ -199,6 +206,16 @@ export default function SettingsSharePanel({
     }
   };
 
+  const copyClerkInviteCodeLink = async () => {
+    if (!householdCode) return;
+    try {
+      await navigator.clipboard.writeText(buildClerkInviteCodeShareUrl(householdCode));
+      setCopiedClerkLink(true);
+    } catch {
+      setSubmitError("No se pudo copiar el link de Clerk.");
+    }
+  };
+
   const prepareInviteShare = async () => {
     if (!shareHouseholdId) {
       setSubmitError("Selecciona primero el household al que quieres invitar.");
@@ -215,12 +232,13 @@ export default function SettingsSharePanel({
         body: JSON.stringify(isDiod ? { householdId: shareHouseholdId } : {})
       });
       const inviteUrl = data?.inviteLink || buildInviteShareUrl(data?.token || "");
+      const clerkInviteUrl = data?.clerkInviteLink || buildClerkInviteShareUrl(data?.token || "");
       setShareInvite({
         id: "household-invite",
         label: "Invitar al hogar",
-        description: "Comparte un acceso con token seguro. La otra persona tendra que iniciar sesion antes de unirse.",
-        url: inviteUrl,
-        message: `Join my household in HomeFirst: ${inviteUrl}`
+        description: "Comparte un acceso con token seguro. La otra persona puede crear cuenta con Clerk y unirse al hogar.",
+        url: clerkInviteUrl || inviteUrl,
+        message: `Join my household in HomeFirst: ${clerkInviteUrl || inviteUrl}`
       });
       await loadShareContext(shareHouseholdId);
     } catch (error) {
@@ -390,7 +408,19 @@ export default function SettingsSharePanel({
             >
               {copiedCode ? "OK" : "Copiar"}
             </button>
+            <button
+              type="button"
+              className={`settings-mini-icon ${copiedClerkLink ? "is-copied" : ""}`}
+              onClick={copyClerkInviteCodeLink}
+              disabled={!householdCode}
+              aria-label="Copiar link de invitacion con Clerk"
+            >
+              {copiedClerkLink ? "OK" : "Link Clerk"}
+            </button>
           </div>
+          <p className="kitchen-muted">
+            El link Clerk abre el alta segura y pre-rellena este codigo para unirse al hogar.
+          </p>
         </div>
 
         <div className="settings-block">

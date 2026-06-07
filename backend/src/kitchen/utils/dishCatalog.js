@@ -2,9 +2,30 @@ import { HiddenMaster } from "../models/HiddenMaster.js";
 import { CATALOG_SCOPES } from "./catalogScopes.js";
 
 export const DISH_HIDDEN_MASTER_TYPES = {
-  MAIN: "dish",
-  SIDE: "side"
+  MAIN: "dish"
 };
+
+export function buildManualPlanningDishFilter({ isDinner = null } = {}) {
+  return {
+    sidedish: { $ne: true },
+    active: { $ne: false },
+    isArchived: { $ne: true },
+    deletedAt: null,
+    ...(typeof isDinner === "boolean" ? { isDinner } : {})
+  };
+}
+
+export function buildRandomizableMainDishFilter({ isDinner = false } = {}) {
+  return {
+    sidedish: { $ne: true },
+    special: { $ne: true },
+    allowRandom: { $ne: false },
+    active: true,
+    isArchived: { $ne: true },
+    deletedAt: null,
+    isDinner: Boolean(isDinner)
+  };
+}
 
 function isNonEmptyObject(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0;
@@ -40,7 +61,7 @@ function normalizeIds(ids = []) {
 
 function hiddenMasterKey(dishLike) {
   if (!dishLike?._id) return "";
-  return `${getDishHiddenMasterType(dishLike)}:${String(dishLike._id)}`;
+  return `${getDishHiddenMasterType()}:${String(dishLike._id)}`;
 }
 
 function dedupeById(entries = []) {
@@ -57,8 +78,8 @@ function dedupeById(entries = []) {
   return result;
 }
 
-export function getDishHiddenMasterType(dishLike) {
-  return dishLike?.sidedish ? DISH_HIDDEN_MASTER_TYPES.SIDE : DISH_HIDDEN_MASTER_TYPES.MAIN;
+export function getDishHiddenMasterType() {
+  return DISH_HIDDEN_MASTER_TYPES.MAIN;
 }
 
 export async function resolveDishCatalogForHousehold({

@@ -8,6 +8,15 @@ import { getUserColorById } from "./utils/userColors.js";
 import { getUserInitialsFromProfile } from "./utils/userInitials.js";
 import lunchfyIcon from "../assets/brand/Lunchfy_icon.png";
 import lunchfyLogo from "../assets/brand/Lunchfy_logo1.png";
+import OnboardingBanner from "./components/onboarding/OnboardingBanner.jsx";
+import WeeklyChallengeCard from "./components/weekly/WeeklyChallengeCard.jsx";
+import { useTheme } from "../context/ThemeContext.jsx";
+import { useWeeklyChallenge } from "./contexts/WeeklyChallengeContext.jsx";
+import MilestoneToast from "./components/rewards/MilestoneToast.jsx";
+import { CookingSessionProvider } from "./contexts/CookingSessionContext.jsx";
+import CookingSessionBanner from "./components/cooking/CookingSessionBanner.jsx";
+import CookingSessionStepper from "./components/cooking/CookingSessionStepper.jsx";
+import useMobileRouteSwipeNavigation from "./hooks/useMobileRouteSwipeNavigation.js";
 
 function CalendarIcon(props) {
   return (
@@ -53,6 +62,24 @@ function SettingsIcon(props) {
   );
 }
 
+function CatalogIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <path d="M7 8h10M7 12h7M7 16h8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CreditCardIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" />
+    </svg>
+  );
+}
+
 function LogoutIcon(props) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -89,12 +116,107 @@ function ChevronDownIcon(props) {
   );
 }
 
+/* ── Theme row icons ──────────────────────────────────────────── */
+function AppearanceIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </svg>
+  );
+}
+
+function SystemThemeIcon(props) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
+      <circle cx="8" cy="8" r="6.5" />
+      <path d="M8 1.5a6.5 6.5 0 0 1 0 13V1.5z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function SunThemeIcon(props) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
+      <circle cx="8" cy="8" r="3" />
+      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.53 11.53l1.42 1.42M3.05 12.95l1.42-1.42M11.53 4.47l1.42-1.42" />
+    </svg>
+  );
+}
+
+function MoonThemeIcon(props) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
+      <path d="M14 10.58A6 6 0 0 1 5.42 2a7 7 0 1 0 8.58 8.58z" />
+    </svg>
+  );
+}
+
 function getFirstName(displayName = "") {
   return String(displayName).trim().split(/\s+/)[0] || "";
 }
 
+function BetaProUnlockedModal({ onDismiss }) {
+  const navigate = useNavigate();
+
+  const handleGoSettings = () => {
+    onDismiss();
+    navigate("/kitchen/configuracion");
+  };
+
+  return (
+    <div className="kitchen-beta-pro-modal-backdrop" onClick={onDismiss} role="dialog" aria-modal="true" aria-labelledby="beta-pro-modal-title">
+      <div className="kitchen-beta-pro-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="kitchen-beta-pro-modal-icon" aria-hidden="true">⭐</div>
+        <h2 className="kitchen-beta-pro-modal-title" id="beta-pro-modal-title">
+          ¡Enhorabuena!
+        </h2>
+        <p className="kitchen-beta-pro-modal-subtitle">
+          Has completado el onboarding y la primera semana de retos
+        </p>
+        <p className="kitchen-beta-pro-modal-body">
+          Como recompensa, hemos activado tu licencia <strong>Beta Pro</strong>.
+          Ahora tienes acceso a todo lo que Lunchfy Pro puede ofrecerte durante el
+          periodo beta.
+        </p>
+
+        <div className="kitchen-beta-pro-modal-features">
+          <p className="kitchen-beta-pro-modal-features-title">Con Beta Pro puedes:</p>
+          <ul className="kitchen-beta-pro-modal-features-list">
+            <li>📅 Planificación semanal completa — comidas y cenas</li>
+            <li>🍽️ Más flexibilidad para organizar tu menú</li>
+            <li>📚 Uso avanzado del catálogo de platos</li>
+            <li>🛒 Mejores herramientas para la lista de la compra</li>
+            <li>👨‍👩‍👧‍👦 Más miembros y comensales en tu hogar</li>
+            <li>🚀 Acceso anticipado a funciones Pro que vayamos liberando</li>
+          </ul>
+        </div>
+
+        <div className="kitchen-beta-pro-modal-actions">
+          <button
+            type="button"
+            className="kitchen-ui-button kitchen-beta-pro-modal-cta"
+            onClick={handleGoSettings}
+          >
+            Explorar ajustes Pro
+          </button>
+          <button
+            type="button"
+            className="kitchen-button secondary kitchen-beta-pro-modal-close"
+            onClick={onDismiss}
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function KitchenLayout({ children, containerClassName = "" }) {
   const { user, logout, refreshUser, setUser } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const { betaProEvent, dismissBetaProEvent } = useWeeklyChallenge();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
@@ -136,23 +258,28 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
 
   const navLinks = useMemo(
     () => [
-      { to: "/kitchen/semana", label: "Semana" },
-      { to: "/kitchen/platos", label: "Platos" },
+      { to: "/kitchen/semana", label: "Planificación" },
+      { to: "/kitchen/platos", label: "Cocina" },
       { to: "/kitchen/compra", label: "Lista de la compra" },
-      { to: "/kitchen/configuracion", label: "Configuración" }
+      { to: "/kitchen/catalogo", label: "Catálogo" }
     ],
     []
   );
 
   const bottomNavLinks = useMemo(
     () => [
-      { to: "/kitchen/semana", label: "Semana", icon: CalendarIcon },
-      { to: "/kitchen/platos", label: "Platos", icon: UtensilsIcon },
+      { to: "/kitchen/semana", label: "Planificación", icon: CalendarIcon },
+      { to: "/kitchen/platos", label: "Cocina", icon: UtensilsIcon },
       { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
-      { to: "/kitchen/configuracion", label: "Configuración", icon: SettingsIcon }
+      { to: "/kitchen/catalogo", label: "Catálogo", icon: CatalogIcon }
     ],
     []
   );
+  const mainSwipeRoutes = useMemo(
+    () => bottomNavLinks.map((link) => link.to),
+    [bottomNavLinks]
+  );
+  useMobileRouteSwipeNavigation(mainSwipeRoutes);
 
   useEffect(() => {
     const onPointerDown = (event) => {
@@ -162,6 +289,29 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
     };
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      const target = event.target.closest("button");
+      if (!target || target.disabled) return;
+      if (target.closest(".is-leaving")) return;
+      if (target.classList.contains("shopping-check")) return;
+      target.classList.remove("btn-spring");
+      void target.offsetWidth;
+      target.classList.add("btn-spring");
+    };
+    const handleAnimationEnd = (event) => {
+      if (event.animationName === "btnSpring") {
+        event.target.classList.remove("btn-spring");
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("animationend", handleAnimationEnd);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("animationend", handleAnimationEnd);
+    };
   }, []);
 
   useEffect(() => {
@@ -236,6 +386,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
   const userColors = getUserColorById(user?.colorId, user?.id || user?.email || user?.username || "");
 
   return (
+    <CookingSessionProvider>
     <div className="kitchen-app">
       <Header
         left={(
@@ -271,41 +422,101 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                 {userInitials}
               </span>
               <span className="kitchen-user-name">{userName}</span>
+              {user?.subscriptionPlan && (
+                <span className={`kitchen-user-plan-badge plan-${String(user.subscriptionPlan).toLowerCase()}${user.planSource === "beta_pro" ? " plan-beta-pro" : ""}`}>
+                  {user.planSource === "beta_pro"
+                    ? "Pro Beta"
+                    : String(user.subscriptionPlan).toLowerCase() === "premium"
+                      ? "Premium"
+                      : String(user.subscriptionPlan).toLowerCase() === "pro"
+                        ? "Pro"
+                        : "Basic"}
+                </span>
+              )}
               <ChevronDownIcon className="kitchen-user-chevron" />
             </button>
             {userMenuOpen ? (
               <div className="kitchen-user-menu" role="menu" onPointerDown={(event) => event.stopPropagation()}>
                 {isDiod ? (
-                  <label className="kitchen-user-menu-household">
-                    <span>Hogar activo</span>
-                    <select
-                      className="kitchen-input"
-                      value={user?.activeHouseholdId || ""}
-                      onChange={onChangeActiveHousehold}
-                      disabled={switchingHousehold}
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => { navigate("/admin"); onNavigate(); }}
+                      className="kitchen-user-menu-admin"
                     >
-                      <option value="">Sin hogar (modo global)</option>
-                      {households.map((household) => (
-                        <option key={household.id} value={household.id}>{household.name}</option>
-                      ))}
-                    </select>
-                  </label>
+                      🛠 Panel de administrador
+                    </button>
+                    <label className="kitchen-user-menu-household">
+                      <span>Hogar activo</span>
+                      <select
+                        className="kitchen-input"
+                        value={user?.activeHouseholdId || ""}
+                        onChange={onChangeActiveHousehold}
+                        disabled={switchingHousehold}
+                      >
+                        <option value="">Sin hogar (modo global)</option>
+                        {households.map((household) => (
+                          <option key={household.id} value={household.id}>{household.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
                 ) : null}
                 {householdError ? <div className="kitchen-alert error">{householdError}</div> : null}
-                <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion?section=perfil")}>
+                <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/configuracion?section=perfil"); onNavigate(); }}>
                   <UserIcon className="kitchen-user-menu-icon" />
-                  Editar mi perfil
+                  Perfil
                 </button>
                 {(user?.role === "owner" || user?.role === "admin" || isDiod) ? (
-                  <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion?section=share")}>
+                  <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/configuracion?section=share"); onNavigate(); }}>
                     <ShareIcon className="kitchen-user-menu-icon" />
                     Compartir
                   </button>
                 ) : null}
-                <button type="button" role="menuitem" onClick={() => navigate("/kitchen/configuracion")}>
+                <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/configuracion"); onNavigate(); }}>
                   <SettingsIcon className="kitchen-user-menu-icon" />
                   Configuración
                 </button>
+                <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/upgrade"); onNavigate(); }}>
+                  <CreditCardIcon className="kitchen-user-menu-icon" />
+                  Suscripción / Plan
+                </button>
+                <div className="kitchen-user-menu-theme-row" role="group" aria-label="Apariencia">
+                  <span className="kitchen-user-menu-theme-label">
+                    <AppearanceIcon className="kitchen-user-menu-icon" />
+                    Tema
+                  </span>
+                  <div className="kitchen-user-menu-theme-options">
+                    <button
+                      type="button"
+                      className={`kitchen-user-menu-theme-btn${theme === "system" ? " is-active" : ""}`}
+                      onClick={() => setTheme("system")}
+                      title="Sistema"
+                      aria-pressed={theme === "system"}
+                    >
+                      <SystemThemeIcon className="kitchen-user-menu-theme-icon" />
+                    </button>
+                    <button
+                      type="button"
+                      className={`kitchen-user-menu-theme-btn${theme === "light" ? " is-active" : ""}`}
+                      onClick={() => setTheme("light")}
+                      title="Claro"
+                      aria-pressed={theme === "light"}
+                    >
+                      <SunThemeIcon className="kitchen-user-menu-theme-icon" />
+                    </button>
+                    <button
+                      type="button"
+                      className={`kitchen-user-menu-theme-btn${theme === "dark" ? " is-active" : ""}`}
+                      onClick={() => setTheme("dark")}
+                      title="Oscuro"
+                      aria-pressed={theme === "dark"}
+                    >
+                      <MoonThemeIcon className="kitchen-user-menu-theme-icon" />
+                    </button>
+                  </div>
+                </div>
                 <button type="button" role="menuitem" onClick={onLogout}>
                   <LogoutIcon className="kitchen-user-menu-icon" />
                   Cerrar sesión
@@ -316,9 +527,30 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
         ) : (
           <div className="kitchen-user-placeholder" />
         )}
+        mobileExtra={(
+          <div className="kitchen-mobile-progress-stack">
+            <OnboardingBanner suppressEvents closeOnRouteChange />
+            <WeeklyChallengeCard closeOnRouteChange />
+          </div>
+        )}
       />
-      <div className={`kitchen-container ${containerClassName}`.trim()}>{children}</div>
+      {betaProEvent ? (
+        <BetaProUnlockedModal onDismiss={dismissBetaProEvent} />
+      ) : null}
+      <div className={`kitchen-container ${containerClassName}`.trim()}>
+        <div className="kitchen-main-progress-stack">
+          <OnboardingBanner />
+          <WeeklyChallengeCard />
+        </div>
+        {children}
+      </div>
       <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
+      {/* Milestone reward toast — portal into body, above everything */}
+      <MilestoneToast />
+      {/* Guided cooking mode — banner + full-screen stepper */}
+      <CookingSessionBanner />
+      <CookingSessionStepper />
     </div>
+    </CookingSessionProvider>
   );
 }

@@ -59,3 +59,15 @@ export function buildShoppingShareUrl(weekStart) {
 export function buildInviteShareUrl(token) {
   return buildAppShareUrl(`/invite/${encodeURIComponent(String(token || "").trim())}`);
 }
+
+export function buildClerkInviteShareUrl(token) {
+  return buildAppShareUrl("/signup", {
+    inviteToken: String(token || "").trim()
+  });
+}
+
+export function buildClerkInviteCodeShareUrl(inviteCode) {
+  return buildAppShareUrl("/signup", {
+    inviteCode: String(inviteCode || "").trim()
+  });
+}

@@ -101,7 +101,7 @@ export default function InviteLandingPage() {
       setInviteStatus(data?.status || "joined");
     } catch (err) {
       if (isUserLimitReachedError(err)) {
-        setError("You have reached the user limit for your current license.");
+        setError("Has alcanzado el límite de usuarios de tu plan actual.");
         return;
       }
       setError(err.message || "No se pudo aceptar la invitacion.");

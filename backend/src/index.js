@@ -1,5 +1,8 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import path from "path";
+import { fileURLToPath } from "url";
 import { config } from "./config.js";
 import { connectDb } from "./db.js";
 import { sendTestEmail } from "./mailer.js";
@@ -13,11 +16,41 @@ import testEmailRouter from "./routes/testEmail.js";
 import authRoutes from "./kitchen/routes/auth.js";
 import internalPushRouter from "./routes/internalPush.js";
 import subscriptionRouter from "./routes/subscription.js";
+import paymentsRouter, { stripeWebhookHandler } from "./routes/payments.js";
+import { deactivateExpiredSubscriptions } from "./kitchen/subscriptionCron.js";
+import { seedOnboardingChallenges, seedOnboardingSuggestions, cleanupOldChallenges } from "./kitchen/onboardingEngine.js";
+import { seedWeeklyChallengeDefs } from "./kitchen/weeklyEngine.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.use(cors({ origin: config.corsOrigin }));
-app.use(express.json());
+app.use(helmet());
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    const normalizedOrigin = String(origin).replace(/\/$/, "");
+    if (config.corsOrigins.includes(normalizedOrigin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`Origin ${normalizedOrigin} not allowed by CORS`));
+  }
+}));
+
+// Stripe webhook must receive the raw body for signature verification.
+// This route is registered BEFORE the global express.json() middleware.
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);
+
+app.use(express.json({ limit: "5mb" }));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.get("/health", (req, res) => {
   res.json({ ok: true, env: config.nodeEnv, time: new Date().toISOString() });
@@ -49,6 +82,7 @@ app.use("/api/kitchenIngredients", kitchenIngredientsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/auth", authRoutes);
 app.use("/api/subscription", subscriptionRouter);
+app.use("/api/payments", paymentsRouter);
 app.use("/api", testEmailRouter);
 app.use("/api/internal/push", internalPushRouter);
 
@@ -59,6 +93,15 @@ connectDb()
 app.listen(PORT, () => {
   console.log(`🚀 API escuchando en :${PORT}`);
 });
+
+    seedOnboardingChallenges().catch((e) => console.error("[onboarding] Seed failed:", e.message));
+    seedOnboardingSuggestions().catch((e) => console.error("[onboarding] Suggestions seed failed:", e.message));
+    cleanupOldChallenges().catch((e) => console.error("[onboarding] Cleanup failed:", e.message));
+    seedWeeklyChallengeDefs().catch((e) => console.error("[weekly] Seed failed:", e.message));
+
+    // O-6: Deactivate expired subscriptions hourly
+    deactivateExpiredSubscriptions();
+    setInterval(deactivateExpiredSubscriptions, 60 * 60 * 1000);
   })
   .catch((e) => {
     console.error("❌ Error conectando DB", e);

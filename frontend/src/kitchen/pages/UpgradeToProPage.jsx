@@ -1,61 +1,146 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
-import { apiRequest } from "../api.js";
+import {
+  apiRequest,
+  cancelSubscription,
+  createCheckoutSession,
+  createCustomerPortalSession,
+  devChangePlan,
+  undoCancelSubscription
+} from "../api.js";
 import { getPlanLimits, isUnlimitedLicenseLimit } from "../subscription.js";
+
+const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
+const PAYMENTS_MODE = import.meta.env.VITE_PAYMENTS_MODE || "disabled";
+const IS_TEST_MODE = PAYMENTS_MODE === "test";
+
+const PRICE_IDS = {
+  pro: import.meta.env.VITE_STRIPE_PRO_PRICE_ID || "",
+  premium: import.meta.env.VITE_STRIPE_PREMIUM_PRICE_ID || ""
+};
 
 const PLANS = [
   {
     id: "basic",
     name: "Basic",
-    price: "Free",
-    tagline: "El plan base del household durante la beta, sin pagos.",
+    price: "Gratis",
+    tagline: "El plan base, con lo esencial para organizar tu semana.",
     features: [
-      "Licencia base del household",
-      "Sin integración de pago",
-      "Preparado para upgrades futuros"
+      { label: "Planificación semanal completa", included: true },
+      { label: "Randomizar por día", included: true },
+      { label: "Lista de la compra", included: true },
+      { label: "Randomizar semana completa", included: false },
+      { label: "Presupuesto y control de gasto", included: false }
     ]
   },
   {
     id: "pro",
     name: "Pro",
-    price: "€4.99/month",
+    price: "€4.99/mes",
     tagline: "La opción recomendada para familias activas.",
     recommended: true,
     features: [
-      "Planificación inteligente preparada",
-      "Más capacidad para futuras reglas automáticas",
-      "Acceso prioritario a mejoras beta"
+      { label: "Planificación semanal completa", included: true },
+      { label: "Randomizar por día", included: true },
+      { label: "Lista de la compra", included: true },
+      { label: "Randomizar semana completa", included: true },
+      { label: "Presupuesto y control de gasto", included: true }
     ]
   },
   {
     id: "premium",
     name: "Premium",
-    price: "€8.99/month",
-    tagline: "Pensado para hogares que quieren el máximo margen de crecimiento.",
+    price: "€8.99/mes",
+    tagline: "Para hogares que quieren el máximo y soporte ampliado.",
     features: [
-      "Acceso temprano a herramientas premium",
-      "Soporte beta ampliado",
-      "Preparado para futuras integraciones avanzadas"
+      { label: "Todo lo de Pro", included: true },
+      { label: "Usuarios ilimitados", included: true },
+      { label: "Comensales ilimitados", included: true },
+      { label: "Acceso prioritario a nuevas funciones", included: true },
+      { label: "Soporte beta ampliado", included: true }
     ]
   }
 ];
 
+const CANCEL_REASONS = [
+  { id: "too-expensive", label: "Me resulta demasiado caro" },
+  { id: "not-using", label: "Ya no uso estas funciones" },
+  { id: "missing-feature", label: "Me falta alguna función que esperaba" },
+  { id: "pause", label: "Solo quiero hacer una pausa" },
+  { id: "other", label: "Otro motivo" }
+];
+
+const FEATURES_BY_PLAN = {
+  pro: [
+    "Randomizar semana completa",
+    "Presupuesto y control de gasto",
+    "Filtro de dieta en randomización"
+  ],
+  premium: [
+    "Usuarios y comensales ilimitados",
+    "Randomizar semana completa",
+    "Presupuesto y control de gasto",
+    "Filtro de dieta en randomización",
+    "Acceso prioritario a nuevas funciones"
+  ]
+};
+
+function formatDate(date) {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <circle cx="8" cy="8" r="8" fill="#16a34a" />
+      <path d="M4.5 8l2.5 2.5L11.5 5.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CrossIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <circle cx="8" cy="8" r="8" fill="#e5e7eb" />
+      <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="#9ca3af" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function UpgradeToProPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [loadingPlanId, setLoadingPlanId] = useState("");
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [devChangePlanLoading, setDevChangePlanLoading] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [requestedPlan, setRequestedPlan] = useState("");
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
+  const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
+  const [subscriptionEndsAt, setSubscriptionEndsAt] = useState(null);
+  const [pendingDowngradeAt, setPendingDowngradeAt] = useState(null);
+  const [hasActiveStripeSubscription, setHasActiveStripeSubscription] = useState(false);
+  const [paymentMeta, setPaymentMeta] = useState(null);
   const [householdLicense, setHouseholdLicense] = useState(null);
+
+  // Cancel modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelDetails, setCancelDetails] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [undoLoading, setUndoLoading] = useState(false);
+
+  const from = searchParams.get("from") || "";
+  const backPath = from || "/kitchen/configuracion";
 
   const selectedPlan = useMemo(
     () => PLANS.find((plan) => plan.id === requestedPlan) || null,
     [requestedPlan]
   );
-  const heading = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
 
   useEffect(() => {
     let active = true;
@@ -65,7 +150,12 @@ export default function UpgradeToProPage() {
         const data = await apiRequest("/api/kitchen/household/summary");
         if (!active) return;
         setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
+        setSubscriptionStatus(String(data?.household?.subscriptionStatus || "inactive").toLowerCase());
+        setSubscriptionEndsAt(data?.household?.subscriptionEndsAt || null);
+        setPendingDowngradeAt(data?.household?.pendingDowngradeAt || null);
         setRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
+        setHasActiveStripeSubscription(Boolean(data?.household?.hasActiveStripeSubscription));
+        setPaymentMeta(data?.household?.paymentMeta || null);
         setHouseholdLicense(data?.household?.license || null);
       } catch (loadError) {
         if (!active) return;
@@ -74,102 +164,501 @@ export default function UpgradeToProPage() {
         if (active) setSummaryLoading(false);
       }
     };
-
     void loadSummary();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
-  const requestPlan = async (planId) => {
+  const handlePlanAction = async (planId) => {
+    if (planId === "basic") return;
     setLoadingPlanId(planId);
     setError("");
     setSuccess("");
+
+    if (STRIPE_ENABLED) {
+      try {
+        const { url } = await createCheckoutSession({
+          type: "subscription",
+          planKey: planId,
+          targetName: `Plan ${planId}`,
+          stripePriceId: PRICE_IDS[planId] || ""
+        });
+        window.location.href = url;
+      } catch (checkoutError) {
+        console.error("[upgrade] createCheckoutSession failed", checkoutError);
+        if (checkoutError.body?.code === "SUBSCRIPTION_ACTIVE") {
+          setError("Ya tienes una suscripción activa. Usa el portal de facturación para cambiar de plan.");
+        } else {
+          setError(checkoutError.message || "No se pudo iniciar el proceso de pago. Inténtalo de nuevo.");
+        }
+        setLoadingPlanId("");
+      }
+      return;
+    }
+
     try {
       await apiRequest("/api/subscription/request", {
         method: "POST",
         body: JSON.stringify({ plan: planId })
       });
       setRequestedPlan(planId);
-      setSuccess("Your subscription will be activated by the administrator during beta testing.");
+      setSuccess(
+        PAYMENTS_MODE === "disabled"
+          ? "Solicitud enviada. Un administrador activará tu plan durante la beta."
+          : "Solicitud enviada."
+      );
     } catch (requestError) {
-      setError(requestError.message || "No se pudo enviar la solicitud de suscripción.");
+      setError(requestError.message || "No se pudo enviar la solicitud.");
     } finally {
       setLoadingPlanId("");
     }
   };
 
+  const handleOpenPortal = async () => {
+    setPortalLoading(true);
+    setError("");
+    try {
+      const { url } = await createCustomerPortalSession();
+      window.location.href = url;
+    } catch (portalError) {
+      setError(portalError.message || "No se pudo abrir el portal de facturación.");
+      setPortalLoading(false);
+    }
+  };
+
+  const handleDevChangePlan = async (planKey) => {
+    setDevChangePlanLoading(planKey);
+    setError("");
+    setSuccess("");
+    try {
+      const data = await devChangePlan(planKey);
+      setSubscriptionPlan(data?.household?.subscriptionPlan || planKey);
+      setSubscriptionStatus(data?.household?.subscriptionStatus || "inactive");
+      setHasActiveStripeSubscription(false);
+      setPaymentMeta(null);
+      setPendingDowngradeAt(null);
+      setSuccess(`Plan cambiado a ${planKey} (DEV override).`);
+    } catch (err) {
+      setError(err.message || "No se pudo cambiar el plan.");
+    } finally {
+      setDevChangePlanLoading("");
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!cancelReason) return;
+    setCancelLoading(true);
+    setError("");
+    try {
+      const data = await cancelSubscription({ reason: cancelReason, details: cancelDetails.trim() });
+      setPendingDowngradeAt(data?.household?.pendingDowngradeAt || null);
+      setSubscriptionEndsAt(data?.household?.subscriptionEndsAt || null);
+      setShowCancelModal(false);
+      setCancelReason("");
+      setCancelDetails("");
+    } catch (err) {
+      setError(err.message || "No se pudo programar la cancelación.");
+      setShowCancelModal(false);
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const handleUndoCancel = async () => {
+    setUndoLoading(true);
+    setError("");
+    try {
+      const data = await undoCancelSubscription();
+      setPendingDowngradeAt(null);
+      setSubscriptionEndsAt(data?.household?.subscriptionEndsAt || subscriptionEndsAt);
+      setSuccess("¡De vuelta al equipo! Tu suscripción sigue activa sin cambios.");
+    } catch (err) {
+      setError(err.message || "No se pudo reactivar la suscripción.");
+    } finally {
+      setUndoLoading(false);
+    }
+  };
+
+  const getButtonLabel = (plan) => {
+    const { id } = plan;
+    if (subscriptionPlan === id) return "Plan actual";
+    if (loadingPlanId === id) return STRIPE_ENABLED && PRICE_IDS[id] ? "Redirigiendo..." : "Enviando...";
+    if (id === "basic") return "Mantener Basic";
+
+    if (STRIPE_ENABLED && PRICE_IDS[id]) {
+      return IS_TEST_MODE ? `Probar compra — ${plan.price}` : `Suscribirse — ${plan.price}`;
+    }
+
+    if (requestedPlan === id) return "✓ Solicitud enviada";
+    return `Solicitar ${plan.name}`;
+  };
+
+  const isOnPaidActivePlan = ["pro", "premium"].includes(subscriptionPlan) && subscriptionStatus === "active";
+  const featuresToLose = FEATURES_BY_PLAN[subscriptionPlan] || [];
+
   return (
     <KitchenLayout>
       <div className="upgrade-page">
+
+        {IS_TEST_MODE && STRIPE_ENABLED && (
+          <div className="payment-test-mode-banner" role="status">
+            MODO TEST — Los pagos son simulados. No se realizarán cargos reales.
+          </div>
+        )}
+
         <div className="upgrade-hero">
-          <button type="button" className="kitchen-button secondary" onClick={() => navigate("/kitchen/configuracion")}>
-            Volver
+          <button
+            type="button"
+            className="kitchen-button secondary"
+            onClick={() => navigate(backPath)}
+          >
+            ← Volver
           </button>
           <div className="upgrade-hero-copy">
-            <span className="upgrade-eyebrow">Household subscription</span>
-            <h1>{heading}</h1>
+            <span className="upgrade-eyebrow">Planes</span>
+            <h1>{subscriptionPlan === "premium" ? "Cambiar suscripción" : "Desbloquea todo"}</h1>
             <p className="kitchen-muted">
-              Elige un plan para tu hogar. Durante la beta no hay pagos integrados y la activación la realiza un administrador manualmente.
+              {STRIPE_ENABLED
+                ? IS_TEST_MODE
+                  ? "Elige el plan que mejor se adapte a tu hogar. Estás en entorno de pruebas — ningún cargo será real."
+                  : "Elige el plan que mejor se adapte a tu hogar."
+                : "Elige el plan que mejor se adapte a tu hogar. Durante la beta, la activación la realiza un administrador — sin pagos por ahora."}
             </p>
-            {householdLicense ? (
-              <span className="kitchen-muted">
-                Users: {householdLicense?.usage?.users || 0} / {isUnlimitedLicenseLimit(householdLicense?.limits?.maxUsers) ? "Unlimited" : householdLicense?.limits?.maxUsers}
-                {" · "}
-                Non-user diners: {householdLicense?.usage?.nonUserDiners || 0} / {isUnlimitedLicenseLimit(householdLicense?.limits?.maxNonUserDiners) ? "Unlimited" : householdLicense?.limits?.maxNonUserDiners}
+            {subscriptionPlan && !summaryLoading ? (
+              <span className={`upgrade-current-plan-chip upgrade-current-plan-${subscriptionPlan}`}>
+                Plan actual: <strong>{subscriptionPlan === "premium" ? "Premium" : subscriptionPlan === "pro" ? "Pro" : "Basic"}</strong>
               </span>
             ) : null}
           </div>
         </div>
 
+        {/* Pending downgrade banner */}
+        {!summaryLoading && pendingDowngradeAt && (
+          <div style={{
+            background: "#fffbeb",
+            border: "1px solid #f59e0b",
+            borderRadius: 12,
+            padding: "14px 18px",
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12
+          }}>
+            <span style={{ fontSize: 20, lineHeight: 1.2, flexShrink: 0 }}>⏳</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: "0 0 4px", fontWeight: 600, fontSize: "0.92rem", color: "#92400e" }}>
+                Tu plan {subscriptionPlan === "premium" ? "Premium" : "Pro"} vuelve a Basic el {formatDate(pendingDowngradeAt)}
+              </p>
+              {featuresToLose.length > 0 && (
+                <p style={{ margin: "0 0 10px", fontSize: "0.82rem", color: "#b45309" }}>
+                  Perderás: {featuresToLose.join(", ").toLowerCase()}
+                </p>
+              )}
+              <button
+                type="button"
+                className="kitchen-button secondary"
+                style={{ fontSize: "0.82rem", padding: "5px 12px" }}
+                onClick={handleUndoCancel}
+                disabled={undoLoading}
+              >
+                {undoLoading ? "Reactivando..." : "Reactivar suscripción →"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}
-        {summaryLoading ? <p className="kitchen-muted">Cargando suscripción actual...</p> : null}
+        {summaryLoading ? <p className="kitchen-muted">Cargando...</p> : null}
+
+        {STRIPE_ENABLED && hasActiveStripeSubscription && !summaryLoading && (
+          <div className="upgrade-portal-section">
+            <p className="kitchen-muted" style={{ marginBottom: 8 }}>
+              Tienes una suscripción activa gestionada por Stripe.
+            </p>
+            <button
+              type="button"
+              className="kitchen-button secondary"
+              onClick={handleOpenPortal}
+              disabled={portalLoading}
+            >
+              {portalLoading ? "Abriendo portal..." : "Gestionar suscripción"}
+            </button>
+          </div>
+        )}
 
         <div className="upgrade-plan-grid">
           {PLANS.map((plan) => {
             const isLoading = loadingPlanId === plan.id;
             const isRequested = requestedPlan === plan.id;
+            const isCurrent = subscriptionPlan === plan.id;
             const limits = getPlanLimits(plan.id);
+            const hasStripePrice = Boolean(STRIPE_ENABLED && PRICE_IDS[plan.id]);
+
             return (
               <article
                 key={plan.id}
-                className={`upgrade-plan-card ${plan.recommended ? "is-recommended" : ""}`}
+                className={`upgrade-plan-card ${plan.recommended ? "is-recommended" : ""} ${isCurrent ? "is-current" : ""}`}
               >
-                {plan.recommended ? <span className="upgrade-badge">Recommended</span> : null}
+                {plan.recommended ? <span className="upgrade-badge">Recomendado</span> : null}
+                {isCurrent && !plan.recommended ? <span className="upgrade-badge is-current-badge">Plan actual</span> : null}
+
                 <div className="upgrade-plan-head">
                   <h2>{plan.name}</h2>
-                  <strong>{plan.price}</strong>
+                  <strong className="upgrade-plan-price">{plan.price}</strong>
                 </div>
                 <p className="upgrade-plan-tagline">{plan.tagline}</p>
-                <ul className="kitchen-list">
-                  {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
-                  <li>{plan.id === "basic" ? "Day-by-day randomization" : "Full week randomization"}</li>
-                  <li>{isUnlimitedLicenseLimit(limits.maxUsers) ? "Unlimited users" : `Up to ${limits.maxUsers} users`}</li>
-                  <li>{isUnlimitedLicenseLimit(limits.maxNonUserDiners) ? "Unlimited non-user diners" : `Up to ${limits.maxNonUserDiners} non-user diners`}</li>
+
+                <ul className="upgrade-feature-list">
+                  {plan.features.map((feature) => (
+                    <li key={feature.label} className={`upgrade-feature-item ${feature.included ? "is-included" : "is-excluded"}`}>
+                      {feature.included ? <CheckIcon /> : <CrossIcon />}
+                      <span>{feature.label}</span>
+                    </li>
+                  ))}
+                  <li className="upgrade-feature-item is-included">
+                    <CheckIcon />
+                    <span>
+                      {isUnlimitedLicenseLimit(limits.maxUsers) ? "Usuarios ilimitados" : `Hasta ${limits.maxUsers} usuarios`}
+                    </span>
+                  </li>
                 </ul>
+
                 <button
                   type="button"
-                  className={`kitchen-button ${plan.recommended ? "" : "secondary"}`}
-                  onClick={() => requestPlan(plan.id)}
-                  disabled={Boolean(loadingPlanId)}
+                  className={`kitchen-button ${plan.recommended ? "" : "secondary"} ${hasStripePrice && !isCurrent ? "payment-checkout-btn" : ""}`}
+                  onClick={() => isCurrent || plan.id === "basic" ? null : handlePlanAction(plan.id)}
+                  disabled={Boolean(loadingPlanId) || isCurrent || plan.id === "basic"}
                 >
-                  {isLoading ? "Enviando..." : isRequested ? "Plan solicitado" : "Select Plan"}
+                  {getButtonLabel(plan)}
                 </button>
+
+                {hasStripePrice && !isCurrent && IS_TEST_MODE && (
+                  <p className="kitchen-muted" style={{ fontSize: "0.72rem", marginTop: 6, textAlign: "center" }}>
+                    Pago de prueba — no se cobrarán fondos reales
+                  </p>
+                )}
               </article>
             );
           })}
         </div>
 
-        {selectedPlan ? (
+        {!STRIPE_ENABLED && selectedPlan && !summaryLoading ? (
           <div className="upgrade-footnote">
-            <strong>{selectedPlan.name}</strong>
+            <strong>{selectedPlan.name} solicitado</strong>
             <span className="kitchen-muted">
-              Tu hogar ha solicitado este plan y queda listo para una futura activación administrativa.
+              Tu hogar ha solicitado este plan. Se activará en cuanto un administrador lo confirme durante la beta.
             </span>
           </div>
         ) : null}
+
+        {/* Cancel subscription link — only for active paid plans with no pending downgrade */}
+        {!summaryLoading && isOnPaidActivePlan && !pendingDowngradeAt && (
+          <div style={{ textAlign: "center", marginTop: 28 }}>
+            <button
+              type="button"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#9ca3af",
+                fontSize: "0.82rem",
+                cursor: "pointer",
+                textDecoration: "underline",
+                textDecorationStyle: "dotted",
+                padding: "4px 8px"
+              }}
+              onClick={() => { setError(""); setSuccess(""); setShowCancelModal(true); }}
+            >
+              Cancelar suscripción
+            </button>
+          </div>
+        )}
+
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <button
+            type="button"
+            className="kitchen-button secondary"
+            onClick={() => navigate(backPath)}
+          >
+            ← Volver
+          </button>
+        </div>
+
+        {IS_TEST_MODE && !summaryLoading && (
+          <details style={{ marginTop: 32, border: "1px dashed #f59e0b", borderRadius: 8, padding: 16, background: "#fffbeb" }}>
+            <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: 13, color: "#92400e", marginBottom: 0 }}>
+              🛠 Panel de diagnóstico DEV (solo visible en test mode)
+            </summary>
+            <div style={{ marginTop: 12, display: "grid", gap: 6, fontSize: 12, fontFamily: "monospace" }}>
+              <div><strong>plan actual:</strong> {subscriptionPlan}</div>
+              <div><strong>subscriptionStatus:</strong> {subscriptionStatus}</div>
+              <div><strong>isPro:</strong> {String(householdLicense?.isPro ?? "—")}</div>
+              <div><strong>hasActiveStripeSubscription:</strong> {String(hasActiveStripeSubscription)}</div>
+              <div><strong>pendingDowngradeAt:</strong> {pendingDowngradeAt ? new Date(pendingDowngradeAt).toLocaleString() : "—"}</div>
+              <div><strong>subscriptionEndsAt:</strong> {subscriptionEndsAt ? new Date(subscriptionEndsAt).toLocaleString() : "—"}</div>
+              <div><strong>stripeCustomerId:</strong> {paymentMeta?.stripeCustomerId || "—"}</div>
+              <div><strong>stripeSubscriptionId:</strong> {paymentMeta?.stripeSubscriptionId || "—"}</div>
+              <div><strong>paymentProvider:</strong> {paymentMeta?.paymentProvider || "—"}</div>
+              <div><strong>paymentMode:</strong> {paymentMeta?.paymentMode || "—"}</div>
+              <div><strong>planUpdatedAt:</strong> {paymentMeta?.planUpdatedAt ? new Date(paymentMeta.planUpdatedAt).toLocaleString() : "—"}</div>
+              <div><strong>VITE_STRIPE_ENABLED:</strong> {String(STRIPE_ENABLED)}</div>
+              <div><strong>VITE_PAYMENTS_MODE:</strong> {PAYMENTS_MODE}</div>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <p style={{ fontSize: 12, color: "#92400e", marginBottom: 8 }}>
+                <strong>Cambio rápido de plan (DEV override — sin Stripe):</strong>
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {["basic", "pro", "premium"].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    style={{
+                      padding: "5px 12px",
+                      fontSize: 12,
+                      borderRadius: 6,
+                      border: `1px solid ${p === subscriptionPlan ? "#92400e" : "#d97706"}`,
+                      background: p === subscriptionPlan ? "#fde68a" : "#fff",
+                      cursor: devChangePlanLoading ? "not-allowed" : "pointer",
+                      fontWeight: p === subscriptionPlan ? 700 : 400
+                    }}
+                    disabled={Boolean(devChangePlanLoading) || p === subscriptionPlan}
+                    onClick={() => handleDevChangePlan(p)}
+                  >
+                    {devChangePlanLoading === p ? "..." : p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </details>
+        )}
       </div>
+
+      {/* Cancel subscription modal */}
+      {showCancelModal && (
+        <div className="kitchen-modal-backdrop" onClick={() => !cancelLoading && setShowCancelModal(false)}>
+          <div className="kitchen-modal-overlay">
+            <div
+              className="kitchen-modal"
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: 480 }}
+            >
+              <div className="kitchen-modal-header" style={{ paddingBottom: 8 }}>
+                <h3 style={{ fontSize: "1.15rem" }}>¿Nos vamos? 👋</h3>
+                {subscriptionEndsAt ? (
+                  <p className="kitchen-muted" style={{ marginTop: 4, fontSize: "0.88rem" }}>
+                    Tu plan {subscriptionPlan === "premium" ? "Premium" : "Pro"} seguirá activo hasta el{" "}
+                    <strong style={{ color: "inherit" }}>{formatDate(subscriptionEndsAt)}</strong>.
+                    Después volverás al plan Basic sin cargo adicional.
+                  </p>
+                ) : (
+                  <p className="kitchen-muted" style={{ marginTop: 4, fontSize: "0.88rem" }}>
+                    Tu suscripción se cancelará al final del período actual.
+                  </p>
+                )}
+              </div>
+
+              {featuresToLose.length > 0 && (
+                <div style={{ padding: "0 24px 16px", borderBottom: "1px solid var(--border, #e5e7eb)" }}>
+                  <p style={{ fontSize: "0.82rem", color: "#6b7280", marginBottom: 8, fontWeight: 600 }}>
+                    Perderás acceso a:
+                  </p>
+                  <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 5 }}>
+                    {featuresToLose.map((f) => (
+                      <li key={f} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.84rem", color: "#374151" }}>
+                        <CrossIcon />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div style={{ padding: "16px 24px 8px" }}>
+                <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "#374151", marginBottom: 10 }}>
+                  ¿Por qué cancelas? <span style={{ fontWeight: 400, color: "#9ca3af" }}>(nos ayuda a mejorar)</span>
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {CANCEL_REASONS.map((r) => (
+                    <label
+                      key={r.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        cursor: "pointer",
+                        fontSize: "0.88rem",
+                        color: "#374151",
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        border: `1px solid ${cancelReason === r.id ? "var(--color-primary, #3b82f6)" : "#e5e7eb"}`,
+                        background: cancelReason === r.id ? "var(--color-primary-bg, #eff6ff)" : "#fff",
+                        transition: "border-color 0.15s, background 0.15s"
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="cancelReason"
+                        value={r.id}
+                        checked={cancelReason === r.id}
+                        onChange={() => setCancelReason(r.id)}
+                        style={{ accentColor: "var(--color-primary, #3b82f6)", flexShrink: 0 }}
+                      />
+                      {r.label}
+                    </label>
+                  ))}
+                </div>
+
+                <textarea
+                  placeholder="Cuéntanos más (opcional) — tu feedback nos importa"
+                  value={cancelDetails}
+                  onChange={(e) => setCancelDetails(e.target.value)}
+                  maxLength={300}
+                  rows={2}
+                  style={{
+                    width: "100%",
+                    marginTop: 12,
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "1px solid #e5e7eb",
+                    fontSize: "0.84rem",
+                    resize: "vertical",
+                    fontFamily: "inherit",
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+
+              <div className="kitchen-modal-actions" style={{ flexDirection: "column-reverse", gap: 8 }}>
+                <button
+                  type="button"
+                  className="kitchen-button secondary"
+                  onClick={() => setShowCancelModal(false)}
+                  disabled={cancelLoading}
+                  style={{ width: "100%", justifyContent: "center" }}
+                >
+                  Mejor me quedo — seguir con {subscriptionPlan === "premium" ? "Premium" : "Pro"}
+                </button>
+                <button
+                  type="button"
+                  className="kitchen-button"
+                  onClick={handleCancelSubscription}
+                  disabled={!cancelReason || cancelLoading}
+                  style={{
+                    width: "100%",
+                    justifyContent: "center",
+                    background: "#dc2626",
+                    borderColor: "#dc2626",
+                    color: "#fff",
+                    opacity: !cancelReason ? 0.5 : 1
+                  }}
+                >
+                  {cancelLoading ? "Cancelando..." : "Sí, cancelar al final del período"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </KitchenLayout>
   );
 }

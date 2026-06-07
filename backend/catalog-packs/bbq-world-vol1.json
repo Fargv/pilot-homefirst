@@ -1,0 +1,1368 @@
+{
+  "slug": "bbq-world-vol1",
+  "title": "10 Barbacoas del Mundo",
+  "subtitle": "La vuelta al mundo a través del fuego y la brasa",
+  "description": "Diez formas de entender el fuego, la carne y el ritual. Desde el brisket texano que exige 12 horas de paciencia hasta la picanha brasileña que solo necesita sal gruesa y una brasa viva. Con el corte exacto, el combustible correcto y el orden de cocción que marca la diferencia.",
+  "coverImage": "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=1200&q=80&auto=format&fit=crop",
+  "tags": ["barbacoa", "bbq", "carne", "parrilla", "verano", "especial", "internacional"],
+  "cuisineType": "Internacional / Barbacoa",
+  "active": true,
+  "featured": true,
+  "diet": "omnivore",
+  "isDietPack": false,
+  "priceBasic": 2.99,
+  "includedPlans": ["pro", "premium"],
+  "monthlyCreditCost": 2,
+  "sortOrder": 18,
+  "defaultAllowRandom": false,
+  "defaultSpecial": true,
+  "disclaimer": "Estos platos requieren barbacoa o parrilla al aire libre. Los tiempos son orientativos — la temperatura interna siempre manda más que el reloj.",
+  "dishes": [
+    {
+      "name": "Texas Brisket Ahumado",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "diet": "omnivore",
+      "mealType": null,
+      "estimatedDifficulty": 5,
+      "estimatedPrepTime": 780,
+      "ingredients": [
+        { "displayName": "Brisket de ternera", "canonicalName": "brisket ternera" },
+        { "displayName": "Sal gruesa", "canonicalName": "sal gruesa" },
+        { "displayName": "Pimienta negra gruesa", "canonicalName": "pimienta negra" },
+        { "displayName": "Astillas de roble o nogal", "canonicalName": "astillas madera roble" },
+        { "displayName": "Carbón de calidad", "canonicalName": "carbon barbacoa" }
+      ],
+      "recipe": {
+        "baseServings": 6,
+        "ingredients": [
+          {
+            "name": "Brisket de ternera (punta o plana)",
+            "quantity": { "amount": 3.5, "unit": "kg", "note": "corte entero con capa de grasa, pedir en carnicería especializada", "scalable": true, "originalText": "3.5 kg" }
+          },
+          {
+            "name": "Sal gruesa",
+            "quantity": { "amount": 60, "unit": "g", "scalable": false, "originalText": "60 g" }
+          },
+          {
+            "name": "Pimienta negra gruesa",
+            "quantity": { "amount": 60, "unit": "g", "note": "recién molida o machacada en mortero, no fina", "scalable": false, "originalText": "60 g" }
+          },
+          {
+            "name": "Astillas de madera para ahumar",
+            "quantity": { "amount": 250, "unit": "g", "note": "roble (sabor equilibrado) o nogal americano/hickory (más intenso)", "scalable": false, "originalText": "250 g" }
+          },
+          {
+            "name": "Carbón de calidad o briquetas de larga duración",
+            "quantity": { "amount": 3, "unit": "kg", "note": "evitar carbón de baja calidad con mucho cemento", "scalable": false, "originalText": "3 kg" }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Prepara el rub (la víspera)",
+            "text": "Mezcla sal gruesa y pimienta negra gruesa a partes iguales en un bol. Este es el 'Dalmatian rub' texano: nada más. Recorta la capa de grasa del brisket dejando exactamente 6 mm (ni más ni menos: más grasa no se funde, menos grasa reseca la carne). Cubre toda la superficie generosamente con el rub, presionando para que se adhiera. Envuelve en film y refrigera mínimo 2 horas, idealmente toda la noche.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              { "name": "Brisket de ternera (punta o plana)" },
+              { "name": "Sal gruesa" },
+              { "name": "Pimienta negra gruesa" }
+            ],
+            "tips": "En Texas no existe el marinado: sal y pimienta es la única opción válida. Si alguien te dice que añadas ajo en polvo, coge distancia."
+          },
+          {
+            "order": 2,
+            "title": "Enciende el ahumador",
+            "text": "Prepara la barbacoa para fuego indirecto: el carbón a un lado, el brisket irá al lado opuesto. Enciende el carbón y espera a que esté blanco (sin llama). Añade 2-3 trozos grandes de astillas de madera sobre las brasas. Objetivo: temperatura estable de 110-120°C en la zona donde estará el brisket. Usa un termómetro de sonda o el de la tapa para verificar. Este proceso tarda 40-50 minutos.",
+            "hasTimer": true,
+            "durationMinutes": 45,
+            "durationSeconds": 2700,
+            "timerLabel": "Estabilizar temperatura a 110-120°C",
+            "ingredientRefs": [
+              { "name": "Carbón de calidad o briquetas de larga duración" },
+              { "name": "Astillas de madera para ahumar" }
+            ],
+            "tips": "¿Gas o carbón? Para brisket: carbón + madera sin excepción. El gas no produce humo y sin humo no hay bark ni sabor texano. Es la única barbacoa de este pack donde el gas directamente no funciona."
+          },
+          {
+            "order": 3,
+            "title": "Coloca el brisket y no lo toques",
+            "text": "Saca el brisket de la nevera 1 hora antes de cocinar para que se atempere. Colócalo con la capa de grasa hacia arriba en la zona de calor indirecto. La grasa fundida irá bañando la carne durante la cocción. Cierra la tapa. No abras cada 10 minutos: cada vez que abres pierdes 15 minutos de temperatura estable. Añade más astillas de madera cada 45-60 minutos durante las primeras 3 horas.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              { "name": "Astillas de madera para ahumar" }
+            ],
+            "tips": "El anillo rosado bajo el bark no es carne cruda: es el smoke ring, prueba de una buena cocción con humo. Cuanto más definido, mejor lo has hecho."
+          },
+          {
+            "order": 4,
+            "title": "Cocción lenta hasta 74°C internos",
+            "text": "Mantén la temperatura de la barbacoa entre 110-120°C. Comprueba la temperatura interna del brisket con un termómetro de sonda cada 2 horas. En algún momento entre las horas 4 y 7, la temperatura interna se estancará entre 68-74°C durante horas. Esto se llama El Stall: la carne suda y se enfría sola, igual que si fuera piel humana. Es completamente normal. NO subas el fuego. La paciencia es el ingrediente más importante del brisket texano.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [],
+            "tips": "Usa termómetro, no tiempo. Un brisket de 3.5 kg puede tardar entre 8 y 14 horas según el animal, la temperatura exterior y la barbacoa. El tiempo es una estimación, la sonda es la verdad."
+          },
+          {
+            "order": 5,
+            "title": "Texas Crutch: envuelve y termina",
+            "text": "Cuando la temperatura interna alcance 74°C, saca el brisket. Envuélvelo firmemente en papel de carnicero (butcher paper rosa, no papel de aluminio: el aluminio lo cuece en vapor y ablanda el bark). Vuelve a colocarlo en la barbacoa. Sube ligeramente la temperatura a 120-130°C. Continúa hasta que la sonda entre sin resistencia y la temperatura llegue a 90-95°C internos. Serán unas 2-3 horas más.",
+            "hasTimer": true,
+            "durationMinutes": 180,
+            "durationSeconds": 10800,
+            "timerLabel": "Fase envuelto hasta 90-95°C internos",
+            "ingredientRefs": [],
+            "tips": "El papel de carnicero es pereable: deja salir el vapor lentamente y mantiene el bark crujiente. El papel de aluminio lo atrapa todo y deja la corteza blanda. No es lo mismo."
+          },
+          {
+            "order": 6,
+            "title": "Reposo: el paso que nadie hace bien",
+            "text": "Saca el brisket del fuego. Mantenlo envuelto en el papel de carnicero. Mételo en una nevera de camping vacía o envuélvelo en varias toallas gruesas para mantener el calor. Reposa mínimo 1 hora, idealmente 2. Durante el reposo la temperatura interna se redistribuye y los jugos vuelven a las fibras. Un brisket bien reposado vale el doble que uno cortado en caliente.",
+            "hasTimer": true,
+            "durationMinutes": 90,
+            "durationSeconds": 5400,
+            "timerLabel": "Reposo del brisket",
+            "ingredientRefs": []
+          },
+          {
+            "order": 7,
+            "title": "Corta y sirve",
+            "text": "Separa la punta (point, más grasa, más jugosa) de la plana (flat, más magra) siguiendo la línea de grasa interior. Corta SIEMPRE perpendicular a la fibra muscular, en lonchas de 1 cm. Si la loncha se dobla sin romperse y el bark es oscuro y crujiente: lo has hecho perfecto. Sirve inmediatamente con pan de maíz, pepinillos encurtidos y salsa BBQ en el lado (no sobre la carne).",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "Asado Argentino Completo",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "diet": "omnivore",
+      "mealType": null,
+      "estimatedDifficulty": 4,
+      "estimatedPrepTime": 240,
+      "ingredients": [
+        { "displayName": "Tira de asado", "canonicalName": "tira de asado" },
+        { "displayName": "Vacío de ternera", "canonicalName": "vacio ternera" },
+        { "displayName": "Chorizo criollo", "canonicalName": "chorizo criollo" },
+        { "displayName": "Morcilla criolla", "canonicalName": "morcilla criolla" },
+        { "displayName": "Sal gruesa", "canonicalName": "sal gruesa" },
+        { "displayName": "Carbón vegetal o leña", "canonicalName": "carbon vegetal" }
+      ],
+      "recipe": {
+        "baseServings": 6,
+        "ingredients": [
+          {
+            "name": "Tira de asado",
+            "quantity": { "amount": 2, "unit": "kg", "note": "costillas de ternera cortadas en tira ancha, con hueso", "scalable": true, "originalText": "2 kg" }
+          },
+          {
+            "name": "Vacío de ternera",
+            "quantity": { "amount": 1.5, "unit": "kg", "note": "corte del flanco, con membrana exterior", "scalable": true, "originalText": "1.5 kg" }
+          },
+          {
+            "name": "Chorizo criollo",
+            "quantity": { "amount": 6, "unit": "unidad", "scalable": true, "originalText": "6 unidades" }
+          },
+          {
+            "name": "Morcilla criolla",
+            "quantity": { "amount": 3, "unit": "unidad", "scalable": true, "originalText": "3 unidades" }
+          },
+          {
+            "name": "Sal gruesa",
+            "quantity": { "amount": 0, "unit": "al gusto", "note": "se aplica sobre la carne durante la cocción, nunca antes", "scalable": false, "originalText": "al gusto" }
+          },
+          {
+            "name": "Carbón vegetal o leña dura",
+            "quantity": { "amount": 3, "unit": "kg", "note": "encina, quebracho o roble. Nunca briquetas industriales en un asado argentino.", "scalable": false, "originalText": "3 kg" }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Enciende el fuego (el ritual)",
+            "text": "El asado argentino empieza 90 minutos antes de comer, no 20. Apila el carbón o la leña en un lateral de la parrilla formando una pirámide. Enciende con papel y una sola cerilla (los profesionales no usan pastilla de encendido). Deja arder hasta que el carbón esté completamente blanco y sin llama. Distribuye las brasas de forma uniforme bajo la parrilla. La altura correcta: puedes aguantar la mano a 15 cm de la parrilla durante 4-5 segundos, no más.",
+            "hasTimer": true,
+            "durationMinutes": 90,
+            "durationSeconds": 5400,
+            "timerLabel": "Preparación del fuego",
+            "ingredientRefs": [
+              { "name": "Carbón vegetal o leña dura" }
+            ],
+            "tips": "¿Gas o carbón? El gas es una ofensa en un asado argentino. La leña de quebracho o encina da un aroma que es parte del plato. No hay alternativa válida."
+          },
+          {
+            "order": 2,
+            "title": "Primera tanda: morcilla y chorizos",
+            "text": "La morcilla va primero porque es la más delicada y se recalienta mal. Ponla entera a fuego medio-bajo, sin pinchar. Dale vuelta cada 5 minutos. Estará lista cuando la piel esté tostada y firme pero sin explotar (20-25 min). Los chorizos van a continuación o en paralelo si tienes espacio. Cocínalos a fuego medio, girando cada 5 minutos, hasta que estén dorados y jugosos por dentro (20-25 min). Retira y sirve como aperitivo mientras continúa el asado.",
+            "hasTimer": true,
+            "durationMinutes": 25,
+            "durationSeconds": 1500,
+            "timerLabel": "Morcilla y chorizos",
+            "ingredientRefs": [
+              { "name": "Morcilla criolla" },
+              { "name": "Chorizo criollo" }
+            ],
+            "tips": "La morcilla nunca se pincha: la presión interna es lo que la cocina. Si la pinchas, se vacía. Si explota, el fuego estaba demasiado fuerte."
+          },
+          {
+            "order": 3,
+            "title": "La tira de asado: paciencia total",
+            "text": "Coloca la tira de asado con el lado de los huesos hacia abajo. Así durante los primeros 45-50 minutos: los huesos protegen la carne y la cocinan desde dentro. No la muevas, no la presiones, no la toques. Pasados los 45 minutos, dale la vuelta: ahora la grasa queda hacia arriba y se funde lentamente. Sala con sal gruesa por el lado que ya está cocinado. Otros 20-25 minutos y estará lista.",
+            "hasTimer": true,
+            "durationMinutes": 70,
+            "durationSeconds": 4200,
+            "timerLabel": "Tira de asado completa",
+            "ingredientRefs": [
+              { "name": "Tira de asado" },
+              { "name": "Sal gruesa" }
+            ],
+            "tips": "El asado argentino siempre se cocina a fuego lento y sin tapa. Si ves llama directa bajo la carne, el fuego está demasiado alto. Apaga con unas gotas de agua y redistribuye las brasas."
+          },
+          {
+            "order": 4,
+            "title": "El vacío: el corte más argentino",
+            "text": "El vacío tiene dos caras: el lado de la membrana (cuero) y el lado de la carne. Empieza por el lado del cuero hacia abajo a fuego medio. Esa membrana se vuelve crujiente como chicharrón (35-40 min). Luego voltea y termina por el lado carne otros 15-20 minutos. El vacío bien hecho queda rosado por dentro y con la membrana crujiente por fuera. Sala con sal gruesa al dar la vuelta.",
+            "hasTimer": true,
+            "durationMinutes": 55,
+            "durationSeconds": 3300,
+            "timerLabel": "Vacío completo",
+            "ingredientRefs": [
+              { "name": "Vacío de ternera" },
+              { "name": "Sal gruesa" }
+            ]
+          },
+          {
+            "order": 5,
+            "title": "Reposo y servicio",
+            "text": "Retira las carnes de la parrilla y deja reposar 5-10 minutos sobre una tabla. En Argentina el asado no se sirve todo a la vez: primero la morcilla y el chorizo como aperitivo, luego la tira, luego el vacío. El asado es un proceso, no un plato. Corta la tira entre costilla y costilla. El vacío se corta en diagonal a la fibra. Sirve con chimichurri, pan y ensalada criolla.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "Reposo de las carnes",
+            "ingredientRefs": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "Picanha Brasileña a la Brasa",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "diet": "omnivore",
+      "mealType": null,
+      "estimatedDifficulty": 3,
+      "estimatedPrepTime": 75,
+      "ingredients": [
+        { "displayName": "Picanha (tapa de cuadril)", "canonicalName": "picanha tapa cuadril" },
+        { "displayName": "Sal gruesa", "canonicalName": "sal gruesa" },
+        { "displayName": "Carbón vegetal", "canonicalName": "carbon vegetal" }
+      ],
+      "recipe": {
+        "baseServings": 6,
+        "ingredients": [
+          {
+            "name": "Picanha (tapa de cuadril con capa de grasa)",
+            "quantity": { "amount": 2, "unit": "kg", "note": "pedir en carnicería con la tapa de grasa intacta, mínimo 1.5 cm de grosor. En España se llama tapa de cuadril o rabillo de cadera.", "scalable": true, "originalText": "2 kg" }
+          },
+          {
+            "name": "Sal gruesa",
+            "quantity": { "amount": 80, "unit": "g", "note": "sal marina o sal do Himalaia. La sal es el único condimento.", "scalable": false, "originalText": "80 g" }
+          },
+          {
+            "name": "Carbón vegetal o leña",
+            "quantity": { "amount": 2, "unit": "kg", "note": "fuego alto, brasa viva. El churrasco brasileño necesita calor intenso.", "scalable": false, "originalText": "2 kg" }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Prepara la brasa viva",
+            "text": "El churrasco brasileño necesita calor fuerte, no lento. Enciende el carbón y espera a que esté al rojo vivo con una fina capa de ceniza blanca. La parrilla debe estar caliente: si pones la mano a 10 cm aguantas menos de 2 segundos, es perfecta. Si puedes aguantar 5 segundos, falta calor. Coloca la parrilla cerca de las brasas (5-8 cm).",
+            "hasTimer": true,
+            "durationMinutes": 40,
+            "durationSeconds": 2400,
+            "timerLabel": "Preparar brasa viva",
+            "ingredientRefs": [
+              { "name": "Carbón vegetal o leña" }
+            ],
+            "tips": "¿Gas o carbón? El gas funciona, pero el carbón a alta temperatura da el exterior caramelizado característico del churrasco. Si usas gas, ponlo al máximo."
+          },
+          {
+            "order": 2,
+            "title": "Corta y sala la picanha",
+            "text": "Corta la picanha en filetes de 3-4 cm de grosor, perpendicular a la fibra, manteniendo la capa de grasa en cada filete. Salar la carne justo antes de poner en la parrilla: la sal gruesa por ambas caras, sin frotar, dejando que se adhiera sola. Si usas espeto (brocheta larga): dobla cada filete en forma de C con la grasa en el exterior y pínchalo. Esta forma concentra la jugosidad.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              { "name": "Picanha (tapa de cuadril con capa de grasa)" },
+              { "name": "Sal gruesa" }
+            ],
+            "tips": "Nunca recortes la capa de grasa antes de cocinar: es lo que hace a la picanha única. Se funde durante la cocción y baña la carne. Se puede recortar al servir."
+          },
+          {
+            "order": 3,
+            "title": "A la brasa: grasa primero",
+            "text": "Coloca los filetes con la capa de grasa hacia abajo primero durante 3-4 minutos: la grasa se empieza a fundir y caramelizar. Voltea y cocina el lado de la carne 4-5 minutos para punto medio-rojo (el más popular en Brasil). Para bien hecho: 6-7 minutos por lado. La picanha nunca se hace muy hecha: pierde toda la gracia. Si usas espeto, gira cada 2-3 minutos.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "Cocción de la picanha",
+            "ingredientRefs": []
+          },
+          {
+            "order": 4,
+            "title": "El corte brasileño y el servicio",
+            "text": "El churrasco se sirve al estilo rodízio: se cortan lonchas muy finas directamente del espeto o de la tabla mientras la carne sigue cocinándose. El exterior más hecho se sirve primero, luego se sigue cocinando para las siguientes rondas. Sin espeto: reposa 5 minutos sobre la tabla y corta en lonchas de 5 mm contra la fibra. Sirve inmediatamente con arroz blanco, farofa (harina de mandioca tostada) y vinagreta brasileña.",
+            "hasTimer": true,
+            "durationMinutes": 5,
+            "durationSeconds": 300,
+            "timerLabel": "Reposo antes de cortar",
+            "ingredientRefs": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "BBQ Coreana: Galbi y Bulgogi",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "diet": "omnivore",
+      "mealType": null,
+      "estimatedDifficulty": 3,
+      "estimatedPrepTime": 300,
+      "ingredients": [
+        { "displayName": "Costillas de ternera corte flanken", "canonicalName": "costillas ternera flanken galbi" },
+        { "displayName": "Solomillo de ternera en láminas", "canonicalName": "solomillo ternera bulgogi" },
+        { "displayName": "Salsa de soja", "canonicalName": "salsa de soja" },
+        { "displayName": "Pera asiática", "canonicalName": "pera asiatica" },
+        { "displayName": "Aceite de sésamo", "canonicalName": "aceite de sesamo" }
+      ],
+      "recipe": {
+        "baseServings": 6,
+        "ingredients": [
+          {
+            "name": "Costillas de ternera corte flanken (galbi)",
+            "quantity": { "amount": 1.5, "unit": "kg", "note": "corte transversal del hueso, 3-4 mm de grosor. Pedir en carnicería coreana o asiática como 'LA-style short ribs'.", "scalable": true, "originalText": "1.5 kg" }
+          },
+          {
+            "name": "Solomillo de ternera en láminas finas (bulgogi)",
+            "quantity": { "amount": 500, "unit": "g", "note": "cortado a 2-3 mm, congelarlo 30 minutos facilita el corte", "scalable": true, "originalText": "500 g" }
+          },
+          {
+            "name": "Salsa de soja",
+            "quantity": { "amount": 100, "unit": "ml", "scalable": false, "originalText": "100 ml" }
+          },
+          {
+            "name": "Pera asiática",
+            "quantity": { "amount": 1, "unit": "unidad", "note": "o kiwi maduro, actúa como ablandador enzimático natural", "scalable": false, "originalText": "1 unidad" }
+          },
+          {
+            "name": "Aceite de sésamo",
+            "quantity": { "amount": 30, "unit": "ml", "scalable": false, "originalText": "30 ml" }
+          },
+          {
+            "name": "Ajo",
+            "quantity": { "amount": 8, "unit": "diente", "scalable": false, "originalText": "8 dientes" }
+          },
+          {
+            "name": "Jengibre fresco",
+            "quantity": { "amount": 25, "unit": "g", "scalable": false, "originalText": "25 g" }
+          },
+          {
+            "name": "Azúcar moreno",
+            "quantity": { "amount": 40, "unit": "g", "scalable": false, "originalText": "40 g" }
+          },
+          {
+            "name": "Cebolleta",
+            "quantity": { "amount": 6, "unit": "unidad", "scalable": true, "originalText": "6 unidades" }
+          },
+          {
+            "name": "Sésamo tostado",
+            "quantity": { "amount": 20, "unit": "g", "scalable": false, "originalText": "20 g" }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Prepara la marinada",
+            "text": "Tritura en un procesador: la pera asiática pelada, el ajo, el jengibre y la salsa de soja. Añade el azúcar moreno y el aceite de sésamo. Mezcla bien. Esta marinada tiene fruta: la pera o el kiwi contienen enzimas que rompen las proteínas musculares y ablandan la carne de forma natural en pocas horas. Divide la marinada: la mitad para el galbi, la otra mitad para el bulgogi. Añade la cebolleta cortada en diagonal.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              { "name": "Salsa de soja" },
+              { "name": "Pera asiática" },
+              { "name": "Aceite de sésamo" },
+              { "name": "Ajo" },
+              { "name": "Jengibre fresco" },
+              { "name": "Azúcar moreno" },
+              { "name": "Cebolleta" }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Marina las carnes",
+            "text": "Mezcla el galbi y el bulgogi con sus respectivas marinadas. Cubre y refrigera. Mínimo 2 horas, ideal toda la noche. Con la fruta no marines más de 24 horas: las enzimas seguirán trabajando y la carne puede quedar pastosa. Saca de la nevera 30 minutos antes de cocinar.",
+            "hasTimer": true,
+            "durationMinutes": 240,
+            "durationSeconds": 14400,
+            "timerLabel": "Marinado mínimo 4 horas",
+            "ingredientRefs": [
+              { "name": "Costillas de ternera corte flanken (galbi)" },
+              { "name": "Solomillo de ternera en láminas finas (bulgogi)" }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Prepara la parrilla coreana",
+            "text": "La BBQ coreana se hace sobre una parrilla o plancha de mesa encima del carbón. Si tienes una parrilla doméstica: usa el fuego más alto posible, la parrilla debe estar muy caliente antes de añadir la carne. El carbón en mesa es la experiencia auténtica y lo que más se recomienda. El gas funciona bien para el bulgogi (plancha antiadherente). Prepara los acompañamientos: lechuga para ssam, kimchi, arroz.",
+            "hasTimer": true,
+            "durationMinutes": 20,
+            "durationSeconds": 1200,
+            "timerLabel": "Calentar la parrilla",
+            "ingredientRefs": [],
+            "tips": "¿Gas o carbón? Para galbi: carbón da el exterior caramelizado perfecto. Para bulgogi: gas o plancha de hierro funcionan igual de bien, el marinado domina el sabor."
+          },
+          {
+            "order": 4,
+            "title": "Galbi primero: 3-4 min por lado",
+            "text": "Coloca las costillas flanken en la parrilla muy caliente. Son finas: 3-4 minutos por cada lado máximo. Busca un exterior bien caramelizado con el azúcar de la marinada. El azúcar se quema rápido: vigila que no se carbonice demasiado. Corta entre huesos para servir en piezas individuales. El galbi bien hecho queda dorado, ligeramente crujiente por fuera y rosado y jugoso por dentro.",
+            "hasTimer": true,
+            "durationMinutes": 8,
+            "durationSeconds": 480,
+            "timerLabel": "Galbi: 4 min por lado",
+            "ingredientRefs": [
+              { "name": "Costillas de ternera corte flanken (galbi)" },
+              { "name": "Sésamo tostado" }
+            ]
+          },
+          {
+            "order": 5,
+            "title": "Bulgogi: vuelta y vuelta rápida",
+            "text": "El bulgogi son láminas muy finas: 1-2 minutos por lado a fuego muy alto. Si la parrilla está bien caliente, se hace casi al instante. No amontones: cocina en tandas para que cada pieza toque el metal directamente. El resultado debe ser ligeramente dorado y caramelizado, nunca gris o hervido. Sirve con cebolleta cortada en diagonal y sésamo tostado por encima.",
+            "hasTimer": true,
+            "durationMinutes": 4,
+            "durationSeconds": 240,
+            "timerLabel": "Bulgogi: rápido a fuego alto",
+            "ingredientRefs": [
+              { "name": "Solomillo de ternera en láminas finas (bulgogi)" },
+              { "name": "Cebolleta" },
+              { "name": "Sésamo tostado" }
+            ],
+            "tips": "El ssam es la forma correcta de comer: hoja de lechuga, arroz, un trozo de galbi o bulgogi, kimchi, pasta gochujang. Se enrolla y se come de un bocado. No es opcional."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Memphis Pulled Pork & Ribs",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "diet": "omnivore",
+      "mealType": null,
+      "estimatedDifficulty": 5,
+      "estimatedPrepTime": 720,
+      "ingredients": [
+        { "displayName": "Paleta de cerdo Boston Butt", "canonicalName": "paleta cerdo boston butt" },
+        { "displayName": "Rack de costillas baby back", "canonicalName": "costillas cerdo baby back" },
+        { "displayName": "Pimentón ahumado", "canonicalName": "pimenton ahumado" },
+        { "displayName": "Astillas de hickory o manzano", "canonicalName": "astillas hickory" }
+      ],
+      "recipe": {
+        "baseServings": 6,
+        "ingredients": [
+          {
+            "name": "Paleta de cerdo (Boston Butt)",
+            "quantity": { "amount": 2.5, "unit": "kg", "note": "con hueso, con capa de grasa. Es la parte superior de la paleta, no el jarrete.", "scalable": true, "originalText": "2.5 kg" }
+          },
+          {
+            "name": "Rack de costillas de cerdo baby back",
+            "quantity": { "amount": 1, "unit": "unidad", "note": "aproximadamente 1.5 kg. Las baby back son más tiernas que las spare ribs.", "scalable": true, "originalText": "1 rack (~1.5 kg)" }
+          },
+          {
+            "name": "Pimentón ahumado",
+            "quantity": { "amount": 25, "unit": "g", "scalable": false, "originalText": "25 g" }
+          },
+          {
+            "name": "Azúcar moreno",
+            "quantity": { "amount": 25, "unit": "g", "scalable": false, "originalText": "25 g" }
+          },
+          {
+            "name": "Sal",
+            "quantity": { "amount": 15, "unit": "g", "scalable": false, "originalText": "15 g" }
+          },
+          {
+            "name": "Pimienta negra molida",
+            "quantity": { "amount": 10, "unit": "g", "scalable": false, "originalText": "10 g" }
+          },
+          {
+            "name": "Comino molido",
+            "quantity": { "amount": 5, "unit": "g", "scalable": false, "originalText": "5 g" }
+          },
+          {
+            "name": "Ajo en polvo",
+            "quantity": { "amount": 5, "unit": "g", "scalable": false, "originalText": "5 g" }
+          },
+          {
+            "name": "Cebolla en polvo",
+            "quantity": { "amount": 5, "unit": "g", "scalable": false, "originalText": "5 g" }
+          },
+          {
+            "name": "Cayena molida",
+            "quantity": { "amount": 2, "unit": "g", "scalable": false, "originalText": "2 g" }
+          },
+          {
+            "name": "Astillas de madera hickory o manzano",
+            "quantity": { "amount": 200, "unit": "g", "note": "hickory = sabor fuerte, manzano = más suave y dulce. Para cerdo, el manzano es extraordinario.", "scalable": false, "originalText": "200 g" }
+          },
+          {
+            "name": "Carbón de calidad",
+            "quantity": { "amount": 3, "unit": "kg", "scalable": false, "originalText": "3 kg" }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "El dry rub (la víspera)",
+            "text": "Mezcla en un bol: pimentón ahumado, azúcar moreno, sal, pimienta negra, comino, ajo en polvo, cebolla en polvo y cayena. Esta mezcla es el dry rub estilo Memphis: sin salsa, toda la intensidad viene del rub y el humo. Aplica generosamente por toda la paleta y las costillas, presionando para adherir. Envuelve en film y refrigera toda la noche. Las costillas: retira la membrana plateada del lado interior pasando un cuchillo bajo ella y tirando con un trapo (si no se retira, bloquea el sabor).",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              { "name": "Paleta de cerdo (Boston Butt)" },
+              { "name": "Rack de costillas de cerdo baby back" },
+              { "name": "Pimentón ahumado" },
+              { "name": "Azúcar moreno" },
+              { "name": "Sal" },
+              { "name": "Pimienta negra molida" },
+              { "name": "Comino molido" },
+              { "name": "Ajo en polvo" },
+              { "name": "Cebolla en polvo" },
+              { "name": "Cayena molida" }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Enciende el ahumador a 110°C",
+            "text": "Prepara la barbacoa para fuego indirecto con temperatura objetivo de 110-120°C. Añade astillas de madera de manzano o hickory sobre las brasas. La paleta necesita humo durante las primeras 4-5 horas principalmente. El manzano es más suave y perfecto para cerdo; el hickory más intenso y el favorito de Memphis. Estabiliza la temperatura antes de poner la carne.",
+            "hasTimer": true,
+            "durationMinutes": 45,
+            "durationSeconds": 2700,
+            "timerLabel": "Estabilizar ahumador a 110-120°C",
+            "ingredientRefs": [
+              { "name": "Carbón de calidad" },
+              { "name": "Astillas de madera hickory o manzano" }
+            ],
+            "tips": "Memphis vs Kansas City: en Memphis el rub es seco y la salsa se sirve al lado (o no se usa). En Kansas City cubren todo con salsa dulce durante la cocción. Este es estilo Memphis: el sabor viene del humo y el rub, no de la salsa."
+          },
+          {
+            "order": 3,
+            "title": "Cocción lenta: paleta 8-10h, ribs 3h de humo",
+            "text": "Coloca la paleta con la grasa hacia arriba. Coloca las costillas en un soporte vertical si tienes, o planas en la zona más alejada del calor. La paleta necesita cocinarse hasta 74°C internos (unas 8-10 horas). Las costillas siguen el método 3-2-1: primero 3 horas en el ahumador. Mantén el humo activo con astillas las primeras 3 horas. Usa termómetro de sonda, no te fíes del tiempo.",
+            "hasTimer": true,
+            "durationMinutes": 180,
+            "durationSeconds": 10800,
+            "timerLabel": "Fase 1 de humo: 3 horas",
+            "ingredientRefs": []
+          },
+          {
+            "order": 4,
+            "title": "Costillas: 2 horas envueltas en foil",
+            "text": "Saca las costillas del ahumador. Envuélvelas firmemente en papel de aluminio con 2 cucharadas de agua o zumo de manzana dentro (esto crea vapor y las ablanda). Vuelve a colocar en la barbacoa. Ahora pueden subir ligeramente la temperatura a 130°C. La paleta sigue sin envolver hasta los 74°C. Las costillas quedarán muy tiernas después de estas 2 horas.",
+            "hasTimer": true,
+            "durationMinutes": 120,
+            "durationSeconds": 7200,
+            "timerLabel": "Costillas envueltas en foil: 2 horas",
+            "ingredientRefs": []
+          },
+          {
+            "order": 5,
+            "title": "Costillas: 1 hora final y pulled pork",
+            "text": "Desenvuelve las costillas y vuelve a la parrilla 1 hora más para que recuperen el bark. La paleta: cuando alcance 95-98°C y la sonda entre sin resistencia (como mantequilla), está lista para hacer pulled pork. Retira la paleta del fuego. Las costillas están listas cuando la carne se separa del hueso con un ligero tirón pero no cae sola.",
+            "hasTimer": true,
+            "durationMinutes": 60,
+            "durationSeconds": 3600,
+            "timerLabel": "Costillas: 1 hora final sin foil",
+            "ingredientRefs": []
+          },
+          {
+            "order": 6,
+            "title": "Reposo y pulled pork",
+            "text": "Reposa la paleta envuelta en papel de aluminio y toallas en una nevera de camping durante 1 hora mínimo. Para hacer pulled pork: retira el hueso (debe salir solo) y deshuesa la carne con dos tenedores, desmenuzando en hebras. Mezcla el jugo que haya soltado de vuelta con la carne desmenuzada. Sirve en pan brioche con coleslaw. Las costillas: corta entre huesos y sirve directamente.",
+            "hasTimer": true,
+            "durationMinutes": 60,
+            "durationSeconds": 3600,
+            "timerLabel": "Reposo de la paleta",
+            "ingredientRefs": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "Yakitori Japonés en Binchotan",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "diet": "omnivore",
+      "mealType": null,
+      "estimatedDifficulty": 4,
+      "estimatedPrepTime": 90,
+      "ingredients": [
+        { "displayName": "Muslo de pollo sin hueso", "canonicalName": "muslo pollo sin hueso" },
+        { "displayName": "Piel de pollo", "canonicalName": "piel de pollo" },
+        { "displayName": "Corazones de pollo", "canonicalName": "corazones de pollo" },
+        { "displayName": "Carbón binchotan", "canonicalName": "carbon binchotan" },
+        { "displayName": "Salsa de soja", "canonicalName": "salsa de soja" }
+      ],
+      "recipe": {
+        "baseServings": 6,
+        "ingredients": [
+          {
+            "name": "Muslo de pollo sin hueso",
+            "quantity": { "amount": 800, "unit": "g", "note": "con piel, cortado en cubos de 3 cm", "scalable": true, "originalText": "800 g" }
+          },
+          {
+            "name": "Piel de pollo",
+            "quantity": { "amount": 200, "unit": "g", "note": "pedir a la carnicería aparte, o usar la piel sobrante del muslo", "scalable": true, "originalText": "200 g" }
+          },
+          {
+            "name": "Corazones de pollo",
+            "quantity": { "amount": 300, "unit": "g", "scalable": true, "originalText": "300 g" }
+          },
+          {
+            "name": "Cebolleta",
+            "quantity": { "amount": 6, "unit": "unidad", "note": "la parte blanca en trozos de 3 cm para pinchar entre la carne", "scalable": true, "originalText": "6 unidades" }
+          },
+          {
+            "name": "Salsa de soja",
+            "quantity": { "amount": 80, "unit": "ml", "scalable": false, "originalText": "80 ml" }
+          },
+          {
+            "name": "Mirin",
+            "quantity": { "amount": 60, "unit": "ml", "scalable": false, "originalText": "60 ml" }
+          },
+          {
+            "name": "Sake",
+            "quantity": { "amount": 60, "unit": "ml", "scalable": false, "originalText": "60 ml" }
+          },
+          {
+            "name": "Azúcar",
+            "quantity": { "amount": 20, "unit": "g", "scalable": false, "originalText": "20 g" }
+          },
+          {
+            "name": "Carbón binchotan",
+            "quantity": { "amount": 1.5, "unit": "kg", "note": "carbón blanco japonés. Alternativa: carbón vegetal de calidad. El binchotan no humea, alcanza temperaturas muy altas y dura horas.", "scalable": false, "originalText": "1.5 kg" }
+          },
+          {
+            "name": "Sal fina",
+            "quantity": { "amount": 0, "unit": "al gusto", "scalable": false, "originalText": "al gusto" }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Prepara la salsa tare",
+            "text": "En un cazo pequeño, mezcla la salsa de soja, el mirin, el sake y el azúcar. Lleva a fuego medio-bajo y reduce durante 15-20 minutos hasta que espese ligeramente y cubra el dorso de una cuchara. Esta es la tare, la salsa de lacado que se aplica durante la cocción. Deja enfriar. Puedes hacerla con días de antelación y guardarla en nevera.",
+            "hasTimer": true,
+            "durationMinutes": 20,
+            "durationSeconds": 1200,
+            "timerLabel": "Reducir la tare",
+            "ingredientRefs": [
+              { "name": "Salsa de soja" },
+              { "name": "Mirin" },
+              { "name": "Sake" },
+              { "name": "Azúcar" }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Enciende el binchotan",
+            "text": "El binchotan necesita tiempo para encenderse: no se enciende directamente con papel. Usa un encendedor de chimenea (chimney starter) con fuego directo de gas bajo el binchotan durante 15-20 minutos. Cuando los bordes estén rojos, pasa las brasas a la parrilla. El binchotan alcanza temperaturas extremas (900°C+) sin producir humo, lo que permite poner los pinchos muy cerca del calor. Deja estabilizar 20 minutos.",
+            "hasTimer": true,
+            "durationMinutes": 45,
+            "durationSeconds": 2700,
+            "timerLabel": "Encender y estabilizar binchotan",
+            "ingredientRefs": [
+              { "name": "Carbón binchotan" }
+            ],
+            "tips": "¿Gas o carbón? Para yakitori: el binchotan es irremplazable. No humea, no da sabores extraños, alcanza temperaturas brutales y dura horas. El gas no reproduce la experiencia. Si no tienes binchotan, usa carbón de calidad muy encendido."
+          },
+          {
+            "order": 3,
+            "title": "Prepara y pincha los yakitori",
+            "text": "Momo (muslo): cubos de 3 cm alternados con trozos de cebolleta en pinchos de bambú (remojados 30 min en agua). Kawa (piel): estira las tiras de piel y dobla en acordeón en el pincho, bien prieto. Hatsu (corazones): ensarta 3-4 por pincho. Estos son los tres estilos clásicos. Usa pinchos de metal si los tienes: no se queman.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              { "name": "Muslo de pollo sin hueso" },
+              { "name": "Piel de pollo" },
+              { "name": "Corazones de pollo" },
+              { "name": "Cebolleta" }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Yakitori de muslo (momo): 10-12 min",
+            "text": "Coloca los pinchos de momo muy cerca del binchotan (3-4 cm). Gira cada 2 minutos. Tras 6 minutos, empieza a untar con tare usando un pincel en cada vuelta. La tare se carameliza con cada capa. El resultado final es una capa brillante y lacada. Interior: jugoso y cocinado. Sirve espolvoreado con sal fina o sansho (pimienta japonesa) si tienes. También puedes servirlos shio (solo sal, sin tare) para apreciar el pollo puro.",
+            "hasTimer": true,
+            "durationMinutes": 12,
+            "durationSeconds": 720,
+            "timerLabel": "Momo: 12 min girando cada 2",
+            "ingredientRefs": [
+              { "name": "Sal fina" }
+            ],
+            "tips": "El yakitori correcto: exterior lacado y ligeramente crujiente, interior a 72-74°C. No lo hagas muy hecho: el pollo jugoso es el objetivo."
+          },
+          {
+            "order": 5,
+            "title": "Piel (kawa) y corazones (hatsu)",
+            "text": "Kawa: la piel necesita más tiempo a fuego algo más bajo para que la grasa se funda y quede crujiente sin quemarse. Gira frecuentemente, 15-18 minutos total. Hatsu: los corazones son pequeños y van rápido, 5-6 minutos girando cada minuto. El interior debe quedar ligeramente rosado: bien hecho y seco es un error. Unta con tare en los últimos 2 minutos. Los corazones con tare y sésamo son el yakitori más adictivo.",
+            "hasTimer": true,
+            "durationMinutes": 16,
+            "durationSeconds": 960,
+            "timerLabel": "Kawa y hatsu: 15-18 min",
+            "ingredientRefs": [
+              { "name": "Sal fina" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Braai Sudafricano",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "diet": "omnivore",
+      "mealType": null,
+      "estimatedDifficulty": 3,
+      "estimatedPrepTime": 120,
+      "ingredients": [
+        { "displayName": "Boerewors (salchicha sudafricana)", "canonicalName": "boerewors salchicha sudafricana" },
+        { "displayName": "Chuletas de cordero", "canonicalName": "chuleta cordero" },
+        { "displayName": "Leña dura", "canonicalName": "lena encina roble" },
+        { "displayName": "Queso gouda", "canonicalName": "queso gouda" }
+      ],
+      "recipe": {
+        "baseServings": 6,
+        "ingredients": [
+          {
+            "name": "Boerewors",
+            "quantity": { "amount": 1.5, "unit": "kg", "note": "salchicha sudafricana en espiral, mezcla de vacuno y cerdo con cilantro, pimienta y vinagre. Busca en carnicería especializada o cocina la receta: 70% ternera + 30% cerdo graso, cilantro molido, pimienta, clavo, vinagre de manzana.", "scalable": true, "originalText": "1.5 kg" }
+          },
+          {
+            "name": "Chuletas de cordero",
+            "quantity": { "amount": 12, "unit": "unidad", "note": "chuletas de palo o de riñonada, 2 por persona", "scalable": true, "originalText": "12 unidades (~1.2 kg)" }
+          },
+          {
+            "name": "Ajo",
+            "quantity": { "amount": 4, "unit": "diente", "scalable": false, "originalText": "4 dientes" }
+          },
+          {
+            "name": "Romero fresco",
+            "quantity": { "amount": 4, "unit": "ramita", "scalable": false, "originalText": "4 ramitas" }
+          },
+          {
+            "name": "Limón",
+            "quantity": { "amount": 2, "unit": "unidad", "scalable": false, "originalText": "2 unidades" }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": { "amount": 60, "unit": "ml", "scalable": false, "originalText": "60 ml" }
+          },
+          {
+            "name": "Sal gruesa y pimienta negra",
+            "quantity": { "amount": 0, "unit": "al gusto", "scalable": false, "originalText": "al gusto" }
+          },
+          {
+            "name": "Pan de molde grueso",
+            "quantity": { "amount": 12, "unit": "rebanada", "note": "para las braaibroodjies, las tostadas rellenas del braai", "scalable": true, "originalText": "12 rebanadas" }
+          },
+          {
+            "name": "Queso gouda",
+            "quantity": { "amount": 200, "unit": "g", "note": "en lonchas gruesas para el braaibroodjie", "scalable": true, "originalText": "200 g" }
+          },
+          {
+            "name": "Tomate",
+            "quantity": { "amount": 2, "unit": "unidad", "note": "en rodajas para el braaibroodjie", "scalable": true, "originalText": "2 unidades" }
+          },
+          {
+            "name": "Leña dura",
+            "quantity": { "amount": 3, "unit": "kg", "note": "encina, roble o madera de frutales. En el braai SOLO se usa leña. Nunca gas, nunca briquetas. Es parte de la cultura.", "scalable": false, "originalText": "3 kg" }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "El fuego de leña (el braai empieza aquí)",
+            "text": "El braai usa solo leña, nunca gas ni carbón industrial. Es parte de la identidad cultural sudafricana: hacer el fuego correctamente es tan importante como cocinar bien. Apila la leña en una rejilla elevada o directamente en la parrilla. Enciende con papel o corteza de árbol. Deja arder hasta obtener brasas vivas y uniformes (60-70 minutos). El braai no tiene prisa: la conversación alrededor del fuego mientras se espera es parte del ritual.",
+            "hasTimer": true,
+            "durationMinutes": 70,
+            "durationSeconds": 4200,
+            "timerLabel": "Fuego de leña hasta obtener brasas",
+            "ingredientRefs": [
+              { "name": "Leña dura" }
+            ],
+            "tips": "En Sudáfrica el braai es una institución social tan importante como la propia comida. No se llama BBQ, se llama braai. La diferencia no es solo semántica: el proceso, la leña y el tiempo son parte del plato."
+          },
+          {
+            "order": 2,
+            "title": "Marina las chuletas de cordero",
+            "text": "Mezcla el aceite de oliva, el ajo picado fino, el romero deshojado y el zumo de medio limón. Unta las chuletas por ambos lados. Sala y pimenta. Deja reposar a temperatura ambiente mientras el fuego se prepara. No es necesaria una marinada larga para las chuletas: 30-45 minutos es suficiente.",
+            "hasTimer": true,
+            "durationMinutes": 30,
+            "durationSeconds": 1800,
+            "timerLabel": "Marinado de las chuletas",
+            "ingredientRefs": [
+              { "name": "Chuletas de cordero" },
+              { "name": "Aceite de oliva" },
+              { "name": "Ajo" },
+              { "name": "Romero fresco" },
+              { "name": "Limón" },
+              { "name": "Sal gruesa y pimienta negra" }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Boerewors: la salchicha en espiral",
+            "text": "El boerewors se cocina entero en espiral, sin cortar ni pinchar. Colócalo sobre las brasas a fuego medio. La grasa que tiene dentro lo mantiene jugoso. Cocínalo girando la espiral completa cada 5-6 minutos durante unos 20-25 minutos total. Cuando la piel esté dorada y crujiente por todos lados y la temperatura interna supere 72°C, está listo. Sirve cortando en trozos mientras sigue en la parrilla.",
+            "hasTimer": true,
+            "durationMinutes": 22,
+            "durationSeconds": 1320,
+            "timerLabel": "Boerewors en espiral",
+            "ingredientRefs": [
+              { "name": "Boerewors" }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Chuletas de cordero: 5-6 min por lado",
+            "text": "Con el boerewors casi listo, coloca las chuletas de cordero sobre brasas vivas a fuego medio-alto. Las chuletas de palo: 5-6 minutos por lado para punto medio. El cordero queda mejor rosado: cocción excesiva lo seca rápidamente. Hacia el final, exprime el limón restante sobre las chuletas en la parrilla. El ácido carameliza con el calor y crea una corteza aromática.",
+            "hasTimer": true,
+            "durationMinutes": 12,
+            "durationSeconds": 720,
+            "timerLabel": "Chuletas de cordero",
+            "ingredientRefs": [
+              { "name": "Chuletas de cordero" },
+              { "name": "Limón" }
+            ]
+          },
+          {
+            "order": 5,
+            "title": "Braaibroodjie: el final imprescindible",
+            "text": "El braaibroodjie es la tostada rellena que se hace al final del braai con las brasas más bajas. Monta sandwiches: pan + queso gouda + rodajas de tomate + sal y pimienta. Coloca directamente sobre las brasas (o en una sandwichera de parrilla si tienes). 3-4 minutos por lado hasta que el pan esté tostado y el queso fundido. Es obligatorio. No es opcional. El braai no termina sin braaibroodjie.",
+            "hasTimer": true,
+            "durationMinutes": 8,
+            "durationSeconds": 480,
+            "timerLabel": "Braaibroodjie: 4 min por lado",
+            "ingredientRefs": [
+              { "name": "Pan de molde grueso" },
+              { "name": "Queso gouda" },
+              { "name": "Tomate" },
+              { "name": "Sal gruesa y pimienta negra" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Arrachera Mexicana al Carbón",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "diet": "omnivore",
+      "mealType": null,
+      "estimatedDifficulty": 2,
+      "estimatedPrepTime": 45,
+      "ingredients": [
+        { "displayName": "Arrachera (falda de ternera)", "canonicalName": "arrachera falda ternera" },
+        { "displayName": "Tortillas de maíz", "canonicalName": "tortillas maiz" },
+        { "displayName": "Aguacate", "canonicalName": "aguacate" },
+        { "displayName": "Limones", "canonicalName": "limon" }
+      ],
+      "recipe": {
+        "baseServings": 6,
+        "ingredients": [
+          {
+            "name": "Arrachera (falda exterior de ternera)",
+            "quantity": { "amount": 1.5, "unit": "kg", "note": "la falda exterior (outside skirt) es más sabrosa que la interior. En España pídela como 'entraña' en carnicería argentina o 'falda'. Grosor de 1-1.5 cm.", "scalable": true, "originalText": "1.5 kg" }
+          },
+          {
+            "name": "Limones",
+            "quantity": { "amount": 4, "unit": "unidad", "scalable": false, "originalText": "4 unidades" }
+          },
+          {
+            "name": "Naranja",
+            "quantity": { "amount": 1, "unit": "unidad", "scalable": false, "originalText": "1 unidad" }
+          },
+          {
+            "name": "Ajo",
+            "quantity": { "amount": 6, "unit": "diente", "scalable": false, "originalText": "6 dientes" }
+          },
+          {
+            "name": "Comino molido",
+            "quantity": { "amount": 10, "unit": "g", "scalable": false, "originalText": "10 g" }
+          },
+          {
+            "name": "Chile ancho en polvo",
+            "quantity": { "amount": 10, "unit": "g", "note": "o pimentón ahumado + una pizca de cayena si no encuentras chile ancho", "scalable": false, "originalText": "10 g" }
+          },
+          {
+            "name": "Cilantro fresco",
+            "quantity": { "amount": 1, "unit": "manojo", "scalable": false, "originalText": "1 manojo" }
+          },
+          {
+            "name": "Cerveza rubia",
+            "quantity": { "amount": 200, "unit": "ml", "note": "actúa como ablandador suave. Opcional pero recomendable.", "scalable": false, "originalText": "200 ml" }
+          },
+          {
+            "name": "Tortillas de maíz",
+            "quantity": { "amount": 18, "unit": "unidad", "scalable": true, "originalText": "18 unidades" }
+          },
+          {
+            "name": "Cebolla blanca",
+            "quantity": { "amount": 2, "unit": "unidad", "scalable": true, "originalText": "2 unidades" }
+          },
+          {
+            "name": "Aguacate",
+            "quantity": { "amount": 3, "unit": "unidad", "scalable": true, "originalText": "3 unidades" }
+          },
+          {
+            "name": "Chile serrano o jalapeño",
+            "quantity": { "amount": 2, "unit": "unidad", "scalable": false, "originalText": "2 unidades" }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "La marinada (mínimo 2 horas)",
+            "text": "Mezcla el zumo de los limones, el zumo de naranja, el ajo picado fino, el comino, el chile ancho en polvo, el cilantro picado y la cerveza. Sumerge la arrachera completamente. Mínimo 2 horas en nevera, máximo 6 (el ácido del cítrico empieza a cocinar la carne si se deja mucho tiempo y la textura se vuelve extraña). Saca 30 minutos antes de cocinar.",
+            "hasTimer": true,
+            "durationMinutes": 120,
+            "durationSeconds": 7200,
+            "timerLabel": "Marinado de la arrachera",
+            "ingredientRefs": [
+              { "name": "Arrachera (falda exterior de ternera)" },
+              { "name": "Limones" },
+              { "name": "Naranja" },
+              { "name": "Ajo" },
+              { "name": "Comino molido" },
+              { "name": "Chile ancho en polvo" },
+              { "name": "Cilantro fresco" },
+              { "name": "Cerveza rubia" }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Parrilla al rojo vivo",
+            "text": "La arrachera necesita fuego ALTO. Encima de las brasas más vivas que tengas. El objetivo es sellar rápido el exterior y dejar el interior rosado. Si la parrilla está fría la carne se cuece, no se sella, y pierde los jugos. Calienta la parrilla al máximo durante 20-30 minutos. Seca la arrachera con papel de cocina antes de poner en la parrilla (la humedad del marinado impide el sellado).",
+            "hasTimer": true,
+            "durationMinutes": 30,
+            "durationSeconds": 1800,
+            "timerLabel": "Calentar parrilla al máximo",
+            "ingredientRefs": [],
+            "tips": "¿Gas o carbón? Ambos funcionan bien para arrachera. El gas a máxima potencia puede alcanzar temperaturas equivalentes. Lo importante es el calor extremo, no el combustible."
+          },
+          {
+            "order": 3,
+            "title": "Cocción rápida: 3-4 min por lado",
+            "text": "Coloca la arrachera seca sobre la parrilla muy caliente. Escucharás el chisporroteo: eso es bueno. NO la muevas durante los primeros 3-4 minutos: el sellado necesita tiempo de contacto sin interrupciones. Voltea una sola vez. Otros 3-4 minutos por el segundo lado. El punto ideal es medio: exterior bien sellado con marcas de parrilla, interior rosado. Temperatura interna objetivo: 57-60°C.",
+            "hasTimer": true,
+            "durationMinutes": 8,
+            "durationSeconds": 480,
+            "timerLabel": "Arrachera: 4 min por lado",
+            "ingredientRefs": []
+          },
+          {
+            "order": 4,
+            "title": "Reposo y corte en diagonal",
+            "text": "Retira la arrachera y deja reposar 8-10 minutos sobre una tabla. Esto es obligatorio: cortarla en caliente hace que todos los jugos escapen. Corta en láminas muy finas (5 mm) en diagonal a la fibra muscular. La fibra de la arrachera es muy visible; si cortas paralelo a ella, queda dura. El corte en diagonal multiplica la terneza percibida.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "Reposo antes de cortar",
+            "ingredientRefs": []
+          },
+          {
+            "order": 5,
+            "title": "Monta los tacos al carbón",
+            "text": "Calienta las tortillas de maíz directamente en la parrilla 30 segundos por lado (quedan con marcas y se ablandan). Prepara guacamole: aguacate aplastado con limón, sal, chile serrano y cilantro. Pica la cebolla muy fina. Monta: dos tortillas superpuestas (tradición mexicana), láminas de arrachera, cebolla cruda picada, cilantro y unas gotas de limón. La salsa verde va aparte.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              { "name": "Tortillas de maíz" },
+              { "name": "Aguacate" },
+              { "name": "Cebolla blanca" },
+              { "name": "Cilantro fresco" },
+              { "name": "Limones" },
+              { "name": "Chile serrano o jalapeño" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Jerk de Pollo Jamaicano",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "diet": "omnivore",
+      "mealType": null,
+      "estimatedDifficulty": 3,
+      "estimatedPrepTime": 180,
+      "ingredients": [
+        { "displayName": "Pollo entero en mariposa", "canonicalName": "pollo entero" },
+        { "displayName": "Pimiento habanero o scotch bonnet", "canonicalName": "pimiento habanero scotch bonnet" },
+        { "displayName": "Pimienta de Jamaica (allspice)", "canonicalName": "pimienta jamaica allspice" },
+        { "displayName": "Cebolleta", "canonicalName": "cebolleta" }
+      ],
+      "recipe": {
+        "baseServings": 6,
+        "ingredients": [
+          {
+            "name": "Pollo entero abierto en mariposa",
+            "quantity": { "amount": 2, "unit": "unidad", "note": "aproximadamente 1.5 kg cada uno. Abiertos en mariposa (spatchcock): corta la columna vertebral y aplana. Así se cocina de forma uniforme y más rápido.", "scalable": true, "originalText": "2 unidades (~1.5 kg c/u)" }
+          },
+          {
+            "name": "Pimiento habanero o scotch bonnet",
+            "quantity": { "amount": 3, "unit": "unidad", "note": "el scotch bonnet es el auténtico jamaicano. El habanero es más fácil de encontrar y muy similar. Aviso: son muy picantes. Usa guantes al manipularlos.", "scalable": false, "originalText": "3 unidades" }
+          },
+          {
+            "name": "Pimienta de Jamaica molida (allspice)",
+            "quantity": { "amount": 15, "unit": "g", "note": "la especia clave del jerk. No tiene sustituto directo, aunque puedes mezclar clavo + canela + pimienta negra en menor medida.", "scalable": false, "originalText": "15 g" }
+          },
+          {
+            "name": "Tomillo fresco",
+            "quantity": { "amount": 4, "unit": "ramita", "scalable": false, "originalText": "4 ramitas" }
+          },
+          {
+            "name": "Jengibre fresco",
+            "quantity": { "amount": 30, "unit": "g", "scalable": false, "originalText": "30 g" }
+          },
+          {
+            "name": "Ajo",
+            "quantity": { "amount": 8, "unit": "diente", "scalable": false, "originalText": "8 dientes" }
+          },
+          {
+            "name": "Cebolleta",
+            "quantity": { "amount": 6, "unit": "unidad", "scalable": false, "originalText": "6 unidades" }
+          },
+          {
+            "name": "Salsa de soja",
+            "quantity": { "amount": 60, "unit": "ml", "scalable": false, "originalText": "60 ml" }
+          },
+          {
+            "name": "Vinagre de manzana",
+            "quantity": { "amount": 30, "unit": "ml", "scalable": false, "originalText": "30 ml" }
+          },
+          {
+            "name": "Azúcar moreno",
+            "quantity": { "amount": 30, "unit": "g", "scalable": false, "originalText": "30 g" }
+          },
+          {
+            "name": "Canela molida",
+            "quantity": { "amount": 3, "unit": "g", "scalable": false, "originalText": "3 g" }
+          },
+          {
+            "name": "Nuez moscada",
+            "quantity": { "amount": 2, "unit": "g", "scalable": false, "originalText": "2 g" }
+          },
+          {
+            "name": "Pimienta negra molida",
+            "quantity": { "amount": 5, "unit": "g", "scalable": false, "originalText": "5 g" }
+          },
+          {
+            "name": "Carbón de calidad",
+            "quantity": { "amount": 2.5, "unit": "kg", "scalable": false, "originalText": "2.5 kg" }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "La marinada jerk (24h antes)",
+            "text": "Tritura en procesador o mortero: el habanero (con semillas para máximo picante, sin semillas para moderado), la cebolleta, el ajo, el jengibre, el tomillo deshojado, la pimienta de Jamaica, la canela, la nuez moscada, la pimienta negra, la salsa de soja, el vinagre y el azúcar moreno. Mezcla hasta obtener una pasta. Punta con un cuchillo la piel del pollo en varios puntos y cubre completamente con la pasta jerk, metiendo bajo la piel también. Refrigera mínimo 4 horas, idealmente 24 horas.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              { "name": "Pollo entero abierto en mariposa" },
+              { "name": "Pimiento habanero o scotch bonnet" },
+              { "name": "Cebolleta" },
+              { "name": "Ajo" },
+              { "name": "Jengibre fresco" },
+              { "name": "Tomillo fresco" },
+              { "name": "Pimienta de Jamaica molida (allspice)" },
+              { "name": "Canela molida" },
+              { "name": "Nuez moscada" },
+              { "name": "Pimienta negra molida" },
+              { "name": "Salsa de soja" },
+              { "name": "Vinagre de manzana" },
+              { "name": "Azúcar moreno" }
+            ],
+            "tips": "Usa guantes al trabajar con habanero o scotch bonnet. El capsaicin de estos pimientos permanece en la piel durante horas. Si te tocas los ojos después de manipularlos sin guantes, no digas que no te avisamos."
+          },
+          {
+            "order": 2,
+            "title": "Prepara la parrilla a 160°C indirecto",
+            "text": "El jerk se cocina a calor indirecto moderado, no a fuego vivo. Busca una temperatura de 160-170°C con el carbón en un lateral y el pollo en el otro. Este calor indirecto cocina el pollo completamente sin quemar el azúcar de la marinada (que se caramelizaría demasiado rápido a fuego directo). Saca el pollo de la nevera 30 minutos antes de cocinar.",
+            "hasTimer": true,
+            "durationMinutes": 40,
+            "durationSeconds": 2400,
+            "timerLabel": "Preparar parrilla a 160°C indirecto",
+            "ingredientRefs": [
+              { "name": "Carbón de calidad" }
+            ],
+            "tips": "¿Gas o carbón? El jerk auténtico se hace sobre leña de pimiento (allspice/pimento wood), que da un aroma incomparable. El gas es una alternativa aceptable. El carbón con unas bayas de pimienta de Jamaica tiradas sobre las brasas se acerca bastante."
+          },
+          {
+            "order": 3,
+            "title": "Cocción indirecta: 1h 45min",
+            "text": "Coloca los pollos con la piel hacia arriba en la zona de calor indirecto. Tapa la barbacoa. Cocina durante 1 hora 45 minutos aproximadamente. La temperatura interna objetivo es 74°C en la parte más gruesa del muslo (sin tocar el hueso). No abras demasiado frecuentemente: cada apertura baja la temperatura.",
+            "hasTimer": true,
+            "durationMinutes": 105,
+            "durationSeconds": 6300,
+            "timerLabel": "Jerk: cocción indirecta",
+            "ingredientRefs": []
+          },
+          {
+            "order": 4,
+            "title": "Golpe final a fuego directo",
+            "text": "Cuando el pollo alcance 70°C internos, muévelo a la zona de calor directo durante 8-10 minutos para caramelizar la piel del jerk. Vigila: el azúcar de la marinada se quema fácilmente. Busca una piel oscura, casi negra en zonas, con marcas de parrilla profundas. Eso es el jerk bien hecho: oscuro por fuera, jugoso por dentro.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "Sellado final del jerk",
+            "ingredientRefs": []
+          },
+          {
+            "order": 5,
+            "title": "Reposo y servicio",
+            "text": "Reposa el pollo 10 minutos tapado con papel de aluminio. Corta en cuartos o directamente en trozos. El jerk jamaicano se sirve con arroz con leche de coco y guisantes (rice & peas), plátano macho frito y festival bread. El color oscuro de la piel es normal y correcto: no es que esté quemado, es el jerk.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "Reposo del jerk",
+            "ingredientRefs": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "La BBQ Vegana (Para los Valientes)",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": false,
+      "isDinner": false,
+      "special": true,
+      "allowRandom": false,
+      "diet": "vegan",
+      "mealType": null,
+      "estimatedDifficulty": 2,
+      "estimatedPrepTime": 90,
+      "ingredients": [
+        { "displayName": "Setas portobello grandes", "canonicalName": "seta portobello" },
+        { "displayName": "Coliflor entera", "canonicalName": "coliflor" },
+        { "displayName": "Mazorcas de maíz", "canonicalName": "mazorca maiz" },
+        { "displayName": "Tofu firme", "canonicalName": "tofu firme" },
+        { "displayName": "Pimientos rojos", "canonicalName": "pimiento rojo" }
+      ],
+      "recipe": {
+        "baseServings": 6,
+        "ingredients": [
+          {
+            "name": "Setas portobello grandes",
+            "quantity": { "amount": 6, "unit": "unidad", "note": "las de mayor tamaño posible. Son el 'filete' de esta BBQ.", "scalable": true, "originalText": "6 unidades" }
+          },
+          {
+            "name": "Coliflor entera",
+            "quantity": { "amount": 1, "unit": "unidad", "note": "tamaño grande (~1.2 kg). Entera, sin cortar. El momento estelar de la BBQ vegana.", "scalable": false, "originalText": "1 unidad grande" }
+          },
+          {
+            "name": "Mazorcas de maíz",
+            "quantity": { "amount": 6, "unit": "unidad", "scalable": true, "originalText": "6 unidades" }
+          },
+          {
+            "name": "Tofu firme",
+            "quantity": { "amount": 400, "unit": "g", "note": "prensado y secado bien antes de marinar: el exceso de agua impide el sellado", "scalable": true, "originalText": "400 g" }
+          },
+          {
+            "name": "Pimientos rojos",
+            "quantity": { "amount": 3, "unit": "unidad", "scalable": true, "originalText": "3 unidades" }
+          },
+          {
+            "name": "Cebolla roja",
+            "quantity": { "amount": 2, "unit": "unidad", "scalable": true, "originalText": "2 unidades" }
+          },
+          {
+            "name": "Calabacín",
+            "quantity": { "amount": 2, "unit": "unidad", "scalable": true, "originalText": "2 unidades" }
+          },
+          {
+            "name": "Salsa de soja",
+            "quantity": { "amount": 60, "unit": "ml", "scalable": false, "originalText": "60 ml" }
+          },
+          {
+            "name": "Vinagre balsámico",
+            "quantity": { "amount": 30, "unit": "ml", "scalable": false, "originalText": "30 ml" }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": { "amount": 80, "unit": "ml", "scalable": false, "originalText": "80 ml" }
+          },
+          {
+            "name": "Ajo",
+            "quantity": { "amount": 4, "unit": "diente", "scalable": false, "originalText": "4 dientes" }
+          },
+          {
+            "name": "Romero y tomillo frescos",
+            "quantity": { "amount": 4, "unit": "ramita", "scalable": false, "originalText": "4 ramitas" }
+          },
+          {
+            "name": "Pimentón ahumado",
+            "quantity": { "amount": 10, "unit": "g", "scalable": false, "originalText": "10 g" }
+          },
+          {
+            "name": "Mantequilla vegana",
+            "quantity": { "amount": 60, "unit": "g", "note": "para las mazorcas al final. Marca la diferencia.", "scalable": false, "originalText": "60 g" }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Comunicar la noticia al grupo",
+            "text": "Avisa al grupo de que habrá una BBQ vegana. Espera las reacciones. Acepta con calma los comentarios de los escépticos. Cuando en 45 minutos estén comiendo coliflor entera al carbón con marcas de parrilla, tú tendrás la última palabra. Mientras tanto, empieza con la marinada.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [],
+            "tips": "La BBQ vegana no es una concesión. La coliflor entera al carbón, los portobello marinados y las mazorcas con mantequilla vegana son genuinamente espectaculares. El humor no quita lo bueno."
+          },
+          {
+            "order": 2,
+            "title": "Marinada y preparación",
+            "text": "Mezcla la salsa de soja, el vinagre balsámico, el aceite de oliva, el ajo picado fino, el pimentón ahumado, el romero y tomillo deshojados. Portobello: quita el tallo, unta la marinada por ambas caras, deja reposar 30 minutos. Tofu: córtalo en láminas de 1.5 cm, prensa con papel absorbente para eliminar agua, unta con marinada. Verduras (pimiento, cebolla, calabacín): córtalas en trozos grandes y mezcla con el resto de marinada. Mazorcas: déjalas enteras, las salarás y untarás con mantequilla vegana en la parrilla.",
+            "hasTimer": true,
+            "durationMinutes": 30,
+            "durationSeconds": 1800,
+            "timerLabel": "Marinado de portobello y tofu",
+            "ingredientRefs": [
+              { "name": "Setas portobello grandes" },
+              { "name": "Tofu firme" },
+              { "name": "Pimientos rojos" },
+              { "name": "Cebolla roja" },
+              { "name": "Calabacín" },
+              { "name": "Salsa de soja" },
+              { "name": "Vinagre balsámico" },
+              { "name": "Aceite de oliva" },
+              { "name": "Ajo" },
+              { "name": "Romero y tomillo frescos" },
+              { "name": "Pimentón ahumado" }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "La coliflor entera al carbón (empieza primero)",
+            "text": "La coliflor entera necesita el mayor tiempo. Colócala entera boca abajo en la zona de calor indirecto. Úntala con aceite de oliva, sal y pimentón ahumado. Tapa la barbacoa. Cocina 30-35 minutos hasta que al pinchar el centro con un cuchillo no encuentres resistencia. En los últimos 5 minutos mueve a calor directo para quemar la superficie. El resultado: exterior negro con marcas profundas, interior tierno y ahumado. Es el plato estrella y sí, visualmente impresiona más que muchas carnes.",
+            "hasTimer": true,
+            "durationMinutes": 35,
+            "durationSeconds": 2100,
+            "timerLabel": "Coliflor entera al carbón",
+            "ingredientRefs": [
+              { "name": "Coliflor entera" },
+              { "name": "Aceite de oliva" },
+              { "name": "Pimentón ahumado" }
+            ],
+            "tips": "¿Gas o carbón? Para la coliflor: el carbón añade un ahumado que eleva el plato completamente. Con gas también funciona, pero el resultado es más neutro. Aquí sí merece la pena el carbón."
+          },
+          {
+            "order": 4,
+            "title": "Mazorcas: 20 min a fuego directo",
+            "text": "Coloca las mazorcas directamente sobre las brasas o en la parrilla. Gíralas cada 3-4 minutos. El maíz debe quedar con zonas doradas y algunas partes ligeramente carbonizadas (eso es bueno: el carbón aporta sabor). Cuando estén listas, unta inmediatamente con mantequilla vegana mientras están calientes para que se funda. Añade sal y pimentón ahumado.",
+            "hasTimer": true,
+            "durationMinutes": 20,
+            "durationSeconds": 1200,
+            "timerLabel": "Mazorcas a la brasa",
+            "ingredientRefs": [
+              { "name": "Mazorcas de maíz" },
+              { "name": "Mantequilla vegana" },
+              { "name": "Pimentón ahumado" }
+            ]
+          },
+          {
+            "order": 5,
+            "title": "Portobello y verduras",
+            "text": "Portobello: parrilla caliente, 5-6 minutos por lado. Se reduce bastante de tamaño al perder agua: es normal. El resultado es carnoso, jugoso y con el sabor profundo de la marinada. No lo hagas demasiado: pierde jugosidad. Verduras en brocheta o directas: 8-10 minutos girando. Tofu: parrilla muy caliente, 4 minutos por lado sin moverlo (el sellado necesita contacto sostenido). El tofu bien sellado tiene corteza crujiente y exterior dorado.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "Portobello y verduras",
+            "ingredientRefs": [
+              { "name": "Setas portobello grandes" },
+              { "name": "Tofu firme" },
+              { "name": "Pimientos rojos" },
+              { "name": "Cebolla roja" },
+              { "name": "Calabacín" }
+            ]
+          },
+          {
+            "order": 6,
+            "title": "Acepta los aplausos",
+            "text": "Sirve todo junto: la coliflor entera en el centro de la tabla (córtala en cuartos con un cuchillo grande, en la mesa), los portobello como filetes, las mazorcas brillantes de mantequilla vegana, las verduras y el tofu. Espera a que los más escépticos del grupo repitan. Acepta los elogios con humildad. La BBQ vegana existe, funciona, y tiene mucho que enseñar sobre técnica de brasa.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              { "name": "Mantequilla vegana" }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

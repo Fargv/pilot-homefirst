@@ -1,15 +1,17 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { AuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
+import { AuthProvider, ClerkEnabledAuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
 import { buildApiUrl } from "./kitchen/api.js";
 import KitchenLayout from "./kitchen/Layout.jsx";
 import RequireAuth from "./kitchen/RequireAuth.jsx";
 import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
+import AdminLoginPage from "./kitchen/pages/AdminLoginPage.jsx";
+import AdminPanelPage from "./kitchen/pages/AdminPanelPage.jsx";
+import AdminForgotPasswordPage from "./kitchen/pages/AdminForgotPasswordPage.jsx";
+import AdminResetPasswordPage from "./kitchen/pages/AdminResetPasswordPage.jsx";
 import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
-import LoginPage from "./kitchen/pages/LoginPage.jsx";
-import SignupPage from "./kitchen/pages/SignupPage.jsx";
-import ForgotPasswordPage from "./kitchen/pages/ForgotPasswordPage.jsx";
-import ResetPasswordPage from "./kitchen/pages/ResetPasswordPage.jsx";
+import ClerkAuthPage from "./kitchen/pages/ClerkAuthPage.jsx";
+import ClerkOnboardingPage from "./kitchen/pages/ClerkOnboardingPage.jsx";
 import WeekPage from "./kitchen/pages/WeekPage.jsx";
 import DishesPage from "./kitchen/pages/DishesPage.jsx";
 import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
@@ -17,24 +19,31 @@ import ShoppingBudgetPage from "./kitchen/pages/ShoppingBudgetPage.jsx";
 import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
 import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
 import UpgradeToProPage from "./kitchen/pages/UpgradeToProPage.jsx";
+import CatalogPage from "./kitchen/pages/CatalogPage.jsx";
 import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
+import PaymentSuccessPage from "./kitchen/pages/PaymentSuccessPage.jsx";
+import PaymentCancelledPage from "./kitchen/pages/PaymentCancelledPage.jsx";
 import DevEnvironmentBanner from "./components/DevEnvironmentBanner.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
+import PwaInstallPrompt from "./kitchen/components/PwaInstallPrompt.jsx";
 import { AppLoadingScreen } from "./kitchen/components/WeekPageSkeleton.jsx";
 import "./kitchen/kitchen.css";
 import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
+import { OnboardingProvider } from "./kitchen/contexts/OnboardingContext.jsx";
+import { WeeklyChallengeProvider } from "./kitchen/contexts/WeeklyChallengeContext.jsx";
 
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
+const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 function HomeRedirect() {
-  const { user, loading } = useAuth();
+  const { user, loading, onboardingRequired } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (loading) return;
-    const destination = isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
+    const destination = onboardingRequired ? "/onboarding/clerk" : isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
     navigate(destination, { replace: true });
-  }, [loading, navigate, user]);
+  }, [loading, navigate, onboardingRequired, user]);
 
   return (
     <AppLoadingScreen
@@ -74,6 +83,154 @@ function BootstrapRedirect() {
   return null;
 }
 
+function AppRoutes() {
+  return (
+    <ActiveWeekProvider>
+      <OnboardingProvider>
+      <WeeklyChallengeProvider>
+      <DevEnvironmentBanner />
+      <PwaInstallPrompt />
+      <BootstrapRedirect />
+      <Routes>
+        <Route path="/" element={<HomeRedirect />} />
+        <Route path="/bootstrap" element={<BootstrapPage />} />
+        <Route path="/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} />
+        <Route path="/login/*" element={<ClerkAuthPage mode="sign-in" />} />
+        <Route path="/signup/*" element={<ClerkAuthPage mode="sign-up" />} />
+        <Route path="/auth/clerk" element={<ClerkAuthPage mode="choice" />} />
+        <Route path="/auth/clerk/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} />
+        <Route path="/auth/clerk/sign-up/*" element={<ClerkAuthPage mode="sign-up" />} />
+        <Route path="/auth/clerk/reset-password/*" element={<ClerkAuthPage mode="reset-password" />} />
+        <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} />
+        <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} />
+        <Route path="/invite/:token" element={<InviteLandingPage />} />
+        <Route
+          path="/kitchen/semana"
+          element={(
+            <RequireAuth>
+              <WeekPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/kitchen/platos"
+          element={(
+            <RequireAuth>
+              <DishesPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/kitchen/compra"
+          element={(
+            <RequireAuth>
+              <ShoppingPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/kitchen/compra/presupuesto"
+          element={(
+            <RequireAuth>
+              <ShoppingBudgetPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/kitchen/cambios"
+          element={(
+            <RequireAuth>
+              <SwapsPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/kitchen/configuracion"
+          element={(
+            <RequireAuth>
+              <SettingsPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/kitchen/upgrade"
+          element={(
+            <RequireAuth>
+              <UpgradeToProPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/kitchen/catalogo"
+          element={(
+            <RequireAuth>
+              <CatalogPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/payments/success"
+          element={(
+            <RequireAuth>
+              <PaymentSuccessPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/payments/cancelled"
+          element={(
+            <RequireAuth>
+              <PaymentCancelledPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/admin/usuarios"
+          element={(
+            <RequireAuth roles={["admin"]}>
+              <AdminUsersPage />
+            </RequireAuth>
+          )}
+        />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
+        <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
+        <Route path="/admin" element={<AdminPanelPage />} />
+        <Route path="/admin/architecture" element={<AdminPanelPage />} />
+        <Route
+          path="/kitchen"
+          element={(
+            <RequireAuth>
+              <KitchenLayout>
+                <div className="kitchen-card">Selecciona una seccion.</div>
+              </KitchenLayout>
+            </RequireAuth>
+          )}
+        />
+        <Route path="*" element={<HomeRedirect />} />
+      </Routes>
+      </WeeklyChallengeProvider>
+      </OnboardingProvider>
+    </ActiveWeekProvider>
+  );
+}
+
+function AuthBoundary() {
+  if (clerkPublishableKey) {
+    return (
+      <ClerkEnabledAuthProvider>
+        <AppRoutes />
+      </ClerkEnabledAuthProvider>
+    );
+  }
+
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  );
+}
+
 export default function App() {
   useEffect(() => {
     document.title = isDevelopmentEnvironment ? "Lunchfy DEV" : "Lunchfy";
@@ -82,98 +239,7 @@ export default function App() {
   return (
     <AppErrorBoundary>
       <BrowserRouter>
-        <AuthProvider>
-          <ActiveWeekProvider>
-            <DevEnvironmentBanner />
-            <BootstrapRedirect />
-            <Routes>
-            <Route path="/" element={<HomeRedirect />} />
-            <Route path="/bootstrap" element={<BootstrapPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/kitchen/login" element={<LoginPage />} />
-            <Route path="/register" element={<SignupPage />} />
-            <Route path="/kitchen/register" element={<SignupPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/invite/:token" element={<InviteLandingPage />} />
-            <Route
-              path="/kitchen/semana"
-              element={(
-                <RequireAuth>
-                  <WeekPage />
-                </RequireAuth>
-              )}
-            />
-            <Route
-              path="/kitchen/platos"
-              element={(
-                <RequireAuth>
-                  <DishesPage />
-                </RequireAuth>
-              )}
-            />
-            <Route
-              path="/kitchen/compra"
-              element={(
-                <RequireAuth>
-                  <ShoppingPage />
-                </RequireAuth>
-              )}
-            />
-            <Route
-              path="/kitchen/compra/presupuesto"
-              element={(
-                <RequireAuth>
-                  <ShoppingBudgetPage />
-                </RequireAuth>
-              )}
-            />
-            <Route
-              path="/kitchen/cambios"
-              element={(
-                <RequireAuth>
-                  <SwapsPage />
-                </RequireAuth>
-              )}
-            />
-            <Route
-              path="/kitchen/configuracion"
-              element={(
-                <RequireAuth>
-                  <SettingsPage />
-                </RequireAuth>
-              )}
-            />
-            <Route
-              path="/kitchen/upgrade"
-              element={(
-                <RequireAuth>
-                  <UpgradeToProPage />
-                </RequireAuth>
-              )}
-            />
-            <Route
-              path="/admin/usuarios"
-              element={(
-                <RequireAuth roles={["admin"]}>
-                  <AdminUsersPage />
-                </RequireAuth>
-              )}
-            />
-            <Route
-              path="/kitchen"
-              element={(
-                <RequireAuth>
-                  <KitchenLayout>
-                    <div className="kitchen-card">Selecciona una sección.</div>
-                  </KitchenLayout>
-                </RequireAuth>
-              )}
-            />
-            <Route path="*" element={<HomeRedirect />} />
-            </Routes>
-          </ActiveWeekProvider>
-        </AuthProvider>
+        <AuthBoundary />
       </BrowserRouter>
     </AppErrorBoundary>
   );

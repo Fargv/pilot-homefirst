@@ -14,6 +14,7 @@ import {
 import { ensureDefaultCategory } from "../utils/categoryMatching.js";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
+import { HouseholdBasic } from "../models/HouseholdBasic.js";
 import { getWeekStart } from "../utils/dates.js";
 
 const router = express.Router();
@@ -113,6 +114,12 @@ async function syncIngredientReferences({ ingredientId, name, canonicalName, hou
       arrayFilters: [{ "entry.ingredientId": ingredientId }]
     }
   );
+
+  // Keep HouseholdBasic denormalized cache in sync with the ingredient name
+  await HouseholdBasic.updateMany(
+    { ingredientId },
+    { $set: { name, canonicalName } }
+  );
 }
 
 function buildSearchFilter(q) {
@@ -136,7 +143,9 @@ function buildSearchFilter(q) {
 router.get("/", requireAuth, async (req, res) => {
   try {
     const { q, includeInactive, limit, mode } = req.query;
-    const effectiveHouseholdId = getOptionalHouseholdId(req.user);
+    // ?global=1 forces master-only results (DIOD admin catalog view)
+    const forceMaster = isDiodUser(req.kitchenUser) && req.query.global === "1";
+    const effectiveHouseholdId = forceMaster ? null : getOptionalHouseholdId(req.user);
     const shouldIncludeInactive = String(includeInactive || "").toLowerCase() === "true";
 
     const ingredients = await resolveCatalogForHousehold({

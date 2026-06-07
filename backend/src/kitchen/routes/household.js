@@ -14,6 +14,9 @@ import {
   normalizeColorId
 } from "../../users/utils.js";
 import { Household } from "../models/Household.js";
+import { HouseholdCatalogPack } from "../models/HouseholdCatalogPack.js";
+import { CatalogPack } from "../models/CatalogPack.js";
+import { BitesTransaction } from "../models/BitesTransaction.js";
 import { ensureHouseholdInviteCode } from "../householdInviteCode.js";
 import { sendEmail } from "../../services/emailService.js";
 import { buildHouseholdInvitationEmail } from "../householdInvitationEmail.js";
@@ -25,7 +28,9 @@ import {
 import {
   buildHouseholdFeatureAvailability,
   buildHouseholdSubscriptionResponse,
-  canUseBudgetFeature
+  canUseBudgetFeature,
+  canUseDietRandomization,
+  canUseDinnersFeature
 } from "../subscriptionService.js";
 import {
   assertCanAddNonUserDinerToHousehold,
@@ -34,6 +39,7 @@ import {
   countHouseholdLicenseUsage,
   sendHouseholdLicenseError
 } from "../householdLicenseService.js";
+import { triggerWeeklyChallenge } from "../weeklyEngine.js";
 
 const router = express.Router();
 
@@ -93,20 +99,35 @@ function parseCycleStartDayInput(value) {
 }
 
 function buildHouseholdResponse(household, license = null) {
-  const budgetFeatureEnabled = canUseBudgetFeature(household?.subscriptionPlan);
+  const budgetFeatureEnabled = canUseBudgetFeature(household);
+  const dietFeatureEnabled = canUseDietRandomization(household);
   return {
     id: household._id,
     name: household.name || "Mi household",
     inviteCode: household.inviteCode || null,
     ownerUserId: household.ownerUserId || null,
     dinnersEnabled: Boolean(household.dinnersEnabled),
+    dinnersIncludeInShopping: Boolean(household.dinnersIncludeInShopping),
     avoidRepeatsEnabled: Boolean(household.avoidRepeatsEnabled),
     avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(household.avoidRepeatsWeeks),
     monthlyBudget: budgetFeatureEnabled && Number.isFinite(Number(household.monthlyBudget))
       ? Number(household.monthlyBudget)
       : null,
     cycleStartDay: budgetFeatureEnabled ? normalizeCycleStartDay(household.cycleStartDay) : null,
+    randomizationUseDietFilter: dietFeatureEnabled ? Boolean(household.randomizationUseDietFilter) : false,
+    randomizationDefaultDietPackIds: dietFeatureEnabled
+      ? (Array.isArray(household.randomizationDefaultDietPackIds) ? household.randomizationDefaultDietPackIds.map(String) : [])
+      : [],
     ...buildHouseholdSubscriptionResponse(household),
+    hasActiveStripeSubscription: Boolean(household.stripeSubscriptionId),
+    // Payment debug fields — always returned so admin/test UI can inspect state
+    paymentMeta: {
+      stripeCustomerId: household.stripeCustomerId || null,
+      stripeSubscriptionId: household.stripeSubscriptionId || null,
+      paymentProvider: household.paymentProvider || null,
+      paymentMode: household.paymentMode || null,
+      planUpdatedAt: household.planUpdatedAt || null
+    },
     featureAvailability: buildHouseholdFeatureAvailability(household),
     license: license || buildHouseholdLicenseSummary(household)
   };
@@ -227,7 +248,7 @@ router.get("/summary", requireAuth, async (req, res) => {
   try {
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("_id name inviteCode ownerUserId dinnersEnabled avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin")
+      .select("_id name inviteCode ownerUserId dinnersEnabled dinnersIncludeInShopping avoidRepeatsEnabled avoidRepeatsWeeks monthlyBudget cycleStartDay subscriptionPlan subscriptionStatus subscriptionRequestedPlan trialEndsAt subscriptionEndsAt isPro assignedByAdmin planSource betaPro randomizationUseDietFilter randomizationDefaultDietPackIds stripeSubscriptionId stripeCustomerId paymentProvider paymentMode planUpdatedAt")
       .lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
@@ -252,19 +273,42 @@ router.patch("/name", requireAuth, requireRole("owner"), async (req, res) => {
       return res.status(400).json({ ok: false, error: "El nombre del household es obligatorio." });
     }
 
-    const household = await Household.findById(effectiveHouseholdId);
+    const household = await Household.findByIdAndUpdate(
+      effectiveHouseholdId,
+      { $set: { name: nextName } },
+      { new: true }
+    ).lean();
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-
-    household.name = nextName;
-    await household.save();
 
     return res.json({ ok: true, household: buildHouseholdResponse(household) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
     return res.status(500).json({ ok: false, error: "No se pudo actualizar el nombre del household." });
+  }
+});
+
+router.get("/bites-history", requireAuth, async (req, res) => {
+  try {
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || "30"), 10) || 30));
+    const [transactions, household] = await Promise.all([
+      BitesTransaction.find({ householdId: effectiveHouseholdId })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean(),
+      Household.findById(effectiveHouseholdId).select("freeBitesBalance purchasedBitesBalance").lean()
+    ]);
+    return res.json({
+      ok: true,
+      transactions,
+      freeBitesBalance: household?.freeBitesBalance ?? 0,
+      purchasedBitesBalance: household?.purchasedBitesBalance ?? 0
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "No se pudo cargar el historial de Bites." });
   }
 });
 
@@ -275,7 +319,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-    const budgetFeatureEnabled = canUseBudgetFeature(household?.subscriptionPlan);
+    const budgetFeatureEnabled = canUseBudgetFeature(household);
     const isBudgetMutation = req.body?.monthlyBudget !== undefined || req.body?.cycleStartDay !== undefined;
     if (!budgetFeatureEnabled && isBudgetMutation) {
       return res.status(403).json({
@@ -285,8 +329,19 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       });
     }
 
+    const dietFeatureEnabled = canUseDietRandomization(household);
+    const isDietMutation = req.body?.randomizationUseDietFilter !== undefined || req.body?.randomizationDefaultDietPackIds !== undefined;
+    if (!dietFeatureEnabled && isDietMutation) {
+      return res.status(403).json({
+        ok: false,
+        code: "DIET_RANDOMIZATION_NOT_AVAILABLE",
+        message: "La aleatorización por dieta por defecto está disponible solo para hogares Pro y Premium."
+      });
+    }
+
     const incomingEnabled = req.body?.avoidRepeatsEnabled;
     const incomingDinnersEnabled = req.body?.dinnersEnabled;
+    const incomingDinnersIncludeInShopping = req.body?.dinnersIncludeInShopping;
     const parsedEnabled = incomingEnabled === undefined
       ? { ok: true, value: Boolean(household.avoidRepeatsEnabled) }
       : parseBooleanInput(incomingEnabled);
@@ -298,6 +353,20 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       : parseBooleanInput(incomingDinnersEnabled);
     if (!parsedDinnersEnabled.ok) {
       return res.status(400).json({ ok: false, error: "dinnersEnabled debe ser booleano." });
+    }
+    const dinnersFeatureEnabled = canUseDinnersFeature(household);
+    const parsedDinnersIncludeInShopping = incomingDinnersIncludeInShopping === undefined
+      ? { ok: true, value: Boolean(household.dinnersIncludeInShopping) }
+      : parseBooleanInput(incomingDinnersIncludeInShopping);
+    if (!parsedDinnersIncludeInShopping.ok) {
+      return res.status(400).json({ ok: false, error: "dinnersIncludeInShopping debe ser booleano." });
+    }
+    if (!dinnersFeatureEnabled && incomingDinnersIncludeInShopping !== undefined) {
+      return res.status(403).json({
+        ok: false,
+        code: "DINNER_FEATURE_NOT_AVAILABLE",
+        message: "La opción de incluir cenas en la lista está disponible solo para planes Pro y Premium."
+      });
     }
 
     const parsedWeeks = parseWeeksInput(req.body?.avoidRepeatsWeeks);
@@ -318,15 +387,64 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       return res.status(400).json({ ok: false, error: "avoidRepeatsWeeks debe ser un entero entre 1 y 12." });
     }
 
+    // Build diet pref update
+    let nextDietUseDietFilter = Boolean(household.randomizationUseDietFilter);
+    let nextDietDefaultPackIds = Array.isArray(household.randomizationDefaultDietPackIds)
+      ? household.randomizationDefaultDietPackIds.map(String)
+      : [];
+
+    if (dietFeatureEnabled && isDietMutation) {
+      if (req.body?.randomizationUseDietFilter !== undefined) {
+        const parsed = parseBooleanInput(req.body.randomizationUseDietFilter);
+        if (!parsed.ok) {
+          return res.status(400).json({ ok: false, error: "randomizationUseDietFilter debe ser booleano." });
+        }
+        nextDietUseDietFilter = parsed.value;
+      }
+
+      if (req.body?.randomizationDefaultDietPackIds !== undefined) {
+        const incomingIds = req.body.randomizationDefaultDietPackIds;
+        if (!Array.isArray(incomingIds)) {
+          return res.status(400).json({ ok: false, error: "randomizationDefaultDietPackIds debe ser un array." });
+        }
+        const validIds = incomingIds.filter((id) => mongoose.isValidObjectId(id)).map(String);
+        // Sanitize: only installed diet packs owned by this household
+        const installedOwnerships = validIds.length > 0
+          ? await HouseholdCatalogPack.find({
+              householdId: effectiveHouseholdId,
+              packId: { $in: validIds },
+              status: "installed"
+            }).select("packId").lean()
+          : [];
+        const installedPackIds = new Set(installedOwnerships.map((o) => String(o.packId)));
+        const validInstalledIds = validIds.filter((id) => installedPackIds.has(id));
+        if (validInstalledIds.length > 0) {
+          const dietPacks = await CatalogPack.find({
+            _id: { $in: validInstalledIds },
+            isDietPack: true,
+            status: "published",
+            active: true
+          }).select("_id").lean();
+          const dietPackIds = new Set(dietPacks.map((p) => String(p._id)));
+          nextDietDefaultPackIds = validInstalledIds.filter((id) => dietPackIds.has(id));
+        } else {
+          nextDietDefaultPackIds = [];
+        }
+      }
+    }
+
     const updated = await Household.findByIdAndUpdate(
       effectiveHouseholdId,
       {
         $set: {
           avoidRepeatsEnabled: parsedEnabled.value,
           dinnersEnabled: parsedDinnersEnabled.value,
+          dinnersIncludeInShopping: parsedDinnersIncludeInShopping.value,
           avoidRepeatsWeeks: normalizeAvoidRepeatsWeeks(nextWeeks),
           monthlyBudget: parsedBudget.value,
-          cycleStartDay: parsedCycleStartDay.value
+          cycleStartDay: parsedCycleStartDay.value,
+          randomizationUseDietFilter: nextDietUseDietFilter,
+          randomizationDefaultDietPackIds: nextDietDefaultPackIds
         }
       },
       { new: true, runValidators: true }
@@ -391,7 +509,7 @@ router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) 
     }
     await assertCanAddUserToHousehold(household);
 
-    const { rawToken, inviteLink, invitation } = await createHouseholdInvitation({
+    const { rawToken, inviteLink, clerkInviteLink, invitation } = await createHouseholdInvitation({
       householdId: household._id,
       createdByUserId: req.kitchenUser._id
     });
@@ -399,6 +517,7 @@ router.post("/invitations", requireAuth, requireRole("owner"), async (req, res) 
     return res.status(201).json({
       ok: true,
       inviteLink,
+      clerkInviteLink,
       token: rawToken,
       expiresAt: invitation.expiresAt
     });
@@ -557,6 +676,12 @@ router.post("/invitations/:token/accept", requireAuth, async (req, res) => {
     invitation.usedByUserId = req.kitchenUser._id;
     await invitation.save();
 
+    // Weekly challenge: fire diner_invited for the household owner (non-fatal).
+    const ownerHousehold = await Household.findById(invitation.householdId).select("ownerUserId").lean();
+    if (ownerHousehold?.ownerUserId) {
+      triggerWeeklyChallenge(String(invitation.householdId), "diner_invited", {}).catch(() => {});
+    }
+
     return res.json({
       ok: true,
       status: "joined",
@@ -615,7 +740,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
             email
           });
 
-          const { invitation, inviteLink } = await createHouseholdInvitation({
+          const { invitation, inviteLink, clerkInviteLink } = await createHouseholdInvitation({
             householdId: household._id,
             createdByUserId: req.kitchenUser._id,
             recipientEmail: email
@@ -628,6 +753,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
             html: buildHouseholdInvitationEmail({
               householdName: household.name,
               inviteLink,
+              clerkInviteLink,
               inviteCode,
               inviterName,
               recipientEmail: email
@@ -638,6 +764,7 @@ router.post("/invitations/email", requireAuth, requireRole("owner"), async (req,
             email,
             ok: true,
             inviteLink,
+            clerkInviteLink,
             expiresAt: invitation.expiresAt
           };
         } catch (sendError) {
@@ -834,4 +961,3 @@ router.post("/placeholders/:id/convert", requireAuth, requireRole("owner"), asyn
 });
 
 export default router;
-

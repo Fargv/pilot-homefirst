@@ -1,15 +1,23 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Check, Plus, CheckCircle, AlertCircle, X, ChevronRight } from "lucide-react";
+import WeekDatePicker from "../components/ui/WeekDatePicker.jsx";
 import { UNSAFE_NavigationContext as NavigationContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
 import { useAuth } from "../auth";
 import ShareWhatsAppButton from "../components/ShareWhatsAppButton.jsx";
 import { buildShoppingShareUrl, normalizeWeekParam } from "../deepLinks.js";
-import { isBudgetFeatureUnavailableError } from "../subscription.js";
+import { canUseBasicsFeature, isBudgetFeatureUnavailableError } from "../subscription.js";
 import { useActiveWeek } from "../weekContext.jsx";
-import WeekNavigator from "../components/ui/WeekNavigator.jsx";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
+import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
+import PageHeader from "../components/PageHeader.jsx";
+import BasicsPopup from "../components/BasicsPopup.jsx";
+import { burstParticles, triggerMilestone } from "../hooks/useRewardAnimation.js";
+import { ShoppingPageSkeleton } from "../components/ScreenSkeletons.jsx";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function RefreshIcon(props) {
   return (
@@ -23,9 +31,10 @@ function RefreshIcon(props) {
 function TodayIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M8 3.5v2.2M16 3.5v2.2M4.5 9h15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <rect x="4.5" y="5.8" width="15" height="14.7" rx="2.4" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="12" cy="14" r="2.1" fill="currentColor" />
+      <rect x="3" y="5" width="18" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M3 10h18" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <rect x="9.5" y="12.5" width="5" height="4.5" rx="1" fill="currentColor" />
     </svg>
   );
 }
@@ -58,6 +67,15 @@ function PlusIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
       <path d="M12 6v12M6 12h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PencilIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M4 20h3.5l10-10-3.5-3.5-10 10V20z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M13.5 6.5l3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -98,6 +116,24 @@ function EmptyHistoryIcon(props) {
       <path d="M12 7.5v5l3 1.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M3.8 12a8.2 8.2 0 1 0 2.4-5.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
       <path d="M3.5 5.7v2.9h2.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function DotsIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <circle cx="5" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="19" cy="12" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ChevronSmallIcon({ className, ...props }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className={className} {...props}>
+      <path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -159,6 +195,14 @@ function normalizeQuery(value = "") {
   return String(value).trim().toLowerCase();
 }
 
+function formatWeekLabel(iso) {
+  if (!iso) return "";
+  const date = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "";
+  return `Semana del ${date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}`;
+}
+
+
 function formatCurrency(value) {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return "--";
@@ -197,11 +241,13 @@ export default function ShoppingPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { notify: notifyOnboarding } = useOnboarding();
+  const { notify: notifyWeekly } = useWeeklyChallenge();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { notifyOnboarding("visit_shopping"); }, []);
   const navigationContext = React.useContext(NavigationContext);
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [tab, setTab] = useState("pending");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState("");
@@ -233,10 +279,58 @@ export default function ShoppingPage() {
   const [quickCategorySearch, setQuickCategorySearch] = useState("");
   const [quickCategoryMenuOpen, setQuickCategoryMenuOpen] = useState(false);
   const [quickCategoryMenuPosition, setQuickCategoryMenuPosition] = useState(null);
+  const [allPendingSessions, setAllPendingSessions] = useState([]);
+  const [sessionsTabBusy, setSessionsTabBusy] = useState(false);
+  const [sessionsTabError, setSessionsTabError] = useState("");
+  const [editingGroupSessionId, setEditingGroupSessionId] = useState(null);
+  const [editingGroupAmount, setEditingGroupAmount] = useState("");
+  const [contentSlideClass, setContentSlideClass] = useState("");
+  const [basicsPopupOpen, setBasicsPopupOpen] = useState(false);
+  const [basicsToast, setBasicsToast] = useState("");
+  const basicsToastTimerRef = useRef(null);
+  const [budgetModalOpen, setBudgetModalOpen] = useState(false);
+  const [unmarkAllOpen, setUnmarkAllOpen] = useState(false);
+  const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
+  const [toasts, setToasts] = useState([]);
+  const toastCounterRef = useRef(0);
+
+  const pushToast = useCallback((config) => {
+    const id = ++toastCounterRef.current;
+    const autoDismiss = config.autoDismiss !== undefined
+      ? config.autoDismiss
+      : config.actionLabel ? null : 4000;
+    setToasts((prev) => [...prev, { id, ...config, autoDismiss }]);
+    if (autoDismiss) {
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), autoDismiss);
+    }
+  }, []);
+
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const pushAddedToast = useCallback((name) => {
+    pushToast({ type: "success", message: `«${name}» añadido a la lista`, autoDismiss: 3000 });
+  }, [pushToast]);
+  const overflowMenuRef = useRef(null);
+  const weekDirRef = useRef(null);
+  const [dismissedBannerIds, setDismissedBannerIds] = useState(() => {
+    try {
+      const stored = localStorage.getItem("kitchen_dismissed_banners");
+      return new Set(stored ? JSON.parse(stored) : []);
+    } catch {
+      return new Set();
+    }
+  });
+  const dismissedBannerIdsRef = useRef(dismissedBannerIds);
   const quickInputRef = useRef(null);
   const quickCategoryFieldRef = useRef(null);
   const quickCategoryMenuRef = useRef(null);
   const pendingNavigationRef = useRef(null);
+  const prevPendingCountRef = useRef(null);
+  const openPurchaseSessionRef = useRef(null);
+  const pendingSortOrderRef = useRef(null);
+  const pendingTabRef = useRef(null);
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
   const openPurchaseSession = currentPurchaseSession || pendingPurchaseSessions[0] || null;
@@ -256,6 +350,9 @@ export default function ShoppingPage() {
     const nextWeekValue = typeof valueOrUpdater === "function" ? valueOrUpdater(weekStart) : valueOrUpdater;
     const normalizedWeek = normalizeWeekParam(nextWeekValue, weekStart || getCurrentWeekStart());
     if (!normalizedWeek) return;
+    if (normalizedWeek !== weekStart) {
+      weekDirRef.current = normalizedWeek > weekStart ? "next" : "prev";
+    }
     setWeekStart(normalizedWeek);
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("week", normalizedWeek);
@@ -307,6 +404,25 @@ export default function ShoppingPage() {
     setPendingPurchaseSessions(nextBudgetFeatureEnabled ? normalizedPendingPurchaseSessions : []);
     setCurrentPurchaseSession(nextCurrentPurchaseSession);
     setHasRestorableOpenPurchase(Boolean(nextOpenPurchaseSession?.id && Number(nextOpenPurchaseSession?.itemCount || 0) > 0));
+
+    // Trigger week-change slide animation
+    if (weekDirRef.current) {
+      setContentSlideClass(weekDirRef.current === "next" ? "slide-from-right" : "slide-from-left");
+      weekDirRef.current = null;
+    }
+
+    // Prune dismissed IDs that are no longer pending (already confirmed/cancelled)
+    const activePendingIds = new Set(normalizedPendingPurchaseSessions.map((s) => String(s.id)));
+    if (nextCurrentPurchaseSession?.id) activePendingIds.add(String(nextCurrentPurchaseSession.id));
+    setDismissedBannerIds((prev) => {
+      const pruned = new Set([...prev].filter((id) => activePendingIds.has(id)));
+      if (pruned.size === prev.size) return prev;
+      dismissedBannerIdsRef.current = pruned;
+      try {
+        localStorage.setItem("kitchen_dismissed_banners", JSON.stringify([...pruned]));
+      } catch {}
+      return pruned;
+    });
   };
 
   const handleBudgetFeatureUnavailable = (message = "Upgrade your license to enable budgets.") => {
@@ -320,7 +436,7 @@ export default function ShoppingPage() {
     setPurchaseConfirmStoreId("");
     setPurchaseConfirmAmount("");
     setLeavePromptOpen(false);
-    setError(message);
+    pushToast({ type: "error", message });
   };
 
   const logShoppingApiError = (context, endpoint, err) => {
@@ -336,13 +452,24 @@ export default function ShoppingPage() {
     console.error(`[shopping] ${context} failed`, { endpoint, message: err?.message || err });
   };
 
-  const loadList = async ({ silent = false } = {}) => {
+  const loadList = async ({ silent = false, checkBasicsPopup = false } = {}) => {
     if (isDiodGlobalMode) return;
     if (!silent) setIsRefreshing(true);
-    setError("");
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
       applyPayload(data);
+      if (checkBasicsPopup) {
+        if (canUseBasicsFeature(user)) {
+          const householdId = user?.activeHouseholdId || user?.householdId || "";
+          const popupKey = `lunchfy_basics_popup_${householdId}_${weekStart}`;
+          try {
+            if (!localStorage.getItem(popupKey)) {
+              localStorage.setItem(popupKey, "1");
+              setBasicsPopupOpen(true);
+            }
+          } catch { /* ignore */ }
+        }
+      }
     } catch (err) {
       if (isBudgetFeatureUnavailableError(err)) {
         handleBudgetFeatureUnavailable();
@@ -356,14 +483,14 @@ export default function ShoppingPage() {
       setPendingPurchaseSessions([]);
       setCurrentPurchaseSession(null);
       setHasRestorableOpenPurchase(false);
-      setError(err.message || "No se pudo cargar la lista.");
+      pushToast({ type: "error", message: err.message || "No se pudo cargar la lista." });
     } finally {
       if (!silent) setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    void loadList();
+    void loadList({ checkBasicsPopup: true });
   }, [weekStart, isDiodGlobalMode]);
 
   useEffect(() => {
@@ -480,6 +607,17 @@ export default function ShoppingPage() {
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [quickCreateOpen, quickCategoryMenuOpen]);
 
+  useEffect(() => {
+    if (!overflowMenuOpen) return undefined;
+    const handlePointerDown = (event) => {
+      if (overflowMenuRef.current?.contains(event.target)) return;
+      setOverflowMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [overflowMenuOpen]);
+
+
   const updateQuickCategoryMenuPosition = useCallback(() => {
     const field = quickCategoryFieldRef.current;
     if (!field) return;
@@ -538,18 +676,31 @@ export default function ShoppingPage() {
     };
   }, [quickQuery]);
 
-  const refreshList = async () => {
-    if (isDiodGlobalMode) return;
-    setIsRefreshing(true);
+  useEffect(() => {
+    openPurchaseSessionRef.current = openPurchaseSession;
+  }, [openPurchaseSession]);
+
+  const markCategoryPurchased = async (group) => {
+    if (isDiodGlobalMode || !group?.items?.length) return;
     try {
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/rebuild`, { method: "POST" });
-      applyPayload(data);
-      setSuccess("Lista reconstruida");
+      let lastData;
+      for (const item of group.items) {
+        // eslint-disable-next-line no-await-in-loop
+        lastData = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
+          method: "PUT",
+          body: JSON.stringify({
+            canonicalName: item.canonicalName,
+            ingredientId: item.ingredientId,
+            status: "purchased",
+            storeId: selectedStoreRef.current || null
+          })
+        });
+      }
+      if (lastData) applyPayload(lastData);
+      notifyWeekly("item_purchased", { itemKey: "batch" });
     } catch (err) {
-      logShoppingApiError("refreshList", `/api/kitchen/shopping/${weekStart}/rebuild`, err);
-      setError(err.message || "No se pudo refrescar la lista.");
-    } finally {
-      setIsRefreshing(false);
+      logShoppingApiError("markCategoryPurchased", `/api/kitchen/shopping/${weekStart}/item`, err);
+      pushToast({ type: "error", message: err.message || "No se pudo marcar la categoría." });
     }
   };
 
@@ -620,15 +771,16 @@ export default function ShoppingPage() {
   const handleQuickSelect = async (ingredient) => {
     if (!ingredient?._id || quickBusy) return;
     setQuickBusy(true);
-    setError("");
     try {
       await addIngredientToList(ingredient._id, ingredient.categoryId?._id || ingredient.categoryId || quickCategoryId || null);
       setQuickQuery("");
       setQuickSuggestions([]);
       setQuickCategoryId("");
       quickInputRef.current?.focus();
+      pushAddedToast(ingredient.name);
+      notifyWeekly("manual_item_added");
     } catch (err) {
-      setError(err.message || "No se pudo añadir el ingrediente a la lista.");
+      pushToast({ type: "error", message: err.message || "No se pudo añadir el ingrediente a la lista." });
     } finally {
       setQuickBusy(false);
     }
@@ -655,7 +807,6 @@ export default function ShoppingPage() {
   const handleQuickCreate = async () => {
     if (!quickCreateName.trim() || !quickCategoryId || quickBusy) return;
     setQuickBusy(true);
-    setError("");
     try {
       const ingredient = await createHouseholdIngredient(quickCreateName, quickCategoryId);
       if (!ingredient?._id) throw new Error("No se pudo crear el ingrediente.");
@@ -668,9 +819,10 @@ export default function ShoppingPage() {
       setQuickCategoryMenuOpen(false);
       setQuickCreateOpen(false);
       quickInputRef.current?.focus();
-      setSuccess(`Creado y añadido: ${ingredient.name}`);
+      pushAddedToast(ingredient.name);
+      notifyWeekly("manual_item_added");
     } catch (err) {
-      setError(err.message || "No se pudo crear y añadir el ingrediente.");
+      pushToast({ type: "error", message: err.message || "No se pudo crear y añadir el ingrediente." });
     } finally {
       setQuickBusy(false);
     }
@@ -678,14 +830,14 @@ export default function ShoppingPage() {
 
   const removeItem = async (item) => {
     if (!item?.itemId) {
-      setError("No se pudo eliminar: falta identificador del item.");
+      pushToast({ type: "error", message: "No se pudo eliminar: falta identificador del item." });
       return;
     }
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/${item.itemId}`, { method: "DELETE" });
       applyPayload(data);
     } catch (err) {
-      setError(err.message || "No se pudo eliminar el item.");
+      pushToast({ type: "error", message: err.message || "No se pudo eliminar el item." });
     }
   };
 
@@ -698,14 +850,24 @@ export default function ShoppingPage() {
       });
       applyPayload(data);
     } catch (err) {
-      setError(err.message || "No se pudo actualizar la cantidad.");
+      pushToast({ type: "error", message: err.message || "No se pudo actualizar la cantidad." });
     }
   };
 
-  const setItemStatus = async (item, status) => {
+  // Anchor ref map: tracks the check button element for each item key so
+  // burstParticles can receive a live DOM element even after rerender.
+  const checkButtonRefsRef = useRef(new Map());
+
+  const setItemStatus = async (item, status, checkButtonEl) => {
     if (isDiodGlobalMode) return;
     const key = itemKey(item);
     setTransitioningItemKey(key);
+
+    // 🎯 Fire particle burst immediately (fire-and-forget, does not await)
+    if (status === "purchased" && checkButtonEl) {
+      burstParticles(checkButtonEl, { count: 5, radius: 38, duration: 560 });
+    }
+
     try {
       const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
         method: "PUT",
@@ -717,13 +879,30 @@ export default function ShoppingPage() {
         })
       });
       applyPayload(data);
-      if (status === "purchased" && (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id)) {
-        setHasMarkedPurchaseInViewSession(true);
+      if (status === "purchased") {
+        notifyOnboarding("mark_purchased");
+        notifyWeekly("item_purchased", { itemKey: key });
+        const remaining = data.list?.pendingByCategory
+          ? Object.values(data.list.pendingByCategory).reduce((s, arr) => s + arr.length, 0)
+          : null;
+        if (remaining === 0) {
+          notifyWeekly("shopping_list_completed");
+          // 🏆 Milestone toast: entire list is done
+          triggerMilestone({
+            title   : "Lista completada",
+            subtitle: "¡Todo listo para esta semana!",
+            icon    : "✓",
+            variant : "check"
+          });
+        }
+        if (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id) {
+          setHasMarkedPurchaseInViewSession(true);
+        }
       }
       setRecentlyMovedItemKey(key);
     } catch (err) {
       logShoppingApiError("setItemStatus", `/api/kitchen/shopping/${weekStart}/item`, err);
-      setError(err.message || "No se pudo actualizar.");
+      pushToast({ type: "error", message: err.message || "No se pudo actualizar." });
     } finally {
       setTransitioningItemKey(null);
     }
@@ -738,7 +917,34 @@ export default function ShoppingPage() {
       applyPayload(data);
     } catch (err) {
       logShoppingApiError("updatePurchasedItemStore", `/api/kitchen/shopping/${weekStart}/item/store`, err);
-      setError(err.message || "No se pudo cambiar el supermercado.");
+      pushToast({ type: "error", message: err.message || "No se pudo cambiar el supermercado." });
+    }
+  };
+
+  const saveGroupAmount = async (group) => {
+    if (!group.purchaseSessionId) return;
+    try {
+      await apiRequest(`/api/kitchen/shopping/purchase-sessions/${group.purchaseSessionId}/amount`, {
+        method: "PUT",
+        body: JSON.stringify({ amount: editingGroupAmount })
+      });
+      setEditingGroupSessionId(null);
+      await loadList({ silent: true });
+    } catch (err) {
+      pushToast({ type: "error", message: err.message || "No se pudo actualizar el importe." });
+    }
+  };
+
+  const updateGroupStore = async (group, newStoreId) => {
+    try {
+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/purchased/group-store`, {
+        method: "PUT",
+        body: JSON.stringify({ purchasedDate: group.purchasedDate, storeId: newStoreId || null })
+      });
+      applyPayload(data);
+    } catch (err) {
+      logShoppingApiError("updateGroupStore", `/api/kitchen/shopping/${weekStart}/purchased/group-store`, err);
+      pushToast({ type: "error", message: err.message || "No se pudo cambiar el supermercado." });
     }
   };
 
@@ -753,23 +959,29 @@ export default function ShoppingPage() {
       });
       applyPayload(data);
       if (status === "purchased") {
-        setSuccess(data.updated ? "Todo marcado como comprado" : "No había elementos pendientes.");
+        pushToast({ type: "success", message: data.updated ? "Todo marcado como comprado" : "No había elementos pendientes." });
         if (data.updated && (data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id)) {
           setHasMarkedPurchaseInViewSession(true);
         }
+        // Fire challenge trigger when "mark all" leaves the list fully purchased
+        const remainingAfter = data.list?.pendingByCategory
+          ? Object.values(data.list.pendingByCategory).reduce((s, arr) => s + arr.length, 0)
+          : 0;
+        if (data.updated && remainingAfter === 0) {
+          notifyWeekly("shopping_list_completed");
+        }
       } else {
-        setSuccess(data.updated ? "Todo volvió a pendiente" : "No había elementos comprados.");
+        pushToast({ type: "success", message: data.updated ? "Todo volvió a pendiente" : "No había elementos comprados." });
       }
     } catch (err) {
       logShoppingApiError("setAllItemsStatus", `/api/kitchen/shopping/${weekStart}/items/status`, err);
-      setError(err.message || "No se pudo actualizar en bloque.");
+      pushToast({ type: "error", message: err.message || "No se pudo actualizar en bloque." });
     }
   };
 
   const createStoreFromDropdown = async () => {
     const name = window.prompt("Nombre del supermercado");
     if (!name || !name.trim()) return;
-    setError("");
     try {
       await apiRequest("/api/kitchen/shopping/stores", {
         method: "POST",
@@ -778,14 +990,26 @@ export default function ShoppingPage() {
       await loadList({ silent: true });
     } catch (err) {
       logShoppingApiError("createStoreFromDropdown", "/api/kitchen/shopping/stores", err);
-      setError(err.message || "No se pudo crear el supermercado.");
+      pushToast({ type: "error", message: err.message || "No se pudo crear el supermercado." });
     }
+  };
+
+  const dismissBanner = (sessionId) => {
+    if (!sessionId) return;
+    setDismissedBannerIds((prev) => {
+      const next = new Set(prev);
+      next.add(String(sessionId));
+      dismissedBannerIdsRef.current = next;
+      try {
+        localStorage.setItem("kitchen_dismissed_banners", JSON.stringify([...next]));
+      } catch {}
+      return next;
+    });
   };
 
   const postponePurchaseConfirmation = async () => {
     if (!purchaseConfirmTarget?.id || purchaseConfirmBusy) return;
     setPurchaseConfirmBusy(true);
-    setError("");
     try {
       await apiRequest(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/postpone`, {
         method: "POST"
@@ -803,7 +1027,7 @@ export default function ShoppingPage() {
         handleBudgetFeatureUnavailable();
         return;
       }
-      setError(err.message || "No se pudo posponer la confirmación.");
+      pushToast({ type: "error", message: err.message || "No se pudo posponer la confirmación." });
     } finally {
       setPurchaseConfirmBusy(false);
     }
@@ -812,7 +1036,6 @@ export default function ShoppingPage() {
   const completePendingPurchase = async () => {
     if (!purchaseConfirmTarget?.id || purchaseConfirmBusy) return;
     setPurchaseConfirmBusy(true);
-    setError("");
     try {
       await apiRequest(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/complete`, {
         method: "POST",
@@ -822,20 +1045,33 @@ export default function ShoppingPage() {
         })
       });
       await loadList({ silent: true });
+      // Refresh sessions tab if it was active
+      if (tab === "sessions") {
+        apiRequest("/api/kitchen/shopping/purchase-sessions/pending")
+          .then((data) => setAllPendingSessions(Array.isArray(data?.sessions) ? data.sessions : []))
+          .catch(() => {});
+      }
       setPurchaseConfirmOpen(false);
       setPurchaseConfirmTarget(null);
+      // Weekly challenge: purchase finalized with store + amount
+      if (purchaseConfirmStoreId && purchaseConfirmAmount) {
+        notifyWeekly("purchase_finalized", {
+          storeId: purchaseConfirmStoreId,
+          amount: purchaseConfirmAmount
+        });
+      }
       setPurchaseConfirmStoreId("");
       setPurchaseConfirmAmount("");
       if (pendingNavigationRef.current) {
         proceedPendingNavigation();
       }
-      setSuccess("Compra registrada.");
+      pushToast({ type: "success", message: "Compra registrada." });
     } catch (err) {
       if (isBudgetFeatureUnavailableError(err)) {
         handleBudgetFeatureUnavailable();
         return;
       }
-      setError(err.message || "No se pudo guardar la compra.");
+      pushToast({ type: "error", message: err.message || "No se pudo guardar la compra." });
     } finally {
       setPurchaseConfirmBusy(false);
     }
@@ -846,11 +1082,95 @@ export default function ShoppingPage() {
     return getPendingItemsCount(pendingByCategory);
   }, [pendingByCategory]);
 
+  useEffect(() => {
+    if (!budgetFeatureEnabled || pendingCount === null) {
+      prevPendingCountRef.current = pendingCount;
+      return;
+    }
+    const prev = prevPendingCountRef.current;
+    prevPendingCountRef.current = pendingCount;
+    if (prev === null || prev === 0 || pendingCount > 0) return;
+    const timer = setTimeout(() => {
+      const session = openPurchaseSessionRef.current;
+      if (session?.id && Number(session.itemCount || 0) > 0 && !dismissedBannerIdsRef.current.has(String(session.id))) {
+        openPurchaseConfirmModal(session);
+      }
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [pendingCount, budgetFeatureEnabled]);
+
+  useEffect(() => {
+    if (tab !== "sessions" || !budgetFeatureEnabled) return;
+    let active = true;
+    setSessionsTabBusy(true);
+    setSessionsTabError("");
+    apiRequest("/api/kitchen/shopping/purchase-sessions/pending")
+      .then((data) => {
+        if (!active) return;
+        setAllPendingSessions(Array.isArray(data?.sessions) ? data.sessions : []);
+      })
+      .catch((err) => {
+        if (!active) return;
+        if (isBudgetFeatureUnavailableError(err)) {
+          setSessionsTabError("Esta función requiere el plan PRO.");
+          return;
+        }
+        setSessionsTabError(err.message || "No se pudieron cargar las compras pendientes.");
+      })
+      .finally(() => {
+        if (active) setSessionsTabBusy(false);
+      });
+    return () => { active = false; };
+  }, [tab, budgetFeatureEnabled]);
+
   const purchasedCount = useMemo(() => {
     if (!Array.isArray(purchasedByStoreDay)) return null;
     return purchasedByStoreDay.reduce((acc, group) => acc + (group.items?.length || 0), 0);
   }, [purchasedByStoreDay]);
   const hasExactSuggestion = Array.isArray(quickSuggestions) && quickSuggestions.some((item) => normalizeQuery(item?.name) === normalizeQuery(quickQuery));
+  const currentPendingCanonicals = useMemo(() => {
+    if (!Array.isArray(pendingByCategory)) return new Set();
+    const set = new Set();
+    for (const group of pendingByCategory) {
+      for (const item of (group.items || [])) {
+        if (item.canonicalName) set.add(String(item.canonicalName).toLowerCase());
+      }
+    }
+    return set;
+  }, [pendingByCategory]);
+  const currentPendingIngredientIds = useMemo(() => {
+    if (!Array.isArray(pendingByCategory)) return new Set();
+    const set = new Set();
+    for (const group of pendingByCategory) {
+      for (const item of (group.items || [])) {
+        if (item.ingredientId) set.add(String(item.ingredientId));
+      }
+    }
+    return set;
+  }, [pendingByCategory]);
+
+  // Stable sort: computes order once per tab session (frozen in ref), so marking items
+  // never causes card reordering. Order resets only when the tab changes.
+  const stablePendingByCategory = useMemo(() => {
+    if (!Array.isArray(pendingByCategory) || pendingByCategory.length === 0) {
+      return pendingByCategory;
+    }
+    if (pendingTabRef.current !== tab) {
+      pendingSortOrderRef.current = null;
+      pendingTabRef.current = tab;
+    }
+    if (!pendingSortOrderRef.current) {
+      pendingSortOrderRef.current = [...pendingByCategory]
+        .sort((a, b) => (b.items?.length || 0) - (a.items?.length || 0))
+        .map((g) => g.categoryId || g.categoryInfo?.slug || g.categoryInfo?.name);
+    }
+    const orderMap = new Map(pendingSortOrderRef.current.map((k, i) => [k, i]));
+    return [...pendingByCategory].sort((a, b) => {
+      const ka = a.categoryId || a.categoryInfo?.slug || a.categoryInfo?.name;
+      const kb = b.categoryId || b.categoryInfo?.slug || b.categoryInfo?.name;
+      return (orderMap.get(ka) ?? 999) - (orderMap.get(kb) ?? 999);
+    });
+  }, [pendingByCategory, tab]);
 
   if (isDiodGlobalMode) {
     return (
@@ -860,162 +1180,126 @@ export default function ShoppingPage() {
     );
   }
 
+  const isInitialShoppingLoading =
+    (tab === "pending" && !Array.isArray(pendingByCategory)) ||
+    (tab === "purchased" && !Array.isArray(purchasedByStoreDay));
+
+  if (isInitialShoppingLoading) {
+    return (
+      <KitchenLayout>
+        <ShoppingPageSkeleton />
+      </KitchenLayout>
+    );
+  }
+
   return (
     <KitchenLayout>
-      <div className="shopping-page-shell">
-        <div className="kitchen-card shopping-main-card">
-          <div className="shopping-header-card">
-            <div className="shopping-header-row">
-              <div className="shopping-header-title">
-                <h1>Lista de la compra</h1>
-                <button className="shopping-refresh-icon" type="button" onClick={refreshList} disabled={isRefreshing} aria-label="Reconstruir lista" title="Reconstruir lista">
-                  <RefreshIcon className="shopping-week-arrow-icon" />
-                </button>
-              </div>
-            </div>
-
-            <div className="shopping-header-week-row">
-              <div className="kitchen-week-nav-row shopping-week-nav-row">
-                <WeekNavigator
-                  className="shopping-week-nav shopping-week-header-navigator"
-                  value={weekStart}
-                  onChange={(nextValue) => updateVisibleWeek(normalizeWeekStartInput(nextValue))}
-                  onPrevious={() => updateVisibleWeek((prev) => addDaysToISO(prev, -7))}
-                  onNext={() => updateVisibleWeek((prev) => addDaysToISO(prev, 7))}
-                />
-                {!isCurrentWeek ? (
-                  <button
-                    type="button"
-                    className="kitchen-week-arrow kitchen-week-now-button shopping-week-now-button"
-                    onClick={handleJumpToCurrentWeek}
-                    aria-label="Ir a la semana actual"
-                    title="Ir a la semana actual"
-                  >
-                    <TodayIcon className="kitchen-week-now-icon" />
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            {budgetFeatureEnabled === true ? (
-              <div className="shopping-budget-row">
-                <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
-                  <span className="shopping-budget-label">Budget semanal</span>
-                  <strong>{formatCurrency(budget?.weeklyBudget)}</strong>
-                </button>
-                <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
-                  <span className="shopping-budget-label">Gastado esta semana</span>
-                  <strong>{formatCurrency(budget?.spent)}</strong>
-                </button>
-                <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={openWeeklyBudgetPanel}>
-                  <span className="shopping-budget-label">Disponible esta semana</span>
-                  <strong>{formatCurrency(budget?.available)}</strong>
-                </button>
-              </div>
-            ) : null}
-
-            <div className="shopping-header-tabs-row">
-              <div className="kitchen-tab-share-row shopping-tab-share-row">
-                <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
-                  <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-                  <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-                </div>
-                {shouldShowConfirmPurchaseButton ? (
-                  <button
-                    type="button"
-                    className="kitchen-button secondary shopping-pending-purchases-button"
-                    onClick={() => openPurchaseConfirmModal(openPurchaseSession)}
-                    disabled={!hasOpenPurchase}
-                  >
-                    Confirmar compra
-                  </button>
-                ) : null}
-                <ShareWhatsAppButton
-                  iconOnly
-                  size={22}
-                  className="kitchen-tab-share-button"
-                  buttonLabel="Compartir lista por WhatsApp"
-                  title="Compartir en HomeFirst"
-                  items={[
-                    {
-                      id: "shopping-list",
-                      label: "Compartir esta lista",
-                      description: "Comparte la lista de la compra de esta semana con acceso protegido.",
-                      url: buildShoppingShareUrl(weekStart),
-                      message: `Here is the shopping list in HomeFirst: ${buildShoppingShareUrl(weekStart)}`
-                    }
-                  ]}
-                />
-              </div>
-            </div>
-
-            {tab === "pending" ? (
-              <div className="shopping-header-input-row">
-                <div className="shopping-header-store-col">
-                  <select
-                    className="kitchen-select shopping-store-select"
-                    value={selectedStoreId}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      if (value === "__add__") {
-                        void createStoreFromDropdown();
-                        return;
-                      }
-                      selectedStoreRef.current = value;
-                      setSelectedStoreId(value);
-                    }}
-                  >
-                    <option value="">Supermercado (opcional)</option>
-                    {stores.map((store) => (
-                      <option key={store._id} value={store._id}>{store.name}</option>
-                    ))}
-                    <option value="__add__">Añadir supermercado…</option>
-                  </select>
-                </div>
-
-                <div className="shopping-header-quick-col">
-                  <div className="shopping-quick-add shopping-quick-add-header" role="region" aria-label="Añadir ingrediente rápido">
-                    <div className="shopping-quick-add-row">
-                      <input
-                        ref={quickInputRef}
-                        className="kitchen-input shopping-quick-add-input"
-                        value={quickQuery}
-                        onChange={(event) => setQuickQuery(event.target.value)}
-                        placeholder="Añadir ingrediente a la lista..."
-                      />
-                    </div>
-                    {quickQuery ? (
-                      <div className="shopping-quick-suggestions">
-                        {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
-                        {!quickSearching ? quickSuggestions.slice(0, 8).map((item) => (
-                          <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => handleQuickSelect(item)} disabled={quickBusy}>
-                            <span className="kitchen-suggestion-name">{item.name}</span>
-                          </button>
-                        )) : null}
-                        {!quickSearching && !hasExactSuggestion && quickQuery.trim() ? (
-                          <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={openQuickCreateModal} disabled={quickBusy}>
-                            Crear "{quickQuery.trim()}"
-                          </button>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
+      <PageHeader
+        title="Lista de la compra"
+        subtitle="Gestiona lo que necesitas comprar esta semana"
+        primaryAction={
+          <ShareWhatsAppButton
+            iconOnly
+            size={18}
+            className="shopping-header-wa-btn"
+            buttonLabel="Compartir lista de la compra"
+            items={[
+              {
+                id: "shopping-list",
+                label: "Compartir esta lista",
+                description: "Comparte la lista de la compra de esta semana con acceso protegido.",
+                url: buildShoppingShareUrl(weekStart),
+                message: `Aquí tienes la lista de la compra en HomeFirst: ${buildShoppingShareUrl(weekStart)}`
+              }
+            ]}
+          />
+        }
+        secondaryLeft={
+          <WeekDatePicker
+            selectedWeek={weekStart}
+            onWeekChange={updateVisibleWeek}
+            className="shopping-header-week-picker"
+          />
+        }
+        footer={
+          budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (() => {
+            const pct = Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100));
+            const isOver = budget.spent > budget.weeklyBudget;
+            const label = `Presupuesto · ${formatCurrency(budget.spent)} / ${formatCurrency(budget.weeklyBudget)}`;
+            return (
+              <button
+                type="button"
+                className={`shopping-budget-pill-bar${isOver ? " is-over" : ""}`}
+                onClick={openWeeklyBudgetPanel}
+                aria-label="Ver desglose del presupuesto"
+              >
+                <div className="shopping-budget-pill-fill" style={{ width: `${pct}%` }} />
+                <span className="shopping-budget-pill-text-dark">{label}</span>
+                <ChevronRight size={12} className="shopping-budget-pill-chevron" aria-hidden="true" />
+              </button>
+            );
+          })() : null
+        }
+        className="shopping-header-card"
+      >
+        {/* Tabs */}
+        <div className="shopping-tabs-standalone">
+          <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
+            <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
+            <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+            {budgetFeatureEnabled ? (
+              <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
+                Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
+              </button>
             ) : null}
           </div>
-          {(success || error) ? (
-            <div className="shopping-toolbar-alerts" aria-live="polite">
-              {success ? <div className="kitchen-alert success shopping-toolbar-alert">{success}</div> : null}
-              {error ? <div className="kitchen-alert error shopping-toolbar-alert">{error}</div> : null}
-            </div>
-          ) : null}
-
+        </div>
+      </PageHeader>
+      <div className="shopping-page-shell">
+        <div className="kitchen-card shopping-main-card">
+          <div
+            className={`shopping-week-content ${contentSlideClass}`}
+            onAnimationEnd={() => setContentSlideClass("")}
+          >
           {tab === "pending" ? (
-            <div className="shopping-categories">
-              <div className="shopping-bulk-actions">
-                <button className="kitchen-button ghost shopping-bulk-button" type="button" onClick={() => setAllItemsStatus("purchased")}>Marcar todo como comprado</button>
+            <>
+              {/* Add input + basics — below tabs, only in pending tab */}
+              <div className="shopping-add-inline">
+                <div className="shopping-add-wrapper" role="region" aria-label="Añadir ingrediente">
+                  <input
+                    ref={quickInputRef}
+                    className="kitchen-input shopping-add-input"
+                    value={quickQuery}
+                    onChange={(event) => setQuickQuery(event.target.value)}
+                    placeholder="¿Qué necesitas comprar?"
+                  />
+                  {quickQuery ? (
+                    <div className="shopping-quick-suggestions">
+                      {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
+                      {!quickSearching ? quickSuggestions.slice(0, 8).map((item) => (
+                        <button key={item._id} type="button" className="kitchen-suggestion" onClick={() => handleQuickSelect(item)} disabled={quickBusy}>
+                          <span className="kitchen-suggestion-name">{item.name}</span>
+                        </button>
+                      )) : null}
+                      {!quickSearching && !hasExactSuggestion && quickQuery.trim() ? (
+                        <button className="kitchen-button ghost shopping-quick-create" type="button" onClick={openQuickCreateModal} disabled={quickBusy}>
+                          Crear "{quickQuery.trim()}"
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  className="kitchen-button shopping-basics-btn-inline"
+                  onClick={() => setBasicsPopupOpen(true)}
+                  aria-label="Añadir básicos de compra"
+                >
+                  <Plus size={14} />
+                  Básicos
+                </button>
               </div>
+              <div className="shopping-categories-wrap">
               {!Array.isArray(pendingByCategory) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
               ) : pendingByCategory.length === 0 ? (
@@ -1023,69 +1307,169 @@ export default function ShoppingPage() {
                   {purchasedCount ? <EmptyCheckIcon /> : <EmptyListIcon />}
                   <h4>{purchasedCount ? "Todo comprado por esta semana." : "No hay nada por comprar todavía."}</h4>
                 </div>
-              ) : pendingByCategory.map((group) => {
-                const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
-                return (
-                  <div className="shopping-category-card" key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name} style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}>
-                    <div className="shopping-category-head"><h4>{category.name.toUpperCase()}</h4><span className="shopping-category-count">{group.items.length} items</span></div>
-                    <div className="shopping-items-list">
-                      {group.items.map((item) => {
-                        const key = itemKey(item);
-                        return (
-                          <div className={`shopping-item ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
-                            <button className="shopping-check" type="button" onClick={() => setItemStatus(item, "purchased")}><span className="shopping-check-dot">✓</span></button>
-                            <span className="shopping-item-text">{item.displayName}</span>
-                            <div className="shopping-item-controls">
-                              <button
-                                className="shopping-qty-button shopping-remove-item"
-                                type="button"
-                                onClick={() => adjustItemOccurrences(item, -1)}
-                                aria-label={`Reducir cantidad de ${item.displayName}`}
-                                title="Reducir"
-                              >
-                                <MinusIcon />
-                              </button>
-                              <span className="shopping-item-amount">x{Math.max(1, Number(item.occurrences || 1))}</span>
-                              <button
-                                className="shopping-qty-button"
-                                type="button"
-                                onClick={() => adjustItemOccurrences(item, 1)}
-                                aria-label={`Aumentar cantidad de ${item.displayName}`}
-                                title="Aumentar"
-                              >
-                                <PlusIcon />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+              ) : (
+                <>
+                  <div className="shopping-global-actions-row">
+                    <button
+                      type="button"
+                      className="shopping-global-mark-all"
+                      onClick={() => setAllItemsStatus("purchased")}
+                    >
+                      Marcar todo
+                    </button>
                   </div>
-                );
-              })}
+                  <div className="shopping-categories shopping-categories-grid">
+                    {(stablePendingByCategory || []).map((group) => {
+                      const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
+                      return (
+                        <div
+                          className="shopping-category-card"
+                          key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name}
+                          style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}
+                        >
+                          <div className="shopping-category-head">
+                            <h4>{category.name.toUpperCase()}</h4>
+                            <span className="shopping-category-count">{group.items.length}</span>
+                          </div>
+                          <div className="shopping-items-flat-list">
+                            {group.items.map((item) => {
+                              const key = itemKey(item);
+                              return (
+                                <div className={`shopping-item-flat ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
+                                  <button
+                                    className="shopping-check"
+                                    type="button"
+                                    onClick={(e) => setItemStatus(item, "purchased", e.currentTarget)}
+                                    aria-label={`Marcar ${item.displayName} como comprado`}
+                                  >
+                                    <span className="shopping-check-dot">✓</span>
+                                  </button>
+                                  <div className="shopping-item-name-col">
+                                    <span className="shopping-item-text">{item.displayName}</span>
+                                  </div>
+                                  <div className="shopping-item-controls">
+                                    <button
+                                      className="shopping-qty-button"
+                                      type="button"
+                                      onClick={() => adjustItemOccurrences(item, -1)}
+                                      aria-label={`Reducir cantidad de ${item.displayName}`}
+                                    >
+                                      <MinusIcon />
+                                    </button>
+                                    <span className="shopping-item-amount">{Math.max(1, Number(item.occurrences || 1))}</span>
+                                    <button
+                                      className="shopping-qty-button"
+                                      type="button"
+                                      onClick={() => adjustItemOccurrences(item, 1)}
+                                      aria-label={`Aumentar cantidad de ${item.displayName}`}
+                                    >
+                                      <PlusIcon />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
-          ) : (
+            </>
+          ) : null}
+
+          {tab === "purchased" ? (
             <div className="shopping-categories">
-              <div className="shopping-bulk-actions">
-                <button
-                  className="kitchen-button ghost shopping-bulk-button"
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm("¿Desmarcar todo lo comprado de esta semana?")) {
-                      void setAllItemsStatus("pending");
-                    }
-                  }}
-                >
-                  Desmarcar todo
-                </button>
-              </div>
               {!Array.isArray(purchasedByStoreDay) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
               ) : purchasedByStoreDay.length === 0 ? (
                 <div className="shopping-empty-state"><EmptyHistoryIcon /><h4>No hay nada comprado esta semana.</h4></div>
-              ) : purchasedByStoreDay.map((group) => (
+              ) : (
+              <>
+              <div className="shopping-unmark-bar">
+                <button
+                  type="button"
+                  className="kitchen-button secondary shopping-unmark-all-btn"
+                  onClick={() => setUnmarkAllOpen(true)}
+                >
+                  Descomprar todo
+                </button>
+              </div>
+              {purchasedByStoreDay.map((group) => (
                 <div className="shopping-category-card shopping-purchased-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
-                  <h4>Comprado por <span>{group.purchasedByName || "Usuario"}</span> · <em>{group.storeName || "Sin supermercado"}</em> · {formatTripDate(group.purchasedDate)}</h4>
+                  <div className="shopping-purchased-card-head">
+                    <div className="shopping-purchased-card-meta">
+                      <span className="shopping-trip-date">{formatTripDate(group.purchasedDate)}</span>
+                      <span className="shopping-purchased-by"> · por {group.purchasedByName || "Usuario"}</span>
+                      {group.sessionAmount != null ? (
+                        editingGroupSessionId === group.purchaseSessionId ? (
+                          <form
+                            className="shopping-trip-amount-form"
+                            onSubmit={(e) => { e.preventDefault(); void saveGroupAmount(group); }}
+                          >
+                            <input
+                              className="kitchen-input shopping-trip-amount-input"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              inputMode="decimal"
+                              value={editingGroupAmount}
+                              onChange={(e) => setEditingGroupAmount(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Escape") setEditingGroupSessionId(null); }}
+                              autoFocus
+                            />
+                            <button type="submit" className="shopping-trip-amount-save" aria-label="Guardar">✓</button>
+                            <button type="button" className="shopping-trip-amount-cancel" aria-label="Cancelar" onClick={() => setEditingGroupSessionId(null)}>✕</button>
+                          </form>
+                        ) : (
+                          <button
+                            type="button"
+                            className="shopping-trip-amount"
+                            onClick={() => { setEditingGroupSessionId(group.purchaseSessionId); setEditingGroupAmount(String(group.sessionAmount ?? "")); }}
+                            title="Editar importe"
+                          >
+                            {formatCurrency(group.sessionAmount)}
+                            <PencilIcon className="shopping-trip-amount-pencil" />
+                          </button>
+                        )
+                      ) : null}
+                    </div>
+                    <div className="shopping-purchased-card-controls">
+                      <select
+                        className="kitchen-select shopping-group-store-select"
+                        value={group.storeId || ""}
+                        onChange={(event) => {
+                          const val = event.target.value;
+                          if (val === "__add__") { void createStoreFromDropdown(); return; }
+                          void updateGroupStore(group, val || null);
+                        }}
+                      >
+                        <option value="">Sin supermercado</option>
+                        {stores.map((store) => (
+                          <option key={store._id} value={store._id}>{store.name}</option>
+                        ))}
+                        <option value="__add__">Añadir supermercado…</option>
+                      </select>
+                      {budgetFeatureEnabled && group.purchaseSessionId && group.sessionAmount == null ? (
+                        <button
+                          type="button"
+                          className="kitchen-button is-small"
+                          onClick={() => openPurchaseConfirmModal({
+                            id: group.purchaseSessionId,
+                            itemCount: group.items.length,
+                            storeId: group.storeId || null,
+                            storeName: group.storeName || null,
+                            weekStart: group.purchasedDate,
+                            items: group.items.map((item) => ({ name: item.name || item.displayName || item.canonicalName || "—", occurrences: Number(item.occurrences) || 1 }))
+                          })}
+                        >
+                          Confirmar gasto
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
                   <div className="shopping-items-list shopping-items-list-purchased">
                     {group.items.map((item) => {
                       const key = itemKey(item);
@@ -1094,12 +1478,6 @@ export default function ShoppingPage() {
                           <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
                           <span className="shopping-item-text">{item.displayName}</span>
                           {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
-                          <select className="kitchen-select shopping-store-select-compact" value={item.storeId || ""} onChange={(event) => updatePurchasedItemStore(item, event.target.value)}>
-                            <option value="">Sin supermercado</option>
-                            {stores.map((store) => (
-                              <option key={store._id} value={store._id}>{store.name}</option>
-                            ))}
-                          </select>
                           <button className="shopping-remove-item" type="button" onClick={() => removeItem(item)} aria-label={`Eliminar ${item.displayName}`} title="Eliminar">
                             <MinusIcon />
                           </button>
@@ -1109,8 +1487,74 @@ export default function ShoppingPage() {
                   </div>
                 </div>
               ))}
+              </>
+              )}
             </div>
-          )}
+          ) : null}
+
+          {tab === "sessions" ? (
+            <div className="shopping-categories">
+              {sessionsTabBusy ? (
+                <div className="shopping-session-cards skeleton-session-cards">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div className="shopping-session-card skeleton-session-card" key={index}>
+                      <div className="shopping-session-card-header">
+                        <div className="shopping-session-card-info">
+                          <Skeleton className="skeleton-session-title" />
+                          <Skeleton className="skeleton-session-sub" />
+                        </div>
+                        <Skeleton className="skeleton-cta-button" />
+                      </div>
+                      <div className="shopping-session-card-items">
+                        <Skeleton className="skeleton-small-pill" />
+                        <Skeleton className="skeleton-small-pill is-wide" />
+                        <Skeleton className="skeleton-small-pill" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : sessionsTabError ? (
+                <div className="kitchen-alert error">{sessionsTabError}</div>
+              ) : allPendingSessions.length === 0 ? (
+                <div className="shopping-empty-state"><EmptyCheckIcon /><h4>No hay compras pendientes de confirmar.</h4></div>
+              ) : (
+                <div className="shopping-session-cards">
+                  {allPendingSessions.map((session) => (
+                    <div className="shopping-session-card" key={session.id}>
+                      <div className="shopping-session-card-header">
+                        <div className="shopping-session-card-info">
+                          <strong className="shopping-session-card-title">
+                            {session.weekStart ? `Semana del ${formatTripDate(session.weekStart)}` : "Sin fecha"}
+                          </strong>
+                          <span className="shopping-session-card-sub">
+                            {session.itemCount} producto{session.itemCount !== 1 ? "s" : ""}
+                            {session.storeName ? ` · ${session.storeName}` : " · Sin supermercado"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="kitchen-button is-small"
+                          onClick={() => openPurchaseConfirmModal(session)}
+                        >
+                          Confirmar gasto
+                        </button>
+                      </div>
+                      {session.items?.length > 0 ? (
+                        <div className="shopping-session-card-items">
+                          {session.items.map((item, idx) => (
+                            <span key={idx} className="shopping-session-item-chip">
+                              {item.name}{item.occurrences > 1 ? ` ×${item.occurrences}` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
+          </div>{/* end shopping-week-content */}
         </div>
       </div>
       <ModalSheet
@@ -1156,9 +1600,24 @@ export default function ShoppingPage() {
         )}
       >
         <div className="shopping-confirm-sheet">
-          <p className="kitchen-muted">
-            {purchaseConfirmTarget?.itemCount || 0} productos marcados como comprados.
-          </p>
+          {purchaseConfirmTarget?.weekStart ? (
+            <p className="shopping-confirm-week-label">
+              {formatWeekLabel(purchaseConfirmTarget.weekStart)}
+            </p>
+          ) : null}
+          {Array.isArray(purchaseConfirmTarget?.items) && purchaseConfirmTarget.items.length > 0 ? (
+            <div className="shopping-confirm-items">
+              {purchaseConfirmTarget.items.map((item, idx) => (
+                <span key={idx} className="shopping-session-item-chip">
+                  {item.name}{item.occurrences > 1 ? <span className="shopping-session-chip-count"> ×{item.occurrences}</span> : null}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="kitchen-muted shopping-confirm-item-count">
+              {purchaseConfirmTarget?.itemCount || 0} productos marcados como comprados.
+            </p>
+          )}
           <label className="kitchen-field">
             <span className="kitchen-label">Supermercado</span>
             <select
@@ -1196,6 +1655,29 @@ export default function ShoppingPage() {
             />
           </label>
         </div>
+      </ModalSheet>
+      <ModalSheet
+        open={unmarkAllOpen}
+        title="Descomprar todo"
+        onClose={() => setUnmarkAllOpen(false)}
+        actions={(
+          <>
+            <button type="button" className="kitchen-button secondary" onClick={() => setUnmarkAllOpen(false)}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="kitchen-button"
+              onClick={() => { setUnmarkAllOpen(false); void setAllItemsStatus("pending"); }}
+            >
+              Sí, descomprar todo
+            </button>
+          </>
+        )}
+      >
+        <p className="kitchen-muted">
+          Todos los productos comprados volverán a estar pendientes. Esta acción no se puede deshacer.
+        </p>
       </ModalSheet>
       {quickCreateOpen ? (
         <div className="kitchen-modal-backdrop" role="presentation" onClick={closeQuickCreateModal}>
@@ -1294,6 +1776,109 @@ export default function ShoppingPage() {
         </div>,
         document.body
       ) : null}
+
+      {basicsPopupOpen && (
+        <BasicsPopup
+          weekStart={weekStart}
+          plan={user}
+          currentPendingCanonicals={currentPendingCanonicals}
+          currentPendingIngredientIds={currentPendingIngredientIds}
+          onClose={() => setBasicsPopupOpen(false)}
+          onBasicCreated={() => notifyWeekly("basic_created")}
+          onApplied={({ addedCount }) => {
+            setBasicsPopupOpen(false);
+            if (addedCount > 0) {
+              void loadList({ silent: true });
+              clearTimeout(basicsToastTimerRef.current);
+              setBasicsToast(`${addedCount} básico${addedCount !== 1 ? "s" : ""} añadido${addedCount !== 1 ? "s" : ""} a la lista ✓`);
+              basicsToastTimerRef.current = setTimeout(() => setBasicsToast(""), 5000);
+              // Weekly challenge: basics added to shopping list
+              notifyWeekly("basic_added_to_list");
+            }
+          }}
+        />
+      )}
+      {basicsToast ? (
+        <div className="basics-toast" role="status" aria-live="polite" onClick={() => setBasicsToast("")}>
+          {basicsToast}
+        </div>
+      ) : null}
+
+      {/* Budget breakdown modal */}
+      {budgetModalOpen ? (
+        <div className="shopping-budget-modal-backdrop" role="presentation" onClick={() => setBudgetModalOpen(false)}>
+          <div
+            className="shopping-budget-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Desglose del presupuesto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="shopping-budget-modal-header">
+              <h3 className="shopping-budget-modal-title">Presupuesto semanal</h3>
+              <button
+                type="button"
+                className="shopping-budget-modal-close"
+                onClick={() => setBudgetModalOpen(false)}
+                aria-label="Cerrar"
+              >
+                <CloseIcon style={{ width: 18, height: 18 }} />
+              </button>
+            </div>
+            <div className="shopping-budget-row">
+              <button type="button" className="shopping-budget-card shopping-budget-card-button" onClick={() => { setBudgetModalOpen(false); openWeeklyBudgetPanel(); }}>
+                <span className="shopping-budget-label">Budget semanal</span>
+                <strong className="shopping-budget-amount">{formatCurrency(budget?.weeklyBudget)}</strong>
+              </button>
+              <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--spent" onClick={() => { setBudgetModalOpen(false); openWeeklyBudgetPanel(); }}>
+                <span className="shopping-budget-label">Gastado esta semana</span>
+                <strong className="shopping-budget-amount">{formatCurrency(budget?.spent)}</strong>
+              </button>
+              <button type="button" className="shopping-budget-card shopping-budget-card-button shopping-budget-card--available" onClick={() => { setBudgetModalOpen(false); openWeeklyBudgetPanel(); }}>
+                <span className="shopping-budget-label">Disponible</span>
+                <strong className="shopping-budget-amount">{formatCurrency(budget?.available)}</strong>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {createPortal(
+        <div className="hf-toast-stack" aria-live="polite" aria-atomic="false">
+          {/* Condition-driven action toast for pending purchase session */}
+          {budgetFeatureEnabled && currentPurchaseSession && !dismissedBannerIds.has(String(currentPurchaseSession.id)) && !purchaseConfirmOpen && tab !== "sessions" ? (
+            <div className="hf-toast hf-toast--action" role="status">
+              <AlertCircle size={16} className="hf-toast-icon" aria-hidden="true" />
+              <span className="hf-toast-msg">
+                {currentPurchaseSession.itemCount} producto{currentPurchaseSession.itemCount !== 1 ? "s" : ""} comprado{currentPurchaseSession.itemCount !== 1 ? "s" : ""}{currentPurchaseSession.storeName ? ` · ${currentPurchaseSession.storeName}` : ""} sin gasto registrado
+              </span>
+              <button type="button" className="hf-toast-action-btn" onClick={() => openPurchaseConfirmModal(currentPurchaseSession)}>
+                Registrar
+              </button>
+              <button type="button" className="hf-toast-dismiss" onClick={() => dismissBanner(currentPurchaseSession.id)} aria-label="Cerrar aviso">
+                <X size={14} aria-hidden="true" />
+              </button>
+            </div>
+          ) : null}
+          {/* Push-based toasts (success, error) */}
+          {toasts.map((toast) => (
+            <div key={toast.id} className={`hf-toast hf-toast--${toast.type}`} role="status">
+              {toast.type === "success"
+                ? <CheckCircle size={16} className="hf-toast-icon" aria-hidden="true" />
+                : <AlertCircle size={16} className="hf-toast-icon" aria-hidden="true" />}
+              <span className="hf-toast-msg">{toast.message}</span>
+              {toast.actionLabel ? (
+                <button type="button" className="hf-toast-action-btn" onClick={() => { toast.onAction?.(); dismissToast(toast.id); }}>
+                  {toast.actionLabel}
+                </button>
+              ) : null}
+              <button type="button" className="hf-toast-dismiss" onClick={() => dismissToast(toast.id)} aria-label="Cerrar">
+                <X size={14} aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+        </div>,
+        document.body
+      )}
     </KitchenLayout>
   );
 }

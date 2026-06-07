@@ -1,0 +1,521 @@
+[
+  {
+    "type": "invalid_ingredient_id",
+    "collection": "kitchenDishes",
+    "documentId": "697155cacaf410af214ae479",
+    "documentName": "Pastel de Carne",
+    "fieldPath": "ingredients.0",
+    "currentValue": {
+      "ingredientId": "697393ff1184805197f6b9ac",
+      "name": "Carne Picada"
+    },
+    "suggestedCandidates": [],
+    "reason": "ingredientId does not point to an existing ingredient.",
+    "recommendedAction": "Fix the ingredientId manually or remove it so the script can match by name."
+  },
+  {
+    "type": "invalid_ingredient_id",
+    "collection": "kitchenDishes",
+    "documentId": "697155cacaf410af214ae479",
+    "documentName": "Pastel de Carne",
+    "fieldPath": "ingredients.1",
+    "currentValue": {
+      "ingredientId": "6973940d1184805197f6b9b2",
+      "name": "Tomate Frito"
+    },
+    "suggestedCandidates": [],
+    "reason": "ingredientId does not point to an existing ingredient.",
+    "recommendedAction": "Fix the ingredientId manually or remove it so the script can match by name."
+  },
+  {
+    "type": "invalid_ingredient_id",
+    "collection": "kitchenDishes",
+    "documentId": "697155cacaf410af214ae479",
+    "documentName": "Pastel de Carne",
+    "fieldPath": "ingredients.2",
+    "currentValue": {
+      "ingredientId": "697394311184805197f6b9bc",
+      "name": "Puré de Patatas"
+    },
+    "suggestedCandidates": [],
+    "reason": "ingredientId does not point to an existing ingredient.",
+    "recommendedAction": "Fix the ingredientId manually or remove it so the script can match by name."
+  },
+  {
+    "type": "invalid_ingredient_id",
+    "collection": "kitchenDishes",
+    "documentId": "697155cacaf410af214ae479",
+    "documentName": "Pastel de Carne",
+    "fieldPath": "ingredients.3",
+    "currentValue": {
+      "ingredientId": "6973943d1184805197f6b9c2",
+      "name": "Cebolla"
+    },
+    "suggestedCandidates": [],
+    "reason": "ingredientId does not point to an existing ingredient.",
+    "recommendedAction": "Fix the ingredientId manually or remove it so the script can match by name."
+  },
+  {
+    "type": "invalid_ingredient_id",
+    "collection": "kitchenDishes",
+    "documentId": "697393101184805197f6b949",
+    "documentName": "Garbanzos con Chorizo",
+    "fieldPath": "ingredients.0",
+    "currentValue": {
+      "ingredientId": "697393211184805197f6b94f",
+      "name": "Pimentón Dulce"
+    },
+    "suggestedCandidates": [],
+    "reason": "ingredientId does not point to an existing ingredient.",
+    "recommendedAction": "Fix the ingredientId manually or remove it so the script can match by name."
+  },
+  {
+    "type": "invalid_ingredient_id",
+    "collection": "kitchenDishes",
+    "documentId": "697393101184805197f6b949",
+    "documentName": "Garbanzos con Chorizo",
+    "fieldPath": "ingredients.1",
+    "currentValue": {
+      "ingredientId": "697393bd1184805197f6b986",
+      "name": "Garbanzos"
+    },
+    "suggestedCandidates": [],
+    "reason": "ingredientId does not point to an existing ingredient.",
+    "recommendedAction": "Fix the ingredientId manually or remove it so the script can match by name."
+  },
+  {
+    "type": "invalid_ingredient_id",
+    "collection": "kitchenDishes",
+    "documentId": "697393101184805197f6b949",
+    "documentName": "Garbanzos con Chorizo",
+    "fieldPath": "ingredients.2",
+    "currentValue": {
+      "ingredientId": "697393e31184805197f6b999",
+      "name": "Chorizo"
+    },
+    "suggestedCandidates": [],
+    "reason": "ingredientId does not point to an existing ingredient.",
+    "recommendedAction": "Fix the ingredientId manually or remove it so the script can match by name."
+  },
+  {
+    "type": "invalid_ingredient_id",
+    "collection": "kitchenDishes",
+    "documentId": "6973b48335b74eb3bc1d93e9",
+    "documentName": "Alcachofas con Jamón y Burrata",
+    "fieldPath": "ingredients.2",
+    "currentValue": {
+      "ingredientId": "697389abf38758705669edf7",
+      "name": "Jamón"
+    },
+    "suggestedCandidates": [],
+    "reason": "ingredientId does not point to an existing ingredient.",
+    "recommendedAction": "Fix the ingredientId manually or remove it so the script can match by name."
+  },
+  {
+    "type": "missing_dish_category",
+    "collection": "kitchenDishes",
+    "documentId": "69bac0f06d705c3f49697215",
+    "documentName": "Gambones al Vapor",
+    "fieldPath": "dishCategoryId",
+    "currentValue": null,
+    "suggestedCandidates": [],
+    "reason": "no safe dish category inference",
+    "recommendedAction": "Choose a dish category or add dishCategories override."
+  },
+  {
+    "type": "missing_dish_category",
+    "collection": "kitchenDishes",
+    "documentId": "69bac4bb6d705c3f496972c6",
+    "documentName": "Pato Laqueado",
+    "fieldPath": "dishCategoryId",
+    "currentValue": null,
+    "suggestedCandidates": [],
+    "reason": "no safe dish category inference",
+    "recommendedAction": "Choose a dish category or add dishCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a01f5516b7cb75b88ae4716",
+    "documentName": "Enchiladas verdes",
+    "fieldPath": "ingredients.0",
+    "currentValue": "Pollo desmenuzado",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a01f5516b7cb75b88ae471c",
+    "documentName": "Sopa de tortilla",
+    "fieldPath": "ingredients.3",
+    "currentValue": "Tortilla frita",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a01f5516b7cb75b88ae4720",
+    "documentName": "Burritos de ternera",
+    "fieldPath": "ingredients.3",
+    "currentValue": "Alubias negras",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a01f5516b7cb75b88ae4726",
+    "documentName": "Fajitas de pollo",
+    "fieldPath": "ingredients.0",
+    "currentValue": "Pollo en tiras",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a01f5b46b7cb75b88ae47ac",
+    "documentName": "Ensalada griega",
+    "fieldPath": "ingredients.3",
+    "currentValue": "Aceitunas negras",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_dish_category",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e213b2ce87d473d0a024",
+    "documentName": "Gambas al ajillo",
+    "fieldPath": "dishCategoryId",
+    "currentValue": null,
+    "suggestedCandidates": [],
+    "reason": "no safe dish category inference",
+    "recommendedAction": "Choose a dish category or add dishCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e213b2ce87d473d0a024",
+    "documentName": "Gambas al ajillo",
+    "fieldPath": "ingredients.2",
+    "currentValue": "Guindilla",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e213b2ce87d473d0a028",
+    "documentName": "Pimientos de padrón",
+    "fieldPath": "ingredients.0",
+    "currentValue": "Pimientos de padrón",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e0",
+    "documentName": "Caldo de Navidad con galets",
+    "fieldPath": "ingredients.0",
+    "currentValue": "Carcasa de pollo",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e0",
+    "documentName": "Caldo de Navidad con galets",
+    "fieldPath": "ingredients.6",
+    "currentValue": "Galets",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_dish_category",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e2",
+    "documentName": "Langostinos a la plancha",
+    "fieldPath": "dishCategoryId",
+    "currentValue": null,
+    "suggestedCandidates": [],
+    "reason": "no safe dish category inference",
+    "recommendedAction": "Choose a dish category or add dishCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e2",
+    "documentName": "Langostinos a la plancha",
+    "fieldPath": "ingredients.0",
+    "currentValue": "Langostinos",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e4",
+    "documentName": "Besugo al horno",
+    "fieldPath": "ingredients.0",
+    "currentValue": "Besugo entero",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e4",
+    "documentName": "Besugo al horno",
+    "fieldPath": "ingredients.6",
+    "currentValue": "Vino blanco",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e6",
+    "documentName": "Cordero asado al horno",
+    "fieldPath": "ingredients.5",
+    "currentValue": "Vino blanco",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e8",
+    "documentName": "Pavo relleno de Navidad",
+    "fieldPath": "ingredients.0",
+    "currentValue": "Pavo entero",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e8",
+    "documentName": "Pavo relleno de Navidad",
+    "fieldPath": "ingredients.2",
+    "currentValue": "Ciruelas pasas",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e8",
+    "documentName": "Pavo relleno de Navidad",
+    "fieldPath": "ingredients.3",
+    "currentValue": "Orejones de albaricoque",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "kitchenDishes",
+    "documentId": "6a02e52676662bcef84238e8",
+    "documentName": "Pavo relleno de Navidad",
+    "fieldPath": "ingredients.7",
+    "currentValue": "Vino de Oporto",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a01f28f04de57e076cb12fc",
+    "documentName": "mediterranean-pack-vol1 / Ensalada griega",
+    "fieldPath": "dishes.0.ingredients.3",
+    "currentValue": "Aceitunas negras",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a01f28f04de57e076cb1303",
+    "documentName": "mexican-pack-vol1 / Enchiladas verdes",
+    "fieldPath": "dishes.1.ingredients.0",
+    "currentValue": "Pollo desmenuzado",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a01f28f04de57e076cb1303",
+    "documentName": "mexican-pack-vol1 / Sopa de tortilla",
+    "fieldPath": "dishes.4.ingredients.3",
+    "currentValue": "Tortilla frita",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a01f28f04de57e076cb1303",
+    "documentName": "mexican-pack-vol1 / Burritos de ternera",
+    "fieldPath": "dishes.6.ingredients.3",
+    "currentValue": "Alubias negras",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a01f28f04de57e076cb1303",
+    "documentName": "mexican-pack-vol1 / Fajitas de pollo",
+    "fieldPath": "dishes.9.ingredients.0",
+    "currentValue": "Pollo en tiras",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02de0e04de57e076ed28ba",
+    "documentName": "tapas-espanolas-vol1 / Gambas al ajillo",
+    "fieldPath": "dishes.3.ingredients.2",
+    "currentValue": "Guindilla",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02de0e04de57e076ed28ba",
+    "documentName": "tapas-espanolas-vol1 / Pimientos de padrón",
+    "fieldPath": "dishes.5.ingredients.0",
+    "currentValue": "Pimientos de padrón",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02e36e04de57e076ee1977",
+    "documentName": "navidad-espanola-vol1 / Caldo de Navidad con galets",
+    "fieldPath": "dishes.0.ingredients.0",
+    "currentValue": "Carcasa de pollo",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02e36e04de57e076ee1977",
+    "documentName": "navidad-espanola-vol1 / Caldo de Navidad con galets",
+    "fieldPath": "dishes.0.ingredients.6",
+    "currentValue": "Galets",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02e36e04de57e076ee1977",
+    "documentName": "navidad-espanola-vol1 / Langostinos a la plancha",
+    "fieldPath": "dishes.1.ingredients.0",
+    "currentValue": "Langostinos",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02e36e04de57e076ee1977",
+    "documentName": "navidad-espanola-vol1 / Besugo al horno",
+    "fieldPath": "dishes.2.ingredients.6",
+    "currentValue": "Vino blanco",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02e36e04de57e076ee1977",
+    "documentName": "navidad-espanola-vol1 / Cordero asado al horno",
+    "fieldPath": "dishes.3.ingredients.5",
+    "currentValue": "Vino blanco",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02e36e04de57e076ee1977",
+    "documentName": "navidad-espanola-vol1 / Pavo relleno de Navidad",
+    "fieldPath": "dishes.4.ingredients.0",
+    "currentValue": "Pavo entero",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02e36e04de57e076ee1977",
+    "documentName": "navidad-espanola-vol1 / Pavo relleno de Navidad",
+    "fieldPath": "dishes.4.ingredients.2",
+    "currentValue": "Ciruelas pasas",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02e36e04de57e076ee1977",
+    "documentName": "navidad-espanola-vol1 / Pavo relleno de Navidad",
+    "fieldPath": "dishes.4.ingredients.3",
+    "currentValue": "Orejones de albaricoque",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  },
+  {
+    "type": "missing_master_ingredient",
+    "collection": "catalogPacks",
+    "documentId": "6a02e36e04de57e076ee1977",
+    "documentName": "navidad-espanola-vol1 / Pavo relleno de Navidad",
+    "fieldPath": "dishes.4.ingredients.7",
+    "currentValue": "Vino de Oporto",
+    "suggestedCandidates": [],
+    "reason": "No existing master ingredient and no safe category inference.",
+    "recommendedAction": "Create a master ingredient with categoryId or add ingredientCategories override."
+  }
+]

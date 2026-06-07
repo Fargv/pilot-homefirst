@@ -1,0 +1,6319 @@
+{
+  "slug": "cenas-ninos-vol1",
+  "title": "Cenas para Niños",
+  "subtitle": "20 cenas variadas, rápidas y sin dramas",
+  "description": "Recetas pensadas para la cena familiar con niños: desde los clásicos espaguetis a la boloñesa hasta una pizza casera o unas croquetas. Combinamos platos nutritivos con algún capricho ocasional para que cenar en familia sea un momento agradable y sin peleas.",
+  "coverImage": "https://images.unsplash.com/photo-1597393353365-9d4366392fe9?w=1200&q=80&auto=format&fit=crop",
+  "tags": [
+    "niños",
+    "familia",
+    "cenas",
+    "rápido",
+    "sencillo"
+  ],
+  "cuisineType": "Mediterránea / Internacional",
+  "active": true,
+  "featured": false,
+  "diet": false,
+  "isDietPack": false,
+  "priceBasic": 1.99,
+  "includedPlans": [
+    "pro",
+    "premium"
+  ],
+  "monthlyCreditCost": 1,
+  "sortOrder": 16,
+  "disclaimer": "Recetas adaptadas para paladares infantiles. Ajusta la cantidad de especias según la edad y tolerancia de cada niño.",
+  "dishes": [
+    {
+      "name": "Espaguetis a la boloñesa",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "30 min",
+      "ingredients": [
+        {
+          "displayName": "Espaguetis",
+          "canonicalName": "espagueti",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "displayName": "Carne picada mixta (ternera y cerdo)",
+          "canonicalName": "carne picada mixta",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "displayName": "Tomate triturado",
+          "canonicalName": "tomate triturado",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla",
+          "quantity": 1,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Zanahoria",
+          "canonicalName": "zanahoria",
+          "quantity": 1,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Queso parmesano rallado",
+          "canonicalName": "queso parmesano",
+          "quantity": 40,
+          "unit": "g"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Espaguetis",
+            "quantity": {
+              "amount": 400,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "400 g"
+            }
+          },
+          {
+            "name": "Carne picada mixta",
+            "quantity": {
+              "amount": 400,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "400 g"
+            }
+          },
+          {
+            "name": "Tomate triturado",
+            "quantity": {
+              "amount": 400,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "400 g"
+            }
+          },
+          {
+            "name": "Cebolla mediana",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Zanahoria",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Ajo",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "displayUnit": "dientes",
+              "scalable": true,
+              "originalText": "2 dientes"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 2,
+              "unit": "cucharada",
+              "scalable": true,
+              "originalText": "2 cdas"
+            }
+          },
+          {
+            "name": "Sal y pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Queso parmesano rallado",
+            "quantity": {
+              "amount": 40,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "40 g"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Pica la cebolla y",
+            "text": "Pica la cebolla y la zanahoria muy finos. Sofríe en aceite a fuego medio 8 min hasta que estén blandas.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Cebolla mediana"
+              },
+              {
+                "name": "Zanahoria"
+              },
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Añade el ajo picado",
+            "text": "Añade el ajo picado y la carne. Sube el fuego y saltea removiendo hasta que la carne cambie de color, unos 5 min. Salpimienta.",
+            "hasTimer": true,
+            "durationMinutes": 5,
+            "durationSeconds": 300,
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Carne picada mixta"
+              },
+              {
+                "name": "Ajo"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Incorpora el tomate triturado",
+            "text": "Incorpora el tomate triturado, baja el fuego y cuece tapado 15 min removiendo de vez en cuando.",
+            "hasTimer": true,
+            "durationMinutes": 15,
+            "durationSeconds": 900,
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Tomate triturado"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Cuece la pasta en",
+            "text": "Cuece la pasta en agua abundante con sal según el tiempo del paquete. Escurre.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": []
+          },
+          {
+            "order": 5,
+            "title": "Mezcla la pasta con",
+            "text": "Mezcla la pasta con la salsa y sirve con parmesano rallado por encima.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Queso parmesano rallado"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Espaguetis a la boloñesa"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Pica la cebolla y la zanahoria muy finos. Sofríe en aceite a fuego medio "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "8 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que estén blandas."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Añade el ajo picado y la carne. Sube el fuego y saltea removiendo hasta que la carne cambie de color, "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "unos 5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Salpimienta."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Incorpora el tomate triturado, baja el fuego y cuece tapado "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "15 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " removiendo de vez en cuando."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Cuece la pasta en agua abundante con sal según el tiempo del paquete. Escurre."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Mezcla la pasta con la salsa y sirve con parmesano rallado por encima."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 La salsa boloñesa sabe mejor de un día para otro — prepara el doble y congela la mitad."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pizza casera de jamón y queso",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "25 min",
+      "ingredients": [
+        {
+          "displayName": "Masa de pizza (fresca o base lista)",
+          "canonicalName": "masa de pizza",
+          "quantity": 2,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Tomate frito",
+          "canonicalName": "tomate frito",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "displayName": "Mozzarella rallada",
+          "canonicalName": "mozzarella",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "displayName": "Jamón york en lonchas",
+          "canonicalName": "jamon york",
+          "quantity": 150,
+          "unit": "g"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Masa de pizza (base lista)",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 ud"
+            }
+          },
+          {
+            "name": "Tomate frito",
+            "quantity": {
+              "amount": 200,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "200 g"
+            }
+          },
+          {
+            "name": "Mozzarella rallada",
+            "quantity": {
+              "amount": 200,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "200 g"
+            }
+          },
+          {
+            "name": "Jamón york",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Orégano seco",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cdita"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Precalienta el horno a 220 °C calor",
+            "text": "Precalienta el horno a 220 °C calor arriba y abajo.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": []
+          },
+          {
+            "order": 2,
+            "title": "Coloca la base de pizza sobre papel de",
+            "text": "Coloca la base de pizza sobre papel de horno. Extiende el tomate frito dejando 1 cm de borde.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Masa de pizza (base lista)"
+              },
+              {
+                "name": "Tomate frito"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Reparte el jamón york troceado y cubre",
+            "text": "Reparte el jamón york troceado y cubre con la mozzarella. Espolvorea orégano.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mozzarella rallada"
+              },
+              {
+                "name": "Jamón york"
+              },
+              {
+                "name": "Orégano seco"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Hornea 12-15 min hasta",
+            "text": "Hornea 12-15 min hasta que la masa esté dorada y el queso burbujeante.",
+            "hasTimer": true,
+            "durationMinutes": 11,
+            "durationSeconds": 630,
+            "timerLabel": "12-15 min",
+            "ingredientRefs": [
+              {
+                "name": "Masa de pizza (base lista)"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Pizza casera de jamón y queso"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Precalienta el horno a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "220 °C"
+                        },
+                        {
+                          "type": "text",
+                          "text": " calor arriba y abajo."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Coloca la base de pizza sobre papel de horno. Extiende el tomate frito dejando 1 cm de borde."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Reparte el jamón york troceado y cubre con la mozzarella. Espolvorea orégano."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Hornea "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "12-15 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que la masa esté dorada y el queso burbujeante."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Los niños pueden ayudar a poner los ingredientes — ¡se lo comen todo cuando lo han hecho ellos!"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Nuggets de pollo al horno",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "30 min",
+      "ingredients": [
+        {
+          "displayName": "Pechuga de pollo",
+          "canonicalName": "pechuga de pollo",
+          "quantity": 600,
+          "unit": "g"
+        },
+        {
+          "displayName": "Huevos",
+          "canonicalName": "huevo",
+          "quantity": 2,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Pan rallado",
+          "canonicalName": "pan rallado",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "displayName": "Harina",
+          "canonicalName": "harina",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Pechuga de pollo",
+            "quantity": {
+              "amount": 600,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "600 g"
+            }
+          },
+          {
+            "name": "Huevos",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 ud"
+            }
+          },
+          {
+            "name": "Pan rallado",
+            "quantity": {
+              "amount": 100,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "100 g"
+            }
+          },
+          {
+            "name": "Harina",
+            "quantity": {
+              "amount": 50,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "50 g"
+            }
+          },
+          {
+            "name": "Sal, pimentón dulce",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Aceite en spray",
+            "quantity": {
+              "amount": null,
+              "unit": "suficiente",
+              "note": "para hornear",
+              "scalable": false,
+              "originalText": "para hornear"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Precalienta el horno a 200 °C. Forra",
+            "text": "Precalienta el horno a 200 °C. Forra una bandeja con papel de horno.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": []
+          },
+          {
+            "order": 2,
+            "title": "Corta el pollo en",
+            "text": "Corta el pollo en trozos tipo nugget. Salpimienta y añade pimentón.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Pechuga de pollo"
+              },
+              {
+                "name": "Sal, pimentón dulce"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Prepara tres platos: harina",
+            "text": "Prepara tres platos: harina, huevo batido y pan rallado. Pasa cada trozo por harina → huevo → pan rallado.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Huevos"
+              },
+              {
+                "name": "Pan rallado"
+              },
+              {
+                "name": "Harina"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Coloca en la bandeja y rocía con",
+            "text": "Coloca en la bandeja y rocía con aceite en spray. Hornea 20 min, dándoles la vuelta a mitad de cocción.",
+            "hasTimer": true,
+            "durationMinutes": 20,
+            "durationSeconds": 1200,
+            "timerLabel": "20 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite en spray"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Nuggets de pollo al horno"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Precalienta el horno a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Forra una bandeja con papel de horno."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Corta el pollo en trozos tipo nugget. Salpimienta y añade pimentón."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Prepara tres platos: harina, huevo batido y pan rallado. Pasa cada trozo por harina → huevo → pan rallado."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Coloca en la bandeja y rocía con aceite en spray. Hornea "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "20 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ", dándoles la vuelta a mitad de cocción."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Sirve con ketchup o salsa de yogur. Puedes congelarlos ya empanados para tenerlos listos cualquier día."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Macarrones con queso gratinados",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "25 min",
+      "ingredients": [
+        {
+          "displayName": "Macarrones",
+          "canonicalName": "macarron",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "displayName": "Leche entera",
+          "canonicalName": "leche",
+          "quantity": 500,
+          "unit": "ml"
+        },
+        {
+          "displayName": "Mantequilla",
+          "canonicalName": "mantequilla",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "displayName": "Harina",
+          "canonicalName": "harina",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "displayName": "Queso cheddar rallado",
+          "canonicalName": "queso cheddar",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "displayName": "Queso mozzarella rallada",
+          "canonicalName": "mozzarella",
+          "quantity": 80,
+          "unit": "g"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Macarrones",
+            "quantity": {
+              "amount": 400,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "400 g"
+            }
+          },
+          {
+            "name": "Mantequilla",
+            "quantity": {
+              "amount": 40,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "40 g"
+            }
+          },
+          {
+            "name": "Harina",
+            "quantity": {
+              "amount": 40,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "40 g"
+            }
+          },
+          {
+            "name": "Leche entera",
+            "quantity": {
+              "amount": 500,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "500 ml"
+            }
+          },
+          {
+            "name": "Queso cheddar rallado",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Mozzarella rallada",
+            "quantity": {
+              "amount": 80,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "80 g"
+            }
+          },
+          {
+            "name": "Sal, nuez moscada",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Cuece los macarrones en",
+            "text": "Cuece los macarrones en agua con sal según el paquete. Escurre y reserva.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Macarrones"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Derrite la mantequilla en una cazuela",
+            "text": "Derrite la mantequilla en una cazuela. Añade la harina y remueve 1 min. Ve añadiendo la leche poco a poco sin parar de remover hasta conseguir una bechamel suave.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla"
+              },
+              {
+                "name": "Harina"
+              },
+              {
+                "name": "Leche entera"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Retira del fuego e",
+            "text": "Retira del fuego e incorpora el cheddar. Mezcla hasta que se funda. Sazona con sal y nuez moscada.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Sal, nuez moscada"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Mezcla los macarrones con",
+            "text": "Mezcla los macarrones con la salsa de queso. Vierte en una fuente de horno, cubre con mozzarella y gratina a 200 °C unos 10 min hasta que esté dorado.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "10 min",
+            "ingredientRefs": [
+              {
+                "name": "Macarrones"
+              },
+              {
+                "name": "Queso cheddar rallado"
+              },
+              {
+                "name": "Mozzarella rallada"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Macarrones con queso gratinados"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Cuece los macarrones en agua con sal según el paquete. Escurre y reserva."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Derrite la mantequilla en una cazuela. Añade la harina y remueve "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "1 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Ve añadiendo la leche poco a poco sin parar de remover hasta conseguir una bechamel suave."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Retira del fuego e incorpora el cheddar. Mezcla hasta que se funda. Sazona con sal y nuez moscada."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Mezcla los macarrones con la salsa de queso. Vierte en una fuente de horno, cubre con mozzarella y gratina a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C unos 10 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que esté dorado."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tortilla de patata",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b61",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "media",
+      "estimatedPrepTime": "30 min",
+      "ingredients": [
+        {
+          "displayName": "Huevos",
+          "canonicalName": "huevo",
+          "quantity": 6,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Patatas",
+          "canonicalName": "patata",
+          "quantity": 600,
+          "unit": "g"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla",
+          "quantity": 1,
+          "unit": "ud"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Huevos",
+            "quantity": {
+              "amount": 6,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "6 ud"
+            }
+          },
+          {
+            "name": "Patatas medianas",
+            "quantity": {
+              "amount": 600,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "600 g"
+            }
+          },
+          {
+            "name": "Cebolla",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": null,
+              "unit": "abundante",
+              "note": "para pochar",
+              "scalable": false,
+              "originalText": "abundante para pochar"
+            }
+          },
+          {
+            "name": "Sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Pela y corta las",
+            "text": "Pela y corta las patatas en láminas finas. Pica la cebolla. Pocha todo en aceite de oliva abundante a fuego bajo 15-20 min hasta que estén tiernas. Escurre el aceite.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas"
+              },
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Bate los huevos con",
+            "text": "Bate los huevos con sal en un bol grande. Mezcla con las patatas y la cebolla escurridas. Deja reposar 5 min.",
+            "hasTimer": true,
+            "durationMinutes": 5,
+            "durationSeconds": 300,
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Huevos"
+              },
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Vierte la mezcla en",
+            "text": "Vierte la mezcla en una sartén antiadherente con un chorrito de aceite a fuego medio. Cuaja 3-4 min por cada lado, dando la vuelta con un plato.",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 165,
+            "timerLabel": "3-4 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Tortilla de patata"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Pela y corta las patatas en láminas finas. Pica la cebolla. Pocha todo en aceite de oliva abundante a fuego bajo "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "15-20 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que estén tiernas. Escurre el aceite."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Bate los huevos con sal en un bol grande. Mezcla con las patatas y la cebolla escurridas. Deja reposar "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Vierte la mezcla en una sartén antiadherente con un chorrito de aceite a fuego medio. Cuaja "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3-4 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " por cada lado, dando la vuelta con un plato."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#ef4444"
+                      }
+                    }
+                  ],
+                  "text": "⚠️ Ten cuidado al dar la vuelta — usa un plato más grande que la sartén para no quemarte."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Croquetas de jamón y queso",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "media",
+      "estimatedPrepTime": "45 min",
+      "ingredients": [
+        {
+          "displayName": "Leche entera",
+          "canonicalName": "leche",
+          "quantity": 600,
+          "unit": "ml"
+        },
+        {
+          "displayName": "Mantequilla",
+          "canonicalName": "mantequilla",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "displayName": "Harina",
+          "canonicalName": "harina",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "displayName": "Jamón serrano picado",
+          "canonicalName": "jamon serrano",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "displayName": "Queso rallado (gruyère o manchego)",
+          "canonicalName": "queso gruyere",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "displayName": "Huevos",
+          "canonicalName": "huevo",
+          "quantity": 2,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Pan rallado",
+          "canonicalName": "pan rallado",
+          "quantity": 150,
+          "unit": "g"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Mantequilla",
+            "quantity": {
+              "amount": 60,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "60 g"
+            }
+          },
+          {
+            "name": "Harina",
+            "quantity": {
+              "amount": 80,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "80 g"
+            }
+          },
+          {
+            "name": "Leche entera caliente",
+            "quantity": {
+              "amount": 600,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "600 ml"
+            }
+          },
+          {
+            "name": "Jamón serrano picado fino",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Queso rallado",
+            "quantity": {
+              "amount": 80,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "80 g"
+            }
+          },
+          {
+            "name": "Sal, nuez moscada",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Huevos (para rebozar)",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 ud"
+            }
+          },
+          {
+            "name": "Pan rallado (para rebozar)",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Aceite de girasol (para freír)",
+            "quantity": {
+              "amount": null,
+              "unit": "abundante",
+              "scalable": false,
+              "originalText": "abundante"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Derrite la mantequilla en una cazuela",
+            "text": "Derrite la mantequilla en una cazuela, añade la harina y tuesta removiendo 2 min. Incorpora la leche caliente poco a poco sin dejar de remover hasta obtener una masa espesa.",
+            "hasTimer": true,
+            "durationMinutes": 2,
+            "durationSeconds": 120,
+            "timerLabel": "2 min",
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla"
+              },
+              {
+                "name": "Harina"
+              },
+              {
+                "name": "Leche entera caliente"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Añade el jamón, el",
+            "text": "Añade el jamón, el queso, sal y nuez moscada. Remueve bien y cuece 3 min más. Vierte en un bol, cubre con film a piel y enfría al menos 2 h en nevera.",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 180,
+            "timerLabel": "3 min",
+            "ingredientRefs": [
+              {
+                "name": "Jamón serrano picado fino"
+              },
+              {
+                "name": "Queso rallado"
+              },
+              {
+                "name": "Sal, nuez moscada"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Forma las croquetas con",
+            "text": "Forma las croquetas con las manos o dos cucharas. Pasa por huevo batido y luego por pan rallado.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Huevos (para rebozar)"
+              },
+              {
+                "name": "Pan rallado (para rebozar)"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Fríe en aceite abundante",
+            "text": "Fríe en aceite abundante a 180 °C unos 2-3 min hasta dorar. Escurre sobre papel absorbente.",
+            "hasTimer": true,
+            "durationMinutes": 2,
+            "durationSeconds": 120,
+            "timerLabel": "2-3 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite de girasol (para freír)"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Croquetas de jamón y queso"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Derrite la mantequilla en una cazuela, añade la harina y tuesta removiendo "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "2 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Incorpora la leche caliente poco a poco sin dejar de remover hasta obtener una masa espesa."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Añade el jamón, el queso, sal y nuez moscada. Remueve bien y cuece "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " más. Vierte en un bol, cubre con film a piel y enfría "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "al menos 2 h en nevera"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Forma las croquetas con las manos o dos cucharas. Pasa por huevo batido y luego por pan rallado."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Fríe en aceite abundante a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "180 °C"
+                        },
+                        {
+                          "type": "text",
+                          "text": " unos "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "2-3 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta dorar. Escurre sobre papel absorbente."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Puedes hacer el doble y congelar las croquetas ya rebozadas sin freír. Van directas del congelador al aceite."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Hamburguesa casera con queso",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        {
+          "displayName": "Carne picada de ternera",
+          "canonicalName": "carne picada de ternera",
+          "quantity": 500,
+          "unit": "g"
+        },
+        {
+          "displayName": "Panes de hamburguesa",
+          "canonicalName": "pan de hamburguesa",
+          "quantity": 4,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Queso en lonchas",
+          "canonicalName": "queso loncha",
+          "quantity": 4,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Lechuga",
+          "canonicalName": "lechuga",
+          "quantity": 1,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Tomate",
+          "canonicalName": "tomate",
+          "quantity": 1,
+          "unit": "ud"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Carne picada de ternera",
+            "quantity": {
+              "amount": 500,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "500 g"
+            }
+          },
+          {
+            "name": "Panes de hamburguesa",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "4 ud"
+            }
+          },
+          {
+            "name": "Queso en lonchas",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "4 ud"
+            }
+          },
+          {
+            "name": "Lechuga",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "note": "hojas",
+              "scalable": false,
+              "originalText": "hojas al gusto"
+            }
+          },
+          {
+            "name": "Tomate en rodajas",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Sal, pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Ketchup o mostaza",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Divide la carne en 4 porciones. Forma",
+            "text": "Divide la carne en 4 porciones. Forma hamburguesas de unos 2 cm de grosor. Salpimienta por ambos lados.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Carne picada de ternera"
+              },
+              {
+                "name": "Panes de hamburguesa"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Calienta una sartén o",
+            "text": "Calienta una sartén o plancha a fuego fuerte. Cocina las hamburguesas 3-4 min por lado (bien hechas para niños).",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 165,
+            "timerLabel": "3-4 min",
+            "ingredientRefs": []
+          },
+          {
+            "order": 3,
+            "title": "Coloca una loncha de queso encima al",
+            "text": "Coloca una loncha de queso encima al final y tapa la sartén 1 min para que funda.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Queso en lonchas"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Tuesta el pan, monta",
+            "text": "Tuesta el pan, monta con lechuga, tomate, hamburguesa y salsa al gusto.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Panes de hamburguesa"
+              },
+              {
+                "name": "Lechuga"
+              },
+              {
+                "name": "Tomate en rodajas"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Hamburguesa casera con queso"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Divide la carne en 4 porciones. Forma hamburguesas de unos 2 cm de grosor. Salpimienta por ambos lados."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Calienta una sartén o plancha a fuego fuerte. Cocina las hamburguesas "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3-4 min por lado"
+                        },
+                        {
+                          "type": "text",
+                          "text": " (bien hechas para niños)."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Coloca una loncha de queso encima al final y tapa la sartén "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "1 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " para que funda."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Tuesta el pan, monta con lechuga, tomate, hamburguesa y salsa al gusto."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#ef4444"
+                      }
+                    }
+                  ],
+                  "text": "⚠️ Para niños pequeños la carne debe estar bien hecha (sin rosado en el centro)."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Salchichas Frankfurt con puré de patatas",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "25 min",
+      "ingredients": [
+        {
+          "displayName": "Salchichas Frankfurt",
+          "canonicalName": "salchicha frankfurt",
+          "quantity": 8,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Patatas",
+          "canonicalName": "patata",
+          "quantity": 700,
+          "unit": "g"
+        },
+        {
+          "displayName": "Leche entera",
+          "canonicalName": "leche",
+          "quantity": 100,
+          "unit": "ml"
+        },
+        {
+          "displayName": "Mantequilla",
+          "canonicalName": "mantequilla",
+          "quantity": 40,
+          "unit": "g"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Salchichas Frankfurt",
+            "quantity": {
+              "amount": 8,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "8 ud"
+            }
+          },
+          {
+            "name": "Patatas",
+            "quantity": {
+              "amount": 700,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "700 g"
+            }
+          },
+          {
+            "name": "Mantequilla",
+            "quantity": {
+              "amount": 40,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "40 g"
+            }
+          },
+          {
+            "name": "Leche caliente",
+            "quantity": {
+              "amount": 100,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "100 ml"
+            }
+          },
+          {
+            "name": "Sal, nuez moscada",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Pela las patatas y",
+            "text": "Pela las patatas y cuece en agua con sal 20 min hasta que estén blandas. Escurre bien.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Aplasta las patatas con un tenedor o",
+            "text": "Aplasta las patatas con un tenedor o pasapurés. Añade la mantequilla y la leche caliente poco a poco hasta obtener un puré cremoso. Ajusta de sal y nuez moscada.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla"
+              },
+              {
+                "name": "Leche caliente"
+              },
+              {
+                "name": "Sal, nuez moscada"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Calienta las salchichas en",
+            "text": "Calienta las salchichas en una sartén a fuego medio 3-4 min dándoles la vuelta hasta que estén doradas.",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 165,
+            "timerLabel": "3-4 min",
+            "ingredientRefs": [
+              {
+                "name": "Salchichas Frankfurt"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Sirve las salchichas sobre",
+            "text": "Sirve las salchichas sobre el puré. Acompaña con ketchup si les apetece.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": []
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Salchichas Frankfurt con puré de patatas"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Pela las patatas y cuece en agua con sal "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "20 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que estén blandas. Escurre bien."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Aplasta las patatas con un tenedor o pasapurés. Añade la mantequilla y la leche caliente poco a poco hasta obtener un puré cremoso. Ajusta de sal y nuez moscada."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Calienta las salchichas en una sartén a fuego medio "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3-4 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " dándoles la vuelta hasta que estén doradas."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Sirve las salchichas sobre el puré. Acompaña con ketchup si les apetece."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Añade un poco de queso rallado al puré para hacerlo aún más irresistible."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Arroz con pollo al curry suave",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "35 min",
+      "ingredients": [
+        {
+          "displayName": "Muslos de pollo deshuesados",
+          "canonicalName": "muslo de pollo deshuesado",
+          "quantity": 500,
+          "unit": "g"
+        },
+        {
+          "displayName": "Arroz basmati",
+          "canonicalName": "arroz basmati",
+          "quantity": 320,
+          "unit": "g"
+        },
+        {
+          "displayName": "Leche de coco",
+          "canonicalName": "leche de coco",
+          "quantity": 400,
+          "unit": "ml"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla",
+          "quantity": 1,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Curry en polvo suave",
+          "canonicalName": "curry en polvo",
+          "quantity": 1,
+          "unit": "cda"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Muslos de pollo deshuesados",
+            "quantity": {
+              "amount": 500,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "500 g"
+            }
+          },
+          {
+            "name": "Arroz basmati",
+            "quantity": {
+              "amount": 320,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "320 g"
+            }
+          },
+          {
+            "name": "Leche de coco",
+            "quantity": {
+              "amount": 400,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "400 ml"
+            }
+          },
+          {
+            "name": "Cebolla",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Curry en polvo suave",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharada",
+              "scalable": true,
+              "originalText": "1 cda"
+            }
+          },
+          {
+            "name": "Aceite, sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Caldo de pollo o agua",
+            "quantity": {
+              "amount": 200,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "200 ml"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Corta el pollo en",
+            "text": "Corta el pollo en dados. Saltea en aceite a fuego alto 3-4 min hasta dorar. Retira y reserva.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Muslos de pollo deshuesados"
+              },
+              {
+                "name": "Caldo de pollo o agua"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "En la misma sartén sofríe la cebolla",
+            "text": "En la misma sartén sofríe la cebolla picada 5 min. Añade el curry y remueve 1 min.",
+            "hasTimer": true,
+            "durationMinutes": 5,
+            "durationSeconds": 300,
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Curry en polvo suave"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Incorpora la leche de",
+            "text": "Incorpora la leche de coco y el caldo. Lleva a ebullición, añade el pollo y el arroz. Baja el fuego, tapa y cuece 15 min hasta que el arroz absorba el líquido.",
+            "hasTimer": true,
+            "durationMinutes": 15,
+            "durationSeconds": 900,
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Arroz basmati"
+              },
+              {
+                "name": "Leche de coco"
+              },
+              {
+                "name": "Caldo de pollo o agua"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Deja reposar tapado 5",
+            "text": "Deja reposar tapado 5 min antes de servir.",
+            "hasTimer": true,
+            "durationMinutes": 5,
+            "durationSeconds": 300,
+            "timerLabel": "5 min",
+            "ingredientRefs": []
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Arroz con pollo al curry suave"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Corta el pollo en dados. Saltea en aceite a fuego alto "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3-4 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta dorar. Retira y reserva."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "En la misma sartén sofríe la cebolla picada "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Añade el curry y remueve "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "1 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Incorpora la leche de coco y el caldo. Lleva a ebullición, añade el pollo y el arroz. Baja el fuego, tapa y cuece "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "15 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que el arroz absorba el líquido."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Deja reposar tapado "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " antes de servir."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Usa curry suave o medio — el picante no es para todos los niños. Puedes añadir guisantes congelados para sumar verdura sin que protesten."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Croque monsieur (tostada francesa jamón y queso)",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "15 min",
+      "ingredients": [
+        {
+          "displayName": "Pan de molde",
+          "canonicalName": "pan de molde",
+          "quantity": 8,
+          "unit": "rebanadas"
+        },
+        {
+          "displayName": "Jamón york en lonchas",
+          "canonicalName": "jamon york",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "displayName": "Queso gruyère o emmental lonchas",
+          "canonicalName": "queso gruyere",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "displayName": "Leche entera",
+          "canonicalName": "leche",
+          "quantity": 150,
+          "unit": "ml"
+        },
+        {
+          "displayName": "Mantequilla",
+          "canonicalName": "mantequilla",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "displayName": "Harina",
+          "canonicalName": "harina",
+          "quantity": 20,
+          "unit": "g"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Rebanadas de pan de molde",
+            "quantity": {
+              "amount": 8,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "8 ud"
+            }
+          },
+          {
+            "name": "Jamón york",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Queso gruyère en lonchas",
+            "quantity": {
+              "amount": 100,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "100 g"
+            }
+          },
+          {
+            "name": "Mantequilla",
+            "quantity": {
+              "amount": 30,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "30 g"
+            }
+          },
+          {
+            "name": "Harina",
+            "quantity": {
+              "amount": 20,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "20 g"
+            }
+          },
+          {
+            "name": "Leche",
+            "quantity": {
+              "amount": 150,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "150 ml"
+            }
+          },
+          {
+            "name": "Sal, nuez moscada",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Queso rallado extra para gratinar",
+            "quantity": {
+              "amount": 40,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "40 g"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Prepara una bechamel ligera:",
+            "text": "Prepara una bechamel ligera: derrite la mantequilla, añade harina, remueve 1 min y añade leche poco a poco hasta obtener una salsa espesa. Salpimienta con nuez moscada.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla"
+              },
+              {
+                "name": "Harina"
+              },
+              {
+                "name": "Leche"
+              },
+              {
+                "name": "Sal, nuez moscada"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Unta bechamel en una cara de cada",
+            "text": "Unta bechamel en una cara de cada rebanada. Monta: pan → jamón → queso → pan. Pon otra capa de bechamel por encima y espolvorea queso rallado.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Jamón york"
+              },
+              {
+                "name": "Queso gruyère en lonchas"
+              },
+              {
+                "name": "Queso rallado extra para gratinar"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Gratina en horno a",
+            "text": "Gratina en horno a 200 °C unos 8-10 min hasta que el queso esté dorado y burbujeante.",
+            "hasTimer": true,
+            "durationMinutes": 7,
+            "durationSeconds": 420,
+            "timerLabel": "8-10 min",
+            "ingredientRefs": []
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Croque monsieur"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Prepara una bechamel ligera: derrite la mantequilla, añade harina, remueve "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "1 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " y añade leche poco a poco hasta obtener una salsa espesa. Salpimienta con nuez moscada."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Unta bechamel en una cara de cada rebanada. Monta: pan → jamón → queso → pan. Pon otra capa de bechamel por encima y espolvorea queso rallado."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Gratina en horno a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C unos 8-10 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que el queso esté dorado y burbujeante."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Si no tienes horno, puedes hacerlo en sartén antiadherente tapada a fuego bajo."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Quesadillas de pollo con maíz",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "20 min",
+      "ingredients": [
+        {
+          "displayName": "Tortillas de trigo (wraps)",
+          "canonicalName": "tortilla de trigo",
+          "quantity": 4,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Pechuga de pollo",
+          "canonicalName": "pechuga de pollo",
+          "quantity": 300,
+          "unit": "g"
+        },
+        {
+          "displayName": "Queso mozzarella rallada",
+          "canonicalName": "mozzarella",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "displayName": "Maíz en lata",
+          "canonicalName": "maiz en lata",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "displayName": "Pimiento rojo",
+          "canonicalName": "pimiento rojo",
+          "quantity": 1,
+          "unit": "ud"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Tortillas de trigo grandes",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "4 ud"
+            }
+          },
+          {
+            "name": "Pechuga de pollo cocida o a la plancha",
+            "quantity": {
+              "amount": 300,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "300 g"
+            }
+          },
+          {
+            "name": "Mozzarella rallada",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Maíz escurrido",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Pimiento rojo picado",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Aceite, sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Saltea el pimiento picado",
+            "text": "Saltea el pimiento picado en un poco de aceite 3 min. Añade el pollo desmenuzado y el maíz. Mezcla y reserva.",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 180,
+            "timerLabel": "3 min",
+            "ingredientRefs": [
+              {
+                "name": "Pechuga de pollo cocida o a la plancha"
+              },
+              {
+                "name": "Maíz escurrido"
+              },
+              {
+                "name": "Pimiento rojo picado"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Pon una tortilla en",
+            "text": "Pon una tortilla en una sartén seca a fuego medio. Cubre la mitad con queso, añade el relleno encima y cierra la tortilla.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": []
+          },
+          {
+            "order": 3,
+            "title": "Cocina 2 min por cada lado hasta que",
+            "text": "Cocina 2 min por cada lado hasta que esté dorada y el queso fundido. Repite con el resto.",
+            "hasTimer": true,
+            "durationMinutes": 2,
+            "durationSeconds": 120,
+            "timerLabel": "2 min",
+            "ingredientRefs": []
+          },
+          {
+            "order": 4,
+            "title": "Corta en triángulos y",
+            "text": "Corta en triángulos y sirve con yogur natural o crema agria.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": []
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Quesadillas de pollo con maíz"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Saltea el pimiento picado en un poco de aceite "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Añade el pollo desmenuzado y el maíz. Mezcla y reserva."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Pon una tortilla en una sartén seca a fuego medio. Cubre la mitad con queso, añade el relleno encima y cierra la tortilla."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Cocina "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "2 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " por cada lado hasta que esté dorada y el queso fundido. Repite con el resto."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Corta en triángulos y sirve con yogur natural o crema agria."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crema de calabaza con picatostes",
+      "dishCategoryId": "69ac70b1d23659ad70fcf948",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "30 min",
+      "ingredients": [
+        {
+          "displayName": "Calabaza",
+          "canonicalName": "calabaza",
+          "quantity": 800,
+          "unit": "g"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla",
+          "quantity": 1,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Zanahoria",
+          "canonicalName": "zanahoria",
+          "quantity": 2,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Nata para cocinar",
+          "canonicalName": "nata para cocinar",
+          "quantity": 100,
+          "unit": "ml"
+        },
+        {
+          "displayName": "Pan de molde (para picatostes)",
+          "canonicalName": "pan de molde",
+          "quantity": 3,
+          "unit": "rebanadas"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Calabaza pelada y troceada",
+            "quantity": {
+              "amount": 800,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "800 g"
+            }
+          },
+          {
+            "name": "Cebolla",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Zanahoria",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 ud"
+            }
+          },
+          {
+            "name": "Caldo de verduras",
+            "quantity": {
+              "amount": 700,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "700 ml"
+            }
+          },
+          {
+            "name": "Nata para cocinar",
+            "quantity": {
+              "amount": 100,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "100 ml"
+            }
+          },
+          {
+            "name": "Pan de molde",
+            "quantity": {
+              "amount": 3,
+              "unit": "unidad",
+              "displayUnit": "rebanadas",
+              "scalable": true,
+              "originalText": "3 rebanadas"
+            }
+          },
+          {
+            "name": "Aceite de oliva, sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Pocha la cebolla y",
+            "text": "Pocha la cebolla y la zanahoria en aceite 5 min. Añade la calabaza troceada y el caldo. Cuece 20 min hasta que todo esté tierno.",
+            "hasTimer": true,
+            "durationMinutes": 5,
+            "durationSeconds": 300,
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Calabaza pelada y troceada"
+              },
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Zanahoria"
+              },
+              {
+                "name": "Caldo de verduras"
+              },
+              {
+                "name": "Aceite de oliva, sal"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Tritura con batidora de",
+            "text": "Tritura con batidora de mano hasta obtener una crema fina. Añade la nata, ajusta de sal y calienta 2 min más.",
+            "hasTimer": true,
+            "durationMinutes": 2,
+            "durationSeconds": 120,
+            "timerLabel": "2 min",
+            "ingredientRefs": [
+              {
+                "name": "Nata para cocinar"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Corta el pan en",
+            "text": "Corta el pan en dados y tuesta en sartén seca o en el horno a 180 °C 8 min hasta que estén crujientes.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": []
+          },
+          {
+            "order": 4,
+            "title": "Sirve la crema con",
+            "text": "Sirve la crema con los picatostes por encima.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": []
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Crema de calabaza con picatostes"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Pocha la cebolla y la zanahoria en aceite "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Añade la calabaza troceada y el caldo. Cuece "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "20 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que todo esté tierno."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Tritura con batidora de mano hasta obtener una crema fina. Añade la nata, ajusta de sal y calienta "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "2 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " más."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Corta el pan en dados y tuesta en sartén seca o en el horno a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "180 °C 8 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que estén crujientes."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Sirve la crema con los picatostes por encima."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Un chorrito de nata en espiral antes de servir le da un toque visual que encanta a los niños."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Albóndigas en salsa de tomate",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "media",
+      "estimatedPrepTime": "35 min",
+      "ingredients": [
+        {
+          "displayName": "Carne picada mixta",
+          "canonicalName": "carne picada mixta",
+          "quantity": 500,
+          "unit": "g"
+        },
+        {
+          "displayName": "Huevo",
+          "canonicalName": "huevo",
+          "quantity": 1,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Pan rallado",
+          "canonicalName": "pan rallado",
+          "quantity": 50,
+          "unit": "g"
+        },
+        {
+          "displayName": "Tomate triturado",
+          "canonicalName": "tomate triturado",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "displayName": "Cebolla",
+          "canonicalName": "cebolla",
+          "quantity": 1,
+          "unit": "ud"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Carne picada mixta",
+            "quantity": {
+              "amount": 500,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "500 g"
+            }
+          },
+          {
+            "name": "Huevo",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Pan rallado",
+            "quantity": {
+              "amount": 50,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "50 g"
+            }
+          },
+          {
+            "name": "Ajo en polvo",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cdita"
+            }
+          },
+          {
+            "name": "Sal, pimienta",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Tomate triturado",
+            "quantity": {
+              "amount": 400,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "400 g"
+            }
+          },
+          {
+            "name": "Cebolla",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Aceite de oliva",
+            "quantity": {
+              "amount": 2,
+              "unit": "cucharada",
+              "scalable": true,
+              "originalText": "2 cdas"
+            }
+          },
+          {
+            "name": "Azúcar",
+            "quantity": {
+              "amount": 1,
+              "unit": "cucharadita",
+              "scalable": true,
+              "originalText": "1 cdita"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Mezcla la carne con",
+            "text": "Mezcla la carne con el huevo, pan rallado, ajo en polvo, sal y pimienta. Forma bolas del tamaño de una nuez.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Carne picada mixta"
+              },
+              {
+                "name": "Huevo"
+              },
+              {
+                "name": "Pan rallado"
+              },
+              {
+                "name": "Ajo en polvo"
+              },
+              {
+                "name": "Sal, pimienta"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Dora las albóndigas en",
+            "text": "Dora las albóndigas en aceite a fuego medio-alto 3-4 min por todos lados. Retira y reserva.",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 165,
+            "timerLabel": "3-4 min",
+            "ingredientRefs": [
+              {
+                "name": "Aceite de oliva"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "En la misma sartén sofríe la cebolla",
+            "text": "En la misma sartén sofríe la cebolla picada 5 min. Añade el tomate, el azúcar y sazona. Cuece 10 min.",
+            "hasTimer": true,
+            "durationMinutes": 5,
+            "durationSeconds": 300,
+            "timerLabel": "5 min",
+            "ingredientRefs": [
+              {
+                "name": "Tomate triturado"
+              },
+              {
+                "name": "Cebolla"
+              },
+              {
+                "name": "Azúcar"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Incorpora las albóndigas a",
+            "text": "Incorpora las albóndigas a la salsa y cuece todo junto 10 min a fuego suave. Sirve con arroz, pasta o pan.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "10 min",
+            "ingredientRefs": []
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Albóndigas en salsa de tomate"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Mezcla la carne con el huevo, pan rallado, ajo en polvo, sal y pimienta. Forma bolas del tamaño de una nuez."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Dora las albóndigas en aceite a fuego medio-alto "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3-4 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " por todos lados. Retira y reserva."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "En la misma sartén sofríe la cebolla picada "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Añade el tomate, el azúcar y sazona. Cuece "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "10 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Incorpora las albóndigas a la salsa y cuece todo junto "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "10 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " a fuego suave. Sirve con arroz, pasta o pan."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Prepara el doble y congela en la salsa — aguantan perfectamente 3 meses."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Merluza al horno con patatas",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "35 min",
+      "ingredients": [
+        {
+          "displayName": "Filetes de merluza (sin piel y sin espinas)",
+          "canonicalName": "filete de merluza",
+          "quantity": 600,
+          "unit": "g"
+        },
+        {
+          "displayName": "Patatas",
+          "canonicalName": "patata",
+          "quantity": 600,
+          "unit": "g"
+        },
+        {
+          "displayName": "Tomate",
+          "canonicalName": "tomate",
+          "quantity": 2,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Limón",
+          "canonicalName": "limon",
+          "quantity": 1,
+          "unit": "ud"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Filetes de merluza sin piel",
+            "quantity": {
+              "amount": 600,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "600 g"
+            }
+          },
+          {
+            "name": "Patatas medianas",
+            "quantity": {
+              "amount": 600,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "600 g"
+            }
+          },
+          {
+            "name": "Tomate en rodajas",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 ud"
+            }
+          },
+          {
+            "name": "Limón",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Aceite de oliva, sal, perejil",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Precalienta el horno a 190 °C. Pela y",
+            "text": "Precalienta el horno a 190 °C. Pela y corta las patatas en rodajas de 0,5 cm.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas"
+              },
+              {
+                "name": "Tomate en rodajas"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Coloca las patatas en la fuente, riega",
+            "text": "Coloca las patatas en la fuente, riega con aceite y sal. Hornea 20 min hasta que estén casi tiernas.",
+            "hasTimer": true,
+            "durationMinutes": 20,
+            "durationSeconds": 1200,
+            "timerLabel": "20 min",
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas"
+              },
+              {
+                "name": "Aceite de oliva, sal, perejil"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Coloca los filetes de merluza sobre",
+            "text": "Coloca los filetes de merluza sobre las patatas. Pon encima las rodajas de tomate. Aliña con aceite, sal y zumo de limón.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Filetes de merluza sin piel"
+              },
+              {
+                "name": "Patatas medianas"
+              },
+              {
+                "name": "Tomate en rodajas"
+              },
+              {
+                "name": "Limón"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Hornea 12-15 min más",
+            "text": "Hornea 12-15 min más hasta que el pescado esté opaco y se separe en lascas fácilmente.",
+            "hasTimer": true,
+            "durationMinutes": 11,
+            "durationSeconds": 630,
+            "timerLabel": "12-15 min",
+            "ingredientRefs": []
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Merluza al horno con patatas"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Precalienta el horno a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "190 °C"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Pela y corta las patatas en rodajas de 0,5 cm."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Coloca las patatas en la fuente, riega con aceite y sal. Hornea "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "20 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que estén casi tiernas."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Coloca los filetes de merluza sobre las patatas. Pon encima las rodajas de tomate. Aliña con aceite, sal y zumo de limón."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Hornea "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "12-15 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " más hasta que el pescado esté opaco y se separe en lascas fácilmente."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#ef4444"
+                      }
+                    }
+                  ],
+                  "text": "⚠️ Revisa bien que los filetes no tengan espinas antes de servir a los niños."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ñoquis con tomate y mozzarella",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "15 min",
+      "ingredients": [
+        {
+          "displayName": "Ñoquis de patata frescos",
+          "canonicalName": "ñoqui de patata",
+          "quantity": 500,
+          "unit": "g"
+        },
+        {
+          "displayName": "Tomate frito",
+          "canonicalName": "tomate frito",
+          "quantity": 300,
+          "unit": "g"
+        },
+        {
+          "displayName": "Mozzarella fresca",
+          "canonicalName": "mozzarella fresca",
+          "quantity": 125,
+          "unit": "g"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Ñoquis de patata frescos",
+            "quantity": {
+              "amount": 500,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "500 g"
+            }
+          },
+          {
+            "name": "Tomate frito",
+            "quantity": {
+              "amount": 300,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "300 g"
+            }
+          },
+          {
+            "name": "Mozzarella fresca",
+            "quantity": {
+              "amount": 125,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "125 g"
+            }
+          },
+          {
+            "name": "Albahaca fresca o seca",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Aceite de oliva, sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Cuece los ñoquis en",
+            "text": "Cuece los ñoquis en agua con sal abundante. Están listos cuando suben a la superficie, unos 2-3 min. Escurre.",
+            "hasTimer": true,
+            "durationMinutes": 2,
+            "durationSeconds": 120,
+            "timerLabel": "2-3 min",
+            "ingredientRefs": [
+              {
+                "name": "Ñoquis de patata frescos"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Calienta el tomate frito",
+            "text": "Calienta el tomate frito en una sartén. Añade los ñoquis y mezcla bien 1-2 min a fuego medio.",
+            "hasTimer": true,
+            "durationMinutes": 1,
+            "durationSeconds": 75,
+            "timerLabel": "1-2 min",
+            "ingredientRefs": [
+              {
+                "name": "Tomate frito"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Sirve con la mozzarella",
+            "text": "Sirve con la mozzarella rasgada por encima y hojas de albahaca. Añade un chorrito de aceite de oliva.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Mozzarella fresca"
+              },
+              {
+                "name": "Albahaca fresca o seca"
+              },
+              {
+                "name": "Aceite de oliva, sal"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Ñoquis con tomate y mozzarella"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Cuece los ñoquis en agua con sal abundante. Están listos cuando suben a la superficie, "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "unos 2-3 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Escurre."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Calienta el tomate frito en una sartén. Añade los ñoquis y mezcla bien "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "1-2 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " a fuego medio."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Sirve con la mozzarella rasgada por encima y hojas de albahaca. Añade un chorrito de aceite de oliva."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Una de las cenas más rápidas del pack — de principio a fin en 15 minutos."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Wrap de pollo con queso y maíz",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "15 min",
+      "ingredients": [
+        {
+          "displayName": "Tortillas de trigo (wraps)",
+          "canonicalName": "tortilla de trigo",
+          "quantity": 4,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Pechuga de pollo",
+          "canonicalName": "pechuga de pollo",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "displayName": "Queso en lonchas",
+          "canonicalName": "queso loncha",
+          "quantity": 4,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Maíz en lata",
+          "canonicalName": "maiz en lata",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "displayName": "Lechuga",
+          "canonicalName": "lechuga",
+          "quantity": 1,
+          "unit": "ud"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Tortillas de trigo",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "4 ud"
+            }
+          },
+          {
+            "name": "Pechuga de pollo",
+            "quantity": {
+              "amount": 400,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "400 g"
+            }
+          },
+          {
+            "name": "Queso en lonchas",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "4 ud"
+            }
+          },
+          {
+            "name": "Maíz escurrido",
+            "quantity": {
+              "amount": 100,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "100 g"
+            }
+          },
+          {
+            "name": "Hojas de lechuga",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Ketchup o mayonesa",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Aceite, sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Cocina el pollo a la plancha con sal",
+            "text": "Cocina el pollo a la plancha con sal 4-5 min por lado. Deja reposar 2 min y corta en tiras.",
+            "hasTimer": true,
+            "durationMinutes": 4,
+            "durationSeconds": 210,
+            "timerLabel": "4-5 min",
+            "ingredientRefs": [
+              {
+                "name": "Pechuga de pollo"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Calienta las tortillas en",
+            "text": "Calienta las tortillas en una sartén seca 30 seg por cada lado.",
+            "hasTimer": true,
+            "durationMinutes": 1,
+            "durationSeconds": 30,
+            "timerLabel": "30 seg",
+            "ingredientRefs": [
+              {
+                "name": "Tortillas de trigo"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Monta cada wrap: lechuga → queso →",
+            "text": "Monta cada wrap: lechuga → queso → pollo → maíz → salsa. Enrolla apretando bien.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Queso en lonchas"
+              },
+              {
+                "name": "Maíz escurrido"
+              },
+              {
+                "name": "Hojas de lechuga"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Wrap de pollo con queso y maíz"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Cocina el pollo a la plancha con sal "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "4-5 min por lado"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Deja reposar "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "2 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " y corta en tiras."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Calienta las tortillas en una sartén seca "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "30 seg"
+                        },
+                        {
+                          "type": "text",
+                          "text": " por cada lado."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Monta cada wrap: lechuga → queso → pollo → maíz → salsa. Enrolla apretando bien."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Deja que los niños monten su propio wrap — eligen sus ingredientes y comen sin rechistar."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Huevos revueltos con jamón y tostadas",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b61",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "10 min",
+      "ingredients": [
+        {
+          "displayName": "Huevos",
+          "canonicalName": "huevo",
+          "quantity": 8,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Jamón york en taquitos",
+          "canonicalName": "jamon york",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "displayName": "Pan de molde",
+          "canonicalName": "pan de molde",
+          "quantity": 8,
+          "unit": "rebanadas"
+        },
+        {
+          "displayName": "Leche entera",
+          "canonicalName": "leche",
+          "quantity": 50,
+          "unit": "ml"
+        },
+        {
+          "displayName": "Mantequilla",
+          "canonicalName": "mantequilla",
+          "quantity": 20,
+          "unit": "g"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Huevos",
+            "quantity": {
+              "amount": 8,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "8 ud"
+            }
+          },
+          {
+            "name": "Jamón york en taquitos",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Leche",
+            "quantity": {
+              "amount": 50,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "50 ml"
+            }
+          },
+          {
+            "name": "Mantequilla",
+            "quantity": {
+              "amount": 20,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "20 g"
+            }
+          },
+          {
+            "name": "Sal",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          },
+          {
+            "name": "Rebanadas de pan de molde",
+            "quantity": {
+              "amount": 8,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "8 ud"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Bate los huevos con",
+            "text": "Bate los huevos con la leche y una pizca de sal.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Huevos"
+              },
+              {
+                "name": "Leche"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Derrite la mantequilla en una sartén a",
+            "text": "Derrite la mantequilla en una sartén a fuego bajo. Añade el jamón y saltea 1 min.",
+            "hasTimer": true,
+            "durationMinutes": 1,
+            "durationSeconds": 60,
+            "timerLabel": "1 min",
+            "ingredientRefs": [
+              {
+                "name": "Jamón york en taquitos"
+              },
+              {
+                "name": "Mantequilla"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Vierte los huevos y",
+            "text": "Vierte los huevos y remueve suavemente con espátula a fuego muy bajo hasta obtener unos revueltos cremosos y jugosos, 3-4 min. Retira del fuego mientras aún estén ligeramente líquidos.",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 165,
+            "timerLabel": "3-4 min",
+            "ingredientRefs": [
+              {
+                "name": "Huevos"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Tuesta el pan y",
+            "text": "Tuesta el pan y sirve los revueltos encima.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": []
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Huevos revueltos con jamón y tostadas"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Bate los huevos con la leche y una pizca de sal."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Derrite la mantequilla en una sartén a fuego bajo. Añade el jamón y saltea "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "1 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Vierte los huevos y remueve suavemente con espátula a fuego muy bajo hasta obtener unos revueltos cremosos y jugosos, "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3-4 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Retira del fuego mientras aún estén ligeramente líquidos."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Tuesta el pan y sirve los revueltos encima."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 El secreto: fuego bajo y no dejar de mover. Los huevos se terminan de hacer con el calor residual."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Sopa de fideos con pollo",
+      "dishCategoryId": "69ac70b1d23659ad70fcf948",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "35 min",
+      "ingredients": [
+        {
+          "displayName": "Muslos de pollo",
+          "canonicalName": "muslo de pollo",
+          "quantity": 4,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Fideos del número 2 o cabello de ángel",
+          "canonicalName": "fideo",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "displayName": "Zanahoria",
+          "canonicalName": "zanahoria",
+          "quantity": 2,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Puerro",
+          "canonicalName": "puerro",
+          "quantity": 1,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Apio",
+          "canonicalName": "apio",
+          "quantity": 1,
+          "unit": "rama"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Muslos de pollo",
+            "quantity": {
+              "amount": 4,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "4 ud"
+            }
+          },
+          {
+            "name": "Fideos del nº 2",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Zanahoria",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 ud"
+            }
+          },
+          {
+            "name": "Puerro",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Rama de apio",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Sal, pimienta en grano",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Pon los muslos de",
+            "text": "Pon los muslos de pollo en una olla con 1,5 litros de agua fría, la zanahoria entera, el puerro y el apio. Lleva a ebullición, retira la espuma y cuece a fuego medio 25 min.",
+            "hasTimer": true,
+            "durationMinutes": 25,
+            "durationSeconds": 1500,
+            "timerLabel": "25 min",
+            "ingredientRefs": [
+              {
+                "name": "Muslos de pollo"
+              },
+              {
+                "name": "Zanahoria"
+              },
+              {
+                "name": "Puerro"
+              },
+              {
+                "name": "Rama de apio"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Retira el pollo y",
+            "text": "Retira el pollo y las verduras. Cuela el caldo. Deshuesa el pollo y córtalo en trozos pequeños. Corta la zanahoria en rodajas.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Zanahoria"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Lleva el caldo a ebullición, añade los",
+            "text": "Lleva el caldo a ebullición, añade los fideos y cuece según el paquete. Incorpora el pollo y la zanahoria. Ajusta de sal.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Muslos de pollo"
+              },
+              {
+                "name": "Fideos del nº 2"
+              },
+              {
+                "name": "Zanahoria"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Sopa de fideos con pollo"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Pon los muslos de pollo en una olla con 1,5 litros de agua fría, la zanahoria entera, el puerro y el apio. Lleva a ebullición, retira la espuma y cuece a fuego medio "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "25 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Retira el pollo y las verduras. Cuela el caldo. Deshuesa el pollo y córtalo en trozos pequeños. Corta la zanahoria en rodajas."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Lleva el caldo a ebullición, añade los fideos y cuece "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "según el paquete"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Incorpora el pollo y la zanahoria. Ajusta de sal."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Si tienes prisa usa caldo de pollo comprado y pollo cocido o a la plancha — listo en 15 minutos."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crepes saladas de jamón y queso",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b61",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "media",
+      "estimatedPrepTime": "25 min",
+      "ingredients": [
+        {
+          "displayName": "Huevos",
+          "canonicalName": "huevo",
+          "quantity": 2,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Leche entera",
+          "canonicalName": "leche",
+          "quantity": 250,
+          "unit": "ml"
+        },
+        {
+          "displayName": "Harina",
+          "canonicalName": "harina",
+          "quantity": 125,
+          "unit": "g"
+        },
+        {
+          "displayName": "Mantequilla",
+          "canonicalName": "mantequilla",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "displayName": "Jamón york en lonchas",
+          "canonicalName": "jamon york",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "displayName": "Queso en lonchas o rallado",
+          "canonicalName": "queso loncha",
+          "quantity": 100,
+          "unit": "g"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Huevos",
+            "quantity": {
+              "amount": 2,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "2 ud"
+            }
+          },
+          {
+            "name": "Leche",
+            "quantity": {
+              "amount": 250,
+              "unit": "ml",
+              "scalable": true,
+              "originalText": "250 ml"
+            }
+          },
+          {
+            "name": "Harina",
+            "quantity": {
+              "amount": 125,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "125 g"
+            }
+          },
+          {
+            "name": "Mantequilla derretida",
+            "quantity": {
+              "amount": 30,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "30 g"
+            }
+          },
+          {
+            "name": "Sal",
+            "quantity": {
+              "amount": 1,
+              "unit": "pizca",
+              "scalable": false,
+              "originalText": "una pizca"
+            }
+          },
+          {
+            "name": "Jamón york",
+            "quantity": {
+              "amount": 150,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "150 g"
+            }
+          },
+          {
+            "name": "Queso en lonchas",
+            "quantity": {
+              "amount": 100,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "100 g"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Mezcla harina y sal",
+            "text": "Mezcla harina y sal. Añade los huevos y la leche poco a poco batiendo hasta obtener una masa lisa sin grumos. Incorpora la mantequilla derretida. Deja reposar 15 min.",
+            "hasTimer": true,
+            "durationMinutes": 15,
+            "durationSeconds": 900,
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Huevos"
+              },
+              {
+                "name": "Leche"
+              },
+              {
+                "name": "Harina"
+              },
+              {
+                "name": "Mantequilla derretida"
+              },
+              {
+                "name": "Sal"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Calienta una sartén antiadherente",
+            "text": "Calienta una sartén antiadherente a fuego medio con un poco de mantequilla. Vierte un cucharón de masa y extiende girando la sartén. Cuece 1 min por cada lado hasta que los bordes se despeguen.",
+            "hasTimer": true,
+            "durationMinutes": 1,
+            "durationSeconds": 60,
+            "timerLabel": "1 min",
+            "ingredientRefs": [
+              {
+                "name": "Mantequilla derretida"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Coloca jamón y queso sobre cada crepe",
+            "text": "Coloca jamón y queso sobre cada crepe caliente, dobla en cuatro y sirve.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Jamón york"
+              },
+              {
+                "name": "Queso en lonchas"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Crepes saladas de jamón y queso"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Mezcla harina y sal. Añade los huevos y la leche poco a poco batiendo hasta obtener una masa lisa sin grumos. Incorpora la mantequilla derretida. Deja reposar "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "15 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Calienta una sartén antiadherente a fuego medio con un poco de mantequilla. Vierte un cucharón de masa y extiende girando la sartén. Cuece "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "1 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " por cada lado hasta que los bordes se despeguen."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Coloca jamón y queso sobre cada crepe caliente, dobla en cuatro y sirve."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 La masa puede prepararse la noche anterior y guardarse en la nevera."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Palitos de pescado al horno con patatas",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5c",
+      "sidedish": false,
+      "isDinner": true,
+      "special": false,
+      "allowRandom": true,
+      "diet": false,
+      "mealType": "cena",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "30 min",
+      "ingredients": [
+        {
+          "displayName": "Palitos de merluza congelados",
+          "canonicalName": "palito de merluza",
+          "quantity": 16,
+          "unit": "ud"
+        },
+        {
+          "displayName": "Patatas",
+          "canonicalName": "patata",
+          "quantity": 600,
+          "unit": "g"
+        },
+        {
+          "displayName": "Limón",
+          "canonicalName": "limon",
+          "quantity": 1,
+          "unit": "ud"
+        }
+      ],
+      "recipe": {
+        "ingredients": [
+          {
+            "name": "Palitos de merluza congelados",
+            "quantity": {
+              "amount": 16,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "16 ud"
+            }
+          },
+          {
+            "name": "Patatas medianas",
+            "quantity": {
+              "amount": 600,
+              "unit": "g",
+              "scalable": true,
+              "originalText": "600 g"
+            }
+          },
+          {
+            "name": "Limón",
+            "quantity": {
+              "amount": 1,
+              "unit": "unidad",
+              "scalable": true,
+              "originalText": "1 ud"
+            }
+          },
+          {
+            "name": "Aceite de oliva, sal, pimentón dulce",
+            "quantity": {
+              "amount": null,
+              "unit": "al gusto",
+              "scalable": false,
+              "originalText": "al gusto"
+            }
+          }
+        ],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Precalienta el horno a 200 °C. Corta",
+            "text": "Precalienta el horno a 200 °C. Corta las patatas en bastones, mezcla con aceite, sal y pimentón.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas"
+              },
+              {
+                "name": "Aceite de oliva, sal, pimentón dulce"
+              }
+            ]
+          },
+          {
+            "order": 2,
+            "title": "Extiende las patatas en",
+            "text": "Extiende las patatas en una bandeja y hornea 15 min.",
+            "hasTimer": true,
+            "durationMinutes": 15,
+            "durationSeconds": 900,
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Patatas medianas"
+              }
+            ]
+          },
+          {
+            "order": 3,
+            "title": "Añade los palitos de",
+            "text": "Añade los palitos de pescado congelados en otra bandeja (o junto a las patatas si hay espacio). Hornea todo junto 15 min más hasta que los palitos estén dorados.",
+            "hasTimer": true,
+            "durationMinutes": 15,
+            "durationSeconds": 900,
+            "timerLabel": "15 min",
+            "ingredientRefs": [
+              {
+                "name": "Palitos de merluza congelados"
+              }
+            ]
+          },
+          {
+            "order": 4,
+            "title": "Sirve con unas gotas",
+            "text": "Sirve con unas gotas de limón y ketchup al lado.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null,
+            "ingredientRefs": [
+              {
+                "name": "Limón"
+              }
+            ]
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Palitos de pescado al horno con patatas"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Precalienta el horno a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "200 °C"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Corta las patatas en bastones, mezcla con aceite, sal y pimentón."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Extiende las patatas en una bandeja y hornea "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "15 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Añade los palitos de pescado congelados en otra bandeja (o junto a las patatas si hay espacio). Hornea todo junto "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "15 min más"
+                        },
+                        {
+                          "type": "text",
+                          "text": " hasta que los palitos estén dorados."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Sirve con unas gotas de limón y ketchup al lado."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Una cena salvavidas para los días más caóticos — sin descongelar nada de antemano."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

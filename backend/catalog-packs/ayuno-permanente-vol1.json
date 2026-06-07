@@ -1,0 +1,2414 @@
+{
+  "slug": "ayuno-permanente-vol1",
+  "title": "Pack Ayuno Permanente",
+  "subtitle": "La lista de la compra más barata de tu vida",
+  "description": "Bienvenido al pack más revolucionario de la historia de la nutrición. Sin ingredientes. Sin calorías. Sin compras. Sin cocinar. Sin limpiar. Sin culpa. Los expertos afirman que este plan es el único que realmente cumple todas las expectativas — porque no promete nada. No recomendado por nutricionistas, médicos, ni por tu madre. Ideal para quienes sienten que ya gastan demasiado en comida y necesitan un respiro espiritual de la nevera.",
+  "coverImage": "https://images.unsplash.com/photo-1531928351158-2f736078e0a1?w=1200&q=80&auto=format&fit=crop",
+  "tags": [
+    "humor",
+    "meme",
+    "especial",
+    "experimental",
+    "ayuno",
+    "easter-egg"
+  ],
+  "cuisineType": "Conceptual / Existencial",
+  "active": true,
+  "featured": false,
+  "diet": false,
+  "isDietPack": false,
+  "priceBasic": 0,
+  "includedPlans": [
+    "free",
+    "basic",
+    "pro",
+    "premium"
+  ],
+  "monthlyCreditCost": 0,
+  "defaultAllowRandom": false,
+  "defaultSpecial": false,
+  "sortOrder": 17,
+  "disclaimer": "Este pack es una broma. Si lo estás usando como plan nutricional real, por favor llama a alguien que te quiera. Los platos no contienen ingredientes por diseño — así que la lista de la compra está técnicamente completa.",
+  "dishes": [
+    {
+      "name": "Agua con personalidad",
+      "dishCategoryId": "69ac70b1d23659ad70fcf948",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Abre el grifo. Contempla el agua unos",
+            "text": "Abre el grifo. Contempla el agua unos 30 segundos para que sepa que la valoras.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Verter en vaso. Servir a temperatura",
+            "text": "Verter en vaso. Servir a temperatura emocional.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Opcional: añadir una rodaja de limón",
+            "text": "Opcional: añadir una rodaja de limón imaginario para el toque gourmet.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Agua con personalidad"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Abre el grifo. Contempla el agua unos "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "30 segundos"
+                        },
+                        {
+                          "type": "text",
+                          "text": " para que sepa que la valoras."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Verter en vaso. Servir a temperatura emocional."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Opcional: añadir una rodaja de limón imaginario para el toque gourmet."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Maridaje recomendado: silencio y resignación."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pizza invisible",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Precalentar el horno a 220 °C. La masa",
+            "text": "Precalentar el horno a 220 °C. La masa invisible no necesita amasar.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Extender los ingredientes con la",
+            "text": "Extender los ingredientes con la imaginación directamente sobre el papel de horno.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Hornear 12 min o hasta que el queso",
+            "text": "Hornear 12 min o hasta que el queso ficticio burbujee en tu mente.",
+            "hasTimer": true,
+            "durationMinutes": 12,
+            "durationSeconds": 720,
+            "timerLabel": "12 min"
+          },
+          {
+            "order": 4,
+            "title": "Servir caliente. Comer despacio para",
+            "text": "Servir caliente. Comer despacio para apreciar cada bocado conceptual.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Pizza invisible"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Precalentar el horno a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "220 °C"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". La masa invisible no necesita amasar."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Extender los ingredientes con la imaginación directamente sobre el papel de horno."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Hornear "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "12 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " o hasta que el queso ficticio burbujee en tu mente."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Servir caliente. Comer despacio para apreciar cada bocado conceptual."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Cero calorías. Cero carbohidratos. Cero satisfacción. Perfecta."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Filete de optimismo",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Sellar el optimismo a fuego fuerte por",
+            "text": "Sellar el optimismo a fuego fuerte por ambos lados, 2 min cada uno, hasta que pierda el miedo.",
+            "hasTimer": true,
+            "durationMinutes": 2,
+            "durationSeconds": 120,
+            "timerLabel": "2 min"
+          },
+          {
+            "order": 2,
+            "title": "Dejar reposar las expectativas 5 min",
+            "text": "Dejar reposar las expectativas 5 min tapado con papel de aluminio existencial.",
+            "hasTimer": true,
+            "durationMinutes": 5,
+            "durationSeconds": 300,
+            "timerLabel": "5 min"
+          },
+          {
+            "order": 3,
+            "title": "Acompañar con la guarnición de tu",
+            "text": "Acompañar con la guarnición de tu elección (igualmente imaginaria).",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Filete de optimismo"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Sellar el optimismo a fuego fuerte por ambos lados, "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "2 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " cada uno, hasta que pierda el miedo."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Dejar reposar las expectativas "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " tapado con papel de aluminio existencial."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Acompañar con la guarnición de tu elección (igualmente imaginaria)."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#ef4444"
+                      }
+                    }
+                  ],
+                  "text": "⚠️ No recomendado para personas sin sentido del humor."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ensalada conceptual",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Disponer los ingredientes imaginarios",
+            "text": "Disponer los ingredientes imaginarios en un bol limpio. La presentación lo es todo cuando no hay nada.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Aliñar con aceite de oliva virgen",
+            "text": "Aliñar con aceite de oliva virgen extra (este sí existe, pero no lo uses). Servir a temperatura ambiente.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Contemplar el plato durante 3 min",
+            "text": "Contemplar el plato durante 3 min antes de consumir. Es arte.",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 180,
+            "timerLabel": "3 min"
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Ensalada conceptual"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Disponer los ingredientes imaginarios en un bol limpio. La presentación lo es todo cuando no hay nada."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Aliñar con aceite de oliva virgen extra (este sí existe, pero no lo uses). Servir a temperatura ambiente."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Contemplar el plato durante "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " antes de consumir. Es arte."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Apta para veganos, celíacos, intolerantes a la lactosa y a la vida en general."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pasta al recuerdo",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Hervir agua. Recordar el olor de la",
+            "text": "Hervir agua. Recordar el olor de la pasta de cuando eras pequeño. Sentir una punzada de nostalgia.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "No añadir pasta. El recuerdo es",
+            "text": "No añadir pasta. El recuerdo es suficiente. Remover el agua vacía 8 min al dente de la melancolía.",
+            "hasTimer": true,
+            "durationMinutes": 8,
+            "durationSeconds": 480,
+            "timerLabel": "8 min"
+          },
+          {
+            "order": 3,
+            "title": "Escurrir el vacío. Emplatar con",
+            "text": "Escurrir el vacío. Emplatar con elegancia. Servir con una historia de cuando sí había pasta.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Pasta al recuerdo"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Hervir agua. Recordar el olor de la pasta de cuando eras pequeño. Sentir una punzada de nostalgia."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "No añadir pasta. El recuerdo es suficiente. Remover el agua vacía "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "8 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " al dente de la melancolía."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Escurrir el vacío. Emplatar con elegancia. Servir con una historia de cuando sí había pasta."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Combina muy bien con una copa de vino tinto que sí existe y que sí deberías abrir."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Croquetas NFT",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Acuñar cada croqueta digitalmente en",
+            "text": "Acuñar cada croqueta digitalmente en la blockchain. Esto garantiza su unicidad y su total incomestibilidad.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "No freír. No hornear. Simplemente",
+            "text": "No freír. No hornear. Simplemente contemplarlas en la pantalla del móvil mientras hueles el aceite de alguien que sí cocina.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Compartir en redes para que todos",
+            "text": "Compartir en redes para que todos sepan que tienes croquetas NFT. El hambre es secundario al engagement.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Croquetas NFT"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Acuñar cada croqueta digitalmente en la blockchain. Esto garantiza su unicidad y su total incomestibilidad."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "No freír. No hornear. Simplemente contemplarlas en la pantalla del móvil mientras hueles el aceite de alguien que sí cocina."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Compartir en redes para que todos sepan que tienes croquetas NFT. El hambre es secundario al engagement."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#ef4444"
+                      }
+                    }
+                  ],
+                  "text": "⚠️ Valor nutritivo: 0. Valor especulativo: incierto. Valor como broma: 10/10."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tostada de aire puro de montaña",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Abrir una ventana. Respirar",
+            "text": "Abrir una ventana. Respirar profundamente 3 veces. Eso es el ingrediente principal.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Tostar el aire en la tostadora a",
+            "text": "Tostar el aire en la tostadora a máxima potencia. No poner nada. Sacar cuando suene el clic.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Emplatar sobre plato blanco",
+            "text": "Emplatar sobre plato blanco. Fotografiar para Instagram. Consumir espiritualmente.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Tostada de aire puro de montaña"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Abrir una ventana. Respirar profundamente "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3 veces"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Eso es el ingrediente principal."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Tostar el aire en la tostadora a máxima potencia. No poner nada. Sacar cuando suene el clic."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Emplatar sobre plato blanco. Fotografiar para Instagram. Consumir espiritualmente."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Si usas aire de montaña ecológico de sobre, esta receta es técnicamente artesanal."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Gazpacho emocional",
+      "dishCategoryId": "69ac70b1d23659ad70fcf948",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Reunir todos tus sentimientos en un",
+            "text": "Reunir todos tus sentimientos en un bol grande. Triturar con batidora emocional hasta obtener una textura homogénea de resignación.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Enfriar en nevera durante 30 min o",
+            "text": "Enfriar en nevera durante 30 min o hasta que las expectativas se asienten.",
+            "hasTimer": true,
+            "durationMinutes": 30,
+            "durationSeconds": 1800,
+            "timerLabel": "30 min"
+          },
+          {
+            "order": 3,
+            "title": "Servir muy frío en vaso. Acompañar con",
+            "text": "Servir muy frío en vaso. Acompañar con agua del grifo premium.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Gazpacho emocional"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Reunir todos tus sentimientos en un bol grande. Triturar con batidora emocional hasta obtener una textura homogénea de resignación."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Enfriar en nevera durante "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "30 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " o hasta que las expectativas se asienten."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Servir muy frío en vaso. Acompañar con agua del grifo premium."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Especialmente refrescante en verano o tras ver el precio de la compra."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Arroz con ausencia",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Hervir agua abundante con mucha",
+            "text": "Hervir agua abundante con mucha ilusión. Añadir el arroz que no tienes. Cocer 18 min a fuego filosófico.",
+            "hasTimer": true,
+            "durationMinutes": 18,
+            "durationSeconds": 1080,
+            "timerLabel": "18 min"
+          },
+          {
+            "order": 2,
+            "title": "El sofrito con la ausencia: calentar",
+            "text": "El sofrito con la ausencia: calentar el aceite imaginario, añadir el vacío y remover hasta que se dore el existencialismo.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Mezclar arroz inexistente con sofrito",
+            "text": "Mezclar arroz inexistente con sofrito conceptual. Emplatar con cucharón de madera y dignidad.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Arroz con ausencia"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Hervir agua abundante con mucha ilusión. Añadir el arroz que no tienes. Cocer "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "18 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " a fuego filosófico."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "El sofrito con la ausencia: calentar el aceite imaginario, añadir el vacío y remover hasta que se dore el existencialismo."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Mezclar arroz inexistente con sofrito conceptual. Emplatar con cucharón de madera y dignidad."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Sin gluten, sin lactosa, sin arroz. Apto para cualquier intolerancia conocida."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Sopa de pensamientos positivos",
+      "dishCategoryId": "69ac70b1d23659ad70fcf948",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Calentar una olla grande con",
+            "text": "Calentar una olla grande con intenciones puras. Añadir 3 litros de agua y todo el positivismo que te quede.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Hervir los pensamientos a fuego alto",
+            "text": "Hervir los pensamientos a fuego alto 10 min. Reducir el fuego y añadir la esperanza. Cocer otros 20 min.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "10 min"
+          },
+          {
+            "order": 3,
+            "title": "Triturar si se desea una textura más",
+            "text": "Triturar si se desea una textura más suave. Servir caliente en bol hondo con una sonrisa forzada.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Sopa de pensamientos positivos"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Calentar una olla grande con intenciones puras. Añadir 3 litros de agua y todo el positivismo que te quede."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Hervir los pensamientos a fuego alto "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "10 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Reducir el fuego y añadir la esperanza. Cocer otros "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "20 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Triturar si se desea una textura más suave. Servir caliente en bol hondo con una sonrisa forzada."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Especialmente nutritiva para el alma. Cero impacto en la lista de la compra."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pollo al vacío existencial",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5b",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "media",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Envasar el vacío al vacío en una bolsa",
+            "text": "Envasar el vacío al vacío en una bolsa de cocción. Esto es redundante pero necesario.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Sumergir en agua a 63 °C durante 2",
+            "text": "Sumergir en agua a 63 °C durante 2 horas. Contemplar el temporizador con la serenidad de quien ya ha asumido su destino.",
+            "hasTimer": true,
+            "durationMinutes": 120,
+            "durationSeconds": 7200,
+            "timerLabel": "2 horas"
+          },
+          {
+            "order": 3,
+            "title": "Marcar a fuego fuerte en sartén muy",
+            "text": "Marcar a fuego fuerte en sartén muy caliente para conseguir el dorado conceptual. Emplatar sobre purê filosófico (no incluido).",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Pollo al vacío existencial"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Envasar el vacío al vacío en una bolsa de cocción. Esto es redundante pero necesario."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Sumergir en agua a "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "63 °C durante 2 horas"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Contemplar el temporizador con la serenidad de quien ya ha asumido su destino."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Marcar a fuego fuerte en sartén muy caliente para conseguir el dorado conceptual. Emplatar sobre purê filosófico (no incluido)."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#ef4444"
+                      }
+                    }
+                  ],
+                  "text": "⚠️ La técnica sous-vide no mejora lo que no existe. Pero suena muy bien en una cena de trabajo."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Huevos del futuro",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b61",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Los huevos del futuro aún no existen",
+            "text": "Los huevos del futuro aún no existen, pero cuando existan, serán impresionantes. Precalentar la sartén con anticipación.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Cascar los huevos en el plano temporal",
+            "text": "Cascar los huevos en el plano temporal correcto. Si no ves nada, es que sigues en el presente. Intentarlo de nuevo mañana.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Servir con tostadas del pasado",
+            "text": "Servir con tostadas del pasado (igualmente no incluidas).",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Huevos del futuro"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Los huevos del futuro aún no existen, pero cuando existan, serán impresionantes. Precalentar la sartén con anticipación."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Cascar los huevos en el plano temporal correcto. Si no ves nada, es que sigues en el presente. Intentarlo de nuevo mañana."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Servir con tostadas del pasado (igualmente no incluidas)."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Técnicamente los huevos del futuro tienen menos colesterol. La ciencia lo confirmará eventualmente."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Bikini de la imaginación",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5a",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Imaginar dos rebanadas de pan de",
+            "text": "Imaginar dos rebanadas de pan de molde. Imaginar jamón york y queso en el interior. La fuerza del pensamiento es suficiente.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Presionar mentalmente con la",
+            "text": "Presionar mentalmente con la sandwichera durante 3 min a temperatura de ilusión alta.",
+            "hasTimer": true,
+            "durationMinutes": 3,
+            "durationSeconds": 180,
+            "timerLabel": "3 min"
+          },
+          {
+            "order": 3,
+            "title": "Cortar en diagonal para el efecto",
+            "text": "Cortar en diagonal para el efecto visual máximo. Es el único paso donde el resultado es indistinguible del original.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Bikini de la imaginación"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Imaginar dos rebanadas de pan de molde. Imaginar jamón york y queso en el interior. La fuerza del pensamiento es suficiente."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Presionar mentalmente con la sandwichera durante "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "3 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " a temperatura de ilusión alta."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Cortar en diagonal para el efecto visual máximo. Es el único paso donde el resultado es indistinguible del original."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Perfectamente cuadrado. Perfectamente vacío. Perfectamente tuyo."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Raviolis de esperanza",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b5f",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Preparar la masa fresca con harina de",
+            "text": "Preparar la masa fresca con harina de ambición y huevos de determinación (ninguno incluido). Amasar 10 min con energía renovada.",
+            "hasTimer": true,
+            "durationMinutes": 10,
+            "durationSeconds": 600,
+            "timerLabel": "10 min"
+          },
+          {
+            "order": 2,
+            "title": "Rellenar con esperanza pura. Cerrar",
+            "text": "Rellenar con esperanza pura. Cerrar bien los bordes para que no se escape durante la cocción.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 3,
+            "title": "Cocer en agua hirviendo 4 min. Salsear",
+            "text": "Cocer en agua hirviendo 4 min. Salsear con lo que buenamente puedas. O con nada. Todo vale.",
+            "hasTimer": true,
+            "durationMinutes": 4,
+            "durationSeconds": 240,
+            "timerLabel": "4 min"
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Raviolis de esperanza"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Preparar la masa fresca con harina de ambición y huevos de determinación (ninguno incluido). Amasar "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "10 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": " con energía renovada."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Rellenar con esperanza pura. Cerrar bien los bordes para que no se escape durante la cocción."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Cocer en agua hirviendo "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "4 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Salsear con lo que buenamente puedas. O con nada. Todo vale."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Rellenos de nada, pero con mucho corazón. Como la mayoría de proyectos creativos."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Postre de silencio profundo",
+      "dishCategoryId": "69ac442ac0755cd97c6a9b60",
+      "sidedish": false,
+      "isDinner": false,
+      "special": false,
+      "allowRandom": false,
+      "diet": false,
+      "mealType": "almuerzo",
+      "estimatedDifficulty": "fácil",
+      "estimatedPrepTime": "0 min",
+      "ingredients": [],
+      "recipe": {
+        "ingredients": [],
+        "steps": [
+          {
+            "order": 1,
+            "title": "Sentarse en silencio frente al plato",
+            "text": "Sentarse en silencio frente al plato vacío. Esto es el postre. No hay más pasos.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          },
+          {
+            "order": 2,
+            "title": "Mantener la postura durante 5 min",
+            "text": "Mantener la postura durante 5 min. Respirar. Aceptar.",
+            "hasTimer": true,
+            "durationMinutes": 5,
+            "durationSeconds": 300,
+            "timerLabel": "5 min"
+          },
+          {
+            "order": 3,
+            "title": "Lavar el plato vacío. Guardarlo. La",
+            "text": "Lavar el plato vacío. Guardarlo. La cocina queda impecable.",
+            "hasTimer": false,
+            "durationMinutes": null,
+            "durationSeconds": null,
+            "timerLabel": null
+          }
+        ],
+        "baseServings": 4,
+        "elaboration": {
+          "type": "doc",
+          "content": [
+            {
+              "type": "heading",
+              "attrs": {
+                "level": 2,
+                "textAlign": "left"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#4338ca"
+                      }
+                    }
+                  ],
+                  "text": "Postre de silencio profundo"
+                }
+              ]
+            },
+            {
+              "type": "orderedList",
+              "attrs": {
+                "start": 1
+              },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Sentarse en silencio frente al plato vacío. Esto es el postre. No hay más pasos."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Mantener la postura durante "
+                        },
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "textStyle",
+                              "attrs": {
+                                "color": "#f97316"
+                              }
+                            }
+                          ],
+                          "text": "5 min"
+                        },
+                        {
+                          "type": "text",
+                          "text": ". Respirar. Aceptar."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Lavar el plato vacío. Guardarlo. La cocina queda impecable."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "textStyle",
+                      "attrs": {
+                        "color": "#22c55e"
+                      }
+                    }
+                  ],
+                  "text": "💡 Es el único postre de la historia que mejora con el tiempo. Cuanto más tiempo llevas sin comer, más profundo es el silencio."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

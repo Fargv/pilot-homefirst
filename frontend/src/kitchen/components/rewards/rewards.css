@@ -1,0 +1,189 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rewards.css — MilestoneToast & reward micro-animation styles
+
+   Neo-soft Lunchfy aesthetic: rounded, soft shadows, indigo/violet palette.
+   Positions:
+     - Desktop: bottom-right corner, above 16px from viewport edge
+     - Mobile (<640px): bottom center, above bottom navigation bar
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Overlay container (full-viewport fixed layer) ─────────────────────────── */
+.lf-milestone-overlay {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  z-index: 9000;
+  pointer-events: none; /* allow clicks to pass through except on the card */
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  padding: 0 20px 24px;
+  /* Mobile: centre the toast above the bottom nav */
+}
+
+@media (max-width: 640px) {
+  .lf-milestone-overlay {
+    justify-content: center;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px) + 12px);
+  }
+}
+
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+.lf-milestone-card {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(199, 210, 254, 0.6);
+  border-radius: 16px;
+  padding: 14px 16px 14px 14px;
+  box-shadow:
+    0 4px 24px rgba(99, 102, 241, 0.10),
+    0 1px 6px  rgba(0, 0, 0, 0.06);
+  max-width: 320px;
+  width: auto;
+  min-width: 220px;
+  /* Initial state — Anime.js overrides opacity via inline style */
+  will-change: transform, opacity;
+}
+
+@media (max-width: 640px) {
+  .lf-milestone-card {
+    max-width: 90vw;
+    min-width: 200px;
+  }
+}
+
+/* ── Icon wrap ─────────────────────────────────────────────────────────────── */
+.lf-milestone-icon-wrap {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eef2ff 0%, #ede9fe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Variant colour tints */
+.lf-milestone-card--check  .lf-milestone-icon-wrap { background: linear-gradient(135deg, #dcfce7, #d1fae5); }
+.lf-milestone-card--trophy .lf-milestone-icon-wrap { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+.lf-milestone-card--bites  .lf-milestone-icon-wrap { background: linear-gradient(135deg, #ffedd5, #fed7aa); }
+.lf-milestone-card--flame  .lf-milestone-icon-wrap { background: linear-gradient(135deg, #fee2e2, #fecaca); }
+.lf-milestone-card--spark  .lf-milestone-icon-wrap { background: linear-gradient(135deg, #eef2ff, #ede9fe); }
+
+.lf-milestone-icon {
+  font-size: 20px;
+  line-height: 1;
+  display: block;
+}
+
+/* ── Text body ─────────────────────────────────────────────────────────────── */
+.lf-milestone-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.lf-milestone-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lf-milestone-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6366f1;
+  line-height: 1.3;
+}
+
+/* ── Close button ──────────────────────────────────────────────────────────── */
+.lf-milestone-close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #9ca3af;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.lf-milestone-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.lf-milestone-close:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dark mode
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .lf-milestone-card {
+  background: #1e1b4b; /* deep indigo-950 */
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    0 1px 6px  rgba(0, 0, 0, 0.20);
+}
+
+[data-theme="dark"] .lf-milestone-icon-wrap {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+}
+
+[data-theme="dark"] .lf-milestone-card--check  .lf-milestone-icon-wrap { background: rgba(34, 197, 94, 0.18); }
+[data-theme="dark"] .lf-milestone-card--trophy .lf-milestone-icon-wrap { background: rgba(251, 191, 36, 0.18); }
+[data-theme="dark"] .lf-milestone-card--bites  .lf-milestone-icon-wrap { background: rgba(249, 115, 22, 0.18); }
+[data-theme="dark"] .lf-milestone-card--flame  .lf-milestone-icon-wrap { background: rgba(239, 68, 68, 0.18); }
+
+[data-theme="dark"] .lf-milestone-title {
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .lf-milestone-subtitle {
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .lf-milestone-close {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .lf-milestone-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d5db;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   prefers-reduced-motion
+   When reduced motion is requested, suppress all particle/spring animations.
+   MilestoneToast still appears (opacity-only fade) so the user sees the
+   completion message without relying on animation for communication.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .lf-milestone-card {
+    /* Instant appear — no transform/spring */
+    will-change: auto;
+    transition: opacity 0.15s ease;
+  }
+}

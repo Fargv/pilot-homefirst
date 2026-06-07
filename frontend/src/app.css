@@ -17,6 +17,42 @@
   font-family: "Montserrat", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
+[data-theme="dark"] .app-shell,
+[data-theme="dark"] .app-splash {
+  background-color: var(--app-bg, #0c1019);
+  background-image: var(--hf-bg-gradient, linear-gradient(180deg, rgba(66, 55, 136, 0.22), rgba(12, 16, 25, 0.98)));
+  color: var(--text-primary, #edf3ff);
+}
+
+[data-theme="dark"] .app-panel,
+[data-theme="dark"] .app-empty {
+  background: var(--surface, #171c2c);
+  border: 1px solid var(--border-soft, #30384f);
+  color: var(--text-primary, #edf3ff);
+  box-shadow: var(--card-shadow, 0 18px 42px rgba(0, 0, 0, 0.34));
+}
+
+[data-theme="dark"] .app-subtitle,
+[data-theme="dark"] .app-muted {
+  color: var(--text-muted, #9aa8c0);
+}
+
+[data-theme="dark"] .app-empty-title,
+[data-theme="dark"] .app-name {
+  color: var(--text-primary, #edf3ff);
+}
+
+[data-theme="dark"] .app-logo,
+[data-theme="dark"] .app-primary-button {
+  background: var(--button-primary-bg, #818cf8);
+  color: var(--button-primary-text, #ffffff);
+}
+
+[data-theme="dark"] .app-loader {
+  border-color: var(--border-soft, #30384f);
+  border-top-color: var(--button-primary-bg, #818cf8);
+}
+
 .app-panel {
   width: min(640px, 100%);
   background: #ffffff;

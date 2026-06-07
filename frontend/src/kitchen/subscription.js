@@ -24,23 +24,62 @@ export function normalizeSubscriptionPlan(plan) {
     : "basic";
 }
 
+function isPlanString(value) {
+  return typeof value === "string" || value == null;
+}
+
+function isActiveBetaProGrant(householdOrUser, now = new Date()) {
+  if (!householdOrUser || typeof householdOrUser !== "object") return false;
+  const betaPro = householdOrUser.betaPro || {};
+  const betaProActive = betaPro.active === true || householdOrUser.betaProActive === true;
+  const planSource = String(householdOrUser.planSource || "").toLowerCase();
+  if (!betaProActive && planSource !== "beta_pro") return false;
+  if (betaPro.expiredAt) return false;
+  if (betaPro.expiresAt && new Date(betaPro.expiresAt).getTime() <= now.getTime()) return false;
+  return betaProActive;
+}
+
+export function isProLikeHousehold(householdOrUser, now = new Date()) {
+  if (isPlanString(householdOrUser)) {
+    const normalizedPlan = normalizeSubscriptionPlan(householdOrUser);
+    return normalizedPlan === "pro" || normalizedPlan === "premium";
+  }
+  const normalizedPlan = normalizeSubscriptionPlan(householdOrUser?.subscriptionPlan);
+  if (normalizedPlan === "premium") return true;
+  if (String(householdOrUser?.planSource || "").toLowerCase() === "beta_pro") {
+    return isActiveBetaProGrant(householdOrUser, now);
+  }
+  if (normalizedPlan === "pro") return true;
+  return isActiveBetaProGrant(householdOrUser, now);
+}
+
 export function getPlanLimits(plan) {
   return PLAN_LIMITS[normalizeSubscriptionPlan(plan)] || PLAN_LIMITS.basic;
 }
 
-export function canUseBudgetFeature(plan) {
-  const normalizedPlan = normalizeSubscriptionPlan(plan);
-  return normalizedPlan === "pro" || normalizedPlan === "premium";
+export function canUseBudgetFeature(householdOrPlan) {
+  return isProLikeHousehold(householdOrPlan);
 }
 
-export function canRandomizeFullWeek(plan) {
-  const normalizedPlan = normalizeSubscriptionPlan(plan);
-  return normalizedPlan === "pro" || normalizedPlan === "premium";
+export function canRandomizeFullWeek(householdOrPlan) {
+  return isProLikeHousehold(householdOrPlan);
 }
 
 export function canRandomizeSingleDay(plan) {
   const normalizedPlan = normalizeSubscriptionPlan(plan);
   return normalizedPlan === "basic" || normalizedPlan === "pro" || normalizedPlan === "premium";
+}
+
+export function canUseDietRandomization(householdOrPlan) {
+  return isProLikeHousehold(householdOrPlan);
+}
+
+export function canUseDinnersFeature(householdOrPlan) {
+  return isProLikeHousehold(householdOrPlan);
+}
+
+export function canUseBasicsFeature(householdOrPlan) {
+  return isProLikeHousehold(householdOrPlan);
 }
 
 export function canAddUser(plan, currentUsersCount) {

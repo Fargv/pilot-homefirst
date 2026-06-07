@@ -18,8 +18,12 @@ const KitchenUserSchema = new mongoose.Schema(
     dinnerCanCook: { type: Boolean, default: true },
     claimedAt: { type: Date, default: null },
     passwordHash: { type: String, default: null },
+    clerkId: { type: String, trim: true, default: null },
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
+    // Legacy admin recovery — only populated for globalRole:"diod" accounts.
+    // Never used for Clerk users. Never exposed in toSafeJSON().
+    recoveryEmail: { type: String, lowercase: true, trim: true, default: null },
     role: { type: String, enum: ["owner", "member", "admin", "user"], default: "member" },
     householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" },
     createdByUserId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },
@@ -32,6 +36,11 @@ const KitchenUserSchema = new mongoose.Schema(
 KitchenUserSchema.index(
   { email: 1 },
   { unique: true, partialFilterExpression: { email: { $exists: true } } }
+);
+
+KitchenUserSchema.index(
+  { clerkId: 1 },
+  { unique: true, partialFilterExpression: { clerkId: { $type: "string" } } }
 );
 
 KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
@@ -57,6 +66,7 @@ KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
     dinnerActive,
     dinnerCanCook,
     claimedAt: this.claimedAt ?? null,
+    clerkId: this.clerkId ?? null,
     role: this.role,
     householdId: this.householdId ?? null,
     createdByUserId: this.createdByUserId ?? null,

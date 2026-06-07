@@ -11,6 +11,7 @@ import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
 import { KitchenSwap } from "../models/KitchenSwap.js";
 import { Store } from "../models/Store.js";
 import { ShoppingTrip } from "../models/ShoppingTrip.js";
+import { PurchaseSession } from "../models/PurchaseSession.js";
 import { Invitation } from "../models/Invitation.js";
 import { KitchenAuditLog } from "../models/KitchenAuditLog.js";
 import { requireAuth, requireRole } from "../middleware.js";
@@ -24,6 +25,7 @@ import {
 } from "../../users/utils.js";
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
+import { deleteClerkUserById } from "../clerkAuth.js";
 
 const router = express.Router();
 
@@ -60,7 +62,84 @@ async function unassignFutureCookSlots({ householdId, userId }) {
   };
 }
 
+function getTotalDiners(attendeeIds = [], extraGuests = 0) {
+  const guests = Number(extraGuests);
+  return attendeeIds.length + (Number.isFinite(guests) && guests > 0 ? Math.floor(guests) : 0);
+}
+
+async function cleanupHouseholdMemberReferences({ householdId, userId, replacementUserId = null }) {
+  const todayStart = startOfTodayUtc();
+  const userIdString = String(userId);
+  const replacement = replacementUserId ? replacementUserId : null;
+  const plans = await KitchenWeekPlan.find({
+    householdId,
+    $or: [
+      { "days.attendeeIds": userId },
+      { "days.cookUserId": userId }
+    ]
+  });
+
+  let weekPlansModified = 0;
+  let attendeeReferencesRemoved = 0;
+  let futureCookSlotsReassigned = 0;
+  for (const plan of plans) {
+    let changed = false;
+    for (const day of plan.days || []) {
+      const attendeeIds = Array.isArray(day.attendeeIds) ? day.attendeeIds : [];
+      const nextAttendeeIds = attendeeIds.filter((item) => String(item) !== userIdString);
+      if (nextAttendeeIds.length !== attendeeIds.length) {
+        attendeeReferencesRemoved += attendeeIds.length - nextAttendeeIds.length;
+        day.attendeeIds = nextAttendeeIds;
+        day.attendeeCount = getTotalDiners(nextAttendeeIds, day.extraGuests);
+        day.servings = day.attendeeCount;
+        changed = true;
+      }
+      const dayDate = day?.date ? new Date(day.date) : null;
+      if (
+        day?.cookUserId
+        && String(day.cookUserId) === userIdString
+        && dayDate
+        && dayDate >= todayStart
+      ) {
+        day.cookUserId = replacement;
+        futureCookSlotsReassigned += 1;
+        changed = true;
+      }
+    }
+    if (changed) {
+      await plan.save();
+      weekPlansModified += 1;
+    }
+  }
+
+  const [shoppingListsResult, purchaseSessionCreatedResult, purchaseSessionUpdatedResult, purchaseSessionCompletedResult] = await Promise.all([
+    KitchenShoppingList.updateMany(
+      { householdId, "items.purchasedBy": userId },
+      { $set: { "items.$[item].purchasedBy": null } },
+      { arrayFilters: [{ "item.purchasedBy": userId }] }
+    ),
+    PurchaseSession.updateMany({ householdId, createdByUserId: userId }, { $set: { createdByUserId: null } }),
+    PurchaseSession.updateMany({ householdId, updatedByUserId: userId }, { $set: { updatedByUserId: null } }),
+    PurchaseSession.updateMany({ householdId, completedByUserId: userId }, { $set: { completedByUserId: null } })
+  ]);
+
+  return {
+    weekPlansModified,
+    attendeeReferencesRemoved,
+    futureCookSlotsReassigned,
+    shoppingListsModified: Number(shoppingListsResult.modifiedCount || 0),
+    purchaseSessionsModified:
+      Number(purchaseSessionCreatedResult.modifiedCount || 0)
+      + Number(purchaseSessionUpdatedResult.modifiedCount || 0)
+      + Number(purchaseSessionCompletedResult.modifiedCount || 0),
+    dietaryPreferencesRemoved: 0
+  };
+}
+
 async function deleteHouseholdScopedData(householdId) {
+  const usersForClerkCleanup = await KitchenUser.find({ householdId })
+    .select("_id clerkId email")
+    .lean();
   const operations = await Promise.all([
     Invitation.deleteMany({ householdId }),
     KitchenShoppingList.deleteMany({ householdId }),
@@ -76,6 +155,18 @@ async function deleteHouseholdScopedData(householdId) {
     KitchenUser.deleteMany({ householdId }),
     Household.deleteOne({ _id: householdId })
   ]);
+  const clerkDeletionResults = await Promise.all(
+    usersForClerkCleanup
+      .filter((user) => user.clerkId)
+      .map((user) => deleteClerkUserById(user.clerkId, {
+        mongoUserId: user._id?.toString?.() || null,
+        email: user.email || null,
+        action: "delete_household_scoped_data"
+      }))
+  );
+
+  const clerkDeletionFailures = clerkDeletionResults.filter((result) => !result.ok);
+
   return {
     invitationsDeleted: Number(operations[0].deletedCount || 0),
     shoppingListsDeleted: Number(operations[1].deletedCount || 0),
@@ -89,7 +180,9 @@ async function deleteHouseholdScopedData(householdId) {
     shoppingTripsDeleted: Number(operations[9].deletedCount || 0),
     auditLogsDeleted: Number(operations[10].deletedCount || 0),
     usersDeleted: Number(operations[11].deletedCount || 0),
-    householdDeleted: Number(operations[12].deletedCount || 0)
+    householdDeleted: Number(operations[12].deletedCount || 0),
+    clerkUsersDeleted: clerkDeletionResults.filter((result) => result.ok && !result.skipped).length,
+    clerkDeletionFailures
   };
 }
 
@@ -340,15 +433,14 @@ router.delete("/me", requireAuth, async (req, res) => {
       return res.json({
         ok: true,
         deleted: "household",
+        clerkDeletionWarning: stats.clerkDeletionFailures?.length
+          ? "El household se elimino en Mongo, pero uno o mas usuarios no se pudieron eliminar en Clerk. Revisa los logs del backend."
+          : null,
         stats
       });
     }
 
-    const unassignResult = await unassignFutureCookSlots({
-      householdId: effectiveHouseholdId,
-      userId: req.kitchenUser._id
-    });
-
+    let replacementOwnerId = null;
     if (preview.isOwner) {
       const replacementOwner = await KitchenUser.findOne(
         buildScopedFilter(effectiveHouseholdId, {
@@ -359,6 +451,7 @@ router.delete("/me", requireAuth, async (req, res) => {
         .select("_id")
         .lean();
       if (replacementOwner?._id) {
+        replacementOwnerId = replacementOwner._id;
         await Household.updateOne(
           { _id: effectiveHouseholdId, ownerUserId: req.kitchenUser._id },
           { $set: { ownerUserId: replacementOwner._id } }
@@ -366,12 +459,30 @@ router.delete("/me", requireAuth, async (req, res) => {
       }
     }
 
+    const cleanupResult = await cleanupHouseholdMemberReferences({
+      householdId: effectiveHouseholdId,
+      userId: req.kitchenUser._id,
+      replacementUserId: replacementOwnerId
+    });
+
+    const deletedClerkId = req.kitchenUser.clerkId || null;
     await KitchenUser.deleteOne({ _id: req.kitchenUser._id });
+    const clerkDeletion = deletedClerkId
+      ? await deleteClerkUserById(deletedClerkId, {
+        mongoUserId: req.kitchenUser._id?.toString?.() || null,
+        email: req.kitchenUser.email || null,
+        action: "delete_own_profile"
+      })
+      : { ok: true, skipped: true };
 
     return res.json({
       ok: true,
       deleted: "user",
-      unassignedFutureCookSlots: unassignResult
+      cleanup: cleanupResult,
+      clerkDeletion,
+      clerkDeletionWarning: clerkDeletion.ok
+        ? null
+        : "Tu perfil se elimino en Mongo, pero no se pudo eliminar la identidad en Clerk. Revisa los logs del backend."
     });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
@@ -481,8 +592,36 @@ router.delete("/members/:id", requireAuth, requireRole("owner"), async (req, res
       return res.status(400).json({ ok: false, error: "No puedes eliminar tu propia cuenta del hogar." });
     }
 
+    const household = await Household.findById(effectiveHouseholdId)
+      .select("_id ownerUserId")
+      .lean();
+    const replacementUserId = household?.ownerUserId && String(household.ownerUserId) !== String(member._id)
+      ? household.ownerUserId
+      : null;
+    const cleanupResult = await cleanupHouseholdMemberReferences({
+      householdId: effectiveHouseholdId,
+      userId: member._id,
+      replacementUserId
+    });
+
+    const deletedClerkId = member.clerkId || null;
     await KitchenUser.deleteOne({ _id: member._id });
-    return res.json({ ok: true });
+    const clerkDeletion = deletedClerkId
+      ? await deleteClerkUserById(deletedClerkId, {
+        mongoUserId: member._id?.toString?.() || null,
+        email: member.email || null,
+        deletedByUserId: req.kitchenUser._id?.toString?.() || null,
+        action: "delete_household_member"
+      })
+      : { ok: true, skipped: true };
+    return res.json({
+      ok: true,
+      cleanup: cleanupResult,
+      clerkDeletion,
+      clerkDeletionWarning: clerkDeletion.ok
+        ? null
+        : "El usuario se elimino en Mongo, pero no se pudo eliminar la identidad en Clerk. Revisa los logs del backend."
+    });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
