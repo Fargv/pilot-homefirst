@@ -800,8 +800,10 @@ export default function WeekPage() {
     const canCarousel = element && element.scrollWidth > element.clientWidth + 1;
 
     if (canCarousel) {
+      const targetLeft = targetNode.offsetLeft - element.offsetLeft;
+      const centeredLeft = targetLeft - Math.max(0, (element.clientWidth - targetNode.offsetWidth) / 2);
       element.scrollTo({
-        left: targetNode.offsetLeft,
+        left: Math.max(0, centeredLeft),
         behavior
       });
       return;
@@ -932,13 +934,15 @@ export default function WeekPage() {
         cancelAnimationFrame(frame);
       }
       frame = requestAnimationFrame(() => {
-        const center = element.scrollLeft + element.clientWidth / 2;
+        const elementRect = element.getBoundingClientRect();
+        const center = elementRect.left + elementRect.width / 2;
         let closestIndex = 0;
         let closestDistance = Number.POSITIVE_INFINITY;
         dayKeys.forEach((key, index) => {
           const node = dayRefs.current.get(key);
           if (!node) return;
-          const nodeCenter = node.offsetLeft + node.offsetWidth / 2;
+          const nodeRect = node.getBoundingClientRect();
+          const nodeCenter = nodeRect.left + nodeRect.width / 2;
           const distance = Math.abs(center - nodeCenter);
           if (distance < closestDistance) {
             closestDistance = distance;
@@ -2066,9 +2070,13 @@ export default function WeekPage() {
   };
 
   const handleCarouselScroll = (direction) => {
-    const element = carouselRef.current;
-    if (!element) return;
-    element.scrollBy({ left: direction * element.clientWidth, behavior: "smooth" });
+    if (!dayKeys.length) return;
+    const nextIndex = Math.min(dayKeys.length - 1, Math.max(0, activeIndex + direction));
+    const nextDay = dayKeys[nextIndex];
+    if (!nextDay) return;
+    setSelectedDay(nextDay);
+    setActiveIndex(nextIndex);
+    scrollCarouselToDay(nextDay, "smooth");
   };
 
   const runRandomizeOption = (mode, packId = null) => {
@@ -2365,7 +2373,7 @@ export default function WeekPage() {
             </PageHeader>
           </section>
 
-          <div className="kitchen-week-carousel">
+          <div className="kitchen-week-carousel" data-swipe-zone="carousel">
             {showCarouselControls ? (
               <button
                 className="kitchen-week-carousel-arrow is-left"
@@ -2381,6 +2389,8 @@ export default function WeekPage() {
               id="week-grid"
               ref={carouselRef}
               onAnimationEnd={() => setContentSlideClass("")}
+              data-swipe-zone="carousel"
+              data-horizontal-scroll="true"
             >
               {!plan ? (
                 <div className="kitchen-card kitchen-empty">
@@ -3177,9 +3187,11 @@ export default function WeekPage() {
                 <button
                   key={key}
                   type="button"
+                  role="tab"
                   className={`kitchen-week-carousel-dot ${activeIndex === index ? "is-active" : ""}`}
                   onClick={() => handleSelectDay(key)}
                   aria-label={`Ir a ${formatDateLabel(key)}`}
+                  aria-selected={activeIndex === index}
                   aria-current={activeIndex === index ? "true" : undefined}
                 />
               ))}

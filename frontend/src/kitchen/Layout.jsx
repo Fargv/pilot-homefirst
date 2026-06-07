@@ -16,6 +16,7 @@ import MilestoneToast from "./components/rewards/MilestoneToast.jsx";
 import { CookingSessionProvider } from "./contexts/CookingSessionContext.jsx";
 import CookingSessionBanner from "./components/cooking/CookingSessionBanner.jsx";
 import CookingSessionStepper from "./components/cooking/CookingSessionStepper.jsx";
+import useMobileRouteSwipeNavigation from "./hooks/useMobileRouteSwipeNavigation.js";
 
 function CalendarIcon(props) {
   return (
@@ -274,6 +275,11 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
     ],
     []
   );
+  const mainSwipeRoutes = useMemo(
+    () => bottomNavLinks.map((link) => link.to),
+    [bottomNavLinks]
+  );
+  useMobileRouteSwipeNavigation(mainSwipeRoutes);
 
   useEffect(() => {
     const onPointerDown = (event) => {

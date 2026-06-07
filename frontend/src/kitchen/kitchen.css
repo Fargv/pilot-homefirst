@@ -1232,21 +1232,40 @@ body {
 .kitchen-week-carousel-dots {
   display: none;
   justify-content: center;
-  gap: 6px;
-  margin-top: 12px;
+  align-items: center;
+  gap: 2px;
+  margin-top: 10px;
 }
 
 .kitchen-week-carousel-dot {
-  width: 8px;
-  height: 8px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   border: none;
   padding: 0;
-  background: #d0d5dd;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
 }
 
-.kitchen-week-carousel-dot.is-active {
+.kitchen-week-carousel-dot::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #d0d5dd;
+  transition: width 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.kitchen-week-carousel-dot.is-active::before {
+  width: 18px;
   background: var(--hf-brand);
+}
+
+.kitchen-week-carousel-dot:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hf-brand) 55%, transparent);
+  outline-offset: 2px;
 }
 
 .kitchen-meal-tabs {
@@ -14868,8 +14887,12 @@ td.recipe-qty-scaled {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="dark"] .kitchen-week-carousel-dot {
+[data-theme="dark"] .kitchen-week-carousel-dot::before {
   background: var(--hf-border);
+}
+
+[data-theme="dark"] .kitchen-week-carousel-dot.is-active::before {
+  background: var(--hf-brand);
 }
 
 /* ─── Filter chips ───────────────────────────────────────────── */
