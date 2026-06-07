@@ -174,6 +174,11 @@ if (process.env.BETA_PRO_ENABLED === "true" && process.env.PRIVATE_BETA_ENABLED 
 }
 
 // ── Startup summary (safe — no secrets) ──────────────────────────────────────
+const _azpList = config.clerkAuthorizedParties.length
+  ? config.clerkAuthorizedParties.join(", ")
+  : "(any — CLERK_AUTHORIZED_PARTIES not set)";
 console.info(
   `[startup] env=${config.nodeEnv}${process.env.APP_ENV ? `/${process.env.APP_ENV}` : ""} | db=${_dbName || "(none)"} | frontend=${config.frontendUrl}`
 );
+console.info(`[startup] clerk.azp=${_azpList}`);
+console.info(`[startup] cors=${config.corsOrigins.join(", ") || "(none)"}`);
