@@ -3,6 +3,18 @@
   command = "npm install && npm run build"
   publish = "dist"
 
+# Canonical domain: www.lunchfyapp.com
+# Netlify dashboard → Domain settings → Primary domain must be set to www.lunchfyapp.com.
+# Netlify will then automatically redirect lunchfyapp.com → www.lunchfyapp.com.
+# The redirect below is an explicit fallback for any request that reaches this site
+# with the apex Host header.
+[[redirects]]
+  from = "https://lunchfyapp.com/*"
+  to = "https://www.lunchfyapp.com/:splat"
+  status = 301
+  force = true
+
+# SPA catch-all: all other routes serve index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
