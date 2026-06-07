@@ -2347,6 +2347,37 @@ export default function WeekPage() {
             </PageHeader>
           </section>
 
+          {(!weekendOptionState.hasSaturday || !weekendOptionState.hasSunday) && (
+            <div className="kitchen-week-finde-bar">
+              {!weekendOptionState.hasSaturday ? (
+                <button
+                  type="button"
+                  className="kitchen-weekend-chip kitchen-weekend-chip-add"
+                  onClick={() => handleAddWeekendDays(["saturday"])}
+                  disabled={weekendBusy}
+                  aria-label="Añadir sábado"
+                >
+                  + Sáb
+                </button>
+              ) : (
+                <span className="kitchen-weekend-chip kitchen-weekend-chip-active" aria-label="Sábado añadido">Sáb ✓</span>
+              )}
+              {!weekendOptionState.hasSunday ? (
+                <button
+                  type="button"
+                  className="kitchen-weekend-chip kitchen-weekend-chip-add"
+                  onClick={() => handleAddWeekendDays(["sunday"])}
+                  disabled={weekendBusy}
+                  aria-label="Añadir domingo"
+                >
+                  + Dom
+                </button>
+              ) : (
+                <span className="kitchen-weekend-chip kitchen-weekend-chip-active" aria-label="Domingo añadido">Dom ✓</span>
+              )}
+            </div>
+          )}
+
           <div className="kitchen-week-carousel">
             {showCarouselControls ? (
               <button

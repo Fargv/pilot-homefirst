@@ -56,11 +56,14 @@ function matchesTab(pack, tab) {
 function matchesSearch(pack, search) {
   if (!search) return true;
   const q = search.toLowerCase();
-  return (
+  if (
     (pack.title || "").toLowerCase().includes(q) ||
     (pack.subtitle || "").toLowerCase().includes(q) ||
     (pack.description || "").toLowerCase().includes(q) ||
     (pack.dietLabel || "").toLowerCase().includes(q)
+  ) return true;
+  return Array.isArray(pack.dishPreview) && pack.dishPreview.some(
+    (d) => (d.name || "").toLowerCase().includes(q) || (d.teaser || "").toLowerCase().includes(q)
   );
 }
 
@@ -787,22 +790,29 @@ export default function CatalogPage() {
             </div>
           }
           secondaryRight={
-            <input
-              type="search"
-              className="kitchen-input catalog-search-input"
-              placeholder="Buscar packs..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Buscar packs"
-            />
+            <div className="catalog-header-controls">
+              {wallet && wallet.totalBites != null && (
+                <button
+                  type="button"
+                  className="catalog-bites-chip"
+                  onClick={() => setBitesStoreOpen(true)}
+                  title="Ver mis Bites"
+                  aria-label={`${wallet.totalBites} Bites disponibles`}
+                >
+                  <BitesIcon size={13} decorative />
+                  <span>{wallet.totalBites}</span>
+                </button>
+              )}
+              <input
+                type="search"
+                className="kitchen-input catalog-search-input"
+                placeholder="Buscar packs..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Buscar packs"
+              />
+            </div>
           }
-        />
-
-        <CatalogBitesWallet
-          wallet={wallet}
-          plan={plan}
-          bitesConfig={bitesConfig}
-          onBuyBites={() => setBitesStoreOpen(true)}
         />
 
         {loading && (

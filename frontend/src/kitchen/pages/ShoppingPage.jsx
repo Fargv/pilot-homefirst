@@ -287,6 +287,7 @@ export default function ShoppingPage() {
   const [basicsToast, setBasicsToast] = useState("");
   const basicsToastTimerRef = useRef(null);
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
+  const [unmarkAllOpen, setUnmarkAllOpen] = useState(false);
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const toastCounterRef = useRef(0);
@@ -1181,6 +1182,7 @@ export default function ShoppingPage() {
     <KitchenLayout>
       <PageHeader
         title="Lista de la compra"
+        subtitle="Gestiona lo que necesitas comprar esta semana"
         primaryAction={
           <ShareWhatsAppButton
             iconOnly
@@ -1219,13 +1221,6 @@ export default function ShoppingPage() {
               >
                 <div className="shopping-budget-pill-fill" style={{ width: `${pct}%` }} />
                 <span className="shopping-budget-pill-text-dark">{label}</span>
-                <span
-                  className="shopping-budget-pill-text-light"
-                  style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }}
-                  aria-hidden="true"
-                >
-                  {label}
-                </span>
                 <ChevronRight size={12} className="shopping-budget-pill-chevron" aria-hidden="true" />
               </button>
             );
@@ -1377,7 +1372,18 @@ export default function ShoppingPage() {
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
               ) : purchasedByStoreDay.length === 0 ? (
                 <div className="shopping-empty-state"><EmptyHistoryIcon /><h4>No hay nada comprado esta semana.</h4></div>
-              ) : purchasedByStoreDay.map((group) => (
+              ) : (
+              <>
+              <div className="shopping-unmark-bar">
+                <button
+                  type="button"
+                  className="kitchen-button secondary shopping-unmark-all-btn"
+                  onClick={() => setUnmarkAllOpen(true)}
+                >
+                  Descomprar todo
+                </button>
+              </div>
+              {purchasedByStoreDay.map((group) => (
                 <div className="shopping-category-card shopping-purchased-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
                   <div className="shopping-purchased-card-head">
                     <div className="shopping-purchased-card-meta">
@@ -1467,6 +1473,8 @@ export default function ShoppingPage() {
                   </div>
                 </div>
               ))}
+              </>
+              )}
             </div>
           ) : null}
 
@@ -1616,6 +1624,29 @@ export default function ShoppingPage() {
             />
           </label>
         </div>
+      </ModalSheet>
+      <ModalSheet
+        open={unmarkAllOpen}
+        title="Descomprar todo"
+        onClose={() => setUnmarkAllOpen(false)}
+        actions={(
+          <>
+            <button type="button" className="kitchen-button secondary" onClick={() => setUnmarkAllOpen(false)}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="kitchen-button"
+              onClick={() => { setUnmarkAllOpen(false); void setAllItemsStatus("pending"); }}
+            >
+              Sí, descomprar todo
+            </button>
+          </>
+        )}
+      >
+        <p className="kitchen-muted">
+          Todos los productos comprados volverán a estar pendientes. Esta acción no se puede deshacer.
+        </p>
       </ModalSheet>
       {quickCreateOpen ? (
         <div className="kitchen-modal-backdrop" role="presentation" onClick={closeQuickCreateModal}>
