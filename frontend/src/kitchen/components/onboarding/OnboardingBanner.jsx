@@ -161,7 +161,7 @@ function OnboardingCompletionModal({ onDismiss }) {
   );
 }
 
-export default function OnboardingBanner() {
+export default function OnboardingBanner({ suppressEvents = false } = {}) {
   const { state, rewardEvent, dismissReward, completionEvent, dismissCompletionEvent } = useOnboarding();
   const { state: weeklyState } = useWeeklyChallenge();
   const [panelOpen, setPanelOpen] = useState(false);
@@ -176,8 +176,8 @@ export default function OnboardingBanner() {
   if (state.status === "completed") {
     return (
       <>
-        {completionEvent && <OnboardingCompletionModal onDismiss={dismissCompletionEvent} />}
-        {rewardEvent && <RewardToast event={rewardEvent} onDismiss={dismissReward} />}
+        {!suppressEvents && completionEvent && <OnboardingCompletionModal onDismiss={dismissCompletionEvent} />}
+        {!suppressEvents && rewardEvent && <RewardToast event={rewardEvent} onDismiss={dismissReward} />}
       </>
     );
   }
@@ -215,7 +215,7 @@ export default function OnboardingBanner() {
             <div style={{ width: `${progressPercent}%` }} />
           </div>
         </div>
-        {rewardEvent && <RewardToast event={rewardEvent} onDismiss={dismissReward} />}
+        {!suppressEvents && rewardEvent && <RewardToast event={rewardEvent} onDismiss={dismissReward} />}
       </>
     );
   }
@@ -279,7 +279,7 @@ export default function OnboardingBanner() {
       </div>
 
       {panelOpen && <OnboardingPanel onClose={() => setPanelOpen(false)} />}
-      {rewardEvent && <RewardToast event={rewardEvent} onDismiss={dismissReward} />}
+      {!suppressEvents && rewardEvent && <RewardToast event={rewardEvent} onDismiss={dismissReward} />}
 
       <style>{`
         @keyframes onboardingToastIn {

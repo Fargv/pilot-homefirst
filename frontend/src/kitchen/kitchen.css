@@ -21647,3 +21647,263 @@ td.recipe-qty-scaled {
 [data-theme="dark"] .kitchen-catalog-picker-item:hover {
   background: rgba(255, 255, 255, 0.05);
 }
+
+/* Mobile responsive polish: planning header, top progress and overflow safety */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.kitchen-mobile-header-extra {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .kitchen-app,
+  .kitchen-container,
+  .kitchen-ui-header,
+  .kitchen-ui-bottom-nav {
+    max-width: 100vw;
+    overflow-x: clip;
+  }
+
+  .kitchen-ui-header-inner {
+    padding: 10px 14px;
+    min-height: 58px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .kitchen-ui-header-inner > div {
+    min-width: 0;
+  }
+
+  .kitchen-brand-link {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .kitchen-brand-icon {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+  }
+
+  .kitchen-brand-logo,
+  .kitchen-user-name,
+  .kitchen-user-plan-badge,
+  .kitchen-user-chevron {
+    display: none;
+  }
+
+  .kitchen-user-chip {
+    width: 48px;
+    height: 48px;
+    min-height: 48px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 999px;
+  }
+
+  .kitchen-user-avatar {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+  }
+
+  .kitchen-mobile-header-extra {
+    display: block;
+    padding: 0 14px 10px;
+  }
+
+  .kitchen-mobile-progress-stack {
+    max-width: 100%;
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-done-chip,
+  .kitchen-mobile-progress-stack .weekly-challenge-slim,
+  .kitchen-mobile-progress-stack .onboarding-guide-slim {
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-card,
+  .kitchen-mobile-progress-stack .onboarding-guide-card {
+    margin: 0;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: none;
+  }
+
+  .kitchen-main-progress-stack > .weekly-challenge-done-chip,
+  .kitchen-main-progress-stack > .weekly-challenge-slim,
+  .kitchen-main-progress-stack > .weekly-challenge-card,
+  .kitchen-main-progress-stack > .onboarding-guide-slim,
+  .kitchen-main-progress-stack > .onboarding-guide-card {
+    display: none;
+  }
+
+  .kitchen-container {
+    padding: 12px 14px calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .kitchen-container.kitchen-week-canvas {
+    padding-top: 8px;
+  }
+
+  .kitchen-week-controls {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .kitchen-week-mobile-frame {
+    gap: 10px;
+  }
+
+  .kitchen-week-header .page-header {
+    gap: 10px;
+    margin-bottom: 8px;
+    padding: 14px 16px;
+  }
+
+  .page-header-top {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .page-header-subtitle {
+    display: none;
+  }
+
+  .page-header-title {
+    font-size: 22px;
+    line-height: 1.08;
+  }
+
+  .page-header-primary-action {
+    min-width: 0;
+  }
+
+  .page-header-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .page-header-controls-left,
+  .page-header-controls-right,
+  .kitchen-week-header-tabs-row {
+    min-width: 0;
+  }
+
+  .kitchen-week-header-tabs-row {
+    gap: 6px;
+  }
+
+  .page-header-footer {
+    gap: 6px;
+  }
+
+  .kitchen-week-carousel {
+    margin-top: 0;
+  }
+
+  .kitchen-weekday-tabs {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .kitchen-weekday-tab {
+    width: 100%;
+    min-width: 0;
+    height: 34px;
+    border-radius: 9px;
+  }
+
+  .kitchen-weekend-chip {
+    min-width: 64px;
+    min-height: 34px;
+    height: 34px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .kitchen-randomize-accordion-shell {
+    width: min(320px, calc(100vw - 28px));
+  }
+}
+
+@media (min-width: 768px) {
+  .kitchen-main-progress-stack {
+    display: contents;
+  }
+}
+
+@media (max-width: 520px) {
+  .cooking-stepper-overlay,
+  .cooking-stepper-header,
+  .cooking-step-area,
+  .cooking-step-card,
+  .cooking-step-ingredients,
+  .cooking-ing-sheet,
+  .recipe-modal,
+  .recipe-modal-ingredient-row {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .cooking-step-ingredient-row,
+  .cooking-ing-row,
+  .recipe-modal-ingredient-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 3px 8px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .cooking-step-ingredient-name,
+  .cooking-ing-name,
+  .recipe-modal-ingredient-row span:first-child {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .cooking-step-ingredient-qty,
+  .cooking-ing-qty,
+  .recipe-modal-ingredient-row span:last-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-align: left;
+  }
+
+  .cooking-stepper-header {
+    gap: 10px;
+  }
+
+  .cooking-stepper-header-info,
+  .cooking-stepper-header-right,
+  .cooking-stepper-recipe-name {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}

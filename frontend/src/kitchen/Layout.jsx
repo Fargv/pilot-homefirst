@@ -521,13 +521,21 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
         ) : (
           <div className="kitchen-user-placeholder" />
         )}
+        mobileExtra={(
+          <div className="kitchen-mobile-progress-stack">
+            <OnboardingBanner suppressEvents />
+            <WeeklyChallengeCard />
+          </div>
+        )}
       />
       {betaProEvent ? (
         <BetaProUnlockedModal onDismiss={dismissBetaProEvent} />
       ) : null}
       <div className={`kitchen-container ${containerClassName}`.trim()}>
-        <OnboardingBanner />
-        <WeeklyChallengeCard />
+        <div className="kitchen-main-progress-stack">
+          <OnboardingBanner />
+          <WeeklyChallengeCard />
+        </div>
         {children}
       </div>
       <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />

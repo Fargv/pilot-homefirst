@@ -2350,6 +2350,7 @@ export default function WeekPage() {
                     hasSunday: weekendOptionState.hasSunday,
                     onAddSat: () => handleAddWeekendDays(["saturday"]),
                     onAddSun: () => handleAddWeekendDays(["sunday"]),
+                    onAddWeekend: (days) => handleAddWeekendDays(days),
                     busy: weekendBusy,
                   }}
                 />
