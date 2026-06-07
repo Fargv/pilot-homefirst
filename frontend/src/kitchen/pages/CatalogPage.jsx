@@ -67,6 +67,28 @@ function matchesSearch(pack, search) {
   );
 }
 
+const PRICE_FILTERS = [
+  { id: "all", label: "Todos" },
+  { id: "free", label: "Gratis" },
+  { id: "bites", label: "Con Bites" },
+  { id: "paid", label: "De pago" },
+];
+
+function matchesPriceFilter(pack, priceFilter) {
+  if (priceFilter === "all") return true;
+  const ent = pack.entitlement || {};
+  if (priceFilter === "free") {
+    return ent.isFree || ent.includedInPlan || getFreeUntilDaysLeft(ent.isFreeUntil) !== null;
+  }
+  if (priceFilter === "bites") {
+    return Number(ent.bitesCost || 0) > 0 && (ent.canUnlockWithBites || ent.needsBitesPurchase);
+  }
+  if (priceFilter === "paid") {
+    return ent.canPayDirect && !ent.isFree && !ent.includedInPlan;
+  }
+  return true;
+}
+
 function PackIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" style={{ width: 40, height: 40 }}>
@@ -553,6 +575,9 @@ export default function CatalogPage() {
   const [bitesStoreOpen, setBitesStoreOpen] = useState(false);
   const [insufficientBitesPack, setInsufficientBitesPack] = useState(null);
   const [dietInstallModal, setDietInstallModal] = useState(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [hideInstalled, setHideInstalled] = useState(false);
+  const [priceFilter, setPriceFilter] = useState("all");
 
   const showToast = useCallback((message, type = "success") => {
     setToast({ message, type });
@@ -580,9 +605,15 @@ export default function CatalogPage() {
   }, [loadCatalog]);
 
   const visiblePacks = useMemo(() => {
-    const filtered = packs.filter((p) => matchesTab(p, activeTab) && matchesSearch(p, search));
+    const filtered = packs
+      .filter((p) => !hideInstalled || !p.entitlement?.installed)
+      .filter((p) => matchesTab(p, activeTab))
+      .filter((p) => matchesSearch(p, search))
+      .filter((p) => matchesPriceFilter(p, priceFilter));
     return [...filtered].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
-  }, [packs, activeTab, search]);
+  }, [packs, activeTab, search, hideInstalled, priceFilter]);
+
+  const hasActiveFilters = activeTab !== "all" || hideInstalled || priceFilter !== "all";
 
   const anyModalOpen = bitesStoreOpen || Boolean(insufficientBitesPack) || Boolean(dietInstallModal);
 
@@ -776,44 +807,98 @@ export default function CatalogPage() {
           title="Catálogo"
           subtitle="Packs de platos listos para añadir a tu hogar"
           secondaryLeft={
-            <div className="catalog-tabs catalog-tabs-inline">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  className={`catalog-tab ${activeTab === tab.id ? "active" : ""}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <button
+              type="button"
+              className={`catalog-filter-toggle${filterOpen ? " is-open" : ""}`}
+              onClick={() => setFilterOpen((v) => !v)}
+              aria-expanded={filterOpen}
+              aria-label="Mostrar filtros"
+            >
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                <path d="M1 3h13M3.5 7h8M6 11h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              </svg>
+              Filtros
+              {hasActiveFilters && <span className="catalog-filter-dot" aria-hidden="true" />}
+            </button>
           }
           secondaryRight={
-            <div className="catalog-header-controls">
-              {wallet && wallet.totalBites != null && (
+            wallet && wallet.totalBites != null ? (
+              <button
+                type="button"
+                className="catalog-bites-chip"
+                onClick={() => setBitesStoreOpen(true)}
+                title="Comprar más Bites"
+                aria-label={`${wallet.totalBites} Bites disponibles — comprar más`}
+              >
+                <BitesIcon size={13} decorative />
+                <span>{wallet.totalBites} Bites</span>
+              </button>
+            ) : null
+          }
+          footer={
+            <input
+              type="search"
+              className="kitchen-input catalog-search-full"
+              placeholder="Buscar packs, platos o ingredientes..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Buscar packs"
+            />
+          }
+        >
+          {filterOpen && (
+            <div className="catalog-filter-panel">
+              <div className="catalog-filter-section">
+                <span className="catalog-filter-label">Categoría</span>
+                <div className="catalog-filter-chips">
+                  {TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={`kitchen-filter-chip${activeTab === tab.id ? " is-active" : ""}`}
+                      onClick={() => setActiveTab(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="catalog-filter-section">
+                <span className="catalog-filter-label">Precio</span>
+                <div className="catalog-filter-chips">
+                  {PRICE_FILTERS.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className={`kitchen-filter-chip${priceFilter === f.id ? " is-active" : ""}`}
+                      onClick={() => setPriceFilter(f.id)}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label className="catalog-filter-check-row">
+                <input
+                  type="checkbox"
+                  className="dishes-filter-check"
+                  checked={hideInstalled}
+                  onChange={(e) => setHideInstalled(e.target.checked)}
+                />
+                Ocultar ya instalados
+              </label>
+              {hasActiveFilters && (
                 <button
                   type="button"
-                  className="catalog-bites-chip"
-                  onClick={() => setBitesStoreOpen(true)}
-                  title="Ver mis Bites"
-                  aria-label={`${wallet.totalBites} Bites disponibles`}
+                  className="catalog-filter-clear"
+                  onClick={() => { setActiveTab("all"); setHideInstalled(false); setPriceFilter("all"); }}
                 >
-                  <BitesIcon size={13} decorative />
-                  <span>{wallet.totalBites}</span>
+                  Limpiar filtros
                 </button>
               )}
-              <input
-                type="search"
-                className="kitchen-input catalog-search-input"
-                placeholder="Buscar packs..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                aria-label="Buscar packs"
-              />
             </div>
-          }
-        />
+          )}
+        </PageHeader>
 
         {loading && (
           <div className="catalog-loading">
