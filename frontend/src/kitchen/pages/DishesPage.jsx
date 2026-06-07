@@ -15,6 +15,7 @@ import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { canUseDinnersFeature } from "../subscription.js";
 import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 import PageHeader from "../components/PageHeader.jsx";
+import { DishGridSkeleton, DishesPageSkeleton } from "../components/ScreenSkeletons.jsx";
 
 const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
 
@@ -902,6 +903,14 @@ export default function DishesPage() {
     : isDiodGlobalMode ? "Nuevo plato master" : "Nuevo plato";
   const headerActionHandler = isIngredientsTab ? startIngredientCreate : startCreate;
 
+  if (loading && !isIngredientsTab) {
+    return (
+      <KitchenLayout>
+        <DishesPageSkeleton />
+      </KitchenLayout>
+    );
+  }
+
   return (
     <KitchenLayout>
       <div className="kitchen-dishes-page">
@@ -1182,7 +1191,7 @@ export default function DishesPage() {
         {isIngredientsTab ? (
           <>
             {ingredientsLoading ? (
-              <div className="kitchen-card kitchen-dishes-loading">Cargando ingredientes...</div>
+              <DishGridSkeleton ingredients />
             ) : visibleIngredients.length === 0 ? (
               <div className="kitchen-card kitchen-empty">
                 <p>{ingredientEmptyMessage}</p>
@@ -1333,7 +1342,7 @@ export default function DishesPage() {
             )}
           </>
         ) : loading ? (
-          <div className="kitchen-card kitchen-dishes-loading">Cargando platos...</div>
+          <DishGridSkeleton />
         ) : visibleDishes.length === 0 ? (
           <div className="kitchen-card kitchen-empty">
             <p>{emptyMessage}</p>

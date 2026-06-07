@@ -11,6 +11,7 @@ import { resolvePackCoverImageUrl } from "../utils/packImages.js";
 import BitesIcon from "../components/BitesIcon.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
+import { CatalogPageSkeleton } from "../components/ScreenSkeletons.jsx";
 
 const TABS = [
   { id: "all", label: "Todos" },
@@ -800,6 +801,14 @@ export default function CatalogPage() {
     }
   }, [loadCatalog, showToast]);
 
+  if (loading) {
+    return (
+      <KitchenLayout>
+        <CatalogPageSkeleton />
+      </KitchenLayout>
+    );
+  }
+
   return (
     <KitchenLayout>
       <div className="catalog-page">
@@ -899,13 +908,6 @@ export default function CatalogPage() {
             </div>
           )}
         </PageHeader>
-
-        {loading && (
-          <div className="catalog-loading">
-            <div className="kitchen-spinner" />
-            <span>Cargando catálogo...</span>
-          </div>
-        )}
 
         {!loading && error && (
           <div className="kitchen-alert error catalog-error">{error}</div>

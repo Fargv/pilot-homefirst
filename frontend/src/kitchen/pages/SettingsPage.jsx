@@ -27,6 +27,7 @@ import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { IngredientSearchAdd } from "../components/BasicsPopup.jsx";
 import PageHeader from "../components/PageHeader.jsx";
+import { SettingsPageSkeleton } from "../components/ScreenSkeletons.jsx";
 
 function initialsFromName(name = "") {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
@@ -2100,7 +2101,7 @@ export default function SettingsPage() {
 
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}
-        {loading ? <p className="kitchen-muted">Cargando configuracion...</p> : null}
+        {loading ? <SettingsPageSkeleton /> : null}
 
         {!loading && pendingDowngradeAt && (
           <div className="settings-downgrade-banner">

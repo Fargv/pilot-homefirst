@@ -16,6 +16,8 @@ import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import BasicsPopup from "../components/BasicsPopup.jsx";
 import { burstParticles, triggerMilestone } from "../hooks/useRewardAnimation.js";
+import { ShoppingPageSkeleton } from "../components/ScreenSkeletons.jsx";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function RefreshIcon(props) {
   return (
@@ -1178,6 +1180,18 @@ export default function ShoppingPage() {
     );
   }
 
+  const isInitialShoppingLoading =
+    (tab === "pending" && !Array.isArray(pendingByCategory)) ||
+    (tab === "purchased" && !Array.isArray(purchasedByStoreDay));
+
+  if (isInitialShoppingLoading) {
+    return (
+      <KitchenLayout>
+        <ShoppingPageSkeleton />
+      </KitchenLayout>
+    );
+  }
+
   return (
     <KitchenLayout>
       <PageHeader
@@ -1481,7 +1495,24 @@ export default function ShoppingPage() {
           {tab === "sessions" ? (
             <div className="shopping-categories">
               {sessionsTabBusy ? (
-                <div className="shopping-empty-state"><span className="kitchen-muted">Cargando compras pendientes…</span></div>
+                <div className="shopping-session-cards skeleton-session-cards">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div className="shopping-session-card skeleton-session-card" key={index}>
+                      <div className="shopping-session-card-header">
+                        <div className="shopping-session-card-info">
+                          <Skeleton className="skeleton-session-title" />
+                          <Skeleton className="skeleton-session-sub" />
+                        </div>
+                        <Skeleton className="skeleton-cta-button" />
+                      </div>
+                      <div className="shopping-session-card-items">
+                        <Skeleton className="skeleton-small-pill" />
+                        <Skeleton className="skeleton-small-pill is-wide" />
+                        <Skeleton className="skeleton-small-pill" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : sessionsTabError ? (
                 <div className="kitchen-alert error">{sessionsTabError}</div>
               ) : allPendingSessions.length === 0 ? (
