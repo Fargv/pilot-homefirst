@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useWeeklyChallenge } from "../../contexts/WeeklyChallengeContext.jsx";
 import { useOnboarding } from "../../contexts/OnboardingContext.jsx";
 import { useAuth } from "../../auth.jsx";
@@ -151,14 +152,16 @@ function BonusRow({ bonus }) {
   );
 }
 
-export default function WeeklyChallengeCard() {
+export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {}) {
   const { state: weeklyState } = useWeeklyChallenge();
   const { state: onboardingState } = useOnboarding();
   const { user } = useAuth();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
   // Separate expansion state for the "all done" view so the chip is always default when complete
   const [doneExpanded, setDoneExpanded] = useState(false);
   const prevAllDoneRef = useRef(false);
+  const cardRef = useRef(null);
 
   // Compute derived values — safe to derive even before early returns
   const completedCount = weeklyState ? (weeklyState.completedCount ?? 0) : 0;
@@ -175,6 +178,53 @@ export default function WeeklyChallengeCard() {
     }
     prevAllDoneRef.current = weeklyAllDone;
   }, [weeklyAllDone]);
+
+  useEffect(() => {
+    if (!closeOnRouteChange) return;
+    setCollapsed(true);
+    setDoneExpanded(false);
+  }, [closeOnRouteChange, location.pathname]);
+
+  useEffect(() => {
+    const expanded = doneExpanded || (!collapsed && !weeklyAllDone);
+    if (!expanded) return;
+
+    const syncOverlayTop = () => {
+      const header = document.querySelector(".kitchen-ui-header");
+      if (!header) return;
+      document.documentElement.style.setProperty(
+        "--kitchen-mobile-progress-overlay-top",
+        `${Math.round(header.getBoundingClientRect().bottom + 8)}px`
+      );
+    };
+    const handlePointerDown = (event) => {
+      if (cardRef.current?.contains(event.target)) return;
+      if (weeklyAllDone) {
+        setDoneExpanded(false);
+      } else {
+        setCollapsed(true);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      if (weeklyAllDone) {
+        setDoneExpanded(false);
+      } else {
+        setCollapsed(true);
+      }
+    };
+
+    syncOverlayTop();
+    window.addEventListener("resize", syncOverlayTop);
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("resize", syncOverlayTop);
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.documentElement.style.removeProperty("--kitchen-mobile-progress-overlay-top");
+    };
+  }, [collapsed, doneExpanded, weeklyAllDone]);
 
   // ── Early renders ──────────────────────────────────────────────────────
   if (!onboardingState || onboardingState.status !== "completed") return null;
@@ -198,18 +248,25 @@ export default function WeeklyChallengeCard() {
   if (weeklyAllDone && !doneExpanded) {
     return (
       <>
-        <div className="weekly-challenge-done-chip" role="region" aria-label="Retos semanales completados">
+        <div
+          className="weekly-challenge-done-chip"
+          role="button"
+          tabIndex={0}
+          aria-label="Ver retos semanales completados"
+          onClick={() => setDoneExpanded(true)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setDoneExpanded(true);
+            }
+          }}
+        >
           <CheckCircleIcon />
           <span className="weekly-challenge-done-chip-text">Retos semanales completados</span>
           <span className="weekly-challenge-done-chip-week">Semana {weeklyState.participationWeek ?? weeklyState.cycleWeekIndex}</span>
-          <button
-            type="button"
-            onClick={() => setDoneExpanded(true)}
-            className="weekly-challenge-done-chip-expand"
-            aria-label="Ver retos completados"
-          >
+          <span className="weekly-challenge-done-chip-expand" aria-hidden="true">
             <ChevronDownIcon />
-          </button>
+          </span>
         </div>
       </>
     );
@@ -219,7 +276,19 @@ export default function WeeklyChallengeCard() {
   if (collapsed && !weeklyAllDone) {
     return (
       <>
-        <div className="weekly-challenge-slim" role="region" aria-label="Retos semanales">
+        <div
+          className="weekly-challenge-slim"
+          role="button"
+          tabIndex={0}
+          aria-label="Expandir retos semanales"
+          onClick={() => toggleCollapsed(false)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              toggleCollapsed(false);
+            }
+          }}
+        >
           <div className="weekly-challenge-slim-top">
             <div className="weekly-challenge-slim-heading">
               <TrophyIcon />
@@ -232,14 +301,9 @@ export default function WeeklyChallengeCard() {
               <span className="weekly-challenge-slim-count">
                 {completedCount}/{totalCount} completados
               </span>
-              <button
-                type="button"
-                onClick={() => toggleCollapsed(false)}
-                className="onboarding-guide-collapse-btn weekly-challenge-collapse-btn"
-                aria-label="Expandir retos semanales"
-              >
+              <span className="onboarding-guide-collapse-btn weekly-challenge-collapse-btn" aria-hidden="true">
                 <ChevronDownIcon />
-              </button>
+              </span>
             </div>
           </div>
           <div className="onboarding-progress onboarding-progress-compact weekly-challenge-progress-bar" style={{ marginBottom: 0 }}>
@@ -253,7 +317,7 @@ export default function WeeklyChallengeCard() {
   // ── Full expanded card ─────────────────────────────────────────────────
   return (
     <>
-      <div className="weekly-challenge-card">
+      <div className="weekly-challenge-card" ref={cardRef}>
         <div className="weekly-challenge-top">
           <div className="weekly-challenge-heading">
             <TrophyIcon />

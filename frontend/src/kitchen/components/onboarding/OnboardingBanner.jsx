@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useOnboarding } from "../../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../../contexts/WeeklyChallengeContext.jsx";
 import { useAuth } from "../../auth.jsx";
@@ -161,16 +162,59 @@ function OnboardingCompletionModal({ onDismiss }) {
   );
 }
 
-export default function OnboardingBanner({ suppressEvents = false } = {}) {
+export default function OnboardingBanner({ suppressEvents = false, closeOnRouteChange = false } = {}) {
   const { state, rewardEvent, dismissReward, completionEvent, dismissCompletionEvent } = useOnboarding();
   const { state: weeklyState } = useWeeklyChallenge();
+  const location = useLocation();
   const [panelOpen, setPanelOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
+  const cardRef = useRef(null);
 
   const toggleCollapsed = (next) => {
     writeCollapsedPref(next);
     setCollapsed(next);
   };
+
+  useEffect(() => {
+    if (!closeOnRouteChange) return;
+    setCollapsed(true);
+    setPanelOpen(false);
+  }, [closeOnRouteChange, location.pathname]);
+
+  useEffect(() => {
+    if (collapsed) return;
+
+    const syncOverlayTop = () => {
+      const header = document.querySelector(".kitchen-ui-header");
+      if (!header) return;
+      document.documentElement.style.setProperty(
+        "--kitchen-mobile-progress-overlay-top",
+        `${Math.round(header.getBoundingClientRect().bottom + 8)}px`
+      );
+    };
+    const handlePointerDown = (event) => {
+      if (cardRef.current?.contains(event.target)) return;
+      setCollapsed(true);
+      setPanelOpen(false);
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setCollapsed(true);
+        setPanelOpen(false);
+      }
+    };
+
+    syncOverlayTop();
+    window.addEventListener("resize", syncOverlayTop);
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("resize", syncOverlayTop);
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.documentElement.style.removeProperty("--kitchen-mobile-progress-overlay-top");
+    };
+  }, [collapsed]);
 
   if (!state || state.status === "disabled") return null;
   if (state.status === "completed") {
@@ -191,7 +235,19 @@ export default function OnboardingBanner({ suppressEvents = false } = {}) {
   if (collapsed) {
     return (
       <>
-        <div className="onboarding-guide-slim" role="region" aria-label="Guía de inicio">
+        <div
+          className="onboarding-guide-slim"
+          role="button"
+          tabIndex={0}
+          aria-label="Expandir guía de inicio"
+          onClick={() => toggleCollapsed(false)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              toggleCollapsed(false);
+            }
+          }}
+        >
           <div className="onboarding-guide-slim-top">
             <div className="onboarding-guide-slim-heading">
               <StarIcon />
@@ -201,14 +257,9 @@ export default function OnboardingBanner({ suppressEvents = false } = {}) {
               <span className="onboarding-guide-slim-count">
                 {completedCount}/{totalCount} completados
               </span>
-              <button
-                type="button"
-                onClick={() => toggleCollapsed(false)}
-                className="onboarding-guide-collapse-btn"
-                aria-label="Expandir guía"
-              >
+              <span className="onboarding-guide-collapse-btn" aria-hidden="true">
                 <ChevronDownIcon />
-              </button>
+              </span>
             </div>
           </div>
           <div className="onboarding-progress onboarding-progress-compact" style={{ marginBottom: 0 }}>
@@ -222,7 +273,7 @@ export default function OnboardingBanner({ suppressEvents = false } = {}) {
 
   return (
     <>
-      <div className="onboarding-guide-card">
+      <div className="onboarding-guide-card" ref={cardRef}>
         <div className="onboarding-guide-top">
           <div className="onboarding-guide-heading">
             <StarIcon />
