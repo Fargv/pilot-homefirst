@@ -1698,10 +1698,7 @@ body {
 }
 
 .kitchen-week-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
+  display: block;
   margin-bottom: 24px;
 }
 
@@ -2837,9 +2834,7 @@ body {
   }
 
   .kitchen-week-mobile-frame {
-    width: calc(100% - 32px);
-    max-width: 420px;
-    margin: 0 auto;
+    width: 100%;
     gap: 16px;
   }
 
@@ -2884,7 +2879,7 @@ body {
   }
 
   .kitchen-week-header {
-    flex-direction: column;
+    display: block;
     margin-bottom: 0;
   }
 
@@ -4529,7 +4524,7 @@ body {
 .shopping-page-shell {
   background: transparent;
   border-radius: 0;
-  padding: 14px 14px calc(80px + env(safe-area-inset-bottom, 0px));
+  padding: 0 0 calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
 .shopping-main-card {
@@ -6472,7 +6467,7 @@ body {
 @media (max-width: 900px) {
   .shopping-page-shell {
     border-radius: 0;
-    padding: 10px;
+    padding: 0 0 calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
   .shopping-main-card {
@@ -6527,7 +6522,6 @@ body {
   border-radius: 14px;
 }
 
-/* Settings header — noCard PageHeader inside kitchen-card */
 .settings-header {
   padding-bottom: 14px;
 }
@@ -11349,8 +11343,7 @@ td.recipe-qty-scaled {
 
 /* ─── CATALOG PAGE ────────────────────────────────────────── */
 .catalog-page {
-  max-width: 860px;
-  margin: 0 auto;
+  width: 100%;
   padding: 0 0 80px;
 }
 /* .catalog-header replaced by .page-header */
@@ -20905,6 +20898,8 @@ td.recipe-qty-scaled {
   gap: 14px;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   margin-bottom: 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Top row: leading slot + text block + primary action */

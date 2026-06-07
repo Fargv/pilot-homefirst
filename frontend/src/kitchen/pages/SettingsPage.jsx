@@ -2083,21 +2083,20 @@ export default function SettingsPage() {
 
   return (
     <KitchenLayout>
+      <PageHeader
+        title="Configuración"
+        subtitle="Gestiona tu cuenta y preferencias"
+        leading={
+          <div
+            className="settings-header-avatar"
+            style={{ background: selectedColor.background, color: selectedColor.text }}
+          >
+            {userInitials}
+          </div>
+        }
+        className="settings-header"
+      />
       <div className="kitchen-card kitchen-block-gap">
-        <PageHeader
-          noCard
-          title="Configuración"
-          subtitle="Gestiona tu cuenta y preferencias"
-          leading={
-            <div
-              className="settings-header-avatar"
-              style={{ background: selectedColor.background, color: selectedColor.text }}
-            >
-              {userInitials}
-            </div>
-          }
-          className="settings-header"
-        />
 
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}

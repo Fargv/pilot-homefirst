@@ -1179,75 +1179,75 @@ export default function ShoppingPage() {
 
   return (
     <KitchenLayout>
+      <PageHeader
+        title="Lista de la compra"
+        primaryAction={
+          <ShareWhatsAppButton
+            iconOnly
+            size={18}
+            className="shopping-header-wa-btn"
+            buttonLabel="Compartir lista de la compra"
+            items={[
+              {
+                id: "shopping-list",
+                label: "Compartir esta lista",
+                description: "Comparte la lista de la compra de esta semana con acceso protegido.",
+                url: buildShoppingShareUrl(weekStart),
+                message: `Aquí tienes la lista de la compra en HomeFirst: ${buildShoppingShareUrl(weekStart)}`
+              }
+            ]}
+          />
+        }
+        secondaryLeft={
+          <WeekDatePicker
+            selectedWeek={weekStart}
+            onWeekChange={updateVisibleWeek}
+            className="shopping-header-week-picker"
+          />
+        }
+        footer={
+          budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (() => {
+            const pct = Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100));
+            const isOver = budget.spent > budget.weeklyBudget;
+            const label = `Presupuesto · ${formatCurrency(budget.spent)} / ${formatCurrency(budget.weeklyBudget)}`;
+            return (
+              <button
+                type="button"
+                className={`shopping-budget-pill-bar${isOver ? " is-over" : ""}`}
+                onClick={openWeeklyBudgetPanel}
+                aria-label="Ver desglose del presupuesto"
+              >
+                <div className="shopping-budget-pill-fill" style={{ width: `${pct}%` }} />
+                <span className="shopping-budget-pill-text-dark">{label}</span>
+                <span
+                  className="shopping-budget-pill-text-light"
+                  style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }}
+                  aria-hidden="true"
+                >
+                  {label}
+                </span>
+                <ChevronRight size={12} className="shopping-budget-pill-chevron" aria-hidden="true" />
+              </button>
+            );
+          })() : null
+        }
+        className="shopping-header-card"
+      >
+        {/* Tabs */}
+        <div className="shopping-tabs-standalone">
+          <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
+            <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
+            <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
+            {budgetFeatureEnabled ? (
+              <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
+                Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </PageHeader>
       <div className="shopping-page-shell">
         <div className="kitchen-card shopping-main-card">
-          <PageHeader
-            title="Lista de la compra"
-            primaryAction={
-              <ShareWhatsAppButton
-                iconOnly
-                size={18}
-                className="shopping-header-wa-btn"
-                buttonLabel="Compartir lista de la compra"
-                items={[
-                  {
-                    id: "shopping-list",
-                    label: "Compartir esta lista",
-                    description: "Comparte la lista de la compra de esta semana con acceso protegido.",
-                    url: buildShoppingShareUrl(weekStart),
-                    message: `Aquí tienes la lista de la compra en HomeFirst: ${buildShoppingShareUrl(weekStart)}`
-                  }
-                ]}
-              />
-            }
-            secondaryLeft={
-              <WeekDatePicker
-                selectedWeek={weekStart}
-                onWeekChange={updateVisibleWeek}
-                className="shopping-header-week-picker"
-              />
-            }
-            footer={
-              budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (() => {
-                const pct = Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100));
-                const isOver = budget.spent > budget.weeklyBudget;
-                const label = `Presupuesto · ${formatCurrency(budget.spent)} / ${formatCurrency(budget.weeklyBudget)}`;
-                return (
-                  <button
-                    type="button"
-                    className={`shopping-budget-pill-bar${isOver ? " is-over" : ""}`}
-                    onClick={openWeeklyBudgetPanel}
-                    aria-label="Ver desglose del presupuesto"
-                  >
-                    <div className="shopping-budget-pill-fill" style={{ width: `${pct}%` }} />
-                    <span className="shopping-budget-pill-text-dark">{label}</span>
-                    <span
-                      className="shopping-budget-pill-text-light"
-                      style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }}
-                      aria-hidden="true"
-                    >
-                      {label}
-                    </span>
-                    <ChevronRight size={12} className="shopping-budget-pill-chevron" aria-hidden="true" />
-                  </button>
-                );
-              })() : null
-            }
-            className="shopping-header-card"
-          >
-            {/* Tabs */}
-            <div className="shopping-tabs-standalone">
-              <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
-                <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-                <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-                {budgetFeatureEnabled ? (
-                  <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
-                    Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          </PageHeader>
           <div
             className={`shopping-week-content ${contentSlideClass}`}
             onAnimationEnd={() => setContentSlideClass("")}
