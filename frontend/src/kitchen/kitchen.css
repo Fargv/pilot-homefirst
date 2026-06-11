@@ -3812,6 +3812,57 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(var(--hf-brand-rgb), 0); }
 }
 
+/* ── Route-level page skeleton (lazy chunk loading) ── */
+.hf-page-skel {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.hf-page-skel-header,
+.hf-page-skel-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--text-primary) 6%, var(--hf-surface));
+}
+
+.hf-page-skel-header {
+  height: 48px;
+  width: 60%;
+  max-width: 320px;
+}
+
+.hf-page-skel-card {
+  height: 110px;
+}
+
+.hf-page-skel-card-short {
+  height: 72px;
+}
+
+.hf-page-skel-header::after,
+.hf-page-skel-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--hf-surface) 60%, transparent) 50%,
+    transparent 100%
+  );
+  animation: hf-page-skel-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes hf-page-skel-shimmer {
+  100% { transform: translateX(100%); }
+}
+
 /* Mount-animation utilities (stagger via --hf-anim-i custom property) */
 .hf-anim-fade { animation: hf-fade-in var(--motion-normal) var(--ease-out) both; }
 .hf-anim-rise {
