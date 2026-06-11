@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { countUp, glowPulse } from "../motion.js";
 import PageHeader from "../components/PageHeader.jsx";
 import { apiRequest, createCheckoutSession } from "../api.js";
 
@@ -110,9 +111,21 @@ function StarIcon() {
 // ─── Bites Wallet Panel ───────────────────────────────────────────────────────
 
 function CatalogBitesWallet({ wallet, plan, bitesConfig, onBuyBites }) {
+  const totalBites = wallet?.totalBites ?? 0;
+  const countRef = useRef(null);
+  const prevBitesRef = useRef(totalBites);
+
+  useEffect(() => {
+    const prev = prevBitesRef.current;
+    prevBitesRef.current = totalBites;
+    if (prev === totalBites || !countRef.current) return;
+    countUp(countRef.current, { from: prev, to: totalBites });
+    if (totalBites > prev) glowPulse(countRef.current.parentElement);
+  }, [totalBites]);
+
   if (!wallet) return null;
 
-  const { freeBitesBalance = 0, purchasedBitesBalance = 0, totalBites = 0, daysUntilNextGrant = null } = wallet;
+  const { freeBitesBalance = 0, purchasedBitesBalance = 0, daysUntilNextGrant = null } = wallet;
   const monthlyGrant = bitesConfig?.monthlyGrant ?? 0;
 
   const breakdownParts = [];
@@ -127,7 +140,7 @@ function CatalogBitesWallet({ wallet, plan, bitesConfig, onBuyBites }) {
 
       <div className="catalog-bites-wallet-hero">
         <BitesIcon size={36} color="#4338ca" decorative />
-        <span className="catalog-bites-wallet-hero-count">{totalBites}</span>
+        <span className="catalog-bites-wallet-hero-count" ref={countRef}>{totalBites}</span>
       </div>
 
       <div className="catalog-bites-wallet-meta">

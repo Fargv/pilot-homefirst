@@ -18773,7 +18773,17 @@ td.recipe-qty-scaled {
 }
 
 .weekly-challenge-status.is-done {
-  color: #16a34a;
+  color: var(--success-text, #16a34a);
+}
+
+.weekly-challenge-status.is-done svg {
+  animation: hf-check-pop var(--motion-slow) var(--ease-spring) both;
+}
+
+@keyframes hf-check-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .weekly-challenge-circle {
