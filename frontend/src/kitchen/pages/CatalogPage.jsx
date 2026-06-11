@@ -316,7 +316,7 @@ function CheckIcon() {
   );
 }
 
-function PackCard({ pack, onAction, onBuyBites, onUninstall }) {
+function PackCard({ pack, onAction, onBuyBites, onUninstall, animIndex = 0 }) {
   const { entitlement } = pack;
   const [loading, setLoading] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
@@ -354,7 +354,10 @@ function PackCard({ pack, onAction, onBuyBites, onUninstall }) {
   const priceLine = getPackPriceLine(entitlement);
 
   return (
-    <div className={`kitchen-card catalog-pack-card ${pack.featured ? "catalog-pack-featured" : ""}`}>
+    <div
+      className={`kitchen-card catalog-pack-card hf-anim-rise ${pack.featured ? "catalog-pack-featured" : ""}`}
+      style={{ "--hf-anim-i": animIndex }}
+    >
       <div className="catalog-pack-cover">
         {coverUrl && !coverFailed
           ? <img src={coverUrl} alt={pack.title} className="catalog-pack-cover-img" onError={() => setCoverFailed(true)} />
@@ -914,18 +917,27 @@ export default function CatalogPage() {
         )}
 
         {!loading && !error && visiblePacks.length === 0 && (
-          <div className="catalog-empty">
-            <PackIcon />
-            <p>No hay packs disponibles en esta categoría.</p>
+          <div className="hf-empty catalog-empty">
+            <span className="hf-empty-icon"><PackIcon /></span>
+            <p className="hf-empty-title">No hay packs con estos filtros</p>
+            <p className="hf-empty-hint">Prueba con otra categoría o limpia los filtros para ver todo el catálogo.</p>
+            <button
+              type="button"
+              className="kitchen-ui-button kitchen-ui-button-secondary"
+              onClick={() => { setActiveTab("all"); setHideInstalled(false); setPriceFilter("all"); }}
+            >
+              Limpiar filtros
+            </button>
           </div>
         )}
 
         {!loading && !error && visiblePacks.length > 0 && (
           <div className="catalog-grid">
-            {visiblePacks.map((pack) => (
+            {visiblePacks.map((pack, packIndex) => (
               <PackCard
                 key={String(pack.id)}
                 pack={pack}
+                animIndex={packIndex}
                 onAction={handlePackAction}
                 onBuyBites={() => setBitesStoreOpen(true)}
                 onUninstall={handleUninstall}

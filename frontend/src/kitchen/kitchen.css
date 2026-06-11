@@ -12424,9 +12424,11 @@ td.recipe-qty-scaled {
   overflow: hidden;
   transition: box-shadow var(--motion-normal), transform var(--motion-normal);
 }
-.catalog-pack-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12);
+@media (hover: hover) {
+  .catalog-pack-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
 }
 .catalog-pack-featured {
   border-color: #a5b4fc;
