@@ -1379,7 +1379,7 @@ export default function DishesPage() {
           </div>
         ) : (
           <div className="kitchen-dishes-grid">
-            {visibleDishes.map((dish) => {
+            {visibleDishes.map((dish, dishIndex) => {
               const ingredientNames = (dish.ingredients || [])
                 .map((item) => item.displayName)
                 .filter(Boolean);
@@ -1395,9 +1395,9 @@ export default function DishesPage() {
               const packColor = isCatalogDish && dish.sourcePackColor ? dish.sourcePackColor : null;
               return (
                 <article
-                  className={`kitchen-dish-card ${isCatalogDish ? "is-catalog" : ""} is-origin-${dishOrigin.type}`}
+                  className={`kitchen-dish-card hf-anim-rise ${isCatalogDish ? "is-catalog" : ""} is-origin-${dishOrigin.type}`}
                   key={dish._id}
-                  style={packColor ? { "--dish-pack-color": packColor } : undefined}
+                  style={{ "--hf-anim-i": dishIndex, ...(packColor ? { "--dish-pack-color": packColor } : null) }}
                 >
                   <div className="kitchen-dish-main">
                     <div className="kitchen-dish-title-row">
