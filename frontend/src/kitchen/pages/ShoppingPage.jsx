@@ -1254,6 +1254,26 @@ export default function ShoppingPage() {
             ) : null}
           </div>
         </div>
+        {Number.isFinite(pendingCount) && pendingCount + (purchasedCount || 0) > 0 ? (
+          <div
+            className="shopping-progress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={pendingCount + (purchasedCount || 0)}
+            aria-valuenow={purchasedCount || 0}
+            aria-label="Progreso de la compra"
+          >
+            <div className="shopping-progress-track">
+              <div
+                className={`shopping-progress-fill ${pendingCount === 0 ? "is-complete" : ""}`}
+                style={{ width: `${Math.round(((purchasedCount || 0) / (pendingCount + (purchasedCount || 0))) * 100)}%` }}
+              />
+            </div>
+            <span className="shopping-progress-label">
+              {purchasedCount || 0} de {pendingCount + (purchasedCount || 0)}
+            </span>
+          </div>
+        ) : null}
       </PageHeader>
       <div className="shopping-page-shell">
         <div className="kitchen-card shopping-main-card">

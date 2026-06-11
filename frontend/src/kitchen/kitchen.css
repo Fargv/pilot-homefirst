@@ -21335,6 +21335,41 @@ td.recipe-qty-scaled {
   padding-top: 4px;
 }
 
+/* ── Shopping progress bar (header) ── */
+.shopping-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 2px 0;
+}
+
+.shopping-progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--hf-brand) 12%, var(--chip-bg));
+  overflow: hidden;
+}
+
+.shopping-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--hf-brand);
+  transition: width var(--motion-slow) var(--ease-out), background var(--motion-normal) var(--ease-out);
+}
+
+.shopping-progress-fill.is-complete {
+  background: var(--success-text);
+}
+
+.shopping-progress-label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Budget breakdown modal ── */
 .shopping-budget-modal-backdrop {
   position: fixed;
