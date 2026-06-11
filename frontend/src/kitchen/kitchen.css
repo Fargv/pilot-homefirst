@@ -1625,6 +1625,7 @@ body {
   justify-content: center;
   padding: 20px;
   z-index: 40;
+  animation: hf-fade-in var(--motion-fast) var(--ease-out) both;
 }
 
 .kitchen-modal-overlay {
@@ -1636,6 +1637,7 @@ body {
   justify-content: center;
   padding: 20px;
   z-index: 60;
+  animation: hf-fade-in var(--motion-fast) var(--ease-out) both;
 }
 
 .kitchen-modal {
@@ -1644,11 +1646,12 @@ body {
   background: white;
   border-radius: var(--radius-lg);
   padding: 24px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+  box-shadow: var(--shadow-overlay);
   display: flex;
   flex-direction: column;
   gap: 20px;
   overflow: hidden;
+  animation: hf-pop-in var(--motion-normal) var(--ease-out) both;
 }
 
 .kitchen-modal .kitchen-form {
@@ -3139,6 +3142,7 @@ body {
   justify-content: center;
   padding: 20px;
   z-index: 60;
+  animation: hf-fade-in var(--motion-fast) var(--ease-out) both;
 }
 
 .kitchen-context-modal-backdrop.inner {
@@ -3149,14 +3153,15 @@ body {
 .kitchen-context-modal {
   width: min(420px, 100%);
   max-height: min(80vh, 560px);
-  background: #ffffff;
+  background: var(--modal-bg);
   border-radius: var(--radius-lg);
   padding: 20px;
-  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
+  box-shadow: var(--shadow-overlay);
   display: flex;
   flex-direction: column;
   gap: 16px;
   overflow: hidden;
+  animation: hf-pop-in var(--motion-normal) var(--ease-out) both;
 }
 
 .kitchen-context-modal.small {
@@ -3763,6 +3768,47 @@ body {
 .hf-empty .kitchen-ui-button {
   margin-top: var(--space-3);
 }
+
+/* ══════════════════════════════════════════════════════════════
+   MOTION SYSTEM — shared keyframes + utility classes
+   JS counterpart: kitchen/motion.js (anime.js helpers).
+   The global prefers-reduced-motion block disables all of these.
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes hf-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes hf-rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hf-pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes hf-sheet-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hf-glow-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(var(--hf-brand-rgb), 0.45); }
+  70%  { box-shadow: 0 0 0 10px rgba(var(--hf-brand-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--hf-brand-rgb), 0); }
+}
+
+/* Mount-animation utilities (stagger via --hf-anim-i custom property) */
+.hf-anim-fade { animation: hf-fade-in var(--motion-normal) var(--ease-out) both; }
+.hf-anim-rise {
+  animation: hf-rise-in var(--motion-slow) var(--ease-out) both;
+  animation-delay: calc(var(--hf-anim-i, 0) * 40ms);
+}
+.hf-anim-pop { animation: hf-pop-in var(--motion-normal) var(--ease-out) both; }
+.hf-glow-pulse { animation: hf-glow-pulse 600ms var(--ease-out) 1; }
 
 .kitchen-ui-header,
 .kitchen-ui-bottom-nav {
@@ -4500,15 +4546,17 @@ body {
   z-index: 45;
   display: grid;
   place-items: center;
+  animation: hf-fade-in var(--motion-fast) var(--ease-out) both;
 }
 
 .kitchen-ui-sheet {
   width: min(720px, 100%);
-  background: #fff;
+  background: var(--modal-bg);
   border-radius: var(--hf-radius-xl);
   padding: 24px;
-  border: 1px solid #dde3f6;
-  box-shadow: 0 28px 52px rgba(15, 23, 42, 0.24);
+  border: 1px solid var(--modal-border);
+  box-shadow: var(--shadow-overlay);
+  animation: hf-pop-in var(--motion-normal) var(--ease-out) both;
 }
 
 .kitchen-ui-sheet-header {
@@ -4543,6 +4591,7 @@ body {
 
   .kitchen-ui-sheet {
     border-radius: var(--hf-radius-xl) var(--hf-radius-xl) 0 0;
+    animation: hf-sheet-up var(--motion-normal) var(--ease-out) both;
   }
 }
 
