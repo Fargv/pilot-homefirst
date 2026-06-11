@@ -2,6 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { SlidersHorizontal, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
+import { createSyncedApi, dishesQuery, fetchCached } from "../queryClient.js";
+
+// Non-GET calls invalidate caches affected by dish edits
+const apiSync = createSyncedApi([["kitchen", "dishes"], ["planning"], ["shopping"]]);
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import DishModal from "../components/DishModal.jsx";
@@ -194,7 +198,7 @@ export default function DishesPage() {
     setLoading(true);
     setDishError("");
     try {
-      const data = await apiRequest("/api/kitchen/dishes");
+      const data = await fetchCached(dishesQuery());
       setDishes(data.dishes || []);
     } catch (err) {
       setDishError(err.message || "No se pudieron cargar los platos.");
@@ -215,7 +219,7 @@ export default function DishesPage() {
 
   const loadCategories = async () => {
     try {
-      const data = await apiRequest("/api/categories");
+      const data = await apiSync("/api/categories");
       setCategories(data.categories || []);
     } catch (err) {
       setDishError(err.message || "No se pudieron cargar las categorías.");
@@ -228,7 +232,7 @@ export default function DishesPage() {
 
   const loadDishCategories = async () => {
     try {
-      const data = await apiRequest("/api/kitchen/dish-categories");
+      const data = await apiSync("/api/kitchen/dish-categories");
       setDishCategories(data.categories || []);
     } catch (err) {
       setDishError(err.message || "No se pudieron cargar las categorías de plato.");
@@ -287,7 +291,7 @@ export default function DishesPage() {
         })),
         ...overrides
       };
-      const data = await apiRequest(`/api/kitchen/dishes/${dish._id}`, {
+      const data = await apiSync(`/api/kitchen/dishes/${dish._id}`, {
         method: "PUT",
         body: JSON.stringify(payload)
       });
@@ -333,7 +337,7 @@ export default function DishesPage() {
   );
 
   const onCategoryCreated = async (name, colors = null) => {
-    const data = await apiRequest("/api/categories", {
+    const data = await apiSync("/api/categories", {
       method: "POST",
       body: JSON.stringify({
         name,
@@ -486,7 +490,7 @@ export default function DishesPage() {
     setIngredientsLoading(true);
     setIngredientsError("");
     try {
-      const data = await apiRequest("/api/kitchenIngredients?limit=0");
+      const data = await apiSync("/api/kitchenIngredients?limit=0");
       setIngredients(data.ingredients || []);
     } catch (err) {
       setIngredientsError(err.message || "No se pudieron cargar los ingredientes.");
@@ -535,7 +539,7 @@ export default function DishesPage() {
     if (!ingredient?._id) return;
     const sourceName = (ingredient.name || "Ingrediente").trim();
     const duplicateName = `${sourceName} (copia)`;
-    await apiRequest("/api/kitchenIngredients", {
+    await apiSync("/api/kitchenIngredients", {
       method: "POST",
       body: JSON.stringify({
         name: duplicateName,
@@ -549,7 +553,7 @@ export default function DishesPage() {
     if (!ingredient?._id) return;
     const confirmed = window.confirm(`¿Estás seguro de eliminar ${ingredient.name}?`);
     if (!confirmed) return;
-    await apiRequest(`/api/kitchenIngredients/${ingredient._id}`, { method: "DELETE" });
+    await apiSync(`/api/kitchenIngredients/${ingredient._id}`, { method: "DELETE" });
     if (activeIngredient?._id === ingredient._id) closeIngredientModal();
     if (ingredientInfoOpenId === ingredient._id) setIngredientInfoOpenId(null);
     await loadIngredients();
@@ -669,7 +673,7 @@ export default function DishesPage() {
     try {
       setRevertDishModal((prev) => ({ ...prev, reverting: true }));
       const revertedId = String(revertDishModal.dish._id);
-      const data = await apiRequest(`/api/kitchen/dishes/${revertedId}/revert-override`, { method: "POST" });
+      const data = await apiSync(`/api/kitchen/dishes/${revertedId}/revert-override`, { method: "POST" });
       if (data?.removedOverrideId) {
         setDishes((prev) => prev.filter((item) => String(item?._id) !== String(data.removedOverrideId)));
       }
@@ -693,7 +697,7 @@ export default function DishesPage() {
     try {
       setDeleteDishModal((prev) => ({ ...prev, deleting: true }));
       const deletedId = String(deleteDishModal.dish._id);
-      await apiRequest(`/api/kitchen/dishes/${deletedId}`, { method: "DELETE" });
+      await apiSync(`/api/kitchen/dishes/${deletedId}`, { method: "DELETE" });
       setDishes((prev) => prev.filter((item) => String(item?._id) !== deletedId));
       if (activeDish?._id === deletedId) closeModal();
       if (dishInfoOpenId === deletedId) closeDishInfo();

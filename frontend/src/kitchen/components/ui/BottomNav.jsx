@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 
-export default function BottomNav({ links = [], onNavigate }) {
+export default function BottomNav({ links = [], onNavigate, onPrefetch }) {
   return (
     <nav className="kitchen-ui-bottom-nav" aria-label="Navegación inferior">
       <div className="kitchen-ui-bottom-nav-inner">
@@ -12,6 +12,8 @@ export default function BottomNav({ links = [], onNavigate }) {
               key={link.to}
               to={link.to}
               onClick={onNavigate}
+              onMouseEnter={onPrefetch ? () => onPrefetch(link.to) : undefined}
+              onTouchStart={onPrefetch ? () => onPrefetch(link.to) : undefined}
               className={({ isActive }) => `kitchen-ui-bottom-nav-item${isActive ? " active" : ""}`}
             >
               <Icon className="kitchen-bottom-nav-icon" />

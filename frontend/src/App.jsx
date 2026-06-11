@@ -28,6 +28,8 @@ import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import PwaInstallPrompt from "./kitchen/components/PwaInstallPrompt.jsx";
 import { AppLoadingScreen } from "./kitchen/components/WeekPageSkeleton.jsx";
 import "./kitchen/kitchen.css";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./kitchen/queryClient.js";
 import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 import { OnboardingProvider } from "./kitchen/contexts/OnboardingContext.jsx";
 import { WeeklyChallengeProvider } from "./kitchen/contexts/WeeklyChallengeContext.jsx";
@@ -85,6 +87,7 @@ function BootstrapRedirect() {
 
 function AppRoutes() {
   return (
+    <QueryClientProvider client={queryClient}>
     <ActiveWeekProvider>
       <OnboardingProvider>
       <WeeklyChallengeProvider>
@@ -212,6 +215,7 @@ function AppRoutes() {
       </WeeklyChallengeProvider>
       </OnboardingProvider>
     </ActiveWeekProvider>
+    </QueryClientProvider>
   );
 }
 

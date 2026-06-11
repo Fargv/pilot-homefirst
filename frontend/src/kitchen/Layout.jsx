@@ -17,6 +17,16 @@ import { CookingSessionProvider } from "./contexts/CookingSessionContext.jsx";
 import CookingSessionBanner from "./components/cooking/CookingSessionBanner.jsx";
 import CookingSessionStepper from "./components/cooking/CookingSessionStepper.jsx";
 import useMobileRouteSwipeNavigation from "./hooks/useMobileRouteSwipeNavigation.js";
+import { useActiveWeek } from "./weekContext.jsx";
+import {
+  queryClient,
+  planningQuery,
+  dishesQuery,
+  shoppingQuery,
+  catalogQuery,
+  userQuery,
+  membersQuery,
+} from "./queryClient.js";
 
 function CalendarIcon(props) {
   return (
@@ -266,6 +276,28 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
     []
   );
 
+  const { activeWeek } = useActiveWeek();
+
+  // Hover-to-click is ~200ms: prefetching on hover/touchstart means the
+  // destination's data is usually cached before navigation happens.
+  const prefetchRoute = React.useCallback((to) => {
+    try {
+      if (to === "/kitchen/semana") {
+        if (activeWeek) queryClient.prefetchQuery(planningQuery(activeWeek));
+        queryClient.prefetchQuery(dishesQuery("false"));
+        queryClient.prefetchQuery(membersQuery());
+      } else if (to === "/kitchen/platos") {
+        queryClient.prefetchQuery(dishesQuery());
+      } else if (to === "/kitchen/compra") {
+        if (activeWeek) queryClient.prefetchQuery(shoppingQuery(activeWeek));
+      } else if (to === "/kitchen/catalogo") {
+        queryClient.prefetchQuery(catalogQuery());
+      } else if (to.startsWith("/kitchen/configuracion")) {
+        queryClient.prefetchQuery(userQuery(user?.id));
+      }
+    } catch { /* prefetch is best-effort */ }
+  }, [activeWeek, user?.id]);
+
   const bottomNavLinks = useMemo(
     () => [
       { to: "/kitchen/semana", label: "Planificación", icon: CalendarIcon },
@@ -400,7 +432,13 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
         center={(
           <nav className="kitchen-nav-desktop">
             {navLinks.map((link) => (
-              <NavLink key={link.to} to={link.to} onClick={onNavigate}>
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={onNavigate}
+                onMouseEnter={() => prefetchRoute(link.to)}
+                onFocus={() => prefetchRoute(link.to)}
+              >
                 {link.label}
               </NavLink>
             ))}
@@ -544,7 +582,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
         </div>
         {children}
       </div>
-      <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
+      <BottomNav links={bottomNavLinks} onNavigate={onNavigate} onPrefetch={prefetchRoute} />
       {/* Milestone reward toast — portal into body, above everything */}
       <MilestoneToast />
       {/* Guided cooking mode — banner + full-screen stepper */}

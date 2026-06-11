@@ -5,6 +5,11 @@ import WeekDatePicker from "../components/ui/WeekDatePicker.jsx";
 import { UNSAFE_NavigationContext as NavigationContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
+import { createSyncedApi, fetchCached, primeCache, shoppingQuery } from "../queryClient.js";
+
+// Shopping mutations return the fresh payload (applyPayload primes the cache);
+// invalidation covers endpoints that do not return the full list
+const apiSync = createSyncedApi([["shopping"]]);
 import { useAuth } from "../auth";
 import ShareWhatsAppButton from "../components/ShareWhatsAppButton.jsx";
 import { buildShoppingShareUrl, normalizeWeekParam } from "../deepLinks.js";
@@ -373,6 +378,7 @@ export default function ShoppingPage() {
   }, [budgetFeatureEnabled, navigate, weekStart]);
 
   const applyPayload = (data) => {
+    primeCache(shoppingQuery(weekStart), data);
     const nextStores = Array.isArray(data?.stores) ? data.stores : [];
     const nextBudgetFeatureEnabled = data?.featureAvailability?.budget !== false;
     const nextBudget = nextBudgetFeatureEnabled ? {
@@ -456,7 +462,7 @@ export default function ShoppingPage() {
     if (isDiodGlobalMode) return;
     if (!silent) setIsRefreshing(true);
     try {
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}`);
+      const data = await fetchCached(shoppingQuery(weekStart));
       applyPayload(data);
       if (checkBasicsPopup) {
         if (canUseBasicsFeature(user)) {
@@ -567,7 +573,7 @@ export default function ShoppingPage() {
     let active = true;
     const loadCategories = async () => {
       try {
-        const categoriesData = await apiRequest("/api/categories");
+        const categoriesData = await apiSync("/api/categories");
         if (!active) return;
         setQuickCategories(categoriesData.categories || []);
       } catch {
@@ -584,7 +590,7 @@ export default function ShoppingPage() {
   useEffect(() => {
     const onCatalogInvalidated = async () => {
       try {
-        const categoriesData = await apiRequest("/api/categories");
+        const categoriesData = await apiSync("/api/categories");
         setQuickCategories(categoriesData.categories || []);
       } catch {
         setQuickCategories([]);
@@ -660,7 +666,7 @@ export default function ShoppingPage() {
     setQuickSearching(true);
     const timer = setTimeout(async () => {
       try {
-        const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(quickQuery)}&limit=20`);
+        const data = await apiSync(`/api/kitchenIngredients?q=${encodeURIComponent(quickQuery)}&limit=20`);
         if (!active) return;
         setQuickSuggestions(data.ingredients || []);
       } catch {
@@ -686,7 +692,7 @@ export default function ShoppingPage() {
       let lastData;
       for (const item of group.items) {
         // eslint-disable-next-line no-await-in-loop
-        lastData = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
+        lastData = await apiSync(`/api/kitchen/shopping/${weekStart}/item`, {
           method: "PUT",
           body: JSON.stringify({
             canonicalName: item.canonicalName,
@@ -748,7 +754,7 @@ export default function ShoppingPage() {
   };
 
   const addIngredientToList = async (ingredientId, categoryId) => {
-    const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items`, {
+    const data = await apiSync(`/api/kitchen/shopping/${weekStart}/items`, {
       method: "POST",
       body: JSON.stringify({ ingredientId, categoryId: categoryId || null, storeId: selectedStoreRef.current || null })
     });
@@ -756,7 +762,7 @@ export default function ShoppingPage() {
   };
 
   const createHouseholdIngredient = async (name, categoryId) => {
-    const data = await apiRequest("/api/kitchenIngredients", {
+    const data = await apiSync("/api/kitchenIngredients", {
       method: "POST",
       body: JSON.stringify({
         name: name.trim(),
@@ -834,7 +840,7 @@ export default function ShoppingPage() {
       return;
     }
     try {
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/${item.itemId}`, { method: "DELETE" });
+      const data = await apiSync(`/api/kitchen/shopping/${weekStart}/items/${item.itemId}`, { method: "DELETE" });
       applyPayload(data);
     } catch (err) {
       pushToast({ type: "error", message: err.message || "No se pudo eliminar el item." });
@@ -844,7 +850,7 @@ export default function ShoppingPage() {
   const adjustItemOccurrences = async (item, delta) => {
     if (!item?.itemId || !Number.isInteger(delta) || delta === 0) return;
     try {
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/${item.itemId}/occurrences`, {
+      const data = await apiSync(`/api/kitchen/shopping/${weekStart}/items/${item.itemId}/occurrences`, {
         method: "PUT",
         body: JSON.stringify({ delta })
       });
@@ -869,7 +875,7 @@ export default function ShoppingPage() {
     }
 
     try {
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
+      const data = await apiSync(`/api/kitchen/shopping/${weekStart}/item`, {
         method: "PUT",
         body: JSON.stringify({
           canonicalName: item.canonicalName,
@@ -910,7 +916,7 @@ export default function ShoppingPage() {
 
   const updatePurchasedItemStore = async (item, storeId) => {
     try {
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item/store`, {
+      const data = await apiSync(`/api/kitchen/shopping/${weekStart}/item/store`, {
         method: "PUT",
         body: JSON.stringify({ canonicalName: item.canonicalName, ingredientId: item.ingredientId, storeId: storeId || null })
       });
@@ -924,7 +930,7 @@ export default function ShoppingPage() {
   const saveGroupAmount = async (group) => {
     if (!group.purchaseSessionId) return;
     try {
-      await apiRequest(`/api/kitchen/shopping/purchase-sessions/${group.purchaseSessionId}/amount`, {
+      await apiSync(`/api/kitchen/shopping/purchase-sessions/${group.purchaseSessionId}/amount`, {
         method: "PUT",
         body: JSON.stringify({ amount: editingGroupAmount })
       });
@@ -937,7 +943,7 @@ export default function ShoppingPage() {
 
   const updateGroupStore = async (group, newStoreId) => {
     try {
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/purchased/group-store`, {
+      const data = await apiSync(`/api/kitchen/shopping/${weekStart}/purchased/group-store`, {
         method: "PUT",
         body: JSON.stringify({ purchasedDate: group.purchasedDate, storeId: newStoreId || null })
       });
@@ -950,7 +956,7 @@ export default function ShoppingPage() {
 
   const setAllItemsStatus = async (status) => {
     try {
-      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/items/status`, {
+      const data = await apiSync(`/api/kitchen/shopping/${weekStart}/items/status`, {
         method: "PUT",
         body: JSON.stringify({
           status,
@@ -983,7 +989,7 @@ export default function ShoppingPage() {
     const name = window.prompt("Nombre del supermercado");
     if (!name || !name.trim()) return;
     try {
-      await apiRequest("/api/kitchen/shopping/stores", {
+      await apiSync("/api/kitchen/shopping/stores", {
         method: "POST",
         body: JSON.stringify({ name: name.trim() })
       });
@@ -1011,7 +1017,7 @@ export default function ShoppingPage() {
     if (!purchaseConfirmTarget?.id || purchaseConfirmBusy) return;
     setPurchaseConfirmBusy(true);
     try {
-      await apiRequest(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/postpone`, {
+      await apiSync(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/postpone`, {
         method: "POST"
       });
       await loadList({ silent: true });
@@ -1037,7 +1043,7 @@ export default function ShoppingPage() {
     if (!purchaseConfirmTarget?.id || purchaseConfirmBusy) return;
     setPurchaseConfirmBusy(true);
     try {
-      await apiRequest(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/complete`, {
+      await apiSync(`/api/kitchen/shopping/purchase-sessions/${purchaseConfirmTarget.id}/complete`, {
         method: "POST",
         body: JSON.stringify({
           storeId: purchaseConfirmStoreId || null,

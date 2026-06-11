@@ -2,6 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { countUp, glowPulse } from "../motion.js";
 import PageHeader from "../components/PageHeader.jsx";
 import { apiRequest, createCheckoutSession } from "../api.js";
+import { catalogQuery, createSyncedApi, fetchCached } from "../queryClient.js";
+
+// Pack installs add dishes and spend bites — invalidate both areas
+const apiSync = createSyncedApi([["catalog"], ["kitchen", "dishes"], ["user"]]);
 
 const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
 const IS_DEV = import.meta.env.DEV;
@@ -605,7 +609,7 @@ export default function CatalogPage() {
   const loadCatalog = useCallback(async () => {
     setError("");
     try {
-      const data = await apiRequest("/api/kitchen/catalog/packs");
+      const data = await fetchCached(catalogQuery());
       setPacks(data.packs || []);
       setPlan(data.plan || "basic");
       if (data.wallet) setWallet(data.wallet);
@@ -714,7 +718,7 @@ export default function CatalogPage() {
 
     if (entitlement.canUnlockWithBites && !entitlement.owned) {
       try {
-        const result = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/unlock`, {
+        const result = await apiSync(`/api/kitchen/catalog/packs/${pack.id}/unlock`, {
           method: "POST",
           body: JSON.stringify({ paymentMethod: "bites" })
         });
@@ -729,7 +733,7 @@ export default function CatalogPage() {
       }
     } else if (!entitlement.owned && entitlement.canClaimWithPlan) {
       try {
-        await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/claim`, { method: "POST" });
+        await apiSync(`/api/kitchen/catalog/packs/${pack.id}/claim`, { method: "POST" });
       } catch (err) {
         if (!err.message?.includes("ya está en tu biblioteca")) {
           showToast(err.message || "Error al reclamar el pack.", "error");
@@ -739,7 +743,7 @@ export default function CatalogPage() {
     }
 
     try {
-      const result = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/install`, { method: "POST" });
+      const result = await apiSync(`/api/kitchen/catalog/packs/${pack.id}/install`, { method: "POST" });
 
       if (result.alreadyInstalled) {
         showToast("Este pack ya estaba instalado.", "info");
@@ -809,7 +813,7 @@ export default function CatalogPage() {
 
   const handleUninstall = useCallback(async (pack) => {
     try {
-      const result = await apiRequest(`/api/kitchen/catalog/packs/${pack.id}/install`, { method: "DELETE" });
+      const result = await apiSync(`/api/kitchen/catalog/packs/${pack.id}/install`, { method: "DELETE" });
       showToast(`Pack desinstalado. ${result.dishesRemoved} platos eliminados de tu biblioteca.`, "success");
       await loadCatalog();
     } catch (err) {
@@ -991,7 +995,7 @@ export default function CatalogPage() {
             markDietPackModalDismissed(packId);
             setDietInstallModal(null);
             try {
-              await apiRequest("/api/kitchen/household/preferences", {
+              await apiSync("/api/kitchen/household/preferences", {
                 method: "PATCH",
                 body: JSON.stringify({
                   randomizationUseDietFilter: true,

@@ -4,6 +4,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import { apiRequest, undoCancelSubscription } from "../api.js";
+import { createSyncedApi, fetchCached, membersQuery, userQuery } from "../queryClient.js";
+
+// Settings mutations touch household/user data consumed across the app
+const apiSync = createSyncedApi([["user"], ["planning"], ["shopping"], ["kitchen", "dishes"]]);
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import SettingsSharePanel from "../components/SettingsSharePanel.jsx";
 import PushNotificationsPanel from "../components/PushNotificationsPanel.jsx";
@@ -479,7 +483,7 @@ export default function SettingsPage() {
     setError("");
     try {
       const householdSummaryRequest = (!isDiod || user?.activeHouseholdId)
-        ? apiRequest("/api/kitchen/household/summary")
+        ? fetchCached(userQuery(user?.id))
         : Promise.resolve({ household: { name: "", inviteCode: "" } });
       const requests = [
         apiRequest("/api/categories?includeInactive=true"),
@@ -487,7 +491,7 @@ export default function SettingsPage() {
         householdSummaryRequest
       ];
       if (!isDiod || user?.activeHouseholdId) {
-        requests.push(apiRequest("/api/kitchen/users/members"));
+        requests.push(fetchCached(membersQuery()));
       } else {
         requests.push(Promise.resolve({ users: [] }));
       }
@@ -597,7 +601,7 @@ export default function SettingsPage() {
   const loadBitesHistory = async () => {
     setBitesHistoryLoading(true);
     try {
-      const data = await apiRequest("/api/kitchen/household/bites-history");
+      const data = await apiSync("/api/kitchen/household/bites-history");
       setBitesHistory(data?.transactions || []);
       setBitesSummary({ free: data?.freeBitesBalance ?? 0, purchased: data?.purchasedBitesBalance ?? 0 });
     } catch (err) {
@@ -616,7 +620,7 @@ export default function SettingsPage() {
     setBasicsLoading(true);
     setBasicsError("");
     try {
-      const data = await apiRequest("/api/kitchen/basics");
+      const data = await apiSync("/api/kitchen/basics");
       setBasics(data.basics || []);
     } catch (err) {
       setBasicsError(err.message || "No se pudieron cargar los básicos.");
@@ -637,7 +641,7 @@ export default function SettingsPage() {
   const deleteBasic = async (id) => {
     setBasicsError("");
     try {
-      await apiRequest(`/api/kitchen/basics/${id}`, { method: "DELETE" });
+      await apiSync(`/api/kitchen/basics/${id}`, { method: "DELETE" });
       await loadBasics();
     } catch (err) {
       setBasicsError(err.message || "No se pudo eliminar el básico.");
@@ -647,7 +651,7 @@ export default function SettingsPage() {
   const toggleBasicActive = async (id, currentActive) => {
     setBasicsError("");
     try {
-      await apiRequest(`/api/kitchen/basics/${id}`, {
+      await apiSync(`/api/kitchen/basics/${id}`, {
         method: "PUT",
         body: JSON.stringify({ active: !currentActive })
       });
@@ -666,7 +670,7 @@ export default function SettingsPage() {
     try {
       const safeInitials = (profileInitials.trim().toUpperCase() || initialsFromName(safeDisplayName)).slice(0, 3);
       const canEditOwnActive = isOwner || isDiod;
-      const data = await apiRequest("/api/kitchen/users/me", {
+      const data = await apiSync("/api/kitchen/users/me", {
         method: "PATCH",
         body: JSON.stringify({
           displayName: safeDisplayName,
@@ -699,7 +703,7 @@ export default function SettingsPage() {
       return;
     }
     try {
-      await apiRequest("/api/kitchen/users/me/password", {
+      await apiSync("/api/kitchen/users/me/password", {
         method: "PUT",
         body: JSON.stringify({ currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword })
       });
@@ -718,7 +722,7 @@ export default function SettingsPage() {
       return;
     }
     try {
-      const data = await apiRequest("/api/kitchen/household/name", {
+      const data = await apiSync("/api/kitchen/household/name", {
         method: "PATCH",
         body: JSON.stringify({ name: safeName })
       });
@@ -772,7 +776,7 @@ export default function SettingsPage() {
 
     setHouseholdPrefsSaving(true);
     try {
-      const data = await apiRequest("/api/kitchen/household/preferences", {
+      const data = await apiSync("/api/kitchen/household/preferences", {
         method: "PATCH",
         body: JSON.stringify({
           avoidRepeatsEnabled: nextEnabled,
@@ -827,7 +831,7 @@ export default function SettingsPage() {
       confirmDeleteHousehold: false
     });
     try {
-      const data = await apiRequest("/api/kitchen/users/me/delete-preview");
+      const data = await apiSync("/api/kitchen/users/me/delete-preview");
       setDeleteProfileModal((prev) => ({
         ...prev,
         loading: false,
@@ -849,7 +853,7 @@ export default function SettingsPage() {
       if (deleteProfileModal.preview.willDeleteHousehold) {
         body.confirmDeleteHousehold = deleteProfileModal.confirmDeleteHousehold;
       }
-      const data = await apiRequest("/api/kitchen/users/me", {
+      const data = await apiSync("/api/kitchen/users/me", {
         method: "DELETE",
         body: JSON.stringify(body)
       });
@@ -876,7 +880,7 @@ export default function SettingsPage() {
 
   const generateHouseholdCode = async () => {
     try {
-      const data = await apiRequest("/api/kitchen/household/invite-code", { method: "POST" });
+      const data = await apiSync("/api/kitchen/household/invite-code", { method: "POST" });
       setHouseholdCode(data.inviteCode || "");
       updateSuccess("Codigo generado.");
     } catch (err) {
@@ -944,7 +948,7 @@ export default function SettingsPage() {
           dinnerCanCook: memberModal.form.dinnerCanCook
         }
         : (isSelf ? { canCook: memberModal.form.canCook, dinnerCanCook: memberModal.form.dinnerCanCook } : {});
-      const data = await apiRequest(`/api/kitchen/users/members/${memberModal.member.id}`, {
+      const data = await apiSync(`/api/kitchen/users/members/${memberModal.member.id}`, {
         method: "PUT",
         body: JSON.stringify(payload)
       });
@@ -966,7 +970,7 @@ export default function SettingsPage() {
       message: `Seguro que quieres eliminar a ${member.displayName} del household?`,
       dangerLabel: "Eliminar",
       onConfirm: async () => {
-        const data = await apiRequest(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
+        const data = await apiSync(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
         closeMemberModal();
         updateSuccess(data?.clerkDeletionWarning || "Usuario eliminado.");
         await loadData();
@@ -986,7 +990,7 @@ export default function SettingsPage() {
       return;
     }
     try {
-      await apiRequest("/api/kitchen/household/placeholders", {
+      await apiSync("/api/kitchen/household/placeholders", {
         method: "POST",
         body: JSON.stringify({
           displayName: safeName,
@@ -1035,7 +1039,7 @@ export default function SettingsPage() {
       return;
     }
     try {
-      await apiRequest(`/api/kitchen/household/placeholders/${convertModal.memberId}/convert`, {
+      await apiSync(`/api/kitchen/household/placeholders/${convertModal.memberId}/convert`, {
         method: "POST",
         body: JSON.stringify({
           email,
@@ -1074,7 +1078,7 @@ export default function SettingsPage() {
             active: active !== false,
             ...(isDiod ? { scope: "master" } : {})
           };
-      await apiRequest(endpoint, {
+      await apiSync(endpoint, {
         method: "POST",
         body: JSON.stringify(payload)
       });
@@ -1108,7 +1112,7 @@ export default function SettingsPage() {
             active: active !== false,
             forRecipes: category.forRecipes
           };
-      await apiRequest(endpoint, {
+      await apiSync(endpoint, {
         method: "PUT",
         body: JSON.stringify(payload)
       });
@@ -1131,7 +1135,7 @@ export default function SettingsPage() {
         const endpoint = kind === "dish"
           ? `/api/kitchen/dish-categories/${category._id}`
           : `/api/categories/${category._id}`;
-        await apiRequest(endpoint, { method: "DELETE" });
+        await apiSync(endpoint, { method: "DELETE" });
         notifyCatalogInvalidated();
         updateSuccess("Categoria eliminada.");
         await loadData();
@@ -1142,9 +1146,9 @@ export default function SettingsPage() {
   const restoreDeletedItem = async (kind, id) => {
     try {
       if (kind === "ingredient") {
-        await apiRequest(`/api/kitchenIngredients/${id}/restore`, { method: "POST" });
+        await apiSync(`/api/kitchenIngredients/${id}/restore`, { method: "POST" });
       } else {
-        await apiRequest(`/api/kitchen/dishes/${id}/restore`, { method: "POST" });
+        await apiSync(`/api/kitchen/dishes/${id}/restore`, { method: "POST" });
       }
       updateSuccess("Elemento recuperado.");
       await Promise.all([loadDeletedItems(), loadData()]);

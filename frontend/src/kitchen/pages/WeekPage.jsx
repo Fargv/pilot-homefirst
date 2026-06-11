@@ -2,6 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { BookOpen, ChevronRight, Shuffle, User as UserLucide } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiRequest } from "../api.js";
+import { createSyncedApi, dishesQuery, fetchCached, membersQuery, planningQuery, userQuery } from "../queryClient.js";
+
+// Planning edits affect the week plan and the shopping list
+const apiSync = createSyncedApi([["planning"], ["shopping"]]);
 import { useAuth } from "../auth";
 import WeekDayTabs from "../components/WeekDayTabs.jsx";
 import IngredientPicker from "../components/IngredientPicker.jsx";
@@ -424,7 +428,7 @@ export default function WeekPage() {
     const dinnerQuery = selectedMealType === "dinner" ? "true" : "false";
     setDishesLoading(true);
     try {
-      const dishesData = await apiRequest(`/api/kitchen/dishes?isDinner=${dinnerQuery}`);
+      const dishesData = await apiSync(`/api/kitchen/dishes?isDinner=${dinnerQuery}`);
       setDishes(dishesData.dishes || []);
       setDishesLoadedForHouseholdKey(householdKeyAtRequest);
       return dishesData.dishes || [];
@@ -450,7 +454,7 @@ export default function WeekPage() {
       const reqBody = { overwriteAll: false, mealType: selectedMealType };
       if (mode === "mine") reqBody.myDishesOnly = true;
       if (mode === "catalog" && packId) reqBody.packId = packId;
-      const data = await apiRequest(`/api/kitchen/weeks/${weekStartRef.current}/randomize`, {
+      const data = await apiSync(`/api/kitchen/weeks/${weekStartRef.current}/randomize`, {
         method: "POST",
         body: JSON.stringify(reqBody)
       });
@@ -499,7 +503,7 @@ export default function WeekPage() {
     setWeekNotice(null);
     setLoadError("");
     try {
-      const data = await apiRequest(`/api/kitchen/weeks/${weekStartRef.current}/reset`, {
+      const data = await apiSync(`/api/kitchen/weeks/${weekStartRef.current}/reset`, {
         method: "POST",
         body: JSON.stringify({ mealType: selectedMealType })
       });
@@ -531,7 +535,7 @@ export default function WeekPage() {
     setInstalledPacksStatus("loading");
     setInstalledPacksError("");
     try {
-      const data = await apiRequest("/api/kitchen/catalog/packs");
+      const data = await apiSync("/api/kitchen/catalog/packs");
       const all = Array.isArray(data?.packs) ? data.packs : (Array.isArray(data) ? data : []);
       setInstalledPacks(all.filter((p) => p.installed || p.isInstalled || p.status === "installed" || p.entitlement?.installed));
       setInstalledPacksStatus("success");
@@ -600,8 +604,8 @@ export default function WeekPage() {
     try {
       const dinnerQuery = selectedMealType === "dinner" ? "true" : "false";
       const [planData, dishesData] = await Promise.all([
-        apiRequest(`/api/kitchen/weeks/${weekStart}`),
-        apiRequest(`/api/kitchen/dishes?isDinner=${dinnerQuery}`)
+        fetchCached(planningQuery(weekStart)),
+        fetchCached(dishesQuery(dinnerQuery))
       ]);
       if (requestSeq !== loadRequestSeqRef.current) return;
       setPlan(planData.plan || null);
@@ -611,8 +615,8 @@ export default function WeekPage() {
       setDishes(dishesData.dishes || []);
       setDishesLoadedForHouseholdKey(householdKeyAtRequest);
       const [usersData, householdData] = await Promise.all([
-        apiRequest("/api/kitchen/users/members"),
-        apiRequest("/api/kitchen/household/summary")
+        fetchCached(membersQuery()),
+        fetchCached(userQuery(user?.id))
       ]);
       if (requestSeq !== loadRequestSeqRef.current) return;
       setUsers(usersData.users || []);
@@ -715,7 +719,7 @@ export default function WeekPage() {
   const loadCategories = async () => {
     if (isDiodGlobalMode) return;
     try {
-      const data = await apiRequest("/api/categories");
+      const data = await apiSync("/api/categories");
       setCategories(data.categories || []);
     } catch (err) {
       setLoadError(err.message || "No se pudieron cargar las categorías.");
@@ -728,7 +732,7 @@ export default function WeekPage() {
 
   const loadDishCategories = async () => {
     try {
-      const data = await apiRequest("/api/kitchen/dish-categories");
+      const data = await apiSync("/api/kitchen/dish-categories");
       setDishCategories(data.categories || []);
     } catch (err) {
       setLoadError(err.message || "No se pudieron cargar las categorías de plato.");
@@ -759,7 +763,7 @@ export default function WeekPage() {
       return ingredientCache.current.get(canonicalName);
     }
     try {
-      const data = await apiRequest(`/api/kitchenIngredients?q=${encodeURIComponent(canonicalName)}`);
+      const data = await apiSync(`/api/kitchenIngredients?q=${encodeURIComponent(canonicalName)}`);
       const match = (data.ingredients || []).find((item) => item.canonicalName === canonicalName);
       ingredientCache.current.set(canonicalName, match || null);
       return match || null;
@@ -1010,7 +1014,7 @@ export default function WeekPage() {
     setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
     try {
       const mealType = dayMealType(day);
-      const data = await apiRequest(`/api/kitchen/weeks/${targetWeekStart}/day/${day.date.slice(0, 10)}?mealType=${mealType}`, {
+      const data = await apiSync(`/api/kitchen/weeks/${targetWeekStart}/day/${day.date.slice(0, 10)}?mealType=${mealType}`, {
         method: "PUT",
         body: JSON.stringify({ ...requestUpdates, mealType })
       });
@@ -1162,7 +1166,7 @@ export default function WeekPage() {
     if (!dayKey) return;
     setLeftoverLoadingByDay((prev) => ({ ...prev, [dayKey]: true }));
     try {
-      const data = await apiRequest(
+      const data = await apiSync(
         `/api/kitchen/weeks/${weekStartRef.current}/day/${dayKey}/leftovers?mealType=dinner`
       );
       setLeftoverOptionsByDay((prev) => ({ ...prev, [dayKey]: data?.leftovers || [] }));
@@ -1353,7 +1357,7 @@ export default function WeekPage() {
     setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
     try {
       const mealType = dayMealType(day);
-      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/day/${dayKey}/move?mealType=${mealType}`, {
+      const data = await apiSync(`/api/kitchen/weeks/${weekStart}/day/${dayKey}/move?mealType=${mealType}`, {
         method: "POST",
         body: JSON.stringify({ targetDate, mealType })
       });
@@ -1778,7 +1782,7 @@ export default function WeekPage() {
       const randBody = { mealType };
       if (mode === "mine") randBody.myDishesOnly = true;
       if (mode === "catalog" && packId) randBody.packId = packId;
-      return apiRequest(`/api/kitchen/weeks/${clickWeekStart}/day/${dayKey}/random-main`, {
+      return apiSync(`/api/kitchen/weeks/${clickWeekStart}/day/${dayKey}/random-main`, {
         method: "POST",
         body: JSON.stringify(randBody)
       });
@@ -1925,7 +1929,7 @@ export default function WeekPage() {
     setCreatingPlan(true);
     setLoadError("");
     try {
-      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}`, {
+      const data = await apiSync(`/api/kitchen/weeks/${weekStart}`, {
         method: "POST"
       });
       setPlan(data.plan || null);
@@ -1942,7 +1946,7 @@ export default function WeekPage() {
       payload.colorBg = color.colorBg;
       payload.colorText = color.colorText;
     }
-    const data = await apiRequest("/api/categories", {
+    const data = await apiSync("/api/categories", {
       method: "POST",
       body: JSON.stringify(payload)
     });
@@ -2009,7 +2013,7 @@ export default function WeekPage() {
     setWeekendBusy(true);
     setLoadError("");
     try {
-      const data = await apiRequest(`/api/kitchen/weeks/${weekStart}/weekend`, {
+      const data = await apiSync(`/api/kitchen/weeks/${weekStart}/weekend`, {
         method: "POST",
         body: JSON.stringify({
           mealType: selectedMealType,
