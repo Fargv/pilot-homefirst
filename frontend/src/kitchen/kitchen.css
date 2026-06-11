@@ -2589,8 +2589,23 @@ body {
 }
 
 .kitchen-weekdays-item.is-selected {
-  border-color: #c7d2fe;
-  background: #f8f9ff;
+  border-color: color-mix(in srgb, var(--hf-brand) 32%, transparent);
+  background: var(--nav-active-bg);
+}
+
+.kitchen-weekdays-item.is-selected .kitchen-weekdays-circle {
+  background: var(--hf-brand);
+  color: var(--button-primary-text);
+  border-color: var(--hf-brand);
+  box-shadow: var(--shadow-brand);
+}
+
+.kitchen-weekdays-item.is-selected .kitchen-weekdays-label {
+  color: var(--nav-active-text);
+}
+
+.kitchen-weekdays-item:active {
+  transform: scale(0.96);
 }
 
 .kitchen-weekdays-item-action {
@@ -2634,7 +2649,7 @@ body {
 .kitchen-weekdays-label {
   font-size: var(--fs-sm);
   font-weight: 600;
-  color: #475467;
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
@@ -2648,15 +2663,15 @@ body {
 
 .kitchen-day-card.is-empty {
   min-height: auto;
-  background: #f8f9ff;
-  border: 1px solid #e4e7ff;
+  background: color-mix(in srgb, var(--hf-brand) 3%, var(--card-bg));
+  border: 1px dashed color-mix(in srgb, var(--hf-brand) 22%, var(--border-soft));
   border-radius: var(--hf-radius-lg, 28px);
-  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.06);
+  box-shadow: none;
 }
 
 .kitchen-day-card.is-selected {
-  border: 1px solid #c7d2fe;
-  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.05);
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 38%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hf-brand) 8%, transparent), var(--shadow-md);
 }
 
 .kitchen-day-header {

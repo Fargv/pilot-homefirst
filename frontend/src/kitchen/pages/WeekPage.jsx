@@ -2445,7 +2445,7 @@ export default function WeekPage() {
                   ? (isAssigned && cookUser
                     ? cookColors
                     : { background: dayVisual.background, text: dayVisual.color })
-                  : { background: "#ffffff", text: "var(--hf-text)" };
+                  : { background: "var(--card-bg)", text: "var(--hf-text)" };
                 const leftoversDishName = day?.leftoversSourceDishName
                   || (day?.leftoversSourceDishId ? dishMap.get(day.leftoversSourceDishId)?.name : "");
                 const displayDishName = day?.isLeftovers
@@ -2501,9 +2501,10 @@ export default function WeekPage() {
               style={{
                 "--day-card-bg": cardColors.background,
                 "--day-card-text": cardColors.text,
-                "--day-card-highlight": cardColors.text
+                "--day-card-highlight": cardColors.text,
+                "--hf-anim-i": index
               }}
-              className={`kitchen-card kitchen-day-card ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""} ${selectedMealType === "dinner" ? "is-dinner-mode" : ""}`}
+              className={`kitchen-card kitchen-day-card hf-anim-rise ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""} ${selectedMealType === "dinner" ? "is-dinner-mode" : ""}`}
               tabIndex={-1}
               ref={(node) => {
                 if (!node) {
