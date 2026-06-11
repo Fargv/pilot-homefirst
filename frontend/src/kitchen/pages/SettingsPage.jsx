@@ -321,6 +321,7 @@ export default function SettingsPage() {
   const basicsFeatureEnabled = canUseBasicsFeature(subscriptionAccess);
   const canUseDinners = canUseDinnersFeature(subscriptionAccess);
   const licenseActionLabel = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
+  const isPaidPlan = ["pro", "premium"].includes(String(subscriptionPlan || "").toLowerCase());
   const memberUsage = useMemo(() => countLicenseUsage(members), [members]);
   const licenseState = useMemo(
     () => buildLicenseState(subscriptionPlan, memberUsage),
@@ -2085,8 +2086,7 @@ export default function SettingsPage() {
   return (
     <KitchenLayout>
       <PageHeader
-        title="Configuración"
-        subtitle="Gestiona tu cuenta y preferencias"
+        title={displayName || user?.displayName || "Configuración"}
         leading={
           <div
             className="settings-header-avatar"
@@ -2095,9 +2095,14 @@ export default function SettingsPage() {
             {userInitials}
           </div>
         }
-        className="settings-header"
+        primaryAction={
+          <span className={`settings-header-plan-badge${isPaidPlan ? " is-paid" : ""}`}>
+            {formatSubscriptionPlanLabel(subscriptionPlan)}
+          </span>
+        }
+        className="settings-header settings-header-compact"
       />
-      <div className="kitchen-card kitchen-block-gap">
+      <div className={`kitchen-card kitchen-block-gap${!loading && isHub ? " settings-hub-shell" : ""}`}>
 
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}
@@ -2127,9 +2132,9 @@ export default function SettingsPage() {
         {!loading && isHub ? (
           <div className="settings-hub">
 
-            {/* ── Sección 1: Tu cuenta ─────────────────────────── */}
+            {/* ── Sección 1: Cuenta ────────────────────────────── */}
             <div className="settings-section">
-              <p className="settings-section-label">Tu cuenta</p>
+              <p className="settings-section-label">Cuenta</p>
               <div className="settings-section-group">
                 <button type="button" className="settings-nav-row" onClick={() => setPanel("perfil")}>
                   <span className="settings-nav-row-icon settings-nav-icon-account" aria-hidden="true">
@@ -2166,10 +2171,10 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* ── Sección 2: Tu hogar ──────────────────────────── */}
-            {(canViewHousehold || canManageCategories) ? (
+            {/* ── Sección 2: Hogar ─────────────────────────────── */}
+            {(canViewHousehold || canAccessShare) ? (
               <div className="settings-section">
-                <p className="settings-section-label">Tu hogar</p>
+                <p className="settings-section-label">Hogar</p>
                 <div className="settings-section-group">
                   {canViewHousehold ? (
                     <button type="button" className="settings-nav-row" onClick={() => setPanel("household-members")}>
@@ -2207,6 +2212,34 @@ export default function SettingsPage() {
                       </span>
                     </button>
                   ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {/* ── Sección 3: Lista de la compra ────────────────── */}
+            {(canViewHousehold || canManageCategories) ? (
+              <div className="settings-section">
+                <p className="settings-section-label">Lista de la compra</p>
+                <div className="settings-section-group">
+                  {canViewHousehold ? (
+                    <button type="button" className={`settings-nav-row${!basicsFeatureEnabled ? " settings-nav-row-locked" : ""}`} onClick={() => setPanel("basicos")}>
+                      <span className="settings-nav-row-icon settings-nav-icon-basics" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                          <path d="M4 8l1.5-4h9L16 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M3.5 8h13l-1.5 8a1 1 0 0 1-1 .9H6a1 1 0 0 1-1-.9z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                          <path d="M8 12l1 1.5 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                      <span className="settings-nav-row-main">
+                        <span className="settings-nav-row-title">Básicos de compra</span>
+                        <span className="settings-nav-row-sub">{basicsFeatureEnabled ? "Artículos recurrentes" : "Disponible en Pro y Premium"}</span>
+                      </span>
+                      <span className="settings-nav-row-end">
+                        {!basicsFeatureEnabled ? <ProBadge /> : null}
+                        <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </span>
+                    </button>
+                  ) : null}
                   {canManageCategories ? (
                     <button type="button" className="settings-nav-row" onClick={() => setPanel("categorias")}>
                       <span className="settings-nav-row-icon settings-nav-icon-cats" aria-hidden="true">
@@ -2224,32 +2257,13 @@ export default function SettingsPage() {
                       </span>
                     </button>
                   ) : null}
-                  {canViewHousehold ? (
-                    <button type="button" className={`settings-nav-row${!basicsFeatureEnabled ? " settings-nav-row-locked" : ""}`} onClick={() => setPanel("basicos")}>
-                      <span className="settings-nav-row-icon settings-nav-icon-basics" aria-hidden="true">
-                        <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
-                          <path d="M4 8l1.5-4h9L16 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M3.5 8h13l-1.5 8a1 1 0 0 1-1 .9H6a1 1 0 0 1-1-.9z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-                          <path d="M8 12l1 1.5 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                      <span className="settings-nav-row-main">
-                        <span className="settings-nav-row-title">Básicos de compra</span>
-                        <span className="settings-nav-row-sub">{basicsFeatureEnabled ? "Artículos recurrentes de tu lista" : "Disponible en Pro y Premium"}</span>
-                      </span>
-                      <span className="settings-nav-row-end">
-                        {!basicsFeatureEnabled ? <ProBadge /> : null}
-                        <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      </span>
-                    </button>
-                  ) : null}
                 </div>
               </div>
             ) : null}
 
-            {/* ── Sección 3: Plan y beneficios ─────────────────── */}
+            {/* ── Sección 4: Plan ──────────────────────────────── */}
             <div className="settings-section">
-              <p className="settings-section-label">Plan y beneficios</p>
+              <p className="settings-section-label">Plan</p>
               <div className="settings-section-group">
                 <button type="button" className={`settings-nav-row${!budgetFeatureEnabled ? " settings-nav-row-locked" : ""}`} onClick={openBudgetPanel}>
                   <span className="settings-nav-row-icon settings-nav-icon-budget" aria-hidden="true">
@@ -2289,21 +2303,25 @@ export default function SettingsPage() {
                     </svg>
                   </span>
                   <span className="settings-nav-row-main">
-                    <span className="settings-nav-row-title">{licenseActionLabel}</span>
-                    <span className="settings-nav-row-sub">Plan actual: <strong>{formatSubscriptionPlanLabel(subscriptionPlan)}</strong></span>
+                    <span className="settings-nav-row-title">{isPaidPlan ? "Tu Plan" : licenseActionLabel}</span>
+                    <span className="settings-nav-row-sub">{isPaidPlan ? "Plan activo" : <>Plan actual: <strong>{formatSubscriptionPlanLabel(subscriptionPlan)}</strong></>}</span>
                   </span>
                   <span className="settings-nav-row-end">
-                    <span className={subscriptionBadgeClassName(subscriptionPlan)}>{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+                    {isPaidPlan ? (
+                      <span className="settings-plan-active-pill">{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+                    ) : (
+                      <span className={subscriptionBadgeClassName(subscriptionPlan)}>{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+                    )}
                     <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </span>
                 </button>
               </div>
             </div>
 
-            {/* ── Sección 4: Sistema ───────────────────────────── */}
+            {/* ── Sección 5: Datos ─────────────────────────────── */}
             {canManageDeleted ? (
               <div className="settings-section">
-                <p className="settings-section-label">Sistema</p>
+                <p className="settings-section-label">Datos</p>
                 <div className="settings-section-group">
                   <button type="button" className="settings-nav-row" onClick={() => setPanel("eliminados")}>
                     <span className="settings-nav-row-icon settings-nav-icon-deleted" aria-hidden="true">
