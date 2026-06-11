@@ -1651,7 +1651,7 @@ body {
 .kitchen-modal {
   width: min(640px, 100%);
   max-height: min(90vh, 780px);
-  background: white;
+  background: var(--modal-bg);
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow-overlay);
@@ -4596,14 +4596,20 @@ body {
 }
 
 .kitchen-ui-sheet-close {
-  border: 1px solid #d5dced;
-  background: #fff;
-  color: #334155;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  color: var(--text-secondary);
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
   font-weight: 700;
   cursor: pointer;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
+}
+
+.kitchen-ui-sheet-close:hover {
+  background: var(--chip-bg);
+  color: var(--text-primary);
 }
 
 .kitchen-ui-sheet-actions { margin-top: 16px; display: flex; gap: 12px; justify-content: flex-end; }
