@@ -7284,7 +7284,7 @@ body {
   padding: 13px 16px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-soft);
   cursor: pointer;
   text-align: left;
   transition: background var(--motion-fast) ease;
@@ -7296,11 +7296,11 @@ body {
 }
 
 .settings-nav-row:hover {
-  background: #f8faff;
+  background: var(--dropdown-hover-bg);
 }
 
 .settings-nav-row:active {
-  background: #eff3ff;
+  background: var(--dropdown-selected-bg);
 }
 
 /* ── Row icon ────────────────────────────────── */
@@ -7570,6 +7570,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  animation: hf-fade-in var(--motion-normal) var(--ease-out) both;
 }
 
 .settings-panel-header {
