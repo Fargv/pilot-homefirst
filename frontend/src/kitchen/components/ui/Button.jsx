@@ -4,6 +4,8 @@ const variantClass = {
   primary: "kitchen-ui-button",
   secondary: "kitchen-ui-button kitchen-ui-button-secondary",
   ghost: "kitchen-ui-button kitchen-ui-button-ghost",
+  danger: "kitchen-ui-button kitchen-ui-button-danger",
+  destructive: "kitchen-ui-button kitchen-ui-button-danger",
 };
 
 export default function Button({
