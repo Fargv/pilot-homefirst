@@ -950,9 +950,9 @@
     "semantic_hash": "519565ff4000dc843fa12a07d2f3d90d"
   },
   "frontend/package.json": {
-    "mtime": 1780850791.5849476,
-    "ast_hash": "134965f93a6c3063703c5ae843c2b9a9",
-    "semantic_hash": "134965f93a6c3063703c5ae843c2b9a9"
+    "mtime": 1781216985.1205862,
+    "ast_hash": "056c93154069a27927810d881d982992",
+    "semantic_hash": ""
   },
   "frontend/public/sw.js": {
     "mtime": 1775688143.8576777,
@@ -960,8 +960,8 @@
     "semantic_hash": "d8b5a529c8360b94369f1dcfeb0e306b"
   },
   "frontend/src/App.jsx": {
-    "mtime": 1780850791.5920746,
-    "ast_hash": "187c243bfe95148404d971369c3780f1",
+    "mtime": 1781217513.8352978,
+    "ast_hash": "77c7baccad96112de51c12f2943f0872",
     "semantic_hash": ""
   },
   "frontend/src/components/AppErrorBoundary.jsx": {
@@ -980,8 +980,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/Layout.jsx": {
-    "mtime": 1781215313.9686615,
-    "ast_hash": "f1d4d041d317f9932c6c8298cb88277e",
+    "mtime": 1781217554.1803634,
+    "ast_hash": "31da494bed3b1cae70555a3432610c0d",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/RequireAuth.jsx": {
@@ -1160,9 +1160,9 @@
     "semantic_hash": "9cf8d29302672930ea633c83566f7f4e"
   },
   "frontend/src/kitchen/components/ui/BottomNav.jsx": {
-    "mtime": 1773141082.3873825,
-    "ast_hash": "d5838284c0d87701c77c575fddd0a890",
-    "semantic_hash": "d5838284c0d87701c77c575fddd0a890"
+    "mtime": 1781217413.6206174,
+    "ast_hash": "8b7d69e4dac254c58625a3dedf079c1f",
+    "semantic_hash": ""
   },
   "frontend/src/kitchen/components/ui/Button.jsx": {
     "mtime": 1781214369.2889845,
@@ -1295,8 +1295,8 @@
     "semantic_hash": "848b545b3ceb9545b7d0390b7877faa5"
   },
   "frontend/src/kitchen/pages/CatalogPage.jsx": {
-    "mtime": 1781215157.908519,
-    "ast_hash": "81ebe60485c7f81a107340f30f3b9a6c",
+    "mtime": 1781217202.974753,
+    "ast_hash": "dd68c6a1627f8bcc2e778df24b256aac",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/ClerkAuthPage.jsx": {
@@ -1310,8 +1310,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/DishesPage.jsx": {
-    "mtime": 1781214829.0971053,
-    "ast_hash": "3b368e85d96077cd496403de97b2daf5",
+    "mtime": 1781217180.2926831,
+    "ast_hash": "7a5dc3a92e2749939dc5f430dcf404ca",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/InviteLandingPage.jsx": {
@@ -1330,8 +1330,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/SettingsPage.jsx": {
-    "mtime": 1780850791.6599882,
-    "ast_hash": "b67de1072f7dce386a8779df1cf2f14e",
+    "mtime": 1781217309.8037016,
+    "ast_hash": "318df12a1d5bb14456a49c79cf8c7631",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/ShoppingBudgetPage.jsx": {
@@ -1340,8 +1340,8 @@
     "semantic_hash": "91aac52ba3f80133175ae9e6af2e6c69"
   },
   "frontend/src/kitchen/pages/ShoppingPage.jsx": {
-    "mtime": 1781214932.2203398,
-    "ast_hash": "60a86a98ee1b3130abd4f12c7ab0978e",
+    "mtime": 1781243924.8371706,
+    "ast_hash": "0d46645f01e56c88ece9b6bfe737e1ac",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/SwapsPage.jsx": {
@@ -1355,8 +1355,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/WeekPage.jsx": {
-    "mtime": 1781214728.4661162,
-    "ast_hash": "d8412fb4b1b494828956c31a36b03375",
+    "mtime": 1781243954.3130999,
+    "ast_hash": "b85911ed84912b8c2271cc12fc0bef71",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/push.js": {
@@ -1430,8 +1430,8 @@
     "semantic_hash": "cc6117e65b25c0bcbb1254216c792ef1"
   },
   "frontend/vite.config.js": {
-    "mtime": 1780850791.6749878,
-    "ast_hash": "3a94472e790d743fd028927548dfa8ed",
+    "mtime": 1781244026.4739535,
+    "ast_hash": "14a1eae3cb3557460015885b1e31abb6",
     "semantic_hash": ""
   },
   "package.json": {
@@ -1922,6 +1922,16 @@
   "frontend/src/kitchen/motion.js": {
     "mtime": 1781214511.9653137,
     "ast_hash": "93c4be50ecc3c47509e7015da4028834",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/components/PageSkeleton.jsx": {
+    "mtime": 1781217457.868172,
+    "ast_hash": "0d50dd84131f53244f0e96555a89795e",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/queryClient.js": {
+    "mtime": 1781217124.8278806,
+    "ast_hash": "f5035addc96cc26ad4ec050a5d992d64",
     "semantic_hash": ""
   }
 }

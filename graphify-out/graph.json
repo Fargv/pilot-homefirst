@@ -206,7 +206,7 @@
       "source_file": ".claude/skills/impeccable/scripts/command-metadata.json",
       "source_location": "L1",
       "id": "scripts_command_metadata",
-      "community": 191,
+      "community": 218,
       "norm_label": "command-metadata.json"
     },
     {
@@ -5192,7 +5192,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L141",
       "id": "scripts_live_browser_writescrolly",
-      "community": 41,
+      "community": 86,
       "norm_label": "writescrolly()"
     },
     {
@@ -5246,7 +5246,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L198",
       "id": "scripts_live_browser_id8",
-      "community": 41,
+      "community": 86,
       "norm_label": "id8()"
     },
     {
@@ -5462,7 +5462,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L778",
       "id": "scripts_live_browser_extractcontext",
-      "community": 41,
+      "community": 86,
       "norm_label": "extractcontext()"
     },
     {
@@ -5849,7 +5849,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L2085",
       "id": "scripts_live_browser_startvariantobserver",
-      "community": 41,
+      "community": 86,
       "norm_label": "startvariantobserver()"
     },
     {
@@ -5975,7 +5975,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L2525",
       "id": "scripts_live_browser_handlego",
-      "community": 41,
+      "community": 86,
       "norm_label": "handlego()"
     },
     {
@@ -6227,7 +6227,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L3567",
       "id": "scripts_live_browser_updateglobalbarstate",
-      "community": 158,
+      "community": 41,
       "norm_label": "updateglobalbarstate()"
     },
     {
@@ -6236,7 +6236,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L3609",
       "id": "scripts_live_browser_toggledetect",
-      "community": 158,
+      "community": 41,
       "norm_label": "toggledetect()"
     },
     {
@@ -6254,7 +6254,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L3647",
       "id": "scripts_live_browser_loaddetectscript",
-      "community": 158,
+      "community": 41,
       "norm_label": "loaddetectscript()"
     },
     {
@@ -6263,7 +6263,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L3656",
       "id": "scripts_live_browser_ondetectmessage",
-      "community": 158,
+      "community": 41,
       "norm_label": "ondetectmessage()"
     },
     {
@@ -14375,7 +14375,7 @@
       "source_file": "backend/scripts/migrate-purchase-sessions.js",
       "source_location": "L6",
       "id": "scripts_migrate_purchase_sessions_run",
-      "community": 192,
+      "community": 352,
       "norm_label": "run()"
     },
     {
@@ -14402,7 +14402,7 @@
       "source_file": "backend/scripts/migrate-user-email-partial-index.js",
       "source_location": "L1",
       "id": "scripts_migrate_user_email_partial_index",
-      "community": 148,
+      "community": 20,
       "norm_label": "migrate-user-email-partial-index.js"
     },
     {
@@ -14411,7 +14411,7 @@
       "source_file": "backend/scripts/migrate-user-email-partial-index.js",
       "source_location": "L5",
       "id": "scripts_migrate_user_email_partial_index_run",
-      "community": 148,
+      "community": 20,
       "norm_label": "run()"
     },
     {
@@ -15833,7 +15833,7 @@
       "source_file": "backend/scripts/repair-shopping-list-items.js",
       "source_location": "L1",
       "id": "scripts_repair_shopping_list_items",
-      "community": 192,
+      "community": 122,
       "norm_label": "repair-shopping-list-items.js"
     },
     {
@@ -15842,7 +15842,7 @@
       "source_file": "backend/scripts/repair-shopping-list-items.js",
       "source_location": "L6",
       "id": "scripts_repair_shopping_list_items_run",
-      "community": 192,
+      "community": 122,
       "norm_label": "run()"
     },
     {
@@ -16157,7 +16157,7 @@
       "source_file": "backend/scripts/verify-category-cascade.js",
       "source_location": "L1",
       "id": "scripts_verify_category_cascade",
-      "community": 122,
+      "community": 148,
       "norm_label": "verify-category-cascade.js"
     },
     {
@@ -16166,7 +16166,7 @@
       "source_file": "backend/scripts/verify-category-cascade.js",
       "source_location": "L5",
       "id": "scripts_verify_category_cascade_run",
-      "community": 122,
+      "community": 148,
       "norm_label": "run()"
     },
     {
@@ -16175,7 +16175,7 @@
       "source_file": "backend/src/config.js",
       "source_location": "L1",
       "id": "src_config",
-      "community": 105,
+      "community": 148,
       "norm_label": "config.js"
     },
     {
@@ -16184,7 +16184,7 @@
       "source_file": "backend/src/config.js",
       "source_location": "L5",
       "id": "src_config_parseoriginlist",
-      "community": 105,
+      "community": 148,
       "norm_label": "parseoriginlist()"
     },
     {
@@ -16193,7 +16193,7 @@
       "source_file": "backend/src/config.js",
       "source_location": "L16",
       "id": "src_config_extractdbname",
-      "community": 105,
+      "community": 148,
       "norm_label": "extractdbname()"
     },
     {
@@ -16202,7 +16202,7 @@
       "source_file": "backend/src/config.js",
       "source_location": "L22",
       "id": "src_config_config",
-      "community": 105,
+      "community": 148,
       "norm_label": "config"
     },
     {
@@ -16211,7 +16211,7 @@
       "source_file": "backend/src/config.js",
       "source_location": "L92",
       "id": "src_config_dbname",
-      "community": 105,
+      "community": 148,
       "norm_label": "_dbname"
     },
     {
@@ -16301,7 +16301,7 @@
       "source_file": "backend/src/index.js",
       "source_location": "L1",
       "id": "src_index",
-      "community": 54,
+      "community": 105,
       "norm_label": "index.js"
     },
     {
@@ -16310,7 +16310,7 @@
       "source_file": "backend/src/index.js",
       "source_location": "L24",
       "id": "src_index_filename",
-      "community": 54,
+      "community": 105,
       "norm_label": "__filename"
     },
     {
@@ -16319,7 +16319,7 @@
       "source_file": "backend/src/index.js",
       "source_location": "L25",
       "id": "src_index_dirname",
-      "community": 54,
+      "community": 105,
       "norm_label": "__dirname"
     },
     {
@@ -16328,7 +16328,7 @@
       "source_file": "backend/src/index.js",
       "source_location": "L27",
       "id": "src_index_app",
-      "community": 54,
+      "community": 105,
       "norm_label": "app"
     },
     {
@@ -16337,7 +16337,7 @@
       "source_file": "backend/src/index.js",
       "source_location": "L32",
       "id": "src_index_origin",
-      "community": 54,
+      "community": 105,
       "norm_label": "origin()"
     },
     {
@@ -16562,7 +16562,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L1",
       "id": "kitchen_betaservice",
-      "community": 105,
+      "community": 148,
       "norm_label": "betaservice.js"
     },
     {
@@ -16571,7 +16571,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L34",
       "id": "kitchen_betaservice_isbetamodeenabled",
-      "community": 105,
+      "community": 148,
       "norm_label": "isbetamodeenabled()"
     },
     {
@@ -16580,7 +16580,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L39",
       "id": "kitchen_betaservice_createbetatoken",
-      "community": 105,
+      "community": 148,
       "norm_label": "createbetatoken()"
     },
     {
@@ -16589,7 +16589,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L43",
       "id": "kitchen_betaservice_buildbetainvitelink",
-      "community": 105,
+      "community": 148,
       "norm_label": "buildbetainvitelink()"
     },
     {
@@ -16598,7 +16598,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L50",
       "id": "kitchen_betaservice_checkbetaaccess",
-      "community": 105,
+      "community": 148,
       "norm_label": "checkbetaaccess()"
     },
     {
@@ -16607,7 +16607,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L69",
       "id": "kitchen_betaservice_createbetainvite",
-      "community": 105,
+      "community": 148,
       "norm_label": "createbetainvite()"
     },
     {
@@ -16616,7 +16616,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L82",
       "id": "kitchen_betaservice_markbetainviteused",
-      "community": 105,
+      "community": 148,
       "norm_label": "markbetainviteused()"
     },
     {
@@ -16625,7 +16625,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L91",
       "id": "kitchen_betaservice_getbetainvitestatus",
-      "community": 105,
+      "community": 148,
       "norm_label": "getbetainvitestatus()"
     },
     {
@@ -16805,7 +16805,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L1",
       "id": "kitchen_catalognormalization",
-      "community": 122,
+      "community": 54,
       "norm_label": "catalognormalization.js"
     },
     {
@@ -16814,7 +16814,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L7",
       "id": "kitchen_catalognormalization_empty_summary",
-      "community": 122,
+      "community": 54,
       "norm_label": "empty_summary"
     },
     {
@@ -16823,7 +16823,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L20",
       "id": "kitchen_catalognormalization_asid",
-      "community": 122,
+      "community": 54,
       "norm_label": "asid()"
     },
     {
@@ -16832,7 +16832,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L26",
       "id": "kitchen_catalognormalization_suggestionfromingredient",
-      "community": 122,
+      "community": 54,
       "norm_label": "suggestionfromingredient()"
     },
     {
@@ -16841,7 +16841,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L35",
       "id": "kitchen_catalognormalization_loadnormalizationcontext",
-      "community": 122,
+      "community": 54,
       "norm_label": "loadnormalizationcontext()"
     },
     {
@@ -16850,7 +16850,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L64",
       "id": "kitchen_catalognormalization_validatecatalogpackdata",
-      "community": 122,
+      "community": 54,
       "norm_label": "validatecatalogpackdata()"
     },
     {
@@ -16868,7 +16868,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L249",
       "id": "kitchen_catalognormalization_assertingredientcanbecreated",
-      "community": 122,
+      "community": 54,
       "norm_label": "assertingredientcanbecreated()"
     },
     {
@@ -16967,7 +16967,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L1",
       "id": "kitchen_clerkauth",
-      "community": 148,
+      "community": 20,
       "norm_label": "clerkauth.js"
     },
     {
@@ -16976,7 +16976,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L12",
       "id": "kitchen_clerkauth_isdevelopmentclerkreconciliationenabled",
-      "community": 148,
+      "community": 20,
       "norm_label": "isdevelopmentclerkreconciliationenabled()"
     },
     {
@@ -16985,7 +16985,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L16",
       "id": "kitchen_clerkauth_isdevmode",
-      "community": 148,
+      "community": 20,
       "norm_label": "isdevmode()"
     },
     {
@@ -16994,7 +16994,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L24",
       "id": "kitchen_clerkauth_logclerkdev",
-      "community": 148,
+      "community": 20,
       "norm_label": "logclerkdev()"
     },
     {
@@ -17003,7 +17003,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L29",
       "id": "kitchen_clerkauth_buildautherror",
-      "community": 148,
+      "community": 20,
       "norm_label": "buildautherror()"
     },
     {
@@ -17012,7 +17012,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L40",
       "id": "kitchen_clerkauth_withtimeout",
-      "community": 148,
+      "community": 20,
       "norm_label": "withtimeout()"
     },
     {
@@ -17021,7 +17021,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L53",
       "id": "kitchen_clerkauth_getprimaryemailaddress",
-      "community": 148,
+      "community": 20,
       "norm_label": "getprimaryemailaddress()"
     },
     {
@@ -17030,7 +17030,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L63",
       "id": "kitchen_clerkauth_buildclerkdisplayname",
-      "community": 148,
+      "community": 20,
       "norm_label": "buildclerkdisplayname()"
     },
     {
@@ -17039,7 +17039,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L75",
       "id": "kitchen_clerkauth_isclerkauthenabled",
-      "community": 148,
+      "community": 20,
       "norm_label": "isclerkauthenabled()"
     },
     {
@@ -17048,7 +17048,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L79",
       "id": "kitchen_clerkauth_isemailregisteredinclerk",
-      "community": 148,
+      "community": 20,
       "norm_label": "isemailregisteredinclerk()"
     },
     {
@@ -17057,7 +17057,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L99",
       "id": "kitchen_clerkauth_deleteclerkuserbyid",
-      "community": 148,
+      "community": 20,
       "norm_label": "deleteclerkuserbyid()"
     },
     {
@@ -17066,7 +17066,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L135",
       "id": "kitchen_clerkauth_resolveclerkidentityfromtoken",
-      "community": 148,
+      "community": 20,
       "norm_label": "resolveclerkidentityfromtoken()"
     },
     {
@@ -17075,7 +17075,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L288",
       "id": "kitchen_clerkauth_authenticateclerktoken",
-      "community": 148,
+      "community": 20,
       "norm_label": "authenticateclerktoken()"
     },
     {
@@ -17084,7 +17084,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L351",
       "id": "kitchen_clerkauth_pingclerkapi",
-      "community": 148,
+      "community": 20,
       "norm_label": "pingclerkapi()"
     },
     {
@@ -17093,7 +17093,7 @@
       "source_file": "backend/src/kitchen/householdInvitationEmail.js",
       "source_location": "L1",
       "id": "kitchen_householdinvitationemail",
-      "community": 148,
+      "community": 233,
       "norm_label": "householdinvitationemail.js"
     },
     {
@@ -17102,7 +17102,7 @@
       "source_file": "backend/src/kitchen/householdInvitationEmail.js",
       "source_location": "L1",
       "id": "kitchen_householdinvitationemail_escapehtml",
-      "community": 148,
+      "community": 233,
       "norm_label": "escapehtml()"
     },
     {
@@ -17111,7 +17111,7 @@
       "source_file": "backend/src/kitchen/householdInvitationEmail.js",
       "source_location": "L10",
       "id": "kitchen_householdinvitationemail_buildhouseholdinvitationemail",
-      "community": 148,
+      "community": 233,
       "norm_label": "buildhouseholdinvitationemail()"
     },
     {
@@ -17165,7 +17165,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L1",
       "id": "kitchen_householdlicenseservice",
-      "community": 148,
+      "community": 233,
       "norm_label": "householdlicenseservice.js"
     },
     {
@@ -17174,7 +17174,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L6",
       "id": "kitchen_householdlicenseservice_plan_limits",
-      "community": 148,
+      "community": 233,
       "norm_label": "plan_limits"
     },
     {
@@ -17183,7 +17183,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L21",
       "id": "kitchen_householdlicenseservice_real_user_filter",
-      "community": 148,
+      "community": 233,
       "norm_label": "real_user_filter"
     },
     {
@@ -17192,7 +17192,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L38",
       "id": "kitchen_householdlicenseservice_non_user_diner_filter",
-      "community": 148,
+      "community": 233,
       "norm_label": "non_user_diner_filter"
     },
     {
@@ -17201,7 +17201,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L45",
       "id": "kitchen_householdlicenseservice_isunlimited",
-      "community": 148,
+      "community": 233,
       "norm_label": "isunlimited()"
     },
     {
@@ -17210,7 +17210,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L49",
       "id": "kitchen_householdlicenseservice_getplanlimits",
-      "community": 148,
+      "community": 233,
       "norm_label": "getplanlimits()"
     },
     {
@@ -17219,7 +17219,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L54",
       "id": "kitchen_householdlicenseservice_canadduser",
-      "community": 148,
+      "community": 233,
       "norm_label": "canadduser()"
     },
     {
@@ -17228,7 +17228,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L59",
       "id": "kitchen_householdlicenseservice_canaddnonuserdiner",
-      "community": 148,
+      "community": 233,
       "norm_label": "canaddnonuserdiner()"
     },
     {
@@ -17237,7 +17237,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L64",
       "id": "kitchen_householdlicenseservice_counthouseholdlicenseusage",
-      "community": 148,
+      "community": 233,
       "norm_label": "counthouseholdlicenseusage()"
     },
     {
@@ -17246,7 +17246,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L83",
       "id": "kitchen_householdlicenseservice_buildhouseholdlicensesummary",
-      "community": 148,
+      "community": 233,
       "norm_label": "buildhouseholdlicensesummary()"
     },
     {
@@ -17255,7 +17255,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L105",
       "id": "kitchen_householdlicenseservice_builduserlimiterror",
-      "community": 148,
+      "community": 233,
       "norm_label": "builduserlimiterror()"
     },
     {
@@ -17264,7 +17264,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L112",
       "id": "kitchen_householdlicenseservice_buildnonuserdinerlimiterror",
-      "community": 148,
+      "community": 233,
       "norm_label": "buildnonuserdinerlimiterror()"
     },
     {
@@ -17273,7 +17273,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L119",
       "id": "kitchen_householdlicenseservice_assertcanaddusertohousehold",
-      "community": 148,
+      "community": 233,
       "norm_label": "assertcanaddusertohousehold()"
     },
     {
@@ -17282,7 +17282,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L127",
       "id": "kitchen_householdlicenseservice_assertcanaddnonuserdinertohousehold",
-      "community": 148,
+      "community": 233,
       "norm_label": "assertcanaddnonuserdinertohousehold()"
     },
     {
@@ -17291,7 +17291,7 @@
       "source_file": "backend/src/kitchen/householdLicenseService.js",
       "source_location": "L135",
       "id": "kitchen_householdlicenseservice_sendhouseholdlicenseerror",
-      "community": 148,
+      "community": 20,
       "norm_label": "sendhouseholdlicenseerror()"
     },
     {
@@ -17300,7 +17300,7 @@
       "source_file": "backend/src/kitchen/householdScope.js",
       "source_location": "L1",
       "id": "kitchen_householdscope",
-      "community": 42,
+      "community": 122,
       "norm_label": "householdscope.js"
     },
     {
@@ -17309,7 +17309,7 @@
       "source_file": "backend/src/kitchen/householdScope.js",
       "source_location": "L1",
       "id": "kitchen_householdscope_geteffectivehouseholdid",
-      "community": 42,
+      "community": 122,
       "norm_label": "geteffectivehouseholdid()"
     },
     {
@@ -17318,7 +17318,7 @@
       "source_file": "backend/src/kitchen/householdScope.js",
       "source_location": "L22",
       "id": "kitchen_householdscope_getoptionalhouseholdid",
-      "community": 42,
+      "community": 122,
       "norm_label": "getoptionalhouseholdid()"
     },
     {
@@ -17327,7 +17327,7 @@
       "source_file": "backend/src/kitchen/householdScope.js",
       "source_location": "L32",
       "id": "kitchen_householdscope_handlehouseholderror",
-      "community": 42,
+      "community": 122,
       "norm_label": "handlehouseholderror()"
     },
     {
@@ -17462,7 +17462,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L1",
       "id": "kitchen_middleware",
-      "community": 105,
+      "community": 20,
       "norm_label": "middleware.js"
     },
     {
@@ -17471,7 +17471,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L6",
       "id": "kitchen_middleware_logauthdev",
-      "community": 105,
+      "community": 20,
       "norm_label": "logauthdev()"
     },
     {
@@ -17480,7 +17480,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L17",
       "id": "kitchen_middleware_normalizeroleforauthorization",
-      "community": 105,
+      "community": 20,
       "norm_label": "normalizeroleforauthorization()"
     },
     {
@@ -17489,7 +17489,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L23",
       "id": "kitchen_middleware_buildauthuser",
-      "community": 105,
+      "community": 20,
       "norm_label": "buildauthuser()"
     },
     {
@@ -17498,7 +17498,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L34",
       "id": "kitchen_middleware_createtoken",
-      "community": 105,
+      "community": 20,
       "norm_label": "createtoken()"
     },
     {
@@ -17507,7 +17507,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L51",
       "id": "kitchen_middleware_authenticatelegacytoken",
-      "community": 105,
+      "community": 20,
       "norm_label": "authenticatelegacytoken()"
     },
     {
@@ -17516,7 +17516,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L67",
       "id": "kitchen_middleware_requireauth",
-      "community": 105,
+      "community": 20,
       "norm_label": "requireauth()"
     },
     {
@@ -17525,7 +17525,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L129",
       "id": "kitchen_middleware_requirerole",
-      "community": 148,
+      "community": 20,
       "norm_label": "requirerole()"
     },
     {
@@ -17534,7 +17534,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L143",
       "id": "kitchen_middleware_requirediod",
-      "community": 105,
+      "community": 148,
       "norm_label": "requirediod()"
     },
     {
@@ -17543,7 +17543,7 @@
       "source_file": "backend/src/kitchen/models/BetaInvite.js",
       "source_location": "L1",
       "id": "models_betainvite",
-      "community": 105,
+      "community": 148,
       "norm_label": "betainvite.js"
     },
     {
@@ -17552,7 +17552,7 @@
       "source_file": "backend/src/kitchen/models/BetaInvite.js",
       "source_location": "L3",
       "id": "models_betainvite_betainviteschema",
-      "community": 105,
+      "community": 148,
       "norm_label": "betainviteschema"
     },
     {
@@ -17561,7 +17561,7 @@
       "source_file": "backend/src/kitchen/models/BetaInvite.js",
       "source_location": "L16",
       "id": "models_betainvite_betainvite",
-      "community": 105,
+      "community": 148,
       "norm_label": "betainvite"
     },
     {
@@ -17750,7 +17750,7 @@
       "source_file": "backend/src/kitchen/models/Household.js",
       "source_location": "L1",
       "id": "models_household",
-      "community": 112,
+      "community": 105,
       "norm_label": "household.js"
     },
     {
@@ -17759,7 +17759,7 @@
       "source_file": "backend/src/kitchen/models/Household.js",
       "source_location": "L3",
       "id": "models_household_householdschema",
-      "community": 112,
+      "community": 105,
       "norm_label": "householdschema"
     },
     {
@@ -17768,7 +17768,7 @@
       "source_file": "backend/src/kitchen/models/Household.js",
       "source_location": "L93",
       "id": "models_household_household",
-      "community": 112,
+      "community": 105,
       "norm_label": "household"
     },
     {
@@ -17984,7 +17984,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDishCategory.js",
       "source_location": "L1",
       "id": "models_kitchendishcategory",
-      "community": 408,
+      "community": 54,
       "norm_label": "kitchendishcategory.js"
     },
     {
@@ -17993,7 +17993,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDishCategory.js",
       "source_location": "L3",
       "id": "models_kitchendishcategory_kitchendishcategoryschema",
-      "community": 408,
+      "community": 54,
       "norm_label": "kitchendishcategoryschema"
     },
     {
@@ -18002,7 +18002,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDishCategory.js",
       "source_location": "L22",
       "id": "models_kitchendishcategory_kitchendishcategory",
-      "community": 408,
+      "community": 54,
       "norm_label": "kitchendishcategory"
     },
     {
@@ -18101,7 +18101,7 @@
       "source_file": "backend/src/kitchen/models/KitchenUser.js",
       "source_location": "L1",
       "id": "models_kitchenuser",
-      "community": 148,
+      "community": 20,
       "norm_label": "kitchenuser.js"
     },
     {
@@ -18110,7 +18110,7 @@
       "source_file": "backend/src/kitchen/models/KitchenUser.js",
       "source_location": "L3",
       "id": "models_kitchenuser_kitchenuserschema",
-      "community": 148,
+      "community": 20,
       "norm_label": "kitchenuserschema"
     },
     {
@@ -18119,7 +18119,7 @@
       "source_file": "backend/src/kitchen/models/KitchenUser.js",
       "source_location": "L78",
       "id": "models_kitchenuser_kitchenuser",
-      "community": 148,
+      "community": 20,
       "norm_label": "kitchenuser"
     },
     {
@@ -18164,7 +18164,7 @@
       "source_file": "backend/src/kitchen/models/KitchenWeekPlan.js",
       "source_location": "L52",
       "id": "models_kitchenweekplan_kitchenweekplan",
-      "community": 42,
+      "community": 122,
       "norm_label": "kitchenweekplan"
     },
     {
@@ -18173,7 +18173,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingChallenge.js",
       "source_location": "L1",
       "id": "models_onboardingchallenge",
-      "community": 54,
+      "community": 94,
       "norm_label": "onboardingchallenge.js"
     },
     {
@@ -18182,7 +18182,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingChallenge.js",
       "source_location": "L3",
       "id": "models_onboardingchallenge_onboardingchallengeschema",
-      "community": 54,
+      "community": 94,
       "norm_label": "onboardingchallengeschema"
     },
     {
@@ -18191,7 +18191,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingChallenge.js",
       "source_location": "L20",
       "id": "models_onboardingchallenge_onboardingchallenge",
-      "community": 54,
+      "community": 94,
       "norm_label": "onboardingchallenge"
     },
     {
@@ -18200,7 +18200,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingSuggestion.js",
       "source_location": "L1",
       "id": "models_onboardingsuggestion",
-      "community": 54,
+      "community": 94,
       "norm_label": "onboardingsuggestion.js"
     },
     {
@@ -18209,7 +18209,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingSuggestion.js",
       "source_location": "L3",
       "id": "models_onboardingsuggestion_onboardingsuggestionschema",
-      "community": 54,
+      "community": 94,
       "norm_label": "onboardingsuggestionschema"
     },
     {
@@ -18218,7 +18218,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingSuggestion.js",
       "source_location": "L15",
       "id": "models_onboardingsuggestion_onboardingsuggestion",
-      "community": 54,
+      "community": 94,
       "norm_label": "onboardingsuggestion"
     },
     {
@@ -18254,7 +18254,7 @@
       "source_file": "backend/src/kitchen/models/PlansConfig.js",
       "source_location": "L1",
       "id": "models_plansconfig",
-      "community": 105,
+      "community": 38,
       "norm_label": "plansconfig.js"
     },
     {
@@ -18263,7 +18263,7 @@
       "source_file": "backend/src/kitchen/models/PlansConfig.js",
       "source_location": "L3",
       "id": "models_plansconfig_planentryschema",
-      "community": 105,
+      "community": 38,
       "norm_label": "planentryschema"
     },
     {
@@ -18272,7 +18272,7 @@
       "source_file": "backend/src/kitchen/models/PlansConfig.js",
       "source_location": "L13",
       "id": "models_plansconfig_plansconfigschema",
-      "community": 105,
+      "community": 38,
       "norm_label": "plansconfigschema"
     },
     {
@@ -18281,7 +18281,7 @@
       "source_file": "backend/src/kitchen/models/PlansConfig.js",
       "source_location": "L33",
       "id": "models_plansconfig_plansconfig",
-      "community": 105,
+      "community": 38,
       "norm_label": "plansconfig"
     },
     {
@@ -18290,7 +18290,7 @@
       "source_file": "backend/src/kitchen/models/PlansConfig.js",
       "source_location": "L35",
       "id": "models_plansconfig_getplansconfig",
-      "community": 105,
+      "community": 38,
       "norm_label": "getplansconfig()"
     },
     {
@@ -18461,7 +18461,7 @@
       "source_file": "backend/src/kitchen/models/StripeWebhookEvent.js",
       "source_location": "L1",
       "id": "models_stripewebhookevent",
-      "community": 233,
+      "community": 38,
       "norm_label": "stripewebhookevent.js"
     },
     {
@@ -18470,7 +18470,7 @@
       "source_file": "backend/src/kitchen/models/StripeWebhookEvent.js",
       "source_location": "L5",
       "id": "models_stripewebhookevent_stripewebhookeventschema",
-      "community": 233,
+      "community": 38,
       "norm_label": "stripewebhookeventschema"
     },
     {
@@ -18479,7 +18479,7 @@
       "source_file": "backend/src/kitchen/models/StripeWebhookEvent.js",
       "source_location": "L14",
       "id": "models_stripewebhookevent_stripewebhookevent",
-      "community": 233,
+      "community": 38,
       "norm_label": "stripewebhookevent"
     },
     {
@@ -18524,7 +18524,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L1",
       "id": "kitchen_onboardingengine",
-      "community": 54,
+      "community": 94,
       "norm_label": "onboardingengine.js"
     },
     {
@@ -18533,7 +18533,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L12",
       "id": "kitchen_onboardingengine_explore_required",
-      "community": 54,
+      "community": 94,
       "norm_label": "explore_required"
     },
     {
@@ -18542,7 +18542,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L18",
       "id": "kitchen_onboardingengine_default_challenges",
-      "community": 54,
+      "community": 94,
       "norm_label": "default_challenges"
     },
     {
@@ -18551,7 +18551,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L117",
       "id": "kitchen_onboardingengine_default_ingredient_suggestions",
-      "community": 54,
+      "community": 94,
       "norm_label": "default_ingredient_suggestions"
     },
     {
@@ -18560,7 +18560,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L124",
       "id": "kitchen_onboardingengine_default_dish_suggestions",
-      "community": 54,
+      "community": 94,
       "norm_label": "default_dish_suggestions"
     },
     {
@@ -18569,7 +18569,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L135",
       "id": "kitchen_onboardingengine_legacy_challenge_keys",
-      "community": 54,
+      "community": 94,
       "norm_label": "legacy_challenge_keys"
     },
     {
@@ -18578,7 +18578,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L146",
       "id": "kitchen_onboardingengine_seedonboardingchallenges",
-      "community": 54,
+      "community": 94,
       "norm_label": "seedonboardingchallenges()"
     },
     {
@@ -18587,7 +18587,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L165",
       "id": "kitchen_onboardingengine_cleanupoldchallenges",
-      "community": 54,
+      "community": 94,
       "norm_label": "cleanupoldchallenges()"
     },
     {
@@ -18596,7 +18596,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L178",
       "id": "kitchen_onboardingengine_seedonboardingsuggestions",
-      "community": 54,
+      "community": 94,
       "norm_label": "seedonboardingsuggestions()"
     },
     {
@@ -18605,7 +18605,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L193",
       "id": "kitchen_onboardingengine_grantbites",
-      "community": 54,
+      "community": 94,
       "norm_label": "_grantbites()"
     },
     {
@@ -18614,7 +18614,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L217",
       "id": "kitchen_onboardingengine_initonboarding",
-      "community": 54,
+      "community": 94,
       "norm_label": "initonboarding()"
     },
     {
@@ -18623,7 +18623,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L240",
       "id": "kitchen_onboardingengine_getonboardingstate",
-      "community": 54,
+      "community": 94,
       "norm_label": "getonboardingstate()"
     },
     {
@@ -18632,7 +18632,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L301",
       "id": "kitchen_onboardingengine_triggeronboarding",
-      "community": 54,
+      "community": 94,
       "norm_label": "triggeronboarding()"
     },
     {
@@ -18641,7 +18641,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L426",
       "id": "kitchen_onboardingengine_resetonboarding",
-      "community": 54,
+      "community": 94,
       "norm_label": "resetonboarding()"
     },
     {
@@ -18650,7 +18650,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L447",
       "id": "kitchen_onboardingengine_assignonboarding",
-      "community": 54,
+      "community": 94,
       "norm_label": "assignonboarding()"
     },
     {
@@ -18659,7 +18659,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L452",
       "id": "kitchen_onboardingengine_removeonboarding",
-      "community": 54,
+      "community": 94,
       "norm_label": "removeonboarding()"
     },
     {
@@ -18668,7 +18668,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L460",
       "id": "kitchen_onboardingengine_setonboardingstatus",
-      "community": 54,
+      "community": 94,
       "norm_label": "setonboardingstatus()"
     },
     {
@@ -18686,7 +18686,7 @@
       "source_file": "backend/src/kitchen/paymentEntitlementService.js",
       "source_location": "L26",
       "id": "kitchen_paymententitlementservice_applypackentitlementfromattempt",
-      "community": 233,
+      "community": 38,
       "norm_label": "applypackentitlementfromattempt()"
     },
     {
@@ -18695,7 +18695,7 @@
       "source_file": "backend/src/kitchen/paymentEntitlementService.js",
       "source_location": "L134",
       "id": "kitchen_paymententitlementservice_applybitesbundleentitlementfromattempt",
-      "community": 233,
+      "community": 38,
       "norm_label": "applybitesbundleentitlementfromattempt()"
     },
     {
@@ -18812,7 +18812,7 @@
       "source_file": "backend/src/kitchen/purchaseSessionService.js",
       "source_location": "L196",
       "id": "kitchen_purchasesessionservice_getpendingpurchasesessions",
-      "community": 192,
+      "community": 122,
       "norm_label": "getpendingpurchasesessions()"
     },
     {
@@ -19145,7 +19145,7 @@
       "source_file": "backend/src/kitchen/routes/basics.js",
       "source_location": "L33",
       "id": "routes_basics_resolvebasicsaccess",
-      "community": 122,
+      "community": 233,
       "norm_label": "resolvebasicsaccess()"
     },
     {
@@ -19172,7 +19172,7 @@
       "source_file": "backend/src/kitchen/routes/beta.js",
       "source_location": "L1",
       "id": "routes_beta",
-      "community": 105,
+      "community": 148,
       "norm_label": "beta.js"
     },
     {
@@ -19181,7 +19181,7 @@
       "source_file": "backend/src/kitchen/routes/beta.js",
       "source_location": "L31",
       "id": "routes_beta_router",
-      "community": 105,
+      "community": 148,
       "norm_label": "router"
     },
     {
@@ -19190,7 +19190,7 @@
       "source_file": "backend/src/kitchen/routes/beta.js",
       "source_location": "L34",
       "id": "routes_beta_rlstore",
-      "community": 105,
+      "community": 148,
       "norm_label": "_rlstore"
     },
     {
@@ -19199,7 +19199,7 @@
       "source_file": "backend/src/kitchen/routes/beta.js",
       "source_location": "L35",
       "id": "routes_beta_checkratelimit",
-      "community": 105,
+      "community": 148,
       "norm_label": "_checkratelimit()"
     },
     {
@@ -19208,7 +19208,7 @@
       "source_file": "backend/src/kitchen/routes/beta.js",
       "source_location": "L46",
       "id": "routes_beta_getclientip",
-      "community": 105,
+      "community": 148,
       "norm_label": "_getclientip()"
     },
     {
@@ -19424,7 +19424,7 @@
       "source_file": "backend/src/kitchen/routes/dishCategories.js",
       "source_location": "L1",
       "id": "routes_dishcategories",
-      "community": 408,
+      "community": 54,
       "norm_label": "dishcategories.js"
     },
     {
@@ -19433,7 +19433,7 @@
       "source_file": "backend/src/kitchen/routes/dishCategories.js",
       "source_location": "L5",
       "id": "routes_dishcategories_router",
-      "community": 408,
+      "community": 54,
       "norm_label": "router"
     },
     {
@@ -19442,7 +19442,7 @@
       "source_file": "backend/src/kitchen/routes/dishCategories.js",
       "source_location": "L10",
       "id": "routes_dishcategories_normalizecategorycode",
-      "community": 408,
+      "community": 54,
       "norm_label": "normalizecategorycode()"
     },
     {
@@ -19451,7 +19451,7 @@
       "source_file": "backend/src/kitchen/routes/dishCategories.js",
       "source_location": "L19",
       "id": "routes_dishcategories_canmanagedishcategories",
-      "community": 408,
+      "community": 54,
       "norm_label": "canmanagedishcategories()"
     },
     {
@@ -19595,7 +19595,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L1",
       "id": "routes_household",
-      "community": 148,
+      "community": 233,
       "norm_label": "household.js"
     },
     {
@@ -19604,7 +19604,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L44",
       "id": "routes_household_router",
-      "community": 148,
+      "community": 233,
       "norm_label": "router"
     },
     {
@@ -19613,7 +19613,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L46",
       "id": "routes_household_normalizeavoidrepeatsweeks",
-      "community": 148,
+      "community": 233,
       "norm_label": "normalizeavoidrepeatsweeks()"
     },
     {
@@ -19622,7 +19622,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L52",
       "id": "routes_household_normalizecyclestartday",
-      "community": 148,
+      "community": 233,
       "norm_label": "normalizecyclestartday()"
     },
     {
@@ -19631,7 +19631,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L58",
       "id": "routes_household_parsebooleaninput",
-      "community": 148,
+      "community": 233,
       "norm_label": "parsebooleaninput()"
     },
     {
@@ -19640,7 +19640,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L68",
       "id": "routes_household_parseweeksinput",
-      "community": 148,
+      "community": 233,
       "norm_label": "parseweeksinput()"
     },
     {
@@ -19649,7 +19649,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L79",
       "id": "routes_household_parsebudgetinput",
-      "community": 148,
+      "community": 233,
       "norm_label": "parsebudgetinput()"
     },
     {
@@ -19658,7 +19658,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L90",
       "id": "routes_household_parsecyclestartdayinput",
-      "community": 148,
+      "community": 233,
       "norm_label": "parsecyclestartdayinput()"
     },
     {
@@ -19676,7 +19676,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L136",
       "id": "routes_household_parsebooleanwithdefault",
-      "community": 148,
+      "community": 233,
       "norm_label": "parsebooleanwithdefault()"
     },
     {
@@ -19685,7 +19685,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L146",
       "id": "routes_household_isdioduser",
-      "community": 148,
+      "community": 233,
       "norm_label": "isdioduser()"
     },
     {
@@ -19694,7 +19694,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L150",
       "id": "routes_household_normalizerequestedhouseholdid",
-      "community": 148,
+      "community": 233,
       "norm_label": "normalizerequestedhouseholdid()"
     },
     {
@@ -19703,7 +19703,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L155",
       "id": "routes_household_resolvesharehousehold",
-      "community": 148,
+      "community": 233,
       "norm_label": "resolvesharehousehold()"
     },
     {
@@ -19712,7 +19712,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L219",
       "id": "routes_household_normalizeinvitationemails",
-      "community": 148,
+      "community": 20,
       "norm_label": "normalizeinvitationemails()"
     },
     {
@@ -19721,7 +19721,7 @@
       "source_file": "backend/src/kitchen/routes/household.js",
       "source_location": "L241",
       "id": "routes_household_invitationrolelabel",
-      "community": 148,
+      "community": 233,
       "norm_label": "invitationrolelabel()"
     },
     {
@@ -19784,7 +19784,7 @@
       "source_file": "backend/src/kitchen/routes/kitchenIngredients.js",
       "source_location": "L71",
       "id": "routes_kitcheningredients_syncingredientreferences",
-      "community": 408,
+      "community": 122,
       "norm_label": "syncingredientreferences()"
     },
     {
@@ -19802,7 +19802,7 @@
       "source_file": "backend/src/kitchen/routes/onboarding.js",
       "source_location": "L1",
       "id": "routes_onboarding",
-      "community": 54,
+      "community": 94,
       "norm_label": "onboarding.js"
     },
     {
@@ -19811,7 +19811,7 @@
       "source_file": "backend/src/kitchen/routes/onboarding.js",
       "source_location": "L19",
       "id": "routes_onboarding_router",
-      "community": 54,
+      "community": 94,
       "norm_label": "router"
     },
     {
@@ -19820,7 +19820,7 @@
       "source_file": "backend/src/kitchen/routes/plans.js",
       "source_location": "L1",
       "id": "routes_plans",
-      "community": 105,
+      "community": 38,
       "norm_label": "plans.js"
     },
     {
@@ -19829,7 +19829,7 @@
       "source_file": "backend/src/kitchen/routes/plans.js",
       "source_location": "L6",
       "id": "routes_plans_router",
-      "community": 105,
+      "community": 38,
       "norm_label": "router"
     },
     {
@@ -19838,7 +19838,7 @@
       "source_file": "backend/src/kitchen/routes/plans.js",
       "source_location": "L8",
       "id": "routes_plans_plan_keys",
-      "community": 105,
+      "community": 38,
       "norm_label": "plan_keys"
     },
     {
@@ -19892,7 +19892,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L1",
       "id": "routes_shopping",
-      "community": 192,
+      "community": 122,
       "norm_label": "shopping.js"
     },
     {
@@ -19901,7 +19901,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L38",
       "id": "routes_shopping_router",
-      "community": 192,
+      "community": 122,
       "norm_label": "router"
     },
     {
@@ -19910,7 +19910,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L40",
       "id": "routes_shopping_logshoppingerror",
-      "community": 192,
+      "community": 122,
       "norm_label": "logshoppingerror()"
     },
     {
@@ -19919,7 +19919,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L49",
       "id": "routes_shopping_normalizestorename",
-      "community": 192,
+      "community": 122,
       "norm_label": "normalizestorename()"
     },
     {
@@ -19928,7 +19928,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L53",
       "id": "routes_shopping_sortstores",
-      "community": 192,
+      "community": 122,
       "norm_label": "sortstores()"
     },
     {
@@ -19937,7 +19937,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L62",
       "id": "routes_shopping_buildstorevisibilityfilter",
-      "community": 192,
+      "community": 122,
       "norm_label": "buildstorevisibilityfilter()"
     },
     {
@@ -19946,7 +19946,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L72",
       "id": "routes_shopping_buildcategoryvisibilityfilter",
-      "community": 192,
+      "community": 122,
       "norm_label": "buildcategoryvisibilityfilter()"
     },
     {
@@ -19955,7 +19955,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L83",
       "id": "routes_shopping_todategroup",
-      "community": 192,
+      "community": 122,
       "norm_label": "todategroup()"
     },
     {
@@ -19964,7 +19964,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L88",
       "id": "routes_shopping_isvalidobjectid",
-      "community": 192,
+      "community": 122,
       "norm_label": "isvalidobjectid()"
     },
     {
@@ -19973,7 +19973,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L92",
       "id": "routes_shopping_parseamount",
-      "community": 192,
+      "community": 122,
       "norm_label": "parseamount()"
     },
     {
@@ -19982,7 +19982,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L98",
       "id": "routes_shopping_comparecategorygroups",
-      "community": 192,
+      "community": 122,
       "norm_label": "comparecategorygroups()"
     },
     {
@@ -19991,7 +19991,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L105",
       "id": "routes_shopping_normalizeshoppingitemforresponse",
-      "community": 192,
+      "community": 122,
       "norm_label": "normalizeshoppingitemforresponse()"
     },
     {
@@ -20000,7 +20000,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L121",
       "id": "routes_shopping_normalizebudgetnumber",
-      "community": 192,
+      "community": 122,
       "norm_label": "normalizebudgetnumber()"
     },
     {
@@ -20009,7 +20009,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L126",
       "id": "routes_shopping_buildbudgetfeatureunavailablepayload",
-      "community": 192,
+      "community": 122,
       "norm_label": "buildbudgetfeatureunavailablepayload()"
     },
     {
@@ -20018,7 +20018,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L134",
       "id": "routes_shopping_resolvehouseholdbudgetaccess",
-      "community": 192,
+      "community": 122,
       "norm_label": "resolvehouseholdbudgetaccess()"
     },
     {
@@ -20027,7 +20027,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L145",
       "id": "routes_shopping_buildbudgetsummary",
-      "community": 192,
+      "community": 122,
       "norm_label": "buildbudgetsummary()"
     },
     {
@@ -20036,7 +20036,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L174",
       "id": "routes_shopping_buildpurchasesessionsummary",
-      "community": 192,
+      "community": 122,
       "norm_label": "buildpurchasesessionsummary()"
     },
     {
@@ -20045,7 +20045,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L191",
       "id": "routes_shopping_buildweeklybudgetdetails",
-      "community": 192,
+      "community": 122,
       "norm_label": "buildweeklybudgetdetails()"
     },
     {
@@ -20054,7 +20054,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L222",
       "id": "routes_shopping_getshoppingpayload",
-      "community": 192,
+      "community": 122,
       "norm_label": "getshoppingpayload()"
     },
     {
@@ -20063,7 +20063,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L360",
       "id": "routes_shopping_validatestoreselection",
-      "community": 192,
+      "community": 122,
       "norm_label": "validatestoreselection()"
     },
     {
@@ -20072,7 +20072,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L409",
       "id": "routes_shopping_addshoppingitem",
-      "community": 192,
+      "community": 122,
       "norm_label": "addshoppingitem()"
     },
     {
@@ -20081,7 +20081,7 @@
       "source_file": "backend/src/kitchen/routes/swaps.js",
       "source_location": "L1",
       "id": "routes_swaps",
-      "community": 42,
+      "community": 122,
       "norm_label": "swaps.js"
     },
     {
@@ -20090,7 +20090,7 @@
       "source_file": "backend/src/kitchen/routes/swaps.js",
       "source_location": "L14",
       "id": "routes_swaps_router",
-      "community": 42,
+      "community": 122,
       "norm_label": "router"
     },
     {
@@ -20099,7 +20099,7 @@
       "source_file": "backend/src/kitchen/routes/swaps.js",
       "source_location": "L16",
       "id": "routes_swaps_hasadminaccess",
-      "community": 42,
+      "community": 122,
       "norm_label": "hasadminaccess()"
     },
     {
@@ -20117,7 +20117,7 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L1",
       "id": "routes_users",
-      "community": 148,
+      "community": 20,
       "norm_label": "users.js"
     },
     {
@@ -20126,7 +20126,7 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L30",
       "id": "routes_users_router",
-      "community": 148,
+      "community": 20,
       "norm_label": "router"
     },
     {
@@ -20135,7 +20135,7 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L32",
       "id": "routes_users_ishouseholdadmin",
-      "community": 148,
+      "community": 20,
       "norm_label": "ishouseholdadmin()"
     },
     {
@@ -20144,7 +20144,7 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L36",
       "id": "routes_users_startoftodayutc",
-      "community": 148,
+      "community": 20,
       "norm_label": "startoftodayutc()"
     },
     {
@@ -20153,7 +20153,7 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L41",
       "id": "routes_users_unassignfuturecookslots",
-      "community": 148,
+      "community": 20,
       "norm_label": "unassignfuturecookslots()"
     },
     {
@@ -20162,7 +20162,7 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L65",
       "id": "routes_users_gettotaldiners",
-      "community": 148,
+      "community": 20,
       "norm_label": "gettotaldiners()"
     },
     {
@@ -20171,7 +20171,7 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L70",
       "id": "routes_users_cleanuphouseholdmemberreferences",
-      "community": 148,
+      "community": 20,
       "norm_label": "cleanuphouseholdmemberreferences()"
     },
     {
@@ -20180,7 +20180,7 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L139",
       "id": "routes_users_deletehouseholdscopeddata",
-      "community": 148,
+      "community": 20,
       "norm_label": "deletehouseholdscopeddata()"
     },
     {
@@ -20558,7 +20558,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L1",
       "id": "kitchen_shoppingservice",
-      "community": 192,
+      "community": 122,
       "norm_label": "shoppingservice.js"
     },
     {
@@ -20567,7 +20567,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L14",
       "id": "kitchen_shoppingservice_ingredient_scope_priority",
-      "community": 192,
+      "community": 122,
       "norm_label": "ingredient_scope_priority"
     },
     {
@@ -20576,7 +20576,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L20",
       "id": "kitchen_shoppingservice_comparebyscopepriority",
-      "community": 192,
+      "community": 122,
       "norm_label": "comparebyscopepriority()"
     },
     {
@@ -20585,7 +20585,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L26",
       "id": "kitchen_shoppingservice_buildingredientvisibilityfilter",
-      "community": 192,
+      "community": 122,
       "norm_label": "buildingredientvisibilityfilter()"
     },
     {
@@ -20594,7 +20594,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L38",
       "id": "kitchen_shoppingservice_shouldincludemaininshopping",
-      "community": 192,
+      "community": 122,
       "norm_label": "shouldincludemaininshopping()"
     },
     {
@@ -20603,7 +20603,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L44",
       "id": "kitchen_shoppingservice_shouldincludesideinshopping",
-      "community": 192,
+      "community": 122,
       "norm_label": "shouldincludesideinshopping()"
     },
     {
@@ -20612,7 +20612,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L50",
       "id": "kitchen_shoppingservice_ensureshoppinglist",
-      "community": 192,
+      "community": 122,
       "norm_label": "ensureshoppinglist()"
     },
     {
@@ -20621,7 +20621,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L64",
       "id": "kitchen_shoppingservice_derivecanonicalname",
-      "community": 192,
+      "community": 122,
       "norm_label": "derivecanonicalname()"
     },
     {
@@ -20630,7 +20630,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L73",
       "id": "kitchen_shoppingservice_ensurevalidshoppingitemshape",
-      "community": 192,
+      "community": 122,
       "norm_label": "ensurevalidshoppingitemshape()"
     },
     {
@@ -20639,7 +20639,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L89",
       "id": "kitchen_shoppingservice_filtervalidshoppingitems",
-      "community": 192,
+      "community": 122,
       "norm_label": "filtervalidshoppingitems()"
     },
     {
@@ -20648,7 +20648,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L112",
       "id": "kitchen_shoppingservice_resolveshoppingitemingredientdata",
-      "community": 192,
+      "community": 122,
       "norm_label": "resolveshoppingitemingredientdata()"
     },
     {
@@ -20657,7 +20657,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L195",
       "id": "kitchen_shoppingservice_buildaggregatedfromweek",
-      "community": 192,
+      "community": 122,
       "norm_label": "buildaggregatedfromweek()"
     },
     {
@@ -20666,7 +20666,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L273",
       "id": "kitchen_shoppingservice_rebuildshoppinglist",
-      "community": 192,
+      "community": 122,
       "norm_label": "rebuildshoppinglist()"
     },
     {
@@ -20675,7 +20675,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L314",
       "id": "kitchen_shoppingservice_repairshoppinglistitems",
-      "community": 192,
+      "community": 122,
       "norm_label": "repairshoppinglistitems()"
     },
     {
@@ -20747,7 +20747,7 @@
       "source_file": "backend/src/kitchen/subscriptionCron.js",
       "source_location": "L1",
       "id": "kitchen_subscriptioncron",
-      "community": 233,
+      "community": 105,
       "norm_label": "subscriptioncron.js"
     },
     {
@@ -20756,7 +20756,7 @@
       "source_file": "backend/src/kitchen/subscriptionCron.js",
       "source_location": "L4",
       "id": "kitchen_subscriptioncron_deactivateexpiredsubscriptions",
-      "community": 233,
+      "community": 105,
       "norm_label": "deactivateexpiredsubscriptions()"
     },
     {
@@ -20828,7 +20828,7 @@
       "source_file": "backend/src/kitchen/subscriptionService.js",
       "source_location": "L8",
       "id": "kitchen_subscriptionservice_subscription_plans",
-      "community": 233,
+      "community": 38,
       "norm_label": "subscription_plans"
     },
     {
@@ -20990,7 +20990,7 @@
       "source_file": "backend/src/kitchen/subscriptionService.js",
       "source_location": "L144",
       "id": "kitchen_subscriptionservice_applyadminsubscriptionactivation",
-      "community": 233,
+      "community": 38,
       "norm_label": "applyadminsubscriptionactivation()"
     },
     {
@@ -20999,7 +20999,7 @@
       "source_file": "backend/src/kitchen/subscriptionService.js",
       "source_location": "L162",
       "id": "kitchen_subscriptionservice_applyadminsubscriptiondeactivation",
-      "community": 233,
+      "community": 105,
       "norm_label": "applyadminsubscriptiondeactivation()"
     },
     {
@@ -21179,7 +21179,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L1",
       "id": "utils_dates",
-      "community": 162,
+      "community": 122,
       "norm_label": "dates.js"
     },
     {
@@ -21188,7 +21188,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L1",
       "id": "utils_dates_parseisodate",
-      "community": 162,
+      "community": 122,
       "norm_label": "parseisodate()"
     },
     {
@@ -21197,7 +21197,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L7",
       "id": "utils_dates_formatdateiso",
-      "community": 162,
+      "community": 122,
       "norm_label": "formatdateiso()"
     },
     {
@@ -21206,7 +21206,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L11",
       "id": "utils_dates_getweekstart",
-      "community": 408,
+      "community": 122,
       "norm_label": "getweekstart()"
     },
     {
@@ -21872,7 +21872,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L1",
       "id": "routes_payments",
-      "community": 233,
+      "community": 38,
       "norm_label": "payments.js"
     },
     {
@@ -21881,7 +21881,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L27",
       "id": "routes_payments_router",
-      "community": 233,
+      "community": 38,
       "norm_label": "router"
     },
     {
@@ -21890,7 +21890,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L29",
       "id": "routes_payments_valid_types",
-      "community": 233,
+      "community": 38,
       "norm_label": "valid_types"
     },
     {
@@ -21899,7 +21899,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L32",
       "id": "routes_payments_checkoutratelimit",
-      "community": 233,
+      "community": 38,
       "norm_label": "checkoutratelimit"
     },
     {
@@ -21908,7 +21908,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L41",
       "id": "routes_payments_buildstripeclient",
-      "community": 233,
+      "community": 38,
       "norm_label": "buildstripeclient()"
     },
     {
@@ -21917,7 +21917,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L46",
       "id": "routes_payments_paymentsenabledguard",
-      "community": 233,
+      "community": 38,
       "norm_label": "paymentsenabledguard()"
     },
     {
@@ -21926,7 +21926,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L58",
       "id": "routes_payments_stripeclientguard",
-      "community": 233,
+      "community": 38,
       "norm_label": "stripeclientguard()"
     },
     {
@@ -21935,7 +21935,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L350",
       "id": "routes_payments_requiredevenv",
-      "community": 233,
+      "community": 38,
       "norm_label": "requiredevenv()"
     },
     {
@@ -21944,7 +21944,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L633",
       "id": "routes_payments_requiredevtestentitlements",
-      "community": 233,
+      "community": 38,
       "norm_label": "requiredevtestentitlements()"
     },
     {
@@ -21953,7 +21953,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L982",
       "id": "routes_payments_handlecheckoutcompleted",
-      "community": 233,
+      "community": 38,
       "norm_label": "handlecheckoutcompleted()"
     },
     {
@@ -21962,7 +21962,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L1116",
       "id": "routes_payments_handlecheckoutstatusupdate",
-      "community": 233,
+      "community": 38,
       "norm_label": "handlecheckoutstatusupdate()"
     },
     {
@@ -21971,7 +21971,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L1142",
       "id": "routes_payments_resolveplanfrompriceid",
-      "community": 233,
+      "community": 38,
       "norm_label": "resolveplanfrompriceid()"
     },
     {
@@ -21980,7 +21980,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L1158",
       "id": "routes_payments_handlesubscriptionevent",
-      "community": 233,
+      "community": 38,
       "norm_label": "handlesubscriptionevent()"
     },
     {
@@ -21989,7 +21989,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L1299",
       "id": "routes_payments_handleinvoicepaymentsucceeded",
-      "community": 233,
+      "community": 38,
       "norm_label": "handleinvoicepaymentsucceeded()"
     },
     {
@@ -21998,7 +21998,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L1324",
       "id": "routes_payments_handleinvoicepaymentfailed",
-      "community": 233,
+      "community": 38,
       "norm_label": "handleinvoicepaymentfailed()"
     },
     {
@@ -22007,7 +22007,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L1338",
       "id": "routes_payments_handlechargerefunded",
-      "community": 233,
+      "community": 38,
       "norm_label": "handlechargerefunded()"
     },
     {
@@ -22016,7 +22016,7 @@
       "source_file": "backend/src/routes/payments.js",
       "source_location": "L1359",
       "id": "routes_payments_stripewebhookhandler",
-      "community": 233,
+      "community": 38,
       "norm_label": "stripewebhookhandler()"
     },
     {
@@ -22025,7 +22025,7 @@
       "source_file": "backend/src/routes/subscription.js",
       "source_location": "L1",
       "id": "routes_subscription",
-      "community": 42,
+      "community": 105,
       "norm_label": "subscription.js"
     },
     {
@@ -22034,7 +22034,7 @@
       "source_file": "backend/src/routes/subscription.js",
       "source_location": "L10",
       "id": "routes_subscription_router",
-      "community": 42,
+      "community": 105,
       "norm_label": "router"
     },
     {
@@ -22322,7 +22322,7 @@
       "source_file": "backend/src/users/index.js",
       "source_location": "L1",
       "id": "users_index",
-      "community": 148,
+      "community": 20,
       "norm_label": "index.js"
     },
     {
@@ -22331,7 +22331,7 @@
       "source_file": "backend/src/users/index.js",
       "source_location": "L14",
       "id": "users_index_router",
-      "community": 148,
+      "community": 20,
       "norm_label": "router"
     },
     {
@@ -22340,7 +22340,7 @@
       "source_file": "backend/src/users/utils.js",
       "source_location": "L1",
       "id": "users_utils",
-      "community": 148,
+      "community": 20,
       "norm_label": "utils.js"
     },
     {
@@ -22349,7 +22349,7 @@
       "source_file": "backend/src/users/utils.js",
       "source_location": "L1",
       "id": "users_utils_normalizeemail",
-      "community": 148,
+      "community": 20,
       "norm_label": "normalizeemail()"
     },
     {
@@ -22358,7 +22358,7 @@
       "source_file": "backend/src/users/utils.js",
       "source_location": "L5",
       "id": "users_utils_isvalidemail",
-      "community": 148,
+      "community": 20,
       "norm_label": "isvalidemail()"
     },
     {
@@ -22367,7 +22367,7 @@
       "source_file": "backend/src/users/utils.js",
       "source_location": "L9",
       "id": "users_utils_normalizerole",
-      "community": 148,
+      "community": 20,
       "norm_label": "normalizerole()"
     },
     {
@@ -22376,7 +22376,7 @@
       "source_file": "backend/src/users/utils.js",
       "source_location": "L17",
       "id": "users_utils_builddisplayname",
-      "community": 148,
+      "community": 20,
       "norm_label": "builddisplayname()"
     },
     {
@@ -22385,7 +22385,7 @@
       "source_file": "backend/src/users/utils.js",
       "source_location": "L25",
       "id": "users_utils_buildinitials",
-      "community": 148,
+      "community": 20,
       "norm_label": "buildinitials()"
     },
     {
@@ -22394,7 +22394,7 @@
       "source_file": "backend/src/users/utils.js",
       "source_location": "L34",
       "id": "users_utils_normalizeinitials",
-      "community": 148,
+      "community": 20,
       "norm_label": "normalizeinitials()"
     },
     {
@@ -22403,7 +22403,7 @@
       "source_file": "backend/src/users/utils.js",
       "source_location": "L40",
       "id": "users_utils_color_ids",
-      "community": 148,
+      "community": 20,
       "norm_label": "color_ids"
     },
     {
@@ -22412,7 +22412,7 @@
       "source_file": "backend/src/users/utils.js",
       "source_location": "L41",
       "id": "users_utils_legacy_color_map",
-      "community": 148,
+      "community": 20,
       "norm_label": "legacy_color_map"
     },
     {
@@ -22421,7 +22421,7 @@
       "source_file": "backend/src/users/utils.js",
       "source_location": "L47",
       "id": "users_utils_normalizecolorid",
-      "community": 148,
+      "community": 20,
       "norm_label": "normalizecolorid()"
     },
     {
@@ -22524,10 +22524,19 @@
       "norm_label": "@clerk/react"
     },
     {
-      "label": "@tiptap/extension-color",
+      "label": "@tanstack/react-query",
       "file_type": "code",
       "source_file": "frontend/package.json",
       "source_location": "L13",
+      "id": "frontend_package_dependencies_tanstack_react_query",
+      "community": 47,
+      "norm_label": "@tanstack/react-query"
+    },
+    {
+      "label": "@tiptap/extension-color",
+      "file_type": "code",
+      "source_file": "frontend/package.json",
+      "source_location": "L14",
       "id": "frontend_package_dependencies_tiptap_extension_color",
       "community": 47,
       "norm_label": "@tiptap/extension-color"
@@ -22536,7 +22545,7 @@
       "label": "@tiptap/extension-image",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L14",
+      "source_location": "L15",
       "id": "frontend_package_dependencies_tiptap_extension_image",
       "community": 47,
       "norm_label": "@tiptap/extension-image"
@@ -22545,7 +22554,7 @@
       "label": "@tiptap/extension-link",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L15",
+      "source_location": "L16",
       "id": "frontend_package_dependencies_tiptap_extension_link",
       "community": 47,
       "norm_label": "@tiptap/extension-link"
@@ -22554,7 +22563,7 @@
       "label": "@tiptap/extension-placeholder",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L16",
+      "source_location": "L17",
       "id": "frontend_package_dependencies_tiptap_extension_placeholder",
       "community": 47,
       "norm_label": "@tiptap/extension-placeholder"
@@ -22563,7 +22572,7 @@
       "label": "@tiptap/extension-text-style",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L17",
+      "source_location": "L18",
       "id": "frontend_package_dependencies_tiptap_extension_text_style",
       "community": 47,
       "norm_label": "@tiptap/extension-text-style"
@@ -22572,7 +22581,7 @@
       "label": "@tiptap/extension-underline",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L18",
+      "source_location": "L19",
       "id": "frontend_package_dependencies_tiptap_extension_underline",
       "community": 47,
       "norm_label": "@tiptap/extension-underline"
@@ -22581,7 +22590,7 @@
       "label": "@tiptap/pm",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L19",
+      "source_location": "L20",
       "id": "frontend_package_dependencies_tiptap_pm",
       "community": 47,
       "norm_label": "@tiptap/pm"
@@ -22590,7 +22599,7 @@
       "label": "@tiptap/react",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L20",
+      "source_location": "L21",
       "id": "frontend_package_dependencies_tiptap_react",
       "community": 47,
       "norm_label": "@tiptap/react"
@@ -22599,7 +22608,7 @@
       "label": "@tiptap/starter-kit",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L21",
+      "source_location": "L22",
       "id": "frontend_package_dependencies_tiptap_starter_kit",
       "community": 47,
       "norm_label": "@tiptap/starter-kit"
@@ -22608,7 +22617,7 @@
       "label": "animejs",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L22",
+      "source_location": "L23",
       "id": "frontend_package_dependencies_animejs",
       "community": 47,
       "norm_label": "animejs"
@@ -22617,7 +22626,7 @@
       "label": "lucide-react",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L23",
+      "source_location": "L24",
       "id": "frontend_package_dependencies_lucide_react",
       "community": 47,
       "norm_label": "lucide-react"
@@ -22626,7 +22635,7 @@
       "label": "react",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "id": "frontend_package_dependencies_react",
       "community": 47,
       "norm_label": "react"
@@ -22635,7 +22644,7 @@
       "label": "react-dom",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L25",
+      "source_location": "L26",
       "id": "frontend_package_dependencies_react_dom",
       "community": 47,
       "norm_label": "react-dom"
@@ -22644,7 +22653,7 @@
       "label": "react-router-dom",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L26",
+      "source_location": "L27",
       "id": "frontend_package_dependencies_react_router_dom",
       "community": 47,
       "norm_label": "react-router-dom"
@@ -22653,7 +22662,7 @@
       "label": "devDependencies",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L28",
+      "source_location": "L29",
       "id": "frontend_package_devdependencies",
       "community": 47,
       "norm_label": "devdependencies"
@@ -22662,7 +22671,7 @@
       "label": "@vitejs/plugin-react",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "id": "frontend_package_devdependencies_vitejs_plugin_react",
       "community": 47,
       "norm_label": "@vitejs/plugin-react"
@@ -22671,7 +22680,7 @@
       "label": "vite",
       "file_type": "code",
       "source_file": "frontend/package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "id": "frontend_package_devdependencies_vite",
       "community": 47,
       "norm_label": "vite"
@@ -22713,10 +22722,145 @@
       "norm_label": "app.jsx"
     },
     {
+      "label": "WeekPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L15",
+      "id": "src_app_weekpage",
+      "community": 18,
+      "norm_label": "weekpage"
+    },
+    {
+      "label": "DishesPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L16",
+      "id": "src_app_dishespage",
+      "community": 18,
+      "norm_label": "dishespage"
+    },
+    {
+      "label": "ShoppingPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L17",
+      "id": "src_app_shoppingpage",
+      "community": 18,
+      "norm_label": "shoppingpage"
+    },
+    {
+      "label": "ShoppingBudgetPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L18",
+      "id": "src_app_shoppingbudgetpage",
+      "community": 18,
+      "norm_label": "shoppingbudgetpage"
+    },
+    {
+      "label": "SwapsPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L19",
+      "id": "src_app_swapspage",
+      "community": 18,
+      "norm_label": "swapspage"
+    },
+    {
+      "label": "SettingsPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L20",
+      "id": "src_app_settingspage",
+      "community": 18,
+      "norm_label": "settingspage"
+    },
+    {
+      "label": "UpgradeToProPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L21",
+      "id": "src_app_upgradetopropage",
+      "community": 18,
+      "norm_label": "upgradetopropage"
+    },
+    {
+      "label": "CatalogPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L22",
+      "id": "src_app_catalogpage",
+      "community": 18,
+      "norm_label": "catalogpage"
+    },
+    {
+      "label": "InviteLandingPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L23",
+      "id": "src_app_invitelandingpage",
+      "community": 18,
+      "norm_label": "invitelandingpage"
+    },
+    {
+      "label": "PaymentSuccessPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L24",
+      "id": "src_app_paymentsuccesspage",
+      "community": 18,
+      "norm_label": "paymentsuccesspage"
+    },
+    {
+      "label": "PaymentCancelledPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L25",
+      "id": "src_app_paymentcancelledpage",
+      "community": 18,
+      "norm_label": "paymentcancelledpage"
+    },
+    {
+      "label": "AdminUsersPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L26",
+      "id": "src_app_adminuserspage",
+      "community": 18,
+      "norm_label": "adminuserspage"
+    },
+    {
+      "label": "AdminPanelPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L27",
+      "id": "src_app_adminpanelpage",
+      "community": 18,
+      "norm_label": "adminpanelpage"
+    },
+    {
+      "label": "AdminForgotPasswordPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L28",
+      "id": "src_app_adminforgotpasswordpage",
+      "community": 18,
+      "norm_label": "adminforgotpasswordpage"
+    },
+    {
+      "label": "AdminResetPasswordPage",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L29",
+      "id": "src_app_adminresetpasswordpage",
+      "community": 18,
+      "norm_label": "adminresetpasswordpage"
+    },
+    {
       "label": "HomeRedirect()",
       "file_type": "code",
       "source_file": "frontend/src/App.jsx",
-      "source_location": "L38",
+      "source_location": "L44",
       "id": "src_app_homeredirect",
       "community": 18,
       "norm_label": "homeredirect()"
@@ -22725,7 +22869,7 @@
       "label": "BootstrapRedirect()",
       "file_type": "code",
       "source_file": "frontend/src/App.jsx",
-      "source_location": "L56",
+      "source_location": "L62",
       "id": "src_app_bootstrapredirect",
       "community": 66,
       "norm_label": "bootstrapredirect()"
@@ -22734,7 +22878,7 @@
       "label": "AppRoutes()",
       "file_type": "code",
       "source_file": "frontend/src/App.jsx",
-      "source_location": "L86",
+      "source_location": "L92",
       "id": "src_app_approutes",
       "community": 18,
       "norm_label": "approutes()"
@@ -22743,7 +22887,7 @@
       "label": "AuthBoundary()",
       "file_type": "code",
       "source_file": "frontend/src/App.jsx",
-      "source_location": "L218",
+      "source_location": "L228",
       "id": "src_app_authboundary",
       "community": 18,
       "norm_label": "authboundary()"
@@ -22752,7 +22896,7 @@
       "label": "App()",
       "file_type": "code",
       "source_file": "frontend/src/App.jsx",
-      "source_location": "L234",
+      "source_location": "L244",
       "id": "src_app_app",
       "community": 18,
       "norm_label": "app()"
@@ -22896,7 +23040,7 @@
       "label": "CalendarIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L21",
+      "source_location": "L31",
       "id": "kitchen_layout_calendaricon",
       "community": 43,
       "norm_label": "calendaricon()"
@@ -22905,7 +23049,7 @@
       "label": "UtensilsIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L30",
+      "source_location": "L40",
       "id": "kitchen_layout_utensilsicon",
       "community": 43,
       "norm_label": "utensilsicon()"
@@ -22914,7 +23058,7 @@
       "label": "ListIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L42",
+      "source_location": "L52",
       "id": "kitchen_layout_listicon",
       "community": 43,
       "norm_label": "listicon()"
@@ -22923,7 +23067,7 @@
       "label": "SettingsIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L53",
+      "source_location": "L63",
       "id": "kitchen_layout_settingsicon",
       "community": 43,
       "norm_label": "settingsicon()"
@@ -22932,7 +23076,7 @@
       "label": "CatalogIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L65",
+      "source_location": "L75",
       "id": "kitchen_layout_catalogicon",
       "community": 43,
       "norm_label": "catalogicon()"
@@ -22941,7 +23085,7 @@
       "label": "CreditCardIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L74",
+      "source_location": "L84",
       "id": "kitchen_layout_creditcardicon",
       "community": 43,
       "norm_label": "creditcardicon()"
@@ -22950,7 +23094,7 @@
       "label": "LogoutIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L83",
+      "source_location": "L93",
       "id": "kitchen_layout_logouticon",
       "community": 43,
       "norm_label": "logouticon()"
@@ -22959,7 +23103,7 @@
       "label": "UserIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L93",
+      "source_location": "L103",
       "id": "kitchen_layout_usericon",
       "community": 43,
       "norm_label": "usericon()"
@@ -22968,7 +23112,7 @@
       "label": "ShareIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L101",
+      "source_location": "L111",
       "id": "kitchen_layout_shareicon",
       "community": 43,
       "norm_label": "shareicon()"
@@ -22977,7 +23121,7 @@
       "label": "ChevronDownIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L111",
+      "source_location": "L121",
       "id": "kitchen_layout_chevrondownicon",
       "community": 43,
       "norm_label": "chevrondownicon()"
@@ -22986,7 +23130,7 @@
       "label": "AppearanceIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L120",
+      "source_location": "L130",
       "id": "kitchen_layout_appearanceicon",
       "community": 43,
       "norm_label": "appearanceicon()"
@@ -22995,7 +23139,7 @@
       "label": "SystemThemeIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L129",
+      "source_location": "L139",
       "id": "kitchen_layout_systemthemeicon",
       "community": 43,
       "norm_label": "systemthemeicon()"
@@ -23004,7 +23148,7 @@
       "label": "SunThemeIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L138",
+      "source_location": "L148",
       "id": "kitchen_layout_sunthemeicon",
       "community": 43,
       "norm_label": "sunthemeicon()"
@@ -23013,7 +23157,7 @@
       "label": "MoonThemeIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L147",
+      "source_location": "L157",
       "id": "kitchen_layout_moonthemeicon",
       "community": 43,
       "norm_label": "moonthemeicon()"
@@ -23022,7 +23166,7 @@
       "label": "getFirstName()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L155",
+      "source_location": "L165",
       "id": "kitchen_layout_getfirstname",
       "community": 43,
       "norm_label": "getfirstname()"
@@ -23031,7 +23175,7 @@
       "label": "BetaProUnlockedModal()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L159",
+      "source_location": "L169",
       "id": "kitchen_layout_betaprounlockedmodal",
       "community": 43,
       "norm_label": "betaprounlockedmodal()"
@@ -23040,7 +23184,7 @@
       "label": "KitchenLayout()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/Layout.jsx",
-      "source_location": "L216",
+      "source_location": "L226",
       "id": "kitchen_layout_kitchenlayout",
       "community": 43,
       "norm_label": "kitchenlayout()"
@@ -23150,7 +23294,7 @@
       "source_file": "frontend/src/kitchen/api.js",
       "source_location": "L40",
       "id": "kitchen_api_registerclerktokengetter",
-      "community": 66,
+      "community": 18,
       "norm_label": "registerclerktokengetter()"
     },
     {
@@ -23240,7 +23384,7 @@
       "source_file": "frontend/src/kitchen/api.js",
       "source_location": "L187",
       "id": "kitchen_api_activatepaymentsession",
-      "community": 66,
+      "community": 18,
       "norm_label": "activatepaymentsession()"
     },
     {
@@ -23537,7 +23681,7 @@
       "source_file": "frontend/src/kitchen/components/CategoryIcon.jsx",
       "source_location": "L1",
       "id": "components_categoryicon",
-      "community": 20,
+      "community": 40,
       "norm_label": "categoryicon.jsx"
     },
     {
@@ -23546,7 +23690,7 @@
       "source_file": "frontend/src/kitchen/components/CategoryIcon.jsx",
       "source_location": "L4",
       "id": "components_categoryicon_categoryicon",
-      "community": 20,
+      "community": 40,
       "norm_label": "categoryicon()"
     },
     {
@@ -23638,6 +23782,24 @@
       "id": "components_pageheader_pageheader",
       "community": 40,
       "norm_label": "pageheader()"
+    },
+    {
+      "label": "PageSkeleton.jsx",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/components/PageSkeleton.jsx",
+      "source_location": "L1",
+      "id": "components_pageskeleton",
+      "community": 18,
+      "norm_label": "pageskeleton.jsx"
+    },
+    {
+      "label": "PageSkeleton()",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/components/PageSkeleton.jsx",
+      "source_location": "L8",
+      "id": "components_pageskeleton_pageskeleton",
+      "community": 18,
+      "norm_label": "pageskeleton()"
     },
     {
       "label": "PushNotificationsPanel.jsx",
@@ -24068,7 +24230,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDayTabs.jsx",
       "source_location": "L1",
       "id": "components_weekdaytabs",
-      "community": 38,
+      "community": 229,
       "norm_label": "weekdaytabs.jsx"
     },
     {
@@ -24077,7 +24239,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDayTabs.jsx",
       "source_location": "L3",
       "id": "components_weekdaytabs_day_abbr",
-      "community": 38,
+      "community": 229,
       "norm_label": "day_abbr"
     },
     {
@@ -24086,7 +24248,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDayTabs.jsx",
       "source_location": "L4",
       "id": "components_weekdaytabs_day_long",
-      "community": 38,
+      "community": 229,
       "norm_label": "day_long"
     },
     {
@@ -24095,7 +24257,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDayTabs.jsx",
       "source_location": "L6",
       "id": "components_weekdaytabs_parsedaykey",
-      "community": 38,
+      "community": 229,
       "norm_label": "parsedaykey()"
     },
     {
@@ -24104,7 +24266,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDayTabs.jsx",
       "source_location": "L13",
       "id": "components_weekdaytabs_getdayabbr",
-      "community": 38,
+      "community": 229,
       "norm_label": "getdayabbr()"
     },
     {
@@ -24113,7 +24275,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDayTabs.jsx",
       "source_location": "L18",
       "id": "components_weekdaytabs_getdaylong",
-      "community": 38,
+      "community": 229,
       "norm_label": "getdaylong()"
     },
     {
@@ -24122,7 +24284,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDayTabs.jsx",
       "source_location": "L23",
       "id": "components_weekdaytabs_weekdaytabs",
-      "community": 38,
+      "community": 229,
       "norm_label": "weekdaytabs()"
     },
     {
@@ -24131,7 +24293,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDaysStrip.jsx",
       "source_location": "L1",
       "id": "components_weekdaysstrip",
-      "community": 43,
+      "community": 160,
       "norm_label": "weekdaysstrip.jsx"
     },
     {
@@ -24140,7 +24302,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDaysStrip.jsx",
       "source_location": "L4",
       "id": "components_weekdaysstrip_day_labels",
-      "community": 43,
+      "community": 160,
       "norm_label": "day_labels"
     },
     {
@@ -24149,7 +24311,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDaysStrip.jsx",
       "source_location": "L5",
       "id": "components_weekdaysstrip_day_long",
-      "community": 43,
+      "community": 160,
       "norm_label": "day_long"
     },
     {
@@ -24158,7 +24320,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDaysStrip.jsx",
       "source_location": "L7",
       "id": "components_weekdaysstrip_getdayabbreviation",
-      "community": 43,
+      "community": 160,
       "norm_label": "getdayabbreviation()"
     },
     {
@@ -24167,7 +24329,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDaysStrip.jsx",
       "source_location": "L16",
       "id": "components_weekdaysstrip_getdaylong",
-      "community": 43,
+      "community": 160,
       "norm_label": "getdaylong()"
     },
     {
@@ -24176,7 +24338,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDaysStrip.jsx",
       "source_location": "L25",
       "id": "components_weekdaysstrip_chevronicon",
-      "community": 43,
+      "community": 160,
       "norm_label": "chevronicon()"
     },
     {
@@ -24185,7 +24347,7 @@
       "source_file": "frontend/src/kitchen/components/WeekDaysStrip.jsx",
       "source_location": "L33",
       "id": "components_weekdaysstrip_weekdaysstrip",
-      "community": 43,
+      "community": 160,
       "norm_label": "weekdaysstrip()"
     },
     {
@@ -24266,7 +24428,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L1",
       "id": "components_categoryiconmap",
-      "community": 20,
+      "community": 40,
       "norm_label": "categoryiconmap.js"
     },
     {
@@ -24275,7 +24437,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L10",
       "id": "components_categoryiconmap_category_icon_by_code",
-      "community": 20,
+      "community": 40,
       "norm_label": "category_icon_by_code"
     },
     {
@@ -24284,7 +24446,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L21",
       "id": "components_categoryiconmap_category_code_aliases",
-      "community": 20,
+      "community": 40,
       "norm_label": "category_code_aliases"
     },
     {
@@ -24293,7 +24455,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L27",
       "id": "components_categoryiconmap_normalizecategorycode",
-      "community": 20,
+      "community": 40,
       "norm_label": "normalizecategorycode()"
     },
     {
@@ -24302,7 +24464,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L37",
       "id": "components_categoryiconmap_resolvecategorycode",
-      "community": 20,
+      "community": 40,
       "norm_label": "resolvecategorycode()"
     },
     {
@@ -24311,7 +24473,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L49",
       "id": "components_categoryiconmap_getcategoryiconbycode",
-      "community": 20,
+      "community": 40,
       "norm_label": "getcategoryiconbycode()"
     },
     {
@@ -24437,7 +24599,7 @@
       "source_file": "frontend/src/kitchen/components/cooking/RecipeStepCard.jsx",
       "source_location": "L1",
       "id": "cooking_recipestepcard",
-      "community": 45,
+      "community": 31,
       "norm_label": "recipestepcard.jsx"
     },
     {
@@ -24446,7 +24608,7 @@
       "source_file": "frontend/src/kitchen/components/cooking/RecipeStepCard.jsx",
       "source_location": "L5",
       "id": "cooking_recipestepcard_recipestepcard",
-      "community": 45,
+      "community": 31,
       "norm_label": "recipestepcard()"
     },
     {
@@ -24455,7 +24617,7 @@
       "source_file": "frontend/src/kitchen/components/cooking/RecipeStepCard.jsx",
       "source_location": "L87",
       "id": "cooking_recipestepcard_normalize",
-      "community": 45,
+      "community": 31,
       "norm_label": "normalize()"
     },
     {
@@ -24824,7 +24986,7 @@
       "source_file": "frontend/src/kitchen/components/ui/DinnerUpgradeBanner.jsx",
       "source_location": "L1",
       "id": "ui_dinnerupgradebanner",
-      "community": 229,
+      "community": 40,
       "norm_label": "dinnerupgradebanner.jsx"
     },
     {
@@ -24833,7 +24995,7 @@
       "source_file": "frontend/src/kitchen/components/ui/DinnerUpgradeBanner.jsx",
       "source_location": "L4",
       "id": "ui_dinnerupgradebanner_dinnerupgradebanner",
-      "community": 229,
+      "community": 40,
       "norm_label": "dinnerupgradebanner()"
     },
     {
@@ -25256,7 +25418,7 @@
       "source_file": "frontend/src/kitchen/contexts/OnboardingContext.jsx",
       "source_location": "L1",
       "id": "contexts_onboardingcontext",
-      "community": 18,
+      "community": 37,
       "norm_label": "onboardingcontext.jsx"
     },
     {
@@ -25265,7 +25427,7 @@
       "source_file": "frontend/src/kitchen/contexts/OnboardingContext.jsx",
       "source_location": "L5",
       "id": "contexts_onboardingcontext_onboardingcontext",
-      "community": 18,
+      "community": 37,
       "norm_label": "onboardingcontext"
     },
     {
@@ -25274,7 +25436,7 @@
       "source_file": "frontend/src/kitchen/contexts/OnboardingContext.jsx",
       "source_location": "L7",
       "id": "contexts_onboardingcontext_onboardingprovider",
-      "community": 18,
+      "community": 37,
       "norm_label": "onboardingprovider()"
     },
     {
@@ -25292,7 +25454,7 @@
       "source_file": "frontend/src/kitchen/contexts/WeeklyChallengeContext.jsx",
       "source_location": "L1",
       "id": "contexts_weeklychallengecontext",
-      "community": 18,
+      "community": 37,
       "norm_label": "weeklychallengecontext.jsx"
     },
     {
@@ -25301,7 +25463,7 @@
       "source_file": "frontend/src/kitchen/contexts/WeeklyChallengeContext.jsx",
       "source_location": "L7",
       "id": "contexts_weeklychallengecontext_weeklychallengecontext",
-      "community": 18,
+      "community": 37,
       "norm_label": "weeklychallengecontext"
     },
     {
@@ -25310,7 +25472,7 @@
       "source_file": "frontend/src/kitchen/contexts/WeeklyChallengeContext.jsx",
       "source_location": "L9",
       "id": "contexts_weeklychallengecontext_weeklychallengeprovider",
-      "community": 18,
+      "community": 37,
       "norm_label": "weeklychallengeprovider()"
     },
     {
@@ -26439,10 +26601,19 @@
       "norm_label": "catalogpage.jsx"
     },
     {
+      "label": "apiSync",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
+      "source_location": "L8",
+      "id": "pages_catalogpage_apisync",
+      "community": 48,
+      "norm_label": "apisync"
+    },
+    {
       "label": "TABS",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L17",
+      "source_location": "L21",
       "id": "pages_catalogpage_tabs",
       "community": 48,
       "norm_label": "tabs"
@@ -26451,7 +26622,7 @@
       "label": "HEALTHY_TAGS",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L27",
+      "source_location": "L31",
       "id": "pages_catalogpage_healthy_tags",
       "community": 48,
       "norm_label": "healthy_tags"
@@ -26460,7 +26631,7 @@
       "label": "QUICK_TAGS",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L28",
+      "source_location": "L32",
       "id": "pages_catalogpage_quick_tags",
       "community": 48,
       "norm_label": "quick_tags"
@@ -26469,7 +26640,7 @@
       "label": "SPECIAL_TAGS",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L29",
+      "source_location": "L33",
       "id": "pages_catalogpage_special_tags",
       "community": 48,
       "norm_label": "special_tags"
@@ -26478,7 +26649,7 @@
       "label": "isNew()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L31",
+      "source_location": "L35",
       "id": "pages_catalogpage_isnew",
       "community": 48,
       "norm_label": "isnew()"
@@ -26487,7 +26658,7 @@
       "label": "getFreeUntilDaysLeft()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L39",
+      "source_location": "L43",
       "id": "pages_catalogpage_getfreeuntildaysleft",
       "community": 48,
       "norm_label": "getfreeuntildaysleft()"
@@ -26496,7 +26667,7 @@
       "label": "matchesTab()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L46",
+      "source_location": "L50",
       "id": "pages_catalogpage_matchestab",
       "community": 48,
       "norm_label": "matchestab()"
@@ -26505,7 +26676,7 @@
       "label": "matchesSearch()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L58",
+      "source_location": "L62",
       "id": "pages_catalogpage_matchessearch",
       "community": 48,
       "norm_label": "matchessearch()"
@@ -26514,7 +26685,7 @@
       "label": "PRICE_FILTERS",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L72",
+      "source_location": "L76",
       "id": "pages_catalogpage_price_filters",
       "community": 48,
       "norm_label": "price_filters"
@@ -26523,7 +26694,7 @@
       "label": "matchesPriceFilter()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L79",
+      "source_location": "L83",
       "id": "pages_catalogpage_matchespricefilter",
       "community": 48,
       "norm_label": "matchespricefilter()"
@@ -26532,7 +26703,7 @@
       "label": "PackIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L94",
+      "source_location": "L98",
       "id": "pages_catalogpage_packicon",
       "community": 48,
       "norm_label": "packicon()"
@@ -26541,7 +26712,7 @@
       "label": "StarIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L103",
+      "source_location": "L107",
       "id": "pages_catalogpage_staricon",
       "community": 48,
       "norm_label": "staricon()"
@@ -26550,7 +26721,7 @@
       "label": "CatalogBitesWallet()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L113",
+      "source_location": "L117",
       "id": "pages_catalogpage_catalogbiteswallet",
       "community": 48,
       "norm_label": "catalogbiteswallet()"
@@ -26559,7 +26730,7 @@
       "label": "CatalogBitesStore()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L171",
+      "source_location": "L175",
       "id": "pages_catalogpage_catalogbitesstore",
       "community": 48,
       "norm_label": "catalogbitesstore()"
@@ -26568,7 +26739,7 @@
       "label": "InsufficientBitesModal()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L225",
+      "source_location": "L229",
       "id": "pages_catalogpage_insufficientbitesmodal",
       "community": 48,
       "norm_label": "insufficientbitesmodal()"
@@ -26577,7 +26748,7 @@
       "label": "EntitlementBadge()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L260",
+      "source_location": "L264",
       "id": "pages_catalogpage_entitlementbadge",
       "community": 48,
       "norm_label": "entitlementbadge()"
@@ -26586,7 +26757,7 @@
       "label": "formatPrice()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L289",
+      "source_location": "L293",
       "id": "pages_catalogpage_formatprice",
       "community": 48,
       "norm_label": "formatprice()"
@@ -26595,7 +26766,7 @@
       "label": "getPackPriceLine()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L294",
+      "source_location": "L298",
       "id": "pages_catalogpage_getpackpriceline",
       "community": 48,
       "norm_label": "getpackpriceline()"
@@ -26604,7 +26775,7 @@
       "label": "PackPriceLine()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L307",
+      "source_location": "L311",
       "id": "pages_catalogpage_packpriceline",
       "community": 48,
       "norm_label": "packpriceline()"
@@ -26613,7 +26784,7 @@
       "label": "CheckIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L324",
+      "source_location": "L328",
       "id": "pages_catalogpage_checkicon",
       "community": 48,
       "norm_label": "checkicon()"
@@ -26622,7 +26793,7 @@
       "label": "PackCard()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L332",
+      "source_location": "L336",
       "id": "pages_catalogpage_packcard",
       "community": 48,
       "norm_label": "packcard()"
@@ -26631,7 +26802,7 @@
       "label": "Toast()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L518",
+      "source_location": "L522",
       "id": "pages_catalogpage_toast",
       "community": 48,
       "norm_label": "toast()"
@@ -26640,7 +26811,7 @@
       "label": "getDietPackDismissKey()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L532",
+      "source_location": "L536",
       "id": "pages_catalogpage_getdietpackdismisskey",
       "community": 48,
       "norm_label": "getdietpackdismisskey()"
@@ -26649,7 +26820,7 @@
       "label": "isDietPackModalDismissed()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L536",
+      "source_location": "L540",
       "id": "pages_catalogpage_isdietpackmodaldismissed",
       "community": 48,
       "norm_label": "isdietpackmodaldismissed()"
@@ -26658,7 +26829,7 @@
       "label": "markDietPackModalDismissed()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L544",
+      "source_location": "L548",
       "id": "pages_catalogpage_markdietpackmodaldismissed",
       "community": 48,
       "norm_label": "markdietpackmodaldismissed()"
@@ -26667,7 +26838,7 @@
       "label": "DietPackInstallModal()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L550",
+      "source_location": "L554",
       "id": "pages_catalogpage_dietpackinstallmodal",
       "community": 48,
       "norm_label": "dietpackinstallmodal()"
@@ -26676,7 +26847,7 @@
       "label": "CatalogPage()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
-      "source_location": "L577",
+      "source_location": "L581",
       "id": "pages_catalogpage_catalogpage",
       "community": 37,
       "norm_label": "catalogpage()"
@@ -26840,50 +27011,59 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L1",
       "id": "pages_dishespage",
-      "community": 37,
+      "community": 40,
       "norm_label": "dishespage.jsx"
+    },
+    {
+      "label": "apiSync",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
+      "source_location": "L8",
+      "id": "pages_dishespage_apisync",
+      "community": 40,
+      "norm_label": "apisync"
     },
     {
       "label": "ASSIGN_DAY_LABELS",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
-      "source_location": "L21",
+      "source_location": "L25",
       "id": "pages_dishespage_assign_day_labels",
-      "community": 37,
+      "community": 40,
       "norm_label": "assign_day_labels"
     },
     {
       "label": "getMondayISO()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
-      "source_location": "L23",
+      "source_location": "L27",
       "id": "pages_dishespage_getmondayiso",
-      "community": 37,
+      "community": 40,
       "norm_label": "getmondayiso()"
     },
     {
       "label": "addDaysToISO()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
-      "source_location": "L31",
+      "source_location": "L35",
       "id": "pages_dishespage_adddaystoiso",
-      "community": 37,
+      "community": 40,
       "norm_label": "adddaystoiso()"
     },
     {
       "label": "buildAssignDays()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
-      "source_location": "L38",
+      "source_location": "L42",
       "id": "pages_dishespage_buildassigndays",
-      "community": 37,
+      "community": 40,
       "norm_label": "buildassigndays()"
     },
     {
       "label": "formatWeekLabel()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
-      "source_location": "L49",
+      "source_location": "L53",
       "id": "pages_dishespage_formatweeklabel",
       "community": 37,
       "norm_label": "formatweeklabel()"
@@ -26892,34 +27072,34 @@
       "label": "getAssignDayLabel()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
-      "source_location": "L60",
+      "source_location": "L64",
       "id": "pages_dishespage_getassigndaylabel",
-      "community": 37,
+      "community": 40,
       "norm_label": "getassigndaylabel()"
     },
     {
       "label": "getAssignDayNumber()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
-      "source_location": "L67",
+      "source_location": "L71",
       "id": "pages_dishespage_getassigndaynumber",
-      "community": 37,
+      "community": 40,
       "norm_label": "getassigndaynumber()"
     },
     {
       "label": "ChevronIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
-      "source_location": "L73",
+      "source_location": "L77",
       "id": "pages_dishespage_chevronicon",
-      "community": 37,
+      "community": 40,
       "norm_label": "chevronicon()"
     },
     {
       "label": "DishesPage()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
-      "source_location": "L87",
+      "source_location": "L91",
       "id": "pages_dishespage_dishespage",
       "community": 37,
       "norm_label": "dishespage()"
@@ -26928,9 +27108,9 @@
       "label": "normalizeMealType()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
-      "source_location": "L1907",
+      "source_location": "L1911",
       "id": "pages_dishespage_normalizemealtype",
-      "community": 37,
+      "community": 40,
       "norm_label": "normalizemealtype()"
     },
     {
@@ -27015,19 +27195,28 @@
       "norm_label": "settingspage.jsx"
     },
     {
+      "label": "apiSync",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
+      "source_location": "L10",
+      "id": "pages_settingspage_apisync",
+      "community": 16,
+      "norm_label": "apisync"
+    },
+    {
       "label": "initialsFromName()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L32",
+      "source_location": "L36",
       "id": "pages_settingspage_initialsfromname",
-      "community": 43,
+      "community": 160,
       "norm_label": "initialsfromname()"
     },
     {
       "label": "roleLabel()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L39",
+      "source_location": "L43",
       "id": "pages_settingspage_rolelabel",
       "community": 16,
       "norm_label": "rolelabel()"
@@ -27036,7 +27225,7 @@
       "label": "memberRoleLabel()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L46",
+      "source_location": "L50",
       "id": "pages_settingspage_memberrolelabel",
       "community": 16,
       "norm_label": "memberrolelabel()"
@@ -27045,7 +27234,7 @@
       "label": "CATEGORY_COLORS",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L53",
+      "source_location": "L57",
       "id": "pages_settingspage_category_colors",
       "community": 16,
       "norm_label": "category_colors"
@@ -27054,7 +27243,7 @@
       "label": "PencilIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L70",
+      "source_location": "L74",
       "id": "pages_settingspage_pencilicon",
       "community": 16,
       "norm_label": "pencilicon()"
@@ -27063,7 +27252,7 @@
       "label": "SaveIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L79",
+      "source_location": "L83",
       "id": "pages_settingspage_saveicon",
       "community": 16,
       "norm_label": "saveicon()"
@@ -27072,7 +27261,7 @@
       "label": "CloseIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L89",
+      "source_location": "L93",
       "id": "pages_settingspage_closeicon",
       "community": 16,
       "norm_label": "closeicon()"
@@ -27081,7 +27270,7 @@
       "label": "TrashIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L97",
+      "source_location": "L101",
       "id": "pages_settingspage_trashicon",
       "community": 16,
       "norm_label": "trashicon()"
@@ -27090,7 +27279,7 @@
       "label": "CopyIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L106",
+      "source_location": "L110",
       "id": "pages_settingspage_copyicon",
       "community": 16,
       "norm_label": "copyicon()"
@@ -27099,7 +27288,7 @@
       "label": "InfoIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L115",
+      "source_location": "L119",
       "id": "pages_settingspage_infoicon",
       "community": 16,
       "norm_label": "infoicon()"
@@ -27108,7 +27297,7 @@
       "label": "EyeIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L125",
+      "source_location": "L129",
       "id": "pages_settingspage_eyeicon",
       "community": 16,
       "norm_label": "eyeicon()"
@@ -27117,7 +27306,7 @@
       "label": "EyeOffIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L134",
+      "source_location": "L138",
       "id": "pages_settingspage_eyeofficon",
       "community": 16,
       "norm_label": "eyeofficon()"
@@ -27126,7 +27315,7 @@
       "label": "getBitesLabel()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L143",
+      "source_location": "L147",
       "id": "pages_settingspage_getbiteslabel",
       "community": 16,
       "norm_label": "getbiteslabel()"
@@ -27135,7 +27324,7 @@
       "label": "clampAvoidRepeatWeeks()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L158",
+      "source_location": "L162",
       "id": "pages_settingspage_clampavoidrepeatweeks",
       "community": 16,
       "norm_label": "clampavoidrepeatweeks()"
@@ -27144,7 +27333,7 @@
       "label": "formatLicenseLimit()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L164",
+      "source_location": "L168",
       "id": "pages_settingspage_formatlicenselimit",
       "community": 16,
       "norm_label": "formatlicenselimit()"
@@ -27153,9 +27342,9 @@
       "label": "SettingsPage()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
-      "source_location": "L172",
+      "source_location": "L176",
       "id": "pages_settingspage_settingspage",
-      "community": 43,
+      "community": 160,
       "norm_label": "settingspage()"
     },
     {
@@ -27213,10 +27402,19 @@
       "norm_label": "shoppingpage.jsx"
     },
     {
+      "label": "apiSync",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
+      "source_location": "L12",
+      "id": "pages_shoppingpage_apisync",
+      "community": 35,
+      "norm_label": "apisync"
+    },
+    {
       "label": "RefreshIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L22",
+      "source_location": "L27",
       "id": "pages_shoppingpage_refreshicon",
       "community": 35,
       "norm_label": "refreshicon()"
@@ -27225,7 +27423,7 @@
       "label": "TodayIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L31",
+      "source_location": "L36",
       "id": "pages_shoppingpage_todayicon",
       "community": 35,
       "norm_label": "todayicon()"
@@ -27234,7 +27432,7 @@
       "label": "ConfirmIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L42",
+      "source_location": "L47",
       "id": "pages_shoppingpage_confirmicon",
       "community": 35,
       "norm_label": "confirmicon()"
@@ -27243,7 +27441,7 @@
       "label": "CloseIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L50",
+      "source_location": "L55",
       "id": "pages_shoppingpage_closeicon",
       "community": 35,
       "norm_label": "closeicon()"
@@ -27252,7 +27450,7 @@
       "label": "MinusIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L58",
+      "source_location": "L63",
       "id": "pages_shoppingpage_minusicon",
       "community": 35,
       "norm_label": "minusicon()"
@@ -27261,7 +27459,7 @@
       "label": "PlusIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L66",
+      "source_location": "L71",
       "id": "pages_shoppingpage_plusicon",
       "community": 35,
       "norm_label": "plusicon()"
@@ -27270,7 +27468,7 @@
       "label": "PencilIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L74",
+      "source_location": "L79",
       "id": "pages_shoppingpage_pencilicon",
       "community": 35,
       "norm_label": "pencilicon()"
@@ -27279,7 +27477,7 @@
       "label": "EmptyStateIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L83",
+      "source_location": "L88",
       "id": "pages_shoppingpage_emptystateicon",
       "community": 35,
       "norm_label": "emptystateicon()"
@@ -27288,7 +27486,7 @@
       "label": "EmptyCheckIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L93",
+      "source_location": "L98",
       "id": "pages_shoppingpage_emptycheckicon",
       "community": 35,
       "norm_label": "emptycheckicon()"
@@ -27297,7 +27495,7 @@
       "label": "EmptyListIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L102",
+      "source_location": "L107",
       "id": "pages_shoppingpage_emptylisticon",
       "community": 35,
       "norm_label": "emptylisticon()"
@@ -27306,7 +27504,7 @@
       "label": "EmptyHistoryIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L113",
+      "source_location": "L118",
       "id": "pages_shoppingpage_emptyhistoryicon",
       "community": 35,
       "norm_label": "emptyhistoryicon()"
@@ -27315,7 +27513,7 @@
       "label": "DotsIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L123",
+      "source_location": "L128",
       "id": "pages_shoppingpage_dotsicon",
       "community": 35,
       "norm_label": "dotsicon()"
@@ -27324,7 +27522,7 @@
       "label": "ChevronSmallIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L133",
+      "source_location": "L138",
       "id": "pages_shoppingpage_chevronsmallicon",
       "community": 35,
       "norm_label": "chevronsmallicon()"
@@ -27333,7 +27531,7 @@
       "label": "addDaysToISO()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L141",
+      "source_location": "L146",
       "id": "pages_shoppingpage_adddaystoiso",
       "community": 35,
       "norm_label": "adddaystoiso()"
@@ -27342,7 +27540,7 @@
       "label": "normalizeWeekStartInput()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L148",
+      "source_location": "L153",
       "id": "pages_shoppingpage_normalizeweekstartinput",
       "community": 35,
       "norm_label": "normalizeweekstartinput()"
@@ -27351,7 +27549,7 @@
       "label": "getCurrentWeekStart()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L158",
+      "source_location": "L163",
       "id": "pages_shoppingpage_getcurrentweekstart",
       "community": 35,
       "norm_label": "getcurrentweekstart()"
@@ -27360,7 +27558,7 @@
       "label": "formatWeekTitle()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L162",
+      "source_location": "L167",
       "id": "pages_shoppingpage_formatweektitle",
       "community": 35,
       "norm_label": "formatweektitle()"
@@ -27369,7 +27567,7 @@
       "label": "formatTripDate()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L173",
+      "source_location": "L178",
       "id": "pages_shoppingpage_formattripdate",
       "community": 35,
       "norm_label": "formattripdate()"
@@ -27378,7 +27576,7 @@
       "label": "slugColor()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L180",
+      "source_location": "L185",
       "id": "pages_shoppingpage_slugcolor",
       "community": 35,
       "norm_label": "slugcolor()"
@@ -27387,7 +27585,7 @@
       "label": "itemKey()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L190",
+      "source_location": "L195",
       "id": "pages_shoppingpage_itemkey",
       "community": 35,
       "norm_label": "itemkey()"
@@ -27396,7 +27594,7 @@
       "label": "normalizeQuery()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L194",
+      "source_location": "L199",
       "id": "pages_shoppingpage_normalizequery",
       "community": 35,
       "norm_label": "normalizequery()"
@@ -27405,7 +27603,7 @@
       "label": "formatWeekLabel()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L198",
+      "source_location": "L203",
       "id": "pages_shoppingpage_formatweeklabel",
       "community": 35,
       "norm_label": "formatweeklabel()"
@@ -27414,7 +27612,7 @@
       "label": "formatCurrency()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L206",
+      "source_location": "L211",
       "id": "pages_shoppingpage_formatcurrency",
       "community": 35,
       "norm_label": "formatcurrency()"
@@ -27423,7 +27621,7 @@
       "label": "getPendingItemsCount()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L217",
+      "source_location": "L222",
       "id": "pages_shoppingpage_getpendingitemscount",
       "community": 35,
       "norm_label": "getpendingitemscount()"
@@ -27432,7 +27630,7 @@
       "label": "isShoppingRoutePath()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L222",
+      "source_location": "L227",
       "id": "pages_shoppingpage_isshoppingroutepath",
       "community": 35,
       "norm_label": "isshoppingroutepath()"
@@ -27441,7 +27639,7 @@
       "label": "resolvePathnameFromTo()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L226",
+      "source_location": "L231",
       "id": "pages_shoppingpage_resolvepathnamefromto",
       "community": 35,
       "norm_label": "resolvepathnamefromto()"
@@ -27450,7 +27648,7 @@
       "label": "ShoppingPage()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
-      "source_location": "L239",
+      "source_location": "L244",
       "id": "pages_shoppingpage_shoppingpage",
       "community": 35,
       "norm_label": "shoppingpage()"
@@ -27461,7 +27659,7 @@
       "source_file": "frontend/src/kitchen/pages/SwapsPage.jsx",
       "source_location": "L1",
       "id": "pages_swapspage",
-      "community": 43,
+      "community": 66,
       "norm_label": "swapspage.jsx"
     },
     {
@@ -27470,7 +27668,7 @@
       "source_file": "frontend/src/kitchen/pages/SwapsPage.jsx",
       "source_location": "L5",
       "id": "pages_swapspage_getmondayiso",
-      "community": 43,
+      "community": 66,
       "norm_label": "getmondayiso()"
     },
     {
@@ -27479,7 +27677,7 @@
       "source_file": "frontend/src/kitchen/pages/SwapsPage.jsx",
       "source_location": "L13",
       "id": "pages_swapspage_swapspage",
-      "community": 43,
+      "community": 66,
       "norm_label": "swapspage()"
     },
     {
@@ -27573,10 +27771,19 @@
       "norm_label": "weekpage.jsx"
     },
     {
+      "label": "apiSync",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
+      "source_location": "L8",
+      "id": "pages_weekpage_apisync",
+      "community": 229,
+      "norm_label": "apisync"
+    },
+    {
       "label": "DAY_CARD_STYLES",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L26",
+      "source_location": "L30",
       "id": "pages_weekpage_day_card_styles",
       "community": 229,
       "norm_label": "day_card_styles"
@@ -27585,7 +27792,7 @@
       "label": "getMondayISO()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L36",
+      "source_location": "L40",
       "id": "pages_weekpage_getmondayiso",
       "community": 229,
       "norm_label": "getmondayiso()"
@@ -27594,7 +27801,7 @@
       "label": "formatDateLabel()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L44",
+      "source_location": "L48",
       "id": "pages_weekpage_formatdatelabel",
       "community": 229,
       "norm_label": "formatdatelabel()"
@@ -27603,7 +27810,7 @@
       "label": "addDaysToISO()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L55",
+      "source_location": "L59",
       "id": "pages_weekpage_adddaystoiso",
       "community": 229,
       "norm_label": "adddaystoiso()"
@@ -27612,7 +27819,7 @@
       "label": "parseISODateInput()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L62",
+      "source_location": "L66",
       "id": "pages_weekpage_parseisodateinput",
       "community": 229,
       "norm_label": "parseisodateinput()"
@@ -27621,7 +27828,7 @@
       "label": "normalizeWeekStart()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L69",
+      "source_location": "L73",
       "id": "pages_weekpage_normalizeweekstart",
       "community": 229,
       "norm_label": "normalizeweekstart()"
@@ -27630,7 +27837,7 @@
       "label": "ChevronIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L75",
+      "source_location": "L79",
       "id": "pages_weekpage_chevronicon",
       "community": 229,
       "norm_label": "chevronicon()"
@@ -27639,7 +27846,7 @@
       "label": "DiceIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L82",
+      "source_location": "L86",
       "id": "pages_weekpage_diceicon",
       "community": 229,
       "norm_label": "diceicon()"
@@ -27648,7 +27855,7 @@
       "label": "EditIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L92",
+      "source_location": "L96",
       "id": "pages_weekpage_editicon",
       "community": 229,
       "norm_label": "editicon()"
@@ -27657,7 +27864,7 @@
       "label": "EyeIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L100",
+      "source_location": "L104",
       "id": "pages_weekpage_eyeicon",
       "community": 229,
       "norm_label": "eyeicon()"
@@ -27666,7 +27873,7 @@
       "label": "SwapIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L108",
+      "source_location": "L112",
       "id": "pages_weekpage_swapicon",
       "community": 229,
       "norm_label": "swapicon()"
@@ -27675,7 +27882,7 @@
       "label": "TrashIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L116",
+      "source_location": "L120",
       "id": "pages_weekpage_trashicon",
       "community": 229,
       "norm_label": "trashicon()"
@@ -27684,7 +27891,7 @@
       "label": "SaveIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L124",
+      "source_location": "L128",
       "id": "pages_weekpage_saveicon",
       "community": 229,
       "norm_label": "saveicon()"
@@ -27693,7 +27900,7 @@
       "label": "CloseIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L131",
+      "source_location": "L135",
       "id": "pages_weekpage_closeicon",
       "community": 229,
       "norm_label": "closeicon()"
@@ -27702,7 +27909,7 @@
       "label": "TodayIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L138",
+      "source_location": "L142",
       "id": "pages_weekpage_todayicon",
       "community": 229,
       "norm_label": "todayicon()"
@@ -27711,7 +27918,7 @@
       "label": "BookIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L149",
+      "source_location": "L153",
       "id": "pages_weekpage_bookicon",
       "community": 229,
       "norm_label": "bookicon()"
@@ -27720,7 +27927,7 @@
       "label": "PackageIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L157",
+      "source_location": "L161",
       "id": "pages_weekpage_packageicon",
       "community": 229,
       "norm_label": "packageicon()"
@@ -27729,7 +27936,7 @@
       "label": "UserIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L165",
+      "source_location": "L169",
       "id": "pages_weekpage_usericon",
       "community": 229,
       "norm_label": "usericon()"
@@ -27738,7 +27945,7 @@
       "label": "ChevronDownIcon()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L173",
+      "source_location": "L177",
       "id": "pages_weekpage_chevrondownicon",
       "community": 229,
       "norm_label": "chevrondownicon()"
@@ -27747,7 +27954,7 @@
       "label": "OPTIONAL_WEEKEND_DAY_OFFSETS",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L183",
+      "source_location": "L187",
       "id": "pages_weekpage_optional_weekend_day_offsets",
       "community": 229,
       "norm_label": "optional_weekend_day_offsets"
@@ -27756,7 +27963,7 @@
       "label": "normalizeMealType()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L188",
+      "source_location": "L192",
       "id": "pages_weekpage_normalizemealtype",
       "community": 229,
       "norm_label": "normalizemealtype()"
@@ -27765,7 +27972,7 @@
       "label": "dayMealType()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L192",
+      "source_location": "L196",
       "id": "pages_weekpage_daymealtype",
       "community": 229,
       "norm_label": "daymealtype()"
@@ -27774,7 +27981,7 @@
       "label": "mergeIngredientLists()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L196",
+      "source_location": "L200",
       "id": "pages_weekpage_mergeingredientlists",
       "community": 229,
       "norm_label": "mergeingredientlists()"
@@ -27783,7 +27990,7 @@
       "label": "isActiveMember()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L216",
+      "source_location": "L220",
       "id": "pages_weekpage_isactivemember",
       "community": 229,
       "norm_label": "isactivemember()"
@@ -27792,7 +27999,7 @@
       "label": "resolveDayAttendees()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L220",
+      "source_location": "L224",
       "id": "pages_weekpage_resolvedayattendees",
       "community": 229,
       "norm_label": "resolvedayattendees()"
@@ -27801,7 +28008,7 @@
       "label": "resolveDayExtraGuests()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L235",
+      "source_location": "L239",
       "id": "pages_weekpage_resolvedayextraguests",
       "community": 229,
       "norm_label": "resolvedayextraguests()"
@@ -27810,7 +28017,7 @@
       "label": "resolveDayDinerCount()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L240",
+      "source_location": "L244",
       "id": "pages_weekpage_resolvedaydinercount",
       "community": 229,
       "norm_label": "resolvedaydinercount()"
@@ -27819,7 +28026,7 @@
       "label": "normalizeExclusionKey()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L248",
+      "source_location": "L252",
       "id": "pages_weekpage_normalizeexclusionkey",
       "community": 229,
       "norm_label": "normalizeexclusionkey()"
@@ -27828,7 +28035,7 @@
       "label": "formatWeekendOptionLabel()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L252",
+      "source_location": "L256",
       "id": "pages_weekpage_formatweekendoptionlabel",
       "community": 229,
       "norm_label": "formatweekendoptionlabel()"
@@ -27837,7 +28044,7 @@
       "label": "isOptionalWeekendDayKey()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L259",
+      "source_location": "L263",
       "id": "pages_weekpage_isoptionalweekenddaykey",
       "community": 229,
       "norm_label": "isoptionalweekenddaykey()"
@@ -27846,7 +28053,7 @@
       "label": "WeekPage()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
-      "source_location": "L265",
+      "source_location": "L269",
       "id": "pages_weekpage_weekpage",
       "community": 229,
       "norm_label": "weekpage()"
@@ -27967,6 +28174,105 @@
       "id": "kitchen_push_sendpushnotificationtest",
       "community": 28,
       "norm_label": "sendpushnotificationtest()"
+    },
+    {
+      "label": "queryClient.js",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L1",
+      "id": "kitchen_queryclient",
+      "community": 43,
+      "norm_label": "queryclient.js"
+    },
+    {
+      "label": "queryClient",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L16",
+      "id": "kitchen_queryclient_queryclient",
+      "community": 43,
+      "norm_label": "queryclient"
+    },
+    {
+      "label": "planningQuery()",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L30",
+      "id": "kitchen_queryclient_planningquery",
+      "community": 43,
+      "norm_label": "planningquery()"
+    },
+    {
+      "label": "dishesQuery()",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L35",
+      "id": "kitchen_queryclient_dishesquery",
+      "community": 43,
+      "norm_label": "dishesquery()"
+    },
+    {
+      "label": "shoppingQuery()",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L41",
+      "id": "kitchen_queryclient_shoppingquery",
+      "community": 43,
+      "norm_label": "shoppingquery()"
+    },
+    {
+      "label": "catalogQuery()",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L46",
+      "id": "kitchen_queryclient_catalogquery",
+      "community": 43,
+      "norm_label": "catalogquery()"
+    },
+    {
+      "label": "userQuery()",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L52",
+      "id": "kitchen_queryclient_userquery",
+      "community": 43,
+      "norm_label": "userquery()"
+    },
+    {
+      "label": "membersQuery()",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L57",
+      "id": "kitchen_queryclient_membersquery",
+      "community": 43,
+      "norm_label": "membersquery()"
+    },
+    {
+      "label": "fetchCached()",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L68",
+      "id": "kitchen_queryclient_fetchcached",
+      "community": 43,
+      "norm_label": "fetchcached()"
+    },
+    {
+      "label": "primeCache()",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L73",
+      "id": "kitchen_queryclient_primecache",
+      "community": 43,
+      "norm_label": "primecache()"
+    },
+    {
+      "label": "createSyncedApi()",
+      "file_type": "code",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L83",
+      "id": "kitchen_queryclient_createsyncedapi",
+      "community": 40,
+      "norm_label": "createsyncedapi()"
     },
     {
       "label": "subscription.js",
@@ -28271,7 +28577,7 @@
       "source_file": "frontend/src/kitchen/utils/dishOrigin.js",
       "source_location": "L1",
       "id": "utils_dishorigin",
-      "community": 37,
+      "community": 40,
       "norm_label": "dishorigin.js"
     },
     {
@@ -28280,7 +28586,7 @@
       "source_file": "frontend/src/kitchen/utils/dishOrigin.js",
       "source_location": "L1",
       "id": "utils_dishorigin_getobjectid",
-      "community": 37,
+      "community": 40,
       "norm_label": "getobjectid()"
     },
     {
@@ -28289,7 +28595,7 @@
       "source_file": "frontend/src/kitchen/utils/dishOrigin.js",
       "source_location": "L7",
       "id": "utils_dishorigin_isdishfromcatalog",
-      "community": 37,
+      "community": 40,
       "norm_label": "isdishfromcatalog()"
     },
     {
@@ -28298,7 +28604,7 @@
       "source_file": "frontend/src/kitchen/utils/dishOrigin.js",
       "source_location": "L12",
       "id": "utils_dishorigin_isusercreateddish",
-      "community": 37,
+      "community": 40,
       "norm_label": "isusercreateddish()"
     },
     {
@@ -28307,7 +28613,7 @@
       "source_file": "frontend/src/kitchen/utils/dishOrigin.js",
       "source_location": "L17",
       "id": "utils_dishorigin_getdishorigin",
-      "community": 37,
+      "community": 40,
       "norm_label": "getdishorigin()"
     },
     {
@@ -28343,7 +28649,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L1",
       "id": "utils_notificationservice",
-      "community": 412,
+      "community": 45,
       "norm_label": "notificationservice.js"
     },
     {
@@ -28352,7 +28658,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L13",
       "id": "utils_notificationservice_getaudioctx",
-      "community": 412,
+      "community": 45,
       "norm_label": "getaudioctx()"
     },
     {
@@ -28361,7 +28667,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L25",
       "id": "utils_notificationservice_primeaudio",
-      "community": 412,
+      "community": 45,
       "norm_label": "primeaudio()"
     },
     {
@@ -28370,7 +28676,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L35",
       "id": "utils_notificationservice_playtimersound",
-      "community": 412,
+      "community": 45,
       "norm_label": "playtimersound()"
     },
     {
@@ -28379,7 +28685,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L64",
       "id": "utils_notificationservice_vibrateifsupported",
-      "community": 412,
+      "community": 45,
       "norm_label": "vibrateifsupported()"
     },
     {
@@ -28388,7 +28694,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L74",
       "id": "utils_notificationservice_notifytimercomplete",
-      "community": 412,
+      "community": 45,
       "norm_label": "notifytimercomplete()"
     },
     {
@@ -28397,7 +28703,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L98",
       "id": "utils_notificationservice_notifytimerautopaused",
-      "community": 412,
+      "community": 45,
       "norm_label": "notifytimerautopaused()"
     },
     {
@@ -28811,7 +29117,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L1",
       "id": "utils_usercolors",
-      "community": 43,
+      "community": 160,
       "norm_label": "usercolors.js"
     },
     {
@@ -28820,7 +29126,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L1",
       "id": "utils_usercolors_color_palette",
-      "community": 43,
+      "community": 160,
       "norm_label": "color_palette"
     },
     {
@@ -28829,7 +29135,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L14",
       "id": "utils_usercolors_unassigned_color",
-      "community": 43,
+      "community": 160,
       "norm_label": "unassigned_color"
     },
     {
@@ -28838,7 +29144,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L16",
       "id": "utils_usercolors_hashstring",
-      "community": 43,
+      "community": 160,
       "norm_label": "hashstring()"
     },
     {
@@ -28847,7 +29153,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L25",
       "id": "utils_usercolors_readoverrides",
-      "community": 43,
+      "community": 160,
       "norm_label": "readoverrides()"
     },
     {
@@ -28856,7 +29162,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L36",
       "id": "utils_usercolors_writeoverrides",
-      "community": 43,
+      "community": 160,
       "norm_label": "writeoverrides()"
     },
     {
@@ -28865,7 +29171,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L40",
       "id": "utils_usercolors_getusercolor",
-      "community": 43,
+      "community": 160,
       "norm_label": "getusercolor()"
     },
     {
@@ -28874,7 +29180,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L54",
       "id": "utils_usercolors_getusercolorbyid",
-      "community": 43,
+      "community": 160,
       "norm_label": "getusercolorbyid()"
     },
     {
@@ -28883,7 +29189,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L63",
       "id": "utils_usercolors_getunassignedcolor",
-      "community": 43,
+      "community": 160,
       "norm_label": "getunassignedcolor()"
     },
     {
@@ -28892,7 +29198,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L67",
       "id": "utils_usercolors_getcolorpalette",
-      "community": 43,
+      "community": 160,
       "norm_label": "getcolorpalette()"
     },
     {
@@ -28901,7 +29207,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L71",
       "id": "utils_usercolors_getusercolorpreference",
-      "community": 43,
+      "community": 160,
       "norm_label": "getusercolorpreference()"
     },
     {
@@ -28910,7 +29216,7 @@
       "source_file": "frontend/src/kitchen/utils/userColors.js",
       "source_location": "L77",
       "id": "utils_usercolors_setusercolorpreference",
-      "community": 43,
+      "community": 160,
       "norm_label": "setusercolorpreference()"
     },
     {
@@ -90112,6 +90418,16 @@
       "source_file": "frontend/package.json",
       "source_location": "L13",
       "weight": 1.0,
+      "source": "frontend_package_dependencies",
+      "target": "frontend_package_dependencies_tanstack_react_query",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/package.json",
+      "source_location": "L13",
+      "weight": 1.0,
       "confidence_score": 1.0,
       "source": "frontend_package_dependencies",
       "target": "frontend_package_dependencies_tiptap_extension_color"
@@ -90257,6 +90573,17 @@
       "confidence_score": 1.0,
       "source": "src_app",
       "target": "components_devenvironmentbanner"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "components_pageskeleton",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -90422,6 +90749,28 @@
       "confidence_score": 1.0,
       "source": "src_app",
       "target": "kitchen_layout"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "kitchen_queryclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "kitchen_queryclient_queryclient",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -90669,6 +91018,46 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/App.jsx",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_adminforgotpasswordpage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_adminpanelpage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_adminresetpasswordpage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_adminuserspage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
       "source_location": "L234",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -90709,11 +91098,121 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/App.jsx",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_catalogpage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_dishespage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
       "source_location": "L38",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "src_app",
       "target": "src_app_homeredirect"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_invitelandingpage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_paymentcancelledpage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_paymentsuccesspage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_settingspage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_shoppingbudgetpage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_shoppingpage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_swapspage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_upgradetopropage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "src_app_weekpage",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -91297,6 +91796,116 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "kitchen_layout",
+      "target": "kitchen_queryclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "kitchen_layout",
+      "target": "kitchen_queryclient_catalogquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "kitchen_layout",
+      "target": "kitchen_queryclient_dishesquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "kitchen_layout",
+      "target": "kitchen_queryclient_membersquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "kitchen_layout",
+      "target": "kitchen_queryclient_planningquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "kitchen_layout",
+      "target": "kitchen_queryclient_queryclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "kitchen_layout",
+      "target": "kitchen_queryclient_shoppingquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "kitchen_layout",
+      "target": "kitchen_queryclient_userquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "kitchen_layout",
+      "target": "kitchen_weekcontext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "kitchen_layout",
+      "target": "kitchen_weekcontext_useactiveweek",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/Layout.jsx",
       "source_location": "L11",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -91555,6 +92164,17 @@
       "weight": 1.0,
       "source": "kitchen_layout_kitchenlayout",
       "target": "kitchen_auth_useauth"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/kitchen/Layout.jsx",
+      "source_location": "L279",
+      "weight": 1.0,
+      "source": "kitchen_layout_kitchenlayout",
+      "target": "kitchen_weekcontext_useactiveweek"
     },
     {
       "relation": "calls",
@@ -92059,6 +92679,17 @@
       "confidence_score": 1.0,
       "source": "kitchen_push",
       "target": "kitchen_api"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_api",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -92849,6 +93480,28 @@
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "kitchen_push_syncsubscriptionwithbackend",
+      "target": "kitchen_api_apirequest"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_api_apirequest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "kitchen_queryclient_createsyncedapi",
       "target": "kitchen_api_apirequest"
     },
     {
@@ -94901,6 +95554,16 @@
       "confidence_score": 1.0,
       "source": "pages_weekpage",
       "target": "components_pageheader"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/components/PageSkeleton.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "components_pageskeleton",
+      "target": "components_pageskeleton_pageskeleton",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -99750,9 +100413,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L208",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_accordion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_accordion"
     },
     {
       "relation": "contains",
@@ -99760,9 +100423,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L103",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_checkbounce",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_checkbounce"
     },
     {
       "relation": "contains",
@@ -99770,9 +100433,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L168",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_checkout",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_checkout"
     },
     {
       "relation": "contains",
@@ -99780,9 +100443,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L121",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_countup",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_countup"
     },
     {
       "relation": "contains",
@@ -99790,9 +100453,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_duration",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_duration"
     },
     {
       "relation": "contains",
@@ -99800,9 +100463,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L25",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_ease",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_ease"
     },
     {
       "relation": "contains",
@@ -99810,9 +100473,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L77",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_fadeout",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_fadeout"
     },
     {
       "relation": "contains",
@@ -99820,9 +100483,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L150",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_glowpulse",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_glowpulse"
     },
     {
       "relation": "contains",
@@ -99830,9 +100493,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L61",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_popin",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_popin"
     },
     {
       "relation": "contains",
@@ -99840,9 +100503,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L31",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_prefersreducedmotion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_prefersreducedmotion"
     },
     {
       "relation": "contains",
@@ -99850,9 +100513,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L43",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion",
-      "target": "kitchen_motion_risein",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_risein"
     },
     {
       "relation": "imports_from",
@@ -99861,9 +100524,9 @@
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogpage",
-      "target": "kitchen_motion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion"
     },
     {
       "relation": "calls",
@@ -99872,9 +100535,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L211",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion_accordion",
-      "target": "kitchen_motion_prefersreducedmotion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_prefersreducedmotion"
     },
     {
       "relation": "calls",
@@ -99883,9 +100546,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L104",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion_checkbounce",
-      "target": "kitchen_motion_prefersreducedmotion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_prefersreducedmotion"
     },
     {
       "relation": "calls",
@@ -99894,9 +100557,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L170",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion_checkout",
-      "target": "kitchen_motion_prefersreducedmotion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_prefersreducedmotion"
     },
     {
       "relation": "calls",
@@ -99905,9 +100568,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L124",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion_countup",
-      "target": "kitchen_motion_prefersreducedmotion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_prefersreducedmotion"
     },
     {
       "relation": "calls",
@@ -99916,9 +100579,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L79",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion_fadeout",
-      "target": "kitchen_motion_prefersreducedmotion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_prefersreducedmotion"
     },
     {
       "relation": "calls",
@@ -99927,9 +100590,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L151",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion_glowpulse",
-      "target": "kitchen_motion_prefersreducedmotion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_prefersreducedmotion"
     },
     {
       "relation": "calls",
@@ -99938,9 +100601,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L62",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion_popin",
-      "target": "kitchen_motion_prefersreducedmotion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_prefersreducedmotion"
     },
     {
       "relation": "calls",
@@ -99949,9 +100612,9 @@
       "source_file": "frontend/src/kitchen/motion.js",
       "source_location": "L46",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "kitchen_motion_risein",
-      "target": "kitchen_motion_prefersreducedmotion",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_prefersreducedmotion"
     },
     {
       "relation": "imports",
@@ -99960,9 +100623,9 @@
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogpage",
-      "target": "kitchen_motion_countup",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_countup"
     },
     {
       "relation": "calls",
@@ -99971,9 +100634,9 @@
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
       "source_location": "L122",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogpage_catalogbiteswallet",
-      "target": "kitchen_motion_countup",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_countup"
     },
     {
       "relation": "imports",
@@ -99982,9 +100645,9 @@
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogpage",
-      "target": "kitchen_motion_glowpulse",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_glowpulse"
     },
     {
       "relation": "calls",
@@ -99993,9 +100656,9 @@
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
       "source_location": "L123",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogpage_catalogbiteswallet",
-      "target": "kitchen_motion_glowpulse",
-      "confidence_score": 1.0
+      "target": "kitchen_motion_glowpulse"
     },
     {
       "relation": "contains",
@@ -100856,6 +101519,50 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_catalogpage",
+      "target": "kitchen_queryclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_catalogpage",
+      "target": "kitchen_queryclient_catalogquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_catalogpage",
+      "target": "kitchen_queryclient_createsyncedapi",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_catalogpage",
+      "target": "kitchen_queryclient_fetchcached",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -100872,6 +101579,16 @@
       "confidence_score": 1.0,
       "source": "pages_catalogpage",
       "target": "kitchen_subscription_canusedietrandomization"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/CatalogPage.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "pages_catalogpage",
+      "target": "pages_catalogpage_apisync",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -101496,6 +102213,50 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_dishespage",
+      "target": "kitchen_queryclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_dishespage",
+      "target": "kitchen_queryclient_createsyncedapi",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_dishespage",
+      "target": "kitchen_queryclient_dishesquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_dishespage",
+      "target": "kitchen_queryclient_fetchcached",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L16",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -101522,6 +102283,16 @@
       "confidence_score": 1.0,
       "source": "pages_dishespage",
       "target": "pages_dishespage_adddaystoiso"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "pages_dishespage",
+      "target": "pages_dishespage_apisync",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -101756,6 +102527,61 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "pages_settingspage",
+      "target": "kitchen_queryclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "pages_settingspage",
+      "target": "kitchen_queryclient_createsyncedapi",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "pages_settingspage",
+      "target": "kitchen_queryclient_fetchcached",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "pages_settingspage",
+      "target": "kitchen_queryclient_membersquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "pages_settingspage",
+      "target": "kitchen_queryclient_userquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
       "source_location": "L12",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -101882,6 +102708,16 @@
       "confidence_score": 1.0,
       "source": "pages_settingspage",
       "target": "kitchen_weekcontext_useactiveweek"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "pages_settingspage",
+      "target": "pages_settingspage_apisync",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -102308,6 +103144,61 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "pages_shoppingpage",
+      "target": "kitchen_queryclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "pages_shoppingpage",
+      "target": "kitchen_queryclient_createsyncedapi",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "pages_shoppingpage",
+      "target": "kitchen_queryclient_fetchcached",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "pages_shoppingpage",
+      "target": "kitchen_queryclient_primecache",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "pages_shoppingpage",
+      "target": "kitchen_queryclient_shoppingquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
       "source_location": "L11",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -102367,6 +103258,16 @@
       "confidence_score": 1.0,
       "source": "pages_shoppingpage",
       "target": "pages_shoppingpage_adddaystoiso"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/ShoppingPage.jsx",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "pages_shoppingpage",
+      "target": "pages_shoppingpage_apisync",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -102854,6 +103755,83 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_weekpage",
+      "target": "kitchen_queryclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_weekpage",
+      "target": "kitchen_queryclient_createsyncedapi",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_weekpage",
+      "target": "kitchen_queryclient_dishesquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_weekpage",
+      "target": "kitchen_queryclient_fetchcached",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_weekpage",
+      "target": "kitchen_queryclient_membersquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_weekpage",
+      "target": "kitchen_queryclient_planningquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pages_weekpage",
+      "target": "kitchen_queryclient_userquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
       "source_location": "L19",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -102924,6 +103902,16 @@
       "confidence_score": 1.0,
       "source": "pages_weekpage",
       "target": "pages_weekpage_adddaystoiso"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/pages/WeekPage.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "pages_weekpage",
+      "target": "pages_weekpage_apisync",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -103718,6 +104706,106 @@
       "confidence_score": 1.0,
       "source": "kitchen_push_enablepushnotifications",
       "target": "kitchen_push_getpushnotificationstatus"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_queryclient_catalogquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_queryclient_createsyncedapi",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_queryclient_dishesquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_queryclient_fetchcached",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_queryclient_membersquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_queryclient_planningquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_queryclient_primecache",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_queryclient_queryclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_queryclient_shoppingquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/kitchen/queryClient.js",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "kitchen_queryclient",
+      "target": "kitchen_queryclient_userquery",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -114714,5 +115802,5 @@
       "source_file": "CLAUDE.md"
     }
   ],
-  "built_at_commit": "3408295eaa8319725ec0dfb608ef7bfebf172a76"
+  "built_at_commit": "c2d1f2866f0745d96d66a04fc5e9b895ae80536b"
 }

@@ -980,8 +980,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/Layout.jsx": {
-    "mtime": 1780850791.5971825,
-    "ast_hash": "033ce170802ba6303b3eddb0fb99090d",
+    "mtime": 1781215313.9686615,
+    "ast_hash": "f1d4d041d317f9932c6c8298cb88277e",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/RequireAuth.jsx": {
@@ -1165,9 +1165,9 @@
     "semantic_hash": "d5838284c0d87701c77c575fddd0a890"
   },
   "frontend/src/kitchen/components/ui/Button.jsx": {
-    "mtime": 1773141082.3873825,
-    "ast_hash": "a03dc5600595b664d4b44981a5a8b97a",
-    "semantic_hash": "a03dc5600595b664d4b44981a5a8b97a"
+    "mtime": 1781214369.2889845,
+    "ast_hash": "e07910cce95ea4786060bcf6e1f30705",
+    "semantic_hash": ""
   },
   "frontend/src/kitchen/components/ui/Card.jsx": {
     "mtime": 1773141082.3873825,
@@ -1295,8 +1295,8 @@
     "semantic_hash": "848b545b3ceb9545b7d0390b7877faa5"
   },
   "frontend/src/kitchen/pages/CatalogPage.jsx": {
-    "mtime": 1780850791.64999,
-    "ast_hash": "8aa15eb8c28dc7a8864cd98458c45e5c",
+    "mtime": 1781215157.908519,
+    "ast_hash": "81ebe60485c7f81a107340f30f3b9a6c",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/ClerkAuthPage.jsx": {
@@ -1310,8 +1310,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/DishesPage.jsx": {
-    "mtime": 1780850791.653987,
-    "ast_hash": "3be43f20d26ab318fd4ec0716d9e0ef7",
+    "mtime": 1781214829.0971053,
+    "ast_hash": "3b368e85d96077cd496403de97b2daf5",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/InviteLandingPage.jsx": {
@@ -1340,8 +1340,8 @@
     "semantic_hash": "91aac52ba3f80133175ae9e6af2e6c69"
   },
   "frontend/src/kitchen/pages/ShoppingPage.jsx": {
-    "mtime": 1780850791.6619892,
-    "ast_hash": "20beac1284ac7e903ead57007010885e",
+    "mtime": 1781214932.2203398,
+    "ast_hash": "60a86a98ee1b3130abd4f12c7ab0978e",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/SwapsPage.jsx": {
@@ -1355,8 +1355,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/WeekPage.jsx": {
-    "mtime": 1780850791.664987,
-    "ast_hash": "00aca82c2f408084923cd5f68dd6406f",
+    "mtime": 1781214728.4661162,
+    "ast_hash": "d8412fb4b1b494828956c31a36b03375",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/push.js": {
@@ -1917,6 +1917,11 @@
   "backend/REDESIGN_PLAN.md": {
     "mtime": 1781213865.8384054,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/motion.js": {
+    "mtime": 1781214511.9653137,
+    "ast_hash": "93c4be50ecc3c47509e7015da4028834",
     "semantic_hash": ""
   }
 }
