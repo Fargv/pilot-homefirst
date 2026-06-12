@@ -333,16 +333,187 @@ function CheckIcon() {
   );
 }
 
-function PackCard({ pack, onAction, onBuyBites, onUninstall, animIndex = 0 }) {
+// Category gradient for packs without a cover image (no icon overlay)
+const PACK_GRADIENTS = [
+  { match: ["mexican", "internacional", "international", "asiatic", "asiátic", "italian"], gradient: "linear-gradient(135deg, #fef3c7, #fde68a)" },
+  { match: ["fitness", "dieta", "diet", "saludable", "healthy", "ligero", "light", "vegano", "vegetariano", "keto"], gradient: "linear-gradient(135deg, #d1fae5, #a7f3d0)" },
+  { match: ["carne", "bbq", "barbacoa", "parrilla", "grill"], gradient: "linear-gradient(135deg, #fed7aa, #fdba74)" },
+  { match: ["especial", "special", "festivo", "festividad", "navidad", "gourmet"], gradient: "linear-gradient(135deg, #fee2e2, #fecaca)" },
+  { match: ["español", "espanol", "tapas", "tradicional"], gradient: "linear-gradient(135deg, #e0e7ff, #c7d2fe)" }
+];
+const DEFAULT_PACK_GRADIENT = "linear-gradient(135deg, #f3f4f6, #e5e7eb)";
+
+function getPackGradient(pack) {
+  const haystack = [
+    ...(Array.isArray(pack.tags) ? pack.tags : []),
+    pack.dietLabel || "",
+    pack.isDietPack ? "dieta" : "",
+    pack.title || ""
+  ].join(" ").toLowerCase();
+  for (const entry of PACK_GRADIENTS) {
+    if (entry.match.some((keyword) => haystack.includes(keyword))) return entry.gradient;
+  }
+  return DEFAULT_PACK_GRADIENT;
+}
+
+// Short price label for the image chip ("300 Bites", "Gratis", "4,99 €")
+function getPackChipLabel(entitlement = {}) {
+  if (entitlement.installed || entitlement.owned) return "";
+  const daysLeft = getFreeUntilDaysLeft(entitlement.isFreeUntil);
+  if (daysLeft !== null) return `Gratis ${daysLeft}d`;
+  if (entitlement.isFree || entitlement.includedInPlan) return "Gratis";
+  const bitesCost = Number(entitlement.bitesCost || 0);
+  if (bitesCost > 0) return `${bitesCost} ${bitesCost === 1 ? "Bite" : "Bites"}`;
+  const direct = Number(entitlement.priceBasic || 0);
+  if (direct > 0) return formatPrice(direct);
+  return "";
+}
+
+function PackCard({ pack, onAction, onBuyBites, onOpenDetail, animIndex = 0 }) {
   const { entitlement } = pack;
   const [loading, setLoading] = useState(false);
-  const [uninstalling, setUninstalling] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
   const coverUrl = resolvePackCoverImageUrl(pack.coverImage);
 
   useEffect(() => {
     setCoverFailed(false);
   }, [coverUrl]);
+
+  const handleAction = async (paymentMethod) => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      await onAction(pack, paymentMethod);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const bitesCost = Number(entitlement.bitesCost || 0);
+  const hasBitesPrice = bitesCost > 0;
+  const canShowDirect = Number(entitlement.priceBasic || 0) > 0;
+  const showImage = Boolean(coverUrl && !coverFailed);
+  const chipLabel = getPackChipLabel(entitlement);
+  const statusBadge = entitlement.installed
+    ? { className: "is-installed", label: "✓ Instalado" }
+    : entitlement.owned
+      ? { className: "is-owned", label: "En biblioteca" }
+      : null;
+
+  // Primary CTA per state; the full action set lives in the detail modal
+  let cta;
+  if (entitlement.installed) {
+    cta = { label: "Ya instalado", className: "is-installed", disabled: true };
+  } else if (entitlement.owned || entitlement.isFree || entitlement.canClaimWithPlan) {
+    cta = {
+      label: loading ? "Procesando..." : entitlement.isFree ? "Instalar gratis" : "Instalar",
+      className: entitlement.owned ? "is-owned" : "is-primary",
+      onClick: () => handleAction("install")
+    };
+  } else if (entitlement.canUnlockWithBites) {
+    cta = {
+      label: loading ? "Procesando..." : `Canjear ${bitesCost} ${bitesCost === 1 ? "Bite" : "Bites"}`,
+      className: "is-primary",
+      onClick: () => handleAction("bites")
+    };
+  } else if (canShowDirect) {
+    cta = {
+      label: loading ? "..." : `Pagar ${formatPrice(entitlement.priceBasic)}`,
+      className: "is-primary",
+      onClick: () => handleAction("direct")
+    };
+  } else if (hasBitesPrice) {
+    cta = { label: "Comprar Bites", className: "is-primary", onClick: () => onBuyBites(pack) };
+  } else {
+    cta = { label: "Ver detalles", className: "is-owned", onClick: () => onOpenDetail(pack) };
+  }
+
+  return (
+    <article
+      className="pk2-card hf-anim-rise"
+      style={{ "--hf-anim-i": animIndex }}
+      onClick={() => onOpenDetail(pack)}
+    >
+      <div
+        className="pk2-cover"
+        style={showImage ? undefined : { background: getPackGradient(pack) }}
+      >
+        {showImage ? (
+          <img
+            src={coverUrl}
+            alt={pack.title}
+            className="pk2-cover-img"
+            loading="lazy"
+            onError={() => setCoverFailed(true)}
+          />
+        ) : null}
+        {pack.featured ? (
+          <span className="pk2-badge pk2-badge-featured">⭐ Destacado</span>
+        ) : null}
+        {statusBadge ? (
+          <span className={`pk2-badge pk2-badge-status ${statusBadge.className}`}>{statusBadge.label}</span>
+        ) : null}
+        {chipLabel ? <span className="pk2-price-chip">{chipLabel}</span> : null}
+      </div>
+
+      <div className="pk2-body">
+        <h3 className="pk2-title">{pack.title}</h3>
+        <p className="pk2-count">{pack.dishCount} platos incluidos</p>
+        {Array.isArray(pack.tags) && pack.tags.length > 0 ? (
+          <div className="pk2-tags">
+            {pack.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="pk2-tag">{tag}</span>
+            ))}
+          </div>
+        ) : null}
+        <div className="pk2-cta-row" onClick={(event) => event.stopPropagation()}>
+          <button
+            type="button"
+            className={`pk2-cta ${cta.className}`}
+            onClick={cta.onClick}
+            disabled={Boolean(cta.disabled) || loading}
+          >
+            {cta.label}
+          </button>
+          <button
+            type="button"
+            className="pk2-more"
+            onClick={() => onOpenDetail(pack)}
+            aria-label={`Ver detalles de ${pack.title}`}
+            title="Ver detalles"
+          >
+            ›
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+// ─── Pack detail modal ────────────────────────────────────────────────────────
+
+function PackDetailModal({ pack, closing, onClose, onAction, onBuyBites, onUninstall }) {
+  const { entitlement } = pack;
+  const [loading, setLoading] = useState(false);
+  const [uninstalling, setUninstalling] = useState(false);
+  const [coverFailed, setCoverFailed] = useState(false);
+  const coverUrl = resolvePackCoverImageUrl(pack.coverImage);
+  const showImage = Boolean(coverUrl && !coverFailed);
+  const chipLabel = getPackChipLabel(entitlement);
+  const bitesCost = Number(entitlement.bitesCost || 0);
+  const hasBitesPrice = bitesCost > 0;
+  const canShowDirect = Number(entitlement.priceBasic || 0) > 0;
+  const previewDishes = Array.isArray(pack.dishPreview) ? pack.dishPreview : [];
+  const remainingDishes = Math.max(0, Number(pack.dishCount || 0) - previewDishes.length);
+  const freeDaysLeft = getFreeUntilDaysLeft(entitlement.isFreeUntil);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   const handleAction = async (paymentMethod) => {
     if (loading) return;
@@ -365,86 +536,90 @@ function PackCard({ pack, onAction, onBuyBites, onUninstall, animIndex = 0 }) {
     }
   };
 
-  const bitesCost = Number(entitlement.bitesCost || 0);
-  const hasBitesPrice = Number(bitesCost || 0) > 0;
-  const canShowDirect = Number(entitlement.priceBasic || 0) > 0;
-  const priceLine = getPackPriceLine(entitlement);
-
   return (
     <div
-      className={`kitchen-card catalog-pack-card hf-anim-rise ${pack.featured ? "catalog-pack-featured" : ""}`}
-      style={{ "--hf-anim-i": animIndex }}
+      className={`pk2-modal-overlay ${closing ? "is-closing" : ""}`}
+      role="presentation"
+      onClick={onClose}
     >
-      <div className="catalog-pack-cover">
-        {coverUrl && !coverFailed
-          ? <img src={coverUrl} alt={pack.title} className="catalog-pack-cover-img" onError={() => setCoverFailed(true)} />
-          : <div className="catalog-pack-cover-placeholder"><PackIcon /></div>}
-        {pack.featured && (
-          <span className="catalog-pack-featured-badge"><StarIcon /> Destacado</span>
-        )}
-      </div>
-
-      <div className="catalog-pack-body">
-        <div className="catalog-pack-header">
-          <h3 className="catalog-pack-title">{pack.title}</h3>
-          <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
-            <EntitlementBadge entitlement={entitlement} />
-          </div>
+      <div
+        className="pk2-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={pack.title}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div
+          className="pk2-modal-cover"
+          style={showImage ? undefined : { background: getPackGradient(pack) }}
+        >
+          {showImage ? (
+            <img
+              src={coverUrl}
+              alt={pack.title}
+              className="pk2-cover-img"
+              onError={() => setCoverFailed(true)}
+            />
+          ) : null}
+          <button type="button" className="pk2-modal-close" onClick={onClose} aria-label="Cerrar">✕</button>
+          {chipLabel ? <span className="pk2-modal-price">{chipLabel}</span> : null}
         </div>
 
-        {pack.subtitle && <p className="catalog-pack-subtitle">{pack.subtitle}</p>}
-        {pack.description && <p className="catalog-pack-description">{pack.description}</p>}
+        <div className="pk2-modal-body">
+          <h2 className="pk2-modal-title">{pack.title}</h2>
+          {pack.subtitle ? <p className="pk2-modal-subtitle">{pack.subtitle}</p> : null}
+          {pack.description ? <p className="pk2-modal-desc">{pack.description}</p> : null}
 
-        {Array.isArray(pack.dishPreview) && pack.dishPreview.length > 0 && (
-          <div className="catalog-pack-dish-preview">
-            <div>
-              {pack.dishPreview.map((d, i) => (
-                <div key={i} className="catalog-pack-dish-preview-item">
-                  <span className="catalog-pack-dish-preview-dot" aria-hidden="true">·</span>
-                  <span className="catalog-pack-dish-preview-name">{d.name}</span>
-                  {d.teaser && <span className="catalog-pack-dish-preview-teaser"> — {d.teaser}</span>}
-                </div>
-              ))}
+          {previewDishes.length > 0 ? (
+            <div className="pk2-modal-section">
+              <span className="pk2-modal-label">Platos incluidos</span>
+              <div className="pk2-modal-dishes">
+                {previewDishes.map((dish, index) => (
+                  <div key={index} className="pk2-modal-dish">
+                    {dish.name}
+                    {dish.teaser ? <span className="pk2-modal-dish-teaser"> — {dish.teaser}</span> : null}
+                  </div>
+                ))}
+                {remainingDishes > 0 ? (
+                  <div className="pk2-modal-dish is-more">
+                    +{remainingDishes} platos más · {pack.dishCount} en total
+                  </div>
+                ) : null}
+              </div>
             </div>
-            {pack.dishCount > pack.dishPreview.length && (
-              <div className="catalog-pack-dish-preview-more">
-                +{pack.dishCount - pack.dishPreview.length} platos más incluidos
-              </div>
-            )}
-          </div>
-        )}
+          ) : null}
 
-        <div className="catalog-pack-footer">
-          {(() => {
-            const days = getFreeUntilDaysLeft(pack.entitlement?.isFreeUntil);
-            return days !== null ? (
-              <div className="catalog-pack-free-countdown">
-                ⏳ Gratis todavía {days} {days === 1 ? "día" : "días"} más
-              </div>
-            ) : null;
-          })()}
-
-          <div className="catalog-pack-meta">
-            <span className="catalog-pack-dish-count">{pack.dishCount} platos</span>
-            {priceLine ? <span className="catalog-pack-price-line"><PackPriceLine entitlement={entitlement} /></span> : null}
-            {pack.tags && pack.tags.length > 0 && (
-              <div className="catalog-pack-tags">
-                {pack.tags.slice(0, 3).map((tag) => (
-                  <span key={tag} className="catalog-pack-tag">{tag}</span>
+          {Array.isArray(pack.tags) && pack.tags.length > 0 ? (
+            <div className="pk2-modal-section">
+              <span className="pk2-modal-label">Etiquetas</span>
+              <div className="pk2-tags">
+                {pack.tags.map((tag) => (
+                  <span key={tag} className="pk2-tag">{tag}</span>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          ) : null}
+
+          {freeDaysLeft !== null ? (
+            <p className="pk2-modal-free-countdown">
+              ⏳ Gratis todavía {freeDaysLeft} {freeDaysLeft === 1 ? "día" : "días"} más
+            </p>
+          ) : null}
 
           {(() => {
             if (entitlement.installed) {
               return (
                 <>
-                  <button type="button" className="kitchen-btn catalog-pack-action installed" disabled>
+                  <button type="button" className="pk2-modal-cta is-installed" disabled>
                     <CheckIcon /> Ya instalado
                   </button>
-                  <button type="button" className="catalog-pack-uninstall" onClick={handleUninstall} disabled={uninstalling}>
-                    {uninstalling ? "Desinstalando..." : "Desinstalar"}
+                  <button
+                    type="button"
+                    className="pk2-modal-uninstall"
+                    onClick={handleUninstall}
+                    disabled={uninstalling}
+                  >
+                    {uninstalling ? "Desinstalando..." : "Desinstalar pack"}
                   </button>
                 </>
               );
@@ -453,7 +628,7 @@ function PackCard({ pack, onAction, onBuyBites, onUninstall, animIndex = 0 }) {
               return (
                 <button
                   type="button"
-                  className="kitchen-btn catalog-pack-action primary"
+                  className={`pk2-modal-cta ${entitlement.owned ? "is-owned" : "is-primary"}`}
                   onClick={() => handleAction("install")}
                   disabled={loading}
                 >
@@ -465,42 +640,42 @@ function PackCard({ pack, onAction, onBuyBites, onUninstall, animIndex = 0 }) {
               return (
                 <button
                   type="button"
-                  className="kitchen-btn catalog-pack-action bites"
+                  className="pk2-modal-cta is-primary"
                   onClick={() => handleAction("bites")}
                   disabled={loading}
                 >
-                  {loading ? "Procesando..." : <><BitesIcon size={14} decorative /> Canjear {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>}
+                  {loading ? "Procesando..." : <><BitesIcon size={15} decorative /> Canjear {bitesCost} {bitesCost === 1 ? "Bite" : "Bites"}</>}
                 </button>
               );
             }
             return (
-              <div className={`catalog-pack-actions-row ${!hasBitesPrice || !canShowDirect ? "single" : ""}`}>
-                {canShowDirect && (
+              <>
+                {canShowDirect ? (
                   <button
                     type="button"
-                    className="kitchen-btn catalog-pack-action catalog-pack-action-direct"
+                    className="pk2-modal-cta is-primary"
                     onClick={() => handleAction("direct")}
                     disabled={loading}
                   >
                     {loading ? "..." : `Pagar ${formatPrice(entitlement.priceBasic)}`}
                   </button>
-                )}
+                ) : null}
                 {hasBitesPrice ? (
                   <button
                     type="button"
-                    className="kitchen-btn catalog-pack-action bites"
+                    className={`pk2-modal-cta ${canShowDirect ? "is-owned" : "is-primary"}`}
                     onClick={() => onBuyBites(pack)}
                     disabled={loading}
                   >
-                    <BitesIcon size={14} decorative /> Comprar Bites
+                    <BitesIcon size={15} decorative /> Comprar Bites
                   </button>
                 ) : null}
-              </div>
+              </>
             );
           })()}
 
           {IS_DEV && (entitlement.isPaid || entitlement.stripePriceId) && (
-            <details style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)", borderTop: "1px dashed var(--border-soft)", paddingTop: 6 }}>
+            <details style={{ marginTop: 12, fontSize: 11, color: "var(--text-muted)", borderTop: "1px dashed var(--border-soft)", paddingTop: 6 }}>
               <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--hf-brand-darker)" }}>💳 DEV: payment config</summary>
               <div style={{ marginTop: 4, display: "grid", gap: 2 }}>
                 <div>isPaid: <strong>{String(entitlement.isPaid)}</strong></div>
@@ -596,6 +771,22 @@ export default function CatalogPage() {
   const [bitesStoreOpen, setBitesStoreOpen] = useState(false);
   const [insufficientBitesPack, setInsufficientBitesPack] = useState(null);
   const [dietInstallModal, setDietInstallModal] = useState(null);
+  // Pack detail modal: presentation state only ({ packId, closing })
+  const [packDetail, setPackDetail] = useState(null);
+
+  const openPackDetail = useCallback((pack) => {
+    setPackDetail({ packId: String(pack.id), closing: false });
+  }, []);
+
+  const closePackDetail = useCallback(() => {
+    setPackDetail((prev) => (prev && !prev.closing ? { ...prev, closing: true } : prev));
+  }, []);
+
+  useEffect(() => {
+    if (!packDetail?.closing) return undefined;
+    const timer = setTimeout(() => setPackDetail(null), 200);
+    return () => clearTimeout(timer);
+  }, [packDetail]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [hideInstalled, setHideInstalled] = useState(false);
   const [priceFilter, setPriceFilter] = useState("all");
@@ -962,12 +1153,27 @@ export default function CatalogPage() {
                 animIndex={packIndex}
                 onAction={handlePackAction}
                 onBuyBites={() => setBitesStoreOpen(true)}
-                onUninstall={handleUninstall}
+                onOpenDetail={openPackDetail}
               />
             ))}
           </div>
         )}
       </div>
+
+      {packDetail ? (() => {
+        const detailPack = packs.find((entry) => String(entry.id) === packDetail.packId);
+        if (!detailPack) return null;
+        return (
+          <PackDetailModal
+            pack={detailPack}
+            closing={packDetail.closing}
+            onClose={closePackDetail}
+            onAction={handlePackAction}
+            onBuyBites={() => setBitesStoreOpen(true)}
+            onUninstall={handleUninstall}
+          />
+        );
+      })() : null}
 
       {bitesStoreOpen && (
         <CatalogBitesStore
