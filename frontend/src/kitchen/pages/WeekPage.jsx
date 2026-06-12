@@ -2679,9 +2679,7 @@ export default function WeekPage() {
               {!isEditing ? (
                 isEmptyState ? (
                   <div className="dc2-empty">
-                    <span className="dc2-empty-icon" aria-hidden="true">🍽️</span>
-                    <p className="dc2-empty-title">{isToday ? "Sin plato para hoy" : "Sin plato para este día"}</p>
-                    <p className="dc2-empty-sub">Elige un plato o deja que Lunchfy decida</p>
+                    <div className="dc2-empty-zone" aria-hidden="true" />
                     {canShowAssignCta ? (
                       <div className="dc2-empty-actions">
                         <button
