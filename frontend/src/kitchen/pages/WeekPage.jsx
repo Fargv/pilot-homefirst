@@ -1012,8 +1012,30 @@ export default function WeekPage() {
       : updates;
     setDayErrors((prev) => ({ ...prev, [dayKey]: "" }));
     setDayStatus((prev) => ({ ...prev, [dayKey]: "saving" }));
+
+    // Optimistic: reflect plain field updates on the visible plan right away;
+    // the server payload below stays canonical. Structural changes (removeDay)
+    // and updates targeting a non-visible week wait for the response.
+    const mealType = dayMealType(day);
+    const previousPlan = plan;
+    const canPatchLocally =
+      targetWeekStart === weekStartRef.current
+      && !requestUpdates?.removeDay
+      && Array.isArray(previousPlan?.days);
+    if (canPatchLocally) {
+      setPlan((prev) => {
+        if (!Array.isArray(prev?.days)) return prev;
+        return {
+          ...prev,
+          days: prev.days.map((entry) => (
+            entry?.date === day.date && dayMealType(entry) === mealType
+              ? { ...entry, ...requestUpdates }
+              : entry
+          ))
+        };
+      });
+    }
     try {
-      const mealType = dayMealType(day);
       const data = await apiSync(`/api/kitchen/weeks/${targetWeekStart}/day/${day.date.slice(0, 10)}?mealType=${mealType}`, {
         method: "PUT",
         body: JSON.stringify({ ...requestUpdates, mealType })
@@ -1046,6 +1068,9 @@ export default function WeekPage() {
       }
       return data.plan;
     } catch (err) {
+      if (canPatchLocally) {
+        setPlan(previousPlan);
+      }
       const message = err.message || "No se pudo actualizar el día.";
       setDayErrors((prev) => ({ ...prev, [dayKey]: message }));
       setDayStatus((prev) => ({ ...prev, [dayKey]: "error" }));

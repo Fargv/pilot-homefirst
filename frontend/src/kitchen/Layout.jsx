@@ -575,7 +575,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
       {betaProEvent ? (
         <BetaProUnlockedModal onDismiss={dismissBetaProEvent} />
       ) : null}
-      <div className={`kitchen-container hf-anim-fade ${containerClassName}`.trim()}>
+      <div className={`kitchen-container hf-page-enter ${containerClassName}`.trim()}>
         <div className="kitchen-main-progress-stack">
           <OnboardingBanner />
           <WeeklyChallengeCard />

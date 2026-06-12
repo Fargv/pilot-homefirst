@@ -3863,6 +3863,16 @@ body {
   100% { transform: translateX(100%); }
 }
 
+/* ── Route transition: every page mounts with a soft rise-fade ── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hf-page-enter {
+  animation: pageEnter 200ms ease-out both;
+}
+
 /* Mount-animation utilities (stagger via --hf-anim-i custom property) */
 .hf-anim-fade { animation: hf-fade-in var(--motion-normal) var(--ease-out) both; }
 .hf-anim-rise {

@@ -874,6 +874,25 @@ export default function ShoppingPage() {
       burstParticles(checkButtonEl, { count: 5, radius: 38, duration: 560 });
     }
 
+    // Optimistic: once the 180ms leave animation finishes, drop the item from
+    // its current tab without waiting for the network. The server payload
+    // (applyPayload) remains canonical; on error both lists are restored.
+    const previousPending = pendingByCategory;
+    const previousPurchased = purchasedByStoreDay;
+    const dropItemFromGroups = (groups) =>
+      Array.isArray(groups)
+        ? groups
+            .map((group) => ({ ...group, items: (group.items || []).filter((entry) => itemKey(entry) !== key) }))
+            .filter((group) => (group.items || []).length > 0)
+        : groups;
+    const optimisticTimer = setTimeout(() => {
+      if (status === "purchased") {
+        setPendingByCategory(dropItemFromGroups);
+      } else {
+        setPurchasedByStoreDay(dropItemFromGroups);
+      }
+    }, 190);
+
     try {
       const data = await apiSync(`/api/kitchen/shopping/${weekStart}/item`, {
         method: "PUT",
@@ -907,6 +926,9 @@ export default function ShoppingPage() {
       }
       setRecentlyMovedItemKey(key);
     } catch (err) {
+      clearTimeout(optimisticTimer);
+      setPendingByCategory(previousPending);
+      setPurchasedByStoreDay(previousPurchased);
       logShoppingApiError("setItemStatus", `/api/kitchen/shopping/${weekStart}/item`, err);
       pushToast({ type: "error", message: err.message || "No se pudo actualizar." });
     } finally {
