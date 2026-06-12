@@ -117,6 +117,42 @@
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
 }
 
+[data-app-theme] .app-shell,
+[data-app-theme] .app-splash {
+  background-color: var(--app-bg, #f7f8fa);
+  background-image: var(--hf-bg-gradient, none);
+  color: var(--text-primary, #17213e);
+}
+
+[data-app-theme] .app-panel,
+[data-app-theme] .app-empty {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--card-border, #e4e7ec);
+  color: var(--text-primary, #17213e);
+  box-shadow: var(--card-shadow, 0 14px 36px rgba(52, 71, 170, 0.1));
+}
+
+[data-app-theme] .app-subtitle,
+[data-app-theme] .app-muted {
+  color: var(--text-muted, #667085);
+}
+
+[data-app-theme] .app-empty-title,
+[data-app-theme] .app-name {
+  color: var(--text-primary, #17213e);
+}
+
+[data-app-theme] .app-logo,
+[data-app-theme] .app-primary-button {
+  background: var(--button-primary-bg, #3447aa);
+  color: var(--button-primary-text, #ffffff);
+}
+
+[data-app-theme] .app-loader {
+  border-color: var(--border-soft, #e1e5f2);
+  border-top-color: var(--button-primary-bg, #3447aa);
+}
+
 .app-splash {
   min-height: 100vh;
   display: flex;

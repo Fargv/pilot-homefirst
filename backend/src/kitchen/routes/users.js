@@ -26,6 +26,8 @@ import {
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
 import { deleteClerkUserById } from "../clerkAuth.js";
+import { isProLikeHousehold } from "../subscriptionService.js";
+import { isThemeAvailableForPlan, isValidThemeId, normalizeThemeId } from "../themeService.js";
 
 const router = express.Router();
 
@@ -328,21 +330,30 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
 
 router.patch("/me", requireAuth, async (req, res) => {
   try {
+    const hasProfileNameMutation = req.body?.firstName !== undefined
+      || req.body?.lastName !== undefined
+      || req.body?.displayName !== undefined;
     const safeDisplayName = buildDisplayName({
       firstName: req.body?.firstName,
       lastName: req.body?.lastName,
       displayName: req.body?.displayName,
       name: req.body?.displayName
-    });
-    if (!safeDisplayName) {
+    }) || req.kitchenUser.displayName;
+    if (hasProfileNameMutation && !safeDisplayName) {
       return res.status(400).json({ ok: false, error: "El nombre para mostrar es obligatorio." });
     }
 
-    req.kitchenUser.displayName = safeDisplayName;
-    req.kitchenUser.firstName = req.body?.firstName ? String(req.body.firstName).trim() : req.kitchenUser.firstName;
-    req.kitchenUser.lastName = req.body?.lastName ? String(req.body.lastName).trim() : req.kitchenUser.lastName;
-    req.kitchenUser.initials = normalizeInitials(req.body?.initials, safeDisplayName);
-    req.kitchenUser.colorId = normalizeColorId(req.body?.colorId);
+    if (hasProfileNameMutation) {
+      req.kitchenUser.displayName = safeDisplayName;
+      req.kitchenUser.firstName = req.body?.firstName ? String(req.body.firstName).trim() : req.kitchenUser.firstName;
+      req.kitchenUser.lastName = req.body?.lastName ? String(req.body.lastName).trim() : req.kitchenUser.lastName;
+    }
+    if (req.body?.initials !== undefined || hasProfileNameMutation) {
+      req.kitchenUser.initials = normalizeInitials(req.body?.initials ?? req.kitchenUser.initials, safeDisplayName);
+    }
+    if (req.body?.colorId !== undefined) {
+      req.kitchenUser.colorId = normalizeColorId(req.body?.colorId);
+    }
     if (typeof req.body?.canCook === "boolean") {
       req.kitchenUser.canCook = req.body.canCook;
     }
@@ -360,6 +371,29 @@ router.patch("/me", requireAuth, async (req, res) => {
         return res.status(403).json({ ok: false, error: "No tienes permisos para cambiar el estado activo." });
       }
       req.kitchenUser.active = req.body.active;
+    }
+    if (req.body?.themeId !== undefined) {
+      const nextThemeId = String(req.body.themeId || "").trim();
+      if (!isValidThemeId(nextThemeId)) {
+        return res.status(400).json({ ok: false, code: "THEME_INVALID", error: "El tema seleccionado no es valido." });
+      }
+
+      const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+      const household = await Household.findById(effectiveHouseholdId)
+        .select("_id subscriptionPlan planSource betaPro")
+        .lean();
+      if (!household) {
+        return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+      }
+      const planForTheme = isProLikeHousehold(household) ? "pro" : "basic";
+      if (!isThemeAvailableForPlan(nextThemeId, planForTheme)) {
+        return res.status(403).json({
+          ok: false,
+          code: "THEME_NOT_AVAILABLE",
+          error: "Disponible en Pro"
+        });
+      }
+      req.kitchenUser.themeId = normalizeThemeId(nextThemeId);
     }
     await req.kitchenUser.save();
 

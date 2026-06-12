@@ -1,5 +1,6 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext.jsx";
+import { APP_THEMES, DEFAULT_THEME_ID } from "../../context/appThemes.js";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
@@ -20,6 +21,7 @@ import {
   canUseDietRandomization,
   canUseDinnersFeature,
   countLicenseUsage,
+  isProLikeHousehold,
   isNonUserDinerLimitReachedError,
   isUnlimitedLicenseLimit,
   isUserLimitReachedError
@@ -198,7 +200,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { activeWeek } = useActiveWeek();
   const { user, setUser, refreshUser, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { themeId, setTheme, syncThemeFromUser } = useTheme();
   const { notify: notifyOnboarding } = useOnboarding();
   const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -244,6 +246,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [themeFeedback, setThemeFeedback] = useState("");
+  const [themeSavingId, setThemeSavingId] = useState("");
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [profileInitials, setProfileInitials] = useState(user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
   const [selectedColorId, setSelectedColorId] = useState(user?.colorId || getUserColorPreference(user?.id) || "lavender");
@@ -367,6 +371,7 @@ export default function SettingsPage() {
   const budgetFeatureEnabled = canUseBudgetFeature(subscriptionAccess);
   const basicsFeatureEnabled = canUseBasicsFeature(subscriptionAccess);
   const canUseDinners = canUseDinnersFeature(subscriptionAccess);
+  const canSelectPremiumThemes = isProLikeHousehold(subscriptionAccess);
   const licenseActionLabel = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
   const isPaidPlan = ["pro", "premium"].includes(String(subscriptionPlan || "").toLowerCase());
   const memberUsage = useMemo(() => countLicenseUsage(members), [members]);
@@ -648,6 +653,12 @@ export default function SettingsPage() {
     return () => clearTimeout(timer);
   }, [copiedField]);
 
+  useEffect(() => {
+    if (!themeFeedback) return;
+    const timer = setTimeout(() => setThemeFeedback(""), 3000);
+    return () => clearTimeout(timer);
+  }, [themeFeedback]);
+
   const loadDeletedItems = async () => {
     if (!canManageDeleted) return;
     if (isDiod && !user?.activeHouseholdId) {
@@ -803,6 +814,45 @@ export default function SettingsPage() {
       updateSuccess("Contrasena actualizada.");
     } catch (err) {
       setError(err.message || "No se pudo cambiar la contrasena.");
+    }
+  };
+
+  const applyAppTheme = async (nextThemeId) => {
+    if (themeSavingId) return;
+    const selectedTheme = APP_THEMES.find((item) => item.id === nextThemeId) || APP_THEMES[0];
+    const requiresPro = !selectedTheme.availableForPlans.includes("basic");
+    if (requiresPro && !canSelectPremiumThemes) {
+      setThemeFeedback("Disponible en Pro");
+      setError("");
+      return;
+    }
+    if (nextThemeId === themeId) {
+      setThemeFeedback("Tema aplicado");
+      return;
+    }
+
+    const previousThemeId = themeId || DEFAULT_THEME_ID;
+    setThemeSavingId(nextThemeId);
+    setThemeFeedback("");
+    setTheme(nextThemeId);
+    try {
+      const data = await apiSync("/api/kitchen/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({ themeId: nextThemeId })
+      });
+      if (data?.user) {
+        setUser((prev) => ({ ...prev, ...data.user }));
+        syncThemeFromUser(data.user.themeId, { canUsePremiumThemes: canSelectPremiumThemes });
+      }
+      setThemeFeedback("Tema aplicado");
+      await refreshUser();
+    } catch (err) {
+      setTheme(previousThemeId);
+      syncThemeFromUser(previousThemeId, { canUsePremiumThemes: canSelectPremiumThemes });
+      setThemeFeedback("No se pudo guardar el tema");
+      setError(err.message || "No se pudo guardar el tema");
+    } finally {
+      setThemeSavingId("");
     }
   };
 
@@ -1470,42 +1520,50 @@ export default function SettingsPage() {
       <div className="settings-block">
         <p className="settings-section-label" style={{ marginBottom: 12 }}>App</p>
         <div className="settings-coming-row"><span>Idioma</span><span className="kitchen-pill">Próximamente</span></div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hf-text)" }}>Apariencia</span>
-          <div className="theme-selector">
-            <button
-              type="button"
-              className={`theme-selector-option${theme === "system" ? " is-active" : ""}`}
-              onClick={() => setTheme("system")}
-            >
-              <svg className="theme-selector-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-              </svg>
-              Sistema
-            </button>
-            <button
-              type="button"
-              className={`theme-selector-option${theme === "light" ? " is-active" : ""}`}
-              onClick={() => setTheme("light")}
-            >
-              <svg className="theme-selector-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="5" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-              </svg>
-              Claro
-            </button>
-            <button
-              type="button"
-              className={`theme-selector-option${theme === "dark" ? " is-active" : ""}`}
-              onClick={() => setTheme("dark")}
-            >
-              <svg className="theme-selector-icon" viewBox="0 0 24 24" aria-hidden="true" style={{ strokeWidth: 1.6 }}>
-                <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" />
-              </svg>
-              Oscuro
-            </button>
+        <div className="settings-theme-control">
+          <div className="settings-theme-heading">
+            <span>Apariencia</span>
+            {themeFeedback ? (
+              <span className={`settings-theme-feedback${themeFeedback === "No se pudo guardar el tema" ? " is-error" : ""}`} role="status">
+                {themeFeedback}
+              </span>
+            ) : null}
           </div>
+          <div className="settings-theme-grid" role="radiogroup" aria-label="Tema de la app">
+            {APP_THEMES.map((appTheme) => {
+              const selected = themeId === appTheme.id;
+              const locked = !appTheme.availableForPlans.includes("basic") && !canSelectPremiumThemes;
+              return (
+                <button
+                  key={appTheme.id}
+                  type="button"
+                  className={`settings-theme-card${selected ? " is-selected" : ""}${locked ? " is-locked" : ""}`}
+                  onClick={() => applyAppTheme(appTheme.id)}
+                  aria-checked={selected}
+                  role="radio"
+                  disabled={Boolean(themeSavingId && themeSavingId !== appTheme.id)}
+                >
+                  <span className="settings-theme-card-top">
+                    <span className="settings-theme-swatches" aria-hidden="true">
+                      <span style={{ background: appTheme.anchors.primary }} />
+                      <span style={{ background: appTheme.anchors.secondary }} />
+                    </span>
+                    <span className="settings-theme-card-status">
+                      {themeSavingId === appTheme.id ? "Guardando" : selected ? "Actual" : locked ? "Pro" : "Elegir"}
+                    </span>
+                  </span>
+                  <span className="settings-theme-card-name">{appTheme.name}</span>
+                  <span className="settings-theme-card-label">{appTheme.label}</span>
+                  {locked ? <span className="settings-theme-card-lock">Disponible en Pro</span> : null}
+                </button>
+              );
+            })}
+          </div>
+          {!canSelectPremiumThemes ? (
+            <button type="button" className="settings-theme-upgrade" onClick={() => navigate("/kitchen/upgrade")}>
+              Desbloquear temas Pro
+            </button>
+          ) : null}
         </div>
       </div>
 

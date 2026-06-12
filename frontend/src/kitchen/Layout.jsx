@@ -17,6 +17,7 @@ import { CookingSessionProvider } from "./contexts/CookingSessionContext.jsx";
 import CookingSessionBanner from "./components/cooking/CookingSessionBanner.jsx";
 import CookingSessionStepper from "./components/cooking/CookingSessionStepper.jsx";
 import useMobileRouteSwipeNavigation from "./hooks/useMobileRouteSwipeNavigation.js";
+import { isProLikeHousehold } from "./subscription.js";
 import { useActiveWeek } from "./weekContext.jsx";
 import {
   queryClient,
@@ -136,32 +137,6 @@ function AppearanceIcon(props) {
   );
 }
 
-function SystemThemeIcon(props) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
-      <circle cx="8" cy="8" r="6.5" />
-      <path d="M8 1.5a6.5 6.5 0 0 1 0 13V1.5z" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function SunThemeIcon(props) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
-      <circle cx="8" cy="8" r="3" />
-      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.53 11.53l1.42 1.42M3.05 12.95l1.42-1.42M11.53 4.47l1.42-1.42" />
-    </svg>
-  );
-}
-
-function MoonThemeIcon(props) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
-      <path d="M14 10.58A6 6 0 0 1 5.42 2a7 7 0 1 0 8.58 8.58z" />
-    </svg>
-  );
-}
-
 function getFirstName(displayName = "") {
   return String(displayName).trim().split(/\s+/)[0] || "";
 }
@@ -225,7 +200,7 @@ function BetaProUnlockedModal({ onDismiss }) {
 
 export default function KitchenLayout({ children, containerClassName = "" }) {
   const { user, logout, refreshUser, setUser } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { appTheme, syncThemeFromUser } = useTheme();
   const { betaProEvent, dismissBetaProEvent } = useWeeklyChallenge();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -312,6 +287,21 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
     [bottomNavLinks]
   );
   useMobileRouteSwipeNavigation(mainSwipeRoutes);
+
+  useEffect(() => {
+    if (!user) {
+      syncThemeFromUser(null, { canUsePremiumThemes: false });
+      return;
+    }
+    syncThemeFromUser(user.themeId, {
+      canUsePremiumThemes: isProLikeHousehold({
+        subscriptionPlan: user.subscriptionPlan,
+        planSource: user.planSource,
+        betaProActive: user.betaProActive,
+        betaPro: user.betaPro
+      })
+    });
+  }, [syncThemeFromUser, user?.betaPro, user?.betaProActive, user?.id, user?.planSource, user?.subscriptionPlan, user?.themeId]);
 
   useEffect(() => {
     const onPointerDown = (event) => {
@@ -525,35 +515,17 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                     <AppearanceIcon className="kitchen-user-menu-icon" />
                     Tema
                   </span>
-                  <div className="kitchen-user-menu-theme-options">
-                    <button
-                      type="button"
-                      className={`kitchen-user-menu-theme-btn${theme === "system" ? " is-active" : ""}`}
-                      onClick={() => setTheme("system")}
-                      title="Sistema"
-                      aria-pressed={theme === "system"}
-                    >
-                      <SystemThemeIcon className="kitchen-user-menu-theme-icon" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`kitchen-user-menu-theme-btn${theme === "light" ? " is-active" : ""}`}
-                      onClick={() => setTheme("light")}
-                      title="Claro"
-                      aria-pressed={theme === "light"}
-                    >
-                      <SunThemeIcon className="kitchen-user-menu-theme-icon" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`kitchen-user-menu-theme-btn${theme === "dark" ? " is-active" : ""}`}
-                      onClick={() => setTheme("dark")}
-                      title="Oscuro"
-                      aria-pressed={theme === "dark"}
-                    >
-                      <MoonThemeIcon className="kitchen-user-menu-theme-icon" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="kitchen-user-menu-theme-current"
+                    onClick={() => { navigate("/kitchen/configuracion?section=preferencias"); onNavigate(); }}
+                  >
+                    <span className="kitchen-user-menu-theme-swatches" aria-hidden="true">
+                      <span style={{ background: appTheme.anchors.primary }} />
+                      <span style={{ background: appTheme.anchors.secondary }} />
+                    </span>
+                    {appTheme.name}
+                  </button>
                 </div>
                 <button type="button" role="menuitem" onClick={onLogout}>
                   <LogoutIcon className="kitchen-user-menu-icon" />
