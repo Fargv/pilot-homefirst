@@ -16568,6 +16568,8 @@ td.recipe-qty-scaled {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .onboarding-guide-slim-title {
@@ -16582,6 +16584,10 @@ td.recipe-qty-scaled {
   font-size: var(--fs-sm);
   font-weight: 800;
   letter-spacing: 0.03em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .onboarding-guide-slim-right,
@@ -16589,6 +16595,8 @@ td.recipe-qty-scaled {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .onboarding-guide-slim-count,
@@ -16596,6 +16604,8 @@ td.recipe-qty-scaled {
   color: #6b7280;
   font-size: var(--fs-xs);
   font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .onboarding-guide-collapse-btn,
@@ -16667,6 +16677,60 @@ td.recipe-qty-scaled {
 
 .weekly-challenge-done-chip-expand:hover {
   color: #15803d;
+}
+
+/* ── Responsive fixes for mobile (< 640px) ──────────────────────────────── */
+@media (max-width: 640px) {
+  .weekly-challenge-slim-top {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .weekly-challenge-slim-heading {
+    width: 100%;
+  }
+
+  .weekly-challenge-slim-right {
+    width: 100%;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+
+  .weekly-challenge-done-chip {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .weekly-challenge-done-chip-text {
+    flex-basis: 100%;
+  }
+}
+
+/* ── Extra tight mobile (< 380px) ─────────────────────────────────────── */
+@media (max-width: 380px) {
+  .weekly-challenge-slim {
+    margin: 0 12px 10px;
+    padding: 8px 10px;
+  }
+
+  .weekly-challenge-slim-heading {
+    flex-wrap: wrap;
+  }
+
+  .weekly-challenge-slim-title {
+    max-width: 100px;
+  }
+
+  .weekly-challenge-done-chip {
+    margin: 0 12px 10px;
+    padding: 6px 10px;
+  }
+
+  .weekly-challenge-done-chip-week {
+    font-size: 10px;
+  }
 }
 
 /* ── Beta Pro hint note ─────────────────────────────────────────────────── */
@@ -18850,6 +18914,8 @@ td.recipe-qty-scaled {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  flex: 1;
 }
 
 .weekly-challenge-heading span {
@@ -18971,6 +19037,8 @@ td.recipe-qty-scaled {
   font-weight: 600;
   color: #1f2937;
   line-height: 1.35;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .weekly-challenge-reward {
@@ -19155,6 +19223,53 @@ td.recipe-qty-scaled {
   background: color-mix(in srgb, #4338ca 8%, var(--surface-muted));
   border-left-color: #6366f1;
   color: var(--text-secondary);
+}
+
+/* ── Expanded card responsive fixes (< 640px) ────────────────────────────── */
+@media (max-width: 640px) {
+  .weekly-challenge-top {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .weekly-challenge-heading span {
+    white-space: nowrap;
+  }
+
+  .weekly-challenge-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .weekly-challenge-reward {
+    align-self: flex-start;
+  }
+
+  .weekly-challenge-row {
+    padding: 6px 0;
+  }
+}
+
+/* ── Extra tight mobile (< 380px) ───────────────────────────────────────── */
+@media (max-width: 380px) {
+  .weekly-challenge-card {
+    margin: 0 12px 12px;
+    padding: 10px 10px;
+  }
+
+  .weekly-challenge-top {
+    gap: 6px;
+  }
+
+  .weekly-challenge-title {
+    font-size: 13px;
+  }
+
+  .weekly-challenge-slim-count {
+    font-size: 11px;
+  }
 }
 
 /* ── Admin panel tab navigation ──────────────────────────────────────────────── */
@@ -24883,6 +24998,133 @@ body,
 [data-theme="dark"] .settings-savebar {
   background: var(--surface-elevated, #1f2333);
   border-color: rgba(148, 163, 184, 0.22);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE LAYOUT FIXES (<768px only — desktop untouched)
+   Planificación header rows, shopping header rows, weekly-challenge
+   bar overflow, weekday strip fit at 375px.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+  /* Residual horizontal scroll guard. overflow-x: clip (not hidden)
+     avoids creating a scroll container, so position: sticky children
+     keep working. */
+  .kitchen-container {
+    overflow-x: clip;
+  }
+
+  /* ── Weekly challenges bar: never push the avatar out ── */
+  .weekly-challenge-slim {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .weekly-challenge-slim-top,
+  .weekly-challenge-slim-heading,
+  .weekly-challenge-slim-right {
+    min-width: 0;
+  }
+
+  .weekly-challenge-slim-title,
+  .weekly-challenge-slim-count {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .weekly-challenge-slim-count {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .kitchen-user-chip,
+  .kitchen-user-avatar {
+    flex-shrink: 0;
+  }
+
+  /* ── PageHeader controls: two rows instead of one squeezed line ──
+     Row A: tabs (+ WhatsApp on Planificación), Row B: week picker. */
+  .page-header-controls {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    row-gap: 10px;
+  }
+
+  .page-header-controls-left {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .page-header-controls-right {
+    flex: 1 1 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  /* Planificación: tabs left, WhatsApp right on the same row */
+  .kitchen-week-header-tabs-row {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Week picker on its own full row; the date label never truncates */
+  .page-header .wdp-container {
+    width: 100%;
+  }
+
+  .page-header .wdp-strip {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .page-header .wdp-chevron,
+  .page-header .wdp-date-btn,
+  .page-header .wdp-today-chip {
+    flex-shrink: 0;
+  }
+
+  .page-header .wdp-date-label {
+    white-space: nowrap;
+  }
+
+  /* Lista de la compra: tabs get their own scrollable row */
+  .page-header-controls-left .kitchen-dishes-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .page-header-controls-left .kitchen-dishes-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .page-header .kitchen-tab-button {
+    flex-shrink: 0;
+  }
+
+  /* Budget bar stays full-width below both rows (footer is a column) */
+  .page-header-footer {
+    min-width: 0;
+  }
+
+  /* ── Weekday strip (L M X J V + Finde) fits in 375px ── */
+  .kitchen-weekday-tabs {
+    max-width: 100%;
+  }
+
+  .kitchen-weekend-chip {
+    min-width: 0;
+    min-height: 30px;
+    padding: 0 8px;
+    font-size: 11px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
 }
 
 /* Dynamic app theme layer */
