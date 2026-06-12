@@ -2343,7 +2343,6 @@ export default function WeekPage() {
           <section className="kitchen-week-header">
             <PageHeader
               title="Planificación"
-              subtitle="Organiza tus comidas de la semana"
               primaryAction={
                 canShowWeekRandomize ? (
                   canUseFullWeekRandomization ? (
@@ -2374,14 +2373,14 @@ export default function WeekPage() {
                   )
                 ) : null
               }
-              secondaryLeft={
+              secondaryRight={
                 <WeekDatePicker
                   selectedWeek={weekStart}
                   onWeekChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
                   className="kitchen-week-header-navigator"
                 />
               }
-              secondaryRight={(() => {
+              secondaryLeft={(() => {
                 if (!canUseDinners) return null;
                 const hasFindeAction = false;
                 return (

@@ -1224,7 +1224,6 @@ export default function ShoppingPage() {
     <KitchenLayout>
       <PageHeader
         title="Lista de la compra"
-        subtitle="Gestiona lo que necesitas comprar esta semana"
         primaryAction={
           <ShareWhatsAppButton
             iconOnly
@@ -1243,14 +1242,31 @@ export default function ShoppingPage() {
           />
         }
         secondaryLeft={
-          <WeekDatePicker
-            selectedWeek={weekStart}
-            onWeekChange={updateVisibleWeek}
-            className="shopping-header-week-picker"
-          />
+          <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
+            <button className={`kitchen-tab-button has-count ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>
+              <span className="hdr-tab-count">{pendingCount === null ? "—" : pendingCount}</span>
+              <span>Pendiente</span>
+            </button>
+            <button className={`kitchen-tab-button has-count ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>
+              <span className="hdr-tab-count">{purchasedCount === null ? "—" : purchasedCount}</span>
+              <span>Comprado</span>
+            </button>
+            {budgetFeatureEnabled ? (
+              <button className={`kitchen-tab-button has-count ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
+                <span className="hdr-tab-count">{pendingPurchaseSessions.length}</span>
+                <span>Por confirmar</span>
+              </button>
+            ) : null}
+          </div>
         }
         footer={
-          budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (() => {
+          <>
+            <WeekDatePicker
+              selectedWeek={weekStart}
+              onWeekChange={updateVisibleWeek}
+              className="shopping-header-week-picker"
+            />
+            {budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (() => {
             const pct = Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100));
             const isOver = budget.spent > budget.weeklyBudget;
             const label = `Presupuesto · ${formatCurrency(budget.spent)} / ${formatCurrency(budget.weeklyBudget)}`;
@@ -1266,22 +1282,11 @@ export default function ShoppingPage() {
                 <ChevronRight size={12} className="shopping-budget-pill-chevron" aria-hidden="true" />
               </button>
             );
-          })() : null
+            })() : null}
+          </>
         }
         className="shopping-header-card"
       >
-        {/* Tabs */}
-        <div className="shopping-tabs-standalone">
-          <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
-            <button className={`kitchen-tab-button ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>Pendiente ({pendingCount === null ? "—" : pendingCount})</button>
-            <button className={`kitchen-tab-button ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>Comprado</button>
-            {budgetFeatureEnabled ? (
-              <button className={`kitchen-tab-button ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
-                Por confirmar{pendingPurchaseSessions.length > 0 ? ` (${pendingPurchaseSessions.length})` : ""}
-              </button>
-            ) : null}
-          </div>
-        </div>
         {Number.isFinite(pendingCount) && pendingCount + (purchasedCount || 0) > 0 ? (
           <div
             className="shopping-progress"

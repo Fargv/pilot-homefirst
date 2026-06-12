@@ -834,7 +834,20 @@ export default function CatalogPage() {
       <div className="catalog-page">
         <PageHeader
           title="Catálogo"
-          subtitle="Packs de platos listos para añadir a tu hogar"
+          primaryAction={
+            wallet && wallet.totalBites != null ? (
+              <button
+                type="button"
+                className="catalog-bites-chip"
+                onClick={() => setBitesStoreOpen(true)}
+                title="Comprar más Bites"
+                aria-label={`${wallet.totalBites} Bites disponibles — comprar más`}
+              >
+                <BitesIcon size={13} decorative />
+                <span>{wallet.totalBites} Bites</span>
+              </button>
+            ) : null
+          }
           secondaryLeft={
             <button
               type="button"
@@ -850,29 +863,21 @@ export default function CatalogPage() {
               {hasActiveFilters && <span className="catalog-filter-dot" aria-hidden="true" />}
             </button>
           }
-          secondaryRight={
-            wallet && wallet.totalBites != null ? (
-              <button
-                type="button"
-                className="catalog-bites-chip"
-                onClick={() => setBitesStoreOpen(true)}
-                title="Comprar más Bites"
-                aria-label={`${wallet.totalBites} Bites disponibles — comprar más`}
-              >
-                <BitesIcon size={13} decorative />
-                <span>{wallet.totalBites} Bites</span>
-              </button>
-            ) : null
-          }
           footer={
-            <input
-              type="search"
-              className="kitchen-input catalog-search-full"
-              placeholder="Buscar packs, platos o ingredientes..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Buscar packs"
-            />
+            <div className="hdr-search">
+              <svg className="hdr-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M16.5 16.5L21 21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              <input
+                type="search"
+                className="kitchen-input catalog-search-full"
+                placeholder="Buscar packs, platos o ingredientes..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Buscar packs"
+              />
+            </div>
           }
         >
           {filterOpen && (

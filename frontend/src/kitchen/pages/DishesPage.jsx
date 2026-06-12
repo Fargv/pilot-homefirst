@@ -960,7 +960,6 @@ export default function DishesPage() {
         {/* ── Unified Explorer Panel ──────────────────────────────────── */}
         <PageHeader
           title={headerTitle}
-          subtitle={headerDescription}
           primaryAction={
             <button className="kitchen-button dishes-new-button" type="button" onClick={headerActionHandler}>
               + {headerActionLabel}
@@ -969,28 +968,30 @@ export default function DishesPage() {
           topRef={panelHeadingRef}
           className="dishes-explorer-panel"
         >
-          {/* ── FILA DE CONTROLES: tabs + sliders + cenas toggle ── */}
+          {/* ── FILA DE TABS ── */}
+          <div className="dishes-explorer-nav" role="tablist" aria-label="Secciones de cocina">
+            <button
+              className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "main"}
+              onClick={() => setActiveTab("main")}
+            >
+              Platos
+            </button>
+            <button
+              className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "ingredients"}
+              onClick={() => setActiveTab("ingredients")}
+            >
+              Productos
+            </button>
+          </div>
+
+          {/* ── FILA DE FILTROS: toggles izquierda + contador derecha ── */}
           <div className="dishes-controls-row">
-            <div className="dishes-explorer-nav" role="tablist" aria-label="Secciones de cocina">
-              <button
-                className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "main"}
-                onClick={() => setActiveTab("main")}
-              >
-                Platos
-              </button>
-              <button
-                className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "ingredients"}
-                onClick={() => setActiveTab("ingredients")}
-              >
-                Productos
-              </button>
-            </div>
             <div className="dishes-filters-right">
               <button
                 type="button"
@@ -1025,6 +1026,13 @@ export default function DishesPage() {
                 </button>
               ) : null}
             </div>
+            {!loading && !ingredientsLoading ? (
+              <p className="dishes-results-count">
+                {isIngredientsTab
+                  ? `${visibleIngredients.length} ${visibleIngredients.length === 1 ? "producto" : "productos"}`
+                  : `${visibleDishes.length} ${visibleDishes.length === 1 ? "plato" : "platos"}`}
+              </p>
+            ) : null}
           </div>
 
           {/* Dinner gate banner (outside panel) */}
@@ -1177,25 +1185,22 @@ export default function DishesPage() {
           ) : null}
 
           {/* Buscador */}
-          <input
-            className="kitchen-input dishes-search-input"
-            placeholder={isIngredientsTab ? "Buscar producto…" : "Buscar por plato o producto…"}
-            value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
-            onChange={(event) =>
-              isIngredientsTab
-                ? setIngredientSearchTerm(event.target.value)
-                : setDishSearchTerm(event.target.value)
-            }
-          />
-
-          {/* Contador resultados */}
-          {!loading && !ingredientsLoading ? (
-            <p className="dishes-results-count">
-              {isIngredientsTab
-                ? `${visibleIngredients.length} ${visibleIngredients.length === 1 ? "producto encontrado" : "productos encontrados"}`
-                : `${visibleDishes.length} ${visibleDishes.length === 1 ? "plato encontrado" : "platos encontrados"}`}
-            </p>
-          ) : null}
+          <div className="hdr-search">
+            <svg className="hdr-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M16.5 16.5L21 21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            <input
+              className="kitchen-input dishes-search-input"
+              placeholder={isIngredientsTab ? "Buscar producto…" : "Buscar por plato o producto…"}
+              value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
+              onChange={(event) =>
+                isIngredientsTab
+                  ? setIngredientSearchTerm(event.target.value)
+                  : setDishSearchTerm(event.target.value)
+              }
+            />
+          </div>
         </PageHeader>
         {/* Onboarding suggestions (outside panel, above grid) */}
         {(isIngredientsTab ? filteredIngredientSuggestions : (activeTab === "main" ? filteredDishSuggestions : [])).length > 0 && (

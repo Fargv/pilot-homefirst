@@ -23667,3 +23667,250 @@ body,
     overflow-wrap: anywhere;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   HDR — unified page-header layer (Planificación / Cocina /
+   Lista de la compra / Catálogo). Overrides the per-page header
+   components into one shared vocabulary.
+   ═══════════════════════════════════════════════════════════════ */
+
+.page-header {
+  padding: 20px 20px 18px;
+  gap: 12px;
+}
+
+.page-header-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  text-align: left;
+  line-height: 1.2;
+}
+
+/* ── Title-row right elements: one size (36px, r10, 13px) ── */
+.kitchen-week-randomize-btn,
+.dishes-new-button {
+  height: 36px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.catalog-bites-chip {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  color: #4338ca;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 5px;
+}
+
+.catalog-bites-chip:hover {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+}
+
+.shopping-header-wa-btn,
+.kitchen-tab-share-button {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+/* ── Tabs: flat pills, always left-aligned ── */
+.page-header .kitchen-dishes-tabs,
+.page-header .kitchen-meal-tabs,
+.page-header .shopping-tabs-inline,
+.page-header .dishes-explorer-nav {
+  display: inline-flex;
+  gap: 4px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  margin-inline: 0;
+  align-self: flex-start;
+}
+
+.page-header .kitchen-tab-button,
+.page-header .kitchen-meal-tab {
+  border-radius: 10px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #f3f4f6;
+  color: #6b7280;
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.page-header .kitchen-tab-button.is-active,
+.page-header .kitchen-meal-tab.is-active {
+  background: #4338ca;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* Tabs with a count stacked above the label (Lista de la compra) */
+.page-header .kitchen-tab-button.has-count {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 5px 16px;
+  line-height: 1.25;
+}
+
+.hdr-tab-count {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Filters/controls row (Cocina, Catálogo) ── */
+.dishes-controls-row {
+  justify-content: space-between;
+}
+
+.dishes-filters-right {
+  margin-left: 0;
+}
+
+.page-header .dishes-results-count {
+  margin: 0 0 0 auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.catalog-filter-toggle,
+.dishes-sliders-btn,
+.dishes-cenas-toggle {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 5px;
+}
+
+.catalog-filter-toggle {
+  padding: 0 12px;
+}
+
+/* ── Unified search (Cocina + Catálogo) ── */
+.hdr-search {
+  position: relative;
+  width: 100%;
+}
+
+.hdr-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.hdr-search .kitchen-input {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 0 12px 0 36px;
+  font-size: 13px;
+  color: #374151;
+  box-sizing: border-box;
+}
+
+.hdr-search .kitchen-input::placeholder {
+  color: #9ca3af;
+}
+
+/* ── Week navigator (Planificación + Lista) ── */
+.page-header .wdp-strip {
+  gap: 8px;
+  padding: 0;
+  justify-content: flex-start;
+}
+
+.page-header .wdp-strip:hover {
+  background: transparent;
+}
+
+.page-header .wdp-chevron {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+}
+
+.page-header .wdp-chevron:hover {
+  background: #f9fafb;
+  color: #374151;
+}
+
+.page-header .wdp-date-btn {
+  color: #374151;
+  font-weight: 500;
+}
+
+.page-header .wdp-date-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .page-header-title {
+  color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .catalog-bites-chip {
+  background: rgba(99, 102, 241, 0.14);
+  border-color: rgba(129, 140, 248, 0.35);
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .shopping-header-wa-btn,
+[data-theme="dark"] .kitchen-tab-share-button,
+[data-theme="dark"] .catalog-filter-toggle,
+[data-theme="dark"] .dishes-sliders-btn,
+[data-theme="dark"] .dishes-cenas-toggle,
+[data-theme="dark"] .page-header .wdp-chevron {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .page-header .kitchen-tab-button,
+[data-theme="dark"] .page-header .kitchen-meal-tab {
+  background: rgba(148, 163, 184, 0.14);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .page-header .kitchen-tab-button.is-active,
+[data-theme="dark"] .page-header .kitchen-meal-tab.is-active {
+  background: var(--hf-brand, #6366f1);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .hdr-search .kitchen-input {
+  background: rgba(148, 163, 184, 0.08);
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .page-header .wdp-date-btn,
+[data-theme="dark"] .page-header .dishes-results-count {
+  color: #cbd5e1;
+}
