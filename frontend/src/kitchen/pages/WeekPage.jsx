@@ -11,7 +11,6 @@ import WeekDayTabs from "../components/WeekDayTabs.jsx";
 import IngredientPicker from "../components/IngredientPicker.jsx";
 import DishModal from "../components/DishModal.jsx";
 import RecipeModal from "../components/RecipeModal.jsx";
-import CategoryIcon from "../components/CategoryIcon.jsx";
 import { resolveCategoryCode } from "../components/categoryIconMap.js";
 import { getDishOrigin } from "../utils/dishOrigin.js";
 import WeekPageSkeleton from "../components/WeekPageSkeleton.jsx";
@@ -29,6 +28,17 @@ import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
+
+const CATEGORY_EMOJI_BY_CODE = {
+  carne: "🥩",
+  pollo_aves: "🍗",
+  pescado: "🐟",
+  legumbres: "🫘",
+  pasta: "🍝",
+  arroz: "🍚",
+  verduras: "🥦",
+  huevos: "🥚"
+};
 
 const DAY_CARD_STYLES = [
   { background: "#eef2ff", color: "#1f2a60" },
@@ -373,6 +383,14 @@ export default function WeekPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [dayCardMenu, closeDayCardMenu]);
+
+  // The desktop dropdown is viewport-anchored; close it if the page scrolls
+  useEffect(() => {
+    if (!dayCardMenu || isMobileViewport) return undefined;
+    const handleScroll = () => closeDayCardMenu();
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [dayCardMenu, isMobileViewport, closeDayCardMenu]);
   const [dishModalOpen, setDishModalOpen] = useState(false);
   const [dishModalName, setDishModalName] = useState("");
   const [dishModalDayKey, setDishModalDayKey] = useState(null);
@@ -2542,6 +2560,7 @@ export default function WeekPage() {
                 const dishCategoryKey = mainDish?.dishCategoryId?._id || mainDish?.dishCategoryId || "";
                 const dishCategory = dishCategoryKey ? dishCategoryMap.get(String(dishCategoryKey)) : null;
                 const dishCategoryCode = resolveCategoryCode(dishCategory);
+                const dishEmoji = day.isLeftovers ? "♻️" : (CATEGORY_EMOJI_BY_CODE[dishCategoryCode] || "");
                 const dishOrigin = mainDish ? getDishOrigin(mainDish) : null;
                 const showOriginTag = Boolean(dishOrigin) && dishOrigin.type !== "user";
                 const recipeSteps = Array.isArray(mainDish?.recipe?.steps) ? mainDish.recipe.steps : [];
@@ -2701,18 +2720,12 @@ export default function WeekPage() {
                 ) : (
                   <>
                     <div className="dc2-dish">
-                      {dishCategoryCode ? (
-                        <CategoryIcon
-                          categoryCode={dishCategoryCode}
-                          className="dc2-dish-icon"
-                          title={dishCategory?.name || ""}
-                        />
-                      ) : (
-                        <span className="dc2-dish-icon-fallback" aria-hidden="true">
-                          {day.isLeftovers ? "♻️" : "🍽️"}
-                        </span>
-                      )}
-                      <h4 className="dc2-dish-name">{displayDishName || "Sin plato"}</h4>
+                      <h4 className="dc2-dish-name">
+                        {dishEmoji ? (
+                          <span className="dc2-dish-name-emoji" aria-hidden="true">{dishEmoji}</span>
+                        ) : null}
+                        {displayDishName || "Sin plato"}
+                      </h4>
                       {dishCategory?.name || recipeMinutes > 0 || showOriginTag ? (
                         <div className="dc2-dish-tags">
                           {dishCategory?.name ? (

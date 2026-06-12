@@ -3870,7 +3870,11 @@ body {
 }
 
 .hf-page-enter {
-  animation: pageEnter 200ms ease-out both;
+  /* backwards (not both): a retained transform would turn the page
+     container into the containing block for position:fixed children
+     (menus, sheets, modals), anchoring them to the container instead
+     of the viewport */
+  animation: pageEnter 200ms ease-out backwards;
 }
 
 /* Mount-animation utilities (stagger via --hf-anim-i custom property) */
@@ -20457,19 +20461,11 @@ td.recipe-qty-scaled {
   padding: 18px 16px 14px;
 }
 
-.dc2-dish-icon {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  display: block;
-  margin-bottom: 10px;
-}
-
-.dc2-dish-icon-fallback {
-  font-size: 32px;
+.dc2-dish-name-emoji {
+  font-size: 18px;
   line-height: 1;
-  display: block;
-  margin-bottom: 10px;
+  margin-right: 8px;
+  vertical-align: -2px;
 }
 
 .dc2-dish-name {
