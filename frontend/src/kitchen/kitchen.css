@@ -20262,6 +20262,745 @@ td.recipe-qty-scaled {
   gap: 8px;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   DAY CARD v2 (dc2) — redesigned Planning day cards
+   Self-contained layer: card shell, header, dish block, actions
+   row, empty state, and the "···" menu (sheet + dropdown).
+   Cook accent arrives via --dc2-accent / --dc2-badge-* inline vars.
+   ═══════════════════════════════════════════════════════════════ */
+
+.kitchen-card.kitchen-day-card.dc2 {
+  background: #ffffff;
+  border: none;
+  border-left: 4px solid var(--dc2-accent, #d1d5db);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07), 0 8px 24px rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+  padding: 0;
+  gap: 0;
+  color: var(--hf-text, #1e293b);
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.kitchen-card.kitchen-day-card.dc2.is-empty,
+.kitchen-card.kitchen-day-card.dc2.is-dinner-mode {
+  background: #ffffff;
+  border: none;
+  border-left: 4px solid var(--dc2-accent, #d1d5db);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07), 0 8px 24px rgba(0, 0, 0, 0.07);
+}
+
+.kitchen-card.kitchen-day-card.dc2.is-selected {
+  border-color: var(--dc2-accent, #d1d5db);
+}
+
+.kitchen-card.kitchen-day-card.dc2.is-today {
+  outline: 2.5px solid #818cf8;
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 4px rgba(129, 140, 248, 0.10),
+    0 2px 8px rgba(0, 0, 0, 0.07),
+    0 8px 24px rgba(0, 0, 0, 0.07);
+}
+
+@media (hover: hover) and (min-width: 768px) {
+  .kitchen-card.kitchen-day-card.dc2:hover {
+    /* drop the filled hf-anim-rise mount animation so its final
+       transform keyframe stops overriding the hover lift */
+    animation: none;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.09), 0 14px 34px rgba(0, 0, 0, 0.10);
+  }
+  .kitchen-card.kitchen-day-card.dc2.is-today:hover {
+    box-shadow:
+      0 0 0 4px rgba(129, 140, 248, 0.10),
+      0 4px 12px rgba(0, 0, 0, 0.09),
+      0 14px 34px rgba(0, 0, 0, 0.10);
+  }
+}
+
+/* Editing mode reuses the legacy inner layout, so restore inner padding */
+.kitchen-card.kitchen-day-card.dc2.is-editing {
+  padding: 0 16px 16px;
+  gap: 12px;
+  overflow: visible;
+}
+
+/* ── Header ── */
+.dc2-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.kitchen-card.kitchen-day-card.dc2.is-editing .dc2-header {
+  margin: 0 -16px;
+  align-items: flex-start;
+}
+
+.dc2-header-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dc2-day-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.dc2-day-name-text {
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dc2-today-chip {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #eef2ff;
+  color: #4338ca;
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-left: 6px;
+}
+
+.dc2-attendees {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 2px;
+  min-width: 0;
+}
+
+.dc2-attendees-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.dc2-attendees-edit {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+}
+
+.dc2-attendees-edit svg {
+  width: 12px;
+  height: 12px;
+}
+
+.dc2-attendees-edit:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+.dc2-attendees-edit:active {
+  transform: scale(0.97);
+}
+
+.dc2-cook-timing {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.dc2-cook-badge {
+  flex-shrink: 0;
+  max-width: 124px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--dc2-badge-bg, #f3f4f6);
+  color: var(--dc2-badge-text, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Dish block ── */
+.dc2-dish {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 18px 16px 14px;
+}
+
+.dc2-dish-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.dc2-dish-icon-fallback {
+  font-size: 32px;
+  line-height: 1;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.dc2-dish-name {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dc2-dish-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.dc2-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.dc2-tag.is-brand {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.dc2-stats {
+  width: 100%;
+  display: flex;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.dc2-stat {
+  flex: 1;
+  padding: 10px 8px;
+  text-align: center;
+  border-right: 1px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+}
+
+.dc2-stat:last-child {
+  border-right: none;
+}
+
+.dc2-stat-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dc2-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-top: 1px;
+}
+
+/* ── Actions row ── */
+.dc2-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+
+.dc2-btn {
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+}
+
+.dc2-btn:active {
+  transform: scale(0.97);
+}
+
+.dc2-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.dc2-btn-recipe {
+  flex: 2;
+  min-width: 0;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  color: #4338ca;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dc2-btn-recipe:hover {
+  background: #e0e7ff;
+}
+
+.dc2-btn-edit {
+  flex: 2;
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dc2-btn-edit:hover {
+  background: #f9fafb;
+}
+
+.dc2-btn-recipe span,
+.dc2-btn-edit span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dc2-btn-more {
+  width: 44px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0;
+}
+
+.dc2-btn-more:hover {
+  background: #f9fafb;
+  color: #374151;
+}
+
+/* ── Empty state ── */
+.dc2-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 22px 16px 20px;
+  min-height: 180px;
+}
+
+.dc2-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.dc2-empty-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dc2-empty-sub {
+  margin: 0 0 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+  line-height: 1.45;
+  max-width: 200px;
+}
+
+.dc2-empty-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.dc2-empty-cta {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: #4338ca;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 14px;
+  transition: background 120ms ease, transform 100ms ease;
+}
+
+.dc2-empty-cta:hover {
+  background: #3730a3;
+}
+
+.dc2-empty-cta:active {
+  transform: scale(0.97);
+}
+
+.dc2-empty-random {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+}
+
+.dc2-empty-random svg {
+  width: 18px;
+  height: 18px;
+}
+
+.dc2-empty-random.is-expand {
+  width: 32px;
+}
+
+.dc2-empty-random:hover:not(:disabled) {
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+.dc2-empty-random:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.dc2-empty-random:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── "···" menu: mobile bottom sheet ── */
+@keyframes dc2OverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes dc2SheetIn {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes dc2SheetOut {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+
+.dc2-sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  animation: dc2OverlayIn 200ms ease-out both;
+}
+
+.dc2-sheet-root.is-closing {
+  animation: dc2OverlayIn 200ms ease-in reverse both;
+}
+
+.dc2-sheet {
+  background: #ffffff;
+  border-radius: 20px 20px 0 0;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  animation: dc2SheetIn 280ms ease-out both;
+}
+
+.dc2-sheet-root.is-closing .dc2-sheet {
+  animation: dc2SheetOut 220ms ease-in both;
+}
+
+.dc2-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  margin: 8px auto;
+}
+
+.dc2-sheet-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+  padding: 4px 16px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── "···" menu: desktop dropdown ── */
+@keyframes dc2DropdownIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.dc2-dropdown-root {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.dc2-dropdown {
+  position: fixed;
+  min-width: 200px;
+  background: #ffffff;
+  border: 0.5px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06), 0 10px 28px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  z-index: 81;
+  transform-origin: top right;
+  animation: dc2DropdownIn 150ms ease-out both;
+}
+
+.dc2-dropdown.is-closing {
+  animation: dc2DropdownIn 120ms ease-in reverse both;
+}
+
+/* ── Menu items (shared by sheet and dropdown) ── */
+.dc2-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #374151;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms ease;
+}
+
+.dc2-dropdown .dc2-menu-item {
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+
+.dc2-menu-item:hover {
+  background: #f9fafb;
+}
+
+.dc2-menu-item:active {
+  background: #f3f4f6;
+}
+
+.dc2-menu-item-icon {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: #4b5563;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dc2-dropdown .dc2-menu-item-icon {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 8px;
+}
+
+.dc2-menu-item-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.dc2-menu-item.is-danger {
+  color: #ef4444;
+}
+
+.dc2-menu-item.is-danger .dc2-menu-item-icon {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.dc2-menu-separator {
+  height: 1px;
+  background: #f3f4f6;
+  margin: 2px 16px;
+}
+
+.dc2-dropdown .dc2-menu-separator {
+  margin: 2px 8px;
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .kitchen-card.kitchen-day-card.dc2,
+[data-theme="dark"] .kitchen-card.kitchen-day-card.dc2.is-empty,
+[data-theme="dark"] .kitchen-card.kitchen-day-card.dc2.is-dinner-mode {
+  background: var(--surface-elevated, #1f2333);
+  color: var(--hf-text, #e2e8f0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32), 0 8px 24px rgba(0, 0, 0, 0.30);
+}
+
+[data-theme="dark"] .dc2-header {
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+}
+
+[data-theme="dark"] .dc2-day-name,
+[data-theme="dark"] .dc2-dish-name,
+[data-theme="dark"] .dc2-stat-value,
+[data-theme="dark"] .dc2-empty-title {
+  color: var(--hf-text, #e2e8f0);
+}
+
+[data-theme="dark"] .dc2-attendees-edit,
+[data-theme="dark"] .dc2-btn-edit,
+[data-theme="dark"] .dc2-btn-more,
+[data-theme="dark"] .dc2-empty-random {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .dc2-btn-edit:hover,
+[data-theme="dark"] .dc2-btn-more:hover {
+  background: rgba(148, 163, 184, 0.10);
+}
+
+[data-theme="dark"] .dc2-tag {
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .dc2-stats,
+[data-theme="dark"] .dc2-stat {
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+[data-theme="dark"] .dc2-empty-icon {
+  background: rgba(148, 163, 184, 0.14);
+}
+
+[data-theme="dark"] .dc2-sheet,
+[data-theme="dark"] .dc2-dropdown {
+  background: var(--surface-elevated, #1f2333);
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+[data-theme="dark"] .dc2-sheet-title {
+  color: var(--hf-text, #e2e8f0);
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+}
+
+[data-theme="dark"] .dc2-menu-item {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .dc2-menu-item:hover {
+  background: rgba(148, 163, 184, 0.10);
+}
+
+[data-theme="dark"] .dc2-menu-item-icon {
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .dc2-menu-item.is-danger .dc2-menu-item-icon {
+  background: rgba(239, 68, 68, 0.14);
+}
+
+[data-theme="dark"] .dc2-menu-separator {
+  background: rgba(148, 163, 184, 0.14);
+}
+
+/* Save/error feedback line sits inside the zero-padding shell */
+.kitchen-card.kitchen-day-card.dc2 .kitchen-day-feedback {
+  margin-top: 0;
+  padding: 0 16px;
+}
+
+.kitchen-card.kitchen-day-card.dc2 .kitchen-day-feedback:not(:empty) {
+  padding-bottom: 12px;
+}
+
+.kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-day-feedback {
+  padding: 0;
+}
+
+/* Mobile: no hover lift; full-width cards keep 12px side margins via grid */
+@media (max-width: 767px) {
+  .kitchen-card.kitchen-day-card.dc2:hover {
+    transform: none;
+  }
+}
+
 /* ── Step ingredient list ─────────────────────────────────────────────────── */
 .cooking-step-ingredients {
   margin-top: 10px;

@@ -11,6 +11,9 @@ import WeekDayTabs from "../components/WeekDayTabs.jsx";
 import IngredientPicker from "../components/IngredientPicker.jsx";
 import DishModal from "../components/DishModal.jsx";
 import RecipeModal from "../components/RecipeModal.jsx";
+import CategoryIcon from "../components/CategoryIcon.jsx";
+import { resolveCategoryCode } from "../components/categoryIconMap.js";
+import { getDishOrigin } from "../utils/dishOrigin.js";
 import WeekPageSkeleton from "../components/WeekPageSkeleton.jsx";
 import WeekDatePicker from "../components/ui/WeekDatePicker.jsx";
 import KitchenLayout from "../Layout.jsx";
@@ -327,6 +330,49 @@ export default function WeekPage() {
   const [attendeeDraftExtraGuests, setAttendeeDraftExtraGuests] = useState(0);
   const [attendeeDialogBusy, setAttendeeDialogBusy] = useState(false);
   const [attendeeDialogError, setAttendeeDialogError] = useState("");
+  // Day-card "···" menu: bottom sheet on mobile, anchored dropdown on desktop.
+  // Pure presentation state; actions delegate to the existing handlers.
+  const [dayCardMenu, setDayCardMenu] = useState(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => (
+    typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  ));
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobileViewport(event.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  const openDayCardMenu = (dayKey, buttonEl) => {
+    const rect = buttonEl?.getBoundingClientRect?.() || null;
+    setDayCardMenu({
+      dayKey,
+      closing: false,
+      anchor: rect
+        ? { top: rect.bottom, right: Math.max(window.innerWidth - rect.right, 8) }
+        : null
+    });
+  };
+
+  const closeDayCardMenu = useCallback(() => {
+    setDayCardMenu((prev) => (prev && !prev.closing ? { ...prev, closing: true } : prev));
+  }, []);
+
+  useEffect(() => {
+    if (!dayCardMenu?.closing) return undefined;
+    const timer = setTimeout(() => setDayCardMenu(null), 220);
+    return () => clearTimeout(timer);
+  }, [dayCardMenu, closeDayCardMenu]);
+
+  useEffect(() => {
+    if (!dayCardMenu) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") closeDayCardMenu();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [dayCardMenu, closeDayCardMenu]);
   const [dishModalOpen, setDishModalOpen] = useState(false);
   const [dishModalName, setDishModalName] = useState("");
   const [dishModalDayKey, setDishModalDayKey] = useState(null);
@@ -897,6 +943,14 @@ export default function WeekPage() {
     });
     return map;
   }, [dishes]);
+  const dishCategoryMap = useMemo(() => {
+    const map = new Map();
+    dishCategories.forEach((category) => {
+      if (category?._id) map.set(String(category._id), category);
+    });
+    return map;
+  }, [dishCategories]);
+  const todayDateKey = new Date().toISOString().slice(0, 10);
   const showCookTiming = useMemo(() => {
     if (!visibleDays.length) {
       return false;
@@ -2483,6 +2537,25 @@ export default function WeekPage() {
                   ? (mainDish?.name || "").trim()
                   : "";
                 const canDeletePlanning = isOwnerAdmin || isAssignedToSelf;
+                // Presentation-only derivations for the redesigned card
+                const isToday = dayKey === todayDateKey;
+                const dishCategoryKey = mainDish?.dishCategoryId?._id || mainDish?.dishCategoryId || "";
+                const dishCategory = dishCategoryKey ? dishCategoryMap.get(String(dishCategoryKey)) : null;
+                const dishCategoryCode = resolveCategoryCode(dishCategory);
+                const dishOrigin = mainDish ? getDishOrigin(mainDish) : null;
+                const showOriginTag = Boolean(dishOrigin) && dishOrigin.type !== "user";
+                const recipeSteps = Array.isArray(mainDish?.recipe?.steps) ? mainDish.recipe.steps : [];
+                const recipeMinutes = Math.round(
+                  recipeSteps.reduce((total, step) => total + (Number(step?.durationSeconds) || 0), 0) / 60
+                );
+                const recipeServings = Number(mainDish?.recipe?.servings) || null;
+                const hasDishStats = Boolean(recipeServings || recipeMinutes > 0);
+                const hasCookAccent = Boolean(isAssigned && cookUser);
+                const cookAccent = hasCookAccent
+                  ? `color-mix(in srgb, ${cookColors.text} 42%, ${cookColors.background})`
+                  : "#d1d5db";
+                const cookBadgeBg = hasCookAccent ? cookColors.background : "#f3f4f6";
+                const cookBadgeText = hasCookAccent ? cookColors.text : "#6b7280";
                 const baseIngredientExclusions = Array.isArray(day.baseIngredientExclusions)
                   ? day.baseIngredientExclusions.map((item) => normalizeExclusionKey(item))
                   : [];
@@ -2531,9 +2604,12 @@ export default function WeekPage() {
                 "--day-card-bg": cardColors.background,
                 "--day-card-text": cardColors.text,
                 "--day-card-highlight": cardColors.text,
+                "--dc2-accent": cookAccent,
+                "--dc2-badge-bg": cookBadgeBg,
+                "--dc2-badge-text": cookBadgeText,
                 "--hf-anim-i": index
               }}
-              className={`kitchen-card kitchen-day-card hf-anim-rise ${selectedDay === dayKey ? "is-selected" : ""} ${isEmptyState ? "is-empty" : ""} ${selectedMealType === "dinner" ? "is-dinner-mode" : ""}`}
+              className={`kitchen-card kitchen-day-card dc2 hf-anim-rise ${selectedDay === dayKey ? "is-selected" : ""} ${isToday ? "is-today" : ""} ${isEditing ? "is-editing" : ""} ${isEmptyState ? "is-empty" : ""} ${selectedMealType === "dinner" ? "is-dinner-mode" : ""}`}
               tabIndex={-1}
               ref={(node) => {
                 if (!node) {
@@ -2543,74 +2619,63 @@ export default function WeekPage() {
                 dayRefs.current.set(dayKey, node);
               }}
             >
-              <div className="kitchen-day-header">
-                <div className="kitchen-day-header-row">
-                  <div className="kitchen-day-header-main">
-                    <h3 className="kitchen-day-title">
-                      <span className="kitchen-day-title-primary">
-                        {dayTitleSecondary ? `${dayTitlePrimary},` : formattedDayLabel}
-                      </span>
-                      {dayTitleSecondary ? (
-                        <span className="kitchen-day-title-secondary">{dayTitleSecondary}</span>
-                      ) : null}
-                    </h3>
-                    <div className="kitchen-day-subtitle-row">
-                      <div className="kitchen-day-subtitle">
-                        Comen {attendeeCount} {attendeeCount === 1 ? "persona" : "personas"}
-                      </div>
-                      <button
-                        type="button"
-                        className="kitchen-day-attendees-action"
-                        onClick={() => openAttendeeDialog(day, canManageAttendees)}
-                        aria-label={canManageAttendees ? "Editar comensales" : "Ver comensales"}
-                        title={canManageAttendees ? "Editar comensales" : "Ver comensales"}
-                      >
-                        {canManageAttendees ? <EditIcon /> : <EyeIcon />}
-                      </button>
+              <div className="dc2-header">
+                <div className="dc2-header-main">
+                  <h3 className="dc2-day-name">
+                    <span className="dc2-day-name-text">
+                      {dayTitleSecondary ? `${dayTitlePrimary}, ${dayTitleSecondary}` : formattedDayLabel}
+                    </span>
+                    {isToday ? <span className="dc2-today-chip">Hoy</span> : null}
+                  </h3>
+                  <div className="dc2-attendees">
+                    <span className="dc2-attendees-text">
+                      <span aria-hidden="true">👤</span> {attendeeCount} {attendeeCount === 1 ? "persona" : "personas"}
+                    </span>
+                    <button
+                      type="button"
+                      className="dc2-attendees-edit"
+                      onClick={() => openAttendeeDialog(day, canManageAttendees)}
+                      aria-label={canManageAttendees ? "Editar comensales" : "Ver comensales"}
+                      title={canManageAttendees ? "Editar comensales" : "Ver comensales"}
+                    >
+                      {canManageAttendees ? <EditIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                  {!isEmptyState && showCookTiming ? (
+                    <div className="dc2-cook-timing">
+                      Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}
                     </div>
-                  </div>
-                  <div className={`kitchen-day-cook-block ${isEditing && isOwnerAdmin ? "is-editing" : ""}`}>
-                    {isEditing && isOwnerAdmin ? (
-                      renderAssigneePicker(day, dayKey, cookUser)
-                    ) : (
-                      <span className="kitchen-day-cook-name">
-                        {cookUser?.displayName || "Sin cocinar"}
-                      </span>
-                    )}
-                  </div>
+                  ) : null}
                 </div>
-                {!isEmptyState ? (
-                  <>
-                    <div className="kitchen-day-meta">
-                      {showCookTiming ? (
-                        <span>Cocina: {day.cookTiming === "same_day" ? "mismo día" : "día anterior"}</span>
-                      ) : null}
-                    </div>
-                    <div className="kitchen-day-cta" />
-                  </>
-                ) : null}
+                {isEditing && isOwnerAdmin ? (
+                  <div className="kitchen-day-cook-block is-editing">
+                    {renderAssigneePicker(day, dayKey, cookUser)}
+                  </div>
+                ) : (
+                  <span className="dc2-cook-badge">
+                    {cookUser?.displayName || "Sin cocinar"}
+                  </span>
+                )}
               </div>
 
               {!isEditing ? (
                 isEmptyState ? (
-                  <div className="kitchen-day-empty">
-                    <div className="kitchen-day-empty-body">
-                      <span className="kitchen-day-empty-icon" aria-hidden="true">🍽️</span>
-                      <p className="kitchen-day-empty-title">Sin plato asignado</p>
-                      <p className="kitchen-day-empty-sub">Planifica una comida para este día</p>
-                    </div>
+                  <div className="dc2-empty">
+                    <span className="dc2-empty-icon" aria-hidden="true">🍽️</span>
+                    <p className="dc2-empty-title">{isToday ? "Sin plato para hoy" : "Sin plato para este día"}</p>
+                    <p className="dc2-empty-sub">Elige un plato o deja que Lunchfy decida</p>
                     {canShowAssignCta ? (
-                      <div className="kitchen-day-empty-actions">
+                      <div className="dc2-empty-actions">
                         <button
                           type="button"
-                          className="kitchen-button kitchen-day-empty-button"
+                          className="dc2-empty-cta"
                           onClick={() => handleAssignCta(day, canEdit, isAssigned)}
                         >
-                          Asignar plato
+                          + Añadir plato
                         </button>
                         <button
                           type="button"
-                          className="kitchen-button secondary kitchen-day-random-button"
+                          className="dc2-empty-random"
                           onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
                           disabled={randomDisabled}
                           aria-label="Randomizar día"
@@ -2621,7 +2686,7 @@ export default function WeekPage() {
                         {canUseFullWeekRandomization ? (
                           <button
                             type="button"
-                            className="kitchen-day-random-expand"
+                            className="dc2-empty-random is-expand"
                             onClick={() => openRandomizeMenu({ day, canEdit, isAssigned })}
                             disabled={randomDisabled}
                             aria-label="Opciones de randomización"
@@ -2634,90 +2699,86 @@ export default function WeekPage() {
                     ) : null}
                   </div>
                 ) : (
-                  <div className="kitchen-day-view">
-                    <div className="kitchen-day-dish-row">
-                      <div className="kitchen-day-dish-display">{displayDishName || "Sin plato"}</div>
-                    </div>
-                    {!isPlanned && canShowAssignCta ? (
-                      <div className="kitchen-day-assign-actions">
-                        <button
-                          type="button"
-                          className="kitchen-button"
-                          onClick={() => handleAssignCta(day, canEdit, isAssigned)}
-                        >
-                          Asignar plato
-                        </button>
-                          <button
-                            type="button"
-                            className="kitchen-button secondary kitchen-day-random-button"
-                            onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
-                            disabled={randomDisabled}
-                            aria-label="Randomizar día"
-                            title={randomTitle}
-                          >
-                            <DiceIcon />
-                          </button>
-                          {canUseFullWeekRandomization ? (
-                            <button
-                              type="button"
-                              className="kitchen-day-random-expand"
-                              onClick={() => openRandomizeMenu({ day, canEdit, isAssigned })}
-                              disabled={randomDisabled}
-                              aria-label="Opciones de randomización"
-                              title="Más opciones"
-                            >
-                              <ChevronDownIcon width="14" height="14" />
-                            </button>
+                  <>
+                    <div className="dc2-dish">
+                      {dishCategoryCode ? (
+                        <CategoryIcon
+                          categoryCode={dishCategoryCode}
+                          className="dc2-dish-icon"
+                          title={dishCategory?.name || ""}
+                        />
+                      ) : (
+                        <span className="dc2-dish-icon-fallback" aria-hidden="true">
+                          {day.isLeftovers ? "♻️" : "🍽️"}
+                        </span>
+                      )}
+                      <h4 className="dc2-dish-name">{displayDishName || "Sin plato"}</h4>
+                      {dishCategory?.name || recipeMinutes > 0 || showOriginTag ? (
+                        <div className="dc2-dish-tags">
+                          {dishCategory?.name ? (
+                            <span className="dc2-tag">{dishCategory.name}</span>
                           ) : null}
-                      </div>
-                    ) : null}
-                    {isPlanned ? (
-                      <div className="kitchen-day-footer">
+                          {recipeMinutes > 0 ? (
+                            <span className="dc2-tag">{recipeMinutes} min</span>
+                          ) : null}
+                          {showOriginTag ? (
+                            <span className={`dc2-tag ${dishOrigin.type === "master" || dishOrigin.type === "catalog" ? "is-brand" : ""}`}>
+                              {dishOrigin.type === "catalog" ? "Catálogo" : dishOrigin.label}
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      {hasDishStats ? (
+                        <div className="dc2-stats">
+                          {recipeServings ? (
+                            <div className="dc2-stat">
+                              <span className="dc2-stat-value">{recipeServings}</span>
+                              <span className="dc2-stat-label">Raciones</span>
+                            </div>
+                          ) : null}
+                          {recipeMinutes > 0 ? (
+                            <div className="dc2-stat">
+                              <span className="dc2-stat-value">{recipeMinutes} min</span>
+                              <span className="dc2-stat-label">Tiempo</span>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="dc2-actions">
+                      <button
+                        type="button"
+                        className="dc2-btn dc2-btn-recipe"
+                        onClick={() => setRecipeModal({ dish: mainDish, servings: attendeeCount || null })}
+                        aria-label="Ver receta e ingredientes"
+                      >
+                        <BookIcon /> <span>Ver receta</span>
+                      </button>
+                      {canEdit ? (
                         <button
                           type="button"
-                          className="kitchen-day-icon-action kitchen-day-recipe-action"
-                          onClick={() => setRecipeModal({ dish: mainDish, servings: attendeeCount || null })}
-                          aria-label="Ver receta e ingredientes"
-                          title="Ver receta e ingredientes"
+                          className="dc2-btn dc2-btn-edit"
+                          onClick={() => startEditingDay(day)}
+                          aria-label="Editar día"
                         >
-                          <BookIcon />
+                          <EditIcon /> <span>Editar</span>
                         </button>
-                        {canEdit ? (
-                          <button
-                            type="button"
-                            className="kitchen-day-icon-action"
-                            onClick={() => startEditingDay(day)}
-                            aria-label="Editar día"
-                            title="Editar"
-                          >
-                            <EditIcon />
-                          </button>
-                        ) : null}
-                        {isOwnerAdmin ? (
-                          <button
-                            type="button"
-                            className="kitchen-day-icon-action"
-                            onClick={() => startSwapDialog(day)}
-                            aria-label="Intercambiar día"
-                            title="Intercambiar día"
-                          >
-                            <SwapIcon />
-                          </button>
-                        ) : null}
-                        {canDeletePlanning ? (
-                          <button
-                            type="button"
-                            className="kitchen-day-icon-action is-danger"
-                            onClick={() => requestRemoveDayAssignment(day)}
-                            aria-label="Eliminar plato de la planificación"
-                            title="Eliminar plato de la planificación"
-                          >
-                            <TrashIcon />
-                          </button>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
+                      ) : null}
+                      {isOwnerAdmin || canDeletePlanning ? (
+                        <button
+                          type="button"
+                          className="dc2-btn dc2-btn-more"
+                          onClick={(event) => openDayCardMenu(dayKey, event.currentTarget)}
+                          aria-haspopup="menu"
+                          aria-expanded={dayCardMenu?.dayKey === dayKey}
+                          aria-label="Más acciones"
+                          title="Más acciones"
+                        >
+                          ···
+                        </button>
+                      ) : null}
+                    </div>
+                  </>
                 )
               ) : (
                 <>
@@ -3242,6 +3303,81 @@ export default function WeekPage() {
           ) : null}
         </div>
       </div>
+      {dayCardMenu ? (() => {
+        const menuDay = visibleDays.find((entry) => entry?.date?.slice(0, 10) === dayCardMenu.dayKey);
+        if (!menuDay) return null;
+        const menuDish = menuDay.mainDishId ? dishMap.get(menuDay.mainDishId) : null;
+        const menuLeftoversName = menuDay?.leftoversSourceDishName
+          || (menuDay?.leftoversSourceDishId ? dishMap.get(menuDay.leftoversSourceDishId)?.name : "");
+        const menuDishName = menuDay?.isLeftovers
+          ? (menuLeftoversName ? `Sobras - ${menuLeftoversName}` : "Sobras")
+          : (menuDish?.name || "Plato del día");
+        const menuCookId = normalizeCookUserId(menuDay.cookUserId);
+        const menuAssignedToSelf = menuCookId
+          && (String(menuCookId) === String(user?.id || "") || String(menuCookId) === String(user?._id || ""));
+        const menuCanDelete = isOwnerAdmin || menuAssignedToSelf;
+        const handleMenuSwap = () => {
+          closeDayCardMenu();
+          startSwapDialog(menuDay);
+        };
+        const handleMenuDelete = () => {
+          closeDayCardMenu();
+          requestRemoveDayAssignment(menuDay);
+        };
+        const menuItems = (
+          <>
+            {isOwnerAdmin ? (
+              <button type="button" className="dc2-menu-item" role="menuitem" onClick={handleMenuSwap}>
+                <span className="dc2-menu-item-icon" aria-hidden="true"><SwapIcon /></span>
+                Intercambiar con otro día
+              </button>
+            ) : null}
+            {isOwnerAdmin && menuCanDelete ? <div className="dc2-menu-separator" role="separator" /> : null}
+            {menuCanDelete ? (
+              <button type="button" className="dc2-menu-item is-danger" role="menuitem" onClick={handleMenuDelete}>
+                <span className="dc2-menu-item-icon" aria-hidden="true"><TrashIcon /></span>
+                Eliminar del día
+              </button>
+            ) : null}
+          </>
+        );
+        if (isMobileViewport) {
+          return (
+            <div
+              className={`dc2-sheet-root ${dayCardMenu.closing ? "is-closing" : ""}`}
+              role="presentation"
+              onClick={closeDayCardMenu}
+            >
+              <div
+                className="dc2-sheet"
+                role="menu"
+                aria-label={`Acciones de ${menuDishName}`}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="dc2-sheet-handle" aria-hidden="true" />
+                <div className="dc2-sheet-title">{menuDishName}</div>
+                {menuItems}
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div className="dc2-dropdown-root" role="presentation" onClick={closeDayCardMenu}>
+            <div
+              className={`dc2-dropdown ${dayCardMenu.closing ? "is-closing" : ""}`}
+              role="menu"
+              aria-label={`Acciones de ${menuDishName}`}
+              style={{
+                top: (dayCardMenu.anchor?.top ?? 96) + 6,
+                right: dayCardMenu.anchor?.right ?? 16
+              }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              {menuItems}
+            </div>
+          </div>
+        );
+      })() : null}
       {attendeeDialogDay ? (
         <div className="kitchen-modal-backdrop" role="presentation">
           <div
