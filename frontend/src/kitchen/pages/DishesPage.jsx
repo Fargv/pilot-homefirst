@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, BookOpen } from "lucide-react";
+import { SlidersHorizontal, BookOpen, Info, Pencil, Copy, Trash2, CalendarPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import { createSyncedApi, dishesQuery, fetchCached } from "../queryClient.js";
@@ -11,8 +11,6 @@ import { useAuth } from "../auth";
 import DishModal from "../components/DishModal.jsx";
 import IngredientModal from "../components/IngredientModal.jsx";
 import RecipeModal from "../components/RecipeModal.jsx";
-import CategoryIcon from "../components/CategoryIcon.jsx";
-import { resolveCategoryCode } from "../components/categoryIconMap.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { getDishOrigin, isDishFromCatalog, isUserCreatedDish } from "../utils/dishOrigin.js";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
@@ -1241,138 +1239,74 @@ export default function DishesPage() {
                 const categoryName = ingredient.categoryId?.name || "Sin categoría";
                 const isInfoOpen = ingredientInfoOpenId === ingredient._id && !isInfoMobile;
                 return (
-                  <article className="kitchen-dish-card kitchen-ingredient-card" key={ingredient._id}>
-                    <div className="kitchen-dish-main">
-                      <div className="kitchen-dish-title-row">
-                        <h3 className="kitchen-dish-name">{ingredient.name}</h3>
+                  <article className="dk2-card" key={ingredient._id}>
+                    <div className="dk2-main">
+                      <h3 className="dk2-name">{ingredient.name}</h3>
+                      <div className="dk2-pills">
+                        <span className="dk2-pill">{categoryName}</span>
+                        {!ingredient.active ? <span className="dk2-pill dk2-pill-inactive">Inactivo</span> : null}
                       </div>
-                      <p className="kitchen-card-subtitle">{categoryName}</p>
-                      {!ingredient.active ? <p className="kitchen-card-inactive">Inactivo</p> : null}
                     </div>
-                    <div className="kitchen-dish-actions-bar">
-                      <div className="kitchen-dish-actions">
-                        <div className="kitchen-dish-info-wrap">
-                          <button
-                            ref={(node) => registerIngredientInfoButton(ingredient._id, node)}
-                            className="kitchen-icon-button info"
-                            type="button"
-                            onClick={() => toggleIngredientInfo(ingredient._id)}
-                            aria-label={`Ver detalles de ${ingredient.name}`}
-                            aria-expanded={ingredientInfoOpenId === ingredient._id}
-                            aria-controls={`ingredient-info-${ingredient._id}`}
-                            title="Información"
+                    <div className="dk2-actions">
+                      <div className="kitchen-dish-info-wrap dk2-action-slot">
+                        <button
+                          ref={(node) => registerIngredientInfoButton(ingredient._id, node)}
+                          className="dk2-action"
+                          type="button"
+                          onClick={() => toggleIngredientInfo(ingredient._id)}
+                          aria-label={`Ver detalles de ${ingredient.name}`}
+                          aria-expanded={ingredientInfoOpenId === ingredient._id}
+                          aria-controls={`ingredient-info-${ingredient._id}`}
+                          title="Información"
+                        >
+                          <Info size={17} aria-hidden="true" />
+                        </button>
+                        {isInfoOpen ? (
+                          <div
+                            id={`ingredient-info-${ingredient._id}`}
+                            className="kitchen-dish-info-popover"
+                            role="dialog"
+                            aria-label={`Información de ${ingredient.name}`}
+                            ref={ingredientInfoPopoverRef}
                           >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path
-                                d="M12 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"
-                                fill="currentColor"
-                              />
-                              <path
-                                d="M12 11v6m9-5a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                          {isInfoOpen ? (
-                            <div
-                              id={`ingredient-info-${ingredient._id}`}
-                              className="kitchen-dish-info-popover"
-                              role="dialog"
-                              aria-label={`Información de ${ingredient.name}`}
-                              ref={ingredientInfoPopoverRef}
-                            >
-                              <h4 className="kitchen-dish-info-heading">{ingredient.name}</h4>
-                              <p className="kitchen-dish-info-empty">{categoryName}</p>
-                              {!ingredient.active ? (
-                                <p className="kitchen-dish-info-empty">Estado: Inactivo</p>
-                              ) : null}
-                            </div>
-                          ) : null}
-                        </div>
-                        <button
-                          className="kitchen-icon-button edit"
-                          type="button"
-                          onClick={() => startIngredientEdit(ingredient)}
-                          aria-label={`Editar ${ingredient.name}`}
-                          title="Editar"
-                        >
-                          <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M15.75 5.625 18.375 8.25"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          className="kitchen-icon-button duplicate"
-                          type="button"
-                          onClick={() => duplicateIngredient(ingredient)}
-                          aria-label={`Duplicar ${ingredient.name}`}
-                          title="Duplicar"
-                        >
-                          <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <rect
-                              x="9"
-                              y="9"
-                              width="10"
-                              height="10"
-                              rx="2"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                            />
-                            <path
-                              d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          className="kitchen-icon-button danger"
-                          type="button"
-                          onClick={() => deleteIngredient(ingredient)}
-                          aria-label={`Eliminar ${ingredient.name}`}
-                          title="Eliminar"
-                        >
-                          <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
+                            <h4 className="kitchen-dish-info-heading">{ingredient.name}</h4>
+                            <p className="kitchen-dish-info-empty">{categoryName}</p>
+                            {!ingredient.active ? (
+                              <p className="kitchen-dish-info-empty">Estado: Inactivo</p>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </div>
+                      <span className="dk2-action-divider" aria-hidden="true" />
+                      <button
+                        className="dk2-action"
+                        type="button"
+                        onClick={() => startIngredientEdit(ingredient)}
+                        aria-label={`Editar ${ingredient.name}`}
+                        title="Editar"
+                      >
+                        <Pencil size={16} aria-hidden="true" />
+                      </button>
+                      <span className="dk2-action-divider" aria-hidden="true" />
+                      <button
+                        className="dk2-action"
+                        type="button"
+                        onClick={() => duplicateIngredient(ingredient)}
+                        aria-label={`Duplicar ${ingredient.name}`}
+                        title="Duplicar"
+                      >
+                        <Copy size={16} aria-hidden="true" />
+                      </button>
+                      <span className="dk2-action-divider" aria-hidden="true" />
+                      <button
+                        className="dk2-action is-danger"
+                        type="button"
+                        onClick={() => deleteIngredient(ingredient)}
+                        aria-label={`Eliminar ${ingredient.name}`}
+                        title="Eliminar"
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                      </button>
                     </div>
                   </article>
                 );
@@ -1395,206 +1329,131 @@ export default function DishesPage() {
               const isInfoOpen = dishInfoOpenId === dish._id && !isInfoMobile;
               const categoryKey = dish?.dishCategoryId?._id || dish?.dishCategoryId || "";
               const dishCategory = categoryKey ? dishCategoryMap.get(String(categoryKey)) : null;
-              const dishCategoryCode = resolveCategoryCode(dishCategory);
-              const showCategoryIcon = Boolean(dishCategoryCode);
               const randomEnabled = dish.allowRandom !== false;
               const toggleDisabled = dishTogglePendingId === dish._id;
               const dishOrigin = getDishOrigin(dish);
               const isCatalogDish = isDishFromCatalog(dish);
               const packColor = isCatalogDish && dish.sourcePackColor ? dish.sourcePackColor : null;
+              const hasRecipe = Boolean(dish.recipe && (dish.recipe.ingredients?.length > 0 || dish.recipe.steps));
+              const canDeleteDish = user?.role === "admin" || user?.role === "owner" || user?.globalRole === "diod";
               return (
                 <article
-                  className={`kitchen-dish-card hf-anim-rise ${isCatalogDish ? "is-catalog" : ""} is-origin-${dishOrigin.type}`}
+                  className="dk2-card hf-anim-rise"
                   key={dish._id}
                   style={{ "--hf-anim-i": dishIndex, ...(packColor ? { "--dish-pack-color": packColor } : null) }}
                 >
-                  <div className="kitchen-dish-main">
-                    <div className="kitchen-dish-title-row">
-                      <div className={`kitchen-dish-title-inline ${dish.special ? "is-special" : ""}`}>
-                        <h3 className="kitchen-dish-name">{dish.name}</h3>
-                        {dish.special ? (
-                          <span
-                            className="kitchen-dish-special-inline-star"
-                            title="Plato especial — excluido del plan automático"
-                            aria-label="Plato especial"
-                          >
-                            ★
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="kitchen-dish-category-meta">
-                      {showCategoryIcon ? (
-                        <CategoryIcon
-                          categoryCode={dishCategoryCode}
-                          className="kitchen-dish-category-icon"
-                          title={dishCategory?.name || dishCategoryCode}
-                        />
+                  <div className="dk2-main">
+                    <h3 className="dk2-name">
+                      {dish.name}
+                      {dish.special ? (
+                        <span
+                          className="dk2-special-star"
+                          title="Plato especial — excluido del plan automático"
+                          aria-label="Plato especial"
+                        >
+                          ★
+                        </span>
                       ) : null}
-                      <p className="kitchen-card-subtitle">{dishCategory?.name || "Sin categoría"}</p>
-                      <span className={`kitchen-dish-origin-badge is-${dishOrigin.type}`}>{dishOrigin.label}</span>
+                    </h3>
+                    <div className="dk2-pills">
+                      <span className="dk2-pill">{dishCategory?.name || "Sin categoría"}</span>
+                      <span className={`dk2-pill dk2-pill-origin is-${dishOrigin.type}`}>{dishOrigin.label}</span>
                     </div>
                     {isCatalogDish && dish.sourcePackTitle ? (
-                      <div className="kitchen-dish-catalog-origin">
-                        <svg viewBox="0 0 14 14" aria-hidden="true" style={{ width: 11, height: 11, flexShrink: 0 }}>
-                          <rect x="0.75" y="0.75" width="12.5" height="12.5" rx="2.25" strokeWidth="1.4" fill="none" stroke="currentColor" />
-                          <path d="M3 4h8M3 7h5M3 10h6" strokeWidth="1.2" strokeLinecap="round" stroke="currentColor" />
-                        </svg>
+                      <div className="dk2-pack-line">
+                        <BookOpen size={11} aria-hidden="true" />
                         <span>{dish.sourcePackTitle}</span>
                       </div>
                     ) : null}
                   </div>
-                  <div className="kitchen-dish-actions-bar">
-                    <label
-                      className={`kitchen-dish-random-checkbox${toggleDisabled ? " is-loading" : ""}${dish.special ? " is-special" : ""}`}
-                      title={dish.special ? "Plato especial — excluido del plan automático" : (randomEnabled ? "Excluir de randomización" : "Incluir en randomización")}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={randomEnabled}
-                        disabled={toggleDisabled || Boolean(dish.special)}
-                        onChange={() => toggleDishAllowRandom(dish, !randomEnabled)}
-                      />
-                      <span>Incluir en randomización</span>
-                    </label>
-                    <div className="kitchen-dish-actions">
-                      <div className="kitchen-dish-info-wrap">
-                        {(() => {
-                          const hasRecipe = Boolean(dish.recipe && (dish.recipe.ingredients?.length > 0 || dish.recipe.steps));
-                          return (
-                            <>
-                              <button
-                                ref={(node) => registerInfoButton(dish._id, node)}
-                                className={`kitchen-icon-button info${hasRecipe ? " has-recipe" : ""}`}
-                                type="button"
-                                onClick={() => {
-                                  if (hasRecipe) { setRecipeModalDish(dish); }
-                                  else { toggleDishInfo(dish._id); }
-                                }}
-                                aria-label={hasRecipe ? `Ver elaboración de ${dish.name}` : `Ver ingredientes de ${dish.name}`}
-                                aria-expanded={dishInfoOpenId === dish._id}
-                                aria-controls={`dish-info-${dish._id}`}
-                                title={hasRecipe ? "Ver elaboración" : "Ingredientes"}
-                              >
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                  <path
-                                    d="M12 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"
-                                    fill="currentColor"
-                                  />
-                                  <path
-                                    d="M12 11v6m9-5a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
-                              </button>
-                              {isInfoOpen ? (
-                                <div
-                                  id={`dish-info-${dish._id}`}
-                                  className="kitchen-dish-info-popover"
-                                  role="dialog"
-                                  aria-label={`Ingredientes de ${dish.name}`}
-                                  ref={infoPopoverRef}
-                                >
-                                  <h4 className="kitchen-dish-info-heading">Ingredientes</h4>
-                                  {ingredientNames.length > 0 ? (
-                                    <ul className="kitchen-dish-info-list">
-                                      {ingredientNames.map((name, index) => (
-                                        <li key={`${dish._id}-ingredient-${index}`}>{name}</li>
-                                      ))}
-                                    </ul>
-                                  ) : (
-                                    <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
-                                  )}
-                                </div>
-                              ) : null}
-                            </>
-                          );
-                        })()}
-                      </div>
+                  <label
+                    className={`dk2-random${toggleDisabled ? " is-loading" : ""}${dish.special ? " is-special" : ""}`}
+                    title={dish.special ? "Plato especial — excluido del plan automático" : (randomEnabled ? "Excluir de randomización" : "Incluir en randomización")}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={randomEnabled}
+                      disabled={toggleDisabled || Boolean(dish.special)}
+                      onChange={() => toggleDishAllowRandom(dish, !randomEnabled)}
+                    />
+                    <span>Incluir en randomización</span>
+                  </label>
+                  <div className="dk2-actions">
+                    <div className="kitchen-dish-info-wrap dk2-action-slot">
                       <button
-                        className="kitchen-icon-button edit"
+                        ref={(node) => registerInfoButton(dish._id, node)}
+                        className={`dk2-action${hasRecipe ? " is-accent" : ""}`}
                         type="button"
-                        onClick={() => startEdit(dish)}
-                        aria-label={`Editar ${dish.name}`}
+                        onClick={() => {
+                          if (hasRecipe) { setRecipeModalDish(dish); }
+                          else { toggleDishInfo(dish._id); }
+                        }}
+                        aria-label={hasRecipe ? `Ver elaboración de ${dish.name}` : `Ver ingredientes de ${dish.name}`}
+                        aria-expanded={dishInfoOpenId === dish._id}
+                        aria-controls={`dish-info-${dish._id}`}
+                        title={hasRecipe ? "Ver elaboración" : "Ingredientes"}
                       >
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                          <path
-                            d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182l-9.19 9.19a2.25 2.25 0 0 1-1.06.592l-3.293.823.823-3.293a2.25 2.25 0 0 1 .592-1.06l9.19-9.19Z"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M15.75 5.625 18.375 8.25"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                          />
-                        </svg>
+                        <Info size={17} aria-hidden="true" />
                       </button>
-                      {!isDiodGlobalMode ? (
+                      {isInfoOpen ? (
+                        <div
+                          id={`dish-info-${dish._id}`}
+                          className="kitchen-dish-info-popover"
+                          role="dialog"
+                          aria-label={`Ingredientes de ${dish.name}`}
+                          ref={infoPopoverRef}
+                        >
+                          <h4 className="kitchen-dish-info-heading">Ingredientes</h4>
+                          {ingredientNames.length > 0 ? (
+                            <ul className="kitchen-dish-info-list">
+                              {ingredientNames.map((name, index) => (
+                                <li key={`${dish._id}-ingredient-${index}`}>{name}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                    <span className="dk2-action-divider" aria-hidden="true" />
+                    <button
+                      className="dk2-action"
+                      type="button"
+                      onClick={() => startEdit(dish)}
+                      aria-label={`Editar ${dish.name}`}
+                      title="Editar"
+                    >
+                      <Pencil size={16} aria-hidden="true" />
+                    </button>
+                    {!isDiodGlobalMode ? (
+                      <>
+                        <span className="dk2-action-divider" aria-hidden="true" />
                         <button
-                          className="kitchen-icon-button assign"
+                          className="dk2-action"
                           type="button"
                           onClick={() => openAssignModal(dish)}
                           aria-label="Asignar"
                           title="Asignar"
                         >
-                          <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M5 10h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="m8 15 2 2 4-4"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                          <CalendarPlus size={16} aria-hidden="true" />
                         </button>
-                      ) : null}
-                      {user?.role === "admin" || user?.role === "owner" || user?.globalRole === "diod" ? (
+                      </>
+                    ) : null}
+                    {canDeleteDish ? (
+                      <>
+                        <span className="dk2-action-divider" aria-hidden="true" />
                         <button
-                          className="kitchen-icon-button danger"
+                          className="dk2-action is-danger"
                           type="button"
                           onClick={() => askDeleteDish(dish)}
                           aria-label={`Eliminar ${dish.name}`}
+                          title="Eliminar"
                         >
-                          <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              d="M4 7h16M10 11v6m4-6v6M9 4h6l1 2H8l1-2Z"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                          <Trash2 size={16} aria-hidden="true" />
                         </button>
-                      ) : null}
-                    </div>
+                      </>
+                    ) : null}
                   </div>
                 </article>
               );
