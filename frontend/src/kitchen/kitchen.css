@@ -20280,6 +20280,11 @@ td.recipe-qty-scaled {
   gap: 0;
   color: var(--hf-text, #1e293b);
   transition: box-shadow 180ms ease, transform 180ms ease;
+  /* hf-anim-rise ships with fill-mode both; its final keyframe would
+     pin transform forever and fight the hover lift. backwards keeps
+     the card hidden during the stagger delay but releases the fill
+     once the mount animation ends. */
+  animation-fill-mode: backwards;
 }
 
 .kitchen-card.kitchen-day-card.dc2.is-empty,
@@ -20305,9 +20310,6 @@ td.recipe-qty-scaled {
 
 @media (hover: hover) and (min-width: 768px) {
   .kitchen-card.kitchen-day-card.dc2:hover {
-    /* drop the filled hf-anim-rise mount animation so its final
-       transform keyframe stops overriding the hover lift */
-    animation: none;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.09), 0 14px 34px rgba(0, 0, 0, 0.10);
   }

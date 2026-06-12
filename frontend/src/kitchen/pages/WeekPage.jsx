@@ -2549,7 +2549,7 @@ export default function WeekPage() {
                   recipeSteps.reduce((total, step) => total + (Number(step?.durationSeconds) || 0), 0) / 60
                 );
                 const recipeServings = Number(mainDish?.recipe?.servings) || null;
-                const hasDishStats = Boolean(recipeServings || recipeMinutes > 0);
+                const hasDishStats = Boolean(recipeServings);
                 const hasCookAccent = Boolean(isAssigned && cookUser);
                 const cookAccent = hasCookAccent
                   ? `color-mix(in srgb, ${cookColors.text} 42%, ${cookColors.background})`
@@ -2730,18 +2730,10 @@ export default function WeekPage() {
                       ) : null}
                       {hasDishStats ? (
                         <div className="dc2-stats">
-                          {recipeServings ? (
-                            <div className="dc2-stat">
-                              <span className="dc2-stat-value">{recipeServings}</span>
-                              <span className="dc2-stat-label">Raciones</span>
-                            </div>
-                          ) : null}
-                          {recipeMinutes > 0 ? (
-                            <div className="dc2-stat">
-                              <span className="dc2-stat-value">{recipeMinutes} min</span>
-                              <span className="dc2-stat-label">Tiempo</span>
-                            </div>
-                          ) : null}
+                          <div className="dc2-stat">
+                            <span className="dc2-stat-value">{recipeServings}</span>
+                            <span className="dc2-stat-label">Raciones</span>
+                          </div>
                         </div>
                       ) : null}
                     </div>
