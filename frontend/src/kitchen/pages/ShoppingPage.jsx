@@ -1259,13 +1259,15 @@ export default function ShoppingPage() {
             ) : null}
           </div>
         }
+        secondaryRight={
+          <WeekDatePicker
+            selectedWeek={weekStart}
+            onWeekChange={updateVisibleWeek}
+            className="kitchen-week-header-navigator"
+          />
+        }
         footer={
           <>
-            <WeekDatePicker
-              selectedWeek={weekStart}
-              onWeekChange={updateVisibleWeek}
-              className="shopping-header-week-picker"
-            />
             {budgetFeatureEnabled === true && budget !== null && budget?.weeklyBudget > 0 ? (() => {
             const pct = Math.min(100, Math.round((budget.spent / budget.weeklyBudget) * 100));
             const isOver = budget.spent > budget.weeklyBudget;
