@@ -650,8 +650,8 @@
     "semantic_hash": "817b9c15df55fafdcbdd8593261fdc04"
   },
   "backend/src/kitchen/models/KitchenUser.js": {
-    "mtime": 1780850791.5458484,
-    "ast_hash": "6f125637baccbd8dfe3871e05fb78a44",
+    "mtime": 1781294920.712201,
+    "ast_hash": "b10120066207fb23d96e058b3822414d",
     "semantic_hash": ""
   },
   "backend/src/kitchen/models/KitchenWeekPlan.js": {
@@ -820,8 +820,8 @@
     "semantic_hash": "d15376c6d0c96f38b824def425996216"
   },
   "backend/src/kitchen/routes/users.js": {
-    "mtime": 1780850791.5688474,
-    "ast_hash": "5ba919b0dec9ce1f9bd790b4f09f1345",
+    "mtime": 1781295358.3256013,
+    "ast_hash": "428da3327b8df8076279597cf34be96c",
     "semantic_hash": ""
   },
   "backend/src/kitchen/routes/weekly.js": {
@@ -975,13 +975,13 @@
     "semantic_hash": "38e13e3c6485c01ce630ce317153e5f7"
   },
   "frontend/src/context/ThemeContext.jsx": {
-    "mtime": 1780850791.5960755,
-    "ast_hash": "1b25883303b8e0dc784fbcc64392dc81",
+    "mtime": 1781294900.7851777,
+    "ast_hash": "dedcb0ec413535b7391e562ce28f9c88",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/Layout.jsx": {
-    "mtime": 1781217554.1803634,
-    "ast_hash": "31da494bed3b1cae70555a3432610c0d",
+    "mtime": 1781295030.7255797,
+    "ast_hash": "44327eb415be27bd44b8218ef8459f4c",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/RequireAuth.jsx": {
@@ -1295,8 +1295,8 @@
     "semantic_hash": "848b545b3ceb9545b7d0390b7877faa5"
   },
   "frontend/src/kitchen/pages/CatalogPage.jsx": {
-    "mtime": 1781217202.974753,
-    "ast_hash": "dd68c6a1627f8bcc2e778df24b256aac",
+    "mtime": 1781278756.0006404,
+    "ast_hash": "72d70fad425c60d620d6a7c3601c4e00",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/ClerkAuthPage.jsx": {
@@ -1310,8 +1310,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/DishesPage.jsx": {
-    "mtime": 1781217180.2926831,
-    "ast_hash": "7a5dc3a92e2749939dc5f430dcf404ca",
+    "mtime": 1781279389.4257717,
+    "ast_hash": "587eae23dc3190d107cfe90340fbe60b",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/InviteLandingPage.jsx": {
@@ -1330,8 +1330,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/SettingsPage.jsx": {
-    "mtime": 1781217309.8037016,
-    "ast_hash": "318df12a1d5bb14456a49c79cf8c7631",
+    "mtime": 1781295132.225586,
+    "ast_hash": "c7fece8e4ed6c9aeac59d27f6383583d",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/ShoppingBudgetPage.jsx": {
@@ -1340,8 +1340,8 @@
     "semantic_hash": "91aac52ba3f80133175ae9e6af2e6c69"
   },
   "frontend/src/kitchen/pages/ShoppingPage.jsx": {
-    "mtime": 1781243924.8371706,
-    "ast_hash": "0d46645f01e56c88ece9b6bfe737e1ac",
+    "mtime": 1781279784.7006452,
+    "ast_hash": "680360daf330b693bfd936749d7acca5",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/SwapsPage.jsx": {
@@ -1355,8 +1355,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/WeekPage.jsx": {
-    "mtime": 1781243954.3130999,
-    "ast_hash": "b85911ed84912b8c2271cc12fc0bef71",
+    "mtime": 1781279036.0595975,
+    "ast_hash": "dba196ec0b8cfe64f227fd9444fab10a",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/push.js": {
@@ -1932,6 +1932,16 @@
   "frontend/src/kitchen/queryClient.js": {
     "mtime": 1781217124.8278806,
     "ast_hash": "f5035addc96cc26ad4ec050a5d992d64",
+    "semantic_hash": ""
+  },
+  "backend/src/kitchen/themeService.js": {
+    "mtime": 1781294912.0171418,
+    "ast_hash": "de0e16d0e8031ae673aa6614024550b5",
+    "semantic_hash": ""
+  },
+  "frontend/src/context/appThemes.js": {
+    "mtime": 1781294875.6398861,
+    "ast_hash": "5e506a665f4fef3454d25522f58aebe9",
     "semantic_hash": ""
   }
 }
