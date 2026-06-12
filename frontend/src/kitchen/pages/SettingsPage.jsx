@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
@@ -38,6 +38,27 @@ function initialsFromName(name = "") {
   if (!parts.length) return "U";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
+
+/**
+ * Inline save feedback shared by every settings control:
+ * "Guardando…" while the request is in flight, "Guardado" (with a
+ * brief check pulse) on success, "No se pudo guardar" on failure.
+ * Announced via role=status so screen readers hear the transition.
+ */
+function SaveStatusChip({ status }) {
+  if (!status || status === "idle") return null;
+  return (
+    <span className={`settings-save-status is-${status}`} role="status">
+      {status === "saving" ? <span className="settings-save-spinner" aria-hidden="true" /> : null}
+      {status === "saved" ? (
+        <svg className="settings-save-check" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+          <path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : null}
+      {status === "saving" ? "Guardando…" : status === "saved" ? "Guardado" : "No se pudo guardar"}
+    </span>
+  );
 }
 
 function roleLabel(user, isOwner, householdName) {
@@ -294,6 +315,28 @@ export default function SettingsPage() {
   const [basics, setBasics] = useState([]);
   const [basicsLoading, setBasicsLoading] = useState(false);
   const [basicsError, setBasicsError] = useState("");
+  // Shared save-status map: one inline chip per settings area
+  // (keys: profile, household-name, dinners, dinners-shopping, budget, repeats, diet, basics)
+  const [saveStatuses, setSaveStatuses] = useState({});
+  const [profileSaving, setProfileSaving] = useState(false);
+  const saveStatusTimersRef = useRef({});
+  const syncedPrefsRef = useRef(null);
+  const successTimerRef = useRef(null);
+
+  const setSaveStatus = useCallback((key, status) => {
+    setSaveStatuses((prev) => ({ ...prev, [key]: status }));
+    clearTimeout(saveStatusTimersRef.current[key]);
+    if (status === "saved") {
+      saveStatusTimersRef.current[key] = setTimeout(() => {
+        setSaveStatuses((prev) => ({ ...prev, [key]: "idle" }));
+      }, 2500);
+    }
+  }, []);
+
+  useEffect(() => () => {
+    Object.values(saveStatusTimersRef.current).forEach((timer) => clearTimeout(timer));
+    clearTimeout(successTimerRef.current);
+  }, []);
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
@@ -376,7 +419,41 @@ export default function SettingsPage() {
     return "settings-subscription-badge basic";
   };
 
+  // Real unsaved changes only: profile edit-mode diffs vs snapshot, or a
+  // modified household name still in edit mode.
+  const profileDirty = profileEditingMain && (
+    displayName !== profileSnapshot.displayName
+    || profileInitials !== profileSnapshot.initials
+    || selectedColorId !== profileSnapshot.colorId
+    || profileActive !== profileSnapshot.active
+    || profileCanCook !== profileSnapshot.canCook
+    || profileDinnerActive !== profileSnapshot.dinnerActive
+    || profileDinnerCanCook !== profileSnapshot.dinnerCanCook
+  );
+  const householdNameDirty = householdNameEditing && householdNameDraft.trim() !== householdName.trim();
+  const hasUnsavedChanges = profileDirty || householdNameDirty;
+
+  // Browser refresh / tab close guard — only while something is really dirty
+  useEffect(() => {
+    if (!hasUnsavedChanges) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
   const setPanel = (panel) => {
+    if (hasUnsavedChanges) {
+      const leaveAnyway = window.confirm("Tienes cambios sin guardar. ¿Quieres salir igualmente?");
+      if (!leaveAnyway) return;
+      if (profileEditingMain) cancelProfileEdit();
+      if (householdNameEditing) {
+        setHouseholdNameDraft(householdName);
+        setHouseholdNameEditing(false);
+      }
+    }
     if (!panel) {
       setSearchParams({});
       navigate("/kitchen/configuracion");
@@ -396,6 +473,8 @@ export default function SettingsPage() {
   const updateSuccess = (message) => {
     setSuccess(message);
     setError("");
+    clearTimeout(successTimerRef.current);
+    successTimerRef.current = setTimeout(() => setSuccess(""), 4000);
   };
 
   const notifyCatalogInvalidated = () => {
@@ -640,33 +719,42 @@ export default function SettingsPage() {
 
   const deleteBasic = async (id) => {
     setBasicsError("");
+    setSaveStatus("basics", "saving");
     try {
       await apiSync(`/api/kitchen/basics/${id}`, { method: "DELETE" });
       await loadBasics();
+      setSaveStatus("basics", "saved");
     } catch (err) {
+      setSaveStatus("basics", "error");
       setBasicsError(err.message || "No se pudo eliminar el básico.");
     }
   };
 
   const toggleBasicActive = async (id, currentActive) => {
     setBasicsError("");
+    setSaveStatus("basics", "saving");
     try {
       await apiSync(`/api/kitchen/basics/${id}`, {
         method: "PUT",
         body: JSON.stringify({ active: !currentActive })
       });
       await loadBasics();
+      setSaveStatus("basics", "saved");
     } catch (err) {
+      setSaveStatus("basics", "error");
       setBasicsError(err.message || "No se pudo actualizar el básico.");
     }
   };
 
   const saveProfile = async () => {
+    if (profileSaving) return;
     const safeDisplayName = displayName.trim();
     if (!safeDisplayName) {
       setError("El nombre visible es obligatorio.");
       return;
     }
+    setProfileSaving(true);
+    setSaveStatus("profile", "saving");
     try {
       const safeInitials = (profileInitials.trim().toUpperCase() || initialsFromName(safeDisplayName)).slice(0, 3);
       const canEditOwnActive = isOwner || isDiod;
@@ -687,9 +775,12 @@ export default function SettingsPage() {
       setUserColorPreference(user?.id, selectedColorId);
       await refreshUser();
       setProfileEditingMain(false);
-      updateSuccess("Perfil actualizado.");
+      setSaveStatus("profile", "saved");
     } catch (err) {
+      setSaveStatus("profile", "error");
       setError(err.message || "No se pudo guardar el perfil.");
+    } finally {
+      setProfileSaving(false);
     }
   };
 
@@ -721,6 +812,11 @@ export default function SettingsPage() {
       setError("El nombre del household es obligatorio.");
       return;
     }
+    if (safeName === householdName.trim()) {
+      setHouseholdNameEditing(false);
+      return;
+    }
+    setSaveStatus("household-name", "saving");
     try {
       const data = await apiSync("/api/kitchen/household/name", {
         method: "PATCH",
@@ -728,15 +824,16 @@ export default function SettingsPage() {
       });
       setHouseholdName(data?.household?.name || safeName);
       setHouseholdNameEditing(false);
-      updateSuccess("Nombre del household actualizado.");
+      setSaveStatus("household-name", "saved");
       notifyOnboarding("update_household");
       await refreshUser();
     } catch (err) {
+      setSaveStatus("household-name", "error");
       setError(err.message || "No se pudo actualizar el household.");
     }
   };
 
-  const saveHouseholdPreferences = async (nextValues = {}) => {
+  const saveHouseholdPreferences = async (nextValues = {}, statusKey = "prefs") => {
     if (!canManageHousehold) return;
     const nextEnabled = Object.prototype.hasOwnProperty.call(nextValues, "avoidRepeatsEnabled")
       ? Boolean(nextValues.avoidRepeatsEnabled)
@@ -774,28 +871,47 @@ export default function SettingsPage() {
       ? nextValues.randomizationDefaultDietPackIds
       : dietDefaultPackIds;
 
+    const payloadString = JSON.stringify({
+      avoidRepeatsEnabled: nextEnabled,
+      dinnersEnabled: nextDinnersEnabled,
+      ...(canUseDinners ? { dinnersIncludeInShopping: nextDinnersIncludeInShopping } : {}),
+      avoidRepeatsWeeks: Number(nextWeeks),
+      ...(budgetFeatureEnabled
+        ? {
+            monthlyBudget: nextMonthlyBudget === "" ? null : Number(nextMonthlyBudget),
+            cycleStartDay: nextCycleStartDay
+          }
+        : {}),
+      ...(dietEnabled
+        ? {
+            randomizationUseDietFilter: nextDietFilterEnabled,
+            randomizationDefaultDietPackIds: nextDietDefaultPackIds
+          }
+        : {})
+    });
+
+    // Blur on an untouched field: nothing changed since the last sync, skip the PATCH
+    if (!Object.keys(nextValues).length && payloadString === syncedPrefsRef.current) return;
+
+    // Snapshot of the pre-save values so a failed request can revert
+    // the optimistic toggle/input instead of leaving stale state
+    const revertSnapshot = {
+      dinnersEnabled,
+      dinnersIncludeInShopping,
+      avoidRepeatsEnabled,
+      avoidRepeatsWeeks,
+      monthlyBudget,
+      cycleStartDay,
+      dietFilterEnabled,
+      dietDefaultPackIds
+    };
+
     setHouseholdPrefsSaving(true);
+    setSaveStatus(statusKey, "saving");
     try {
       const data = await apiSync("/api/kitchen/household/preferences", {
         method: "PATCH",
-        body: JSON.stringify({
-          avoidRepeatsEnabled: nextEnabled,
-          dinnersEnabled: nextDinnersEnabled,
-          ...(canUseDinners ? { dinnersIncludeInShopping: nextDinnersIncludeInShopping } : {}),
-          avoidRepeatsWeeks: Number(nextWeeks),
-          ...(budgetFeatureEnabled
-            ? {
-                monthlyBudget: nextMonthlyBudget === "" ? null : Number(nextMonthlyBudget),
-                cycleStartDay: nextCycleStartDay
-              }
-            : {}),
-          ...(dietEnabled
-            ? {
-                randomizationUseDietFilter: nextDietFilterEnabled,
-                randomizationDefaultDietPackIds: nextDietDefaultPackIds
-              }
-            : {})
-        })
+        body: payloadString
       });
       setDinnersEnabled(Boolean(data?.household?.dinnersEnabled));
       setDinnersIncludeInShopping(Boolean(data?.household?.dinnersIncludeInShopping));
@@ -814,8 +930,18 @@ export default function SettingsPage() {
       if (budgetFeatureEnabled && nextMonthlyBudget !== "" && Number(nextMonthlyBudget) > 0) {
         notifyWeekly("budget_configured");
       }
-      updateSuccess("Preferencia del household actualizada.");
+      syncedPrefsRef.current = payloadString;
+      setSaveStatus(statusKey, "saved");
     } catch (err) {
+      setDinnersEnabled(revertSnapshot.dinnersEnabled);
+      setDinnersIncludeInShopping(revertSnapshot.dinnersIncludeInShopping);
+      setAvoidRepeatsEnabled(revertSnapshot.avoidRepeatsEnabled);
+      setAvoidRepeatsWeeks(revertSnapshot.avoidRepeatsWeeks);
+      setMonthlyBudget(revertSnapshot.monthlyBudget);
+      setCycleStartDay(revertSnapshot.cycleStartDay);
+      setDietFilterEnabled(revertSnapshot.dietFilterEnabled);
+      setDietDefaultPackIds(revertSnapshot.dietDefaultPackIds);
+      setSaveStatus(statusKey, "error");
       setError(err.message || "No se pudieron guardar las preferencias del household.");
     } finally {
       setHouseholdPrefsSaving(false);
@@ -1182,12 +1308,25 @@ export default function SettingsPage() {
         <div className="settings-inline-heading">
           <h3 className="settings-subtitle">Nombre y color</h3>
           {!profileEditingMain ? (
-            <button type="button" className="settings-icon-only" onClick={enterProfileEdit} aria-label="Editar perfil">
-              <PencilIcon />
-            </button>
+            <div className="settings-icon-row">
+              <SaveStatusChip status={saveStatuses.profile} />
+              <button type="button" className="settings-icon-only" onClick={enterProfileEdit} aria-label="Editar perfil">
+                <PencilIcon />
+              </button>
+            </div>
           ) : (
             <div className="settings-icon-row">
-              <button type="button" className="settings-icon-only" onClick={saveProfile} aria-label="Guardar perfil">
+              {profileDirty && !profileSaving ? (
+                <span className="settings-unsaved-chip">Cambios sin guardar</span>
+              ) : null}
+              <SaveStatusChip status={saveStatuses.profile} />
+              <button
+                type="button"
+                className="settings-icon-only"
+                onClick={saveProfile}
+                disabled={!profileDirty || profileSaving}
+                aria-label="Guardar perfil"
+              >
                 <SaveIcon />
               </button>
               <button type="button" className="settings-icon-only" onClick={cancelProfileEdit} aria-label="Cancelar edición">
@@ -1300,6 +1439,19 @@ export default function SettingsPage() {
         <p className="settings-danger-text">Esta accion puede eliminar tu cuenta o todo el household si eres el ultimo owner.</p>
         <button type="button" className="kitchen-button secondary danger" onClick={openDeleteProfileFlow}>Eliminar mi perfil</button>
       </div>
+      {profileEditingMain && profileDirty ? (
+        <div className="settings-savebar" role="region" aria-label="Cambios sin guardar">
+          <span className="settings-savebar-text">Cambios sin guardar</span>
+          <div className="settings-savebar-actions">
+            <button type="button" className="settings-savebar-discard" onClick={cancelProfileEdit} disabled={profileSaving}>
+              Descartar
+            </button>
+            <button type="button" className="settings-savebar-save" onClick={saveProfile} disabled={profileSaving}>
+              {profileSaving ? "Guardando…" : "Guardar cambios"}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 
@@ -1398,14 +1550,17 @@ export default function SettingsPage() {
                 autoFocus
                 style={{ marginBottom: 8 }}
               />
-              <div style={{ display: "flex", gap: 8 }}>
-                <button type="button" className="settings-mini-button" onClick={saveHouseholdName}>Guardar</button>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button type="button" className="settings-mini-button" onClick={saveHouseholdName} disabled={saveStatuses["household-name"] === "saving"}>
+                  {saveStatuses["household-name"] === "saving" ? "Guardando…" : "Guardar"}
+                </button>
                 <button type="button" className="settings-mini-button" onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(false); }}>Cancelar</button>
               </div>
             </div>
           ) : (
             <div className="hh-summary-name-row">
               <span className="hh-summary-name">{householdName || "Mi hogar"}</span>
+              <SaveStatusChip status={saveStatuses["household-name"]} />
               {canManageHousehold ? (
                 <button
                   type="button"
@@ -1544,6 +1699,7 @@ export default function SettingsPage() {
               {!canUseDinners ? (
                 <span className="dinner-gate-pro-badge">PRO</span>
               ) : null}
+              <SaveStatusChip status={saveStatuses.dinners} />
             </div>
             <p className="kitchen-muted">
               {canUseDinners
@@ -1563,7 +1719,7 @@ export default function SettingsPage() {
                 onChange={(event) => {
                   const checked = event.target.checked;
                   setDinnersEnabled(checked);
-                  void saveHouseholdPreferences({ dinnersEnabled: checked });
+                  void saveHouseholdPreferences({ dinnersEnabled: checked }, "dinners");
                 }}
               />
               <span className="kitchen-toggle-track" />
@@ -1586,6 +1742,7 @@ export default function SettingsPage() {
             <div className="settings-household-pref-main">
               <div className="settings-household-pref-title">
                 <span>🛒 Incluir cenas en la lista de la compra</span>
+                <SaveStatusChip status={saveStatuses["dinners-shopping"]} />
               </div>
               <p className="kitchen-muted">
                 {dinnersIncludeInShopping
@@ -1602,7 +1759,7 @@ export default function SettingsPage() {
                 onChange={(event) => {
                   const checked = event.target.checked;
                   setDinnersIncludeInShopping(checked);
-                  void saveHouseholdPreferences({ dinnersIncludeInShopping: checked });
+                  void saveHouseholdPreferences({ dinnersIncludeInShopping: checked }, "dinners-shopping");
                 }}
               />
               <span className="kitchen-toggle-track" />
@@ -1614,7 +1771,7 @@ export default function SettingsPage() {
           {budgetFeatureEnabled ? (
             <>
               <label className="kitchen-field">
-                <span className="kitchen-label">Budget mensual</span>
+                <span className="kitchen-label">Budget mensual <SaveStatusChip status={saveStatuses.budget} /></span>
                 <input
                   type="number"
                   min={0}
@@ -1623,7 +1780,7 @@ export default function SettingsPage() {
                   value={monthlyBudget}
                   disabled={householdPrefsSaving}
                   onChange={(event) => setMonthlyBudget(event.target.value)}
-                  onBlur={() => void saveHouseholdPreferences()}
+                  onBlur={() => void saveHouseholdPreferences({}, "budget")}
                   placeholder="0.00"
                 />
               </label>
@@ -1638,7 +1795,7 @@ export default function SettingsPage() {
                   value={cycleStartDay}
                   disabled={householdPrefsSaving}
                   onChange={(event) => setCycleStartDay(Math.min(28, Math.max(1, Number.parseInt(event.target.value || "1", 10) || 1)))}
-                  onBlur={() => void saveHouseholdPreferences()}
+                  onBlur={() => void saveHouseholdPreferences({}, "budget")}
                 />
               </label>
             </>
@@ -1662,6 +1819,7 @@ export default function SettingsPage() {
               >
                 <InfoIcon />
               </button>
+              <SaveStatusChip status={saveStatuses.repeats} />
             </div>
             <p className="kitchen-muted">Regla best-effort para la planificación automática.</p>
           </div>
@@ -1674,7 +1832,7 @@ export default function SettingsPage() {
               onChange={(event) => {
                 const checked = event.target.checked;
                 setAvoidRepeatsEnabled(checked);
-                void saveHouseholdPreferences({ avoidRepeatsEnabled: checked });
+                void saveHouseholdPreferences({ avoidRepeatsEnabled: checked }, "repeats");
               }}
             />
             <span className="kitchen-toggle-track" />
@@ -1692,7 +1850,7 @@ export default function SettingsPage() {
               value={avoidRepeatsWeeks}
               disabled={!avoidRepeatsEnabled || householdPrefsSaving}
               onChange={(event) => setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(event.target.value))}
-              onBlur={() => void saveHouseholdPreferences()}
+              onBlur={() => void saveHouseholdPreferences({}, "repeats")}
             />
           </label>
         </div>
@@ -1724,6 +1882,7 @@ export default function SettingsPage() {
                 <div className="settings-household-pref-main">
                   <div className="settings-household-pref-title">
                     <span>Usar dietas por defecto al randomizar</span>
+                    <SaveStatusChip status={saveStatuses.diet} />
                   </div>
                 </div>
                 <label className="kitchen-toggle" aria-label="Activar filtro de dieta">
@@ -1735,7 +1894,7 @@ export default function SettingsPage() {
                     onChange={(event) => {
                       const checked = event.target.checked;
                       setDietFilterEnabled(checked);
-                      void saveHouseholdPreferences({ randomizationUseDietFilter: checked });
+                      void saveHouseholdPreferences({ randomizationUseDietFilter: checked }, "diet");
                     }}
                   />
                   <span className="kitchen-toggle-track" />
@@ -1763,7 +1922,7 @@ export default function SettingsPage() {
                                   ? dietDefaultPackIds.filter((id) => id !== String(pack.id))
                                   : [...dietDefaultPackIds, String(pack.id)];
                                 setDietDefaultPackIds(nextIds);
-                                void saveHouseholdPreferences({ randomizationDefaultDietPackIds: nextIds });
+                                void saveHouseholdPreferences({ randomizationDefaultDietPackIds: nextIds }, "diet");
                               }}
                             />
                             <span style={{ fontWeight: 500 }}>{pack.dietLabel || pack.title}</span>
@@ -2040,7 +2199,9 @@ export default function SettingsPage() {
           ) : null}
 
           <div className="settings-block">
-            <p className="settings-section-label" style={{ marginBottom: "10px" }}>Tus básicos</p>
+            <p className="settings-section-label" style={{ marginBottom: "10px" }}>
+              Tus básicos <SaveStatusChip status={saveStatuses.basics} />
+            </p>
             {basicsLoading && <p className="kitchen-muted">Cargando…</p>}
             {basicsError && <div className="kitchen-alert error">{basicsError}</div>}
             {!basicsLoading && basics.length === 0 && (
