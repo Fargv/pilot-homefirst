@@ -19162,6 +19162,27 @@ td.recipe-qty-scaled {
   100% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes hf-sheet-slide-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes hf-sheet-slide-out {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+@keyframes hf-overlay-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes hf-overlay-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes hf-bar-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
 .weekly-challenge-circle {
   display: block;
   width: 14px;
@@ -19302,6 +19323,29 @@ td.recipe-qty-scaled {
 
 .weekly-challenge-footer strong {
   color: var(--hf-brand);
+}
+
+.weekly-challenge-footer-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.weekly-challenge-footer-bar {
+  display: none;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border-soft, #E5E7EB);
+  overflow: hidden;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.weekly-challenge-footer-bar > div {
+  height: 100%;
+  background: var(--hf-brand, #4338CA);
+  border-radius: inherit;
+  transform-origin: left;
 }
 
 /* Dark mode overrides for weekly challenge card */
@@ -25632,6 +25676,12 @@ body,
     z-index: 1205;
     background: var(--overlay-bg, color-mix(in srgb, var(--app-bg) 58%, rgba(0, 0, 0, 0.55)));
     backdrop-filter: blur(3px);
+    animation: hf-overlay-fade-in 200ms ease-out backwards;
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-mobile-backdrop.is-closing,
+  .kitchen-mobile-progress-stack .onboarding-guide-mobile-backdrop.is-closing {
+    animation: hf-overlay-fade-out 220ms ease-in forwards;
   }
 
   .kitchen-mobile-progress-stack .weekly-challenge-card,
@@ -25652,6 +25702,12 @@ body,
     border-width: 1px 1px 0;
     border-radius: 22px 22px 0 0;
     box-shadow: 0 -22px 54px rgba(15, 23, 42, 0.24);
+    animation: hf-sheet-slide-in 300ms ease-out backwards;
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-card.is-closing,
+  .kitchen-mobile-progress-stack .onboarding-guide-card.is-closing {
+    animation: hf-sheet-slide-out 220ms ease-in forwards;
   }
 
   .kitchen-mobile-progress-stack .weekly-challenge-card::before,
@@ -25674,6 +25730,36 @@ body,
     margin: -2px -2px 10px;
     padding: 2px;
     background: inherit;
+  }
+
+  /* Footer: stack summary + bar vertically inside the sheet */
+  .kitchen-mobile-progress-stack .weekly-challenge-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-footer-bar {
+    display: block;
+    width: 100%;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .kitchen-mobile-progress-stack .weekly-challenge-footer-bar > div {
+      animation: hf-bar-fill 600ms 350ms ease-out backwards;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kitchen-mobile-progress-stack .weekly-challenge-card,
+    .kitchen-mobile-progress-stack .weekly-challenge-card.is-closing,
+    .kitchen-mobile-progress-stack .onboarding-guide-card,
+    .kitchen-mobile-progress-stack .onboarding-guide-card.is-closing,
+    .kitchen-mobile-progress-stack .weekly-challenge-mobile-backdrop,
+    .kitchen-mobile-progress-stack .weekly-challenge-mobile-backdrop.is-closing,
+    .kitchen-mobile-progress-stack .onboarding-guide-mobile-backdrop,
+    .kitchen-mobile-progress-stack .onboarding-guide-mobile-backdrop.is-closing {
+      animation: none;
+    }
   }
 
   .onboarding-panel-sheet {

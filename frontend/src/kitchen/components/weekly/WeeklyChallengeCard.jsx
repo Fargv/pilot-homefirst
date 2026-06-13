@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useWeeklyChallenge } from "../../contexts/WeeklyChallengeContext.jsx";
 import { useOnboarding } from "../../contexts/OnboardingContext.jsx";
@@ -92,7 +92,6 @@ function ChallengeRow({ challenge }) {
 
   const hasProgress = typeof progress === "number" && typeof target === "number" && target > 1;
   const progressPct = hasProgress ? Math.min(100, Math.round((progress / target) * 100)) : 0;
-  // Prefer the richer guidance text; fall back to description.
   const helpText = (guidance || description || "").trim();
 
   return (
@@ -117,7 +116,6 @@ function ChallengeRow({ challenge }) {
               <span>{progress}/{target}</span>
             </div>
           )}
-          {/* Always show guidance for non-completed challenges — users need to see the hint. */}
           {!completed && helpText && (
             <p className="weekly-challenge-guidance weekly-challenge-guidance--visible">{helpText}</p>
           )}
@@ -158,10 +156,11 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
   const { user } = useAuth();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
-  // Separate expansion state for the "all done" view so the chip is always default when complete
   const [doneExpanded, setDoneExpanded] = useState(false);
+  const [closing, setClosing] = useState(false);
   const prevAllDoneRef = useRef(false);
   const cardRef = useRef(null);
+  const closingTimerRef = useRef(null);
 
   // Compute derived values — safe to derive even before early returns
   const completedCount = weeklyState ? (weeklyState.completedCount ?? 0) : 0;
@@ -171,7 +170,6 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
   const weeklyAllDone = completedCount >= totalCount && totalCount > 0;
 
   // Auto-collapse to done chip when completion is first detected this session.
-  // Must be before any early returns to satisfy React hooks rules.
   useEffect(() => {
     if (weeklyAllDone && !prevAllDoneRef.current) {
       setDoneExpanded(false);
@@ -179,12 +177,39 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
     prevAllDoneRef.current = weeklyAllDone;
   }, [weeklyAllDone]);
 
+  // Route change: collapse immediately without animation.
   useEffect(() => {
     if (!closeOnRouteChange) return;
+    clearTimeout(closingTimerRef.current);
+    setClosing(false);
     setCollapsed(true);
     setDoneExpanded(false);
   }, [closeOnRouteChange, location.pathname]);
 
+  // Cleanup timer on unmount.
+  useEffect(() => () => clearTimeout(closingTimerRef.current), []);
+
+  // Animate the sheet closed, then update state once the animation finishes.
+  const closeSheet = useCallback(() => {
+    if (closing) return;
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const delay = reduced ? 0 : 230;
+    setClosing(true);
+    clearTimeout(closingTimerRef.current);
+    closingTimerRef.current = setTimeout(() => {
+      setClosing(false);
+      if (weeklyAllDone) {
+        setDoneExpanded(false);
+      } else {
+        writeCollapsedPref(true);
+        setCollapsed(true);
+      }
+    }, delay);
+  }, [closing, weeklyAllDone]);
+
+  // Outside-click + Escape when the sheet is open.
   useEffect(() => {
     const expanded = doneExpanded || (!collapsed && !weeklyAllDone);
     if (!expanded) return;
@@ -199,19 +224,11 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
     };
     const handlePointerDown = (event) => {
       if (cardRef.current?.contains(event.target)) return;
-      if (weeklyAllDone) {
-        setDoneExpanded(false);
-      } else {
-        setCollapsed(true);
-      }
+      closeSheet();
     };
     const handleKeyDown = (event) => {
       if (event.key !== "Escape") return;
-      if (weeklyAllDone) {
-        setDoneExpanded(false);
-      } else {
-        setCollapsed(true);
-      }
+      closeSheet();
     };
 
     syncOverlayTop();
@@ -224,7 +241,7 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
       document.removeEventListener("keydown", handleKeyDown);
       document.documentElement.style.removeProperty("--kitchen-mobile-progress-overlay-top");
     };
-  }, [collapsed, doneExpanded, weeklyAllDone]);
+  }, [collapsed, doneExpanded, weeklyAllDone, closeSheet]);
 
   // ── Early renders ──────────────────────────────────────────────────────
   if (!onboardingState || onboardingState.status !== "completed") return null;
@@ -239,9 +256,9 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
   const planSource = user?.planSource || "";
   const showBetaProHint = (plan === "basic") && planSource !== "beta_pro" && user?.betaProActive !== true;
 
-  const toggleCollapsed = (next) => {
-    writeCollapsedPref(next);
-    setCollapsed(next);
+  const openSheet = () => {
+    writeCollapsedPref(false);
+    setCollapsed(false);
   };
 
   // ── All done → compact done chip (default state when all challenges complete) ──
@@ -281,11 +298,11 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
           role="button"
           tabIndex={0}
           aria-label="Expandir retos semanales"
-          onClick={() => toggleCollapsed(false)}
+          onClick={openSheet}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
-              toggleCollapsed(false);
+              openSheet();
             }
           }}
         >
@@ -314,11 +331,11 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
     );
   }
 
-  // ── Full expanded card ─────────────────────────────────────────────────
+  // ── Full expanded card / bottom sheet on mobile ────────────────────────
   return (
     <>
-      <div className="weekly-challenge-mobile-backdrop" aria-hidden="true" />
-      <div className="weekly-challenge-card" ref={cardRef}>
+      <div className={`weekly-challenge-mobile-backdrop${closing ? " is-closing" : ""}`} aria-hidden="true" />
+      <div className={`weekly-challenge-card${closing ? " is-closing" : ""}`} ref={cardRef}>
         <div className="weekly-challenge-top">
           <div className="weekly-challenge-heading">
             <TrophyIcon />
@@ -331,14 +348,7 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
             <span>{completedCount}/{totalCount}</span>
             <button
               type="button"
-              onClick={() => {
-                if (weeklyAllDone) {
-                  // Collapse back to done chip
-                  setDoneExpanded(false);
-                } else {
-                  toggleCollapsed(true);
-                }
-              }}
+              onClick={closeSheet}
               className="onboarding-guide-minimize"
               aria-label="Minimizar"
             >
@@ -380,11 +390,16 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
         )}
 
         <div className="weekly-challenge-footer">
-          <BitesIcon size={12} />
-          <span>
-            <strong>{weeklyState.totalBitesEarned || 0}</strong>
-            <span> / {weeklyState.totalBitesAvailable} bites</span>
-          </span>
+          <div className="weekly-challenge-footer-row">
+            <BitesIcon size={12} />
+            <span>
+              <strong>{weeklyState.totalBitesEarned || 0}</strong>
+              <span> / {weeklyState.totalBitesAvailable} bites</span>
+            </span>
+          </div>
+          <div className="weekly-challenge-footer-bar" aria-hidden="true">
+            <div style={{ width: `${progressPercent}%` }} />
+          </div>
         </div>
       </div>
 
