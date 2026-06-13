@@ -25490,10 +25490,198 @@ body,
 [data-app-theme] .modal-sheet,
 [data-app-theme] .shopping-budget-modal,
 [data-app-theme] .pk2-modal,
-[data-app-theme] .kitchen-user-menu {
+[data-app-theme] .kitchen-user-menu,
+[data-app-theme] .weekly-challenge-card,
+[data-app-theme] .onboarding-guide-card,
+[data-app-theme] .onboarding-panel-sheet {
   background: var(--modal-bg);
   border-color: var(--modal-border);
   color: var(--text-primary);
+}
+
+.weekly-challenge-mobile-backdrop,
+.onboarding-guide-mobile-backdrop {
+  display: none;
+}
+
+[data-app-theme] .onboarding-panel-backdrop {
+  z-index: 1300;
+  background: var(--overlay-bg, color-mix(in srgb, var(--app-bg) 58%, rgba(0, 0, 0, 0.55)));
+}
+
+[data-app-theme] .onboarding-guide-slim,
+[data-app-theme] .weekly-challenge-slim,
+[data-app-theme] .weekly-challenge-done-chip {
+  background: var(--surface-glass);
+  border-color: var(--card-border);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-app-theme] .onboarding-guide-card,
+[data-app-theme] .weekly-challenge-card {
+  box-shadow: var(--card-shadow);
+}
+
+[data-app-theme] .onboarding-guide-slim-title,
+[data-app-theme] .onboarding-guide-heading span,
+[data-app-theme] .weekly-challenge-slim-title,
+[data-app-theme] .weekly-challenge-heading span,
+[data-app-theme] .weekly-challenge-footer strong,
+[data-app-theme] .onboarding-panel-progress-row > span,
+[data-app-theme] .onboarding-guide-subprogress span {
+  color: var(--hf-brand);
+}
+
+[data-app-theme] .weekly-challenge-title,
+[data-app-theme] .onboarding-guide-next-title,
+[data-app-theme] .onboarding-panel-title-row h3,
+[data-app-theme] .onboarding-completed-state h4 {
+  color: var(--text-primary);
+}
+
+[data-app-theme] .onboarding-guide-actions span,
+[data-app-theme] .onboarding-guide-kicker,
+[data-app-theme] .onboarding-guide-howto,
+[data-app-theme] .onboarding-guide-complete,
+[data-app-theme] .weekly-challenge-week-label,
+[data-app-theme] .weekly-challenge-guidance,
+[data-app-theme] .weekly-challenge-guidance--visible,
+[data-app-theme] .weekly-challenge-locked-copy,
+[data-app-theme] .weekly-challenge-mini-progress span,
+[data-app-theme] .weekly-challenge-footer,
+[data-app-theme] .onboarding-panel-title-row p,
+[data-app-theme] .onboarding-panel-bites,
+[data-app-theme] .onboarding-challenge-description,
+[data-app-theme] .onboarding-challenge-locked-copy,
+[data-app-theme] .onboarding-completed-state p {
+  color: var(--text-secondary);
+}
+
+[data-app-theme] .onboarding-guide-minimize,
+[data-app-theme] .onboarding-panel-close,
+[data-app-theme] .weekly-challenge-done-chip-expand,
+[data-app-theme] .onboarding-guide-collapse-btn,
+[data-app-theme] .weekly-challenge-collapse-btn {
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  color: var(--chip-text);
+}
+
+[data-app-theme] .onboarding-progress,
+[data-app-theme] .weekly-challenge-mini-bar {
+  background: color-mix(in srgb, var(--hf-brand) 14%, var(--surface-muted));
+  border-color: color-mix(in srgb, var(--hf-brand) 18%, var(--border-soft));
+}
+
+[data-app-theme] .onboarding-progress.is-completed > div {
+  background: var(--success-text);
+}
+
+[data-app-theme] .weekly-challenge-status.is-done,
+[data-app-theme] .onboarding-challenge-row.is-completed .onboarding-challenge-status,
+[data-app-theme] .onboarding-screen-check.is-visited {
+  color: var(--success-text);
+}
+
+[data-app-theme] .onboarding-reward-badge,
+[data-app-theme] .weekly-challenge-curriculum-chip--pro {
+  background: var(--premium-bg);
+  border: 1px solid var(--premium-border);
+  color: var(--premium-text);
+}
+
+[data-app-theme] .onboarding-challenge-row,
+[data-app-theme] .weekly-challenge-guidance--visible,
+[data-app-theme] .onboarding-challenge-note,
+[data-app-theme] .onboarding-challenge-hint {
+  background: var(--surface-muted);
+  border-color: var(--border-soft);
+}
+
+[data-app-theme] .onboarding-challenge-row.is-active {
+  background: color-mix(in srgb, var(--hf-brand) 10%, var(--surface-elevated));
+  border-color: color-mix(in srgb, var(--hf-brand) 42%, var(--border-soft));
+}
+
+[data-app-theme] .onboarding-challenge-row.is-completed {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+}
+
+[data-app-theme] .onboarding-challenge-row.is-active .onboarding-challenge-title,
+[data-app-theme] .onboarding-challenge-row.is-active .onboarding-challenge-reward,
+[data-app-theme] .onboarding-challenge-note-title,
+[data-app-theme] .onboarding-challenge-hint p {
+  color: var(--hf-brand);
+}
+
+[data-app-theme] .onboarding-panel-header,
+[data-app-theme] .onboarding-challenge-detail,
+[data-app-theme] .weekly-challenge-bonus-section,
+[data-app-theme] .weekly-challenge-footer {
+  border-color: var(--border-soft);
+}
+
+@media (max-width: 767px) {
+  .kitchen-mobile-progress-stack .weekly-challenge-mobile-backdrop,
+  .kitchen-mobile-progress-stack .onboarding-guide-mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1205;
+    background: var(--overlay-bg, color-mix(in srgb, var(--app-bg) 58%, rgba(0, 0, 0, 0.55)));
+    backdrop-filter: blur(3px);
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-card,
+  .kitchen-mobile-progress-stack .onboarding-guide-card {
+    position: fixed;
+    left: max(0px, env(safe-area-inset-left, 0px));
+    right: max(0px, env(safe-area-inset-right, 0px));
+    top: auto;
+    bottom: 0;
+    z-index: 1210;
+    width: auto;
+    max-width: none;
+    max-height: min(82dvh, 680px);
+    margin: 0;
+    padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-width: 1px 1px 0;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -22px 54px rgba(15, 23, 42, 0.24);
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-card::before,
+  .kitchen-mobile-progress-stack .onboarding-guide-card::before,
+  .onboarding-panel-sheet::before {
+    content: "";
+    display: block;
+    width: 42px;
+    height: 5px;
+    margin: 0 auto 12px;
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--text-muted) 44%, transparent);
+  }
+
+  .kitchen-mobile-progress-stack .weekly-challenge-top,
+  .kitchen-mobile-progress-stack .onboarding-guide-top {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    margin: -2px -2px 10px;
+    padding: 2px;
+    background: inherit;
+  }
+
+  .onboarding-panel-sheet {
+    max-height: min(88dvh, 720px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-width: 1px 1px 0;
+    border-radius: 22px 22px 0 0;
+  }
 }
 
 [data-app-theme] .catalog-toast-success {

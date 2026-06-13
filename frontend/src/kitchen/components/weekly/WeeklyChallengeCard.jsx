@@ -66,7 +66,7 @@ function StarIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" width={14} height={14}>
       <path d="M10 2l2.09 4.26L17 7.27l-3.5 3.41.83 4.82L10 13.25l-4.33 2.25.83-4.82L3 7.27l4.91-.71L10 2z"
-        fill="#f59e0b" stroke="#f59e0b" strokeWidth="1" strokeLinejoin="round" />
+        fill="var(--warning-text, #f59e0b)" stroke="var(--warning-text, #f59e0b)" strokeWidth="1" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -317,6 +317,7 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
   // ── Full expanded card ─────────────────────────────────────────────────
   return (
     <>
+      <div className="weekly-challenge-mobile-backdrop" aria-hidden="true" />
       <div className="weekly-challenge-card" ref={cardRef}>
         <div className="weekly-challenge-top">
           <div className="weekly-challenge-heading">
