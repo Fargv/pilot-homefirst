@@ -6662,52 +6662,78 @@ body {
   animation: hfToastIn 200ms ease-out both;
 }
 
-/* ── Action banner: full-width bottom sheet on mobile ──────────────── */
+/* ── Action banner: full-width strip above nav bar on mobile ────────── */
 @media (max-width: 767px) {
-  /* Stack anchors to bottom edge of screen, full width */
+  /* Lift the entire stack to sit right above the nav bar (56px).
+     column-reverse: action banner (first in DOM) renders at the visual
+     bottom; regular pill toasts float above it. */
   .hf-toast-stack {
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
     left: 0;
     right: 0;
-    bottom: 0;
     transform: none;
     align-items: stretch;
     gap: 0;
-    /* Reverse so action banner sits at bottom, push-toasts float above */
     flex-direction: column-reverse;
   }
 
-  /* Action banner fills the width, sits flush at bottom above nav */
+  /* Action banner: full-width, light-surface strip */
   .hf-toast--action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 16px;
     border-radius: 12px 12px 0 0;
     max-width: none;
     min-width: 0;
     background: var(--surface-elevated, var(--modal-bg, #fff));
     color: var(--text-primary);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
     backdrop-filter: none;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.14);
-    border-top: 1px solid var(--border-soft);
-    padding-top: 14px;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px) + 56px);
     z-index: 500;
+    animation: none;
   }
 
-  /* Icon color stays legible on light background */
-  .hf-toast--action .hf-toast-icon { color: var(--warning-text, #b45309); }
-
-  /* Action button uses brand color on light background */
-  .hf-toast-action-btn {
-    background: color-mix(in srgb, var(--hf-brand) 10%, transparent);
-    color: var(--hf-brand);
-    border-radius: var(--radius-sm);
+  .hf-toast--action .hf-toast-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+    color: var(--warning-text, #b45309);
   }
 
-  .hf-toast-action-btn:hover {
-    background: color-mix(in srgb, var(--hf-brand) 18%, transparent);
+  .hf-toast--action .hf-toast-msg {
+    font-size: 12px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  /* Dismiss button adapts to light background */
+  /* "Registrar" button: always visible, brand-colored */
+  .hf-toast--action .hf-toast-action-btn {
+    height: 28px;
+    padding: 0 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: var(--hf-brand);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+  }
+
+  .hf-toast--action .hf-toast-action-btn:hover {
+    background: var(--hf-brand-dark, var(--hf-brand));
+  }
+
+  /* ✕ dismiss button */
   .hf-toast--action .hf-toast-dismiss {
+    flex-shrink: 0;
+    padding: 4px;
     color: var(--text-secondary);
+    width: auto;
+    height: auto;
   }
 
   .hf-toast--action .hf-toast-dismiss:hover {
@@ -6715,18 +6741,23 @@ body {
     color: var(--text-primary);
   }
 
-  /* Regular pill toasts keep their dark style; align centered above banner */
+  /* Regular pill toasts stay dark and centered above the banner */
   .hf-toast:not(.hf-toast--action) {
     align-self: center;
-    margin: 0 auto 8px;
+    margin-bottom: 8px;
   }
 }
 
-/* Dark mode: action banner uses elevated surface (already dark) */
+/* Dark mode: action banner uses elevated dark surface */
 [data-theme="dark"] .hf-toast--action {
   background: var(--hf-surface, #1e293b);
   border-top-color: var(--hf-border);
+  color: var(--hf-text, #f1f5f9);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .hf-toast--action .hf-toast-dismiss {
+  color: var(--hf-muted);
 }
 
 @keyframes hfToastIn {
