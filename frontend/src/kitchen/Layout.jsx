@@ -594,7 +594,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
         mobileExtra={(
           <div className="kitchen-mobile-progress-stack">
             <OnboardingBanner suppressEvents closeOnRouteChange />
-            <WeeklyChallengeCard closeOnRouteChange />
+            <WeeklyChallengeCard closeOnRouteChange mobileSheet />
           </div>
         )}
       />

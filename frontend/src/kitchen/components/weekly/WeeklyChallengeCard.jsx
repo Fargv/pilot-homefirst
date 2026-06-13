@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
 import { useWeeklyChallenge } from "../../contexts/WeeklyChallengeContext.jsx";
 import { useOnboarding } from "../../contexts/OnboardingContext.jsx";
@@ -150,7 +151,7 @@ function BonusRow({ bonus }) {
   );
 }
 
-export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {}) {
+export default function WeeklyChallengeCard({ closeOnRouteChange = false, mobileSheet = false } = {}) {
   const { state: weeklyState } = useWeeklyChallenge();
   const { state: onboardingState } = useOnboarding();
   const { user } = useAuth();
@@ -304,7 +305,7 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
           role="button"
           tabIndex={0}
           aria-label="Expandir retos semanales"
-          onClick={openSheet}
+          onClick={(e) => { e.stopPropagation(); openSheet(); }}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
@@ -337,78 +338,104 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
     );
   }
 
-  // ── Full expanded card / bottom sheet on mobile ────────────────────────
+  // ── Shared card content (used by both portal and inline renders) ─────────
+  const cardContent = (
+    <>
+      <div className="weekly-challenge-top">
+        <div className="weekly-challenge-heading">
+          <TrophyIcon />
+          <span>RETOS SEMANALES</span>
+          {weeklyState.curriculum === "pro" && (
+            <span className="weekly-challenge-curriculum-chip weekly-challenge-curriculum-chip--pro">PRO</span>
+          )}
+        </div>
+        <div className="onboarding-guide-actions">
+          <span>{completedCount}/{totalCount}</span>
+          <button
+            type="button"
+            onClick={closeSheet}
+            className="onboarding-guide-minimize"
+            aria-label="Minimizar"
+          >
+            <ChevronUpIcon />
+          </button>
+        </div>
+      </div>
+
+      {!weeklyAllDone && (
+        <div className="onboarding-progress onboarding-progress-compact weekly-challenge-progress-bar">
+          <div style={{ width: `${progressPercent}%` }} />
+        </div>
+      )}
+
+      {showBetaProHint && !weeklyAllDone && (
+        <div className="onboarding-beta-pro-hint weekly-beta-pro-hint">
+          <span className="onboarding-beta-pro-hint-icon">⭐</span>
+          <span>Completa el onboarding y todos los retos de tu primera semana para desbloquear <strong>Pro Beta</strong>.</span>
+        </div>
+      )}
+
+      <div className="weekly-challenge-week-label">
+        Semana {weeklyState.participationWeek ?? weeklyState.cycleWeekIndex}
+      </div>
+
+      <div className="weekly-challenge-list">
+        {(weeklyState.challenges || []).map((c) => (
+          <ChallengeRow key={c.key} challenge={c} />
+        ))}
+      </div>
+
+      {weeklyState.bonus && (
+        <div className="weekly-challenge-bonus-section">
+          <div className="weekly-challenge-bonus-divider">BONUS</div>
+          <BonusRow bonus={weeklyState.bonus} />
+        </div>
+      )}
+
+      <div className="weekly-challenge-footer">
+        <div className="weekly-challenge-footer-row">
+          <BitesIcon size={12} />
+          <span>
+            <strong>{weeklyState.totalBitesEarned || 0}</strong>
+            <span> / {weeklyState.totalBitesAvailable} bites</span>
+          </span>
+        </div>
+        <div className="weekly-challenge-footer-bar" aria-hidden="true">
+          <div style={{ width: `${progressPercent}%` }} />
+        </div>
+      </div>
+    </>
+  );
+
+  // ── Mobile: portal to body so backdrop-filter on the header doesn't trap
+  //    the fixed-position sheet inside the header's stacking context.
+  if (mobileSheet) {
+    return createPortal(
+      <>
+        <div
+          className={`wc-portal-overlay${closing ? " is-closing" : ""}`}
+          aria-hidden="true"
+          onClick={closeSheet}
+        />
+        <div
+          className={`wc-portal-sheet${closing ? " is-closing" : ""}`}
+          ref={cardRef}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {cardContent}
+        </div>
+      </>,
+      document.body
+    );
+  }
+
+  // ── Desktop: inline card (no portal needed, sidebar has no backdrop-filter)
   return (
     <>
       <div className={`weekly-challenge-mobile-backdrop${closing ? " is-closing" : ""}`} aria-hidden="true" />
       <div className={`weekly-challenge-card${closing ? " is-closing" : ""}`} ref={cardRef}>
-        <div className="weekly-challenge-top">
-          <div className="weekly-challenge-heading">
-            <TrophyIcon />
-            <span>RETOS SEMANALES</span>
-            {weeklyState.curriculum === "pro" && (
-              <span className="weekly-challenge-curriculum-chip weekly-challenge-curriculum-chip--pro">PRO</span>
-            )}
-          </div>
-          <div className="onboarding-guide-actions">
-            <span>{completedCount}/{totalCount}</span>
-            <button
-              type="button"
-              onClick={closeSheet}
-              className="onboarding-guide-minimize"
-              aria-label="Minimizar"
-            >
-              <ChevronUpIcon />
-            </button>
-          </div>
-        </div>
-
-        {/* Progress bar only while in progress */}
-        {!weeklyAllDone && (
-          <div className="onboarding-progress onboarding-progress-compact weekly-challenge-progress-bar">
-            <div style={{ width: `${progressPercent}%` }} />
-          </div>
-        )}
-
-        {/* Pre-unlock Beta Pro hint (only for basic users before unlock, only while in-progress) */}
-        {showBetaProHint && !weeklyAllDone && (
-          <div className="onboarding-beta-pro-hint weekly-beta-pro-hint">
-            <span className="onboarding-beta-pro-hint-icon">⭐</span>
-            <span>Completa el onboarding y todos los retos de tu primera semana para desbloquear <strong>Pro Beta</strong>.</span>
-          </div>
-        )}
-
-        <div className="weekly-challenge-week-label">
-          Semana {weeklyState.participationWeek ?? weeklyState.cycleWeekIndex}
-        </div>
-
-        <div className="weekly-challenge-list">
-          {(weeklyState.challenges || []).map((c) => (
-            <ChallengeRow key={c.key} challenge={c} />
-          ))}
-        </div>
-
-        {weeklyState.bonus && (
-          <div className="weekly-challenge-bonus-section">
-            <div className="weekly-challenge-bonus-divider">BONUS</div>
-            <BonusRow bonus={weeklyState.bonus} />
-          </div>
-        )}
-
-        <div className="weekly-challenge-footer">
-          <div className="weekly-challenge-footer-row">
-            <BitesIcon size={12} />
-            <span>
-              <strong>{weeklyState.totalBitesEarned || 0}</strong>
-              <span> / {weeklyState.totalBitesAvailable} bites</span>
-            </span>
-          </div>
-          <div className="weekly-challenge-footer-bar" aria-hidden="true">
-            <div style={{ width: `${progressPercent}%` }} />
-          </div>
-        </div>
+        {cardContent}
       </div>
-
     </>
   );
 }
