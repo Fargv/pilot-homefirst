@@ -975,13 +975,13 @@
     "semantic_hash": "38e13e3c6485c01ce630ce317153e5f7"
   },
   "frontend/src/context/ThemeContext.jsx": {
-    "mtime": 1781337240.1654112,
-    "ast_hash": "9e881ac5c62565ad201d7a632f0088fc",
+    "mtime": 1781294900.7851777,
+    "ast_hash": "dedcb0ec413535b7391e562ce28f9c88",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/Layout.jsx": {
-    "mtime": 1781337304.6345637,
-    "ast_hash": "62ea9c2dc683e8e5f60134041550dc90",
+    "mtime": 1781295030.7255797,
+    "ast_hash": "44327eb415be27bd44b8218ef8459f4c",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/RequireAuth.jsx": {
@@ -1330,8 +1330,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/SettingsPage.jsx": {
-    "mtime": 1781337313.2512324,
-    "ast_hash": "4f94cdb33e45213f231c54a8c3a8de0e",
+    "mtime": 1781295132.225586,
+    "ast_hash": "c7fece8e4ed6c9aeac59d27f6383583d",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/ShoppingBudgetPage.jsx": {
@@ -1935,13 +1935,13 @@
     "semantic_hash": ""
   },
   "backend/src/kitchen/themeService.js": {
-    "mtime": 1781337473.5198474,
-    "ast_hash": "c6b72ba2174f14a658c4060022c5509c",
+    "mtime": 1781294912.0171418,
+    "ast_hash": "de0e16d0e8031ae673aa6614024550b5",
     "semantic_hash": ""
   },
   "frontend/src/context/appThemes.js": {
-    "mtime": 1781337207.5725636,
-    "ast_hash": "a67dccd2c16afca6bdee57e19e379bbf",
+    "mtime": 1781294875.6398861,
+    "ast_hash": "5e506a665f4fef3454d25522f58aebe9",
     "semantic_hash": ""
   }
 }

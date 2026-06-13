@@ -206,7 +206,7 @@
       "source_file": ".claude/skills/impeccable/scripts/command-metadata.json",
       "source_location": "L1",
       "id": "scripts_command_metadata",
-      "community": 201,
+      "community": 218,
       "norm_label": "command-metadata.json"
     },
     {
@@ -5192,7 +5192,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L141",
       "id": "scripts_live_browser_writescrolly",
-      "community": 41,
+      "community": 38,
       "norm_label": "writescrolly()"
     },
     {
@@ -5246,7 +5246,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L198",
       "id": "scripts_live_browser_id8",
-      "community": 41,
+      "community": 38,
       "norm_label": "id8()"
     },
     {
@@ -5462,7 +5462,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L778",
       "id": "scripts_live_browser_extractcontext",
-      "community": 41,
+      "community": 38,
       "norm_label": "extractcontext()"
     },
     {
@@ -5849,7 +5849,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L2085",
       "id": "scripts_live_browser_startvariantobserver",
-      "community": 41,
+      "community": 38,
       "norm_label": "startvariantobserver()"
     },
     {
@@ -5975,7 +5975,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L2525",
       "id": "scripts_live_browser_handlego",
-      "community": 41,
+      "community": 38,
       "norm_label": "handlego()"
     },
     {
@@ -6227,7 +6227,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L3567",
       "id": "scripts_live_browser_updateglobalbarstate",
-      "community": 124,
+      "community": 41,
       "norm_label": "updateglobalbarstate()"
     },
     {
@@ -6236,7 +6236,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L3609",
       "id": "scripts_live_browser_toggledetect",
-      "community": 124,
+      "community": 41,
       "norm_label": "toggledetect()"
     },
     {
@@ -6254,7 +6254,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L3647",
       "id": "scripts_live_browser_loaddetectscript",
-      "community": 124,
+      "community": 41,
       "norm_label": "loaddetectscript()"
     },
     {
@@ -6263,7 +6263,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L3656",
       "id": "scripts_live_browser_ondetectmessage",
-      "community": 124,
+      "community": 41,
       "norm_label": "ondetectmessage()"
     },
     {
@@ -13697,7 +13697,7 @@
       "source_file": "backend/scripts/db-migration/02_enrich_catalog_steps.js",
       "source_location": "L1",
       "id": "db_migration_02_enrich_catalog_steps",
-      "community": 236,
+      "community": 352,
       "norm_label": "02_enrich_catalog_steps.js"
     },
     {
@@ -13706,7 +13706,7 @@
       "source_file": "backend/scripts/db-migration/02_enrich_catalog_steps.js",
       "source_location": "L19",
       "id": "db_migration_02_enrich_catalog_steps_apply",
-      "community": 236,
+      "community": 352,
       "norm_label": "apply"
     },
     {
@@ -13715,7 +13715,7 @@
       "source_file": "backend/scripts/db-migration/02_enrich_catalog_steps.js",
       "source_location": "L20",
       "id": "db_migration_02_enrich_catalog_steps_now",
-      "community": 236,
+      "community": 352,
       "norm_label": "now"
     },
     {
@@ -13724,7 +13724,7 @@
       "source_file": "backend/scripts/db-migration/02_enrich_catalog_steps.js",
       "source_location": "L24",
       "id": "db_migration_02_enrich_catalog_steps_dish_enrichment",
-      "community": 236,
+      "community": 352,
       "norm_label": "dish_enrichment"
     },
     {
@@ -13733,7 +13733,7 @@
       "source_file": "backend/scripts/db-migration/02_enrich_catalog_steps.js",
       "source_location": "L1174",
       "id": "db_migration_02_enrich_catalog_steps_main",
-      "community": 236,
+      "community": 352,
       "norm_label": "main()"
     },
     {
@@ -13742,7 +13742,7 @@
       "source_file": "backend/scripts/db-migration/03_enrich_master_dishes.js",
       "source_location": "L1",
       "id": "db_migration_03_enrich_master_dishes",
-      "community": 352,
+      "community": 169,
       "norm_label": "03_enrich_master_dishes.js"
     },
     {
@@ -13751,7 +13751,7 @@
       "source_file": "backend/scripts/db-migration/03_enrich_master_dishes.js",
       "source_location": "L15",
       "id": "db_migration_03_enrich_master_dishes_apply",
-      "community": 352,
+      "community": 169,
       "norm_label": "apply"
     },
     {
@@ -13760,7 +13760,7 @@
       "source_file": "backend/scripts/db-migration/03_enrich_master_dishes.js",
       "source_location": "L16",
       "id": "db_migration_03_enrich_master_dishes_now",
-      "community": 352,
+      "community": 169,
       "norm_label": "now"
     },
     {
@@ -13769,7 +13769,7 @@
       "source_file": "backend/scripts/db-migration/03_enrich_master_dishes.js",
       "source_location": "L20",
       "id": "db_migration_03_enrich_master_dishes_dishes",
-      "community": 352,
+      "community": 169,
       "norm_label": "dishes"
     },
     {
@@ -13778,7 +13778,7 @@
       "source_file": "backend/scripts/db-migration/03_enrich_master_dishes.js",
       "source_location": "L2100",
       "id": "db_migration_03_enrich_master_dishes_main",
-      "community": 352,
+      "community": 169,
       "norm_label": "main()"
     },
     {
@@ -14366,7 +14366,7 @@
       "source_file": "backend/scripts/migrate-purchase-sessions.js",
       "source_location": "L1",
       "id": "scripts_migrate_purchase_sessions",
-      "community": 352,
+      "community": 386,
       "norm_label": "migrate-purchase-sessions.js"
     },
     {
@@ -14375,7 +14375,7 @@
       "source_file": "backend/scripts/migrate-purchase-sessions.js",
       "source_location": "L6",
       "id": "scripts_migrate_purchase_sessions_run",
-      "community": 352,
+      "community": 386,
       "norm_label": "run()"
     },
     {
@@ -14384,7 +14384,7 @@
       "source_file": "backend/scripts/migrate-remove-shopping-trip-amount.js",
       "source_location": "L1",
       "id": "scripts_migrate_remove_shopping_trip_amount",
-      "community": 352,
+      "community": 170,
       "norm_label": "migrate-remove-shopping-trip-amount.js"
     },
     {
@@ -14393,7 +14393,7 @@
       "source_file": "backend/scripts/migrate-remove-shopping-trip-amount.js",
       "source_location": "L5",
       "id": "scripts_migrate_remove_shopping_trip_amount_run",
-      "community": 352,
+      "community": 170,
       "norm_label": "run()"
     },
     {
@@ -15806,7 +15806,7 @@
       "source_file": "backend/scripts/repair-catalog-source.js",
       "source_location": "L1",
       "id": "scripts_repair_catalog_source",
-      "community": 235,
+      "community": 352,
       "norm_label": "repair-catalog-source.js"
     },
     {
@@ -15815,7 +15815,7 @@
       "source_file": "backend/scripts/repair-catalog-source.js",
       "source_location": "L19",
       "id": "scripts_repair_catalog_source_apply",
-      "community": 235,
+      "community": 352,
       "norm_label": "apply"
     },
     {
@@ -15824,7 +15824,7 @@
       "source_file": "backend/scripts/repair-catalog-source.js",
       "source_location": "L21",
       "id": "scripts_repair_catalog_source_run",
-      "community": 235,
+      "community": 352,
       "norm_label": "run()"
     },
     {
@@ -15833,7 +15833,7 @@
       "source_file": "backend/scripts/repair-shopping-list-items.js",
       "source_location": "L1",
       "id": "scripts_repair_shopping_list_items",
-      "community": 169,
+      "community": 122,
       "norm_label": "repair-shopping-list-items.js"
     },
     {
@@ -15842,7 +15842,7 @@
       "source_file": "backend/scripts/repair-shopping-list-items.js",
       "source_location": "L6",
       "id": "scripts_repair_shopping_list_items_run",
-      "community": 169,
+      "community": 122,
       "norm_label": "run()"
     },
     {
@@ -15851,7 +15851,7 @@
       "source_file": "backend/scripts/seedCatalog.js",
       "source_location": "L1",
       "id": "scripts_seedcatalog",
-      "community": 23,
+      "community": 121,
       "norm_label": "seedcatalog.js"
     },
     {
@@ -15860,7 +15860,7 @@
       "source_file": "backend/scripts/seedCatalog.js",
       "source_location": "L8",
       "id": "scripts_seedcatalog_filename",
-      "community": 23,
+      "community": 121,
       "norm_label": "__filename"
     },
     {
@@ -15869,7 +15869,7 @@
       "source_file": "backend/scripts/seedCatalog.js",
       "source_location": "L9",
       "id": "scripts_seedcatalog_dirname",
-      "community": 23,
+      "community": 121,
       "norm_label": "__dirname"
     },
     {
@@ -15878,7 +15878,7 @@
       "source_file": "backend/scripts/seedCatalog.js",
       "source_location": "L11",
       "id": "scripts_seedcatalog_catalogpackschema",
-      "community": 23,
+      "community": 121,
       "norm_label": "catalogpackschema"
     },
     {
@@ -15887,7 +15887,7 @@
       "source_file": "backend/scripts/seedCatalog.js",
       "source_location": "L51",
       "id": "scripts_seedcatalog_validatepackdata",
-      "community": 23,
+      "community": 121,
       "norm_label": "validatepackdata()"
     },
     {
@@ -15896,7 +15896,7 @@
       "source_file": "backend/scripts/seedCatalog.js",
       "source_location": "L80",
       "id": "scripts_seedcatalog_upsertpack",
-      "community": 23,
+      "community": 121,
       "norm_label": "upsertpack()"
     },
     {
@@ -15905,7 +15905,7 @@
       "source_file": "backend/scripts/seedCatalog.js",
       "source_location": "L127",
       "id": "scripts_seedcatalog_run",
-      "community": 23,
+      "community": 121,
       "norm_label": "run()"
     },
     {
@@ -16202,7 +16202,7 @@
       "source_file": "backend/src/config.js",
       "source_location": "L22",
       "id": "src_config_config",
-      "community": 354,
+      "community": 148,
       "norm_label": "config"
     },
     {
@@ -16346,7 +16346,7 @@
       "source_file": "backend/src/kitchen/assignmentPushService.js",
       "source_location": "L1",
       "id": "kitchen_assignmentpushservice",
-      "community": 168,
+      "community": 354,
       "norm_label": "assignmentpushservice.js"
     },
     {
@@ -16355,7 +16355,7 @@
       "source_file": "backend/src/kitchen/assignmentPushService.js",
       "source_location": "L6",
       "id": "kitchen_assignmentpushservice_toid",
-      "community": 168,
+      "community": 354,
       "norm_label": "toid()"
     },
     {
@@ -16364,7 +16364,7 @@
       "source_file": "backend/src/kitchen/assignmentPushService.js",
       "source_location": "L10",
       "id": "kitchen_assignmentpushservice_normalizemealtype",
-      "community": 168,
+      "community": 354,
       "norm_label": "normalizemealtype()"
     },
     {
@@ -16373,7 +16373,7 @@
       "source_file": "backend/src/kitchen/assignmentPushService.js",
       "source_location": "L14",
       "id": "kitchen_assignmentpushservice_formattargetdate",
-      "community": 168,
+      "community": 354,
       "norm_label": "formattargetdate()"
     },
     {
@@ -16382,7 +16382,7 @@
       "source_file": "backend/src/kitchen/assignmentPushService.js",
       "source_location": "L34",
       "id": "kitchen_assignmentpushservice_resolvepeoplecount",
-      "community": 168,
+      "community": 354,
       "norm_label": "resolvepeoplecount()"
     },
     {
@@ -16391,7 +16391,7 @@
       "source_file": "backend/src/kitchen/assignmentPushService.js",
       "source_location": "L47",
       "id": "kitchen_assignmentpushservice_buildpayload",
-      "community": 168,
+      "community": 354,
       "norm_label": "buildpayload()"
     },
     {
@@ -16400,7 +16400,7 @@
       "source_file": "backend/src/kitchen/assignmentPushService.js",
       "source_location": "L73",
       "id": "kitchen_assignmentpushservice_resolvedishnames",
-      "community": 168,
+      "community": 354,
       "norm_label": "resolvedishnames()"
     },
     {
@@ -16409,7 +16409,7 @@
       "source_file": "backend/src/kitchen/assignmentPushService.js",
       "source_location": "L95",
       "id": "kitchen_assignmentpushservice_shouldnotifyassignment",
-      "community": 168,
+      "community": 354,
       "norm_label": "shouldnotifyassignment()"
     },
     {
@@ -16418,7 +16418,7 @@
       "source_file": "backend/src/kitchen/assignmentPushService.js",
       "source_location": "L103",
       "id": "kitchen_assignmentpushservice_sendassignmentpushtouser",
-      "community": 168,
+      "community": 354,
       "norm_label": "sendassignmentpushtouser()"
     },
     {
@@ -16427,7 +16427,7 @@
       "source_file": "backend/src/kitchen/assignmentPushService.js",
       "source_location": "L144",
       "id": "kitchen_assignmentpushservice_notifycookassignments",
-      "community": 168,
+      "community": 354,
       "norm_label": "notifycookassignments()"
     },
     {
@@ -16805,7 +16805,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L1",
       "id": "kitchen_catalognormalization",
-      "community": 23,
+      "community": 74,
       "norm_label": "catalognormalization.js"
     },
     {
@@ -16814,7 +16814,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L7",
       "id": "kitchen_catalognormalization_empty_summary",
-      "community": 23,
+      "community": 74,
       "norm_label": "empty_summary"
     },
     {
@@ -16823,7 +16823,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L20",
       "id": "kitchen_catalognormalization_asid",
-      "community": 23,
+      "community": 74,
       "norm_label": "asid()"
     },
     {
@@ -16832,7 +16832,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L26",
       "id": "kitchen_catalognormalization_suggestionfromingredient",
-      "community": 23,
+      "community": 74,
       "norm_label": "suggestionfromingredient()"
     },
     {
@@ -16841,7 +16841,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L35",
       "id": "kitchen_catalognormalization_loadnormalizationcontext",
-      "community": 23,
+      "community": 74,
       "norm_label": "loadnormalizationcontext()"
     },
     {
@@ -16850,7 +16850,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L64",
       "id": "kitchen_catalognormalization_validatecatalogpackdata",
-      "community": 23,
+      "community": 74,
       "norm_label": "validatecatalogpackdata()"
     },
     {
@@ -16859,7 +16859,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L235",
       "id": "kitchen_catalognormalization_applycatalogpackvalidation",
-      "community": 23,
+      "community": 121,
       "norm_label": "applycatalogpackvalidation()"
     },
     {
@@ -16868,7 +16868,7 @@
       "source_file": "backend/src/kitchen/catalogNormalization.js",
       "source_location": "L249",
       "id": "kitchen_catalognormalization_assertingredientcanbecreated",
-      "community": 23,
+      "community": 74,
       "norm_label": "assertingredientcanbecreated()"
     },
     {
@@ -16877,7 +16877,7 @@
       "source_file": "backend/src/kitchen/catalogService.js",
       "source_location": "L1",
       "id": "kitchen_catalogservice",
-      "community": 207,
+      "community": 112,
       "norm_label": "catalogservice.js"
     },
     {
@@ -16886,7 +16886,7 @@
       "source_file": "backend/src/kitchen/catalogService.js",
       "source_location": "L3",
       "id": "kitchen_catalogservice_catalog_monthly_pack_credits",
-      "community": 207,
+      "community": 112,
       "norm_label": "catalog_monthly_pack_credits"
     },
     {
@@ -16895,7 +16895,7 @@
       "source_file": "backend/src/kitchen/catalogService.js",
       "source_location": "L10",
       "id": "kitchen_catalogservice_ispackcurrentlyfree",
-      "community": 207,
+      "community": 112,
       "norm_label": "ispackcurrentlyfree()"
     },
     {
@@ -16904,7 +16904,7 @@
       "source_file": "backend/src/kitchen/catalogService.js",
       "source_location": "L16",
       "id": "kitchen_catalogservice_getcatalogmonthlycredits",
-      "community": 207,
+      "community": 112,
       "norm_label": "getcatalogmonthlycredits()"
     },
     {
@@ -16913,7 +16913,7 @@
       "source_file": "backend/src/kitchen/catalogService.js",
       "source_location": "L21",
       "id": "kitchen_catalogservice_canclaimpackwithplan",
-      "community": 207,
+      "community": 112,
       "norm_label": "canclaimpackwithplan()"
     },
     {
@@ -16922,7 +16922,7 @@
       "source_file": "backend/src/kitchen/catalogService.js",
       "source_location": "L25",
       "id": "kitchen_catalogservice_isplanincludedinpack",
-      "community": 207,
+      "community": 112,
       "norm_label": "isplanincludedinpack()"
     },
     {
@@ -16931,7 +16931,7 @@
       "source_file": "backend/src/kitchen/catalogService.js",
       "source_location": "L30",
       "id": "kitchen_catalogservice_getcurrentclaimmonth",
-      "community": 207,
+      "community": 112,
       "norm_label": "getcurrentclaimmonth()"
     },
     {
@@ -16940,7 +16940,7 @@
       "source_file": "backend/src/kitchen/catalogService.js",
       "source_location": "L35",
       "id": "kitchen_catalogservice_getmonthlycreditsused",
-      "community": 207,
+      "community": 112,
       "norm_label": "getmonthlycreditsused()"
     },
     {
@@ -16949,7 +16949,7 @@
       "source_file": "backend/src/kitchen/catalogService.js",
       "source_location": "L43",
       "id": "kitchen_catalogservice_getmonthlycreditsremaining",
-      "community": 207,
+      "community": 112,
       "norm_label": "getmonthlycreditsremaining()"
     },
     {
@@ -16958,7 +16958,7 @@
       "source_file": "backend/src/kitchen/catalogService.js",
       "source_location": "L51",
       "id": "kitchen_catalogservice_resolvepackentitlement",
-      "community": 207,
+      "community": 112,
       "norm_label": "resolvepackentitlement()"
     },
     {
@@ -16967,7 +16967,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L1",
       "id": "kitchen_clerkauth",
-      "community": 74,
+      "community": 20,
       "norm_label": "clerkauth.js"
     },
     {
@@ -16976,7 +16976,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L12",
       "id": "kitchen_clerkauth_isdevelopmentclerkreconciliationenabled",
-      "community": 74,
+      "community": 20,
       "norm_label": "isdevelopmentclerkreconciliationenabled()"
     },
     {
@@ -16985,7 +16985,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L16",
       "id": "kitchen_clerkauth_isdevmode",
-      "community": 74,
+      "community": 20,
       "norm_label": "isdevmode()"
     },
     {
@@ -16994,7 +16994,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L24",
       "id": "kitchen_clerkauth_logclerkdev",
-      "community": 74,
+      "community": 20,
       "norm_label": "logclerkdev()"
     },
     {
@@ -17003,7 +17003,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L29",
       "id": "kitchen_clerkauth_buildautherror",
-      "community": 74,
+      "community": 20,
       "norm_label": "buildautherror()"
     },
     {
@@ -17012,7 +17012,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L40",
       "id": "kitchen_clerkauth_withtimeout",
-      "community": 74,
+      "community": 20,
       "norm_label": "withtimeout()"
     },
     {
@@ -17021,7 +17021,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L53",
       "id": "kitchen_clerkauth_getprimaryemailaddress",
-      "community": 74,
+      "community": 20,
       "norm_label": "getprimaryemailaddress()"
     },
     {
@@ -17030,7 +17030,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L63",
       "id": "kitchen_clerkauth_buildclerkdisplayname",
-      "community": 74,
+      "community": 20,
       "norm_label": "buildclerkdisplayname()"
     },
     {
@@ -17039,7 +17039,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L75",
       "id": "kitchen_clerkauth_isclerkauthenabled",
-      "community": 74,
+      "community": 20,
       "norm_label": "isclerkauthenabled()"
     },
     {
@@ -17048,7 +17048,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L79",
       "id": "kitchen_clerkauth_isemailregisteredinclerk",
-      "community": 74,
+      "community": 20,
       "norm_label": "isemailregisteredinclerk()"
     },
     {
@@ -17057,7 +17057,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L99",
       "id": "kitchen_clerkauth_deleteclerkuserbyid",
-      "community": 74,
+      "community": 20,
       "norm_label": "deleteclerkuserbyid()"
     },
     {
@@ -17066,7 +17066,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L135",
       "id": "kitchen_clerkauth_resolveclerkidentityfromtoken",
-      "community": 74,
+      "community": 20,
       "norm_label": "resolveclerkidentityfromtoken()"
     },
     {
@@ -17075,7 +17075,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L288",
       "id": "kitchen_clerkauth_authenticateclerktoken",
-      "community": 74,
+      "community": 20,
       "norm_label": "authenticateclerktoken()"
     },
     {
@@ -17084,7 +17084,7 @@
       "source_file": "backend/src/kitchen/clerkAuth.js",
       "source_location": "L351",
       "id": "kitchen_clerkauth_pingclerkapi",
-      "community": 74,
+      "community": 20,
       "norm_label": "pingclerkapi()"
     },
     {
@@ -17300,7 +17300,7 @@
       "source_file": "backend/src/kitchen/householdScope.js",
       "source_location": "L1",
       "id": "kitchen_householdscope",
-      "community": 4,
+      "community": 122,
       "norm_label": "householdscope.js"
     },
     {
@@ -17309,7 +17309,7 @@
       "source_file": "backend/src/kitchen/householdScope.js",
       "source_location": "L1",
       "id": "kitchen_householdscope_geteffectivehouseholdid",
-      "community": 4,
+      "community": 122,
       "norm_label": "geteffectivehouseholdid()"
     },
     {
@@ -17318,7 +17318,7 @@
       "source_file": "backend/src/kitchen/householdScope.js",
       "source_location": "L22",
       "id": "kitchen_householdscope_getoptionalhouseholdid",
-      "community": 4,
+      "community": 122,
       "norm_label": "getoptionalhouseholdid()"
     },
     {
@@ -17327,7 +17327,7 @@
       "source_file": "backend/src/kitchen/householdScope.js",
       "source_location": "L32",
       "id": "kitchen_householdscope_handlehouseholderror",
-      "community": 4,
+      "community": 122,
       "norm_label": "handlehouseholderror()"
     },
     {
@@ -17336,7 +17336,7 @@
       "source_file": "backend/src/kitchen/householdScope.js",
       "source_location": "L40",
       "id": "kitchen_householdscope_buildhouseholdfilter",
-      "community": 4,
+      "community": 162,
       "norm_label": "buildhouseholdfilter()"
     },
     {
@@ -17345,7 +17345,7 @@
       "source_file": "backend/src/kitchen/householdScope.js",
       "source_location": "L50",
       "id": "kitchen_householdscope_buildscopedfilter",
-      "community": 169,
+      "community": 162,
       "norm_label": "buildscopedfilter()"
     },
     {
@@ -17462,7 +17462,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L1",
       "id": "kitchen_middleware",
-      "community": 74,
+      "community": 233,
       "norm_label": "middleware.js"
     },
     {
@@ -17471,7 +17471,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L6",
       "id": "kitchen_middleware_logauthdev",
-      "community": 74,
+      "community": 233,
       "norm_label": "logauthdev()"
     },
     {
@@ -17480,7 +17480,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L17",
       "id": "kitchen_middleware_normalizeroleforauthorization",
-      "community": 74,
+      "community": 233,
       "norm_label": "normalizeroleforauthorization()"
     },
     {
@@ -17489,7 +17489,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L23",
       "id": "kitchen_middleware_buildauthuser",
-      "community": 74,
+      "community": 233,
       "norm_label": "buildauthuser()"
     },
     {
@@ -17498,7 +17498,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L34",
       "id": "kitchen_middleware_createtoken",
-      "community": 74,
+      "community": 233,
       "norm_label": "createtoken()"
     },
     {
@@ -17507,7 +17507,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L51",
       "id": "kitchen_middleware_authenticatelegacytoken",
-      "community": 74,
+      "community": 233,
       "norm_label": "authenticatelegacytoken()"
     },
     {
@@ -17516,7 +17516,7 @@
       "source_file": "backend/src/kitchen/middleware.js",
       "source_location": "L67",
       "id": "kitchen_middleware_requireauth",
-      "community": 74,
+      "community": 233,
       "norm_label": "requireauth()"
     },
     {
@@ -17642,7 +17642,7 @@
       "source_file": "backend/src/kitchen/models/CatalogPack.js",
       "source_location": "L1",
       "id": "models_catalogpack",
-      "community": 170,
+      "community": 112,
       "norm_label": "catalogpack.js"
     },
     {
@@ -17651,7 +17651,7 @@
       "source_file": "backend/src/kitchen/models/CatalogPack.js",
       "source_location": "L3",
       "id": "models_catalogpack_dishingredienttemplateschema",
-      "community": 170,
+      "community": 112,
       "norm_label": "dishingredienttemplateschema"
     },
     {
@@ -17660,7 +17660,7 @@
       "source_file": "backend/src/kitchen/models/CatalogPack.js",
       "source_location": "L13",
       "id": "models_catalogpack_recipeingredienttemplateschema",
-      "community": 170,
+      "community": 112,
       "norm_label": "recipeingredienttemplateschema"
     },
     {
@@ -17669,7 +17669,7 @@
       "source_file": "backend/src/kitchen/models/CatalogPack.js",
       "source_location": "L21",
       "id": "models_catalogpack_dishtemplateschema",
-      "community": 170,
+      "community": 112,
       "norm_label": "dishtemplateschema"
     },
     {
@@ -17678,7 +17678,7 @@
       "source_file": "backend/src/kitchen/models/CatalogPack.js",
       "source_location": "L43",
       "id": "models_catalogpack_catalogpackschema",
-      "community": 170,
+      "community": 112,
       "norm_label": "catalogpackschema"
     },
     {
@@ -17687,7 +17687,7 @@
       "source_file": "backend/src/kitchen/models/CatalogPack.js",
       "source_location": "L104",
       "id": "models_catalogpack_catalogpack",
-      "community": 170,
+      "community": 112,
       "norm_label": "catalogpack"
     },
     {
@@ -17831,7 +17831,7 @@
       "source_file": "backend/src/kitchen/models/HouseholdOnboarding.js",
       "source_location": "L1",
       "id": "models_householdonboarding",
-      "community": 121,
+      "community": 94,
       "norm_label": "householdonboarding.js"
     },
     {
@@ -17840,7 +17840,7 @@
       "source_file": "backend/src/kitchen/models/HouseholdOnboarding.js",
       "source_location": "L3",
       "id": "models_householdonboarding_completedchallengeschema",
-      "community": 121,
+      "community": 94,
       "norm_label": "completedchallengeschema"
     },
     {
@@ -17849,7 +17849,7 @@
       "source_file": "backend/src/kitchen/models/HouseholdOnboarding.js",
       "source_location": "L13",
       "id": "models_householdonboarding_resethistoryschema",
-      "community": 121,
+      "community": 94,
       "norm_label": "resethistoryschema"
     },
     {
@@ -17858,7 +17858,7 @@
       "source_file": "backend/src/kitchen/models/HouseholdOnboarding.js",
       "source_location": "L22",
       "id": "models_householdonboarding_householdonboardingschema",
-      "community": 121,
+      "community": 94,
       "norm_label": "householdonboardingschema"
     },
     {
@@ -17867,7 +17867,7 @@
       "source_file": "backend/src/kitchen/models/HouseholdOnboarding.js",
       "source_location": "L53",
       "id": "models_householdonboarding_householdonboarding",
-      "community": 121,
+      "community": 94,
       "norm_label": "householdonboarding"
     },
     {
@@ -17876,7 +17876,7 @@
       "source_file": "backend/src/kitchen/models/HouseholdWeeklyProgress.js",
       "source_location": "L1",
       "id": "models_householdweeklyprogress",
-      "community": 170,
+      "community": 94,
       "norm_label": "householdweeklyprogress.js"
     },
     {
@@ -17885,7 +17885,7 @@
       "source_file": "backend/src/kitchen/models/HouseholdWeeklyProgress.js",
       "source_location": "L3",
       "id": "models_householdweeklyprogress_householdweeklyprogress",
-      "community": 170,
+      "community": 94,
       "norm_label": "householdweeklyprogress"
     },
     {
@@ -17921,7 +17921,7 @@
       "source_file": "backend/src/kitchen/models/KitchenAuditLog.js",
       "source_location": "L1",
       "id": "models_kitchenauditlog",
-      "community": 170,
+      "community": 42,
       "norm_label": "kitchenauditlog.js"
     },
     {
@@ -17930,7 +17930,7 @@
       "source_file": "backend/src/kitchen/models/KitchenAuditLog.js",
       "source_location": "L3",
       "id": "models_kitchenauditlog_kitchenauditlogschema",
-      "community": 170,
+      "community": 42,
       "norm_label": "kitchenauditlogschema"
     },
     {
@@ -17939,7 +17939,7 @@
       "source_file": "backend/src/kitchen/models/KitchenAuditLog.js",
       "source_location": "L13",
       "id": "models_kitchenauditlog_kitchenauditlog",
-      "community": 170,
+      "community": 42,
       "norm_label": "kitchenauditlog"
     },
     {
@@ -17948,7 +17948,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDish.js",
       "source_location": "L1",
       "id": "models_kitchendish",
-      "community": 235,
+      "community": 42,
       "norm_label": "kitchendish.js"
     },
     {
@@ -17957,7 +17957,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDish.js",
       "source_location": "L3",
       "id": "models_kitchendish_ingredientschema",
-      "community": 235,
+      "community": 42,
       "norm_label": "ingredientschema"
     },
     {
@@ -17966,7 +17966,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDish.js",
       "source_location": "L12",
       "id": "models_kitchendish_kitchendishschema",
-      "community": 235,
+      "community": 42,
       "norm_label": "kitchendishschema"
     },
     {
@@ -17975,7 +17975,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDish.js",
       "source_location": "L72",
       "id": "models_kitchendish_kitchendish",
-      "community": 235,
+      "community": 42,
       "norm_label": "kitchendish"
     },
     {
@@ -17984,7 +17984,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDishCategory.js",
       "source_location": "L1",
       "id": "models_kitchendishcategory",
-      "community": 23,
+      "community": 74,
       "norm_label": "kitchendishcategory.js"
     },
     {
@@ -17993,7 +17993,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDishCategory.js",
       "source_location": "L3",
       "id": "models_kitchendishcategory_kitchendishcategoryschema",
-      "community": 23,
+      "community": 74,
       "norm_label": "kitchendishcategoryschema"
     },
     {
@@ -18002,7 +18002,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDishCategory.js",
       "source_location": "L22",
       "id": "models_kitchendishcategory_kitchendishcategory",
-      "community": 23,
+      "community": 74,
       "norm_label": "kitchendishcategory"
     },
     {
@@ -18038,7 +18038,7 @@
       "source_file": "backend/src/kitchen/models/KitchenShoppingList.js",
       "source_location": "L1",
       "id": "models_kitchenshoppinglist",
-      "community": 169,
+      "community": 42,
       "norm_label": "kitchenshoppinglist.js"
     },
     {
@@ -18047,7 +18047,7 @@
       "source_file": "backend/src/kitchen/models/KitchenShoppingList.js",
       "source_location": "L3",
       "id": "models_kitchenshoppinglist_shoppingitemschema",
-      "community": 169,
+      "community": 42,
       "norm_label": "shoppingitemschema"
     },
     {
@@ -18056,7 +18056,7 @@
       "source_file": "backend/src/kitchen/models/KitchenShoppingList.js",
       "source_location": "L23",
       "id": "models_kitchenshoppinglist_kitchenshoppinglistschema",
-      "community": 169,
+      "community": 42,
       "norm_label": "kitchenshoppinglistschema"
     },
     {
@@ -18065,7 +18065,7 @@
       "source_file": "backend/src/kitchen/models/KitchenShoppingList.js",
       "source_location": "L37",
       "id": "models_kitchenshoppinglist_kitchenshoppinglist",
-      "community": 169,
+      "community": 42,
       "norm_label": "kitchenshoppinglist"
     },
     {
@@ -18173,7 +18173,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingChallenge.js",
       "source_location": "L1",
       "id": "models_onboardingchallenge",
-      "community": 121,
+      "community": 94,
       "norm_label": "onboardingchallenge.js"
     },
     {
@@ -18182,7 +18182,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingChallenge.js",
       "source_location": "L3",
       "id": "models_onboardingchallenge_onboardingchallengeschema",
-      "community": 121,
+      "community": 94,
       "norm_label": "onboardingchallengeschema"
     },
     {
@@ -18191,7 +18191,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingChallenge.js",
       "source_location": "L20",
       "id": "models_onboardingchallenge_onboardingchallenge",
-      "community": 121,
+      "community": 94,
       "norm_label": "onboardingchallenge"
     },
     {
@@ -18200,7 +18200,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingSuggestion.js",
       "source_location": "L1",
       "id": "models_onboardingsuggestion",
-      "community": 121,
+      "community": 94,
       "norm_label": "onboardingsuggestion.js"
     },
     {
@@ -18209,7 +18209,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingSuggestion.js",
       "source_location": "L3",
       "id": "models_onboardingsuggestion_onboardingsuggestionschema",
-      "community": 121,
+      "community": 94,
       "norm_label": "onboardingsuggestionschema"
     },
     {
@@ -18218,7 +18218,7 @@
       "source_file": "backend/src/kitchen/models/OnboardingSuggestion.js",
       "source_location": "L15",
       "id": "models_onboardingsuggestion_onboardingsuggestion",
-      "community": 121,
+      "community": 94,
       "norm_label": "onboardingsuggestion"
     },
     {
@@ -18299,7 +18299,7 @@
       "source_file": "backend/src/kitchen/models/PurchaseAttempt.js",
       "source_location": "L1",
       "id": "models_purchaseattempt",
-      "community": 170,
+      "community": 233,
       "norm_label": "purchaseattempt.js"
     },
     {
@@ -18308,7 +18308,7 @@
       "source_file": "backend/src/kitchen/models/PurchaseAttempt.js",
       "source_location": "L5",
       "id": "models_purchaseattempt_purchaseattemptschema",
-      "community": 170,
+      "community": 233,
       "norm_label": "purchaseattemptschema"
     },
     {
@@ -18317,7 +18317,7 @@
       "source_file": "backend/src/kitchen/models/PurchaseAttempt.js",
       "source_location": "L44",
       "id": "models_purchaseattempt_purchaseattempt",
-      "community": 170,
+      "community": 233,
       "norm_label": "purchaseattempt"
     },
     {
@@ -18380,7 +18380,7 @@
       "source_file": "backend/src/kitchen/models/PushSubscription.js",
       "source_location": "L1",
       "id": "models_pushsubscription",
-      "community": 168,
+      "community": 354,
       "norm_label": "pushsubscription.js"
     },
     {
@@ -18389,7 +18389,7 @@
       "source_file": "backend/src/kitchen/models/PushSubscription.js",
       "source_location": "L3",
       "id": "models_pushsubscription_pushsubscriptionschema",
-      "community": 168,
+      "community": 354,
       "norm_label": "pushsubscriptionschema"
     },
     {
@@ -18398,7 +18398,7 @@
       "source_file": "backend/src/kitchen/models/PushSubscription.js",
       "source_location": "L20",
       "id": "models_pushsubscription_kitchenpushsubscription",
-      "community": 168,
+      "community": 354,
       "norm_label": "kitchenpushsubscription"
     },
     {
@@ -18407,7 +18407,7 @@
       "source_file": "backend/src/kitchen/models/ShoppingTrip.js",
       "source_location": "L1",
       "id": "models_shoppingtrip",
-      "community": 352,
+      "community": 170,
       "norm_label": "shoppingtrip.js"
     },
     {
@@ -18416,7 +18416,7 @@
       "source_file": "backend/src/kitchen/models/ShoppingTrip.js",
       "source_location": "L3",
       "id": "models_shoppingtrip_shoppingtripschema",
-      "community": 352,
+      "community": 170,
       "norm_label": "shoppingtripschema"
     },
     {
@@ -18425,7 +18425,7 @@
       "source_file": "backend/src/kitchen/models/ShoppingTrip.js",
       "source_location": "L17",
       "id": "models_shoppingtrip_shoppingtrip",
-      "community": 352,
+      "community": 170,
       "norm_label": "shoppingtrip"
     },
     {
@@ -18434,7 +18434,7 @@
       "source_file": "backend/src/kitchen/models/Store.js",
       "source_location": "L1",
       "id": "models_store",
-      "community": 386,
+      "community": 42,
       "norm_label": "store.js"
     },
     {
@@ -18443,7 +18443,7 @@
       "source_file": "backend/src/kitchen/models/Store.js",
       "source_location": "L3",
       "id": "models_store_storeschema",
-      "community": 386,
+      "community": 42,
       "norm_label": "storeschema"
     },
     {
@@ -18452,7 +18452,7 @@
       "source_file": "backend/src/kitchen/models/Store.js",
       "source_location": "L25",
       "id": "models_store_store",
-      "community": 386,
+      "community": 42,
       "norm_label": "store"
     },
     {
@@ -18524,7 +18524,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L1",
       "id": "kitchen_onboardingengine",
-      "community": 121,
+      "community": 94,
       "norm_label": "onboardingengine.js"
     },
     {
@@ -18533,7 +18533,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L12",
       "id": "kitchen_onboardingengine_explore_required",
-      "community": 121,
+      "community": 94,
       "norm_label": "explore_required"
     },
     {
@@ -18542,7 +18542,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L18",
       "id": "kitchen_onboardingengine_default_challenges",
-      "community": 121,
+      "community": 94,
       "norm_label": "default_challenges"
     },
     {
@@ -18551,7 +18551,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L117",
       "id": "kitchen_onboardingengine_default_ingredient_suggestions",
-      "community": 121,
+      "community": 94,
       "norm_label": "default_ingredient_suggestions"
     },
     {
@@ -18560,7 +18560,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L124",
       "id": "kitchen_onboardingengine_default_dish_suggestions",
-      "community": 121,
+      "community": 94,
       "norm_label": "default_dish_suggestions"
     },
     {
@@ -18569,7 +18569,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L135",
       "id": "kitchen_onboardingengine_legacy_challenge_keys",
-      "community": 121,
+      "community": 94,
       "norm_label": "legacy_challenge_keys"
     },
     {
@@ -18578,7 +18578,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L146",
       "id": "kitchen_onboardingengine_seedonboardingchallenges",
-      "community": 148,
+      "community": 94,
       "norm_label": "seedonboardingchallenges()"
     },
     {
@@ -18587,7 +18587,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L165",
       "id": "kitchen_onboardingengine_cleanupoldchallenges",
-      "community": 148,
+      "community": 94,
       "norm_label": "cleanupoldchallenges()"
     },
     {
@@ -18596,7 +18596,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L178",
       "id": "kitchen_onboardingengine_seedonboardingsuggestions",
-      "community": 148,
+      "community": 94,
       "norm_label": "seedonboardingsuggestions()"
     },
     {
@@ -18605,7 +18605,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L193",
       "id": "kitchen_onboardingengine_grantbites",
-      "community": 121,
+      "community": 94,
       "norm_label": "_grantbites()"
     },
     {
@@ -18614,7 +18614,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L217",
       "id": "kitchen_onboardingengine_initonboarding",
-      "community": 121,
+      "community": 94,
       "norm_label": "initonboarding()"
     },
     {
@@ -18623,7 +18623,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L240",
       "id": "kitchen_onboardingengine_getonboardingstate",
-      "community": 121,
+      "community": 94,
       "norm_label": "getonboardingstate()"
     },
     {
@@ -18632,7 +18632,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L301",
       "id": "kitchen_onboardingengine_triggeronboarding",
-      "community": 121,
+      "community": 94,
       "norm_label": "triggeronboarding()"
     },
     {
@@ -18641,7 +18641,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L426",
       "id": "kitchen_onboardingengine_resetonboarding",
-      "community": 121,
+      "community": 94,
       "norm_label": "resetonboarding()"
     },
     {
@@ -18650,7 +18650,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L447",
       "id": "kitchen_onboardingengine_assignonboarding",
-      "community": 121,
+      "community": 94,
       "norm_label": "assignonboarding()"
     },
     {
@@ -18659,7 +18659,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L452",
       "id": "kitchen_onboardingengine_removeonboarding",
-      "community": 121,
+      "community": 94,
       "norm_label": "removeonboarding()"
     },
     {
@@ -18668,7 +18668,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L460",
       "id": "kitchen_onboardingengine_setonboardingstatus",
-      "community": 121,
+      "community": 94,
       "norm_label": "setonboardingstatus()"
     },
     {
@@ -18812,7 +18812,7 @@
       "source_file": "backend/src/kitchen/purchaseSessionService.js",
       "source_location": "L196",
       "id": "kitchen_purchasesessionservice_getpendingpurchasesessions",
-      "community": 386,
+      "community": 122,
       "norm_label": "getpendingpurchasesessions()"
     },
     {
@@ -18821,7 +18821,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L1",
       "id": "routes_admin",
-      "community": 170,
+      "community": 42,
       "norm_label": "admin.js"
     },
     {
@@ -18830,7 +18830,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L33",
       "id": "routes_admin_router",
-      "community": 170,
+      "community": 42,
       "norm_label": "router"
     },
     {
@@ -18839,7 +18839,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L35",
       "id": "routes_admin_normalizeactivehouseholdidinput",
-      "community": 170,
+      "community": 42,
       "norm_label": "normalizeactivehouseholdidinput()"
     },
     {
@@ -18848,7 +18848,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L47",
       "id": "routes_admin_isvalidobjectidstring",
-      "community": 170,
+      "community": 42,
       "norm_label": "isvalidobjectidstring()"
     },
     {
@@ -18857,7 +18857,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L51",
       "id": "routes_admin_sendinvalidhouseholdid",
-      "community": 170,
+      "community": 42,
       "norm_label": "sendinvalidhouseholdid()"
     },
     {
@@ -18866,7 +18866,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L59",
       "id": "routes_admin_serializebetapro",
-      "community": 170,
+      "community": 42,
       "norm_label": "serializebetapro()"
     },
     {
@@ -18875,7 +18875,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L592",
       "id": "routes_admin_setactivehousehold",
-      "community": 170,
+      "community": 42,
       "norm_label": "setactivehousehold()"
     },
     {
@@ -18884,7 +18884,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L1045",
       "id": "routes_admin_maskadminrecoveryemail",
-      "community": 170,
+      "community": 42,
       "norm_label": "maskadminrecoveryemail()"
     },
     {
@@ -18893,7 +18893,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L1053",
       "id": "routes_admin_validateadminpasswordstrength",
-      "community": 170,
+      "community": 42,
       "norm_label": "validateadminpasswordstrength()"
     },
     {
@@ -19145,7 +19145,7 @@
       "source_file": "backend/src/kitchen/routes/basics.js",
       "source_location": "L33",
       "id": "routes_basics_resolvebasicsaccess",
-      "community": 122,
+      "community": 58,
       "norm_label": "resolvebasicsaccess()"
     },
     {
@@ -19802,7 +19802,7 @@
       "source_file": "backend/src/kitchen/routes/onboarding.js",
       "source_location": "L1",
       "id": "routes_onboarding",
-      "community": 121,
+      "community": 94,
       "norm_label": "onboarding.js"
     },
     {
@@ -19811,7 +19811,7 @@
       "source_file": "backend/src/kitchen/routes/onboarding.js",
       "source_location": "L19",
       "id": "routes_onboarding_router",
-      "community": 121,
+      "community": 94,
       "norm_label": "router"
     },
     {
@@ -19847,7 +19847,7 @@
       "source_file": "backend/src/kitchen/routes/push.js",
       "source_location": "L1",
       "id": "routes_push",
-      "community": 168,
+      "community": 354,
       "norm_label": "push.js"
     },
     {
@@ -19856,7 +19856,7 @@
       "source_file": "backend/src/kitchen/routes/push.js",
       "source_location": "L6",
       "id": "routes_push_router",
-      "community": 168,
+      "community": 354,
       "norm_label": "router"
     },
     {
@@ -19865,7 +19865,7 @@
       "source_file": "backend/src/kitchen/routes/push.js",
       "source_location": "L8",
       "id": "routes_push_geteffectivehouseholdid",
-      "community": 168,
+      "community": 354,
       "norm_label": "geteffectivehouseholdid()"
     },
     {
@@ -19874,7 +19874,7 @@
       "source_file": "backend/src/kitchen/routes/push.js",
       "source_location": "L12",
       "id": "routes_push_sanitizesubscription",
-      "community": 168,
+      "community": 354,
       "norm_label": "sanitizesubscription()"
     },
     {
@@ -19883,7 +19883,7 @@
       "source_file": "backend/src/kitchen/routes/push.js",
       "source_location": "L31",
       "id": "routes_push_buildtestpayload",
-      "community": 168,
+      "community": 354,
       "norm_label": "buildtestpayload()"
     },
     {
@@ -19892,7 +19892,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L1",
       "id": "routes_shopping",
-      "community": 386,
+      "community": 122,
       "norm_label": "shopping.js"
     },
     {
@@ -19901,7 +19901,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L38",
       "id": "routes_shopping_router",
-      "community": 386,
+      "community": 122,
       "norm_label": "router"
     },
     {
@@ -19910,7 +19910,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L40",
       "id": "routes_shopping_logshoppingerror",
-      "community": 386,
+      "community": 122,
       "norm_label": "logshoppingerror()"
     },
     {
@@ -19919,7 +19919,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L49",
       "id": "routes_shopping_normalizestorename",
-      "community": 386,
+      "community": 122,
       "norm_label": "normalizestorename()"
     },
     {
@@ -19928,7 +19928,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L53",
       "id": "routes_shopping_sortstores",
-      "community": 386,
+      "community": 122,
       "norm_label": "sortstores()"
     },
     {
@@ -19937,7 +19937,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L62",
       "id": "routes_shopping_buildstorevisibilityfilter",
-      "community": 386,
+      "community": 122,
       "norm_label": "buildstorevisibilityfilter()"
     },
     {
@@ -19946,7 +19946,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L72",
       "id": "routes_shopping_buildcategoryvisibilityfilter",
-      "community": 386,
+      "community": 122,
       "norm_label": "buildcategoryvisibilityfilter()"
     },
     {
@@ -19955,7 +19955,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L83",
       "id": "routes_shopping_todategroup",
-      "community": 386,
+      "community": 122,
       "norm_label": "todategroup()"
     },
     {
@@ -19964,7 +19964,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L88",
       "id": "routes_shopping_isvalidobjectid",
-      "community": 386,
+      "community": 122,
       "norm_label": "isvalidobjectid()"
     },
     {
@@ -19973,7 +19973,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L92",
       "id": "routes_shopping_parseamount",
-      "community": 386,
+      "community": 122,
       "norm_label": "parseamount()"
     },
     {
@@ -19982,7 +19982,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L98",
       "id": "routes_shopping_comparecategorygroups",
-      "community": 386,
+      "community": 122,
       "norm_label": "comparecategorygroups()"
     },
     {
@@ -19991,7 +19991,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L105",
       "id": "routes_shopping_normalizeshoppingitemforresponse",
-      "community": 386,
+      "community": 122,
       "norm_label": "normalizeshoppingitemforresponse()"
     },
     {
@@ -20000,7 +20000,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L121",
       "id": "routes_shopping_normalizebudgetnumber",
-      "community": 386,
+      "community": 122,
       "norm_label": "normalizebudgetnumber()"
     },
     {
@@ -20009,7 +20009,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L126",
       "id": "routes_shopping_buildbudgetfeatureunavailablepayload",
-      "community": 386,
+      "community": 122,
       "norm_label": "buildbudgetfeatureunavailablepayload()"
     },
     {
@@ -20018,7 +20018,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L134",
       "id": "routes_shopping_resolvehouseholdbudgetaccess",
-      "community": 386,
+      "community": 122,
       "norm_label": "resolvehouseholdbudgetaccess()"
     },
     {
@@ -20027,7 +20027,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L145",
       "id": "routes_shopping_buildbudgetsummary",
-      "community": 386,
+      "community": 122,
       "norm_label": "buildbudgetsummary()"
     },
     {
@@ -20036,7 +20036,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L174",
       "id": "routes_shopping_buildpurchasesessionsummary",
-      "community": 386,
+      "community": 122,
       "norm_label": "buildpurchasesessionsummary()"
     },
     {
@@ -20045,7 +20045,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L191",
       "id": "routes_shopping_buildweeklybudgetdetails",
-      "community": 386,
+      "community": 122,
       "norm_label": "buildweeklybudgetdetails()"
     },
     {
@@ -20054,7 +20054,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L222",
       "id": "routes_shopping_getshoppingpayload",
-      "community": 386,
+      "community": 122,
       "norm_label": "getshoppingpayload()"
     },
     {
@@ -20063,7 +20063,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L360",
       "id": "routes_shopping_validatestoreselection",
-      "community": 386,
+      "community": 122,
       "norm_label": "validatestoreselection()"
     },
     {
@@ -20072,7 +20072,7 @@
       "source_file": "backend/src/kitchen/routes/shopping.js",
       "source_location": "L409",
       "id": "routes_shopping_addshoppingitem",
-      "community": 386,
+      "community": 122,
       "norm_label": "addshoppingitem()"
     },
     {
@@ -20108,7 +20108,7 @@
       "source_file": "backend/src/kitchen/routes/swaps.js",
       "source_location": "L78",
       "id": "routes_swaps_applyswap",
-      "community": 42,
+      "community": 162,
       "norm_label": "applyswap()"
     },
     {
@@ -20180,7 +20180,7 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L141",
       "id": "routes_users_deletehouseholdscopeddata",
-      "community": 74,
+      "community": 20,
       "norm_label": "deletehouseholdscopeddata()"
     },
     {
@@ -20189,7 +20189,7 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L191",
       "id": "routes_users_builddeleteprofilepreview",
-      "community": 169,
+      "community": 162,
       "norm_label": "builddeleteprofilepreview()"
     },
     {
@@ -20477,7 +20477,7 @@
       "source_file": "backend/src/kitchen/routes/weeks.js",
       "source_location": "L254",
       "id": "routes_weeks_loadhouseholdmembers",
-      "community": 169,
+      "community": 162,
       "norm_label": "loadhouseholdmembers()"
     },
     {
@@ -20504,7 +20504,7 @@
       "source_file": "backend/src/kitchen/routes/weeks.js",
       "source_location": "L307",
       "id": "routes_weeks_finddaybydateandmeal",
-      "community": 42,
+      "community": 162,
       "norm_label": "finddaybydateandmeal()"
     },
     {
@@ -20558,7 +20558,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L1",
       "id": "kitchen_shoppingservice",
-      "community": 169,
+      "community": 122,
       "norm_label": "shoppingservice.js"
     },
     {
@@ -20567,7 +20567,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L14",
       "id": "kitchen_shoppingservice_ingredient_scope_priority",
-      "community": 169,
+      "community": 122,
       "norm_label": "ingredient_scope_priority"
     },
     {
@@ -20576,7 +20576,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L20",
       "id": "kitchen_shoppingservice_comparebyscopepriority",
-      "community": 169,
+      "community": 122,
       "norm_label": "comparebyscopepriority()"
     },
     {
@@ -20585,7 +20585,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L26",
       "id": "kitchen_shoppingservice_buildingredientvisibilityfilter",
-      "community": 169,
+      "community": 122,
       "norm_label": "buildingredientvisibilityfilter()"
     },
     {
@@ -20594,7 +20594,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L38",
       "id": "kitchen_shoppingservice_shouldincludemaininshopping",
-      "community": 169,
+      "community": 122,
       "norm_label": "shouldincludemaininshopping()"
     },
     {
@@ -20603,7 +20603,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L44",
       "id": "kitchen_shoppingservice_shouldincludesideinshopping",
-      "community": 169,
+      "community": 122,
       "norm_label": "shouldincludesideinshopping()"
     },
     {
@@ -20612,7 +20612,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L50",
       "id": "kitchen_shoppingservice_ensureshoppinglist",
-      "community": 169,
+      "community": 122,
       "norm_label": "ensureshoppinglist()"
     },
     {
@@ -20621,7 +20621,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L64",
       "id": "kitchen_shoppingservice_derivecanonicalname",
-      "community": 169,
+      "community": 122,
       "norm_label": "derivecanonicalname()"
     },
     {
@@ -20630,7 +20630,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L73",
       "id": "kitchen_shoppingservice_ensurevalidshoppingitemshape",
-      "community": 169,
+      "community": 122,
       "norm_label": "ensurevalidshoppingitemshape()"
     },
     {
@@ -20639,7 +20639,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L89",
       "id": "kitchen_shoppingservice_filtervalidshoppingitems",
-      "community": 169,
+      "community": 122,
       "norm_label": "filtervalidshoppingitems()"
     },
     {
@@ -20648,7 +20648,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L112",
       "id": "kitchen_shoppingservice_resolveshoppingitemingredientdata",
-      "community": 169,
+      "community": 122,
       "norm_label": "resolveshoppingitemingredientdata()"
     },
     {
@@ -20657,7 +20657,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L195",
       "id": "kitchen_shoppingservice_buildaggregatedfromweek",
-      "community": 169,
+      "community": 122,
       "norm_label": "buildaggregatedfromweek()"
     },
     {
@@ -20666,7 +20666,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L273",
       "id": "kitchen_shoppingservice_rebuildshoppinglist",
-      "community": 169,
+      "community": 122,
       "norm_label": "rebuildshoppinglist()"
     },
     {
@@ -20675,7 +20675,7 @@
       "source_file": "backend/src/kitchen/shoppingService.js",
       "source_location": "L314",
       "id": "kitchen_shoppingservice_repairshoppinglistitems",
-      "community": 169,
+      "community": 122,
       "norm_label": "repairshoppinglistitems()"
     },
     {
@@ -21024,34 +21024,16 @@
       "label": "APP_THEME_IDS",
       "file_type": "code",
       "source_file": "backend/src/kitchen/themeService.js",
-      "source_location": "L4",
+      "source_location": "L3",
       "id": "kitchen_themeservice_app_theme_ids",
       "community": 4,
       "norm_label": "app_theme_ids"
     },
     {
-      "label": "BASIC_ACCESS",
-      "file_type": "code",
-      "source_file": "backend/src/kitchen/themeService.js",
-      "source_location": "L19",
-      "id": "kitchen_themeservice_basic_access",
-      "community": 4,
-      "norm_label": "basic_access"
-    },
-    {
-      "label": "PREMIUM_ACCESS",
-      "file_type": "code",
-      "source_file": "backend/src/kitchen/themeService.js",
-      "source_location": "L20",
-      "id": "kitchen_themeservice_premium_access",
-      "community": 4,
-      "norm_label": "premium_access"
-    },
-    {
       "label": "THEME_PLAN_ACCESS",
       "file_type": "code",
       "source_file": "backend/src/kitchen/themeService.js",
-      "source_location": "L24",
+      "source_location": "L12",
       "id": "kitchen_themeservice_theme_plan_access",
       "community": 4,
       "norm_label": "theme_plan_access"
@@ -21060,7 +21042,7 @@
       "label": "normalizeThemeId()",
       "file_type": "code",
       "source_file": "backend/src/kitchen/themeService.js",
-      "source_location": "L39",
+      "source_location": "L21",
       "id": "kitchen_themeservice_normalizethemeid",
       "community": 4,
       "norm_label": "normalizethemeid()"
@@ -21069,7 +21051,7 @@
       "label": "isValidThemeId()",
       "file_type": "code",
       "source_file": "backend/src/kitchen/themeService.js",
-      "source_location": "L44",
+      "source_location": "L26",
       "id": "kitchen_themeservice_isvalidthemeid",
       "community": 4,
       "norm_label": "isvalidthemeid()"
@@ -21078,7 +21060,7 @@
       "label": "isThemeAvailableForPlan()",
       "file_type": "code",
       "source_file": "backend/src/kitchen/themeService.js",
-      "source_location": "L48",
+      "source_location": "L30",
       "id": "kitchen_themeservice_isthemeavailableforplan",
       "community": 4,
       "norm_label": "isthemeavailableforplan()"
@@ -21251,7 +21233,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L1",
       "id": "utils_dates",
-      "community": 192,
+      "community": 122,
       "norm_label": "dates.js"
     },
     {
@@ -21260,7 +21242,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L1",
       "id": "utils_dates_parseisodate",
-      "community": 386,
+      "community": 122,
       "norm_label": "parseisodate()"
     },
     {
@@ -21269,7 +21251,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L7",
       "id": "utils_dates_formatdateiso",
-      "community": 354,
+      "community": 122,
       "norm_label": "formatdateiso()"
     },
     {
@@ -21278,7 +21260,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L11",
       "id": "utils_dates_getweekstart",
-      "community": 354,
+      "community": 122,
       "norm_label": "getweekstart()"
     },
     {
@@ -21287,7 +21269,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L19",
       "id": "utils_dates_getweekdates",
-      "community": 192,
+      "community": 162,
       "norm_label": "getweekdates()"
     },
     {
@@ -21296,7 +21278,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L27",
       "id": "utils_dates_getweekdate",
-      "community": 192,
+      "community": 162,
       "norm_label": "getweekdate()"
     },
     {
@@ -21305,7 +21287,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L33",
       "id": "utils_dates_issameday",
-      "community": 42,
+      "community": 162,
       "norm_label": "issameday()"
     },
     {
@@ -21485,7 +21467,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L1",
       "id": "kitchen_weekplanservice",
-      "community": 192,
+      "community": 162,
       "norm_label": "weekplanservice.js"
     },
     {
@@ -21494,7 +21476,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L7",
       "id": "kitchen_weekplanservice_isactivemember",
-      "community": 192,
+      "community": 162,
       "norm_label": "isactivemember()"
     },
     {
@@ -21503,7 +21485,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L11",
       "id": "kitchen_weekplanservice_builddefaultattendeeids",
-      "community": 192,
+      "community": 162,
       "norm_label": "builddefaultattendeeids()"
     },
     {
@@ -21512,7 +21494,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L18",
       "id": "kitchen_weekplanservice_getmemberdinneractive",
-      "community": 192,
+      "community": 162,
       "norm_label": "getmemberdinneractive()"
     },
     {
@@ -21521,7 +21503,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L22",
       "id": "kitchen_weekplanservice_builddefaultdays",
-      "community": 192,
+      "community": 162,
       "norm_label": "builddefaultdays()"
     },
     {
@@ -21530,7 +21512,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L38",
       "id": "kitchen_weekplanservice_isduplicatekeyerror",
-      "community": 192,
+      "community": 162,
       "norm_label": "isduplicatekeyerror()"
     },
     {
@@ -21539,7 +21521,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L42",
       "id": "kitchen_weekplanservice_daymatchesmeal",
-      "community": 192,
+      "community": 162,
       "norm_label": "daymatchesmeal()"
     },
     {
@@ -21548,7 +21530,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L47",
       "id": "kitchen_weekplanservice_hasmealslot",
-      "community": 192,
+      "community": 162,
       "norm_label": "hasmealslot()"
     },
     {
@@ -21557,7 +21539,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L53",
       "id": "kitchen_weekplanservice_ensuredinnerslotsifenabled",
-      "community": 192,
+      "community": 162,
       "norm_label": "ensuredinnerslotsifenabled()"
     },
     {
@@ -21566,7 +21548,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L101",
       "id": "kitchen_weekplanservice_createorgetweekplan",
-      "community": 192,
+      "community": 162,
       "norm_label": "createorgetweekplan()"
     },
     {
@@ -21575,7 +21557,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L158",
       "id": "kitchen_weekplanservice_ensureweekplan",
-      "community": 192,
+      "community": 162,
       "norm_label": "ensureweekplan()"
     },
     {
@@ -21584,7 +21566,7 @@
       "source_file": "backend/src/kitchen/weekPlanService.js",
       "source_location": "L163",
       "id": "kitchen_weekplanservice_findweekplan",
-      "community": 192,
+      "community": 162,
       "norm_label": "findweekplan()"
     },
     {
@@ -22097,7 +22079,7 @@
       "source_file": "backend/src/routes/subscription.js",
       "source_location": "L1",
       "id": "routes_subscription",
-      "community": 4,
+      "community": 58,
       "norm_label": "subscription.js"
     },
     {
@@ -22106,7 +22088,7 @@
       "source_file": "backend/src/routes/subscription.js",
       "source_location": "L10",
       "id": "routes_subscription_router",
-      "community": 4,
+      "community": 58,
       "norm_label": "router"
     },
     {
@@ -22340,7 +22322,7 @@
       "source_file": "backend/src/services/pushService.js",
       "source_location": "L1",
       "id": "services_pushservice",
-      "community": 168,
+      "community": 354,
       "norm_label": "pushservice.js"
     },
     {
@@ -22349,7 +22331,7 @@
       "source_file": "backend/src/services/pushService.js",
       "source_location": "L6",
       "id": "services_pushservice_hasvapidconfig",
-      "community": 168,
+      "community": 354,
       "norm_label": "hasvapidconfig()"
     },
     {
@@ -22367,7 +22349,7 @@
       "source_file": "backend/src/services/pushService.js",
       "source_location": "L18",
       "id": "services_pushservice_initwebpush",
-      "community": 168,
+      "community": 354,
       "norm_label": "initwebpush()"
     },
     {
@@ -22376,7 +22358,7 @@
       "source_file": "backend/src/services/pushService.js",
       "source_location": "L32",
       "id": "services_pushservice_buildfailureresult",
-      "community": 168,
+      "community": 354,
       "norm_label": "buildfailureresult()"
     },
     {
@@ -22385,7 +22367,7 @@
       "source_file": "backend/src/services/pushService.js",
       "source_location": "L44",
       "id": "services_pushservice_sendpushnotification",
-      "community": 168,
+      "community": 354,
       "norm_label": "sendpushnotification()"
     },
     {
@@ -22979,7 +22961,7 @@
       "source_file": "frontend/src/components/AppErrorBoundary.jsx",
       "source_location": "L1",
       "id": "components_apperrorboundary",
-      "community": 18,
+      "community": 168,
       "norm_label": "apperrorboundary.jsx"
     },
     {
@@ -22988,7 +22970,7 @@
       "source_file": "frontend/src/components/AppErrorBoundary.jsx",
       "source_location": "L3",
       "id": "components_apperrorboundary_apperrorboundary",
-      "community": 18,
+      "community": 168,
       "norm_label": "apperrorboundary"
     },
     {
@@ -22997,7 +22979,7 @@
       "source_file": "frontend/src/components/AppErrorBoundary.jsx",
       "source_location": "L4",
       "id": "components_apperrorboundary_apperrorboundary_constructor",
-      "community": 18,
+      "community": 168,
       "norm_label": ".constructor()"
     },
     {
@@ -23006,7 +22988,7 @@
       "source_file": "frontend/src/components/AppErrorBoundary.jsx",
       "source_location": "L9",
       "id": "components_apperrorboundary_apperrorboundary_getderivedstatefromerror",
-      "community": 18,
+      "community": 168,
       "norm_label": ".getderivedstatefromerror()"
     },
     {
@@ -23015,7 +22997,7 @@
       "source_file": "frontend/src/components/AppErrorBoundary.jsx",
       "source_location": "L13",
       "id": "components_apperrorboundary_apperrorboundary_componentdidcatch",
-      "community": 18,
+      "community": 168,
       "norm_label": ".componentdidcatch()"
     },
     {
@@ -23024,7 +23006,7 @@
       "source_file": "frontend/src/components/AppErrorBoundary.jsx",
       "source_location": "L25",
       "id": "components_apperrorboundary_apperrorboundary_render",
-      "community": 18,
+      "community": 168,
       "norm_label": ".render()"
     },
     {
@@ -23058,7 +23040,7 @@
       "label": "ThemeContext",
       "file_type": "code",
       "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L16",
+      "source_location": "L5",
       "id": "context_themecontext_themecontext",
       "community": 85,
       "norm_label": "themecontext"
@@ -23067,43 +23049,16 @@
       "label": "normalizeStoredTheme()",
       "file_type": "code",
       "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L18",
+      "source_location": "L7",
       "id": "context_themecontext_normalizestoredtheme",
       "community": 85,
       "norm_label": "normalizestoredtheme()"
     },
     {
-      "label": "readInitialTheme()",
-      "file_type": "code",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L26",
-      "id": "context_themecontext_readinitialtheme",
-      "community": 85,
-      "norm_label": "readinitialtheme()"
-    },
-    {
-      "label": "rememberThemeForMode()",
-      "file_type": "code",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L34",
-      "id": "context_themecontext_rememberthemeformode",
-      "community": 85,
-      "norm_label": "rememberthemeformode()"
-    },
-    {
-      "label": "readLastThemeForMode()",
-      "file_type": "code",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L41",
-      "id": "context_themecontext_readlastthemeformode",
-      "community": 85,
-      "norm_label": "readlastthemeformode()"
-    },
-    {
       "label": "applyTheme()",
       "file_type": "code",
       "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L49",
+      "source_location": "L14",
       "id": "context_themecontext_applytheme",
       "community": 85,
       "norm_label": "applytheme()"
@@ -23112,7 +23067,7 @@
       "label": "ThemeProvider()",
       "file_type": "code",
       "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L66",
+      "source_location": "L31",
       "id": "context_themecontext_themeprovider",
       "community": 85,
       "norm_label": "themeprovider()"
@@ -23121,9 +23076,9 @@
       "label": "useTheme()",
       "file_type": "code",
       "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L124",
+      "source_location": "L83",
       "id": "context_themecontext_usetheme",
-      "community": 37,
+      "community": 43,
       "norm_label": "usetheme()"
     },
     {
@@ -23139,25 +23094,16 @@
       "label": "PREMIUM_THEME_PLANS",
       "file_type": "code",
       "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L3",
+      "source_location": "L2",
       "id": "context_appthemes_premium_theme_plans",
       "community": 85,
       "norm_label": "premium_theme_plans"
     },
     {
-      "label": "BASIC_THEME_PLANS",
-      "file_type": "code",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L5",
-      "id": "context_appthemes_basic_theme_plans",
-      "community": 85,
-      "norm_label": "basic_theme_plans"
-    },
-    {
       "label": "APP_THEMES",
       "file_type": "code",
       "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L7",
+      "source_location": "L4",
       "id": "context_appthemes_app_themes",
       "community": 85,
       "norm_label": "app_themes"
@@ -23166,7 +23112,7 @@
       "label": "APP_THEME_IDS",
       "file_type": "code",
       "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L864",
+      "source_location": "L408",
       "id": "context_appthemes_app_theme_ids",
       "community": 85,
       "norm_label": "app_theme_ids"
@@ -23175,7 +23121,7 @@
       "label": "getAppTheme()",
       "file_type": "code",
       "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L866",
+      "source_location": "L410",
       "id": "context_appthemes_getapptheme",
       "community": 85,
       "norm_label": "getapptheme()"
@@ -23184,7 +23130,7 @@
       "label": "isAppThemeId()",
       "file_type": "code",
       "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L870",
+      "source_location": "L414",
       "id": "context_appthemes_isappthemeid",
       "community": 85,
       "norm_label": "isappthemeid()"
@@ -23193,46 +23139,19 @@
       "label": "isThemeAvailableForPlan()",
       "file_type": "code",
       "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L874",
+      "source_location": "L418",
       "id": "context_appthemes_isthemeavailableforplan",
       "community": 85,
       "norm_label": "isthemeavailableforplan()"
     },
     {
-      "label": "isBasicTheme()",
-      "file_type": "code",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L879",
-      "id": "context_appthemes_isbasictheme",
-      "community": 85,
-      "norm_label": "isbasictheme()"
-    },
-    {
-      "label": "getDefaultThemeIdForMode()",
-      "file_type": "code",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L884",
-      "id": "context_appthemes_getdefaultthemeidformode",
-      "community": 85,
-      "norm_label": "getdefaultthemeidformode()"
-    },
-    {
       "label": "resolveThemeIdForAccess()",
       "file_type": "code",
       "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L893",
+      "source_location": "L423",
       "id": "context_appthemes_resolvethemeidforaccess",
       "community": 85,
       "norm_label": "resolvethemeidforaccess()"
-    },
-    {
-      "label": "getSystemPreferredThemeId()",
-      "file_type": "code",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L901",
-      "id": "context_appthemes_getsystempreferredthemeid",
-      "community": 85,
-      "norm_label": "getsystempreferredthemeid()"
     },
     {
       "label": "Layout.jsx",
@@ -23366,7 +23285,7 @@
       "source_file": "frontend/src/kitchen/Layout.jsx",
       "source_location": "L201",
       "id": "kitchen_layout_kitchenlayout",
-      "community": 37,
+      "community": 43,
       "norm_label": "kitchenlayout()"
     },
     {
@@ -23465,7 +23384,7 @@
       "source_file": "frontend/src/kitchen/api.js",
       "source_location": "L30",
       "id": "kitchen_api_settoken",
-      "community": 54,
+      "community": 18,
       "norm_label": "settoken()"
     },
     {
@@ -23564,7 +23483,7 @@
       "source_file": "frontend/src/kitchen/api.js",
       "source_location": "L187",
       "id": "kitchen_api_activatepaymentsession",
-      "community": 66,
+      "community": 18,
       "norm_label": "activatepaymentsession()"
     },
     {
@@ -23654,7 +23573,7 @@
       "source_file": "frontend/src/kitchen/auth.jsx",
       "source_location": "L257",
       "id": "kitchen_auth_useauth",
-      "community": 37,
+      "community": 18,
       "norm_label": "useauth()"
     },
     {
@@ -23861,7 +23780,7 @@
       "source_file": "frontend/src/kitchen/components/CategoryIcon.jsx",
       "source_location": "L1",
       "id": "components_categoryicon",
-      "community": 158,
+      "community": 229,
       "norm_label": "categoryicon.jsx"
     },
     {
@@ -23870,7 +23789,7 @@
       "source_file": "frontend/src/kitchen/components/CategoryIcon.jsx",
       "source_location": "L4",
       "id": "components_categoryicon_categoryicon",
-      "community": 158,
+      "community": 229,
       "norm_label": "categoryicon()"
     },
     {
@@ -23897,7 +23816,7 @@
       "source_file": "frontend/src/kitchen/components/DishModal.jsx",
       "source_location": "L23",
       "id": "components_dishmodal_dishmodal",
-      "community": 16,
+      "community": 18,
       "norm_label": "dishmodal()"
     },
     {
@@ -24266,7 +24185,7 @@
       "source_file": "frontend/src/kitchen/components/ScreenSkeletons.jsx",
       "source_location": "L59",
       "id": "components_screenskeletons_dishgridskeleton",
-      "community": 15,
+      "community": 37,
       "norm_label": "dishgridskeleton()"
     },
     {
@@ -24275,7 +24194,7 @@
       "source_file": "frontend/src/kitchen/components/ScreenSkeletons.jsx",
       "source_location": "L91",
       "id": "components_screenskeletons_dishespageskeleton",
-      "community": 15,
+      "community": 37,
       "norm_label": "dishespageskeleton()"
     },
     {
@@ -24572,7 +24491,7 @@
       "source_file": "frontend/src/kitchen/components/WeekPageSkeleton.jsx",
       "source_location": "L92",
       "id": "components_weekpageskeleton_apploadingscreen",
-      "community": 15,
+      "community": 18,
       "norm_label": "apploadingscreen()"
     },
     {
@@ -24608,7 +24527,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L1",
       "id": "components_categoryiconmap",
-      "community": 158,
+      "community": 229,
       "norm_label": "categoryiconmap.js"
     },
     {
@@ -24617,7 +24536,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L10",
       "id": "components_categoryiconmap_category_icon_by_code",
-      "community": 158,
+      "community": 229,
       "norm_label": "category_icon_by_code"
     },
     {
@@ -24626,7 +24545,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L21",
       "id": "components_categoryiconmap_category_code_aliases",
-      "community": 158,
+      "community": 229,
       "norm_label": "category_code_aliases"
     },
     {
@@ -24635,7 +24554,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L27",
       "id": "components_categoryiconmap_normalizecategorycode",
-      "community": 158,
+      "community": 229,
       "norm_label": "normalizecategorycode()"
     },
     {
@@ -24644,7 +24563,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L37",
       "id": "components_categoryiconmap_resolvecategorycode",
-      "community": 158,
+      "community": 229,
       "norm_label": "resolvecategorycode()"
     },
     {
@@ -24653,7 +24572,7 @@
       "source_file": "frontend/src/kitchen/components/categoryIconMap.js",
       "source_location": "L49",
       "id": "components_categoryiconmap_getcategoryiconbycode",
-      "community": 158,
+      "community": 229,
       "norm_label": "getcategoryiconbycode()"
     },
     {
@@ -24779,7 +24698,7 @@
       "source_file": "frontend/src/kitchen/components/cooking/RecipeStepCard.jsx",
       "source_location": "L1",
       "id": "cooking_recipestepcard",
-      "community": 31,
+      "community": 45,
       "norm_label": "recipestepcard.jsx"
     },
     {
@@ -24788,7 +24707,7 @@
       "source_file": "frontend/src/kitchen/components/cooking/RecipeStepCard.jsx",
       "source_location": "L5",
       "id": "cooking_recipestepcard_recipestepcard",
-      "community": 31,
+      "community": 45,
       "norm_label": "recipestepcard()"
     },
     {
@@ -24797,7 +24716,7 @@
       "source_file": "frontend/src/kitchen/components/cooking/RecipeStepCard.jsx",
       "source_location": "L87",
       "id": "cooking_recipestepcard_normalize",
-      "community": 31,
+      "community": 45,
       "norm_label": "normalize()"
     },
     {
@@ -25166,7 +25085,7 @@
       "source_file": "frontend/src/kitchen/components/ui/DinnerUpgradeBanner.jsx",
       "source_location": "L1",
       "id": "ui_dinnerupgradebanner",
-      "community": 158,
+      "community": 229,
       "norm_label": "dinnerupgradebanner.jsx"
     },
     {
@@ -25175,7 +25094,7 @@
       "source_file": "frontend/src/kitchen/components/ui/DinnerUpgradeBanner.jsx",
       "source_location": "L4",
       "id": "ui_dinnerupgradebanner_dinnerupgradebanner",
-      "community": 158,
+      "community": 229,
       "norm_label": "dinnerupgradebanner()"
     },
     {
@@ -26111,7 +26030,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminLoginPage.jsx",
       "source_location": "L1",
       "id": "pages_adminloginpage",
-      "community": 54,
+      "community": 18,
       "norm_label": "adminloginpage.jsx"
     },
     {
@@ -26120,7 +26039,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminLoginPage.jsx",
       "source_location": "L9",
       "id": "pages_adminloginpage_adminloginpage",
-      "community": 54,
+      "community": 18,
       "norm_label": "adminloginpage()"
     },
     {
@@ -26678,7 +26597,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminPanelPage.jsx",
       "source_location": "L7230",
       "id": "pages_adminpanelpage_adminpanelpage",
-      "community": 37,
+      "community": 43,
       "norm_label": "adminpanelpage()"
     },
     {
@@ -26759,7 +26678,7 @@
       "source_file": "frontend/src/kitchen/pages/BootstrapPage.jsx",
       "source_location": "L1",
       "id": "pages_bootstrappage",
-      "community": 37,
+      "community": 18,
       "norm_label": "bootstrappage.jsx"
     },
     {
@@ -26768,7 +26687,7 @@
       "source_file": "frontend/src/kitchen/pages/BootstrapPage.jsx",
       "source_location": "L8",
       "id": "pages_bootstrappage_bootstrappage",
-      "community": 37,
+      "community": 18,
       "norm_label": "bootstrappage()"
     },
     {
@@ -27227,7 +27146,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L1",
       "id": "pages_dishespage",
-      "community": 158,
+      "community": 37,
       "norm_label": "dishespage.jsx"
     },
     {
@@ -27236,7 +27155,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L8",
       "id": "pages_dishespage_apisync",
-      "community": 158,
+      "community": 37,
       "norm_label": "apisync"
     },
     {
@@ -27245,7 +27164,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L23",
       "id": "pages_dishespage_assign_day_labels",
-      "community": 158,
+      "community": 37,
       "norm_label": "assign_day_labels"
     },
     {
@@ -27254,7 +27173,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L25",
       "id": "pages_dishespage_getmondayiso",
-      "community": 158,
+      "community": 37,
       "norm_label": "getmondayiso()"
     },
     {
@@ -27263,7 +27182,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L33",
       "id": "pages_dishespage_adddaystoiso",
-      "community": 158,
+      "community": 37,
       "norm_label": "adddaystoiso()"
     },
     {
@@ -27272,7 +27191,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L40",
       "id": "pages_dishespage_buildassigndays",
-      "community": 158,
+      "community": 37,
       "norm_label": "buildassigndays()"
     },
     {
@@ -27281,7 +27200,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L51",
       "id": "pages_dishespage_formatweeklabel",
-      "community": 158,
+      "community": 37,
       "norm_label": "formatweeklabel()"
     },
     {
@@ -27290,7 +27209,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L62",
       "id": "pages_dishespage_getassigndaylabel",
-      "community": 158,
+      "community": 37,
       "norm_label": "getassigndaylabel()"
     },
     {
@@ -27299,7 +27218,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L69",
       "id": "pages_dishespage_getassigndaynumber",
-      "community": 158,
+      "community": 37,
       "norm_label": "getassigndaynumber()"
     },
     {
@@ -27308,7 +27227,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L75",
       "id": "pages_dishespage_chevronicon",
-      "community": 158,
+      "community": 37,
       "norm_label": "chevronicon()"
     },
     {
@@ -27326,7 +27245,7 @@
       "source_file": "frontend/src/kitchen/pages/DishesPage.jsx",
       "source_location": "L1775",
       "id": "pages_dishespage_normalizemealtype",
-      "community": 158,
+      "community": 37,
       "norm_label": "normalizemealtype()"
     },
     {
@@ -27353,7 +27272,7 @@
       "source_file": "frontend/src/kitchen/pages/PaymentCancelledPage.jsx",
       "source_location": "L1",
       "id": "pages_paymentcancelledpage",
-      "community": 18,
+      "community": 43,
       "norm_label": "paymentcancelledpage.jsx"
     },
     {
@@ -27362,7 +27281,7 @@
       "source_file": "frontend/src/kitchen/pages/PaymentCancelledPage.jsx",
       "source_location": "L7",
       "id": "pages_paymentcancelledpage_paymentcancelledpage",
-      "community": 18,
+      "community": 43,
       "norm_label": "paymentcancelledpage()"
     },
     {
@@ -27371,7 +27290,7 @@
       "source_file": "frontend/src/kitchen/pages/PaymentSuccessPage.jsx",
       "source_location": "L1",
       "id": "pages_paymentsuccesspage",
-      "community": 66,
+      "community": 18,
       "norm_label": "paymentsuccesspage.jsx"
     },
     {
@@ -27380,7 +27299,7 @@
       "source_file": "frontend/src/kitchen/pages/PaymentSuccessPage.jsx",
       "source_location": "L10",
       "id": "pages_paymentsuccesspage_paid_plans",
-      "community": 66,
+      "community": 18,
       "norm_label": "paid_plans"
     },
     {
@@ -27389,7 +27308,7 @@
       "source_file": "frontend/src/kitchen/pages/PaymentSuccessPage.jsx",
       "source_location": "L12",
       "id": "pages_paymentsuccesspage_planlabel",
-      "community": 66,
+      "community": 18,
       "norm_label": "planlabel()"
     },
     {
@@ -27398,7 +27317,7 @@
       "source_file": "frontend/src/kitchen/pages/PaymentSuccessPage.jsx",
       "source_location": "L18",
       "id": "pages_paymentsuccesspage_paymentsuccesspage",
-      "community": 66,
+      "community": 18,
       "norm_label": "paymentsuccesspage()"
     },
     {
@@ -27425,7 +27344,7 @@
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
       "source_location": "L38",
       "id": "pages_settingspage_initialsfromname",
-      "community": 16,
+      "community": 160,
       "norm_label": "initialsfromname()"
     },
     {
@@ -27569,7 +27488,7 @@
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
       "source_location": "L199",
       "id": "pages_settingspage_settingspage",
-      "community": 37,
+      "community": 160,
       "norm_label": "settingspage()"
     },
     {
@@ -27884,7 +27803,7 @@
       "source_file": "frontend/src/kitchen/pages/SwapsPage.jsx",
       "source_location": "L1",
       "id": "pages_swapspage",
-      "community": 18,
+      "community": 66,
       "norm_label": "swapspage.jsx"
     },
     {
@@ -27893,7 +27812,7 @@
       "source_file": "frontend/src/kitchen/pages/SwapsPage.jsx",
       "source_location": "L5",
       "id": "pages_swapspage_getmondayiso",
-      "community": 18,
+      "community": 66,
       "norm_label": "getmondayiso()"
     },
     {
@@ -27902,7 +27821,7 @@
       "source_file": "frontend/src/kitchen/pages/SwapsPage.jsx",
       "source_location": "L13",
       "id": "pages_swapspage_swapspage",
-      "community": 18,
+      "community": 66,
       "norm_label": "swapspage()"
     },
     {
@@ -28460,7 +28379,7 @@
       "source_file": "frontend/src/kitchen/queryClient.js",
       "source_location": "L46",
       "id": "kitchen_queryclient_catalogquery",
-      "community": 43,
+      "community": 48,
       "norm_label": "catalogquery()"
     },
     {
@@ -28811,7 +28730,7 @@
       "source_file": "frontend/src/kitchen/utils/dishOrigin.js",
       "source_location": "L1",
       "id": "utils_dishorigin",
-      "community": 158,
+      "community": 37,
       "norm_label": "dishorigin.js"
     },
     {
@@ -28820,7 +28739,7 @@
       "source_file": "frontend/src/kitchen/utils/dishOrigin.js",
       "source_location": "L1",
       "id": "utils_dishorigin_getobjectid",
-      "community": 158,
+      "community": 37,
       "norm_label": "getobjectid()"
     },
     {
@@ -28829,7 +28748,7 @@
       "source_file": "frontend/src/kitchen/utils/dishOrigin.js",
       "source_location": "L7",
       "id": "utils_dishorigin_isdishfromcatalog",
-      "community": 158,
+      "community": 37,
       "norm_label": "isdishfromcatalog()"
     },
     {
@@ -28838,7 +28757,7 @@
       "source_file": "frontend/src/kitchen/utils/dishOrigin.js",
       "source_location": "L12",
       "id": "utils_dishorigin_isusercreateddish",
-      "community": 158,
+      "community": 37,
       "norm_label": "isusercreateddish()"
     },
     {
@@ -28847,7 +28766,7 @@
       "source_file": "frontend/src/kitchen/utils/dishOrigin.js",
       "source_location": "L17",
       "id": "utils_dishorigin_getdishorigin",
-      "community": 158,
+      "community": 37,
       "norm_label": "getdishorigin()"
     },
     {
@@ -28883,7 +28802,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L1",
       "id": "utils_notificationservice",
-      "community": 45,
+      "community": 158,
       "norm_label": "notificationservice.js"
     },
     {
@@ -28892,7 +28811,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L13",
       "id": "utils_notificationservice_getaudioctx",
-      "community": 45,
+      "community": 158,
       "norm_label": "getaudioctx()"
     },
     {
@@ -28901,7 +28820,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L25",
       "id": "utils_notificationservice_primeaudio",
-      "community": 45,
+      "community": 158,
       "norm_label": "primeaudio()"
     },
     {
@@ -28910,7 +28829,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L35",
       "id": "utils_notificationservice_playtimersound",
-      "community": 45,
+      "community": 158,
       "norm_label": "playtimersound()"
     },
     {
@@ -28919,7 +28838,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L64",
       "id": "utils_notificationservice_vibrateifsupported",
-      "community": 45,
+      "community": 158,
       "norm_label": "vibrateifsupported()"
     },
     {
@@ -28928,7 +28847,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L74",
       "id": "utils_notificationservice_notifytimercomplete",
-      "community": 45,
+      "community": 158,
       "norm_label": "notifytimercomplete()"
     },
     {
@@ -28937,7 +28856,7 @@
       "source_file": "frontend/src/kitchen/utils/notificationService.js",
       "source_location": "L98",
       "id": "utils_notificationservice_notifytimerautopaused",
-      "community": 45,
+      "community": 158,
       "norm_label": "notifytimerautopaused()"
     },
     {
@@ -29459,7 +29378,7 @@
       "source_file": "frontend/src/kitchen/utils/userInitials.js",
       "source_location": "L1",
       "id": "utils_userinitials",
-      "community": 229,
+      "community": 43,
       "norm_label": "userinitials.js"
     },
     {
@@ -29468,7 +29387,7 @@
       "source_file": "frontend/src/kitchen/utils/userInitials.js",
       "source_location": "L3",
       "id": "utils_userinitials_defaultinitials",
-      "community": 229,
+      "community": 43,
       "norm_label": "defaultinitials()"
     },
     {
@@ -29477,7 +29396,7 @@
       "source_file": "frontend/src/kitchen/utils/userInitials.js",
       "source_location": "L10",
       "id": "utils_userinitials_readoverrides",
-      "community": 229,
+      "community": 43,
       "norm_label": "readoverrides()"
     },
     {
@@ -29486,7 +29405,7 @@
       "source_file": "frontend/src/kitchen/utils/userInitials.js",
       "source_location": "L21",
       "id": "utils_userinitials_writeoverrides",
-      "community": 229,
+      "community": 43,
       "norm_label": "writeoverrides()"
     },
     {
@@ -29495,7 +29414,7 @@
       "source_file": "frontend/src/kitchen/utils/userInitials.js",
       "source_location": "L25",
       "id": "utils_userinitials_getuserinitialspreference",
-      "community": 229,
+      "community": 43,
       "norm_label": "getuserinitialspreference()"
     },
     {
@@ -29504,7 +29423,7 @@
       "source_file": "frontend/src/kitchen/utils/userInitials.js",
       "source_location": "L31",
       "id": "utils_userinitials_setuserinitialspreference",
-      "community": 229,
+      "community": 43,
       "norm_label": "setuserinitialspreference()"
     },
     {
@@ -29513,7 +29432,7 @@
       "source_file": "frontend/src/kitchen/utils/userInitials.js",
       "source_location": "L43",
       "id": "utils_userinitials_getuserinitials",
-      "community": 229,
+      "community": 43,
       "norm_label": "getuserinitials()"
     },
     {
@@ -29522,7 +29441,7 @@
       "source_file": "frontend/src/kitchen/utils/userInitials.js",
       "source_location": "L49",
       "id": "utils_userinitials_getuserinitialsfromprofile",
-      "community": 229,
+      "community": 43,
       "norm_label": "getuserinitialsfromprofile()"
     },
     {
@@ -29531,7 +29450,7 @@
       "source_file": "frontend/src/kitchen/weekContext.jsx",
       "source_location": "L1",
       "id": "kitchen_weekcontext",
-      "community": 18,
+      "community": 35,
       "norm_label": "weekcontext.jsx"
     },
     {
@@ -29540,7 +29459,7 @@
       "source_file": "frontend/src/kitchen/weekContext.jsx",
       "source_location": "L3",
       "id": "kitchen_weekcontext_getmondayiso",
-      "community": 18,
+      "community": 35,
       "norm_label": "getmondayiso()"
     },
     {
@@ -29549,7 +29468,7 @@
       "source_file": "frontend/src/kitchen/weekContext.jsx",
       "source_location": "L11",
       "id": "kitchen_weekcontext_normalizeweekstart",
-      "community": 18,
+      "community": 35,
       "norm_label": "normalizeweekstart()"
     },
     {
@@ -29558,7 +29477,7 @@
       "source_file": "frontend/src/kitchen/weekContext.jsx",
       "source_location": "L18",
       "id": "kitchen_weekcontext_activeweekcontext",
-      "community": 18,
+      "community": 35,
       "norm_label": "activeweekcontext"
     },
     {
@@ -29567,7 +29486,7 @@
       "source_file": "frontend/src/kitchen/weekContext.jsx",
       "source_location": "L20",
       "id": "kitchen_weekcontext_activeweekprovider",
-      "community": 18,
+      "community": 35,
       "norm_label": "activeweekprovider()"
     },
     {
@@ -79609,9 +79528,9 @@
       "source_file": "backend/src/kitchen/models/KitchenUser.js",
       "source_location": "L2",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "models_kitchenuser",
-      "target": "kitchen_themeservice"
+      "target": "kitchen_themeservice",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -79620,9 +79539,9 @@
       "source_file": "backend/src/kitchen/models/KitchenUser.js",
       "source_location": "L2",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "models_kitchenuser",
-      "target": "kitchen_themeservice_normalizethemeid"
+      "target": "kitchen_themeservice_normalizethemeid",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -84996,9 +84915,9 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L29",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "routes_users",
-      "target": "kitchen_subscriptionservice"
+      "target": "kitchen_subscriptionservice",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -85007,9 +84926,9 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L29",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "routes_users",
-      "target": "kitchen_subscriptionservice_isprolikehousehold"
+      "target": "kitchen_subscriptionservice_isprolikehousehold",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -85018,9 +84937,9 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L30",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "routes_users",
-      "target": "kitchen_themeservice"
+      "target": "kitchen_themeservice",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -85029,9 +84948,9 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L30",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "routes_users",
-      "target": "kitchen_themeservice_isthemeavailableforplan"
+      "target": "kitchen_themeservice_isthemeavailableforplan",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -85040,9 +84959,9 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L30",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "routes_users",
-      "target": "kitchen_themeservice_isvalidthemeid"
+      "target": "kitchen_themeservice_isvalidthemeid",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -85051,9 +84970,9 @@
       "source_file": "backend/src/kitchen/routes/users.js",
       "source_location": "L30",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "routes_users",
-      "target": "kitchen_themeservice_normalizethemeid"
+      "target": "kitchen_themeservice_normalizethemeid",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -87729,18 +87648,8 @@
       "source_file": "backend/src/kitchen/themeService.js",
       "source_location": "L3",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "kitchen_themeservice",
-      "target": "kitchen_themeservice_app_theme_ids"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/kitchen/themeService.js",
-      "source_location": "L19",
-      "weight": 1.0,
-      "source": "kitchen_themeservice",
-      "target": "kitchen_themeservice_basic_access",
+      "target": "kitchen_themeservice_app_theme_ids",
       "confidence_score": 1.0
     },
     {
@@ -87749,9 +87658,9 @@
       "source_file": "backend/src/kitchen/themeService.js",
       "source_location": "L30",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "kitchen_themeservice",
-      "target": "kitchen_themeservice_isthemeavailableforplan"
+      "target": "kitchen_themeservice_isthemeavailableforplan",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -87759,9 +87668,9 @@
       "source_file": "backend/src/kitchen/themeService.js",
       "source_location": "L26",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "kitchen_themeservice",
-      "target": "kitchen_themeservice_isvalidthemeid"
+      "target": "kitchen_themeservice_isvalidthemeid",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -87769,18 +87678,8 @@
       "source_file": "backend/src/kitchen/themeService.js",
       "source_location": "L21",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "kitchen_themeservice",
-      "target": "kitchen_themeservice_normalizethemeid"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "backend/src/kitchen/themeService.js",
-      "source_location": "L20",
-      "weight": 1.0,
-      "source": "kitchen_themeservice",
-      "target": "kitchen_themeservice_premium_access",
+      "target": "kitchen_themeservice_normalizethemeid",
       "confidence_score": 1.0
     },
     {
@@ -87789,9 +87688,9 @@
       "source_file": "backend/src/kitchen/themeService.js",
       "source_location": "L12",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "kitchen_themeservice",
-      "target": "kitchen_themeservice_theme_plan_access"
+      "target": "kitchen_themeservice_theme_plan_access",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -87800,9 +87699,9 @@
       "source_file": "backend/src/kitchen/themeService.js",
       "source_location": "L31",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "kitchen_themeservice_isthemeavailableforplan",
-      "target": "kitchen_themeservice_normalizethemeid"
+      "target": "kitchen_themeservice_normalizethemeid",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -91764,41 +91663,8 @@
       "source_file": "frontend/src/context/ThemeContext.jsx",
       "source_location": "L2",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_themecontext",
-      "target": "context_appthemes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L2",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "context_themecontext",
-      "target": "context_appthemes_app_themes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L2",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "context_themecontext",
-      "target": "context_appthemes_getapptheme"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L2",
-      "weight": 1.0,
-      "source": "context_themecontext",
-      "target": "context_appthemes_getdefaultthemeidformode",
+      "target": "context_appthemes",
       "confidence_score": 1.0
     },
     {
@@ -91809,7 +91675,7 @@
       "source_location": "L2",
       "weight": 1.0,
       "source": "context_themecontext",
-      "target": "context_appthemes_getsystempreferredthemeid",
+      "target": "context_appthemes_app_themes",
       "confidence_score": 1.0
     },
     {
@@ -91819,9 +91685,9 @@
       "source_file": "frontend/src/context/ThemeContext.jsx",
       "source_location": "L2",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_themecontext",
-      "target": "context_appthemes_isappthemeid"
+      "target": "context_appthemes_getapptheme",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -91830,9 +91696,20 @@
       "source_file": "frontend/src/context/ThemeContext.jsx",
       "source_location": "L2",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_themecontext",
-      "target": "context_appthemes_resolvethemeidforaccess"
+      "target": "context_appthemes_isappthemeid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "frontend/src/context/ThemeContext.jsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "context_themecontext",
+      "target": "context_appthemes_resolvethemeidforaccess",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -91860,38 +91737,8 @@
       "source_file": "frontend/src/context/ThemeContext.jsx",
       "source_location": "L7",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_themecontext",
-      "target": "context_themecontext_normalizestoredtheme"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L26",
-      "weight": 1.0,
-      "source": "context_themecontext",
-      "target": "context_themecontext_readinitialtheme",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L41",
-      "weight": 1.0,
-      "source": "context_themecontext",
-      "target": "context_themecontext_readlastthemeformode",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L34",
-      "weight": 1.0,
-      "source": "context_themecontext",
-      "target": "context_themecontext_rememberthemeformode",
+      "target": "context_themecontext_normalizestoredtheme",
       "confidence_score": 1.0
     },
     {
@@ -91975,73 +91822,7 @@
       "source_file": "frontend/src/context/ThemeContext.jsx",
       "source_location": "L8",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_themecontext_normalizestoredtheme",
-      "target": "context_appthemes_isappthemeid"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L29",
-      "weight": 1.0,
-      "source": "context_themecontext_readinitialtheme",
-      "target": "context_themecontext_normalizestoredtheme",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L31",
-      "weight": 1.0,
-      "source": "context_themecontext_readinitialtheme",
-      "target": "context_appthemes_getsystempreferredthemeid",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L36",
-      "weight": 1.0,
-      "source": "context_themecontext_rememberthemeformode",
-      "target": "context_appthemes_getapptheme",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L44",
-      "weight": 1.0,
-      "source": "context_themecontext_readlastthemeformode",
-      "target": "context_appthemes_getapptheme",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L46",
-      "weight": 1.0,
-      "source": "context_themecontext_readlastthemeformode",
-      "target": "context_appthemes_getdefaultthemeidformode",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/ThemeContext.jsx",
-      "source_location": "L44",
-      "weight": 1.0,
-      "source": "context_themecontext_readlastthemeformode",
       "target": "context_appthemes_isappthemeid",
       "confidence_score": 1.0
     },
@@ -92128,9 +91909,9 @@
       "source_file": "frontend/src/context/appThemes.js",
       "source_location": "L408",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_appthemes",
-      "target": "context_appthemes_app_theme_ids"
+      "target": "context_appthemes_app_theme_ids",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -92138,18 +91919,8 @@
       "source_file": "frontend/src/context/appThemes.js",
       "source_location": "L4",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_appthemes",
-      "target": "context_appthemes_app_themes"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L5",
-      "weight": 1.0,
-      "source": "context_appthemes",
-      "target": "context_appthemes_basic_theme_plans",
+      "target": "context_appthemes_app_themes",
       "confidence_score": 1.0
     },
     {
@@ -92158,28 +91929,8 @@
       "source_file": "frontend/src/context/appThemes.js",
       "source_location": "L410",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_appthemes",
-      "target": "context_appthemes_getapptheme"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L884",
-      "weight": 1.0,
-      "source": "context_appthemes",
-      "target": "context_appthemes_getdefaultthemeidformode",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L901",
-      "weight": 1.0,
-      "source": "context_appthemes",
-      "target": "context_appthemes_getsystempreferredthemeid",
+      "target": "context_appthemes_getapptheme",
       "confidence_score": 1.0
     },
     {
@@ -92188,18 +91939,8 @@
       "source_file": "frontend/src/context/appThemes.js",
       "source_location": "L414",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_appthemes",
-      "target": "context_appthemes_isappthemeid"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L879",
-      "weight": 1.0,
-      "source": "context_appthemes",
-      "target": "context_appthemes_isbasictheme",
+      "target": "context_appthemes_isappthemeid",
       "confidence_score": 1.0
     },
     {
@@ -92208,9 +91949,9 @@
       "source_file": "frontend/src/context/appThemes.js",
       "source_location": "L418",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_appthemes",
-      "target": "context_appthemes_isthemeavailableforplan"
+      "target": "context_appthemes_isthemeavailableforplan",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -92218,9 +91959,9 @@
       "source_file": "frontend/src/context/appThemes.js",
       "source_location": "L2",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_appthemes",
-      "target": "context_appthemes_premium_theme_plans"
+      "target": "context_appthemes_premium_theme_plans",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -92228,9 +91969,9 @@
       "source_file": "frontend/src/context/appThemes.js",
       "source_location": "L423",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_appthemes",
-      "target": "context_appthemes_resolvethemeidforaccess"
+      "target": "context_appthemes_resolvethemeidforaccess",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -92239,9 +91980,9 @@
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "pages_settingspage",
-      "target": "context_appthemes"
+      "target": "context_appthemes",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -92250,19 +91991,8 @@
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "pages_settingspage",
-      "target": "context_appthemes_app_themes"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L880",
-      "weight": 1.0,
-      "source": "context_appthemes_isbasictheme",
-      "target": "context_appthemes_getapptheme",
+      "target": "context_appthemes_app_themes",
       "confidence_score": 1.0
     },
     {
@@ -92272,9 +92002,9 @@
       "source_file": "frontend/src/context/appThemes.js",
       "source_location": "L419",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_appthemes_isthemeavailableforplan",
-      "target": "context_appthemes_getapptheme"
+      "target": "context_appthemes_getapptheme",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -92283,9 +92013,9 @@
       "source_file": "frontend/src/context/appThemes.js",
       "source_location": "L425",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_appthemes_resolvethemeidforaccess",
-      "target": "context_appthemes_getapptheme"
+      "target": "context_appthemes_getapptheme",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -92294,30 +92024,8 @@
       "source_file": "frontend/src/context/appThemes.js",
       "source_location": "L424",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "context_appthemes_resolvethemeidforaccess",
-      "target": "context_appthemes_isappthemeid"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L896",
-      "weight": 1.0,
-      "source": "context_appthemes_resolvethemeidforaccess",
-      "target": "context_appthemes_isbasictheme",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "frontend/src/context/appThemes.js",
-      "source_location": "L897",
-      "weight": 1.0,
-      "source": "context_appthemes_resolvethemeidforaccess",
-      "target": "context_appthemes_getdefaultthemeidformode",
+      "target": "context_appthemes_isappthemeid",
       "confidence_score": 1.0
     },
     {
@@ -92717,9 +92425,9 @@
       "source_file": "frontend/src/kitchen/Layout.jsx",
       "source_location": "L20",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "kitchen_layout",
-      "target": "kitchen_subscription"
+      "target": "kitchen_subscription",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -92728,9 +92436,9 @@
       "source_file": "frontend/src/kitchen/Layout.jsx",
       "source_location": "L20",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "kitchen_layout",
-      "target": "kitchen_subscription_isprolikehousehold"
+      "target": "kitchen_subscription_isprolikehousehold",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -103697,9 +103405,9 @@
       "source_file": "frontend/src/kitchen/pages/SettingsPage.jsx",
       "source_location": "L17",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "pages_settingspage",
-      "target": "kitchen_subscription_isprolikehousehold"
+      "target": "kitchen_subscription_isprolikehousehold",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -116880,5 +116588,5 @@
       "source_file": "CLAUDE.md"
     }
   ],
-  "built_at_commit": "f12343cf2f19605a2b0eb5e7f0f49815db2d0869"
+  "built_at_commit": "464dd00e8766d6a703fec4aa6bfadd0593b1576c"
 }
