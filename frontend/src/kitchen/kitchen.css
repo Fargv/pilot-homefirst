@@ -9798,6 +9798,33 @@ body {
   align-self: center;
 }
 
+/* Shared discrete header WhatsApp: icon only, green, no border/background.
+   Used by Lista (all sizes) and Planificación's mobile line-1 instance. */
+.hdr-wa-btn {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #25D366 !important;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-md);
+}
+.hdr-wa-btn:hover {
+  background: rgba(37, 211, 102, 0.10) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transform: none;
+}
+[data-theme="dark"] .hdr-wa-btn {
+  color: #25D366 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+/* The mobile line-1 instance is hidden on desktop (only the tabs-row one shows) */
+.hdr-wa-mobile {
+  display: none;
+}
+
 .kitchen-share-sheet {
   display: grid;
   gap: 12px;
@@ -23745,62 +23772,122 @@ body,
     line-height: 1.08;
   }
 
-  .page-header-primary-action {
-    min-width: 0;
+  /* ── Unified mobile header (Planificación + Lista): 3 stacked lines ──
+     L1 title + WhatsApp · L2 week picker · L3 tabs · (L4 budget footer).
+     overflow-x: clip guards residual scroll without clipping the
+     randomize accordion (vertical stays visible). */
+  .page-header {
+    overflow-x: clip;
   }
 
+  .page-header-primary-action {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  /* Lines 2 & 3: controls stack into a column, picker above tabs */
   .page-header-controls {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
     overflow: visible;
   }
 
-  .kitchen-week-header .page-header-controls {
-    grid-template-columns: minmax(0, 1fr) 44px;
-    grid-template-areas:
-      "date share"
-      "meal meal";
-    align-items: center;
-  }
-
-  .page-header-controls-left,
-  .page-header-controls-right,
-  .kitchen-week-header-tabs-row {
+  .page-header-controls-left {
+    order: 2;
+    width: 100%;
     min-width: 0;
+    margin: 0;
   }
 
-  .kitchen-week-header .page-header-controls-left {
-    grid-area: date;
-    overflow: hidden;
-  }
-
-  .kitchen-week-header .page-header-controls-right,
-  .kitchen-week-header .kitchen-week-header-tabs-row {
-    display: contents;
-  }
-
-  .kitchen-week-header .kitchen-meal-tabs {
-    grid-area: meal;
-    width: min(100%, 176px);
-    justify-self: center;
-  }
-
-  .kitchen-week-header .kitchen-tab-share-button {
-    grid-area: share;
-    justify-self: end;
-    min-width: 44px;
-    width: 44px;
-    height: 44px;
-  }
-
-  .kitchen-week-header .kitchen-week-header-navigator {
+  .page-header-controls-right {
+    order: 1;
+    width: 100%;
     min-width: 0;
-    max-width: 100%;
+    margin: 0;
   }
 
   .kitchen-week-header-tabs-row {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    gap: 0;
+  }
+
+  /* Line 2 — week picker: full width, date range never truncates */
+  .page-header .wdp-container {
+    width: 100%;
+  }
+
+  .page-header .wdp-strip {
+    width: 100%;
+    justify-content: flex-start;
     gap: 6px;
+  }
+
+  .page-header .wdp-date-btn {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .page-header .wdp-date-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .page-header .wdp-chevron,
+  .page-header .wdp-today-chip {
+    flex: 0 0 auto;
+  }
+
+  /* Line 3 — tabs: full width, horizontal scroll if they overflow */
+  .kitchen-meal-tabs,
+  .page-header .shopping-tabs-inline {
+    display: flex;
+    width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kitchen-meal-tabs::-webkit-scrollbar,
+  .page-header .shopping-tabs-inline::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kitchen-meal-tabs .kitchen-meal-tab,
+  .page-header .shopping-tabs-inline .kitchen-tab-button {
+    flex: 1 0 auto;
+    white-space: nowrap;
+  }
+
+  /* WhatsApp: hide the desktop circled instance, show the discrete one */
+  .hdr-wa-desktop {
+    display: none !important;
+  }
+
+  .hdr-wa-mobile {
+    display: inline-flex;
+  }
+
+  .hdr-wa-btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 8px;
+  }
+
+  .hdr-wa-btn .kitchen-whatsapp-icon-button-svg {
+    width: 20px;
+    height: 20px;
   }
 
   .page-header-footer {

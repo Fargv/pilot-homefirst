@@ -2344,34 +2344,55 @@ export default function WeekPage() {
             <PageHeader
               title="Planificación"
               primaryAction={
-                canShowWeekRandomize ? (
-                  canUseFullWeekRandomization ? (
-                    <div className="kitchen-week-randomize-wrap" ref={weekRandomizeRef}>
-                      <button
-                        type="button"
-                        className="kitchen-week-randomize-btn"
-                        onClick={() => openRandomizeMenu(null)}
-                        disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
-                        title={!dishesReadyForCurrentHousehold ? "Actualizando platos..." : "Randomizar semana"}
-                        aria-label="Randomizar semana"
-                        aria-expanded={randomizeMenuOpen && !randomizeDayContext}
-                        aria-controls="week-randomize-accordion"
-                      >
-                        <DiceIcon /> Randomizar
-                        <ChevronDownIcon className={`kitchen-week-randomize-chevron ${randomizeMenuOpen && !randomizeDayContext ? "is-open" : ""}`} width="14" height="14" />
-                      </button>
-                      <div className={`kitchen-randomize-accordion-shell ${randomizeMenuOpen && !randomizeDayContext ? "is-open" : ""}`}>
-                        <div className="kitchen-randomize-accordion-inner">
-                          {renderRandomizePanel(true)}
+                <>
+                  {canShowWeekRandomize ? (
+                    canUseFullWeekRandomization ? (
+                      <div className="kitchen-week-randomize-wrap" ref={weekRandomizeRef}>
+                        <button
+                          type="button"
+                          className="kitchen-week-randomize-btn"
+                          onClick={() => openRandomizeMenu(null)}
+                          disabled={weekRandomizing || !dishesReadyForCurrentHousehold}
+                          title={!dishesReadyForCurrentHousehold ? "Actualizando platos..." : "Randomizar semana"}
+                          aria-label="Randomizar semana"
+                          aria-expanded={randomizeMenuOpen && !randomizeDayContext}
+                          aria-controls="week-randomize-accordion"
+                        >
+                          <DiceIcon /> Randomizar
+                          <ChevronDownIcon className={`kitchen-week-randomize-chevron ${randomizeMenuOpen && !randomizeDayContext ? "is-open" : ""}`} width="14" height="14" />
+                        </button>
+                        <div className={`kitchen-randomize-accordion-shell ${randomizeMenuOpen && !randomizeDayContext ? "is-open" : ""}`}>
+                          <div className="kitchen-randomize-accordion-inner">
+                            {renderRandomizePanel(true)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <ProGateButton className="kitchen-week-randomize-btn">
-                      <DiceIcon /> Randomizar
-                    </ProGateButton>
-                  )
-                ) : null
+                    ) : (
+                      <ProGateButton className="kitchen-week-randomize-btn">
+                        <DiceIcon /> Randomizar
+                      </ProGateButton>
+                    )
+                  ) : null}
+                  {/* Mobile-only discrete WhatsApp on line 1 (desktop keeps the one in the tabs row) */}
+                  {canUseDinners ? (
+                    <ShareWhatsAppButton
+                      iconOnly
+                      size={20}
+                      className="hdr-wa-btn hdr-wa-mobile"
+                      buttonLabel="Compartir semana por WhatsApp"
+                      title="Compartir en HomeFirst"
+                      items={[
+                        {
+                          id: "week",
+                          label: "Compartir esta semana",
+                          description: "Envia un enlace directo a esta semana. La otra persona tendra que iniciar sesion para verla.",
+                          url: buildWeekShareUrl(weekStart),
+                          message: `Take a look at this week in HomeFirst: ${buildWeekShareUrl(weekStart)}`
+                        }
+                      ]}
+                    />
+                  ) : null}
+                </>
               }
               secondaryRight={
                 <WeekDatePicker
@@ -2431,7 +2452,7 @@ export default function WeekPage() {
                       <ShareWhatsAppButton
                         iconOnly
                         size={22}
-                        className="kitchen-tab-share-button"
+                        className="kitchen-tab-share-button hdr-wa-desktop"
                         buttonLabel="Compartir semana por WhatsApp"
                         title="Compartir en HomeFirst"
                         items={[

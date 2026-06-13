@@ -1228,7 +1228,7 @@ export default function ShoppingPage() {
           <ShareWhatsAppButton
             iconOnly
             size={18}
-            className="shopping-header-wa-btn"
+            className="shopping-header-wa-btn hdr-wa-btn"
             buttonLabel="Compartir lista de la compra"
             items={[
               {
