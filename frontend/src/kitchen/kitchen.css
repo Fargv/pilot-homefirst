@@ -6662,6 +6662,73 @@ body {
   animation: hfToastIn 200ms ease-out both;
 }
 
+/* ── Action banner: full-width bottom sheet on mobile ──────────────── */
+@media (max-width: 767px) {
+  /* Stack anchors to bottom edge of screen, full width */
+  .hf-toast-stack {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    align-items: stretch;
+    gap: 0;
+    /* Reverse so action banner sits at bottom, push-toasts float above */
+    flex-direction: column-reverse;
+  }
+
+  /* Action banner fills the width, sits flush at bottom above nav */
+  .hf-toast--action {
+    border-radius: 12px 12px 0 0;
+    max-width: none;
+    min-width: 0;
+    background: var(--surface-elevated, var(--modal-bg, #fff));
+    color: var(--text-primary);
+    backdrop-filter: none;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.14);
+    border-top: 1px solid var(--border-soft);
+    padding-top: 14px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px) + 56px);
+    z-index: 500;
+  }
+
+  /* Icon color stays legible on light background */
+  .hf-toast--action .hf-toast-icon { color: var(--warning-text, #b45309); }
+
+  /* Action button uses brand color on light background */
+  .hf-toast-action-btn {
+    background: color-mix(in srgb, var(--hf-brand) 10%, transparent);
+    color: var(--hf-brand);
+    border-radius: var(--radius-sm);
+  }
+
+  .hf-toast-action-btn:hover {
+    background: color-mix(in srgb, var(--hf-brand) 18%, transparent);
+  }
+
+  /* Dismiss button adapts to light background */
+  .hf-toast--action .hf-toast-dismiss {
+    color: var(--text-secondary);
+  }
+
+  .hf-toast--action .hf-toast-dismiss:hover {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-primary);
+  }
+
+  /* Regular pill toasts keep their dark style; align centered above banner */
+  .hf-toast:not(.hf-toast--action) {
+    align-self: center;
+    margin: 0 auto 8px;
+  }
+}
+
+/* Dark mode: action banner uses elevated surface (already dark) */
+[data-theme="dark"] .hf-toast--action {
+  background: var(--hf-surface, #1e293b);
+  border-top-color: var(--hf-border);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+}
+
 @keyframes hfToastIn {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -10060,17 +10127,6 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* "Ahora no" in item-confirm modal: grey neutral, not brand-colored */
-.shopping-item-confirm-skip {
-  background: transparent !important;
-  border: 1px solid var(--border-soft, #E5E7EB) !important;
-  color: var(--text-secondary, #6B7280) !important;
-  box-shadow: none !important;
-}
-
-.shopping-item-confirm-skip:hover {
-  background: var(--surface, #F9FAFB) !important;
-}
 
 .shopping-confirm-item-count {
   margin: 0;
