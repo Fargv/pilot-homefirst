@@ -7,6 +7,7 @@ import { useAuth } from "../../auth.jsx";
 import BitesIcon from "../BitesIcon.jsx";
 
 const COLLAPSED_KEY = "lunchfy_weekly_card_collapsed";
+const TOAST_SHOWN_KEY_PREFIX = "lunchfy_weekly_done_toast_";
 
 function readCollapsedPref() {
   try {
@@ -41,15 +42,6 @@ function CheckIcon() {
     <svg viewBox="0 0 20 20" fill="none" width={16} height={16}>
       <circle cx="10" cy="10" r="9" fill="currentColor" />
       <path d="M6 10.5l3 3 5-6" stroke="var(--text-inverse, #fff)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function CheckCircleIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" width={15} height={15}>
-      <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M6 10.5l3 3 5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -159,9 +151,15 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false, mobile
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
   const [doneExpanded, setDoneExpanded] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [showCompletionToast, setShowCompletionToast] = useState(false);
+  const [toastExiting, setToastExiting] = useState(false);
   const prevAllDoneRef = useRef(false);
   const cardRef = useRef(null);
   const closingTimerRef = useRef(null);
+  const toastTimerRef = useRef(null);
+  // Always-current ref so effects don't stale-close over weeklyState.
+  const weeklyStateRef = useRef(weeklyState);
+  weeklyStateRef.current = weeklyState;
 
   // Compute derived values — safe to derive even before early returns
   const completedCount = weeklyState ? (weeklyState.completedCount ?? 0) : 0;
@@ -170,13 +168,41 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false, mobile
     : 0;
   const weeklyAllDone = completedCount >= totalCount && totalCount > 0;
 
-  // Auto-collapse to done chip when completion is first detected this session.
+  // Detect the false→true transition:
+  //   • Collapse any open "done" view
+  //   • Show a one-time completion toast (mobile instance only, once per week key)
   useEffect(() => {
-    if (weeklyAllDone && !prevAllDoneRef.current) {
-      setDoneExpanded(false);
-    }
+    const prevDone = prevAllDoneRef.current;
     prevAllDoneRef.current = weeklyAllDone;
-  }, [weeklyAllDone]);
+
+    if (!weeklyAllDone || prevDone) return; // not a fresh completion
+
+    setDoneExpanded(false);
+
+    if (!mobileSheet) return; // desktop instance: skip toast
+
+    const ws = weeklyStateRef.current;
+    const weekKey = ws?.participationWeek ?? ws?.cycleWeekIndex;
+    const storageKey = `${TOAST_SHOWN_KEY_PREFIX}${weekKey}`;
+    try {
+      if (weekKey == null || localStorage.getItem(storageKey)) return;
+      localStorage.setItem(storageKey, "1");
+    } catch {
+      return;
+    }
+
+    setShowCompletionToast(true);
+    setToastExiting(false);
+    clearTimeout(toastTimerRef.current);
+    // After 4s start the exit animation, then unmount after the animation.
+    toastTimerRef.current = setTimeout(() => {
+      setToastExiting(true);
+      toastTimerRef.current = setTimeout(() => {
+        setShowCompletionToast(false);
+        setToastExiting(false);
+      }, 400);
+    }, 4000);
+  }, [weeklyAllDone, mobileSheet]);
 
   // Route change: collapse immediately without animation.
   useEffect(() => {
@@ -187,8 +213,11 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false, mobile
     setDoneExpanded(false);
   }, [closeOnRouteChange, location.pathname]);
 
-  // Cleanup timer on unmount.
-  useEffect(() => () => clearTimeout(closingTimerRef.current), []);
+  // Cleanup timers on unmount.
+  useEffect(() => () => {
+    clearTimeout(closingTimerRef.current);
+    clearTimeout(toastTimerRef.current);
+  }, []);
 
   // Animate the sheet closed, then update state once the animation finishes.
   const closeSheet = useCallback(() => {
@@ -268,38 +297,27 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false, mobile
     setCollapsed(false);
   };
 
-  // ── All done → compact done chip (default state when all challenges complete) ──
+  // ── Completion toast portal (rendered at body level regardless of card state)
+  const totalBites = weeklyState.totalBitesAvailable ?? 0;
+  const toastPortal = showCompletionToast
+    ? createPortal(
+        <div className={`wc-completion-toast${toastExiting ? " is-exiting" : ""}`}>
+          🏆 ¡Retos de la semana completados!{totalBites > 0 ? ` +${totalBites} Bites` : ""}
+        </div>,
+        document.body
+      )
+    : null;
+
+  // ── All done → hide banner completely; toast handles the feedback ──────
   if (weeklyAllDone && !doneExpanded) {
-    return (
-      <>
-        <div
-          className="weekly-challenge-done-chip"
-          role="button"
-          tabIndex={0}
-          aria-label="Ver retos semanales completados"
-          onClick={() => setDoneExpanded(true)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              setDoneExpanded(true);
-            }
-          }}
-        >
-          <CheckCircleIcon />
-          <span className="weekly-challenge-done-chip-text">Retos semanales completados</span>
-          <span className="weekly-challenge-done-chip-week">Semana {weeklyState.participationWeek ?? weeklyState.cycleWeekIndex}</span>
-          <span className="weekly-challenge-done-chip-expand" aria-hidden="true">
-            <ChevronDownIcon />
-          </span>
-        </div>
-      </>
-    );
+    return toastPortal;
   }
 
   // ── Collapsed slim bar (in-progress) ──────────────────────────────────
   if (collapsed && !weeklyAllDone) {
     return (
       <>
+        {toastPortal}
         <div
           className="weekly-challenge-slim"
           role="button"
@@ -338,7 +356,7 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false, mobile
     );
   }
 
-  // ── Shared card content (used by both portal and inline renders) ─────────
+  // ── Shared card content ────────────────────────────────────────────────
   const cardContent = (
     <>
       <div className="weekly-challenge-top">
@@ -410,28 +428,34 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false, mobile
   // ── Mobile: portal to body so backdrop-filter on the header doesn't trap
   //    the fixed-position sheet inside the header's stacking context.
   if (mobileSheet) {
-    return createPortal(
+    return (
       <>
-        <div
-          className={`wc-portal-overlay${closing ? " is-closing" : ""}`}
-          aria-hidden="true"
-          onClick={closeSheet}
-        />
-        <div
-          className={`wc-portal-sheet${closing ? " is-closing" : ""}`}
-          ref={cardRef}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {cardContent}
-        </div>
-      </>,
-      document.body
+        {toastPortal}
+        {createPortal(
+          <>
+            <div
+              className={`wc-portal-overlay${closing ? " is-closing" : ""}`}
+              aria-hidden="true"
+              onClick={closeSheet}
+            />
+            <div
+              className={`wc-portal-sheet${closing ? " is-closing" : ""}`}
+              ref={cardRef}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {cardContent}
+            </div>
+          </>,
+          document.body
+        )}
+      </>
     );
   }
 
   // ── Desktop: inline card (no portal needed, sidebar has no backdrop-filter)
   return (
     <>
+      {toastPortal}
       <div className={`weekly-challenge-mobile-backdrop${closing ? " is-closing" : ""}`} aria-hidden="true" />
       <div className={`weekly-challenge-card${closing ? " is-closing" : ""}`} ref={cardRef}>
         {cardContent}

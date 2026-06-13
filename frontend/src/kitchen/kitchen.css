@@ -19432,6 +19432,62 @@ td.recipe-qty-scaled {
   }
 }
 
+/* ── Completion toast ─────────────────────────────────────────────────── */
+.wc-completion-toast {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  background: #111827;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 22px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  z-index: 10001;
+  pointer-events: none;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.34);
+  animation: wc-toast-enter 0.3s ease-out both;
+}
+
+.wc-completion-toast.is-exiting {
+  animation: wc-toast-exit 0.4s ease-in forwards;
+}
+
+@keyframes wc-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes wc-toast-exit {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-completion-toast {
+    animation: none;
+  }
+  .wc-completion-toast.is-exiting {
+    opacity: 0;
+    animation: none;
+  }
+}
+
 /* Dark mode */
 [data-theme="dark"] .wc-portal-sheet {
   background: var(--surface-elevated, #1e293b);
