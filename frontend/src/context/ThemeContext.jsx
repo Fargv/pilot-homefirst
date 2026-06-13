@@ -1,14 +1,49 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { DEFAULT_THEME_ID, getAppTheme, isAppThemeId, resolveThemeIdForAccess, APP_THEMES } from "./appThemes.js";
+import {
+  DEFAULT_THEME_ID,
+  DEFAULT_DARK_THEME_ID,
+  getAppTheme,
+  getDefaultThemeIdForMode,
+  getSystemPreferredThemeId,
+  isAppThemeId,
+  resolveThemeIdForAccess,
+  APP_THEMES
+} from "./appThemes.js";
 
 const STORAGE_KEY = "hf-theme";
+const LAST_LIGHT_KEY = "hf-theme-last-light";
+const LAST_DARK_KEY = "hf-theme-last-dark";
 const ThemeContext = createContext(null);
 
 function normalizeStoredTheme(value) {
   if (isAppThemeId(value)) return value;
   if (value === "light" || value === "system") return DEFAULT_THEME_ID;
-  if (value === "dark") return "jet-whale";
+  if (value === "dark") return DEFAULT_DARK_THEME_ID;
   return DEFAULT_THEME_ID;
+}
+
+// First run (no explicit choice): follow the OS color scheme.
+function readInitialTheme() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored != null) return normalizeStoredTheme(stored);
+  } catch {}
+  return getSystemPreferredThemeId();
+}
+
+function rememberThemeForMode(themeId) {
+  try {
+    const mode = getAppTheme(themeId).mode;
+    localStorage.setItem(mode === "dark" ? LAST_DARK_KEY : LAST_LIGHT_KEY, themeId);
+  } catch {}
+}
+
+function readLastThemeForMode(mode) {
+  try {
+    const stored = localStorage.getItem(mode === "dark" ? LAST_DARK_KEY : LAST_LIGHT_KEY);
+    if (isAppThemeId(stored) && getAppTheme(stored).mode === mode) return stored;
+  } catch {}
+  return getDefaultThemeIdForMode(mode);
 }
 
 function applyTheme(themeDef) {
@@ -29,12 +64,7 @@ function applyTheme(themeDef) {
 }
 
 export function ThemeProvider({ children }) {
-  const [theme, setThemeState] = useState(() => {
-    try {
-      return normalizeStoredTheme(localStorage.getItem(STORAGE_KEY));
-    } catch {}
-    return DEFAULT_THEME_ID;
-  });
+  const [theme, setThemeState] = useState(readInitialTheme);
   const [canUsePremiumThemes, setCanUsePremiumThemes] = useState(false);
 
   const themeId = useMemo(
@@ -46,6 +76,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     applyTheme(appTheme);
+    rememberThemeForMode(appTheme.id);
   }, [appTheme]);
 
   const setTheme = useCallback((next) => {
@@ -53,6 +84,14 @@ export function ThemeProvider({ children }) {
     setThemeState(normalized);
     try { localStorage.setItem(STORAGE_KEY, normalized); } catch {}
   }, []);
+
+  // Light/Dark toggle: jump to the last theme used in the target mode
+  // (or that mode's Basic default), resolved against the user's access.
+  const setMode = useCallback((mode) => {
+    const target = resolveThemeIdForAccess(readLastThemeForMode(mode), canUsePremiumThemes);
+    setTheme(target);
+    return target;
+  }, [canUsePremiumThemes, setTheme]);
 
   const syncThemeFromUser = useCallback((nextThemeId, options = {}) => {
     const normalized = normalizeStoredTheme(nextThemeId);
@@ -68,13 +107,15 @@ export function ThemeProvider({ children }) {
       themeId,
       appTheme,
       resolvedTheme,
+      mode: resolvedTheme,
       themes: APP_THEMES,
       canUsePremiumThemes,
       setTheme,
+      setMode,
       setCanUsePremiumThemes,
       syncThemeFromUser
     }),
-    [appTheme, canUsePremiumThemes, resolvedTheme, setTheme, syncThemeFromUser, theme, themeId]
+    [appTheme, canUsePremiumThemes, resolvedTheme, setMode, setTheme, syncThemeFromUser, theme, themeId]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

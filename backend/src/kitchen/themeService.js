@@ -1,21 +1,39 @@
-export const DEFAULT_THEME_ID = "royal-pink";
+export const DEFAULT_THEME_ID = "periwinkle-lavender";
+export const DEFAULT_DARK_THEME_ID = "jet-whale";
 
 export const APP_THEME_IDS = [
-  DEFAULT_THEME_ID,
+  "royal-pink",
   "sulu-fir",
   "jet-whale",
   "bright-stone",
   "turquoise-black",
-  "periwinkle-lavender"
+  "periwinkle-lavender",
+  "sage-cream",
+  "peach-vanilla",
+  "lavender-mist",
+  "midnight-forest",
+  "deep-ocean",
+  "warm-ember"
 ];
 
+const BASIC_ACCESS = new Set(["free", "basic", "pro", "premium"]);
+const PREMIUM_ACCESS = new Set(["pro", "premium"]);
+
+// Basic users reach Periwinkle (light) + Jet Stream (dark) via the toggle;
+// everything else is Pro/Premium.
 const THEME_PLAN_ACCESS = {
-  [DEFAULT_THEME_ID]: new Set(["free", "basic", "pro", "premium"]),
-  "sulu-fir": new Set(["pro", "premium"]),
-  "jet-whale": new Set(["pro", "premium"]),
-  "bright-stone": new Set(["pro", "premium"]),
-  "turquoise-black": new Set(["pro", "premium"]),
-  "periwinkle-lavender": new Set(["pro", "premium"])
+  "royal-pink": PREMIUM_ACCESS,
+  "sulu-fir": PREMIUM_ACCESS,
+  "jet-whale": BASIC_ACCESS,
+  "bright-stone": PREMIUM_ACCESS,
+  "turquoise-black": PREMIUM_ACCESS,
+  "periwinkle-lavender": BASIC_ACCESS,
+  "sage-cream": PREMIUM_ACCESS,
+  "peach-vanilla": PREMIUM_ACCESS,
+  "lavender-mist": PREMIUM_ACCESS,
+  "midnight-forest": PREMIUM_ACCESS,
+  "deep-ocean": PREMIUM_ACCESS,
+  "warm-ember": PREMIUM_ACCESS
 };
 
 export function normalizeThemeId(themeId) {

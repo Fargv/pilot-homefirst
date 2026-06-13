@@ -1553,6 +1553,9 @@ export default function SettingsPage() {
                     </span>
                   </span>
                   <span className="settings-theme-card-name">{appTheme.name}</span>
+                  <span className={`settings-theme-mode-pill is-${appTheme.mode}`}>
+                    {appTheme.mode === "dark" ? "Oscuro" : "Claro"}
+                  </span>
                   <span className="settings-theme-card-label">{appTheme.label}</span>
                   {locked ? <span className="settings-theme-card-lock">Disponible en Pro</span> : null}
                 </button>

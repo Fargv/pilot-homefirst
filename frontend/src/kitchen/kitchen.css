@@ -151,7 +151,10 @@ body {
   --background-page: var(--app-bg);
   --background-card: var(--card-bg);
   --background-card-empty: #f8f8ff;
+  --background-element: var(--surface-muted);
   --border-color: var(--border-soft);
+  --border-subtle: var(--border-soft);
+  --shadow-card: var(--card-shadow);
   /* Legacy aliases — large surfaces collapse onto the xl step */
   --hf-radius-md: var(--radius-lg);
   --hf-radius-lg: var(--radius-xl);
@@ -4947,6 +4950,112 @@ body {
   color: var(--hf-text);
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* ── Profile-menu Appearance section (Light/Dark toggle + Pro link) ── */
+.kitchen-user-menu-appearance {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 12px;
+  margin: 2px 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.kitchen-user-menu-appearance-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--hf-text);
+}
+
+.kitchen-mode-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  background: var(--background-element);
+  border: 1px solid var(--border-subtle);
+}
+
+.kitchen-mode-toggle-opt {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+
+.kitchen-mode-toggle-opt:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.kitchen-mode-toggle-opt.is-active {
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  box-shadow: var(--btn-shadow-primary);
+}
+
+.kitchen-user-menu-customize {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--chip-border);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease;
+}
+
+.kitchen-user-menu-customize:hover {
+  background: var(--dropdown-hover-bg);
+  border-color: var(--border-strong);
+}
+
+.kitchen-user-menu-customize-swatches {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.kitchen-user-menu-customize-swatches span {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid var(--card-bg);
+  box-shadow: 0 0 0 1px var(--border-soft);
+}
+
+.kitchen-user-menu-customize-swatches span + span {
+  margin-left: -6px;
+}
+
+.kitchen-user-menu-customize-arrow {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--hf-brand);
 }
 
 .kitchen-user-menu-theme-options {
@@ -25467,6 +25576,25 @@ body,
   font-size: var(--fs-base);
   font-weight: 800;
   color: var(--text-primary);
+}
+
+.settings-theme-mode-pill {
+  justify-self: start;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.settings-theme-mode-pill.is-light {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.settings-theme-mode-pill.is-dark {
+  background: #1f2937;
+  color: #f9fafb;
 }
 
 .settings-theme-card-label {

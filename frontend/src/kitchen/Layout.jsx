@@ -200,7 +200,8 @@ function BetaProUnlockedModal({ onDismiss }) {
 
 export default function KitchenLayout({ children, containerClassName = "" }) {
   const { user, logout, refreshUser, setUser } = useAuth();
-  const { appTheme, syncThemeFromUser } = useTheme();
+  const { appTheme, mode: themeMode, setMode, canUsePremiumThemes, syncThemeFromUser } = useTheme();
+  const [themeModeSaving, setThemeModeSaving] = useState(false);
   const { betaProEvent, dismissBetaProEvent } = useWeeklyChallenge();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -399,6 +400,27 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
     setUserMenuOpen(false);
   };
 
+  // Profile-menu Light/Dark toggle. Applies instantly (no reload) and
+  // persists the resolved themeId; reverts the local theme on failure.
+  const handleSelectMode = async (nextMode) => {
+    if (themeModeSaving || nextMode === themeMode) return;
+    const previousThemeId = appTheme.id;
+    const targetThemeId = setMode(nextMode);
+    if (!user) return;
+    setThemeModeSaving(true);
+    try {
+      const data = await apiRequest("/api/kitchen/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({ themeId: targetThemeId })
+      });
+      if (data?.user) setUser((prev) => ({ ...prev, ...data.user }));
+    } catch {
+      syncThemeFromUser(previousThemeId, { canUsePremiumThemes });
+    } finally {
+      setThemeModeSaving(false);
+    }
+  };
+
   const userName = getFirstName(user?.displayName || "");
   const userInitials = getUserInitialsFromProfile(
     user?.initials,
@@ -510,22 +532,54 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                   <CreditCardIcon className="kitchen-user-menu-icon" />
                   Suscripción / Plan
                 </button>
-                <div className="kitchen-user-menu-theme-row" role="group" aria-label="Apariencia">
-                  <span className="kitchen-user-menu-theme-label">
+                <div className="kitchen-user-menu-appearance" role="group" aria-label="Apariencia">
+                  <span className="kitchen-user-menu-appearance-label">
                     <AppearanceIcon className="kitchen-user-menu-icon" />
-                    Tema
+                    Apariencia
                   </span>
-                  <button
-                    type="button"
-                    className="kitchen-user-menu-theme-current"
-                    onClick={() => { navigate("/kitchen/configuracion?section=preferencias"); onNavigate(); }}
-                  >
-                    <span className="kitchen-user-menu-theme-swatches" aria-hidden="true">
-                      <span style={{ background: appTheme.anchors.primary }} />
-                      <span style={{ background: appTheme.anchors.secondary }} />
-                    </span>
-                    {appTheme.name}
-                  </button>
+                  <div className="kitchen-mode-toggle" role="radiogroup" aria-label="Tema claro u oscuro">
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={themeMode === "light"}
+                      className={`kitchen-mode-toggle-opt${themeMode === "light" ? " is-active" : ""}`}
+                      onClick={() => handleSelectMode("light")}
+                      disabled={themeModeSaving}
+                    >
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="1.7" />
+                        <path d="M12 2.5v2.2M12 19.3v2.2M4.3 4.3l1.6 1.6M18.1 18.1l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.3 19.7l1.6-1.6M18.1 5.9l1.6-1.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                      </svg>
+                      Claro
+                    </button>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={themeMode === "dark"}
+                      className={`kitchen-mode-toggle-opt${themeMode === "dark" ? " is-active" : ""}`}
+                      onClick={() => handleSelectMode("dark")}
+                      disabled={themeModeSaving}
+                    >
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+                        <path d="M20.5 13.2A8.3 8.3 0 1 1 10.8 3.5a6.5 6.5 0 0 0 9.7 9.7Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Oscuro
+                    </button>
+                  </div>
+                  {canUsePremiumThemes ? (
+                    <button
+                      type="button"
+                      className="kitchen-user-menu-customize"
+                      onClick={() => { navigate("/kitchen/configuracion?section=preferencias"); onNavigate(); }}
+                    >
+                      <span className="kitchen-user-menu-customize-swatches" aria-hidden="true">
+                        <span style={{ background: appTheme.anchors.primary }} />
+                        <span style={{ background: appTheme.anchors.secondary }} />
+                      </span>
+                      Personalizar tema
+                      <span className="kitchen-user-menu-customize-arrow" aria-hidden="true">→</span>
+                    </button>
+                  ) : null}
                 </div>
                 <button type="button" role="menuitem" onClick={onLogout}>
                   <LogoutIcon className="kitchen-user-menu-icon" />
