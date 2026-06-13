@@ -233,9 +233,15 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false } = {})
 
     syncOverlayTop();
     window.addEventListener("resize", syncOverlayTop);
-    document.addEventListener("pointerdown", handlePointerDown);
+    // Defer pointerdown listener by one event-loop tick so that iOS ghost
+    // events (synthetic mousedown/pointerdown fired after the tap that opened
+    // the sheet) don't immediately trigger closeSheet().
+    let deferTimerId = setTimeout(() => {
+      document.addEventListener("pointerdown", handlePointerDown);
+    }, 0);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
+      clearTimeout(deferTimerId);
       window.removeEventListener("resize", syncOverlayTop);
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
