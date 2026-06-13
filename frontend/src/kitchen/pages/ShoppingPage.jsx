@@ -271,6 +271,12 @@ export default function ShoppingPage() {
   const [purchaseConfirmTarget, setPurchaseConfirmTarget] = useState(null);
   const [purchaseConfirmStoreId, setPurchaseConfirmStoreId] = useState("");
   const [purchaseConfirmAmount, setPurchaseConfirmAmount] = useState("");
+  // Item-level confirm modal (shown before marking purchased)
+  const [itemConfirmOpen, setItemConfirmOpen] = useState(false);
+  const [itemConfirmItem, setItemConfirmItem] = useState(null);
+  const [itemConfirmStoreId, setItemConfirmStoreId] = useState("");
+  const [itemConfirmAmount, setItemConfirmAmount] = useState("");
+  const [itemConfirmBusy, setItemConfirmBusy] = useState(false);
   const [hasMarkedPurchaseInViewSession, setHasMarkedPurchaseInViewSession] = useState(false);
   const [hasRestorableOpenPurchase, setHasRestorableOpenPurchase] = useState(false);
   const [quickQuery, setQuickQuery] = useState("");
@@ -936,6 +942,72 @@ export default function ShoppingPage() {
     }
   };
 
+  // ── Item-level confirm flow ────────────────────────────────────────────
+  // Opens modal BEFORE marking item as purchased (modal-first flow).
+  const openItemConfirmModal = (item) => {
+    setItemConfirmItem(item);
+    setItemConfirmStoreId(selectedStoreRef.current || "");
+    setItemConfirmAmount("");
+    setItemConfirmOpen(true);
+  };
+
+  // "Guardar compra": mark purchased + immediately complete the session.
+  const confirmItemAndExpense = async () => {
+    const item = itemConfirmItem;
+    const storeId = itemConfirmStoreId;
+    const amount = itemConfirmAmount;
+    if (!item || itemConfirmBusy) return;
+    setItemConfirmBusy(true);
+    const key = itemKey(item);
+    setTransitioningItemKey(key);
+    try {
+      const data = await apiSync(`/api/kitchen/shopping/${weekStart}/item`, {
+        method: "PUT",
+        body: JSON.stringify({
+          canonicalName: item.canonicalName,
+          ingredientId: item.ingredientId,
+          status: "purchased",
+          storeId: storeId || null
+        })
+      });
+      applyPayload(data);
+      const sessionId = data?.currentPurchaseSession?.id || data?.pendingPurchaseSessions?.[0]?.id;
+      if (sessionId) {
+        await apiSync(`/api/kitchen/shopping/purchase-sessions/${sessionId}/complete`, {
+          method: "POST",
+          body: JSON.stringify({ storeId: storeId || null, amount: amount || null })
+        });
+        await loadList({ silent: true });
+        if (storeId && amount) {
+          notifyWeekly("purchase_finalized", { storeId, amount });
+        }
+        pushToast({ type: "success", message: "Compra registrada." });
+      }
+      notifyOnboarding("mark_purchased");
+      notifyWeekly("item_purchased", { itemKey: key });
+      setRecentlyMovedItemKey(key);
+      setHasMarkedPurchaseInViewSession(true);
+      setItemConfirmOpen(false);
+      setItemConfirmItem(null);
+    } catch (err) {
+      void loadList({ silent: true });
+      logShoppingApiError("confirmItemAndExpense", `/api/kitchen/shopping/${weekStart}/item`, err);
+      pushToast({ type: "error", message: err.message || "No se pudo registrar la compra." });
+    } finally {
+      setTransitioningItemKey(null);
+      setItemConfirmBusy(false);
+    }
+  };
+
+  // "Ahora no": mark purchased without registering expense.
+  const skipItemExpense = () => {
+    const item = itemConfirmItem;
+    if (!item || itemConfirmBusy) return;
+    setItemConfirmOpen(false);
+    setItemConfirmItem(null);
+    void setItemStatus(item, "purchased");
+  };
+
   const updatePurchasedItemStore = async (item, storeId) => {
     try {
       const data = await apiSync(`/api/kitchen/shopping/${weekStart}/item/store`, {
@@ -1394,7 +1466,13 @@ export default function ShoppingPage() {
                                   <button
                                     className="shopping-check"
                                     type="button"
-                                    onClick={(e) => setItemStatus(item, "purchased", e.currentTarget)}
+                                    onClick={(e) => {
+                                      if (budgetFeatureEnabled) {
+                                        openItemConfirmModal(item);
+                                      } else {
+                                        void setItemStatus(item, "purchased", e.currentTarget);
+                                      }
+                                    }}
                                     aria-label={`Marcar ${item.displayName} como comprado`}
                                   >
                                     <span className="shopping-check-dot">✓</span>
@@ -1707,6 +1785,71 @@ export default function ShoppingPage() {
               onChange={(event) => setPurchaseConfirmAmount(event.target.value)}
               placeholder="0,00"
               disabled={purchaseConfirmBusy}
+            />
+          </label>
+        </div>
+      </ModalSheet>
+      <ModalSheet
+        open={itemConfirmOpen}
+        title="Confirmar compra"
+        onClose={() => { if (!itemConfirmBusy) { setItemConfirmOpen(false); setItemConfirmItem(null); } }}
+        actions={(
+          <>
+            <button
+              type="button"
+              className="kitchen-button secondary shopping-item-confirm-skip"
+              onClick={skipItemExpense}
+              disabled={itemConfirmBusy}
+            >
+              Ahora no
+            </button>
+            <button
+              type="button"
+              className="kitchen-button"
+              onClick={confirmItemAndExpense}
+              disabled={itemConfirmBusy}
+            >
+              {itemConfirmBusy ? "Guardando..." : "Guardar compra"}
+            </button>
+          </>
+        )}
+      >
+        <div className="shopping-confirm-sheet shopping-item-confirm-sheet">
+          {itemConfirmItem && (
+            <div className="shopping-confirm-items">
+              <span className="shopping-session-item-chip">{itemConfirmItem.displayName || itemConfirmItem.canonicalName}</span>
+            </div>
+          )}
+          <label className="kitchen-field">
+            <span className="kitchen-label">Supermercado</span>
+            <select
+              className="kitchen-select"
+              value={itemConfirmStoreId}
+              onChange={(e) => {
+                if (e.target.value === "__add__") { void createStoreFromDropdown(); return; }
+                setItemConfirmStoreId(e.target.value);
+              }}
+              disabled={itemConfirmBusy}
+            >
+              <option value="">Seleccionar supermercado</option>
+              {stores.map((store) => (
+                <option key={store._id} value={store._id}>{store.name}</option>
+              ))}
+              <option value="__add__">Añadir supermercado…</option>
+            </select>
+          </label>
+          <label className="kitchen-field">
+            <span className="kitchen-label">Importe</span>
+            <input
+              className="kitchen-input"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={itemConfirmAmount}
+              onChange={(e) => setItemConfirmAmount(e.target.value)}
+              placeholder="0,00"
+              disabled={itemConfirmBusy}
             />
           </label>
         </div>

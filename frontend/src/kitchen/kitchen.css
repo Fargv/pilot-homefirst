@@ -1994,8 +1994,9 @@ body {
   width: 100%;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
-  border: 1px solid #d0d5dd;
-  background: white;
+  border: 1px solid var(--border-soft, #E5E7EB);
+  background: var(--input-bg, #F9FAFB);
+  color: var(--text-primary, #111827);
   font-size: var(--fs-base);
   box-sizing: border-box;
   min-width: 0;
@@ -2005,7 +2006,7 @@ body {
   display: block;
   font-weight: 600;
   margin-bottom: 6px;
-  color: #344054;
+  color: var(--text-secondary, #6B7280);
 }
 
 .kitchen-field {
@@ -6046,11 +6047,11 @@ body {
   align-items: center;
   padding: 3px 10px;
   border-radius: var(--radius-lg);
-  background: #f1f5f9;
-  color: #334155;
+  background: color-mix(in srgb, var(--hf-brand) 10%, transparent);
+  color: var(--hf-brand);
   font-size: var(--fs-sm);
   font-weight: 500;
-  border: 1px solid #e2e8f0;
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 20%, transparent);
 }
 
 /* Banner actions row */
@@ -10054,9 +10055,21 @@ body {
   flex-wrap: wrap;
   gap: 6px;
   padding: 10px 12px;
-  background: #f8fafc;
-  border: 1px solid #e9edf3;
+  background: color-mix(in srgb, var(--hf-brand) 5%, var(--surface, #f8fafc));
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 12%, var(--border-soft));
   border-radius: var(--radius-sm);
+}
+
+/* "Ahora no" in item-confirm modal: grey neutral, not brand-colored */
+.shopping-item-confirm-skip {
+  background: transparent !important;
+  border: 1px solid var(--border-soft, #E5E7EB) !important;
+  color: var(--text-secondary, #6B7280) !important;
+  box-shadow: none !important;
+}
+
+.shopping-item-confirm-skip:hover {
+  background: var(--surface, #F9FAFB) !important;
 }
 
 .shopping-confirm-item-count {
