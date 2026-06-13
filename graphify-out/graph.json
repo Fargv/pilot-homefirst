@@ -5192,7 +5192,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L141",
       "id": "scripts_live_browser_writescrolly",
-      "community": 38,
+      "community": 119,
       "norm_label": "writescrolly()"
     },
     {
@@ -5246,7 +5246,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L198",
       "id": "scripts_live_browser_id8",
-      "community": 38,
+      "community": 119,
       "norm_label": "id8()"
     },
     {
@@ -5336,7 +5336,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L416",
       "id": "scripts_live_browser_clearannotations",
-      "community": 38,
+      "community": 53,
       "norm_label": "clearannotations()"
     },
     {
@@ -5462,7 +5462,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L778",
       "id": "scripts_live_browser_extractcontext",
-      "community": 38,
+      "community": 119,
       "norm_label": "extractcontext()"
     },
     {
@@ -5768,7 +5768,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L1807",
       "id": "scripts_live_browser_closetunepopover",
-      "community": 89,
+      "community": 53,
       "norm_label": "closetunepopover()"
     },
     {
@@ -5831,7 +5831,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L1964",
       "id": "scripts_live_browser_startscrolllock",
-      "community": 53,
+      "community": 119,
       "norm_label": "startscrolllock()"
     },
     {
@@ -5840,7 +5840,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L2071",
       "id": "scripts_live_browser_stopscrolllock",
-      "community": 53,
+      "community": 119,
       "norm_label": "stopscrolllock()"
     },
     {
@@ -5849,7 +5849,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L2085",
       "id": "scripts_live_browser_startvariantobserver",
-      "community": 38,
+      "community": 119,
       "norm_label": "startvariantobserver()"
     },
     {
@@ -5858,7 +5858,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L2168",
       "id": "scripts_live_browser_startscrolltracking",
-      "community": 119,
+      "community": 53,
       "norm_label": "startscrolltracking()"
     },
     {
@@ -5975,7 +5975,7 @@
       "source_file": ".claude/skills/impeccable/scripts/live-browser.js",
       "source_location": "L2525",
       "id": "scripts_live_browser_handlego",
-      "community": 38,
+      "community": 119,
       "norm_label": "handlego()"
     },
     {
@@ -14240,7 +14240,7 @@
       "source_file": "backend/scripts/migrate-add-householdId.js",
       "source_location": "L1",
       "id": "scripts_migrate_add_householdid",
-      "community": 170,
+      "community": 162,
       "norm_label": "migrate-add-householdid.js"
     },
     {
@@ -14249,7 +14249,7 @@
       "source_file": "backend/scripts/migrate-add-householdId.js",
       "source_location": "L13",
       "id": "scripts_migrate_add_householdid_collections_to_migrate",
-      "community": 170,
+      "community": 162,
       "norm_label": "collections_to_migrate"
     },
     {
@@ -14258,7 +14258,7 @@
       "source_file": "backend/scripts/migrate-add-householdId.js",
       "source_location": "L24",
       "id": "scripts_migrate_add_householdid_buildownerdisplayname",
-      "community": 170,
+      "community": 162,
       "norm_label": "buildownerdisplayname()"
     },
     {
@@ -14267,7 +14267,7 @@
       "source_file": "backend/scripts/migrate-add-householdId.js",
       "source_location": "L34",
       "id": "scripts_migrate_add_householdid_resolveowneruser",
-      "community": 170,
+      "community": 162,
       "norm_label": "resolveowneruser()"
     },
     {
@@ -14276,7 +14276,7 @@
       "source_file": "backend/scripts/migrate-add-householdId.js",
       "source_location": "L56",
       "id": "scripts_migrate_add_householdid_ensureownerhousehold",
-      "community": 170,
+      "community": 162,
       "norm_label": "ensureownerhousehold()"
     },
     {
@@ -14285,7 +14285,7 @@
       "source_file": "backend/scripts/migrate-add-householdId.js",
       "source_location": "L89",
       "id": "scripts_migrate_add_householdid_migratecollections",
-      "community": 170,
+      "community": 162,
       "norm_label": "migratecollections()"
     },
     {
@@ -14294,7 +14294,7 @@
       "source_file": "backend/scripts/migrate-add-householdId.js",
       "source_location": "L102",
       "id": "scripts_migrate_add_householdid_run",
-      "community": 170,
+      "community": 162,
       "norm_label": "run()"
     },
     {
@@ -16301,7 +16301,7 @@
       "source_file": "backend/src/index.js",
       "source_location": "L1",
       "id": "src_index",
-      "community": 148,
+      "community": 158,
       "norm_label": "index.js"
     },
     {
@@ -16310,7 +16310,7 @@
       "source_file": "backend/src/index.js",
       "source_location": "L24",
       "id": "src_index_filename",
-      "community": 148,
+      "community": 158,
       "norm_label": "__filename"
     },
     {
@@ -16319,7 +16319,7 @@
       "source_file": "backend/src/index.js",
       "source_location": "L25",
       "id": "src_index_dirname",
-      "community": 148,
+      "community": 158,
       "norm_label": "__dirname"
     },
     {
@@ -16328,7 +16328,7 @@
       "source_file": "backend/src/index.js",
       "source_location": "L27",
       "id": "src_index_app",
-      "community": 148,
+      "community": 158,
       "norm_label": "app"
     },
     {
@@ -16337,7 +16337,7 @@
       "source_file": "backend/src/index.js",
       "source_location": "L32",
       "id": "src_index_origin",
-      "community": 148,
+      "community": 158,
       "norm_label": "origin()"
     },
     {
@@ -16562,7 +16562,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L1",
       "id": "kitchen_betaservice",
-      "community": 148,
+      "community": 158,
       "norm_label": "betaservice.js"
     },
     {
@@ -16571,7 +16571,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L34",
       "id": "kitchen_betaservice_isbetamodeenabled",
-      "community": 148,
+      "community": 158,
       "norm_label": "isbetamodeenabled()"
     },
     {
@@ -16580,7 +16580,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L39",
       "id": "kitchen_betaservice_createbetatoken",
-      "community": 148,
+      "community": 158,
       "norm_label": "createbetatoken()"
     },
     {
@@ -16589,7 +16589,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L43",
       "id": "kitchen_betaservice_buildbetainvitelink",
-      "community": 148,
+      "community": 158,
       "norm_label": "buildbetainvitelink()"
     },
     {
@@ -16598,7 +16598,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L50",
       "id": "kitchen_betaservice_checkbetaaccess",
-      "community": 148,
+      "community": 158,
       "norm_label": "checkbetaaccess()"
     },
     {
@@ -16607,7 +16607,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L69",
       "id": "kitchen_betaservice_createbetainvite",
-      "community": 148,
+      "community": 158,
       "norm_label": "createbetainvite()"
     },
     {
@@ -16616,7 +16616,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L82",
       "id": "kitchen_betaservice_markbetainviteused",
-      "community": 148,
+      "community": 158,
       "norm_label": "markbetainviteused()"
     },
     {
@@ -16625,7 +16625,7 @@
       "source_file": "backend/src/kitchen/betaService.js",
       "source_location": "L91",
       "id": "kitchen_betaservice_getbetainvitestatus",
-      "community": 148,
+      "community": 158,
       "norm_label": "getbetainvitestatus()"
     },
     {
@@ -17120,7 +17120,7 @@
       "source_file": "backend/src/kitchen/householdInviteCode.js",
       "source_location": "L1",
       "id": "kitchen_householdinvitecode",
-      "community": 170,
+      "community": 148,
       "norm_label": "householdinvitecode.js"
     },
     {
@@ -17129,7 +17129,7 @@
       "source_file": "backend/src/kitchen/householdInviteCode.js",
       "source_location": "L3",
       "id": "kitchen_householdinvitecode_randomsixdigitcode",
-      "community": 170,
+      "community": 148,
       "norm_label": "randomsixdigitcode()"
     },
     {
@@ -17138,7 +17138,7 @@
       "source_file": "backend/src/kitchen/householdInviteCode.js",
       "source_location": "L7",
       "id": "kitchen_householdinvitecode_generateuniquehouseholdinvitecode",
-      "community": 170,
+      "community": 148,
       "norm_label": "generateuniquehouseholdinvitecode()"
     },
     {
@@ -17147,7 +17147,7 @@
       "source_file": "backend/src/kitchen/householdInviteCode.js",
       "source_location": "L17",
       "id": "kitchen_householdinvitecode_ensurehouseholdinvitecode",
-      "community": 170,
+      "community": 148,
       "norm_label": "ensurehouseholdinvitecode()"
     },
     {
@@ -17543,7 +17543,7 @@
       "source_file": "backend/src/kitchen/models/BetaInvite.js",
       "source_location": "L1",
       "id": "models_betainvite",
-      "community": 148,
+      "community": 158,
       "norm_label": "betainvite.js"
     },
     {
@@ -17552,7 +17552,7 @@
       "source_file": "backend/src/kitchen/models/BetaInvite.js",
       "source_location": "L3",
       "id": "models_betainvite_betainviteschema",
-      "community": 148,
+      "community": 158,
       "norm_label": "betainviteschema"
     },
     {
@@ -17561,7 +17561,7 @@
       "source_file": "backend/src/kitchen/models/BetaInvite.js",
       "source_location": "L16",
       "id": "models_betainvite_betainvite",
-      "community": 148,
+      "community": 158,
       "norm_label": "betainvite"
     },
     {
@@ -17723,7 +17723,7 @@
       "source_file": "backend/src/kitchen/models/HiddenMaster.js",
       "source_location": "L1",
       "id": "models_hiddenmaster",
-      "community": 122,
+      "community": 121,
       "norm_label": "hiddenmaster.js"
     },
     {
@@ -17732,7 +17732,7 @@
       "source_file": "backend/src/kitchen/models/HiddenMaster.js",
       "source_location": "L3",
       "id": "models_hiddenmaster_hiddenmasterschema",
-      "community": 122,
+      "community": 121,
       "norm_label": "hiddenmasterschema"
     },
     {
@@ -17741,7 +17741,7 @@
       "source_file": "backend/src/kitchen/models/HiddenMaster.js",
       "source_location": "L14",
       "id": "models_hiddenmaster_hiddenmaster",
-      "community": 122,
+      "community": 121,
       "norm_label": "hiddenmaster"
     },
     {
@@ -17750,7 +17750,7 @@
       "source_file": "backend/src/kitchen/models/Household.js",
       "source_location": "L1",
       "id": "models_household",
-      "community": 170,
+      "community": 148,
       "norm_label": "household.js"
     },
     {
@@ -17759,7 +17759,7 @@
       "source_file": "backend/src/kitchen/models/Household.js",
       "source_location": "L3",
       "id": "models_household_householdschema",
-      "community": 170,
+      "community": 148,
       "norm_label": "householdschema"
     },
     {
@@ -17768,7 +17768,7 @@
       "source_file": "backend/src/kitchen/models/Household.js",
       "source_location": "L93",
       "id": "models_household_household",
-      "community": 170,
+      "community": 148,
       "norm_label": "household"
     },
     {
@@ -17804,7 +17804,7 @@
       "source_file": "backend/src/kitchen/models/HouseholdCatalogPack.js",
       "source_location": "L1",
       "id": "models_householdcatalogpack",
-      "community": 170,
+      "community": 148,
       "norm_label": "householdcatalogpack.js"
     },
     {
@@ -17813,7 +17813,7 @@
       "source_file": "backend/src/kitchen/models/HouseholdCatalogPack.js",
       "source_location": "L3",
       "id": "models_householdcatalogpack_householdcatalogpackschema",
-      "community": 170,
+      "community": 148,
       "norm_label": "householdcatalogpackschema"
     },
     {
@@ -17822,7 +17822,7 @@
       "source_file": "backend/src/kitchen/models/HouseholdCatalogPack.js",
       "source_location": "L33",
       "id": "models_householdcatalogpack_householdcatalogpack",
-      "community": 170,
+      "community": 148,
       "norm_label": "householdcatalogpack"
     },
     {
@@ -17921,7 +17921,7 @@
       "source_file": "backend/src/kitchen/models/KitchenAuditLog.js",
       "source_location": "L1",
       "id": "models_kitchenauditlog",
-      "community": 170,
+      "community": 162,
       "norm_label": "kitchenauditlog.js"
     },
     {
@@ -17930,7 +17930,7 @@
       "source_file": "backend/src/kitchen/models/KitchenAuditLog.js",
       "source_location": "L3",
       "id": "models_kitchenauditlog_kitchenauditlogschema",
-      "community": 170,
+      "community": 162,
       "norm_label": "kitchenauditlogschema"
     },
     {
@@ -17939,7 +17939,7 @@
       "source_file": "backend/src/kitchen/models/KitchenAuditLog.js",
       "source_location": "L13",
       "id": "models_kitchenauditlog_kitchenauditlog",
-      "community": 170,
+      "community": 162,
       "norm_label": "kitchenauditlog"
     },
     {
@@ -17948,7 +17948,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDish.js",
       "source_location": "L1",
       "id": "models_kitchendish",
-      "community": 170,
+      "community": 162,
       "norm_label": "kitchendish.js"
     },
     {
@@ -17957,7 +17957,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDish.js",
       "source_location": "L3",
       "id": "models_kitchendish_ingredientschema",
-      "community": 170,
+      "community": 162,
       "norm_label": "ingredientschema"
     },
     {
@@ -17966,7 +17966,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDish.js",
       "source_location": "L12",
       "id": "models_kitchendish_kitchendishschema",
-      "community": 170,
+      "community": 162,
       "norm_label": "kitchendishschema"
     },
     {
@@ -17975,7 +17975,7 @@
       "source_file": "backend/src/kitchen/models/KitchenDish.js",
       "source_location": "L72",
       "id": "models_kitchendish_kitchendish",
-      "community": 170,
+      "community": 162,
       "norm_label": "kitchendish"
     },
     {
@@ -18074,7 +18074,7 @@
       "source_file": "backend/src/kitchen/models/KitchenSwap.js",
       "source_location": "L1",
       "id": "models_kitchenswap",
-      "community": 170,
+      "community": 162,
       "norm_label": "kitchenswap.js"
     },
     {
@@ -18083,7 +18083,7 @@
       "source_file": "backend/src/kitchen/models/KitchenSwap.js",
       "source_location": "L3",
       "id": "models_kitchenswap_kitchenswapschema",
-      "community": 170,
+      "community": 162,
       "norm_label": "kitchenswapschema"
     },
     {
@@ -18092,7 +18092,7 @@
       "source_file": "backend/src/kitchen/models/KitchenSwap.js",
       "source_location": "L17",
       "id": "models_kitchenswap_kitchenswap",
-      "community": 170,
+      "community": 162,
       "norm_label": "kitchenswap"
     },
     {
@@ -18299,7 +18299,7 @@
       "source_file": "backend/src/kitchen/models/PurchaseAttempt.js",
       "source_location": "L1",
       "id": "models_purchaseattempt",
-      "community": 170,
+      "community": 148,
       "norm_label": "purchaseattempt.js"
     },
     {
@@ -18308,7 +18308,7 @@
       "source_file": "backend/src/kitchen/models/PurchaseAttempt.js",
       "source_location": "L5",
       "id": "models_purchaseattempt_purchaseattemptschema",
-      "community": 170,
+      "community": 148,
       "norm_label": "purchaseattemptschema"
     },
     {
@@ -18317,7 +18317,7 @@
       "source_file": "backend/src/kitchen/models/PurchaseAttempt.js",
       "source_location": "L44",
       "id": "models_purchaseattempt_purchaseattempt",
-      "community": 170,
+      "community": 148,
       "norm_label": "purchaseattempt"
     },
     {
@@ -18434,7 +18434,7 @@
       "source_file": "backend/src/kitchen/models/Store.js",
       "source_location": "L1",
       "id": "models_store",
-      "community": 170,
+      "community": 148,
       "norm_label": "store.js"
     },
     {
@@ -18443,7 +18443,7 @@
       "source_file": "backend/src/kitchen/models/Store.js",
       "source_location": "L3",
       "id": "models_store_storeschema",
-      "community": 170,
+      "community": 148,
       "norm_label": "storeschema"
     },
     {
@@ -18452,7 +18452,7 @@
       "source_file": "backend/src/kitchen/models/Store.js",
       "source_location": "L25",
       "id": "models_store_store",
-      "community": 170,
+      "community": 148,
       "norm_label": "store"
     },
     {
@@ -18578,7 +18578,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L146",
       "id": "kitchen_onboardingengine_seedonboardingchallenges",
-      "community": 148,
+      "community": 158,
       "norm_label": "seedonboardingchallenges()"
     },
     {
@@ -18587,7 +18587,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L165",
       "id": "kitchen_onboardingengine_cleanupoldchallenges",
-      "community": 148,
+      "community": 158,
       "norm_label": "cleanupoldchallenges()"
     },
     {
@@ -18596,7 +18596,7 @@
       "source_file": "backend/src/kitchen/onboardingEngine.js",
       "source_location": "L178",
       "id": "kitchen_onboardingengine_seedonboardingsuggestions",
-      "community": 148,
+      "community": 158,
       "norm_label": "seedonboardingsuggestions()"
     },
     {
@@ -18821,7 +18821,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L1",
       "id": "routes_admin",
-      "community": 170,
+      "community": 148,
       "norm_label": "admin.js"
     },
     {
@@ -18830,7 +18830,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L33",
       "id": "routes_admin_router",
-      "community": 170,
+      "community": 148,
       "norm_label": "router"
     },
     {
@@ -18839,7 +18839,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L35",
       "id": "routes_admin_normalizeactivehouseholdidinput",
-      "community": 170,
+      "community": 148,
       "norm_label": "normalizeactivehouseholdidinput()"
     },
     {
@@ -18848,7 +18848,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L47",
       "id": "routes_admin_isvalidobjectidstring",
-      "community": 170,
+      "community": 148,
       "norm_label": "isvalidobjectidstring()"
     },
     {
@@ -18857,7 +18857,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L51",
       "id": "routes_admin_sendinvalidhouseholdid",
-      "community": 170,
+      "community": 148,
       "norm_label": "sendinvalidhouseholdid()"
     },
     {
@@ -18866,7 +18866,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L59",
       "id": "routes_admin_serializebetapro",
-      "community": 170,
+      "community": 148,
       "norm_label": "serializebetapro()"
     },
     {
@@ -18875,7 +18875,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L592",
       "id": "routes_admin_setactivehousehold",
-      "community": 170,
+      "community": 148,
       "norm_label": "setactivehousehold()"
     },
     {
@@ -18884,7 +18884,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L1045",
       "id": "routes_admin_maskadminrecoveryemail",
-      "community": 170,
+      "community": 148,
       "norm_label": "maskadminrecoveryemail()"
     },
     {
@@ -18893,7 +18893,7 @@
       "source_file": "backend/src/kitchen/routes/admin.js",
       "source_location": "L1053",
       "id": "routes_admin_validateadminpasswordstrength",
-      "community": 170,
+      "community": 148,
       "norm_label": "validateadminpasswordstrength()"
     },
     {
@@ -19172,7 +19172,7 @@
       "source_file": "backend/src/kitchen/routes/beta.js",
       "source_location": "L1",
       "id": "routes_beta",
-      "community": 148,
+      "community": 158,
       "norm_label": "beta.js"
     },
     {
@@ -19181,7 +19181,7 @@
       "source_file": "backend/src/kitchen/routes/beta.js",
       "source_location": "L31",
       "id": "routes_beta_router",
-      "community": 148,
+      "community": 158,
       "norm_label": "router"
     },
     {
@@ -19190,7 +19190,7 @@
       "source_file": "backend/src/kitchen/routes/beta.js",
       "source_location": "L34",
       "id": "routes_beta_rlstore",
-      "community": 148,
+      "community": 158,
       "norm_label": "_rlstore"
     },
     {
@@ -19199,7 +19199,7 @@
       "source_file": "backend/src/kitchen/routes/beta.js",
       "source_location": "L35",
       "id": "routes_beta_checkratelimit",
-      "community": 148,
+      "community": 158,
       "norm_label": "_checkratelimit()"
     },
     {
@@ -19208,7 +19208,7 @@
       "source_file": "backend/src/kitchen/routes/beta.js",
       "source_location": "L46",
       "id": "routes_beta_getclientip",
-      "community": 148,
+      "community": 158,
       "norm_label": "_getclientip()"
     },
     {
@@ -19460,7 +19460,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L1",
       "id": "routes_dishes",
-      "community": 122,
+      "community": 121,
       "norm_label": "dishes.js"
     },
     {
@@ -19469,7 +19469,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L24",
       "id": "routes_dishes_router",
-      "community": 122,
+      "community": 121,
       "norm_label": "router"
     },
     {
@@ -19478,7 +19478,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L26",
       "id": "routes_dishes_parsebooleanfield",
-      "community": 122,
+      "community": 121,
       "norm_label": "parsebooleanfield()"
     },
     {
@@ -19487,7 +19487,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L36",
       "id": "routes_dishes_normalizecatalogtemplateid",
-      "community": 122,
+      "community": 121,
       "norm_label": "normalizecatalogtemplateid()"
     },
     {
@@ -19496,7 +19496,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L40",
       "id": "routes_dishes_normalizedishtemplateforhash",
-      "community": 122,
+      "community": 121,
       "norm_label": "normalizedishtemplateforhash()"
     },
     {
@@ -19505,7 +19505,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L66",
       "id": "routes_dishes_catalogcontenthash",
-      "community": 122,
+      "community": 121,
       "norm_label": "catalogcontenthash()"
     },
     {
@@ -19514,7 +19514,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L73",
       "id": "routes_dishes_dishfieldsfromcatalogtemplate",
-      "community": 122,
+      "community": 121,
       "norm_label": "dishfieldsfromcatalogtemplate()"
     },
     {
@@ -19523,7 +19523,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L95",
       "id": "routes_dishes_resolvedishcategoryid",
-      "community": 122,
+      "community": 121,
       "norm_label": "resolvedishcategoryid()"
     },
     {
@@ -19532,7 +19532,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L112",
       "id": "routes_dishes_shouldincludemaininshopping",
-      "community": 122,
+      "community": 121,
       "norm_label": "shouldincludemaininshopping()"
     },
     {
@@ -19541,7 +19541,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L118",
       "id": "routes_dishes_shouldincludesideinshopping",
-      "community": 122,
+      "community": 121,
       "norm_label": "shouldincludesideinshopping()"
     },
     {
@@ -19550,7 +19550,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L124",
       "id": "routes_dishes_rebuildfutureshoppinglistssafe",
-      "community": 122,
+      "community": 121,
       "norm_label": "rebuildfutureshoppinglistssafe()"
     },
     {
@@ -19559,7 +19559,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L139",
       "id": "routes_dishes_rebuildshoppinglistforplan",
-      "community": 122,
+      "community": 121,
       "norm_label": "rebuildshoppinglistforplan()"
     },
     {
@@ -19568,7 +19568,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L184",
       "id": "routes_dishes_unassigndishfromcurrentandfutureweeks",
-      "community": 122,
+      "community": 121,
       "norm_label": "unassigndishfromcurrentandfutureweeks()"
     },
     {
@@ -19577,7 +19577,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L228",
       "id": "routes_dishes_repointdishinplans",
-      "community": 122,
+      "community": 121,
       "norm_label": "repointdishinplans()"
     },
     {
@@ -19586,7 +19586,7 @@
       "source_file": "backend/src/kitchen/routes/dishes.js",
       "source_location": "L272",
       "id": "routes_dishes_rebuildfutureshoppinglists",
-      "community": 122,
+      "community": 121,
       "norm_label": "rebuildfutureshoppinglists()"
     },
     {
@@ -19784,7 +19784,7 @@
       "source_file": "backend/src/kitchen/routes/kitchenIngredients.js",
       "source_location": "L71",
       "id": "routes_kitcheningredients_syncingredientreferences",
-      "community": 122,
+      "community": 121,
       "norm_label": "syncingredientreferences()"
     },
     {
@@ -20747,7 +20747,7 @@
       "source_file": "backend/src/kitchen/subscriptionCron.js",
       "source_location": "L1",
       "id": "kitchen_subscriptioncron",
-      "community": 170,
+      "community": 148,
       "norm_label": "subscriptioncron.js"
     },
     {
@@ -20756,7 +20756,7 @@
       "source_file": "backend/src/kitchen/subscriptionCron.js",
       "source_location": "L4",
       "id": "kitchen_subscriptioncron_deactivateexpiredsubscriptions",
-      "community": 170,
+      "community": 148,
       "norm_label": "deactivateexpiredsubscriptions()"
     },
     {
@@ -20999,7 +20999,7 @@
       "source_file": "backend/src/kitchen/subscriptionService.js",
       "source_location": "L162",
       "id": "kitchen_subscriptionservice_applyadminsubscriptiondeactivation",
-      "community": 170,
+      "community": 148,
       "norm_label": "applyadminsubscriptiondeactivation()"
     },
     {
@@ -21278,7 +21278,7 @@
       "source_file": "backend/src/kitchen/utils/dates.js",
       "source_location": "L11",
       "id": "utils_dates_getweekstart",
-      "community": 122,
+      "community": 121,
       "norm_label": "getweekstart()"
     },
     {
@@ -21314,7 +21314,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L1",
       "id": "utils_dishcatalog",
-      "community": 122,
+      "community": 121,
       "norm_label": "dishcatalog.js"
     },
     {
@@ -21323,7 +21323,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L4",
       "id": "utils_dishcatalog_dish_hidden_master_types",
-      "community": 122,
+      "community": 121,
       "norm_label": "dish_hidden_master_types"
     },
     {
@@ -21332,7 +21332,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L8",
       "id": "utils_dishcatalog_buildmanualplanningdishfilter",
-      "community": 122,
+      "community": 121,
       "norm_label": "buildmanualplanningdishfilter()"
     },
     {
@@ -21341,7 +21341,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L18",
       "id": "utils_dishcatalog_buildrandomizablemaindishfilter",
-      "community": 122,
+      "community": 121,
       "norm_label": "buildrandomizablemaindishfilter()"
     },
     {
@@ -21350,7 +21350,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L30",
       "id": "utils_dishcatalog_isnonemptyobject",
-      "community": 122,
+      "community": 121,
       "norm_label": "isnonemptyobject()"
     },
     {
@@ -21359,7 +21359,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L34",
       "id": "utils_dishcatalog_buildandfilter",
-      "community": 122,
+      "community": 121,
       "norm_label": "buildandfilter()"
     },
     {
@@ -21368,7 +21368,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L41",
       "id": "utils_dishcatalog_applypopulate",
-      "community": 122,
+      "community": 121,
       "norm_label": "applypopulate()"
     },
     {
@@ -21377,7 +21377,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L52",
       "id": "utils_dishcatalog_normalizeids",
-      "community": 122,
+      "community": 121,
       "norm_label": "normalizeids()"
     },
     {
@@ -21386,7 +21386,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L62",
       "id": "utils_dishcatalog_hiddenmasterkey",
-      "community": 122,
+      "community": 121,
       "norm_label": "hiddenmasterkey()"
     },
     {
@@ -21395,7 +21395,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L67",
       "id": "utils_dishcatalog_dedupebyid",
-      "community": 122,
+      "community": 121,
       "norm_label": "dedupebyid()"
     },
     {
@@ -21404,7 +21404,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L81",
       "id": "utils_dishcatalog_getdishhiddenmastertype",
-      "community": 122,
+      "community": 121,
       "norm_label": "getdishhiddenmastertype()"
     },
     {
@@ -21413,7 +21413,7 @@
       "source_file": "backend/src/kitchen/utils/dishCatalog.js",
       "source_location": "L85",
       "id": "utils_dishcatalog_resolvedishcatalogforhousehold",
-      "community": 122,
+      "community": 121,
       "norm_label": "resolvedishcatalogforhousehold()"
     },
     {
@@ -21422,7 +21422,7 @@
       "source_file": "backend/src/kitchen/utils/ingredients.js",
       "source_location": "L1",
       "id": "utils_ingredients",
-      "community": 122,
+      "community": 121,
       "norm_label": "ingredients.js"
     },
     {
@@ -21431,7 +21431,7 @@
       "source_file": "backend/src/kitchen/utils/ingredients.js",
       "source_location": "L3",
       "id": "utils_ingredients_mergeingredientlists",
-      "community": 122,
+      "community": 121,
       "norm_label": "mergeingredientlists()"
     },
     {
@@ -21440,7 +21440,7 @@
       "source_file": "backend/src/kitchen/utils/ingredients.js",
       "source_location": "L28",
       "id": "utils_ingredients_combinedayingredients",
-      "community": 122,
+      "community": 121,
       "norm_label": "combinedayingredients()"
     },
     {
@@ -21476,7 +21476,7 @@
       "source_file": "backend/src/kitchen/utils/normalize.js",
       "source_location": "L22",
       "id": "utils_normalize_normalizeingredientlist",
-      "community": 122,
+      "community": 121,
       "norm_label": "normalizeingredientlist()"
     },
     {
@@ -21881,7 +21881,7 @@
       "source_file": "backend/src/mailer.js",
       "source_location": "L1",
       "id": "src_mailer",
-      "community": 148,
+      "community": 158,
       "norm_label": "mailer.js"
     },
     {
@@ -21890,7 +21890,7 @@
       "source_file": "backend/src/mailer.js",
       "source_location": "L3",
       "id": "src_mailer_sendtestemail",
-      "community": 148,
+      "community": 158,
       "norm_label": "sendtestemail()"
     },
     {
@@ -22115,7 +22115,7 @@
       "source_file": "backend/src/routes/testEmail.js",
       "source_location": "L1",
       "id": "routes_testemail",
-      "community": 148,
+      "community": 158,
       "norm_label": "testemail.js"
     },
     {
@@ -22124,7 +22124,7 @@
       "source_file": "backend/src/routes/testEmail.js",
       "source_location": "L4",
       "id": "routes_testemail_router",
-      "community": 148,
+      "community": 158,
       "norm_label": "router"
     },
     {
@@ -22133,7 +22133,7 @@
       "source_file": "backend/src/services/emailService.js",
       "source_location": "L1",
       "id": "services_emailservice",
-      "community": 148,
+      "community": 158,
       "norm_label": "emailservice.js"
     },
     {
@@ -22142,7 +22142,7 @@
       "source_file": "backend/src/services/emailService.js",
       "source_location": "L4",
       "id": "services_emailservice_parsesender",
-      "community": 148,
+      "community": 158,
       "norm_label": "parsesender()"
     },
     {
@@ -22151,7 +22151,7 @@
       "source_file": "backend/src/services/emailService.js",
       "source_location": "L17",
       "id": "services_emailservice_normalizerecipients",
-      "community": 148,
+      "community": 158,
       "norm_label": "normalizerecipients()"
     },
     {
@@ -22160,7 +22160,7 @@
       "source_file": "backend/src/services/emailService.js",
       "source_location": "L41",
       "id": "services_emailservice_getbrevoclient",
-      "community": 148,
+      "community": 158,
       "norm_label": "getbrevoclient()"
     },
     {
@@ -22169,7 +22169,7 @@
       "source_file": "backend/src/services/emailService.js",
       "source_location": "L57",
       "id": "services_emailservice_sendemail",
-      "community": 148,
+      "community": 158,
       "norm_label": "sendemail()"
     },
     {
@@ -25103,7 +25103,7 @@
       "source_file": "frontend/src/kitchen/components/ui/Button.jsx",
       "source_location": "L1",
       "id": "ui_button",
-      "community": 18,
+      "community": 168,
       "norm_label": "button.jsx"
     },
     {
@@ -25112,7 +25112,7 @@
       "source_file": "frontend/src/kitchen/components/ui/Button.jsx",
       "source_location": "L3",
       "id": "ui_button_variantclass",
-      "community": 18,
+      "community": 168,
       "norm_label": "variantclass"
     },
     {
@@ -25121,7 +25121,7 @@
       "source_file": "frontend/src/kitchen/components/ui/Button.jsx",
       "source_location": "L11",
       "id": "ui_button_button",
-      "community": 18,
+      "community": 168,
       "norm_label": "button()"
     },
     {
@@ -25130,7 +25130,7 @@
       "source_file": "frontend/src/kitchen/components/ui/Card.jsx",
       "source_location": "L1",
       "id": "ui_card",
-      "community": 18,
+      "community": 168,
       "norm_label": "card.jsx"
     },
     {
@@ -25139,7 +25139,7 @@
       "source_file": "frontend/src/kitchen/components/ui/Card.jsx",
       "source_location": "L3",
       "id": "ui_card_card",
-      "community": 18,
+      "community": 168,
       "norm_label": "card()"
     },
     {
@@ -25220,7 +25220,7 @@
       "source_file": "frontend/src/kitchen/components/ui/Input.jsx",
       "source_location": "L1",
       "id": "ui_input",
-      "community": 18,
+      "community": 168,
       "norm_label": "input.jsx"
     },
     {
@@ -25229,7 +25229,7 @@
       "source_file": "frontend/src/kitchen/components/ui/Input.jsx",
       "source_location": "L3",
       "id": "ui_input_input",
-      "community": 18,
+      "community": 168,
       "norm_label": "input()"
     },
     {
@@ -25848,7 +25848,7 @@
       "label": "isStandaloneMode()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/hooks/usePwaInstallPrompt.js",
-      "source_location": "L30",
+      "source_location": "L33",
       "id": "hooks_usepwainstallprompt_isstandalonemode",
       "community": 29,
       "norm_label": "isstandalonemode()"
@@ -25857,7 +25857,7 @@
       "label": "isMobileDevice()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/hooks/usePwaInstallPrompt.js",
-      "source_location": "L39",
+      "source_location": "L42",
       "id": "hooks_usepwainstallprompt_ismobiledevice",
       "community": 29,
       "norm_label": "ismobiledevice()"
@@ -25866,7 +25866,7 @@
       "label": "isIosSafari()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/hooks/usePwaInstallPrompt.js",
-      "source_location": "L46",
+      "source_location": "L49",
       "id": "hooks_usepwainstallprompt_isiossafari",
       "community": 29,
       "norm_label": "isiossafari()"
@@ -25875,7 +25875,7 @@
       "label": "wasAlreadyInstalled()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/hooks/usePwaInstallPrompt.js",
-      "source_location": "L54",
+      "source_location": "L57",
       "id": "hooks_usepwainstallprompt_wasalreadyinstalled",
       "community": 29,
       "norm_label": "wasalreadyinstalled()"
@@ -25884,7 +25884,7 @@
       "label": "wasDismissedRecently()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/hooks/usePwaInstallPrompt.js",
-      "source_location": "L62",
+      "source_location": "L65",
       "id": "hooks_usepwainstallprompt_wasdismissedrecently",
       "community": 29,
       "norm_label": "wasdismissedrecently()"
@@ -25893,7 +25893,7 @@
       "label": "usePwaInstallPrompt()",
       "file_type": "code",
       "source_file": "frontend/src/kitchen/hooks/usePwaInstallPrompt.js",
-      "source_location": "L76",
+      "source_location": "L79",
       "id": "hooks_usepwainstallprompt_usepwainstallprompt",
       "community": 29,
       "norm_label": "usepwainstallprompt()"
@@ -26093,7 +26093,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminForgotPasswordPage.jsx",
       "source_location": "L1",
       "id": "pages_adminforgotpasswordpage",
-      "community": 18,
+      "community": 168,
       "norm_label": "adminforgotpasswordpage.jsx"
     },
     {
@@ -26102,7 +26102,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminForgotPasswordPage.jsx",
       "source_location": "L8",
       "id": "pages_adminforgotpasswordpage_adminforgotpasswordpage",
-      "community": 18,
+      "community": 168,
       "norm_label": "adminforgotpasswordpage()"
     },
     {
@@ -26687,7 +26687,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminResetPasswordPage.jsx",
       "source_location": "L1",
       "id": "pages_adminresetpasswordpage",
-      "community": 18,
+      "community": 168,
       "norm_label": "adminresetpasswordpage.jsx"
     },
     {
@@ -26696,7 +26696,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminResetPasswordPage.jsx",
       "source_location": "L11",
       "id": "pages_adminresetpasswordpage_checkpasswordstrength",
-      "community": 18,
+      "community": 168,
       "norm_label": "checkpasswordstrength()"
     },
     {
@@ -26705,7 +26705,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminResetPasswordPage.jsx",
       "source_location": "L36",
       "id": "pages_adminresetpasswordpage_strength_labels",
-      "community": 18,
+      "community": 168,
       "norm_label": "strength_labels"
     },
     {
@@ -26714,7 +26714,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminResetPasswordPage.jsx",
       "source_location": "L37",
       "id": "pages_adminresetpasswordpage_strength_colors",
-      "community": 18,
+      "community": 168,
       "norm_label": "strength_colors"
     },
     {
@@ -26723,7 +26723,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminResetPasswordPage.jsx",
       "source_location": "L39",
       "id": "pages_adminresetpasswordpage_passwordstrengthbar",
-      "community": 18,
+      "community": 168,
       "norm_label": "passwordstrengthbar()"
     },
     {
@@ -26732,7 +26732,7 @@
       "source_file": "frontend/src/kitchen/pages/AdminResetPasswordPage.jsx",
       "source_location": "L64",
       "id": "pages_adminresetpasswordpage_adminresetpasswordpage",
-      "community": 18,
+      "community": 168,
       "norm_label": "adminresetpasswordpage()"
     },
     {
@@ -116891,5 +116891,5 @@
       "source_file": "CLAUDE.md"
     }
   ],
-  "built_at_commit": "22c439be96fa60837261fc41d8bee76f22b7e3f6"
+  "built_at_commit": "ab16394666f0415944fd867ea5f5f9fa0574fe8b"
 }

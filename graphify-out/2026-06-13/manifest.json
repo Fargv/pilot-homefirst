@@ -1340,8 +1340,8 @@
     "semantic_hash": "91aac52ba3f80133175ae9e6af2e6c69"
   },
   "frontend/src/kitchen/pages/ShoppingPage.jsx": {
-    "mtime": 1781279784.7006452,
-    "ast_hash": "680360daf330b693bfd936749d7acca5",
+    "mtime": 1781338573.0132234,
+    "ast_hash": "b6869965462fdb7027ce4bfe4a2f9e39",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/SwapsPage.jsx": {
@@ -1355,8 +1355,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/WeekPage.jsx": {
-    "mtime": 1781279036.0595975,
-    "ast_hash": "dba196ec0b8cfe64f227fd9444fab10a",
+    "mtime": 1781338565.576845,
+    "ast_hash": "15e32e5987c073869b6db10a49ccb2aa",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/push.js": {

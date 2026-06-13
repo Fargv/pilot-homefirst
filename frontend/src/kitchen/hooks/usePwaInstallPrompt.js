@@ -14,7 +14,10 @@ function _notify() {
 
 if (typeof window !== "undefined") {
   window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
+    // Don't call e.preventDefault(): modern Chrome no longer auto-shows the
+    // mini-infobar, and preventing it without an immediate prompt() logs the
+    // "must call prompt()" console warning. We just stash the event so the
+    // custom install button/banner can trigger prompt() later.
     _deferredPrompt = e;
     _notify();
   });

@@ -1,16 +1,16 @@
 # Graph Report - pilot-homefirst  (2026-06-13)
 
 ## Corpus Check
-- 366 files · ~811,516 words
+- 366 files · ~811,601 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4198 nodes · 7504 edges · 252 communities (239 shown, 13 thin omitted)
+- 4198 nodes · 7504 edges · 254 communities (241 shown, 13 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 77 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `22c439be`
+- Built from commit: `ab163946`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -136,6 +136,7 @@
 - [[_COMMUNITY_Community 118|Community 118]]
 - [[_COMMUNITY_Community 119|Community 119]]
 - [[_COMMUNITY_Community 120|Community 120]]
+- [[_COMMUNITY_Community 121|Community 121]]
 - [[_COMMUNITY_Community 122|Community 122]]
 - [[_COMMUNITY_Community 123|Community 123]]
 - [[_COMMUNITY_Community 124|Community 124]]
@@ -172,6 +173,7 @@
 - [[_COMMUNITY_Community 155|Community 155]]
 - [[_COMMUNITY_Community 156|Community 156]]
 - [[_COMMUNITY_Community 157|Community 157]]
+- [[_COMMUNITY_Community 158|Community 158]]
 - [[_COMMUNITY_Community 159|Community 159]]
 - [[_COMMUNITY_Community 160|Community 160]]
 - [[_COMMUNITY_Community 161|Community 161]]
@@ -181,7 +183,7 @@
 - [[_COMMUNITY_Community 165|Community 165]]
 - [[_COMMUNITY_Community 166|Community 166]]
 - [[_COMMUNITY_Community 167|Community 167]]
-- [[_COMMUNITY_Community 170|Community 170]]
+- [[_COMMUNITY_Community 168|Community 168]]
 - [[_COMMUNITY_Community 171|Community 171]]
 - [[_COMMUNITY_Community 172|Community 172]]
 - [[_COMMUNITY_Community 173|Community 173]]
@@ -281,7 +283,7 @@
 ## Hyperedges (group relationships)
 - **Recipe Data Model (ingredients list, structured steps, ingredientRefs)** — pilot_homefirst_general_ingredients_list, pilot_homefirst_structured_steps, pilot_homefirst_ingredient_refs, pilot_homefirst_base_servings [EXTRACTED 1.00]
 
-## Communities (252 total, 13 thin omitted)
+## Communities (254 total, 13 thin omitted)
 
 ### Community 0 - "Impeccable Design Skill"
 Cohesion: 0.13
@@ -348,8 +350,8 @@ Cohesion: 0.11
 Nodes (53): _(), ae(), be(), bt(), Ce(), Ct(), de(), dt() (+45 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.04
-Nodes (50): AppLoadingScreen(), activatePaymentSession(), fetchInviteDetails(), registerClerkTokenGetter(), setToken(), AuthContext, AuthProvider(), ClerkEnabledAuthProvider() (+42 more)
+Cohesion: 0.05
+Nodes (45): AppLoadingScreen(), activatePaymentSession(), fetchInviteDetails(), registerClerkTokenGetter(), setToken(), AuthContext, AuthProvider(), ClerkEnabledAuthProvider() (+37 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.24
@@ -428,8 +430,8 @@ Cohesion: 0.07
 Nodes (14): OnboardingContext, OnboardingProvider(), useOnboarding(), useWeeklyChallenge(), WeeklyChallengeContext, WeeklyChallengeProvider(), BetaProHint(), OnboardingBanner() (+6 more)
 
 ### Community 38 - "Community 38"
-Cohesion: 0.17
-Nodes (17): beginEditPin(), cancelEditingPin(), clearAnnotations(), extractContext(), finalizeEditingPin(), handleGo(), id8(), localCoords() (+9 more)
+Cohesion: 0.27
+Nodes (11): beginEditPin(), cancelEditingPin(), finalizeEditingPin(), localCoords(), onAnnotDown(), onAnnotInputKey(), onAnnotMove(), onAnnotUp() (+3 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.13
@@ -489,7 +491,7 @@ Nodes (25): checkColors(), checkElementAIPaletteDOM(), checkElementColors(), che
 
 ### Community 53 - "Community 53"
 Cohesion: 0.15
-Nodes (25): cleanup(), clearScrollY(), clearSession(), copyToClipboard(), desc(), handleClick(), handleKeyDown(), handleMouseMove() (+17 more)
+Nodes (26): cleanup(), clearAnnotations(), clearScrollY(), clearSession(), closeTunePopover(), copyToClipboard(), desc(), handleClick() (+18 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.09
@@ -620,8 +622,8 @@ Cohesion: 0.12
 Nodes (15): Accessibility Considerations, Anti-reflexes worth defending against, Classic Typography Principles, Fluid Type, Font Selection & Pairing, Modern Web Typography, Modular Scale & Hierarchy, OpenType Features (+7 more)
 
 ### Community 89 - "Community 89"
-Cohesion: 0.19
-Nodes (16): applyParamDefaults(), applyParamValue(), buildParamsPanel(), closedClipPath(), closeTunePopover(), formatRangeValue(), getVisibleVariantEl(), hideParamsPanel() (+8 more)
+Cohesion: 0.20
+Nodes (15): applyParamDefaults(), applyParamValue(), buildParamsPanel(), closedClipPath(), formatRangeValue(), getVisibleVariantEl(), hideParamsPanel(), openTunePopover() (+7 more)
 
 ### Community 90 - "Community 90"
 Cohesion: 0.13
@@ -740,16 +742,20 @@ Cohesion: 0.32
 Nodes (12): actionLabel(), buildConfigureRow(), buildConfirmedRow(), buildCyclingRow(), buildDots(), buildGeneratingRow(), buildSavingRow(), el() (+4 more)
 
 ### Community 119 - "Community 119"
-Cohesion: 0.21
-Nodes (12): clearHandled(), cycleVariant(), isSessionHandled(), loadSession(), pickVariantContent(), queueCheckpoint(), readScrollY(), resumeSession() (+4 more)
+Cohesion: 0.14
+Nodes (18): clearHandled(), cycleVariant(), extractContext(), handleGo(), id8(), isSessionHandled(), loadSession(), pickVariantContent() (+10 more)
 
 ### Community 120 - "Community 120"
 Cohesion: 0.26
 Nodes (9): applyEvent(), baseSnapshot(), COMPLETED_PHASES, getJournalPath(), getSnapshotPath(), rebuildSnapshotFromJournal(), safeSessionId(), toPendingEvent() (+1 more)
 
+### Community 121 - "Community 121"
+Cohesion: 0.09
+Nodes (24): HiddenMaster, HiddenMasterSchema, catalogContentHash(), normalizeDishTemplateForHash(), rebuildFutureShoppingLists(), rebuildFutureShoppingListsSafe(), rebuildShoppingListForPlan(), repointDishInPlans() (+16 more)
+
 ### Community 122 - "Community 122"
-Cohesion: 0.05
-Nodes (52): getEffectiveHouseholdId(), getOptionalHouseholdId(), handleHouseholdError(), HiddenMaster, HiddenMasterSchema, HouseholdBasic, HouseholdBasicSchema, KitchenIngredient (+44 more)
+Cohesion: 0.10
+Nodes (28): getEffectiveHouseholdId(), getOptionalHouseholdId(), handleHouseholdError(), HouseholdBasic, HouseholdBasicSchema, KitchenIngredient, KitchenIngredientSchema, resolveBasicsAccess() (+20 more)
 
 ### Community 123 - "Community 123"
 Cohesion: 0.18
@@ -852,8 +858,8 @@ Cohesion: 0.29
 Nodes (7): append-arrays, append-string, Consent prompt template, CSP detection (first-time only), Drift-heal warning, First-time setup (config missing or invalid), Troubleshooting
 
 ### Community 148 - "Community 148"
-Cohesion: 0.04
-Nodes (57): buildBetaInviteLink(), checkBetaAccess(), createBetaInvite(), createBetaToken(), getBetaInviteStatus(), isBetaModeEnabled(), markBetaInviteUsed(), requireDiod() (+49 more)
+Cohesion: 0.05
+Nodes (50): ensureHouseholdInviteCode(), generateUniqueHouseholdInviteCode(), randomSixDigitCode(), requireDiod(), applyBitesBundleEntitlementFromAttempt(), applyPackEntitlementFromAttempt(), deactivateExpiredSubscriptions(), applyAdminSubscriptionActivation() (+42 more)
 
 ### Community 149 - "Community 149"
 Cohesion: 0.28
@@ -891,6 +897,10 @@ Nodes (8): Accessibility Resilience, Edge Cases & Boundary Conditions, Error Han
 Cohesion: 0.29
 Nodes (7): checkRepeatedSectionKickers(), checkRepeatedSectionKickersDOM(), checkRepeatedSectionKickersFromDoc(), cleanInlineText(), collectRepeatedSectionKickerCandidates(), isRepeatedKickerCandidate(), makeStaticStyle()
 
+### Community 158 - "Community 158"
+Cohesion: 0.10
+Nodes (23): buildBetaInviteLink(), checkBetaAccess(), createBetaInvite(), createBetaToken(), getBetaInviteStatus(), isBetaModeEnabled(), markBetaInviteUsed(), cleanupOldChallenges() (+15 more)
+
 ### Community 159 - "Community 159"
 Cohesion: 0.29
 Nodes (6): Summary, Duplicate ingredient groups, Ingredients to create, Lunchfy normalization report 20260512-1552, Manual review, Safety notes
@@ -904,8 +914,8 @@ Cohesion: 0.29
 Nodes (6): Summary, Duplicate ingredient groups, Ingredients to create, Lunchfy normalization report 20260512-1556, Manual review, Safety notes
 
 ### Community 162 - "Community 162"
-Cohesion: 0.06
-Nodes (51): buildHouseholdFilter(), buildScopedFilter(), buildDefaultAttendeeIds(), buildDefaultDays(), createOrGetWeekPlan(), ensureDinnerSlotsIfEnabled(), ensureWeekPlan(), findWeekPlan() (+43 more)
+Cohesion: 0.05
+Nodes (64): buildHouseholdFilter(), buildScopedFilter(), buildDefaultAttendeeIds(), buildDefaultDays(), createOrGetWeekPlan(), ensureDinnerSlotsIfEnabled(), ensureWeekPlan(), findWeekPlan() (+56 more)
 
 ### Community 163 - "Community 163"
 Cohesion: 0.29
@@ -927,9 +937,9 @@ Nodes (6): Summary, Duplicate ingredient groups, Ingredients to create, Lunchfy 
 Cohesion: 0.29
 Nodes (6): APPLY, CANONICAL_FIXES, main(), MERGE_MAP, NOW, QUALITY_FIXES
 
-### Community 170 - "Community 170"
-Cohesion: 0.07
-Nodes (29): ensureHouseholdInviteCode(), generateUniqueHouseholdInviteCode(), randomSixDigitCode(), deactivateExpiredSubscriptions(), applyAdminSubscriptionDeactivation(), Household, HouseholdSchema, HouseholdCatalogPack (+21 more)
+### Community 168 - "Community 168"
+Cohesion: 0.16
+Nodes (5): AdminResetPasswordPage(), checkPasswordStrength(), STRENGTH_COLORS, STRENGTH_LABELS, variantClass
 
 ### Community 171 - "Community 171"
 Cohesion: 0.33
@@ -1179,7 +1189,7 @@ Nodes (44): attachItemsToPurchaseSession(), completePurchaseSession(), detachIte
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `resolveMongoUrl()` connect `Community 352` to `Community 386`, `Community 131`, `Community 100`, `Community 70`, `Community 167`, `Community 170`, `Community 74`, `Community 236`, `Community 42`, `Community 78`, `Community 23`, `Community 151`, `Community 122`?**
+- **Why does `resolveMongoUrl()` connect `Community 352` to `Community 162`, `Community 131`, `Community 100`, `Community 386`, `Community 70`, `Community 167`, `Community 74`, `Community 42`, `Community 236`, `Community 78`, `Community 23`, `Community 151`, `Community 122`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Why does `apiRequest()` connect `Community 66` to `Community 34`, `Community 35`, `Community 37`, `Community 229`, `Community 43`, `Community 15`, `Community 16`, `Community 48`, `Community 18`, `Community 19`, `Community 28`?**
   _High betweenness centrality (0.004) - this node is a cross-community bridge._

@@ -1255,8 +1255,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/hooks/usePwaInstallPrompt.js": {
-    "mtime": 1780850791.6371832,
-    "ast_hash": "0c2e6121e59164df796a14f2bdf06ec0",
+    "mtime": 1781341844.6087615,
+    "ast_hash": "453c6aff8ac1bc7cd514b0963ba7b69b",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/hooks/useRewardAnimation.js": {
@@ -1420,8 +1420,8 @@
     "semantic_hash": "4722a28a52ccd0994c517cfdd70cdc90"
   },
   "frontend/src/main.jsx": {
-    "mtime": 1780868063.8425329,
-    "ast_hash": "95b3697a8960ec397b422d2ea42da114",
+    "mtime": 1781341834.0207708,
+    "ast_hash": "95cdb513f734d3375ecf596fbf28eec2",
     "semantic_hash": ""
   },
   "frontend/src/pages/DashboardPage.jsx": {
@@ -1705,8 +1705,8 @@
     "semantic_hash": ""
   },
   "frontend/index.html": {
-    "mtime": 1780850791.5819492,
-    "ast_hash": "cfd8579b1b15805d7d41932395400bc9",
+    "mtime": 1781341826.507531,
+    "ast_hash": "fa738791c27c3757aeafc95c5901d6e8",
     "semantic_hash": ""
   },
   "frontend/public/architecture-map.html": {
