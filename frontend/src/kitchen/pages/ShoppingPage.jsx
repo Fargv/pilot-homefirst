@@ -5,7 +5,7 @@ import WeekDatePicker from "../components/ui/WeekDatePicker.jsx";
 import { UNSAFE_NavigationContext as NavigationContext, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { ApiRequestError, apiRequest } from "../api.js";
-import { createSyncedApi, fetchCached, primeCache, shoppingQuery } from "../queryClient.js";
+import { createSyncedApi, fetchCached, primeCache, queryClient, shoppingQuery } from "../queryClient.js";
 
 // Shopping mutations return the fresh payload (applyPayload primes the cache);
 // invalidation covers endpoints that do not return the full list
@@ -1843,6 +1843,7 @@ export default function ShoppingPage() {
           onApplied={({ addedCount }) => {
             setBasicsPopupOpen(false);
             if (addedCount > 0) {
+              queryClient.invalidateQueries({ queryKey: ["shopping", weekStart] });
               void loadList({ silent: true });
               clearTimeout(basicsToastTimerRef.current);
               setBasicsToast(`${addedCount} básico${addedCount !== 1 ? "s" : ""} añadido${addedCount !== 1 ? "s" : ""} a la lista ✓`);

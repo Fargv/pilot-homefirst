@@ -19692,7 +19692,7 @@ td.recipe-qty-scaled {
   color: var(--color-text-muted, #6b7280);
   line-height: 1.5;
 }
-.basics-popup-error { color: #dc2626; }
+.basics-popup-error { color: var(--danger-text, #dc2626); }
 .basics-popup-success {
   display: flex;
   align-items: center;
@@ -19701,7 +19701,7 @@ td.recipe-qty-scaled {
   padding: 36px 20px;
   font-size: var(--fs-base);
   font-weight: 600;
-  color: #059669;
+  color: var(--success-text, #059669);
 }
 .basics-popup-success-icon {
   font-size: var(--fs-xl);
@@ -19721,7 +19721,7 @@ td.recipe-qty-scaled {
   border: none;
   font-size: var(--fs-sm);
   font-weight: 600;
-  color: var(--color-accent, #6366f1);
+  color: var(--hf-brand);
   cursor: pointer;
   padding: 0;
   font-family: inherit;
@@ -19758,7 +19758,7 @@ td.recipe-qty-scaled {
   background: var(--color-surface-raised, #f9fafb);
 }
 .basics-popup-item.is-selected {
-  background: var(--color-accent-light, #eef2ff);
+  background: var(--hf-brand-soft-hover);
 }
 .basics-popup-item.is-already {
   opacity: 0.55;
@@ -19769,22 +19769,22 @@ td.recipe-qty-scaled {
   height: 20px;
   flex-shrink: 0;
   border-radius: var(--radius-sm);
-  border: 1.8px solid var(--color-border, #d1d5db);
-  background: var(--color-surface, #fff);
+  border: 1.8px solid var(--border-soft, #d1d5db);
+  background: var(--surface-elevated, #fff);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-accent, #6366f1);
+  color: var(--hf-brand);
   transition: border-color var(--motion-fast), background var(--motion-fast);
 }
 .basics-popup-item.is-selected .basics-popup-item-check {
-  border-color: var(--color-accent, #6366f1);
-  background: var(--color-accent, #6366f1);
+  border-color: var(--hf-brand);
+  background: var(--hf-brand);
   color: #fff;
 }
 .basics-popup-item-check.is-done {
-  border-color: #10b981;
-  background: #10b981;
+  border-color: var(--success-text, #10b981);
+  background: var(--success-text, #10b981);
   color: #fff;
 }
 .basics-popup-item-emoji {
@@ -19822,7 +19822,7 @@ td.recipe-qty-scaled {
 }
 .basics-popup-footer-error {
   font-size: var(--fs-sm);
-  color: #dc2626;
+  color: var(--danger-text, #dc2626);
   margin-bottom: 6px;
 }
 .basics-popup-apply-btn {
@@ -19830,7 +19830,7 @@ td.recipe-qty-scaled {
   height: 44px;
   border-radius: var(--radius-md);
   border: none;
-  background: var(--color-accent, #6366f1);
+  background: var(--hf-brand);
   color: #fff;
   font-size: var(--fs-base);
   font-weight: 700;
