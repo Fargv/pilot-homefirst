@@ -959,7 +959,10 @@ router.post("/clerk/onboarding", async (req, res) => {
       avoidRepeatsWeeks,
       selectedPlan,
       inviteCode,
-      inviteToken
+      inviteToken,
+      birthYear,
+      termsAccepted,
+      privacyAccepted
     } = req.body || {};
 
     const safeFirstName = String(firstName || identity.clerkUser?.firstName || "").trim();
@@ -1045,7 +1048,10 @@ router.post("/clerk/onboarding", async (req, res) => {
         role: onboardingTarget.role,
         householdId: null,
         isPlaceholder: false,
-        globalRole: null
+        globalRole: null,
+        birthYear: birthYear ? Number(birthYear) : null,
+        ageVerified: Boolean(birthYear && Number(birthYear) <= new Date().getFullYear() - 16),
+        ageVerifiedAt: birthYear ? new Date() : null
       });
       userCreatedNow = true;
     } else {
@@ -1067,6 +1073,11 @@ router.post("/clerk/onboarding", async (req, res) => {
       user.canCook = parseBooleanWithDefault(canCook, user.canCook ?? true);
       user.dinnerActive = parseBooleanWithDefault(dinnerActive, user.dinnerActive ?? true);
       user.dinnerCanCook = parseBooleanWithDefault(dinnerCanCook, user.dinnerCanCook ?? true);
+      if (birthYear && !user.birthYear) {
+        user.birthYear = Number(birthYear);
+        user.ageVerified = Number(birthYear) <= new Date().getFullYear() - 16;
+        user.ageVerifiedAt = new Date();
+      }
     }
 
     let household = user.householdId ? await Household.findById(user.householdId) : null;

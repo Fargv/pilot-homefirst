@@ -180,6 +180,9 @@ export default function ClerkOnboardingPage() {
     dinnerActive: true,
     dinnerCanCook: true,
     betaToken: "",
+    birthYear: "",
+    termsAccepted: false,
+    privacyAccepted: false,
   });
 
   // ── Status ───────────────────────────────────────────────────────────
@@ -388,7 +391,10 @@ export default function ClerkOnboardingPage() {
 
   // ── Step 3: Profile ───────────────────────────────────────────────────────
 
-  const canContinueProfile = Boolean(String(form.displayName || "").trim());
+  const currentYear = new Date().getFullYear();
+  const birthYearNum = Number(form.birthYear);
+  const birthYearValid = birthYearNum >= 1900 && birthYearNum <= currentYear - 16;
+  const canContinueProfile = Boolean(String(form.displayName || "").trim()) && birthYearValid;
 
   const submitProfile = (event) => {
     event.preventDefault();
@@ -438,6 +444,9 @@ export default function ClerkOnboardingPage() {
           inviteCode: isJoinMode && !form.inviteToken ? normalizedInviteCode : undefined,
           inviteToken: form.inviteToken || undefined,
           betaToken: isCreateMode ? (form.betaToken || undefined) : undefined,
+          birthYear: birthYearNum || undefined,
+          termsAccepted: form.termsAccepted,
+          privacyAccepted: form.privacyAccepted,
         }),
       });
       window.sessionStorage.removeItem(CLERK_STORAGE_INVITE_TOKEN_KEY);
@@ -724,6 +733,27 @@ export default function ClerkOnboardingPage() {
               <p className="kitchen-auth-hint">
                 Tu hogar te verá con este nombre. Se usará para generar tus iniciales en el avatar.
               </p>
+
+              <label className="kitchen-ui-input-group" htmlFor="su-birthyear">
+                <span className="kitchen-login-label">AÑO DE NACIMIENTO</span>
+                <select
+                  id="su-birthyear"
+                  className="kitchen-ui-input kitchen-ui-select"
+                  value={form.birthYear}
+                  onChange={(e) => updateField("birthYear", e.target.value)}
+                >
+                  <option value="">-- Selecciona tu año de nacimiento --</option>
+                  {Array.from({ length: currentYear - 1900 - 15 }, (_, i) => currentYear - 16 - i).map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </label>
+              {form.birthYear && !birthYearValid ? (
+                <p className="kitchen-auth-hint" style={{ color: "var(--danger-text, #dc2626)" }}>
+                  Debes tener al menos 16 años para usar Lunchfy.
+                </p>
+              ) : null}
+
               <div className="kitchen-onboarding-footer">
                 {canGoBack ? (
                   <button type="button" className="kitchen-button secondary" onClick={goBack}>
