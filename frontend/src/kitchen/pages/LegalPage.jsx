@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
-import termsRaw from "../../../../legal/terminos-y-condiciones.md?raw";
-import privacyRaw from "../../../../legal/politica-de-privacidad.md?raw";
+import termsRaw from "../../legal/terminos-y-condiciones.md?raw";
+import privacyRaw from "../../legal/politica-de-privacidad.md?raw";
 
 function escapeHtml(str) {
   return str
