@@ -39,6 +39,7 @@ import { queryClient } from "./kitchen/queryClient.js";
 import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 import { OnboardingProvider } from "./kitchen/contexts/OnboardingContext.jsx";
 import { WeeklyChallengeProvider } from "./kitchen/contexts/WeeklyChallengeContext.jsx";
+import ConsentGate from "./kitchen/components/ConsentGate.jsx";
 
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -97,6 +98,7 @@ function AppRoutes() {
     <ActiveWeekProvider>
       <OnboardingProvider>
       <WeeklyChallengeProvider>
+      <ConsentGate>
       <DevEnvironmentBanner />
       <PwaInstallPrompt />
       <BootstrapRedirect />
@@ -222,6 +224,7 @@ function AppRoutes() {
         <Route path="*" element={<HomeRedirect />} />
       </Routes>
       </React.Suspense>
+      </ConsentGate>
       </WeeklyChallengeProvider>
       </OnboardingProvider>
     </ActiveWeekProvider>

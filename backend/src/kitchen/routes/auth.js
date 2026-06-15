@@ -1429,4 +1429,36 @@ if (config.nodeEnv === "development" || process.env.APP_ENV === "development") {
   });
 }
 
+// POST /accept-consent — records legal consent for existing users (gate modal).
+router.post("/accept-consent", requireAuth, async (req, res) => {
+  try {
+    const user = req.kitchenUser;
+    const { termsAccepted, privacyAccepted } = req.body || {};
+    if (!termsAccepted || !privacyAccepted) {
+      return res.status(400).json({ ok: false, error: "Debes aceptar los Términos y la Política de Privacidad." });
+    }
+    const acceptedAt = new Date();
+    user.consentAcceptedAt = acceptedAt;
+    await user.save();
+    ConsentRecord.create({
+      userId: user._id,
+      termsAccepted: true,
+      termsVersion: "1.0",
+      privacyAccepted: true,
+      privacyVersion: "1.0",
+      acceptedAt,
+      ipAddress: req.ip || req.socket?.remoteAddress || null,
+      userAgent: req.headers?.["user-agent"] || null,
+      source: "gate"
+    }).catch((e) => console.error("[consent] Failed to create ConsentRecord (gate):", e.message));
+    const householdName = user.householdId
+      ? (await import("../models/Household.js").then((m) => m.Household.findById(user.householdId).select("name").lean()))?.name || null
+      : null;
+    return res.json({ ok: true, user: buildSafeUserResponse(user, householdName) });
+  } catch (error) {
+    console.error("[accept-consent] failed", error?.message);
+    return res.status(500).json({ ok: false, error: "No se pudo registrar tu consentimiento." });
+  }
+});
+
 export default router;
