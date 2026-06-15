@@ -145,6 +145,7 @@ async function deleteHouseholdScopedData(householdId) {
   const operations = await Promise.all([
     Invitation.deleteMany({ householdId }),
     KitchenShoppingList.deleteMany({ householdId }),
+    PurchaseSession.deleteMany({ householdId }),
     KitchenWeekPlan.deleteMany({ householdId }),
     KitchenSwap.deleteMany({ householdId }),
     KitchenDish.deleteMany({ householdId }),
