@@ -27,6 +27,8 @@ const AdminUsersPage = React.lazy(() => import("./kitchen/pages/AdminUsersPage.j
 const AdminPanelPage = React.lazy(() => import("./kitchen/pages/AdminPanelPage.jsx"));
 const AdminForgotPasswordPage = React.lazy(() => import("./kitchen/pages/AdminForgotPasswordPage.jsx"));
 const AdminResetPasswordPage = React.lazy(() => import("./kitchen/pages/AdminResetPasswordPage.jsx"));
+const TermsPage = React.lazy(() => import("./kitchen/pages/LegalPage.jsx").then((m) => ({ default: m.TermsPage })));
+const PrivacyPage = React.lazy(() => import("./kitchen/pages/LegalPage.jsx").then((m) => ({ default: m.PrivacyPage })));
 import DevEnvironmentBanner from "./components/DevEnvironmentBanner.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import PwaInstallPrompt from "./kitchen/components/PwaInstallPrompt.jsx";
@@ -111,6 +113,8 @@ function AppRoutes() {
         <Route path="/auth/clerk/reset-password/*" element={<ClerkAuthPage mode="reset-password" />} />
         <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} />
         <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} />
+        <Route path="/terminos" element={<TermsPage />} />
+        <Route path="/privacidad" element={<PrivacyPage />} />
         <Route path="/invite/:token" element={<InviteLandingPage />} />
         <Route
           path="/kitchen/semana"
