@@ -193,12 +193,32 @@ export async function updatePurchaseSessionStore({ householdId, sessionId, userI
   return session;
 }
 
-export async function getPendingPurchaseSessions(householdId) {
+export async function getPendingPurchaseSessions(householdId, weekStart = null) {
   if (!householdId) return [];
-  return PurchaseSession.find({
-    householdId,
-    status: { $in: OPEN_PURCHASE_SESSION_STATUSES }
-  })
+  const filter = { householdId, status: { $in: OPEN_PURCHASE_SESSION_STATUSES } };
+  if (weekStart) {
+    const normalized = normalizeWeekStartKey(weekStart);
+    if (normalized) filter.weekStart = new Date(`${normalized}T00:00:00.000Z`);
+  }
+  return PurchaseSession.find(filter)
     .sort({ updatedAt: -1, createdAt: -1 })
     .lean();
+}
+
+// Mark draft/pending_confirmation sessions from past weeks as expired so
+// their unconfirmed items stop appearing as "pending gasto" banners and
+// are excluded from spent calculations (only "completed" sessions count).
+export async function closeStaleDraftSessions(householdId, currentWeekStart) {
+  if (!householdId || !currentWeekStart) return;
+  const normalized = normalizeWeekStartKey(currentWeekStart);
+  if (!normalized) return;
+  const cutoff = new Date(`${normalized}T00:00:00.000Z`);
+  await PurchaseSession.updateMany(
+    {
+      householdId,
+      status: { $in: OPEN_PURCHASE_SESSION_STATUSES },
+      weekStart: { $lt: cutoff }
+    },
+    { $set: { status: "expired", amount: null } }
+  );
 }
