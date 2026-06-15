@@ -6668,7 +6668,7 @@ body {
      column-reverse: action banner (first in DOM) renders at the visual
      bottom; regular pill toasts float above it. */
   .hf-toast-stack {
-    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
     left: 0;
     right: 0;
     transform: none;
