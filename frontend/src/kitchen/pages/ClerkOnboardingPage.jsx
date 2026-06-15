@@ -415,8 +415,9 @@ export default function ClerkOnboardingPage() {
       const w = Number(form.avoidRepeatsWeeks);
       if (!Number.isInteger(w) || w < 1 || w > 12) return false;
     }
+    if (!form.termsAccepted || !form.privacyAccepted) return false;
     return true;
-  }, [canContinueProfile, form.avoidRepeatsEnabled, form.avoidRepeatsWeeks, form.householdName, isCreateMode]);
+  }, [canContinueProfile, form.avoidRepeatsEnabled, form.avoidRepeatsWeeks, form.householdName, form.termsAccepted, form.privacyAccepted, isCreateMode]);
 
   const submitFinal = async (event) => {
     event.preventDefault();
@@ -865,6 +866,32 @@ export default function ClerkOnboardingPage() {
                     />
                   </>
                 ) : null}
+              </section>
+
+              <section className="kitchen-onboarding-section">
+                <h3 className="kitchen-onboarding-section-title">Términos legales</h3>
+                <div className="consent-check-group">
+                  <label className="consent-check-label">
+                    <input
+                      type="checkbox"
+                      checked={form.termsAccepted}
+                      onChange={(e) => updateField("termsAccepted", e.target.checked)}
+                    />
+                    He leído y acepto los{" "}
+                    <a href="/terminos" target="_blank" rel="noopener noreferrer">Términos y Condiciones</a>
+                    {" "}de uso de Lunchfy.
+                  </label>
+                  <label className="consent-check-label">
+                    <input
+                      type="checkbox"
+                      checked={form.privacyAccepted}
+                      onChange={(e) => updateField("privacyAccepted", e.target.checked)}
+                    />
+                    He leído y acepto la{" "}
+                    <a href="/privacidad" target="_blank" rel="noopener noreferrer">Política de Privacidad</a>
+                    {" "}y el tratamiento de mis datos personales.
+                  </label>
+                </div>
               </section>
 
               <div className="kitchen-onboarding-footer">

@@ -2,6 +2,7 @@ import express from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
+import { ConsentRecord } from "../models/ConsentRecord.js";
 import { KitchenAuditLog } from "../models/KitchenAuditLog.js";
 import { Invitation } from "../models/Invitation.js";
 import { Household } from "../models/Household.js";
@@ -1153,6 +1154,24 @@ router.post("/clerk/onboarding", async (req, res) => {
     }
 
     await user.save();
+
+    // Record consent (GDPR/LOPDGDD) — created once per signup, never deleted.
+    if (termsAccepted && privacyAccepted) {
+      const acceptedAt = new Date();
+      user.consentAcceptedAt = acceptedAt;
+      await user.save();
+      ConsentRecord.create({
+        userId: user._id,
+        termsAccepted: Boolean(termsAccepted),
+        termsVersion: "1.0",
+        privacyAccepted: Boolean(privacyAccepted),
+        privacyVersion: "1.0",
+        acceptedAt,
+        ipAddress: req.ip || req.socket?.remoteAddress || null,
+        userAgent: req.headers?.["user-agent"] || null,
+        source: "signup"
+      }).catch((e) => console.error("[consent] Failed to create ConsentRecord:", e.message));
+    }
 
     logClerkOnboardingDev("Clerk onboarding completed", {
       userId: user._id?.toString?.() || null,
