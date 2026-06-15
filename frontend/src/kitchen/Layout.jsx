@@ -17,6 +17,17 @@ import { CookingSessionProvider } from "./contexts/CookingSessionContext.jsx";
 import CookingSessionBanner from "./components/cooking/CookingSessionBanner.jsx";
 import CookingSessionStepper from "./components/cooking/CookingSessionStepper.jsx";
 import useMobileRouteSwipeNavigation from "./hooks/useMobileRouteSwipeNavigation.js";
+import { isProLikeHousehold } from "./subscription.js";
+import { useActiveWeek } from "./weekContext.jsx";
+import {
+  queryClient,
+  planningQuery,
+  dishesQuery,
+  shoppingQuery,
+  catalogQuery,
+  userQuery,
+  membersQuery,
+} from "./queryClient.js";
 
 function CalendarIcon(props) {
   return (
@@ -126,32 +137,6 @@ function AppearanceIcon(props) {
   );
 }
 
-function SystemThemeIcon(props) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
-      <circle cx="8" cy="8" r="6.5" />
-      <path d="M8 1.5a6.5 6.5 0 0 1 0 13V1.5z" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function SunThemeIcon(props) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
-      <circle cx="8" cy="8" r="3" />
-      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.53 11.53l1.42 1.42M3.05 12.95l1.42-1.42M11.53 4.47l1.42-1.42" />
-    </svg>
-  );
-}
-
-function MoonThemeIcon(props) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
-      <path d="M14 10.58A6 6 0 0 1 5.42 2a7 7 0 1 0 8.58 8.58z" />
-    </svg>
-  );
-}
-
 function getFirstName(displayName = "") {
   return String(displayName).trim().split(/\s+/)[0] || "";
 }
@@ -215,7 +200,8 @@ function BetaProUnlockedModal({ onDismiss }) {
 
 export default function KitchenLayout({ children, containerClassName = "" }) {
   const { user, logout, refreshUser, setUser } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { appTheme, mode: themeMode, setMode, canUsePremiumThemes, syncThemeFromUser } = useTheme();
+  const [themeModeSaving, setThemeModeSaving] = useState(false);
   const { betaProEvent, dismissBetaProEvent } = useWeeklyChallenge();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -266,6 +252,28 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
     []
   );
 
+  const { activeWeek } = useActiveWeek();
+
+  // Hover-to-click is ~200ms: prefetching on hover/touchstart means the
+  // destination's data is usually cached before navigation happens.
+  const prefetchRoute = React.useCallback((to) => {
+    try {
+      if (to === "/kitchen/semana") {
+        if (activeWeek) queryClient.prefetchQuery(planningQuery(activeWeek));
+        queryClient.prefetchQuery(dishesQuery("false"));
+        queryClient.prefetchQuery(membersQuery());
+      } else if (to === "/kitchen/platos") {
+        queryClient.prefetchQuery(dishesQuery());
+      } else if (to === "/kitchen/compra") {
+        if (activeWeek) queryClient.prefetchQuery(shoppingQuery(activeWeek));
+      } else if (to === "/kitchen/catalogo") {
+        queryClient.prefetchQuery(catalogQuery());
+      } else if (to.startsWith("/kitchen/configuracion")) {
+        queryClient.prefetchQuery(userQuery(user?.id));
+      }
+    } catch { /* prefetch is best-effort */ }
+  }, [activeWeek, user?.id]);
+
   const bottomNavLinks = useMemo(
     () => [
       { to: "/kitchen/semana", label: "Planificación", icon: CalendarIcon },
@@ -280,6 +288,21 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
     [bottomNavLinks]
   );
   useMobileRouteSwipeNavigation(mainSwipeRoutes);
+
+  useEffect(() => {
+    if (!user) {
+      syncThemeFromUser(null, { canUsePremiumThemes: false });
+      return;
+    }
+    syncThemeFromUser(user.themeId, {
+      canUsePremiumThemes: isProLikeHousehold({
+        subscriptionPlan: user.subscriptionPlan,
+        planSource: user.planSource,
+        betaProActive: user.betaProActive,
+        betaPro: user.betaPro
+      })
+    });
+  }, [syncThemeFromUser, user?.betaPro, user?.betaProActive, user?.id, user?.planSource, user?.subscriptionPlan, user?.themeId]);
 
   useEffect(() => {
     const onPointerDown = (event) => {
@@ -377,6 +400,27 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
     setUserMenuOpen(false);
   };
 
+  // Profile-menu Light/Dark toggle. Applies instantly (no reload) and
+  // persists the resolved themeId; reverts the local theme on failure.
+  const handleSelectMode = async (nextMode) => {
+    if (themeModeSaving || nextMode === themeMode) return;
+    const previousThemeId = appTheme.id;
+    const targetThemeId = setMode(nextMode);
+    if (!user) return;
+    setThemeModeSaving(true);
+    try {
+      const data = await apiRequest("/api/kitchen/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({ themeId: targetThemeId })
+      });
+      if (data?.user) setUser((prev) => ({ ...prev, ...data.user }));
+    } catch {
+      syncThemeFromUser(previousThemeId, { canUsePremiumThemes });
+    } finally {
+      setThemeModeSaving(false);
+    }
+  };
+
   const userName = getFirstName(user?.displayName || "");
   const userInitials = getUserInitialsFromProfile(
     user?.initials,
@@ -400,7 +444,13 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
         center={(
           <nav className="kitchen-nav-desktop">
             {navLinks.map((link) => (
-              <NavLink key={link.to} to={link.to} onClick={onNavigate}>
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={onNavigate}
+                onMouseEnter={() => prefetchRoute(link.to)}
+                onFocus={() => prefetchRoute(link.to)}
+              >
                 {link.label}
               </NavLink>
             ))}
@@ -482,40 +532,54 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                   <CreditCardIcon className="kitchen-user-menu-icon" />
                   Suscripción / Plan
                 </button>
-                <div className="kitchen-user-menu-theme-row" role="group" aria-label="Apariencia">
-                  <span className="kitchen-user-menu-theme-label">
+                <div className="kitchen-user-menu-appearance" role="group" aria-label="Apariencia">
+                  <span className="kitchen-user-menu-appearance-label">
                     <AppearanceIcon className="kitchen-user-menu-icon" />
-                    Tema
+                    Apariencia
                   </span>
-                  <div className="kitchen-user-menu-theme-options">
+                  <div className="kitchen-mode-toggle" role="radiogroup" aria-label="Tema claro u oscuro">
                     <button
                       type="button"
-                      className={`kitchen-user-menu-theme-btn${theme === "system" ? " is-active" : ""}`}
-                      onClick={() => setTheme("system")}
-                      title="Sistema"
-                      aria-pressed={theme === "system"}
+                      role="radio"
+                      aria-checked={themeMode === "light"}
+                      className={`kitchen-mode-toggle-opt${themeMode === "light" ? " is-active" : ""}`}
+                      onClick={() => handleSelectMode("light")}
+                      disabled={themeModeSaving}
                     >
-                      <SystemThemeIcon className="kitchen-user-menu-theme-icon" />
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="1.7" />
+                        <path d="M12 2.5v2.2M12 19.3v2.2M4.3 4.3l1.6 1.6M18.1 18.1l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.3 19.7l1.6-1.6M18.1 5.9l1.6-1.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                      </svg>
+                      Claro
                     </button>
                     <button
                       type="button"
-                      className={`kitchen-user-menu-theme-btn${theme === "light" ? " is-active" : ""}`}
-                      onClick={() => setTheme("light")}
-                      title="Claro"
-                      aria-pressed={theme === "light"}
+                      role="radio"
+                      aria-checked={themeMode === "dark"}
+                      className={`kitchen-mode-toggle-opt${themeMode === "dark" ? " is-active" : ""}`}
+                      onClick={() => handleSelectMode("dark")}
+                      disabled={themeModeSaving}
                     >
-                      <SunThemeIcon className="kitchen-user-menu-theme-icon" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`kitchen-user-menu-theme-btn${theme === "dark" ? " is-active" : ""}`}
-                      onClick={() => setTheme("dark")}
-                      title="Oscuro"
-                      aria-pressed={theme === "dark"}
-                    >
-                      <MoonThemeIcon className="kitchen-user-menu-theme-icon" />
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+                        <path d="M20.5 13.2A8.3 8.3 0 1 1 10.8 3.5a6.5 6.5 0 0 0 9.7 9.7Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Oscuro
                     </button>
                   </div>
+                  {canUsePremiumThemes ? (
+                    <button
+                      type="button"
+                      className="kitchen-user-menu-customize"
+                      onClick={() => { navigate("/kitchen/configuracion?section=preferencias"); onNavigate(); }}
+                    >
+                      <span className="kitchen-user-menu-customize-swatches" aria-hidden="true">
+                        <span style={{ background: appTheme.anchors.primary }} />
+                        <span style={{ background: appTheme.anchors.secondary }} />
+                      </span>
+                      Personalizar tema
+                      <span className="kitchen-user-menu-customize-arrow" aria-hidden="true">→</span>
+                    </button>
+                  ) : null}
                 </div>
                 <button type="button" role="menuitem" onClick={onLogout}>
                   <LogoutIcon className="kitchen-user-menu-icon" />
@@ -530,21 +594,21 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
         mobileExtra={(
           <div className="kitchen-mobile-progress-stack">
             <OnboardingBanner suppressEvents closeOnRouteChange />
-            <WeeklyChallengeCard closeOnRouteChange />
+            <WeeklyChallengeCard closeOnRouteChange mobileSheet />
           </div>
         )}
       />
       {betaProEvent ? (
         <BetaProUnlockedModal onDismiss={dismissBetaProEvent} />
       ) : null}
-      <div className={`kitchen-container ${containerClassName}`.trim()}>
+      <div className={`kitchen-container hf-page-enter ${containerClassName}`.trim()}>
         <div className="kitchen-main-progress-stack">
           <OnboardingBanner />
           <WeeklyChallengeCard />
         </div>
         {children}
       </div>
-      <BottomNav links={bottomNavLinks} onNavigate={onNavigate} />
+      <BottomNav links={bottomNavLinks} onNavigate={onNavigate} onPrefetch={prefetchRoute} />
       {/* Milestone reward toast — portal into body, above everything */}
       <MilestoneToast />
       {/* Guided cooking mode — banner + full-screen stepper */}

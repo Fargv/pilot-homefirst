@@ -3,13 +3,13 @@ import { useOnboarding } from "../../contexts/OnboardingContext.jsx";
 import BitesIcon from "../BitesIcon.jsx";
 
 const PHASE_COLORS = {
-  1: { bg: "#eef2ff", border: "#c7d2fe", accent: "#4338ca" },
-  2: { bg: "#fefce8", border: "#fde68a", accent: "#d97706" },
-  3: { bg: "#f0fdf4", border: "#bbf7d0", accent: "#16a34a" },
-  4: { bg: "#fff7ed", border: "#fed7aa", accent: "#ea580c" },
-  5: { bg: "#fdf2f8", border: "#f5d0fe", accent: "#9333ea" },
-  6: { bg: "#f0f9ff", border: "#bae6fd", accent: "#0284c7" },
-  7: { bg: "#fff1f2", border: "#fecdd3", accent: "#e11d48" }
+  1: { bg: "var(--info-bg, #eef2ff)", border: "var(--info-border, #c7d2fe)", accent: "var(--info-text, #4338ca)" },
+  2: { bg: "var(--warning-bg, #fefce8)", border: "var(--warning-border, #fde68a)", accent: "var(--warning-text, #d97706)" },
+  3: { bg: "var(--success-bg, #f0fdf4)", border: "var(--success-border, #bbf7d0)", accent: "var(--success-text, #16a34a)" },
+  4: { bg: "var(--premium-bg, #fff7ed)", border: "var(--premium-border, #fed7aa)", accent: "var(--premium-text, #ea580c)" },
+  5: { bg: "var(--chip-active-bg, #fdf2f8)", border: "var(--chip-border, #f5d0fe)", accent: "var(--chip-active-text, #9333ea)" },
+  6: { bg: "var(--chip-bg, #f0f9ff)", border: "var(--chip-border, #bae6fd)", accent: "var(--chip-text, #0284c7)" },
+  7: { bg: "var(--danger-bg, #fff1f2)", border: "var(--danger-border, #fecdd3)", accent: "var(--danger-text, #e11d48)" }
 };
 
 const EXPLORE_SCREEN_LABELS = {

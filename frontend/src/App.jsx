@@ -4,33 +4,42 @@ import { AuthProvider, ClerkEnabledAuthProvider, isUserAuthenticated, useAuth } 
 import { buildApiUrl } from "./kitchen/api.js";
 import KitchenLayout from "./kitchen/Layout.jsx";
 import RequireAuth from "./kitchen/RequireAuth.jsx";
-import AdminUsersPage from "./kitchen/pages/AdminUsersPage.jsx";
 import AdminLoginPage from "./kitchen/pages/AdminLoginPage.jsx";
-import AdminPanelPage from "./kitchen/pages/AdminPanelPage.jsx";
-import AdminForgotPasswordPage from "./kitchen/pages/AdminForgotPasswordPage.jsx";
-import AdminResetPasswordPage from "./kitchen/pages/AdminResetPasswordPage.jsx";
 import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
 import ClerkAuthPage from "./kitchen/pages/ClerkAuthPage.jsx";
 import ClerkOnboardingPage from "./kitchen/pages/ClerkOnboardingPage.jsx";
-import WeekPage from "./kitchen/pages/WeekPage.jsx";
-import DishesPage from "./kitchen/pages/DishesPage.jsx";
-import ShoppingPage from "./kitchen/pages/ShoppingPage.jsx";
-import ShoppingBudgetPage from "./kitchen/pages/ShoppingBudgetPage.jsx";
-import SwapsPage from "./kitchen/pages/SwapsPage.jsx";
-import SettingsPage from "./kitchen/pages/SettingsPage.jsx";
-import UpgradeToProPage from "./kitchen/pages/UpgradeToProPage.jsx";
-import CatalogPage from "./kitchen/pages/CatalogPage.jsx";
-import InviteLandingPage from "./kitchen/pages/InviteLandingPage.jsx";
-import PaymentSuccessPage from "./kitchen/pages/PaymentSuccessPage.jsx";
-import PaymentCancelledPage from "./kitchen/pages/PaymentCancelledPage.jsx";
+import PageSkeleton from "./kitchen/components/PageSkeleton.jsx";
+
+// Main screens are lazy chunks: faster first paint, browser caches each
+// route's code independently. Suspense shows PageSkeleton while loading.
+const WeekPage = React.lazy(() => import("./kitchen/pages/WeekPage.jsx"));
+const DishesPage = React.lazy(() => import("./kitchen/pages/DishesPage.jsx"));
+const ShoppingPage = React.lazy(() => import("./kitchen/pages/ShoppingPage.jsx"));
+const ShoppingBudgetPage = React.lazy(() => import("./kitchen/pages/ShoppingBudgetPage.jsx"));
+const SwapsPage = React.lazy(() => import("./kitchen/pages/SwapsPage.jsx"));
+const SettingsPage = React.lazy(() => import("./kitchen/pages/SettingsPage.jsx"));
+const UpgradeToProPage = React.lazy(() => import("./kitchen/pages/UpgradeToProPage.jsx"));
+const CatalogPage = React.lazy(() => import("./kitchen/pages/CatalogPage.jsx"));
+const InviteLandingPage = React.lazy(() => import("./kitchen/pages/InviteLandingPage.jsx"));
+const PaymentSuccessPage = React.lazy(() => import("./kitchen/pages/PaymentSuccessPage.jsx"));
+const PaymentCancelledPage = React.lazy(() => import("./kitchen/pages/PaymentCancelledPage.jsx"));
+const AdminUsersPage = React.lazy(() => import("./kitchen/pages/AdminUsersPage.jsx"));
+const AdminPanelPage = React.lazy(() => import("./kitchen/pages/AdminPanelPage.jsx"));
+const AdminForgotPasswordPage = React.lazy(() => import("./kitchen/pages/AdminForgotPasswordPage.jsx"));
+const AdminResetPasswordPage = React.lazy(() => import("./kitchen/pages/AdminResetPasswordPage.jsx"));
+const TermsPage = React.lazy(() => import("./kitchen/pages/LegalPage.jsx").then((m) => ({ default: m.TermsPage })));
+const PrivacyPage = React.lazy(() => import("./kitchen/pages/LegalPage.jsx").then((m) => ({ default: m.PrivacyPage })));
 import DevEnvironmentBanner from "./components/DevEnvironmentBanner.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import PwaInstallPrompt from "./kitchen/components/PwaInstallPrompt.jsx";
 import { AppLoadingScreen } from "./kitchen/components/WeekPageSkeleton.jsx";
 import "./kitchen/kitchen.css";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./kitchen/queryClient.js";
 import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 import { OnboardingProvider } from "./kitchen/contexts/OnboardingContext.jsx";
 import { WeeklyChallengeProvider } from "./kitchen/contexts/WeeklyChallengeContext.jsx";
+import ConsentGate from "./kitchen/components/ConsentGate.jsx";
 
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -85,12 +94,15 @@ function BootstrapRedirect() {
 
 function AppRoutes() {
   return (
+    <QueryClientProvider client={queryClient}>
     <ActiveWeekProvider>
       <OnboardingProvider>
       <WeeklyChallengeProvider>
+      <ConsentGate>
       <DevEnvironmentBanner />
       <PwaInstallPrompt />
       <BootstrapRedirect />
+      <React.Suspense fallback={<PageSkeleton />}>
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
@@ -103,6 +115,8 @@ function AppRoutes() {
         <Route path="/auth/clerk/reset-password/*" element={<ClerkAuthPage mode="reset-password" />} />
         <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} />
         <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} />
+        <Route path="/terminos" element={<TermsPage />} />
+        <Route path="/privacidad" element={<PrivacyPage />} />
         <Route path="/invite/:token" element={<InviteLandingPage />} />
         <Route
           path="/kitchen/semana"
@@ -209,9 +223,12 @@ function AppRoutes() {
         />
         <Route path="*" element={<HomeRedirect />} />
       </Routes>
+      </React.Suspense>
+      </ConsentGate>
       </WeeklyChallengeProvider>
       </OnboardingProvider>
     </ActiveWeekProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -6,7 +6,7 @@ const PurchaseSessionSchema = new mongoose.Schema(
     weekStart: { type: Date, required: true, index: true },
     status: {
       type: String,
-      enum: ["draft", "pending_confirmation", "completed", "cancelled"],
+      enum: ["draft", "pending_confirmation", "completed", "cancelled", "expired"],
       default: "draft",
       index: true
     },

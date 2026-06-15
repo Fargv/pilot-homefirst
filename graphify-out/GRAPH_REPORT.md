@@ -1,13 +1,18 @@
-# Graph Report - .  (2026-06-06)
+# Graph Report - pilot-homefirst  (2026-06-13)
 
 ## Corpus Check
-- 32 files · ~758,991 words
+- 366 files · ~811,601 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 557 nodes · 164 edges · 449 communities (12 shown, 437 thin omitted)
-- Extraction: 72% EXTRACTED · 28% INFERRED · 0% AMBIGUOUS · INFERRED: 46 edges (avg confidence: 0.79)
+- 4198 nodes · 7504 edges · 254 communities (241 shown, 13 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 77 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `ab163946`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - [[_COMMUNITY_Impeccable Design Skill|Impeccable Design Skill]]
@@ -179,8 +184,6 @@
 - [[_COMMUNITY_Community 166|Community 166]]
 - [[_COMMUNITY_Community 167|Community 167]]
 - [[_COMMUNITY_Community 168|Community 168]]
-- [[_COMMUNITY_Community 169|Community 169]]
-- [[_COMMUNITY_Community 170|Community 170]]
 - [[_COMMUNITY_Community 171|Community 171]]
 - [[_COMMUNITY_Community 172|Community 172]]
 - [[_COMMUNITY_Community 173|Community 173]]
@@ -202,13 +205,11 @@
 - [[_COMMUNITY_Community 189|Community 189]]
 - [[_COMMUNITY_Community 190|Community 190]]
 - [[_COMMUNITY_Community 191|Community 191]]
-- [[_COMMUNITY_Community 192|Community 192]]
 - [[_COMMUNITY_Community 193|Community 193]]
 - [[_COMMUNITY_Community 194|Community 194]]
 - [[_COMMUNITY_Community 195|Community 195]]
 - [[_COMMUNITY_Community 196|Community 196]]
 - [[_COMMUNITY_Community 197|Community 197]]
-- [[_COMMUNITY_Community 198|Community 198]]
 - [[_COMMUNITY_Community 199|Community 199]]
 - [[_COMMUNITY_Community 200|Community 200]]
 - [[_COMMUNITY_Community 201|Community 201]]
@@ -232,251 +233,43 @@
 - [[_COMMUNITY_Community 219|Community 219]]
 - [[_COMMUNITY_Community 220|Community 220]]
 - [[_COMMUNITY_Community 221|Community 221]]
-- [[_COMMUNITY_Community 222|Community 222]]
-- [[_COMMUNITY_Community 223|Community 223]]
-- [[_COMMUNITY_Community 224|Community 224]]
-- [[_COMMUNITY_Community 225|Community 225]]
-- [[_COMMUNITY_Community 226|Community 226]]
-- [[_COMMUNITY_Community 227|Community 227]]
-- [[_COMMUNITY_Community 228|Community 228]]
 - [[_COMMUNITY_Community 229|Community 229]]
-- [[_COMMUNITY_Community 230|Community 230]]
-- [[_COMMUNITY_Community 231|Community 231]]
-- [[_COMMUNITY_Community 232|Community 232]]
-- [[_COMMUNITY_Community 233|Community 233]]
-- [[_COMMUNITY_Community 234|Community 234]]
-- [[_COMMUNITY_Community 235|Community 235]]
 - [[_COMMUNITY_Community 236|Community 236]]
-- [[_COMMUNITY_Community 237|Community 237]]
-- [[_COMMUNITY_Community 238|Community 238]]
-- [[_COMMUNITY_Community 239|Community 239]]
-- [[_COMMUNITY_Community 240|Community 240]]
-- [[_COMMUNITY_Community 241|Community 241]]
-- [[_COMMUNITY_Community 242|Community 242]]
-- [[_COMMUNITY_Community 243|Community 243]]
-- [[_COMMUNITY_Community 244|Community 244]]
-- [[_COMMUNITY_Community 245|Community 245]]
-- [[_COMMUNITY_Community 246|Community 246]]
-- [[_COMMUNITY_Community 247|Community 247]]
-- [[_COMMUNITY_Community 248|Community 248]]
-- [[_COMMUNITY_Community 249|Community 249]]
-- [[_COMMUNITY_Community 250|Community 250]]
-- [[_COMMUNITY_Community 251|Community 251]]
-- [[_COMMUNITY_Community 252|Community 252]]
-- [[_COMMUNITY_Community 253|Community 253]]
-- [[_COMMUNITY_Community 254|Community 254]]
-- [[_COMMUNITY_Community 255|Community 255]]
-- [[_COMMUNITY_Community 256|Community 256]]
-- [[_COMMUNITY_Community 257|Community 257]]
-- [[_COMMUNITY_Community 258|Community 258]]
-- [[_COMMUNITY_Community 259|Community 259]]
-- [[_COMMUNITY_Community 260|Community 260]]
-- [[_COMMUNITY_Community 261|Community 261]]
-- [[_COMMUNITY_Community 262|Community 262]]
-- [[_COMMUNITY_Community 263|Community 263]]
-- [[_COMMUNITY_Community 264|Community 264]]
-- [[_COMMUNITY_Community 265|Community 265]]
-- [[_COMMUNITY_Community 266|Community 266]]
-- [[_COMMUNITY_Community 267|Community 267]]
-- [[_COMMUNITY_Community 268|Community 268]]
-- [[_COMMUNITY_Community 269|Community 269]]
-- [[_COMMUNITY_Community 270|Community 270]]
-- [[_COMMUNITY_Community 271|Community 271]]
-- [[_COMMUNITY_Community 272|Community 272]]
-- [[_COMMUNITY_Community 273|Community 273]]
-- [[_COMMUNITY_Community 274|Community 274]]
-- [[_COMMUNITY_Community 275|Community 275]]
-- [[_COMMUNITY_Community 276|Community 276]]
-- [[_COMMUNITY_Community 277|Community 277]]
-- [[_COMMUNITY_Community 278|Community 278]]
-- [[_COMMUNITY_Community 279|Community 279]]
-- [[_COMMUNITY_Community 280|Community 280]]
-- [[_COMMUNITY_Community 281|Community 281]]
-- [[_COMMUNITY_Community 282|Community 282]]
-- [[_COMMUNITY_Community 283|Community 283]]
-- [[_COMMUNITY_Community 284|Community 284]]
-- [[_COMMUNITY_Community 285|Community 285]]
-- [[_COMMUNITY_Community 286|Community 286]]
-- [[_COMMUNITY_Community 287|Community 287]]
-- [[_COMMUNITY_Community 288|Community 288]]
-- [[_COMMUNITY_Community 289|Community 289]]
-- [[_COMMUNITY_Community 290|Community 290]]
-- [[_COMMUNITY_Community 291|Community 291]]
-- [[_COMMUNITY_Community 292|Community 292]]
-- [[_COMMUNITY_Community 293|Community 293]]
-- [[_COMMUNITY_Community 294|Community 294]]
-- [[_COMMUNITY_Community 295|Community 295]]
-- [[_COMMUNITY_Community 296|Community 296]]
-- [[_COMMUNITY_Community 297|Community 297]]
 - [[_COMMUNITY_Community 298|Community 298]]
 - [[_COMMUNITY_Community 299|Community 299]]
-- [[_COMMUNITY_Community 300|Community 300]]
-- [[_COMMUNITY_Community 301|Community 301]]
-- [[_COMMUNITY_Community 302|Community 302]]
 - [[_COMMUNITY_Community 303|Community 303]]
-- [[_COMMUNITY_Community 304|Community 304]]
-- [[_COMMUNITY_Community 305|Community 305]]
-- [[_COMMUNITY_Community 306|Community 306]]
-- [[_COMMUNITY_Community 307|Community 307]]
-- [[_COMMUNITY_Community 308|Community 308]]
-- [[_COMMUNITY_Community 309|Community 309]]
-- [[_COMMUNITY_Community 310|Community 310]]
 - [[_COMMUNITY_Community 311|Community 311]]
-- [[_COMMUNITY_Community 312|Community 312]]
-- [[_COMMUNITY_Community 313|Community 313]]
-- [[_COMMUNITY_Community 314|Community 314]]
-- [[_COMMUNITY_Community 315|Community 315]]
 - [[_COMMUNITY_Community 316|Community 316]]
 - [[_COMMUNITY_Community 317|Community 317]]
-- [[_COMMUNITY_Community 318|Community 318]]
 - [[_COMMUNITY_Community 319|Community 319]]
-- [[_COMMUNITY_Community 320|Community 320]]
-- [[_COMMUNITY_Community 321|Community 321]]
-- [[_COMMUNITY_Community 322|Community 322]]
-- [[_COMMUNITY_Community 323|Community 323]]
-- [[_COMMUNITY_Community 324|Community 324]]
-- [[_COMMUNITY_Community 325|Community 325]]
-- [[_COMMUNITY_Community 326|Community 326]]
-- [[_COMMUNITY_Community 327|Community 327]]
-- [[_COMMUNITY_Community 328|Community 328]]
-- [[_COMMUNITY_Community 329|Community 329]]
 - [[_COMMUNITY_Community 330|Community 330]]
-- [[_COMMUNITY_Community 331|Community 331]]
-- [[_COMMUNITY_Community 332|Community 332]]
-- [[_COMMUNITY_Community 333|Community 333]]
-- [[_COMMUNITY_Community 334|Community 334]]
 - [[_COMMUNITY_Community 335|Community 335]]
-- [[_COMMUNITY_Community 336|Community 336]]
-- [[_COMMUNITY_Community 337|Community 337]]
 - [[_COMMUNITY_Community 338|Community 338]]
-- [[_COMMUNITY_Community 339|Community 339]]
 - [[_COMMUNITY_Community 340|Community 340]]
-- [[_COMMUNITY_Community 341|Community 341]]
 - [[_COMMUNITY_Community 342|Community 342]]
-- [[_COMMUNITY_Community 343|Community 343]]
-- [[_COMMUNITY_Community 344|Community 344]]
-- [[_COMMUNITY_Community 345|Community 345]]
-- [[_COMMUNITY_Community 346|Community 346]]
-- [[_COMMUNITY_Community 347|Community 347]]
-- [[_COMMUNITY_Community 348|Community 348]]
-- [[_COMMUNITY_Community 349|Community 349]]
-- [[_COMMUNITY_Community 350|Community 350]]
-- [[_COMMUNITY_Community 351|Community 351]]
 - [[_COMMUNITY_Community 352|Community 352]]
-- [[_COMMUNITY_Community 353|Community 353]]
 - [[_COMMUNITY_Community 354|Community 354]]
-- [[_COMMUNITY_Community 355|Community 355]]
-- [[_COMMUNITY_Community 356|Community 356]]
-- [[_COMMUNITY_Community 357|Community 357]]
-- [[_COMMUNITY_Community 358|Community 358]]
-- [[_COMMUNITY_Community 359|Community 359]]
-- [[_COMMUNITY_Community 360|Community 360]]
-- [[_COMMUNITY_Community 361|Community 361]]
-- [[_COMMUNITY_Community 362|Community 362]]
-- [[_COMMUNITY_Community 363|Community 363]]
-- [[_COMMUNITY_Community 364|Community 364]]
-- [[_COMMUNITY_Community 365|Community 365]]
-- [[_COMMUNITY_Community 366|Community 366]]
-- [[_COMMUNITY_Community 367|Community 367]]
-- [[_COMMUNITY_Community 368|Community 368]]
-- [[_COMMUNITY_Community 369|Community 369]]
-- [[_COMMUNITY_Community 370|Community 370]]
-- [[_COMMUNITY_Community 371|Community 371]]
-- [[_COMMUNITY_Community 372|Community 372]]
-- [[_COMMUNITY_Community 373|Community 373]]
-- [[_COMMUNITY_Community 374|Community 374]]
-- [[_COMMUNITY_Community 375|Community 375]]
-- [[_COMMUNITY_Community 376|Community 376]]
-- [[_COMMUNITY_Community 377|Community 377]]
-- [[_COMMUNITY_Community 378|Community 378]]
-- [[_COMMUNITY_Community 379|Community 379]]
-- [[_COMMUNITY_Community 380|Community 380]]
-- [[_COMMUNITY_Community 381|Community 381]]
-- [[_COMMUNITY_Community 382|Community 382]]
-- [[_COMMUNITY_Community 383|Community 383]]
-- [[_COMMUNITY_Community 384|Community 384]]
-- [[_COMMUNITY_Community 385|Community 385]]
 - [[_COMMUNITY_Community 386|Community 386]]
-- [[_COMMUNITY_Community 387|Community 387]]
-- [[_COMMUNITY_Community 388|Community 388]]
-- [[_COMMUNITY_Community 389|Community 389]]
-- [[_COMMUNITY_Community 390|Community 390]]
-- [[_COMMUNITY_Community 391|Community 391]]
-- [[_COMMUNITY_Community 392|Community 392]]
-- [[_COMMUNITY_Community 393|Community 393]]
-- [[_COMMUNITY_Community 394|Community 394]]
-- [[_COMMUNITY_Community 395|Community 395]]
-- [[_COMMUNITY_Community 396|Community 396]]
-- [[_COMMUNITY_Community 397|Community 397]]
-- [[_COMMUNITY_Community 398|Community 398]]
-- [[_COMMUNITY_Community 399|Community 399]]
-- [[_COMMUNITY_Community 400|Community 400]]
-- [[_COMMUNITY_Community 401|Community 401]]
-- [[_COMMUNITY_Community 402|Community 402]]
-- [[_COMMUNITY_Community 403|Community 403]]
-- [[_COMMUNITY_Community 404|Community 404]]
-- [[_COMMUNITY_Community 405|Community 405]]
-- [[_COMMUNITY_Community 406|Community 406]]
-- [[_COMMUNITY_Community 407|Community 407]]
 - [[_COMMUNITY_Community 408|Community 408]]
-- [[_COMMUNITY_Community 409|Community 409]]
-- [[_COMMUNITY_Community 410|Community 410]]
-- [[_COMMUNITY_Community 411|Community 411]]
-- [[_COMMUNITY_Community 412|Community 412]]
-- [[_COMMUNITY_Community 413|Community 413]]
-- [[_COMMUNITY_Community 414|Community 414]]
-- [[_COMMUNITY_Community 415|Community 415]]
-- [[_COMMUNITY_Community 416|Community 416]]
-- [[_COMMUNITY_Community 417|Community 417]]
 - [[_COMMUNITY_Community 418|Community 418]]
-- [[_COMMUNITY_Community 419|Community 419]]
-- [[_COMMUNITY_Community 420|Community 420]]
-- [[_COMMUNITY_Community 421|Community 421]]
-- [[_COMMUNITY_Community 422|Community 422]]
-- [[_COMMUNITY_Community 423|Community 423]]
-- [[_COMMUNITY_Community 424|Community 424]]
-- [[_COMMUNITY_Community 425|Community 425]]
-- [[_COMMUNITY_Community 426|Community 426]]
-- [[_COMMUNITY_Community 427|Community 427]]
-- [[_COMMUNITY_Community 428|Community 428]]
-- [[_COMMUNITY_Community 429|Community 429]]
-- [[_COMMUNITY_Community 430|Community 430]]
-- [[_COMMUNITY_Community 431|Community 431]]
-- [[_COMMUNITY_Community 432|Community 432]]
-- [[_COMMUNITY_Community 433|Community 433]]
-- [[_COMMUNITY_Community 434|Community 434]]
-- [[_COMMUNITY_Community 435|Community 435]]
-- [[_COMMUNITY_Community 436|Community 436]]
-- [[_COMMUNITY_Community 437|Community 437]]
-- [[_COMMUNITY_Community 438|Community 438]]
-- [[_COMMUNITY_Community 439|Community 439]]
-- [[_COMMUNITY_Community 440|Community 440]]
-- [[_COMMUNITY_Community 441|Community 441]]
-- [[_COMMUNITY_Community 442|Community 442]]
-- [[_COMMUNITY_Community 443|Community 443]]
-- [[_COMMUNITY_Community 444|Community 444]]
-- [[_COMMUNITY_Community 445|Community 445]]
-- [[_COMMUNITY_Community 446|Community 446]]
-- [[_COMMUNITY_Community 447|Community 447]]
-- [[_COMMUNITY_Community 448|Community 448]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `Impeccable Skill (SKILL.md)` - 19 edges
-2. `DESIGN.md — HomeFirst Design System` - 8 edges
-3. `PRODUCT.md — HomeFirst Product Strategy` - 8 edges
-4. `Catalog Recipe Agent` - 8 edges
-5. `Polish — Final UI Pass Reference` - 7 edges
-6. `Live Mode Reference` - 6 edges
-7. `UI Review Skill (Lunchfy/HomeFirst)` - 6 edges
-8. `Ingredient Normalization Process` - 6 edges
-9. `Brand Register Reference` - 5 edges
-10. `Cognitive Load Reference` - 5 edges
+1. `apiRequest()` - 70 edges
+2. `_()` - 55 edges
+3. `useAuth()` - 43 edges
+4. `resolveMongoUrl()` - 42 edges
+5. `requireAuth()` - 27 edges
+6. `ingredientCategories` - 26 edges
+7. `Household` - 26 edges
+8. `scripts` - 25 edges
+9. `main()` - 23 edges
+10. `buildScopedFilter()` - 22 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Polish — Final UI Pass Reference` --references--> `PRODUCT.md — HomeFirst Product Strategy`  [INFERRED]
-  .claude/skills/impeccable/reference/polish.md → PRODUCT.md
 - `Product UI Register Reference` --conceptually_related_to--> `PRODUCT.md — HomeFirst Product Strategy`  [INFERRED]
   .claude/skills/impeccable/reference/product.md → PRODUCT.md
+- `Polish — Final UI Pass Reference` --references--> `PRODUCT.md — HomeFirst Product Strategy`  [INFERRED]
+  .claude/skills/impeccable/reference/polish.md → PRODUCT.md
 - `Montserrat Typography System` --conceptually_related_to--> `Typography Principles Reference`  [INFERRED]
   DESIGN.md → .claude/skills/impeccable/reference/typography.md
 - `CLAUDE.md — Project Instructions` --references--> `DESIGN.md — HomeFirst Design System`  [INFERRED]
@@ -490,35 +283,35 @@
 ## Hyperedges (group relationships)
 - **Recipe Data Model (ingredients list, structured steps, ingredientRefs)** — pilot_homefirst_general_ingredients_list, pilot_homefirst_structured_steps, pilot_homefirst_ingredient_refs, pilot_homefirst_base_servings [EXTRACTED 1.00]
 
-## Communities (449 total, 437 thin omitted)
+## Communities (254 total, 13 thin omitted)
 
 ### Community 0 - "Impeccable Design Skill"
-Cohesion: 0.12
-Nodes (28): Impeccable Skill (SKILL.md), AI Slop Test Principle, Design Register Concept (Brand vs Product), Impeccable Shared Design Laws, Adapt Reference, Animate Reference, Animation Timing and Easing Principles, Audit Reference (+20 more)
+Cohesion: 0.13
+Nodes (14): 1. Context gathering, 2. Register, AI Slop Test Principle, Commands, Pin / Unpin, Design Register Concept (Brand vs Product), Routing rules, Setup (+6 more)
 
 ### Community 1 - "Project Design System"
-Cohesion: 0.13
-Nodes (20): Persona-Based Design Testing Reference, 5 User Persona Archetypes (Alex/Jordan/Sam/Riley/Casey), Product UI Register Reference, Responsive Design Reference, Shape — Design Brief & Discovery Reference, Design Brief Artifact, Spatial Design Reference, Teach — Project Context Setup Reference (+12 more)
+Cohesion: 0.21
+Nodes (12): Persona-Based Design Testing Reference, 5 User Persona Archetypes (Alex/Jordan/Sam/Riley/Casey), Shape — Design Brief & Discovery Reference, Design Brief Artifact, Teach — Project Context Setup Reference, DESIGN.md Visual Document, PRODUCT.md Strategic Document, CLAUDE.md — Project Instructions (+4 more)
 
 ### Community 2 - "UI Polish & Motion"
-Cohesion: 0.25
-Nodes (11): Motion Design Reference, Motion Duration 100/300/500 Rule, prefers-reduced-motion Accessibility, Onboarding Design Reference, Performance Optimization Reference, Core Web Vitals (LCP/FID/CLS), Overdrive — Extraordinary UI Reference, Polish — Final UI Pass Reference (+3 more)
+Cohesion: 0.23
+Nodes (12): Motion Design Reference, Motion Duration 100/300/500 Rule, prefers-reduced-motion Accessibility, Onboarding Design Reference, Performance Optimization Reference, Core Web Vitals (LCP/FID/CLS), Overdrive — Extraordinary UI Reference, Polish — Final UI Pass Reference (+4 more)
 
 ### Community 3 - "Food Category Icons"
 Cohesion: 0.25
 Nodes (9): Chicken Category Icon, Eggs Category Icon, Fish Category Icon, Meat Category Icon, Sides Category Icon, Special Category Icon, Empty Dish UI Illustration, Main Course UI Illustration (+1 more)
 
 ### Community 4 - "Ingredient Data Quality"
-Cohesion: 0.25
-Nodes (9): Codex Visual Direction Reference, Codex Four Stop Points Before Code, Color and Contrast Reference, OKLCH Color Space Principle, Craft Flow Reference, Craft Production Quality Bar, Harden Reference, Interaction Design Reference (+1 more)
+Cohesion: 0.06
+Nodes (50): buildHouseholdInvitationEmail(), escapeHtml(), assertCanAddNonUserDinerToHousehold(), assertCanAddUserToHousehold(), buildHouseholdLicenseSummary(), buildNonUserDinerLimitError(), buildUserLimitError(), canAddNonUserDiner() (+42 more)
 
 ### Community 5 - "Design Craft Core"
 Cohesion: 0.46
 Nodes (8): Duplicate Ingredient Deduplication, Ingredient Normalization Process, Ingredient Category Taxonomy, Normalization Report 20260512-1552 (dry-run, 45 manual items), Normalization Report 20260512-1556 (dry-run, 29 manual items), Normalization Report 20260512-1558 (dry-run, identical to 1556), Normalization Report 20260512-1619 (apply mode — writes executed), Normalization Report 20260512-1621 (post-apply verification, 0 to create)
 
 ### Community 6 - "App Architecture"
-Cohesion: 0.32
-Nodes (8): baseServings, Catalog Recipe Agent, Catalog Recipe Rules (full rules doc), General Ingredients List, Guided Cooking Mode, ingredientRefs, seedCatalog.js Script, Structured Steps
+Cohesion: 0.23
+Nodes (12): baseServings, Catalog Recipe Agent, Catalog Recipe Rules (full rules doc), General Ingredients List, GRAPH_REPORT.md, Graphify Knowledge Graph, graphify-out/ directory, graphify-out/wiki/index.md (+4 more)
 
 ### Community 7 - "Brand & PWA Assets"
 Cohesion: 0.33
@@ -529,36 +322,884 @@ Cohesion: 0.50
 Nodes (5): Lunchfy Brand Icon (src assets), Lunchfy Logo with Wordmark, Lunchfy Brand Icon (public), PWA Icon 192px, PWA Icon 512px
 
 ### Community 9 - "Auth Migration Strategy"
-Cohesion: 0.80
-Nodes (5): Household Invitation Flow, ClerkOnboardingPage 3-Step Flow, Clerk-Based Signup Flow, Subscription Plan Tiers (free/basic/pro/premium), Signup Flow Technical Audit
+Cohesion: 0.05
+Nodes (46): Household Invitation Flow, ClerkOnboardingPage 3-Step Flow, Clerk-Based Signup Flow, Subscription Plan Tiers (free/basic/pro/premium), 10. Issues by Priority, 11. What Was NOT Found (Good), 1. Files Involved, 2. Current Flow Map (+38 more)
 
 ### Community 10 - "Recipe & Guided Cooking"
-Cohesion: 0.83
-Nodes (4): Auth Migration Plan (Legacy JWT to Clerk), Clerk Identity Provider Integration, Legacy JWT / bcrypt Auth System, MongoDB as Authoritative Source for Roles/Plans
+Cohesion: 0.07
+Nodes (28): AUTH_MIGRATION_PLAN, Backend, Backend, Clerk Identity Provider Integration, Clerk Household Invites, Current Auth Architecture, Current Password Hashing Method, DEV-Only Mongo To Clerk Import (+20 more)
 
 ### Community 11 - "Step Ingredient Mapping"
-Cohesion: 0.83
-Nodes (4): GRAPH_REPORT.md, Graphify Knowledge Graph, graphify-out/ directory, graphify-out/wiki/index.md
+Cohesion: 0.07
+Nodes (50): addBrowserFindings(), addVisualContrastFindings(), addVisualContrastResult(), analyzeVisualContrast(), analyzeVisualContrastCandidate(), blendRgba(), browserFindingsFromMap(), buildSelectorSegment() (+42 more)
+
+### Community 14 - "Community 14"
+Cohesion: 0.30
+Nodes (12): ensureStarterMasterDishes(), escapeRegex(), normalizeSeedIngredients(), STARTER_MASTER_DISHES, connectDb(), createIndexSafe(), ensureKitchenUserEmailIndex(), ensureScopedWeekStartIndex() (+4 more)
+
+### Community 15 - "Community 15"
+Cohesion: 0.07
+Nodes (16): CatalogPageSkeleton(), DayTabsSkeleton(), DishesPageSkeleton(), DishGridSkeleton(), MealTabsSkeleton(), PageHeaderSkeleton(), SettingsPageSkeleton(), ShoppingPageSkeleton() (+8 more)
+
+### Community 16 - "Community 16"
+Cohesion: 0.06
+Nodes (30): BasicsPopup(), IngredientSearchAdd(), DishModal(), EMPTY_FORM, buildLicenseState(), canAddNonUserDiner(), canAddUser(), canRandomizeFullWeek() (+22 more)
+
+### Community 17 - "Community 17"
+Cohesion: 0.11
+Nodes (53): _(), ae(), be(), bt(), Ce(), Ct(), de(), dt() (+45 more)
+
+### Community 18 - "Community 18"
+Cohesion: 0.05
+Nodes (45): AppLoadingScreen(), activatePaymentSession(), fetchInviteDetails(), registerClerkTokenGetter(), setToken(), AuthContext, AuthProvider(), ClerkEnabledAuthProvider() (+37 more)
+
+### Community 19 - "Community 19"
+Cohesion: 0.24
+Nodes (4): emptyCategory, PASTEL_PALETTE, resolveCategoryColors(), EMPTY_FORM
+
+### Community 20 - "Community 20"
+Cohesion: 0.06
+Nodes (34): authenticateClerkToken(), buildAuthError(), buildClerkDisplayName(), deleteClerkUserById(), getPrimaryEmailAddress(), isClerkAuthEnabled(), isDevelopmentClerkReconciliationEnabled(), isDevMode() (+26 more)
+
+### Community 21 - "Community 21"
+Cohesion: 0.10
+Nodes (46): checkBorders(), checkColors(), checkElementAIPaletteDOM(), checkElementBorders(), checkElementBordersDOM(), checkElementColors(), checkElementColorsDOM(), checkElementGlow() (+38 more)
+
+### Community 22 - "Community 22"
+Cohesion: 0.04
+Nodes (44): dependencies, bcryptjs, @clerk/backend, cors, dotenv, express, express-rate-limit, @getbrevo/brevo (+36 more)
+
+### Community 23 - "Community 23"
+Cohesion: 0.11
+Nodes (41): APPLY, asId(), buildCategoryLookup(), buildDishCategoryLookup(), buildIngredientIndexes(), buildMarkdownReport(), calculateUsageCounts(), CANONICAL_VARIANTS (+33 more)
+
+### Community 24 - "Community 24"
+Cohesion: 0.05
+Nodes (40): summary, ambiguousMatchesRequiringManualReview, applyStats, createdIngredients, skippedUnsafe, updatedCatalogDishCategories, updatedCatalogRefs, updatedDishCategories (+32 more)
+
+### Community 25 - "Community 25"
+Cohesion: 0.05
+Nodes (40): summary, ambiguousMatchesRequiringManualReview, applyStats, createdIngredients, skippedUnsafe, updatedCatalogDishCategories, updatedCatalogRefs, updatedDishCategories (+32 more)
+
+### Community 26 - "Community 26"
+Cohesion: 0.05
+Nodes (40): summary, ambiguousMatchesRequiringManualReview, applyStats, createdIngredients, skippedUnsafe, updatedCatalogDishCategories, updatedCatalogRefs, updatedDishCategories (+32 more)
+
+### Community 27 - "Community 27"
+Cohesion: 0.05
+Nodes (40): summary, ambiguousMatchesRequiringManualReview, applyStats, createdIngredients, skippedUnsafe, updatedCatalogDishCategories, updatedCatalogRefs, updatedDishCategories (+32 more)
+
+### Community 28 - "Community 28"
+Cohesion: 0.29
+Nodes (14): buildStatusLabel(), PushNotificationsPanel(), disablePushNotifications(), enablePushNotifications(), getBrowserPermission(), getExistingSubscription(), getPublicKey(), getPushNotificationStatus() (+6 more)
+
+### Community 29 - "Community 29"
+Cohesion: 0.21
+Nodes (9): PwaInstallPrompt(), PwaInstallSettingsBlock(), isIosSafari(), isMobileDevice(), isStandaloneMode(), _subscribers, usePwaInstallPrompt(), wasAlreadyInstalled() (+1 more)
+
+### Community 30 - "Community 30"
+Cohesion: 0.05
+Nodes (40): summary, ambiguousMatchesRequiringManualReview, applyStats, createdIngredients, skippedUnsafe, updatedCatalogDishCategories, updatedCatalogRefs, updatedDishCategories (+32 more)
+
+### Community 31 - "Community 31"
+Cohesion: 0.14
+Nodes (19): RecipeEditor(), asPositiveNumber(), COMMON_FRACTIONS, displayIngredientQuantity(), formatDisplayUnit(), formatFractionAmount(), formatScaledQuantityAmount(), getInitialServings() (+11 more)
+
+### Community 32 - "Community 32"
+Cohesion: 0.05
+Nodes (39): summary, ambiguousMatchesRequiringManualReview, applyStats, createdIngredients, skippedUnsafe, updatedCatalogDishCategories, updatedCatalogRefs, updatedDishCategories (+31 more)
+
+### Community 33 - "Community 33"
+Cohesion: 0.17
+Nodes (16): RecipeModal(), useCookingSession(), CookingSessionBanner(), CompletionScreen(), CookingSessionStepper(), detectTimers(), escapeHtml(), estimateTotalDuration() (+8 more)
+
+### Community 34 - "Community 34"
+Cohesion: 0.14
+Nodes (14): APP_COLORS, GuidedStepsEditor(), QuantityEditor(), RecipeIngredientInput(), STEP_F, TIPTAP_EXTENSIONS, detectStepIngredients(), normalize() (+6 more)
+
+### Community 35 - "Community 35"
+Cohesion: 0.04
+Nodes (26): WhatsAppIcon(), ApiRequestError, buildAppShareUrl(), buildClerkInviteCodeShareUrl(), buildClerkInviteShareUrl(), buildInviteShareUrl(), buildShoppingShareUrl(), buildWeekShareUrl() (+18 more)
+
+### Community 36 - "Community 36"
+Cohesion: 0.08
+Nodes (30): checkBorders(), checkElementBorders(), checkElementBordersDOM(), checkElementItalicSerif(), checkElementItalicSerifDOM(), checkElementMotion(), checkElementMotionDOM(), checkItalicSerif() (+22 more)
+
+### Community 37 - "Community 37"
+Cohesion: 0.07
+Nodes (14): OnboardingContext, OnboardingProvider(), useOnboarding(), useWeeklyChallenge(), WeeklyChallengeContext, WeeklyChallengeProvider(), BetaProHint(), OnboardingBanner() (+6 more)
+
+### Community 38 - "Community 38"
+Cohesion: 0.27
+Nodes (11): beginEditPin(), cancelEditingPin(), finalizeEditingPin(), localCoords(), onAnnotDown(), onAnnotInputKey(), onAnnotMove(), onAnnotUp() (+3 more)
+
+### Community 39 - "Community 39"
+Cohesion: 0.13
+Nodes (26): detectUrl(), runVisualContrastFallback(), finding(), getAP(), extractFindingIds(), profileFindings(), profileFindingsAsync(), profileNow() (+18 more)
+
+### Community 40 - "Community 40"
+Cohesion: 0.13
+Nodes (23): buildCollapsible(), buildColorModels(), buildRadiiModels(), buildTypographyModels(), escapeHtml(), fontStack(), groupByKind(), highlightBold() (+15 more)
+
+### Community 41 - "Community 41"
+Cohesion: 0.09
+Nodes (24): buildAnnotationsForCapture(), buildPinElement(), captureAndEmit(), captureElementToBlob(), checkpointPayload(), collectFontCssText(), compileShader(), handleAccept() (+16 more)
+
+### Community 42 - "Community 42"
+Cohesion: 0.38
+Nodes (6): CatalogPackSchema, __dirname, __filename, run(), upsertPack(), validatePackData()
+
+### Community 43 - "Community 43"
+Cohesion: 0.06
+Nodes (25): useTheme(), INTERACTIVE_SELECTOR, isHorizontalScroller(), shouldIgnoreStart(), useMobileRouteSwipeNavigation(), getFirstName(), KitchenLayout(), catalogQuery() (+17 more)
+
+### Community 44 - "Community 44"
+Cohesion: 0.06
+Nodes (31): dishCategories, Croquetas de jamón, Patatas bravas, ingredientCategories, albahaca, alubias rojas, arroz arboreo, arroz arbóreo (+23 more)
+
+### Community 45 - "Community 45"
+Cohesion: 0.15
+Nodes (22): CookingSessionContext, CookingSessionProvider(), BannerTimer(), RecipeTimer(), useLiveCookingTimer(), clearSession(), loadSession(), saveSession() (+14 more)
+
+### Community 46 - "Community 46"
+Cohesion: 0.11
+Nodes (25): oklchToRgb(), parseAnyColor(), resolveVarRefs(), applyStaticDeclaration(), buildBorderOverrideMap(), compareStaticPriority(), cssPropToCamel(), expandStaticBoxValues() (+17 more)
+
+### Community 47 - "Community 47"
+Cohesion: 0.07
+Nodes (28): dependencies, animejs, @clerk/react, lucide-react, react, react-dom, react-router-dom, @tanstack/react-query (+20 more)
+
+### Community 48 - "Community 48"
+Cohesion: 0.08
+Nodes (35): accordion(), checkBounce(), checkOut(), countUp(), DURATION, EASE, fadeOut(), glowPulse() (+27 more)
+
+### Community 49 - "Community 49"
+Cohesion: 0.11
+Nodes (20): acknowledgePendingEvent(), annotRoot, args, CONTEXT_DIR, { detectScript, sessionPath, livePath }, __dirname, enqueueEvent(), existingRecord (+12 more)
+
+### Community 50 - "Community 50"
+Cohesion: 0.17
+Nodes (22): createBrowserDetector(), confirm(), detectCli(), formatFindings(), handleStdin(), printUsage(), buildImportGraph(), detectFrameworkConfig() (+14 more)
+
+### Community 51 - "Community 51"
+Cohesion: 0.08
+Nodes (25): Analysis framework, Behavior rules, Cambios concretos por componente, Context loading, Estado UX general, Feedback requirements, Information hierarchy law, Interaction budget per screen (+17 more)
+
+### Community 52 - "Community 52"
+Cohesion: 0.16
+Nodes (25): checkColors(), checkElementAIPaletteDOM(), checkElementColors(), checkElementColorsDOM(), checkElementGlow(), checkElementGlowDOM(), checkElementIconTile(), checkElementIconTileDOM() (+17 more)
+
+### Community 53 - "Community 53"
+Cohesion: 0.15
+Nodes (26): cleanup(), clearAnnotations(), clearScrollY(), clearSession(), closeTunePopover(), copyToClipboard(), desc(), handleClick() (+18 more)
+
+### Community 55 - "Community 55"
+Cohesion: 0.09
+Nodes (22): 1. Overview, 2. Colors: La Paleta del Orden, 3. Typography, 4. Elevation, 5. Components, 6. Do's and Don'ts, Buttons, Cards / Containers (+14 more)
+
+### Community 57 - "Community 57"
+Cohesion: 0.09
+Nodes (22): Assess Onboarding Needs, Context Over Ceremony, Contextual Help, Design Onboarding Experiences, Documentation & Help, Empty State Design, Feature Discovery & Adoption, Guided Tours & Walkthroughs (+14 more)
+
+### Community 58 - "Community 58"
+Cohesion: 0.17
+Nodes (26): ACTIVE_PLANS, addDays(), applySubscriptionRequest(), BASICS_PLANS, BUDGET_ENABLED_PLANS, buildHouseholdFeatureAvailability(), buildHouseholdSubscriptionResponse(), canRandomizeFullWeek() (+18 more)
+
+### Community 59 - "Community 59"
+Cohesion: 0.10
+Nodes (19): DESIGN.md Google Stitch Format, Pitfalls, Seed mode, Step 1: Confirm seed mode, Step 2: Five questions, Step 3: Write seed DESIGN.md, Step 4: Confirm and refresh session cache, Style guidelines (+11 more)
+
+### Community 60 - "Community 60"
+Cohesion: 0.10
+Nodes (20): Animate complex properties, Assess What "Extraordinary" Means Here, For data-heavy interfaces, For functional UI, For performance-critical UI, For visual/marketing surfaces, Implement with Discipline, Interact with the device (+12 more)
+
+### Community 62 - "Community 62"
+Cohesion: 0.22
+Nodes (12): burstParticles(), getColors(), isDarkMode(), PARTICLE_COLORS_DARK, PARTICLE_COLORS_LIGHT, prefersReducedMotion(), triggerMilestone(), useRewardAnimation() (+4 more)
+
+### Community 63 - "Community 63"
+Cohesion: 0.10
+Nodes (19): active, coverImage, cuisineType, defaultAllowRandom, defaultSpecial, description, diet, disclaimer (+11 more)
+
+### Community 64 - "Community 64"
+Cohesion: 0.10
+Nodes (19): active, coverImage, cuisineType, defaultAllowRandom, defaultSpecial, description, diet, disclaimer (+11 more)
+
+### Community 65 - "Community 65"
+Cohesion: 0.10
+Nodes (19): Clean Up, Code Quality, Color & Contrast, Content & Copy, Design System Discovery, Edge Cases & Error States, Final Verification, Forms & Inputs (+11 more)
+
+### Community 66 - "Community 66"
+Cohesion: 0.04
+Nodes (69): API, apiRequest(), buildApiUrl(), cancelSubscription(), createCheckoutSession(), createCustomerPortalSession(), devApplyLatestSubscription(), devChangePlan() (+61 more)
+
+### Community 67 - "Community 67"
+Cohesion: 0.11
+Nodes (18): Accessibility, Assess Animation Opportunities, CSS Animations, Delight Moments, Entrance Animations, Feedback & Guidance, Implement Animations, JavaScript Animation (+10 more)
+
+### Community 68 - "Community 68"
+Cohesion: 0.11
+Nodes (18): Appropriate to Context, Assess Delight Opportunities, Celebration Moments, Compound Over Time, Delight Amplifies, Never Blocks, Delight Principles, Delight Techniques, Easter Eggs & Hidden Delights (+10 more)
+
+### Community 69 - "Community 69"
+Cohesion: 0.11
+Nodes (18): Cleanup, Exit, Handle `accept`, Handle `discard`, Handle fallback, Handle `prefetch`, Live Mode Identity Lock Principle, Poll loop (+10 more)
+
+### Community 70 - "Community 70"
+Cohesion: 0.15
+Nodes (18): CatalogPackSchema, computeRefs(), __dirname, DRY_RUN, __filename, findIngredient(), findKeywordInText(), FORCE (+10 more)
+
+### Community 71 - "Community 71"
+Cohesion: 0.11
+Nodes (17): active, coverImage, cuisineType, description, diet, disclaimer, dishes, featured (+9 more)
+
+### Community 72 - "Community 72"
+Cohesion: 0.11
+Nodes (17): active, coverImage, cuisineType, description, diet, disclaimer, dishes, featured (+9 more)
+
+### Community 73 - "Community 73"
+Cohesion: 0.11
+Nodes (17): active, coverImage, cuisineType, description, diet, disclaimer, dishes, featured (+9 more)
+
+### Community 74 - "Community 74"
+Cohesion: 0.50
+Nodes (3): ShoppingTrip, ShoppingTripSchema, run()
+
+### Community 75 - "Community 75"
+Cohesion: 0.11
+Nodes (17): active, coverImage, cuisineType, description, diet, disclaimer, dishes, featured (+9 more)
+
+### Community 76 - "Community 76"
+Cohesion: 0.11
+Nodes (17): Admin (if accessible), APPROACH, Catalog, CONSTRAINTS (non-negotiable), DELIVERABLE, Gamification (XP / Bites / Challenges), Kitchen, LUNCHFY UI/UX REDESIGN — FABLE EXECUTION PLAN (+9 more)
+
+### Community 77 - "Community 77"
+Cohesion: 0.11
+Nodes (17): Accent Color Application, Accessibility, Assess Color Opportunity, Background & Surfaces, Balance & Refinement, Borders & Accents, Cohesion, Data Visualization (+9 more)
+
+### Community 78 - "Community 78"
+Cohesion: 0.15
+Nodes (16): buildStructuredStep(), CatalogPackSchema, convertDish(), convertPack(), convertRecipe(), detectFirstTimer(), __dirname, DRY_RUN (+8 more)
+
+### Community 79 - "Community 79"
+Cohesion: 0.12
+Nodes (16): active, coverImage, cuisineType, description, diet, disclaimer, dishes, featured (+8 more)
+
+### Community 80 - "Community 80"
+Cohesion: 0.12
+Nodes (16): active, coverImage, cuisineType, description, diet, disclaimer, dishes, featured (+8 more)
+
+### Community 81 - "Community 81"
+Cohesion: 0.12
+Nodes (16): active, coverImage, cuisineType, description, diet, disclaimer, dishes, featured (+8 more)
+
+### Community 82 - "Community 82"
+Cohesion: 0.12
+Nodes (16): Avoid Redundant Copy, Confirmation Dialogs: Use Sparingly, Consistency: The Terminology Problem, Don't Blame the User, Empty States Are Opportunities, Error Message Templates, Error Messages: The Formula, Form Instructions (+8 more)
+
+### Community 83 - "Community 83"
+Cohesion: 0.13
+Nodes (14): checkHtmlPatterns(), checkPageQualityDOM(), checkPageQualityFromDoc(), BORDER_SAFE_TAGS, BRAND_FONT_DOMAINS, GENERIC_FONTS, GITHUB_DOMAINS, GOOGLE_DOMAINS (+6 more)
+
+### Community 84 - "Community 84"
+Cohesion: 0.22
+Nodes (16): addExclusion(), buildAudit(), buildClerkUser(), DEFAULT_OUTPUT_PATH, __dirname, __filename, getKitchenUserExportModel(), getMongoDbName() (+8 more)
+
+### Community 85 - "Community 85"
+Cohesion: 0.18
+Nodes (17): APP_THEME_IDS, APP_THEMES, BASIC_THEME_PLANS, getAppTheme(), getDefaultThemeIdForMode(), getSystemPreferredThemeId(), isAppThemeId(), isBasicTheme() (+9 more)
+
+### Community 86 - "Community 86"
+Cohesion: 0.38
+Nodes (5): DAY_ABBR, DAY_LONG, getDayAbbr(), getDayLong(), parseDayKey()
+
+### Community 87 - "Community 87"
+Cohesion: 0.12
+Nodes (15): Anti-Goals, Brief Structure, Constraints, Content & Data, Design Direction, How to use the probes, Important limits, Interview cadence (+7 more)
+
+### Community 88 - "Community 88"
+Cohesion: 0.12
+Nodes (15): Accessibility Considerations, Anti-reflexes worth defending against, Classic Typography Principles, Fluid Type, Font Selection & Pairing, Modern Web Typography, Modular Scale & Hierarchy, OpenType Features (+7 more)
+
+### Community 89 - "Community 89"
+Cohesion: 0.20
+Nodes (15): applyParamDefaults(), applyParamValue(), buildParamsPanel(), closedClipPath(), formatRangeValue(), getVisibleVariantEl(), hideParamsPanel(), openTunePopover() (+7 more)
+
+### Community 90 - "Community 90"
+Cohesion: 0.13
+Nodes (14): active, coverImage, cuisineType, description, dishes, featured, includedPlans, monthlyCreditCost (+6 more)
+
+### Community 91 - "Community 91"
+Cohesion: 0.13
+Nodes (14): active, coverImage, cuisineType, description, dishes, featured, includedPlans, monthlyCreditCost (+6 more)
+
+### Community 92 - "Community 92"
+Cohesion: 0.13
+Nodes (14): active, coverImage, cuisineType, description, dishes, featured, includedPlans, monthlyCreditCost (+6 more)
+
+### Community 93 - "Community 93"
+Cohesion: 0.13
+Nodes (14): active, coverImage, cuisineType, description, dishes, featured, includedPlans, monthlyCreditCost (+6 more)
+
+### Community 94 - "Community 94"
+Cohesion: 0.06
+Nodes (70): checkAllMainChallengesComplete(), checkAndGrantBetaPro(), _expireBetaPro(), getBetaProDurationDays(), getBetaProInactivityGraceDays(), _getMondayOf(), inspectBetaProEligibility(), isBetaProEnabled() (+62 more)
+
+### Community 95 - "Community 95"
+Cohesion: 0.13
+Nodes (14): Assess Adaptation Challenge, Content Adaptation, Desktop Adaptation (Mobile → Desktop), Email Adaptation (Web → Email), Implement Adaptations, Layout Adaptation Techniques, Mobile Adaptation (Desktop → Mobile), Navigation Adaptation (+6 more)
+
+### Community 96 - "Community 96"
+Cohesion: 0.13
+Nodes (14): Apply Clarity Principles, Assess Current Copy, Button & CTA Text, Confirmation Dialogs, Empty States, Error Messages, Form Labels & Instructions, Help Text & Tooltips (+6 more)
+
+### Community 97 - "Community 97"
+Cohesion: 0.13
+Nodes (15): Alpha Is A Design Smell, Building Functional Palettes, Color & Contrast, Color Spaces: Use OKLCH, Contrast & Accessibility, Dangerous Color Combinations, Dark Mode Is Not Inverted Light Mode, Never Use Pure Gray or Pure Black (+7 more)
+
+### Community 98 - "Community 98"
+Cohesion: 0.13
+Nodes (14): Cards Are Not Required, Container Queries, Depth & Elevation, Grid Systems, Hierarchy Through Multiple Dimensions, Name Tokens Semantically, Optical Adjustments, Spacing Systems (+6 more)
+
+### Community 99 - "Community 99"
+Cohesion: 0.27
+Nodes (15): barPaletteForTheme(), connectSSE(), defangOutsideHandlers(), designPanelCss(), detectPageTheme(), init(), initActionPicker(), initAnnotOverlay() (+7 more)
+
+### Community 100 - "Community 100"
+Cohesion: 0.17
+Nodes (14): CatalogPackSchema, convertDish(), convertPack(), convertRecipe(), convertRecipeIngredient(), __dirname, DISPLAY_UNIT_OVERRIDE, __filename (+6 more)
+
+### Community 101 - "Community 101"
+Cohesion: 0.19
+Nodes (12): detectStepIngredients(), __dirname, isApply, isDryRun, isForce, isStructuredStepsArray(), normalize(), reEscape() (+4 more)
+
+### Community 102 - "Community 102"
+Cohesion: 0.22
+Nodes (9): 1. The Wall of Options, 2. The Memory Bridge, 3. The Hidden Navigation, 4. The Jargon Barrier, 5. The Visual Noise Floor, 6. The Inconsistent Pattern, 7. The Multi-Task Demand, 8. The Context Switch (+1 more)
+
+### Community 103 - "Community 103"
+Cohesion: 0.14
+Nodes (14): Brand bans (on top of the shared absolute bans), Brand permissions, Brand register, Color, Font selection procedure, Imagery, Layout, Motion (+6 more)
+
+### Community 104 - "Community 104"
+Cohesion: 0.14
+Nodes (14): 10. Help and Documentation, 1. Visibility of System Status, 2. Match Between System and Real World, 3. User Control and Freedom, 4. Consistency and Standards, 5. Error Prevention, 6. Recognition Rather Than Recall, 7. Flexibility and Efficiency of Use (+6 more)
+
+### Community 105 - "Community 105"
+Cohesion: 0.22
+Nodes (9): Anti-Patterns Verdict, Design Health Score, Generate Combined Critique Report, Minor Observations, Overall Impression, Persona Red Flags, Priority Issues, Questions to Consider (+1 more)
+
+### Community 106 - "Community 106"
+Cohesion: 0.14
+Nodes (13): Assess Current Layout, Break Card Grid Monotony, Choose the Right Layout Tool, Create Visual Rhythm, Establish a Spacing System, Improve Layout Systematically, Live-mode signature params, Manage Depth & Elevation (+5 more)
+
+### Community 107 - "Community 107"
+Cohesion: 0.14
+Nodes (14): 1. Read the screenshot (if present), 2. Wrap the element, 3. Load the action's reference, 4. Plan three variants: identity first, then mode, then axes, 5. Apply the freeform prompt (if present), 6. Write all variants in a single edit, 7. Parameters (composition-sized, 0–4 per variant), 8. Signal done (+6 more)
+
+### Community 108 - "Community 108"
+Cohesion: 0.14
+Nodes (13): Animation Performance, Assess Performance Issues, Core Web Vitals Optimization, Cumulative Layout Shift (CLS < 0.1), First Input Delay (FID < 100ms) / INP (< 200ms), Largest Contentful Paint (LCP < 2.5s), Loading Performance, Network Optimization (+5 more)
+
+### Community 109 - "Community 109"
+Cohesion: 0.14
+Nodes (13): Accessibility & Inclusion, Brand & Personality, Interview mode, not confirmation mode, Minimum viable interview, Register (ask first; it shapes everything below), Step 1: Load current state, Step 2: Explore the codebase, Step 3: Ask strategic questions (for PRODUCT.md) (+5 more)
+
+### Community 110 - "Community 110"
+Cohesion: 0.24
+Nodes (13): firstCssUrl(), getLayerValue(), loadVisualContrastImage(), parseObjectPosition(), parsePositionPair(), parsePositionToken(), pointToImageSource(), resolveObjectImageRect() (+5 more)
+
+### Community 111 - "Community 111"
+Cohesion: 0.15
+Nodes (13): Component translation rules, Narrative mapping, Scan mode (approach C: auto-extract, then confirm descriptive language), Schema, Step 1: Find the design assets, Step 2: Auto-extract what can be auto-extracted, Step 2b: Stage the frontmatter, Step 3: Ask the user for qualitative language (+5 more)
+
+### Community 112 - "Community 112"
+Cohesion: 0.05
+Nodes (49): adminGrantBites(), daysUntilNextGrant(), DEFAULT_BUNDLES, DEFAULT_MAX_CARRY_OVER, DEFAULT_MONTHLY_GRANT, getBitesConfig(), getMaxCarryOver(), getMonthlyGrant() (+41 more)
+
+### Community 113 - "Community 113"
+Cohesion: 0.20
+Nodes (12): analyzeVisualContrast(), analyzeVisualContrastCandidate(), blendRgba(), buildSelectorSegment(), clampByte(), collectVisualContrastCandidates(), collectVisualContrastReasons(), generateSelector() (+4 more)
+
+### Community 114 - "Community 114"
+Cohesion: 0.17
+Nodes (11): components, generatedAt, narrative, donts, dos, keyCharacteristics, northStar, overview (+3 more)
+
+### Community 115 - "Community 115"
+Cohesion: 0.17
+Nodes (11): Assess Current State, Code Simplification, Content Simplification, Document Removed Complexity, Information Architecture, Interaction Simplification, Layout Simplification, Plan Simplification (+3 more)
+
+### Community 116 - "Community 116"
+Cohesion: 0.17
+Nodes (12): Destructive Actions: Undo > Confirm, Focus Rings: Do Them Right, Form Design: The Non-Obvious, Gesture Discoverability, Interaction Design, Keyboard Navigation Patterns, Loading States, Modals: The Inert Approach (+4 more)
+
+### Community 117 - "Community 117"
+Cohesion: 0.17
+Nodes (11): Assess Current Typography, Establish Hierarchy, Fix Readability, Font Selection, Improve Typography Systematically, Live-mode signature params, Plan Typography Improvements, Refine Details (+3 more)
+
+### Community 118 - "Community 118"
+Cohesion: 0.32
+Nodes (12): actionLabel(), buildConfigureRow(), buildConfirmedRow(), buildCyclingRow(), buildDots(), buildGeneratingRow(), buildSavingRow(), el() (+4 more)
+
+### Community 119 - "Community 119"
+Cohesion: 0.14
+Nodes (18): clearHandled(), cycleVariant(), extractContext(), handleGo(), id8(), isSessionHandled(), loadSession(), pickVariantContent() (+10 more)
+
+### Community 120 - "Community 120"
+Cohesion: 0.26
+Nodes (9): applyEvent(), baseSnapshot(), COMPLETED_PHASES, getJournalPath(), getSnapshotPath(), rebuildSnapshotFromJournal(), safeSessionId(), toPendingEvent() (+1 more)
+
+### Community 121 - "Community 121"
+Cohesion: 0.09
+Nodes (24): HiddenMaster, HiddenMasterSchema, catalogContentHash(), normalizeDishTemplateForHash(), rebuildFutureShoppingLists(), rebuildFutureShoppingListsSafe(), rebuildShoppingListForPlan(), repointDishInPlans() (+16 more)
+
+### Community 122 - "Community 122"
+Cohesion: 0.10
+Nodes (28): getEffectiveHouseholdId(), getOptionalHouseholdId(), handleHouseholdError(), HouseholdBasic, HouseholdBasicSchema, KitchenIngredient, KitchenIngredientSchema, resolveBasicsAccess() (+20 more)
+
+### Community 123 - "Community 123"
+Cohesion: 0.18
+Nodes (10): Absolute bans, Color, Copy, Layout, Motion, Shared design laws, The AI slop test, Theme (+2 more)
+
+### Community 124 - "Community 124"
+Cohesion: 0.32
+Nodes (8): buildDesignHeader(), fetchDesignSystem(), msgDiv(), renderDesignBody(), renderDesignChrome(), renderParsedMdCta(), renderStaleHint(), toggleDesignPanel()
+
+### Community 125 - "Community 125"
+Cohesion: 0.18
+Nodes (10): Action Summary, Ask the User, Assessment A: Design Review, Assessment B: Detector + Browser Evidence, Assessment Orchestration, Hard Invariants, Persist the Snapshot, Purpose (+2 more)
+
+### Community 126 - "Community 126"
+Cohesion: 0.18
+Nodes (10): Assess Current State, Color Refinement, Composition Refinement, Motion Reduction, Plan Refinement, Refine the Design, Register, Simplification (+2 more)
+
+### Community 127 - "Community 127"
+Cohesion: 0.18
+Nodes (10): Breakpoints: Content-Driven, Detect Input Method, Not Just Screen Size, Layout Adaptation Patterns, Mobile-First: Write It Right, Picture Element for Art Direction, Responsive Design, Responsive Images: Get It Right, Safe Areas: Handle the Notch (+2 more)
+
+### Community 128 - "Community 128"
+Cohesion: 0.18
+Nodes (9): BitesBundleSchema, BitesConfig, BitesConfigSchema, CatalogPack, CatalogPackSchema, Household, HouseholdSchema, MigrationLog (+1 more)
+
+### Community 129 - "Community 129"
+Cohesion: 0.25
+Nodes (9): __dirname, findHarnessDirs(), generatePinnedSkill(), HARNESS_DIRS, loadCommandMetadata(), pin(), root, unpin() (+1 more)
+
+### Community 130 - "Community 130"
+Cohesion: 0.35
+Nodes (10): addDaysISO(), buildMonthGrid(), DAY_LABELS, formatMonthTitle(), formatWeekRange(), getCurrentWeekMonday(), getMondayISO(), getTodayISO() (+2 more)
+
+### Community 131 - "Community 131"
+Cohesion: 0.24
+Nodes (9): APPLY, DISH_CAT, DISH_CATEGORY_RULES, INGREDIENT_CATS, INGREDIENT_REMAP_RULES, main(), NOW, suggestDishCategory() (+1 more)
+
+### Community 132 - "Community 132"
+Cohesion: 0.54
+Nodes (7): buildCycleAnchor(), calculateWeeklyBudget(), daysBetween(), getCycleRangeForDate(), getDaysInUtcMonth(), getWeekDateRange(), startOfUtcDay()
+
+### Community 133 - "Community 133"
+Cohesion: 0.22
+Nodes (10): checkElementHeroEyebrow(), checkElementHeroEyebrowDOM(), checkElementQuality(), checkElementQualityDOM(), checkHeroEyebrow(), checkQuality(), isAccentColor(), resolveFontSizePx() (+2 more)
+
+### Community 134 - "Community 134"
+Cohesion: 0.20
+Nodes (9): Responsive Design Reference, Spatial Design Reference, UX Writing Reference, Indigo Brand Color System (#4f46e5), Analysis checklist, Behavior rules, Context loading, --hf-* CSS Variable Design System (+1 more)
+
+### Community 135 - "Community 135"
+Cohesion: 0.20
+Nodes (8): 1. Accessibility (A11y), 2. Performance, 3. Theming, 4. Responsive Design, 5. Anti-Patterns (CRITICAL), Diagnostic Scan, Recommended Actions, Nielsen 10 Usability Heuristics
+
+### Community 136 - "Community 136"
+Cohesion: 0.20
+Nodes (9): Color, Components, Layout, Motion, Product bans (on top of the shared absolute bans), Product permissions, Product register, The product slop test (+1 more)
+
+### Community 137 - "Community 137"
+Cohesion: 0.20
+Nodes (10): Animation rules, Border-radius consistency, Button hierarchy, CSS variables (--hf-* prefix), Dark mode, Interaction states required on every interactive element, Lunchfy design system reference, Mobile-first constraints (+2 more)
+
+### Community 138 - "Community 138"
+Cohesion: 0.25
+Nodes (9): addBrowserFindings(), addVisualContrastFindings(), addVisualContrastResult(), clearOverlays(), detachOverlay(), disconnectLazyVisualContrastObserver(), scheduleLazyVisualContrast(), shouldRunVisualContrast() (+1 more)
+
+### Community 139 - "Community 139"
+Cohesion: 0.22
+Nodes (8): Accessibility & Inclusion, Anti-references, Brand Personality, Design Principles, Product, Product Purpose, Register, Users
+
+### Community 140 - "Community 140"
+Cohesion: 0.22
+Nodes (9): After This File, Codex: Visual Direction & Asset Production, Four stop points before code, Step A: Explore Directions with the User, Step B: Generate the Brand Palette First, Step C: Generate 1-3 Visual Mocks Against the Palette, Step D: Approval Loop, Step E: Mock Fidelity Inventory (+1 more)
+
+### Community 141 - "Community 141"
+Cohesion: 0.22
+Nodes (8): Cognitive Load Assessment, Cognitive Load Checklist, Extraneous Load: Bad Design, Germane Load: Learning Effort, Intrinsic Load: The Task Itself, The Working Memory Rule, Three Types of Cognitive Load, Working Memory Rule (≤4 items)
+
+### Community 142 - "Community 142"
+Cohesion: 0.29
+Nodes (7): Anti-Patterns Verdict, Audit Health Score, Detailed Findings by Severity, Executive Summary, Generate Report, Patterns & Systemic Issues, Positive Findings
+
+### Community 143 - "Community 143"
+Cohesion: 0.29
+Nodes (7): Amplify the Design, Color Intensification, Composition Boldness, Motion & Animation, Spatial Drama, Typography Amplification, Visual Effects
+
+### Community 144 - "Community 144"
+Cohesion: 0.22
+Nodes (8): Duration: The 100/300/500 Rule, Easing: Pick the Right Curve, Motion Design, Perceived Performance, Performance, Premium Motion Materials, Reduced Motion, Staggered Animations
+
+### Community 145 - "Community 145"
+Cohesion: 0.22
+Nodes (8): 1. Impatient Power User: "Alex", 2. Confused First-Timer: "Jordan", 3. Accessibility-Dependent User: "Sam", 4. Deliberate Stress Tester: "Riley", 5. Distracted Mobile User: "Casey", Persona-Based Design Testing, Project-Specific Personas, Selecting Personas
+
+### Community 146 - "Community 146"
+Cohesion: 0.25
+Nodes (9): checkElementHeroEyebrow(), checkElementHeroEyebrowDOM(), checkElementQuality(), checkElementQualityDOM(), checkHeroEyebrow(), checkQuality(), isAccentColor(), resolveFontSizePx() (+1 more)
+
+### Community 147 - "Community 147"
+Cohesion: 0.29
+Nodes (7): append-arrays, append-string, Consent prompt template, CSP detection (first-time only), Drift-heal warning, First-time setup (config missing or invalid), Troubleshooting
+
+### Community 148 - "Community 148"
+Cohesion: 0.05
+Nodes (50): ensureHouseholdInviteCode(), generateUniqueHouseholdInviteCode(), randomSixDigitCode(), requireDiod(), applyBitesBundleEntitlementFromAttempt(), applyPackEntitlementFromAttempt(), deactivateExpiredSubscriptions(), applyAdminSubscriptionActivation() (+42 more)
+
+### Community 149 - "Community 149"
+Cohesion: 0.28
+Nodes (8): APPLY, __dirname, extractDbName(), __filename, main(), MASTER_COLLECTIONS, NOW, prompt()
+
+### Community 150 - "Community 150"
+Cohesion: 0.36
+Nodes (8): DEFAULT_INPUT_PATH, __dirname, fetchAllClerkUsers(), __filename, getPrimaryEmail(), main(), normalizeEmail(), parseArgs()
+
+### Community 151 - "Community 151"
+Cohesion: 0.25
+Nodes (7): APPLY, BBQ_IDS, CAT_BBQ, CAT_HERBS, HERB_IDS, main(), NOW
+
+### Community 152 - "Community 152"
+Cohesion: 0.29
+Nodes (8): browserFindingsFromMap(), checkHtmlPatterns(), checkPageQualityDOM(), checkPageQualityFromDoc(), checkTypography(), collectBrowserFindings(), collectBrowserFindingsAsync(), isBrandFontOnOwnDomain()
+
+### Community 153 - "Community 153"
+Cohesion: 0.25
+Nodes (7): dependencies, mongodb, name, private, scripts, dev, dev:frontend
+
+### Community 154 - "Community 154"
+Cohesion: 0.25
+Nodes (7): Endpoints principales (backend), Módulo Kitchen, Nota PWA, Pilot Lunchfy, Rutas principales (frontend), Usuarios, Variables de entorno
+
+### Community 155 - "Community 155"
+Cohesion: 0.25
+Nodes (8): Craft Flow, Gates: do not compress, Step 0: Project Foundation, Step 1: Shape the Design, Step 2: Load References, Step 3: Visual Direction & Assets (Harness-Gated), Step 5: Iterate Visually, Step 6: Present
+
+### Community 156 - "Community 156"
+Cohesion: 0.25
+Nodes (8): Accessibility Resilience, Edge Cases & Boundary Conditions, Error Handling, Hardening Dimensions, Input Validation & Sanitization, Internationalization (i18n), Performance Resilience, Text Overflow & Wrapping
+
+### Community 157 - "Community 157"
+Cohesion: 0.29
+Nodes (7): checkRepeatedSectionKickers(), checkRepeatedSectionKickersDOM(), checkRepeatedSectionKickersFromDoc(), cleanInlineText(), collectRepeatedSectionKickerCandidates(), isRepeatedKickerCandidate(), makeStaticStyle()
+
+### Community 158 - "Community 158"
+Cohesion: 0.10
+Nodes (23): buildBetaInviteLink(), checkBetaAccess(), createBetaInvite(), createBetaToken(), getBetaInviteStatus(), isBetaModeEnabled(), markBetaInviteUsed(), cleanupOldChallenges() (+15 more)
+
+### Community 159 - "Community 159"
+Cohesion: 0.29
+Nodes (6): Summary, Duplicate ingredient groups, Ingredients to create, Lunchfy normalization report 20260512-1552, Manual review, Safety notes
+
+### Community 160 - "Community 160"
+Cohesion: 0.14
+Nodes (15): DAY_LABELS, DAY_LONG, initialsFromName(), SettingsPage(), COLOR_PALETTE, getColorPalette(), getUnassignedColor(), getUserColor() (+7 more)
+
+### Community 161 - "Community 161"
+Cohesion: 0.29
+Nodes (6): Summary, Duplicate ingredient groups, Ingredients to create, Lunchfy normalization report 20260512-1556, Manual review, Safety notes
+
+### Community 162 - "Community 162"
+Cohesion: 0.05
+Nodes (64): buildHouseholdFilter(), buildScopedFilter(), buildDefaultAttendeeIds(), buildDefaultDays(), createOrGetWeekPlan(), ensureDinnerSlotsIfEnabled(), ensureWeekPlan(), findWeekPlan() (+56 more)
+
+### Community 163 - "Community 163"
+Cohesion: 0.29
+Nodes (6): Summary, Duplicate ingredient groups, Ingredients to create, Lunchfy normalization report 20260512-1558, Manual review, Safety notes
+
+### Community 164 - "Community 164"
+Cohesion: 0.29
+Nodes (6): Summary, Duplicate ingredient groups, Ingredients to create, Lunchfy normalization report 20260512-1604, Manual review, Safety notes
+
+### Community 165 - "Community 165"
+Cohesion: 0.29
+Nodes (6): Summary, Duplicate ingredient groups, Ingredients to create, Lunchfy normalization report 20260512-1619, Manual review, Safety notes
+
+### Community 166 - "Community 166"
+Cohesion: 0.29
+Nodes (6): Summary, Duplicate ingredient groups, Ingredients to create, Lunchfy normalization report 20260512-1621, Manual review, Safety notes
+
+### Community 167 - "Community 167"
+Cohesion: 0.29
+Nodes (6): APPLY, CANONICAL_FIXES, main(), MERGE_MAP, NOW, QUALITY_FIXES
+
+### Community 168 - "Community 168"
+Cohesion: 0.16
+Nodes (5): AdminResetPasswordPage(), checkPasswordStrength(), STRENGTH_COLORS, STRENGTH_LABELS, variantClass
+
+### Community 171 - "Community 171"
+Cohesion: 0.33
+Nodes (6): APPLY, __dirname, __filename, jsonPath, main(), parseExtendedJson()
+
+### Community 172 - "Community 172"
+Cohesion: 0.29
+Nodes (7): 🔴 Crítico — [N problems], Estado general, 🟠 Importante — [N problems], 🟡 Mejora — [N problems], Output format, UI Review — [ComponentName / ScreenName], Verificación de variables CSS
+
+### Community 173 - "Community 173"
+Cohesion: 0.40
+Nodes (6): checkRepeatedSectionKickers(), checkRepeatedSectionKickersDOM(), checkRepeatedSectionKickersFromDoc(), cleanInlineText(), collectRepeatedSectionKickerCandidates(), isRepeatedKickerCandidate()
+
+### Community 174 - "Community 174"
+Cohesion: 0.33
+Nodes (4): Assess Hardening Needs, Testing Strategies, Verify Hardening, Eight Interactive States
+
+### Community 175 - "Community 175"
+Cohesion: 0.33
+Nodes (6): Anti-Patterns, CSS Anchor Positioning, Dropdown & Overlay Positioning, Fixed Positioning Fallback, Popover + Anchor Combo, Portal / Teleport Pattern
+
+### Community 176 - "Community 176"
+Cohesion: 0.33
+Nodes (5): catalogPacks, categories, dishCategories, kitchenDishes, kitchenIngredients
+
+### Community 177 - "Community 177"
+Cohesion: 0.40
+Nodes (4): permissions, allow, ask, deny
+
+### Community 178 - "Community 178"
+Cohesion: 0.40
+Nodes (5): canonical, displayName, role, tonalRamp, border
+
+### Community 179 - "Community 179"
+Cohesion: 0.40
+Nodes (5): canonical, displayName, role, tonalRamp, brand
+
+### Community 180 - "Community 180"
+Cohesion: 0.40
+Nodes (5): canonical, displayName, role, tonalRamp, brand-dark
+
+### Community 181 - "Community 181"
+Cohesion: 0.40
+Nodes (5): danger, canonical, displayName, role, tonalRamp
+
+### Community 182 - "Community 182"
+Cohesion: 0.40
+Nodes (5): surface, canonical, displayName, role, tonalRamp
+
+### Community 183 - "Community 183"
+Cohesion: 0.40
+Nodes (5): surface-bg, canonical, displayName, role, tonalRamp
+
+### Community 184 - "Community 184"
+Cohesion: 0.40
+Nodes (5): surface-mint, canonical, displayName, role, tonalRamp
+
+### Community 185 - "Community 185"
+Cohesion: 0.40
+Nodes (5): surface-soft, canonical, displayName, role, tonalRamp
+
+### Community 186 - "Community 186"
+Cohesion: 0.40
+Nodes (5): text, canonical, displayName, role, tonalRamp
+
+### Community 187 - "Community 187"
+Cohesion: 0.40
+Nodes (5): text-muted, canonical, displayName, role, tonalRamp
+
+### Community 188 - "Community 188"
+Cohesion: 0.40
+Nodes (5): extensions, breakpoints, colorMeta, motion, shadows
+
+### Community 189 - "Community 189"
+Cohesion: 0.50
+Nodes (3): Codex Four Stop Points Before Code, Production bar, Step 4: Build to Production Quality
+
+### Community 190 - "Community 190"
+Cohesion: 0.50
+Nodes (4): __dirname, __filename, main(), parseArgs()
+
+### Community 191 - "Community 191"
+Cohesion: 0.50
+Nodes (3): adapt, argumentHint, description
+
+### Community 193 - "Community 193"
+Cohesion: 0.50
+Nodes (3): candidates, detectorPath, __dirname
+
+### Community 199 - "Community 199"
+Cohesion: 0.67
+Nodes (3): animate, argumentHint, description
+
+### Community 200 - "Community 200"
+Cohesion: 0.67
+Nodes (3): audit, argumentHint, description
+
+### Community 201 - "Community 201"
+Cohesion: 0.67
+Nodes (3): bolder, argumentHint, description
+
+### Community 202 - "Community 202"
+Cohesion: 0.67
+Nodes (3): clarify, argumentHint, description
+
+### Community 203 - "Community 203"
+Cohesion: 0.67
+Nodes (3): colorize, argumentHint, description
+
+### Community 204 - "Community 204"
+Cohesion: 0.67
+Nodes (3): craft, argumentHint, description
+
+### Community 205 - "Community 205"
+Cohesion: 0.67
+Nodes (3): critique, argumentHint, description
+
+### Community 206 - "Community 206"
+Cohesion: 0.67
+Nodes (3): delight, argumentHint, description
+
+### Community 207 - "Community 207"
+Cohesion: 0.36
+Nodes (9): canClaimPackWithPlan(), CATALOG_MONTHLY_PACK_CREDITS, getCatalogMonthlyCredits(), getCurrentClaimMonth(), getMonthlyCreditsRemaining(), getMonthlyCreditsUsed(), isPackCurrentlyFree(), isPlanIncludedInPack() (+1 more)
+
+### Community 208 - "Community 208"
+Cohesion: 0.67
+Nodes (3): distill, argumentHint, description
+
+### Community 209 - "Community 209"
+Cohesion: 0.67
+Nodes (3): document, argumentHint, description
+
+### Community 210 - "Community 210"
+Cohesion: 0.67
+Nodes (3): extract, argumentHint, description
+
+### Community 211 - "Community 211"
+Cohesion: 0.67
+Nodes (3): harden, argumentHint, description
+
+### Community 212 - "Community 212"
+Cohesion: 0.67
+Nodes (3): layout, argumentHint, description
+
+### Community 213 - "Community 213"
+Cohesion: 0.67
+Nodes (3): live, argumentHint, description
+
+### Community 214 - "Community 214"
+Cohesion: 0.67
+Nodes (3): onboard, argumentHint, description
+
+### Community 215 - "Community 215"
+Cohesion: 0.67
+Nodes (3): optimize, argumentHint, description
+
+### Community 216 - "Community 216"
+Cohesion: 0.67
+Nodes (3): overdrive, argumentHint, description
+
+### Community 217 - "Community 217"
+Cohesion: 0.67
+Nodes (3): polish, argumentHint, description
+
+### Community 218 - "Community 218"
+Cohesion: 0.67
+Nodes (3): quieter, argumentHint, description
+
+### Community 219 - "Community 219"
+Cohesion: 0.67
+Nodes (3): shape, argumentHint, description
+
+### Community 220 - "Community 220"
+Cohesion: 0.67
+Nodes (3): teach, argumentHint, description
+
+### Community 221 - "Community 221"
+Cohesion: 0.67
+Nodes (3): typeset, argumentHint, description
+
+### Community 229 - "Community 229"
+Cohesion: 0.07
+Nodes (23): CategoryIcon(), CATEGORY_CODE_ALIASES, CATEGORY_ICON_BY_CODE, getCategoryIconByCode(), normalizeCategoryCode(), resolveCategoryCode(), addDaysToISO(), apiSync (+15 more)
+
+### Community 236 - "Community 236"
+Cohesion: 0.40
+Nodes (4): APPLY, DISH_ENRICHMENT, main(), NOW
+
+### Community 303 - "Community 303"
+Cohesion: 0.30
+Nodes (11): buildTargetNames(), cleanSkillsLock(), cleanup(), DEPRECATED_NAMES, findProjectRoot(), findSkillsDirs(), HARNESS_DIRS, isImpeccableSkill() (+3 more)
+
+### Community 311 - "Community 311"
+Cohesion: 0.31
+Nodes (11): kebab(), listSnapshotsForSlug(), main(), nowFilenameStamp(), parseFrontmatter(), readLatestSnapshot(), readTrend(), serializeFrontmatter() (+3 more)
+
+### Community 316 - "Community 316"
+Cohesion: 0.16
+Nodes (31): buildColor(), CANONICAL_SECTIONS, collectBullets(), collectColorValues(), collectParagraphs(), detectFormat(), extractColors(), extractComponents() (+23 more)
+
+### Community 317 - "Community 317"
+Cohesion: 0.20
+Nodes (10): detectCsp(), INLINE_HEADER_SIGNALS, LAYOUT_EXTS, MONOREPO_HELPER_SIGNALS, NUXT_ROUTE_RULES_SIGNALS, NUXT_SECURITY_SIGNALS, SCAN_EXTS, SKIP_DIRS (+2 more)
+
+### Community 319 - "Community 319"
+Cohesion: 0.19
+Nodes (17): firstExisting(), getDesignSidecarCandidates(), getDesignSidecarPath(), getImpeccableDir(), getLegacyLiveConfigPath(), getLegacyLiveServerPath(), getLiveAnnotationsDir(), getLiveConfigPath() (+9 more)
+
+### Community 330 - "Community 330"
+Cohesion: 0.25
+Nodes (12): getLegacyLiveSessionsDir(), readLiveServerInfo(), completeCli(), completeThroughServer(), parseArgs(), readServerInfo(), parseArgs(), resumeCli() (+4 more)
+
+### Community 335 - "Community 335"
+Cohesion: 0.10
+Nodes (38): hasGeneratedHeader(), HEADER_MARKERS, isGeneratedFile(), isGitIgnored(), acceptCli(), argVal(), deindentContent(), detectCommentSyntax() (+30 more)
+
+### Community 338 - "Community 338"
+Cohesion: 0.50
+Nodes (6): completionAckForAcceptResult(), completionTypeForAcceptResult(), buildPollReplyPayload(), pollCli(), postReply(), readServerInfo()
+
+### Community 340 - "Community 340"
+Cohesion: 0.18
+Nodes (14): appendOriginToDirective(), buildTagBlock(), commentClose(), commentOpen(), CONFIG_PATH, __dirname, findCspMetaTags(), getAttr() (+6 more)
+
+### Community 342 - "Community 342"
+Cohesion: 0.19
+Nodes (16): __dirname, ensureServerRunning(), resolveFiles(), liveCli(), runScript(), safeParse(), scanForDrift(), cli() (+8 more)
+
+### Community 352 - "Community 352"
+Cohesion: 0.14
+Nodes (16): APPLY, DISHES, main(), NOW, run(), run(), run(), missingBoolean() (+8 more)
+
+### Community 354 - "Community 354"
+Cohesion: 0.08
+Nodes (37): buildPayload(), formatTargetDate(), normalizeMealType(), notifyCookAssignments(), resolveDishNames(), resolvePeopleCount(), sendAssignmentPushToUser(), shouldNotifyAssignment() (+29 more)
+
+### Community 386 - "Community 386"
+Cohesion: 0.07
+Nodes (44): attachItemsToPurchaseSession(), completePurchaseSession(), detachItemsFromPurchaseSession(), ensureOpenPurchaseSession(), getLatestOpenPurchaseSession(), getPendingPurchaseSessions(), markPurchaseSessionPendingConfirmation(), normalizeWeekStartKey() (+36 more)
 
 ## Knowledge Gaps
-- **463 isolated node(s):** `findProjectRoot`, `loadLock`, `isImpeccableSkill`, `buildTargetNames`, `findSkillsDirs` (+458 more)
+- **1659 isolated node(s):** `PreToolUse`, `allow`, `deny`, `ask`, `DEPRECATED_NAMES` (+1654 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **437 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Impeccable Skill (SKILL.md)` connect `Impeccable Design Skill` to `Ingredient Data Quality`?**
+- **Why does `resolveMongoUrl()` connect `Community 352` to `Community 162`, `Community 131`, `Community 100`, `Community 386`, `Community 70`, `Community 167`, `Community 74`, `Community 42`, `Community 236`, `Community 78`, `Community 23`, `Community 151`, `Community 122`?**
+  _High betweenness centrality (0.007) - this node is a cross-community bridge._
+- **Why does `apiRequest()` connect `Community 66` to `Community 34`, `Community 35`, `Community 37`, `Community 229`, `Community 43`, `Community 15`, `Community 16`, `Community 48`, `Community 18`, `Community 19`, `Community 28`?**
+  _High betweenness centrality (0.004) - this node is a cross-community bridge._
+- **Why does `collectRepeatedSectionKickerCandidates()` connect `Community 173` to `Community 36`, `Community 157`?**
   _High betweenness centrality (0.003) - this node is a cross-community bridge._
-- **Why does `PRODUCT.md — HomeFirst Product Strategy` connect `Project Design System` to `UI Polish & Motion`?**
-  _High betweenness centrality (0.002) - this node is a cross-community bridge._
-- **Why does `Polish — Final UI Pass Reference` connect `UI Polish & Motion` to `Project Design System`?**
-  _High betweenness centrality (0.001) - this node is a cross-community bridge._
-- **Are the 2 inferred relationships involving `DESIGN.md — HomeFirst Design System` (e.g. with `CLAUDE.md — Project Instructions` and `PRODUCT.md — HomeFirst Product Strategy`) actually correct?**
-  _`DESIGN.md — HomeFirst Design System` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 4 inferred relationships involving `PRODUCT.md — HomeFirst Product Strategy` (e.g. with `Polish — Final UI Pass Reference` and `Product UI Register Reference`) actually correct?**
-  _`PRODUCT.md — HomeFirst Product Strategy` has 4 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 2 inferred relationships involving `Polish — Final UI Pass Reference` (e.g. with `Typography Principles Reference` and `PRODUCT.md — HomeFirst Product Strategy`) actually correct?**
-  _`Polish — Final UI Pass Reference` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `findProjectRoot`, `loadLock`, `isImpeccableSkill` to the rest of the system?**
-  _465 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `PreToolUse`, `allow`, `deny` to the rest of the system?**
+  _1661 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Impeccable Design Skill` be split into smaller, more focused modules?**
+  _Cohesion score 0.1323529411764706 - nodes in this community are weakly interconnected._
+- **Should `Ingredient Data Quality` be split into smaller, more focused modules?**
+  _Cohesion score 0.05926251097453907 - nodes in this community are weakly interconnected._
+- **Should `Auth Migration Strategy` be split into smaller, more focused modules?**
+  _Cohesion score 0.04625346901017576 - nodes in this community are weakly interconnected._

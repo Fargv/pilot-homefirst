@@ -11,7 +11,9 @@
       "Skill",
       "Bash(git commit *)",
       "Bash(rm -f \".git/COMMIT_EDITMSG_TEMP.txt\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)"
     ],
     "deny": [
       "Read(./.env)",

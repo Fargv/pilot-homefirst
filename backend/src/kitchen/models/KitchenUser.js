@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { DEFAULT_THEME_ID, normalizeThemeId } from "../themeService.js";
 
 const KitchenUserSchema = new mongoose.Schema(
   {
@@ -28,7 +29,12 @@ const KitchenUserSchema = new mongoose.Schema(
     householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" },
     createdByUserId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },
     globalRole: { type: String, enum: ["diod", null], default: null },
-    activeHouseholdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" }
+    activeHouseholdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household" },
+    themeId: { type: String, trim: true, default: DEFAULT_THEME_ID },
+    birthYear: { type: Number, default: null },
+    ageVerified: { type: Boolean, default: false },
+    ageVerifiedAt: { type: Date, default: null },
+    consentAcceptedAt: { type: Date, default: null }
   },
   { timestamps: true }
 );
@@ -71,7 +77,11 @@ KitchenUserSchema.methods.toSafeJSON = function toSafeJSON() {
     householdId: this.householdId ?? null,
     createdByUserId: this.createdByUserId ?? null,
     globalRole: this.globalRole ?? null,
-    activeHouseholdId: this.activeHouseholdId ?? null
+    activeHouseholdId: this.activeHouseholdId ?? null,
+    themeId: normalizeThemeId(this.themeId),
+    birthYear: this.birthYear ?? null,
+    ageVerified: this.ageVerified ?? false,
+    consentAcceptedAt: this.consentAcceptedAt ?? null
   };
 };
 

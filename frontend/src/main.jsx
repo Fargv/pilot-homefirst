@@ -25,6 +25,11 @@ const app = (
     {clerkPublishableKey ? (
       <ClerkProvider
         publishableKey={clerkPublishableKey}
+        // Clerk emits its own styles into the `clerk` CSS layer; our
+        // unlayered .cl-* overrides in kitchen.css then win deterministically
+        // (unlayered beats layered), which also silences Clerk's
+        // "stylesheet targets internal elements" console warning.
+        appearance={{ cssLayerName: "clerk" }}
         signInUrl="/login"
         signUpUrl="/signup"
         signInForceRedirectUrl="/auth/clerk/complete"

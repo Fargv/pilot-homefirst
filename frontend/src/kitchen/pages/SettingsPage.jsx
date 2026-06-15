@@ -1,9 +1,14 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "../../context/ThemeContext.jsx";
+import { APP_THEMES, DEFAULT_THEME_ID } from "../../context/appThemes.js";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth";
 import { apiRequest, undoCancelSubscription } from "../api.js";
+import { createSyncedApi, fetchCached, membersQuery, userQuery } from "../queryClient.js";
+
+// Settings mutations touch household/user data consumed across the app
+const apiSync = createSyncedApi([["user"], ["planning"], ["shopping"], ["kitchen", "dishes"]]);
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import SettingsSharePanel from "../components/SettingsSharePanel.jsx";
 import PushNotificationsPanel from "../components/PushNotificationsPanel.jsx";
@@ -16,6 +21,7 @@ import {
   canUseDietRandomization,
   canUseDinnersFeature,
   countLicenseUsage,
+  isProLikeHousehold,
   isNonUserDinerLimitReachedError,
   isUnlimitedLicenseLimit,
   isUserLimitReachedError
@@ -34,6 +40,27 @@ function initialsFromName(name = "") {
   if (!parts.length) return "U";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
+
+/**
+ * Inline save feedback shared by every settings control:
+ * "Guardando…" while the request is in flight, "Guardado" (with a
+ * brief check pulse) on success, "No se pudo guardar" on failure.
+ * Announced via role=status so screen readers hear the transition.
+ */
+function SaveStatusChip({ status }) {
+  if (!status || status === "idle") return null;
+  return (
+    <span className={`settings-save-status is-${status}`} role="status">
+      {status === "saving" ? <span className="settings-save-spinner" aria-hidden="true" /> : null}
+      {status === "saved" ? (
+        <svg className="settings-save-check" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+          <path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : null}
+      {status === "saving" ? "Guardando…" : status === "saved" ? "Guardado" : "No se pudo guardar"}
+    </span>
+  );
 }
 
 function roleLabel(user, isOwner, householdName) {
@@ -173,7 +200,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { activeWeek } = useActiveWeek();
   const { user, setUser, refreshUser, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { themeId, setTheme, syncThemeFromUser } = useTheme();
   const { notify: notifyOnboarding } = useOnboarding();
   const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -219,6 +246,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [themeFeedback, setThemeFeedback] = useState("");
+  const [themeSavingId, setThemeSavingId] = useState("");
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [profileInitials, setProfileInitials] = useState(user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || ""));
   const [selectedColorId, setSelectedColorId] = useState(user?.colorId || getUserColorPreference(user?.id) || "lavender");
@@ -290,6 +319,28 @@ export default function SettingsPage() {
   const [basics, setBasics] = useState([]);
   const [basicsLoading, setBasicsLoading] = useState(false);
   const [basicsError, setBasicsError] = useState("");
+  // Shared save-status map: one inline chip per settings area
+  // (keys: profile, household-name, dinners, dinners-shopping, budget, repeats, diet, basics)
+  const [saveStatuses, setSaveStatuses] = useState({});
+  const [profileSaving, setProfileSaving] = useState(false);
+  const saveStatusTimersRef = useRef({});
+  const syncedPrefsRef = useRef(null);
+  const successTimerRef = useRef(null);
+
+  const setSaveStatus = useCallback((key, status) => {
+    setSaveStatuses((prev) => ({ ...prev, [key]: status }));
+    clearTimeout(saveStatusTimersRef.current[key]);
+    if (status === "saved") {
+      saveStatusTimersRef.current[key] = setTimeout(() => {
+        setSaveStatuses((prev) => ({ ...prev, [key]: "idle" }));
+      }, 2500);
+    }
+  }, []);
+
+  useEffect(() => () => {
+    Object.values(saveStatusTimersRef.current).forEach((timer) => clearTimeout(timer));
+    clearTimeout(successTimerRef.current);
+  }, []);
 
   const isOwner = user?.role === "owner" || user?.role === "admin";
   const isDiod = user?.globalRole === "diod";
@@ -320,7 +371,9 @@ export default function SettingsPage() {
   const budgetFeatureEnabled = canUseBudgetFeature(subscriptionAccess);
   const basicsFeatureEnabled = canUseBasicsFeature(subscriptionAccess);
   const canUseDinners = canUseDinnersFeature(subscriptionAccess);
+  const canSelectPremiumThemes = isProLikeHousehold(subscriptionAccess);
   const licenseActionLabel = subscriptionPlan === "premium" ? "Change Subscription" : "Upgrade License";
+  const isPaidPlan = ["pro", "premium"].includes(String(subscriptionPlan || "").toLowerCase());
   const memberUsage = useMemo(() => countLicenseUsage(members), [members]);
   const licenseState = useMemo(
     () => buildLicenseState(subscriptionPlan, memberUsage),
@@ -371,7 +424,41 @@ export default function SettingsPage() {
     return "settings-subscription-badge basic";
   };
 
+  // Real unsaved changes only: profile edit-mode diffs vs snapshot, or a
+  // modified household name still in edit mode.
+  const profileDirty = profileEditingMain && (
+    displayName !== profileSnapshot.displayName
+    || profileInitials !== profileSnapshot.initials
+    || selectedColorId !== profileSnapshot.colorId
+    || profileActive !== profileSnapshot.active
+    || profileCanCook !== profileSnapshot.canCook
+    || profileDinnerActive !== profileSnapshot.dinnerActive
+    || profileDinnerCanCook !== profileSnapshot.dinnerCanCook
+  );
+  const householdNameDirty = householdNameEditing && householdNameDraft.trim() !== householdName.trim();
+  const hasUnsavedChanges = profileDirty || householdNameDirty;
+
+  // Browser refresh / tab close guard — only while something is really dirty
+  useEffect(() => {
+    if (!hasUnsavedChanges) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
   const setPanel = (panel) => {
+    if (hasUnsavedChanges) {
+      const leaveAnyway = window.confirm("Tienes cambios sin guardar. ¿Quieres salir igualmente?");
+      if (!leaveAnyway) return;
+      if (profileEditingMain) cancelProfileEdit();
+      if (householdNameEditing) {
+        setHouseholdNameDraft(householdName);
+        setHouseholdNameEditing(false);
+      }
+    }
     if (!panel) {
       setSearchParams({});
       navigate("/kitchen/configuracion");
@@ -391,6 +478,8 @@ export default function SettingsPage() {
   const updateSuccess = (message) => {
     setSuccess(message);
     setError("");
+    clearTimeout(successTimerRef.current);
+    successTimerRef.current = setTimeout(() => setSuccess(""), 4000);
   };
 
   const notifyCatalogInvalidated = () => {
@@ -478,7 +567,7 @@ export default function SettingsPage() {
     setError("");
     try {
       const householdSummaryRequest = (!isDiod || user?.activeHouseholdId)
-        ? apiRequest("/api/kitchen/household/summary")
+        ? fetchCached(userQuery(user?.id))
         : Promise.resolve({ household: { name: "", inviteCode: "" } });
       const requests = [
         apiRequest("/api/categories?includeInactive=true"),
@@ -486,7 +575,7 @@ export default function SettingsPage() {
         householdSummaryRequest
       ];
       if (!isDiod || user?.activeHouseholdId) {
-        requests.push(apiRequest("/api/kitchen/users/members"));
+        requests.push(fetchCached(membersQuery()));
       } else {
         requests.push(Promise.resolve({ users: [] }));
       }
@@ -564,6 +653,12 @@ export default function SettingsPage() {
     return () => clearTimeout(timer);
   }, [copiedField]);
 
+  useEffect(() => {
+    if (!themeFeedback) return;
+    const timer = setTimeout(() => setThemeFeedback(""), 3000);
+    return () => clearTimeout(timer);
+  }, [themeFeedback]);
+
   const loadDeletedItems = async () => {
     if (!canManageDeleted) return;
     if (isDiod && !user?.activeHouseholdId) {
@@ -596,7 +691,7 @@ export default function SettingsPage() {
   const loadBitesHistory = async () => {
     setBitesHistoryLoading(true);
     try {
-      const data = await apiRequest("/api/kitchen/household/bites-history");
+      const data = await apiSync("/api/kitchen/household/bites-history");
       setBitesHistory(data?.transactions || []);
       setBitesSummary({ free: data?.freeBitesBalance ?? 0, purchased: data?.purchasedBitesBalance ?? 0 });
     } catch (err) {
@@ -615,7 +710,7 @@ export default function SettingsPage() {
     setBasicsLoading(true);
     setBasicsError("");
     try {
-      const data = await apiRequest("/api/kitchen/basics");
+      const data = await apiSync("/api/kitchen/basics");
       setBasics(data.basics || []);
     } catch (err) {
       setBasicsError(err.message || "No se pudieron cargar los básicos.");
@@ -635,37 +730,46 @@ export default function SettingsPage() {
 
   const deleteBasic = async (id) => {
     setBasicsError("");
+    setSaveStatus("basics", "saving");
     try {
-      await apiRequest(`/api/kitchen/basics/${id}`, { method: "DELETE" });
+      await apiSync(`/api/kitchen/basics/${id}`, { method: "DELETE" });
       await loadBasics();
+      setSaveStatus("basics", "saved");
     } catch (err) {
+      setSaveStatus("basics", "error");
       setBasicsError(err.message || "No se pudo eliminar el básico.");
     }
   };
 
   const toggleBasicActive = async (id, currentActive) => {
     setBasicsError("");
+    setSaveStatus("basics", "saving");
     try {
-      await apiRequest(`/api/kitchen/basics/${id}`, {
+      await apiSync(`/api/kitchen/basics/${id}`, {
         method: "PUT",
         body: JSON.stringify({ active: !currentActive })
       });
       await loadBasics();
+      setSaveStatus("basics", "saved");
     } catch (err) {
+      setSaveStatus("basics", "error");
       setBasicsError(err.message || "No se pudo actualizar el básico.");
     }
   };
 
   const saveProfile = async () => {
+    if (profileSaving) return;
     const safeDisplayName = displayName.trim();
     if (!safeDisplayName) {
       setError("El nombre visible es obligatorio.");
       return;
     }
+    setProfileSaving(true);
+    setSaveStatus("profile", "saving");
     try {
       const safeInitials = (profileInitials.trim().toUpperCase() || initialsFromName(safeDisplayName)).slice(0, 3);
       const canEditOwnActive = isOwner || isDiod;
-      const data = await apiRequest("/api/kitchen/users/me", {
+      const data = await apiSync("/api/kitchen/users/me", {
         method: "PATCH",
         body: JSON.stringify({
           displayName: safeDisplayName,
@@ -682,9 +786,12 @@ export default function SettingsPage() {
       setUserColorPreference(user?.id, selectedColorId);
       await refreshUser();
       setProfileEditingMain(false);
-      updateSuccess("Perfil actualizado.");
+      setSaveStatus("profile", "saved");
     } catch (err) {
+      setSaveStatus("profile", "error");
       setError(err.message || "No se pudo guardar el perfil.");
+    } finally {
+      setProfileSaving(false);
     }
   };
 
@@ -698,7 +805,7 @@ export default function SettingsPage() {
       return;
     }
     try {
-      await apiRequest("/api/kitchen/users/me/password", {
+      await apiSync("/api/kitchen/users/me/password", {
         method: "PUT",
         body: JSON.stringify({ currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword })
       });
@@ -710,28 +817,73 @@ export default function SettingsPage() {
     }
   };
 
+  const applyAppTheme = async (nextThemeId) => {
+    if (themeSavingId) return;
+    const selectedTheme = APP_THEMES.find((item) => item.id === nextThemeId) || APP_THEMES[0];
+    const requiresPro = !selectedTheme.availableForPlans.includes("basic");
+    if (requiresPro && !canSelectPremiumThemes) {
+      setThemeFeedback("Disponible en Pro");
+      setError("");
+      return;
+    }
+    if (nextThemeId === themeId) {
+      setThemeFeedback("Tema aplicado");
+      return;
+    }
+
+    const previousThemeId = themeId || DEFAULT_THEME_ID;
+    setThemeSavingId(nextThemeId);
+    setThemeFeedback("");
+    setTheme(nextThemeId);
+    try {
+      const data = await apiSync("/api/kitchen/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({ themeId: nextThemeId })
+      });
+      if (data?.user) {
+        setUser((prev) => ({ ...prev, ...data.user }));
+        syncThemeFromUser(data.user.themeId, { canUsePremiumThemes: canSelectPremiumThemes });
+      }
+      setThemeFeedback("Tema aplicado");
+      await refreshUser();
+    } catch (err) {
+      setTheme(previousThemeId);
+      syncThemeFromUser(previousThemeId, { canUsePremiumThemes: canSelectPremiumThemes });
+      setThemeFeedback("No se pudo guardar el tema");
+      setError(err.message || "No se pudo guardar el tema");
+    } finally {
+      setThemeSavingId("");
+    }
+  };
+
   const saveHouseholdName = async () => {
     const safeName = householdNameDraft.trim();
     if (!safeName) {
       setError("El nombre del household es obligatorio.");
       return;
     }
+    if (safeName === householdName.trim()) {
+      setHouseholdNameEditing(false);
+      return;
+    }
+    setSaveStatus("household-name", "saving");
     try {
-      const data = await apiRequest("/api/kitchen/household/name", {
+      const data = await apiSync("/api/kitchen/household/name", {
         method: "PATCH",
         body: JSON.stringify({ name: safeName })
       });
       setHouseholdName(data?.household?.name || safeName);
       setHouseholdNameEditing(false);
-      updateSuccess("Nombre del household actualizado.");
+      setSaveStatus("household-name", "saved");
       notifyOnboarding("update_household");
       await refreshUser();
     } catch (err) {
+      setSaveStatus("household-name", "error");
       setError(err.message || "No se pudo actualizar el household.");
     }
   };
 
-  const saveHouseholdPreferences = async (nextValues = {}) => {
+  const saveHouseholdPreferences = async (nextValues = {}, statusKey = "prefs") => {
     if (!canManageHousehold) return;
     const nextEnabled = Object.prototype.hasOwnProperty.call(nextValues, "avoidRepeatsEnabled")
       ? Boolean(nextValues.avoidRepeatsEnabled)
@@ -769,28 +921,47 @@ export default function SettingsPage() {
       ? nextValues.randomizationDefaultDietPackIds
       : dietDefaultPackIds;
 
+    const payloadString = JSON.stringify({
+      avoidRepeatsEnabled: nextEnabled,
+      dinnersEnabled: nextDinnersEnabled,
+      ...(canUseDinners ? { dinnersIncludeInShopping: nextDinnersIncludeInShopping } : {}),
+      avoidRepeatsWeeks: Number(nextWeeks),
+      ...(budgetFeatureEnabled
+        ? {
+            monthlyBudget: nextMonthlyBudget === "" ? null : Number(nextMonthlyBudget),
+            cycleStartDay: nextCycleStartDay
+          }
+        : {}),
+      ...(dietEnabled
+        ? {
+            randomizationUseDietFilter: nextDietFilterEnabled,
+            randomizationDefaultDietPackIds: nextDietDefaultPackIds
+          }
+        : {})
+    });
+
+    // Blur on an untouched field: nothing changed since the last sync, skip the PATCH
+    if (!Object.keys(nextValues).length && payloadString === syncedPrefsRef.current) return;
+
+    // Snapshot of the pre-save values so a failed request can revert
+    // the optimistic toggle/input instead of leaving stale state
+    const revertSnapshot = {
+      dinnersEnabled,
+      dinnersIncludeInShopping,
+      avoidRepeatsEnabled,
+      avoidRepeatsWeeks,
+      monthlyBudget,
+      cycleStartDay,
+      dietFilterEnabled,
+      dietDefaultPackIds
+    };
+
     setHouseholdPrefsSaving(true);
+    setSaveStatus(statusKey, "saving");
     try {
-      const data = await apiRequest("/api/kitchen/household/preferences", {
+      const data = await apiSync("/api/kitchen/household/preferences", {
         method: "PATCH",
-        body: JSON.stringify({
-          avoidRepeatsEnabled: nextEnabled,
-          dinnersEnabled: nextDinnersEnabled,
-          ...(canUseDinners ? { dinnersIncludeInShopping: nextDinnersIncludeInShopping } : {}),
-          avoidRepeatsWeeks: Number(nextWeeks),
-          ...(budgetFeatureEnabled
-            ? {
-                monthlyBudget: nextMonthlyBudget === "" ? null : Number(nextMonthlyBudget),
-                cycleStartDay: nextCycleStartDay
-              }
-            : {}),
-          ...(dietEnabled
-            ? {
-                randomizationUseDietFilter: nextDietFilterEnabled,
-                randomizationDefaultDietPackIds: nextDietDefaultPackIds
-              }
-            : {})
-        })
+        body: payloadString
       });
       setDinnersEnabled(Boolean(data?.household?.dinnersEnabled));
       setDinnersIncludeInShopping(Boolean(data?.household?.dinnersIncludeInShopping));
@@ -809,8 +980,18 @@ export default function SettingsPage() {
       if (budgetFeatureEnabled && nextMonthlyBudget !== "" && Number(nextMonthlyBudget) > 0) {
         notifyWeekly("budget_configured");
       }
-      updateSuccess("Preferencia del household actualizada.");
+      syncedPrefsRef.current = payloadString;
+      setSaveStatus(statusKey, "saved");
     } catch (err) {
+      setDinnersEnabled(revertSnapshot.dinnersEnabled);
+      setDinnersIncludeInShopping(revertSnapshot.dinnersIncludeInShopping);
+      setAvoidRepeatsEnabled(revertSnapshot.avoidRepeatsEnabled);
+      setAvoidRepeatsWeeks(revertSnapshot.avoidRepeatsWeeks);
+      setMonthlyBudget(revertSnapshot.monthlyBudget);
+      setCycleStartDay(revertSnapshot.cycleStartDay);
+      setDietFilterEnabled(revertSnapshot.dietFilterEnabled);
+      setDietDefaultPackIds(revertSnapshot.dietDefaultPackIds);
+      setSaveStatus(statusKey, "error");
       setError(err.message || "No se pudieron guardar las preferencias del household.");
     } finally {
       setHouseholdPrefsSaving(false);
@@ -826,7 +1007,7 @@ export default function SettingsPage() {
       confirmDeleteHousehold: false
     });
     try {
-      const data = await apiRequest("/api/kitchen/users/me/delete-preview");
+      const data = await apiSync("/api/kitchen/users/me/delete-preview");
       setDeleteProfileModal((prev) => ({
         ...prev,
         loading: false,
@@ -848,7 +1029,7 @@ export default function SettingsPage() {
       if (deleteProfileModal.preview.willDeleteHousehold) {
         body.confirmDeleteHousehold = deleteProfileModal.confirmDeleteHousehold;
       }
-      const data = await apiRequest("/api/kitchen/users/me", {
+      const data = await apiSync("/api/kitchen/users/me", {
         method: "DELETE",
         body: JSON.stringify(body)
       });
@@ -875,7 +1056,7 @@ export default function SettingsPage() {
 
   const generateHouseholdCode = async () => {
     try {
-      const data = await apiRequest("/api/kitchen/household/invite-code", { method: "POST" });
+      const data = await apiSync("/api/kitchen/household/invite-code", { method: "POST" });
       setHouseholdCode(data.inviteCode || "");
       updateSuccess("Codigo generado.");
     } catch (err) {
@@ -943,7 +1124,7 @@ export default function SettingsPage() {
           dinnerCanCook: memberModal.form.dinnerCanCook
         }
         : (isSelf ? { canCook: memberModal.form.canCook, dinnerCanCook: memberModal.form.dinnerCanCook } : {});
-      const data = await apiRequest(`/api/kitchen/users/members/${memberModal.member.id}`, {
+      const data = await apiSync(`/api/kitchen/users/members/${memberModal.member.id}`, {
         method: "PUT",
         body: JSON.stringify(payload)
       });
@@ -965,7 +1146,7 @@ export default function SettingsPage() {
       message: `Seguro que quieres eliminar a ${member.displayName} del household?`,
       dangerLabel: "Eliminar",
       onConfirm: async () => {
-        const data = await apiRequest(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
+        const data = await apiSync(`/api/kitchen/users/members/${member.id}`, { method: "DELETE" });
         closeMemberModal();
         updateSuccess(data?.clerkDeletionWarning || "Usuario eliminado.");
         await loadData();
@@ -985,7 +1166,7 @@ export default function SettingsPage() {
       return;
     }
     try {
-      await apiRequest("/api/kitchen/household/placeholders", {
+      await apiSync("/api/kitchen/household/placeholders", {
         method: "POST",
         body: JSON.stringify({
           displayName: safeName,
@@ -1034,7 +1215,7 @@ export default function SettingsPage() {
       return;
     }
     try {
-      await apiRequest(`/api/kitchen/household/placeholders/${convertModal.memberId}/convert`, {
+      await apiSync(`/api/kitchen/household/placeholders/${convertModal.memberId}/convert`, {
         method: "POST",
         body: JSON.stringify({
           email,
@@ -1073,7 +1254,7 @@ export default function SettingsPage() {
             active: active !== false,
             ...(isDiod ? { scope: "master" } : {})
           };
-      await apiRequest(endpoint, {
+      await apiSync(endpoint, {
         method: "POST",
         body: JSON.stringify(payload)
       });
@@ -1107,7 +1288,7 @@ export default function SettingsPage() {
             active: active !== false,
             forRecipes: category.forRecipes
           };
-      await apiRequest(endpoint, {
+      await apiSync(endpoint, {
         method: "PUT",
         body: JSON.stringify(payload)
       });
@@ -1130,7 +1311,7 @@ export default function SettingsPage() {
         const endpoint = kind === "dish"
           ? `/api/kitchen/dish-categories/${category._id}`
           : `/api/categories/${category._id}`;
-        await apiRequest(endpoint, { method: "DELETE" });
+        await apiSync(endpoint, { method: "DELETE" });
         notifyCatalogInvalidated();
         updateSuccess("Categoria eliminada.");
         await loadData();
@@ -1141,9 +1322,9 @@ export default function SettingsPage() {
   const restoreDeletedItem = async (kind, id) => {
     try {
       if (kind === "ingredient") {
-        await apiRequest(`/api/kitchenIngredients/${id}/restore`, { method: "POST" });
+        await apiSync(`/api/kitchenIngredients/${id}/restore`, { method: "POST" });
       } else {
-        await apiRequest(`/api/kitchen/dishes/${id}/restore`, { method: "POST" });
+        await apiSync(`/api/kitchen/dishes/${id}/restore`, { method: "POST" });
       }
       updateSuccess("Elemento recuperado.");
       await Promise.all([loadDeletedItems(), loadData()]);
@@ -1177,12 +1358,25 @@ export default function SettingsPage() {
         <div className="settings-inline-heading">
           <h3 className="settings-subtitle">Nombre y color</h3>
           {!profileEditingMain ? (
-            <button type="button" className="settings-icon-only" onClick={enterProfileEdit} aria-label="Editar perfil">
-              <PencilIcon />
-            </button>
+            <div className="settings-icon-row">
+              <SaveStatusChip status={saveStatuses.profile} />
+              <button type="button" className="settings-icon-only" onClick={enterProfileEdit} aria-label="Editar perfil">
+                <PencilIcon />
+              </button>
+            </div>
           ) : (
             <div className="settings-icon-row">
-              <button type="button" className="settings-icon-only" onClick={saveProfile} aria-label="Guardar perfil">
+              {profileDirty && !profileSaving ? (
+                <span className="settings-unsaved-chip">Cambios sin guardar</span>
+              ) : null}
+              <SaveStatusChip status={saveStatuses.profile} />
+              <button
+                type="button"
+                className="settings-icon-only"
+                onClick={saveProfile}
+                disabled={!profileDirty || profileSaving}
+                aria-label="Guardar perfil"
+              >
                 <SaveIcon />
               </button>
               <button type="button" className="settings-icon-only" onClick={cancelProfileEdit} aria-label="Cancelar edición">
@@ -1295,6 +1489,19 @@ export default function SettingsPage() {
         <p className="settings-danger-text">Esta accion puede eliminar tu cuenta o todo el household si eres el ultimo owner.</p>
         <button type="button" className="kitchen-button secondary danger" onClick={openDeleteProfileFlow}>Eliminar mi perfil</button>
       </div>
+      {profileEditingMain && profileDirty ? (
+        <div className="settings-savebar" role="region" aria-label="Cambios sin guardar">
+          <span className="settings-savebar-text">Cambios sin guardar</span>
+          <div className="settings-savebar-actions">
+            <button type="button" className="settings-savebar-discard" onClick={cancelProfileEdit} disabled={profileSaving}>
+              Descartar
+            </button>
+            <button type="button" className="settings-savebar-save" onClick={saveProfile} disabled={profileSaving}>
+              {profileSaving ? "Guardando…" : "Guardar cambios"}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 
@@ -1313,42 +1520,53 @@ export default function SettingsPage() {
       <div className="settings-block">
         <p className="settings-section-label" style={{ marginBottom: 12 }}>App</p>
         <div className="settings-coming-row"><span>Idioma</span><span className="kitchen-pill">Próximamente</span></div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--hf-text)" }}>Apariencia</span>
-          <div className="theme-selector">
-            <button
-              type="button"
-              className={`theme-selector-option${theme === "system" ? " is-active" : ""}`}
-              onClick={() => setTheme("system")}
-            >
-              <svg className="theme-selector-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-              </svg>
-              Sistema
-            </button>
-            <button
-              type="button"
-              className={`theme-selector-option${theme === "light" ? " is-active" : ""}`}
-              onClick={() => setTheme("light")}
-            >
-              <svg className="theme-selector-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="5" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-              </svg>
-              Claro
-            </button>
-            <button
-              type="button"
-              className={`theme-selector-option${theme === "dark" ? " is-active" : ""}`}
-              onClick={() => setTheme("dark")}
-            >
-              <svg className="theme-selector-icon" viewBox="0 0 24 24" aria-hidden="true" style={{ strokeWidth: 1.6 }}>
-                <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" />
-              </svg>
-              Oscuro
-            </button>
+        <div className="settings-theme-control">
+          <div className="settings-theme-heading">
+            <span>Apariencia</span>
+            {themeFeedback ? (
+              <span className={`settings-theme-feedback${themeFeedback === "No se pudo guardar el tema" ? " is-error" : ""}`} role="status">
+                {themeFeedback}
+              </span>
+            ) : null}
           </div>
+          <div className="settings-theme-grid" role="radiogroup" aria-label="Tema de la app">
+            {APP_THEMES.map((appTheme) => {
+              const selected = themeId === appTheme.id;
+              const locked = !appTheme.availableForPlans.includes("basic") && !canSelectPremiumThemes;
+              return (
+                <button
+                  key={appTheme.id}
+                  type="button"
+                  className={`settings-theme-card${selected ? " is-selected" : ""}${locked ? " is-locked" : ""}`}
+                  onClick={() => applyAppTheme(appTheme.id)}
+                  aria-checked={selected}
+                  role="radio"
+                  disabled={Boolean(themeSavingId && themeSavingId !== appTheme.id)}
+                >
+                  <span className="settings-theme-card-top">
+                    <span className="settings-theme-swatches" aria-hidden="true">
+                      <span style={{ background: appTheme.anchors.primary }} />
+                      <span style={{ background: appTheme.anchors.secondary }} />
+                    </span>
+                    <span className="settings-theme-card-status">
+                      {themeSavingId === appTheme.id ? "Guardando" : selected ? "Actual" : locked ? "Pro" : "Elegir"}
+                    </span>
+                  </span>
+                  <span className="settings-theme-card-name">{appTheme.name}</span>
+                  <span className={`settings-theme-mode-pill is-${appTheme.mode}`}>
+                    {appTheme.mode === "dark" ? "Oscuro" : "Claro"}
+                  </span>
+                  <span className="settings-theme-card-label">{appTheme.label}</span>
+                  {locked ? <span className="settings-theme-card-lock">Disponible en Pro</span> : null}
+                </button>
+              );
+            })}
+          </div>
+          {!canSelectPremiumThemes ? (
+            <button type="button" className="settings-theme-upgrade" onClick={() => navigate("/kitchen/upgrade")}>
+              Desbloquear temas Pro
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -1393,14 +1611,17 @@ export default function SettingsPage() {
                 autoFocus
                 style={{ marginBottom: 8 }}
               />
-              <div style={{ display: "flex", gap: 8 }}>
-                <button type="button" className="settings-mini-button" onClick={saveHouseholdName}>Guardar</button>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button type="button" className="settings-mini-button" onClick={saveHouseholdName} disabled={saveStatuses["household-name"] === "saving"}>
+                  {saveStatuses["household-name"] === "saving" ? "Guardando…" : "Guardar"}
+                </button>
                 <button type="button" className="settings-mini-button" onClick={() => { setHouseholdNameDraft(householdName || ""); setHouseholdNameEditing(false); }}>Cancelar</button>
               </div>
             </div>
           ) : (
             <div className="hh-summary-name-row">
               <span className="hh-summary-name">{householdName || "Mi hogar"}</span>
+              <SaveStatusChip status={saveStatuses["household-name"]} />
               {canManageHousehold ? (
                 <button
                   type="button"
@@ -1539,6 +1760,7 @@ export default function SettingsPage() {
               {!canUseDinners ? (
                 <span className="dinner-gate-pro-badge">PRO</span>
               ) : null}
+              <SaveStatusChip status={saveStatuses.dinners} />
             </div>
             <p className="kitchen-muted">
               {canUseDinners
@@ -1558,7 +1780,7 @@ export default function SettingsPage() {
                 onChange={(event) => {
                   const checked = event.target.checked;
                   setDinnersEnabled(checked);
-                  void saveHouseholdPreferences({ dinnersEnabled: checked });
+                  void saveHouseholdPreferences({ dinnersEnabled: checked }, "dinners");
                 }}
               />
               <span className="kitchen-toggle-track" />
@@ -1581,6 +1803,7 @@ export default function SettingsPage() {
             <div className="settings-household-pref-main">
               <div className="settings-household-pref-title">
                 <span>🛒 Incluir cenas en la lista de la compra</span>
+                <SaveStatusChip status={saveStatuses["dinners-shopping"]} />
               </div>
               <p className="kitchen-muted">
                 {dinnersIncludeInShopping
@@ -1597,7 +1820,7 @@ export default function SettingsPage() {
                 onChange={(event) => {
                   const checked = event.target.checked;
                   setDinnersIncludeInShopping(checked);
-                  void saveHouseholdPreferences({ dinnersIncludeInShopping: checked });
+                  void saveHouseholdPreferences({ dinnersIncludeInShopping: checked }, "dinners-shopping");
                 }}
               />
               <span className="kitchen-toggle-track" />
@@ -1609,7 +1832,7 @@ export default function SettingsPage() {
           {budgetFeatureEnabled ? (
             <>
               <label className="kitchen-field">
-                <span className="kitchen-label">Budget mensual</span>
+                <span className="kitchen-label">Budget mensual <SaveStatusChip status={saveStatuses.budget} /></span>
                 <input
                   type="number"
                   min={0}
@@ -1618,7 +1841,7 @@ export default function SettingsPage() {
                   value={monthlyBudget}
                   disabled={householdPrefsSaving}
                   onChange={(event) => setMonthlyBudget(event.target.value)}
-                  onBlur={() => void saveHouseholdPreferences()}
+                  onBlur={() => void saveHouseholdPreferences({}, "budget")}
                   placeholder="0.00"
                 />
               </label>
@@ -1633,7 +1856,7 @@ export default function SettingsPage() {
                   value={cycleStartDay}
                   disabled={householdPrefsSaving}
                   onChange={(event) => setCycleStartDay(Math.min(28, Math.max(1, Number.parseInt(event.target.value || "1", 10) || 1)))}
-                  onBlur={() => void saveHouseholdPreferences()}
+                  onBlur={() => void saveHouseholdPreferences({}, "budget")}
                 />
               </label>
             </>
@@ -1657,6 +1880,7 @@ export default function SettingsPage() {
               >
                 <InfoIcon />
               </button>
+              <SaveStatusChip status={saveStatuses.repeats} />
             </div>
             <p className="kitchen-muted">Regla best-effort para la planificación automática.</p>
           </div>
@@ -1669,7 +1893,7 @@ export default function SettingsPage() {
               onChange={(event) => {
                 const checked = event.target.checked;
                 setAvoidRepeatsEnabled(checked);
-                void saveHouseholdPreferences({ avoidRepeatsEnabled: checked });
+                void saveHouseholdPreferences({ avoidRepeatsEnabled: checked }, "repeats");
               }}
             />
             <span className="kitchen-toggle-track" />
@@ -1687,7 +1911,7 @@ export default function SettingsPage() {
               value={avoidRepeatsWeeks}
               disabled={!avoidRepeatsEnabled || householdPrefsSaving}
               onChange={(event) => setAvoidRepeatsWeeks(clampAvoidRepeatWeeks(event.target.value))}
-              onBlur={() => void saveHouseholdPreferences()}
+              onBlur={() => void saveHouseholdPreferences({}, "repeats")}
             />
           </label>
         </div>
@@ -1719,6 +1943,7 @@ export default function SettingsPage() {
                 <div className="settings-household-pref-main">
                   <div className="settings-household-pref-title">
                     <span>Usar dietas por defecto al randomizar</span>
+                    <SaveStatusChip status={saveStatuses.diet} />
                   </div>
                 </div>
                 <label className="kitchen-toggle" aria-label="Activar filtro de dieta">
@@ -1730,7 +1955,7 @@ export default function SettingsPage() {
                     onChange={(event) => {
                       const checked = event.target.checked;
                       setDietFilterEnabled(checked);
-                      void saveHouseholdPreferences({ randomizationUseDietFilter: checked });
+                      void saveHouseholdPreferences({ randomizationUseDietFilter: checked }, "diet");
                     }}
                   />
                   <span className="kitchen-toggle-track" />
@@ -1758,7 +1983,7 @@ export default function SettingsPage() {
                                   ? dietDefaultPackIds.filter((id) => id !== String(pack.id))
                                   : [...dietDefaultPackIds, String(pack.id)];
                                 setDietDefaultPackIds(nextIds);
-                                void saveHouseholdPreferences({ randomizationDefaultDietPackIds: nextIds });
+                                void saveHouseholdPreferences({ randomizationDefaultDietPackIds: nextIds }, "diet");
                               }}
                             />
                             <span style={{ fontWeight: 500 }}>{pack.dietLabel || pack.title}</span>
@@ -2035,7 +2260,9 @@ export default function SettingsPage() {
           ) : null}
 
           <div className="settings-block">
-            <p className="settings-section-label" style={{ marginBottom: "10px" }}>Tus básicos</p>
+            <p className="settings-section-label" style={{ marginBottom: "10px" }}>
+              Tus básicos <SaveStatusChip status={saveStatuses.basics} />
+            </p>
             {basicsLoading && <p className="kitchen-muted">Cargando…</p>}
             {basicsError && <div className="kitchen-alert error">{basicsError}</div>}
             {!basicsLoading && basics.length === 0 && (
@@ -2085,8 +2312,7 @@ export default function SettingsPage() {
   return (
     <KitchenLayout>
       <PageHeader
-        title="Configuración"
-        subtitle="Gestiona tu cuenta y preferencias"
+        title={displayName || user?.displayName || "Configuración"}
         leading={
           <div
             className="settings-header-avatar"
@@ -2095,9 +2321,14 @@ export default function SettingsPage() {
             {userInitials}
           </div>
         }
-        className="settings-header"
+        primaryAction={
+          <span className={`settings-header-plan-badge${isPaidPlan ? " is-paid" : ""}`}>
+            {formatSubscriptionPlanLabel(subscriptionPlan)}
+          </span>
+        }
+        className="settings-header settings-header-compact"
       />
-      <div className="kitchen-card kitchen-block-gap">
+      <div className={`kitchen-card kitchen-block-gap${!loading && isHub ? " settings-hub-shell" : ""}`}>
 
         {error ? <div className="kitchen-alert error">{error}</div> : null}
         {success ? <div className="kitchen-alert success">{success}</div> : null}
@@ -2127,9 +2358,9 @@ export default function SettingsPage() {
         {!loading && isHub ? (
           <div className="settings-hub">
 
-            {/* ── Sección 1: Tu cuenta ─────────────────────────── */}
+            {/* ── Sección 1: Cuenta ────────────────────────────── */}
             <div className="settings-section">
-              <p className="settings-section-label">Tu cuenta</p>
+              <p className="settings-section-label">Cuenta</p>
               <div className="settings-section-group">
                 <button type="button" className="settings-nav-row" onClick={() => setPanel("perfil")}>
                   <span className="settings-nav-row-icon settings-nav-icon-account" aria-hidden="true">
@@ -2166,10 +2397,10 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* ── Sección 2: Tu hogar ──────────────────────────── */}
-            {(canViewHousehold || canManageCategories) ? (
+            {/* ── Sección 2: Hogar ─────────────────────────────── */}
+            {(canViewHousehold || canAccessShare) ? (
               <div className="settings-section">
-                <p className="settings-section-label">Tu hogar</p>
+                <p className="settings-section-label">Hogar</p>
                 <div className="settings-section-group">
                   {canViewHousehold ? (
                     <button type="button" className="settings-nav-row" onClick={() => setPanel("household-members")}>
@@ -2207,6 +2438,34 @@ export default function SettingsPage() {
                       </span>
                     </button>
                   ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {/* ── Sección 3: Lista de la compra ────────────────── */}
+            {(canViewHousehold || canManageCategories) ? (
+              <div className="settings-section">
+                <p className="settings-section-label">Lista de la compra</p>
+                <div className="settings-section-group">
+                  {canViewHousehold ? (
+                    <button type="button" className={`settings-nav-row${!basicsFeatureEnabled ? " settings-nav-row-locked" : ""}`} onClick={() => setPanel("basicos")}>
+                      <span className="settings-nav-row-icon settings-nav-icon-basics" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                          <path d="M4 8l1.5-4h9L16 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M3.5 8h13l-1.5 8a1 1 0 0 1-1 .9H6a1 1 0 0 1-1-.9z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                          <path d="M8 12l1 1.5 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                      <span className="settings-nav-row-main">
+                        <span className="settings-nav-row-title">Básicos de compra</span>
+                        <span className="settings-nav-row-sub">{basicsFeatureEnabled ? "Artículos recurrentes" : "Disponible en Pro y Premium"}</span>
+                      </span>
+                      <span className="settings-nav-row-end">
+                        {!basicsFeatureEnabled ? <ProBadge /> : null}
+                        <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </span>
+                    </button>
+                  ) : null}
                   {canManageCategories ? (
                     <button type="button" className="settings-nav-row" onClick={() => setPanel("categorias")}>
                       <span className="settings-nav-row-icon settings-nav-icon-cats" aria-hidden="true">
@@ -2224,32 +2483,13 @@ export default function SettingsPage() {
                       </span>
                     </button>
                   ) : null}
-                  {canViewHousehold ? (
-                    <button type="button" className={`settings-nav-row${!basicsFeatureEnabled ? " settings-nav-row-locked" : ""}`} onClick={() => setPanel("basicos")}>
-                      <span className="settings-nav-row-icon settings-nav-icon-basics" aria-hidden="true">
-                        <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
-                          <path d="M4 8l1.5-4h9L16 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M3.5 8h13l-1.5 8a1 1 0 0 1-1 .9H6a1 1 0 0 1-1-.9z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-                          <path d="M8 12l1 1.5 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                      <span className="settings-nav-row-main">
-                        <span className="settings-nav-row-title">Básicos de compra</span>
-                        <span className="settings-nav-row-sub">{basicsFeatureEnabled ? "Artículos recurrentes de tu lista" : "Disponible en Pro y Premium"}</span>
-                      </span>
-                      <span className="settings-nav-row-end">
-                        {!basicsFeatureEnabled ? <ProBadge /> : null}
-                        <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      </span>
-                    </button>
-                  ) : null}
                 </div>
               </div>
             ) : null}
 
-            {/* ── Sección 3: Plan y beneficios ─────────────────── */}
+            {/* ── Sección 4: Plan ──────────────────────────────── */}
             <div className="settings-section">
-              <p className="settings-section-label">Plan y beneficios</p>
+              <p className="settings-section-label">Plan</p>
               <div className="settings-section-group">
                 <button type="button" className={`settings-nav-row${!budgetFeatureEnabled ? " settings-nav-row-locked" : ""}`} onClick={openBudgetPanel}>
                   <span className="settings-nav-row-icon settings-nav-icon-budget" aria-hidden="true">
@@ -2289,21 +2529,25 @@ export default function SettingsPage() {
                     </svg>
                   </span>
                   <span className="settings-nav-row-main">
-                    <span className="settings-nav-row-title">{licenseActionLabel}</span>
-                    <span className="settings-nav-row-sub">Plan actual: <strong>{formatSubscriptionPlanLabel(subscriptionPlan)}</strong></span>
+                    <span className="settings-nav-row-title">{isPaidPlan ? "Tu Plan" : licenseActionLabel}</span>
+                    <span className="settings-nav-row-sub">{isPaidPlan ? "Plan activo" : <>Plan actual: <strong>{formatSubscriptionPlanLabel(subscriptionPlan)}</strong></>}</span>
                   </span>
                   <span className="settings-nav-row-end">
-                    <span className={subscriptionBadgeClassName(subscriptionPlan)}>{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+                    {isPaidPlan ? (
+                      <span className="settings-plan-active-pill">{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+                    ) : (
+                      <span className={subscriptionBadgeClassName(subscriptionPlan)}>{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+                    )}
                     <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </span>
                 </button>
               </div>
             </div>
 
-            {/* ── Sección 4: Sistema ───────────────────────────── */}
+            {/* ── Sección 5: Datos ─────────────────────────────── */}
             {canManageDeleted ? (
               <div className="settings-section">
-                <p className="settings-section-label">Sistema</p>
+                <p className="settings-section-label">Datos</p>
                 <div className="settings-section-group">
                   <button type="button" className="settings-nav-row" onClick={() => setPanel("eliminados")}>
                     <span className="settings-nav-row-icon settings-nav-icon-deleted" aria-hidden="true">
@@ -2323,6 +2567,60 @@ export default function SettingsPage() {
                 </div>
               </div>
             ) : null}
+
+            {/* ── Sección 6: Legal ──────────────────────────────── */}
+            <div className="settings-section">
+              <p className="settings-section-label">Legal</p>
+              <div className="settings-section-group">
+                <a
+                  href="/terminos"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="settings-nav-row"
+                  style={{ textDecoration: "none" }}
+                >
+                  <span className="settings-nav-row-icon" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                      <path d="M5 3h10a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <span className="settings-nav-row-main">
+                    <span className="settings-nav-row-title">Términos y Condiciones</span>
+                    <span className="settings-nav-row-sub">Versión 1.0</span>
+                  </span>
+                  <span className="settings-nav-row-end">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M4 12L12 4M8 4h4v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                </a>
+                <a
+                  href="/privacidad"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="settings-nav-row"
+                  style={{ textDecoration: "none" }}
+                >
+                  <span className="settings-nav-row-icon" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                      <path d="M10 2L4 5v5c0 3.5 2.5 6.5 6 7.5C13.5 16.5 16 13.5 16 10V5l-6-3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <span className="settings-nav-row-main">
+                    <span className="settings-nav-row-title">Política de Privacidad</span>
+                    <span className="settings-nav-row-sub">Versión 1.0</span>
+                  </span>
+                  <span className="settings-nav-row-end">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M4 12L12 4M8 4h4v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                </a>
+              </div>
+              {user?.consentAcceptedAt ? (
+                <p className="settings-section-hint" style={{ marginTop: 8, fontSize: "0.8rem", color: "var(--text-muted, #9ca3af)", padding: "0 4px" }}>
+                  T&amp;C v1.0 · Privacidad v1.0 aceptadas el{" "}
+                  {new Date(user.consentAcceptedAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+              ) : null}
+            </div>
 
           </div>
         ) : null}

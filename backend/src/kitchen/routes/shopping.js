@@ -24,6 +24,7 @@ import {
 } from "../utils/categoryMatching.js";
 import {
   attachItemsToPurchaseSession,
+  closeStaleDraftSessions,
   completePurchaseSession,
   detachItemsFromPurchaseSession,
   getLatestOpenPurchaseSession,
@@ -220,6 +221,10 @@ async function buildWeeklyBudgetDetails(weekStartDate, effectiveHouseholdId, hou
 }
 
 async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
+  // Expire draft/pending_confirmation sessions from past weeks so they don't
+  // pollute the "pending gasto" banner and are excluded from spent totals.
+  await closeStaleDraftSessions(effectiveHouseholdId, weekStartDate);
+
   const list = await ensureShoppingList(weekStartDate, effectiveHouseholdId);
 
   const fallbackCategory = await ensureDefaultCategory({
@@ -303,7 +308,7 @@ async function getShoppingPayload(weekStartDate, effectiveHouseholdId) {
     }, new Map());
 
   const { household, budgetFeatureEnabled } = await resolveHouseholdBudgetAccess(effectiveHouseholdId);
-  const pendingPurchaseSessions = budgetFeatureEnabled ? await getPendingPurchaseSessions(effectiveHouseholdId) : [];
+  const pendingPurchaseSessions = budgetFeatureEnabled ? await getPendingPurchaseSessions(effectiveHouseholdId, weekStartDate) : [];
   const latestOpenPurchaseSession = budgetFeatureEnabled ? await getLatestOpenPurchaseSession(effectiveHouseholdId, weekStartDate) : null;
   const budget = budgetFeatureEnabled ? await buildBudgetSummary(weekStartDate, household, effectiveHouseholdId) : null;
 

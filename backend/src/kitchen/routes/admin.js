@@ -23,6 +23,7 @@ import { HouseholdOnboarding } from "../models/HouseholdOnboarding.js";
 import { HouseholdWeeklyProgress } from "../models/HouseholdWeeklyProgress.js";
 import { BitesTransaction } from "../models/BitesTransaction.js";
 import { HiddenMaster } from "../models/HiddenMaster.js";
+import { PurchaseSession } from "../models/PurchaseSession.js";
 import {
   applyAdminSubscriptionActivation,
   applyAdminSubscriptionDeactivation,
@@ -543,6 +544,7 @@ router.delete("/households/:id", requireAuth, requireDiod, async (req, res) => {
       KitchenIngredient.deleteMany({ householdId }),
       Category.deleteMany({ householdId }),
       KitchenShoppingList.deleteMany({ householdId }),
+      PurchaseSession.deleteMany({ householdId }),
       KitchenSwap.deleteMany({ householdId }),
       ShoppingTrip.deleteMany({ householdId }),
       Store.deleteMany({ householdId }),

@@ -2,6 +2,7 @@ import express from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { KitchenUser } from "../models/KitchenUser.js";
+import { ConsentRecord } from "../models/ConsentRecord.js";
 import { KitchenAuditLog } from "../models/KitchenAuditLog.js";
 import { Invitation } from "../models/Invitation.js";
 import { Household } from "../models/Household.js";
@@ -959,7 +960,10 @@ router.post("/clerk/onboarding", async (req, res) => {
       avoidRepeatsWeeks,
       selectedPlan,
       inviteCode,
-      inviteToken
+      inviteToken,
+      birthYear,
+      termsAccepted,
+      privacyAccepted
     } = req.body || {};
 
     const safeFirstName = String(firstName || identity.clerkUser?.firstName || "").trim();
@@ -1045,7 +1049,10 @@ router.post("/clerk/onboarding", async (req, res) => {
         role: onboardingTarget.role,
         householdId: null,
         isPlaceholder: false,
-        globalRole: null
+        globalRole: null,
+        birthYear: birthYear ? Number(birthYear) : null,
+        ageVerified: Boolean(birthYear && Number(birthYear) <= new Date().getFullYear() - 16),
+        ageVerifiedAt: birthYear ? new Date() : null
       });
       userCreatedNow = true;
     } else {
@@ -1067,6 +1074,11 @@ router.post("/clerk/onboarding", async (req, res) => {
       user.canCook = parseBooleanWithDefault(canCook, user.canCook ?? true);
       user.dinnerActive = parseBooleanWithDefault(dinnerActive, user.dinnerActive ?? true);
       user.dinnerCanCook = parseBooleanWithDefault(dinnerCanCook, user.dinnerCanCook ?? true);
+      if (birthYear && !user.birthYear) {
+        user.birthYear = Number(birthYear);
+        user.ageVerified = Number(birthYear) <= new Date().getFullYear() - 16;
+        user.ageVerifiedAt = new Date();
+      }
     }
 
     let household = user.householdId ? await Household.findById(user.householdId) : null;
@@ -1142,6 +1154,24 @@ router.post("/clerk/onboarding", async (req, res) => {
     }
 
     await user.save();
+
+    // Record consent (GDPR/LOPDGDD) — created once per signup, never deleted.
+    if (termsAccepted && privacyAccepted) {
+      const acceptedAt = new Date();
+      user.consentAcceptedAt = acceptedAt;
+      await user.save();
+      ConsentRecord.create({
+        userId: user._id,
+        termsAccepted: Boolean(termsAccepted),
+        termsVersion: "1.0",
+        privacyAccepted: Boolean(privacyAccepted),
+        privacyVersion: "1.0",
+        acceptedAt,
+        ipAddress: req.ip || req.socket?.remoteAddress || null,
+        userAgent: req.headers?.["user-agent"] || null,
+        source: "signup"
+      }).catch((e) => console.error("[consent] Failed to create ConsentRecord:", e.message));
+    }
 
     logClerkOnboardingDev("Clerk onboarding completed", {
       userId: user._id?.toString?.() || null,
@@ -1398,5 +1428,37 @@ if (config.nodeEnv === "development" || process.env.APP_ENV === "development") {
     return res.json({ ok: true, ...report });
   });
 }
+
+// POST /accept-consent — records legal consent for existing users (gate modal).
+router.post("/accept-consent", requireAuth, async (req, res) => {
+  try {
+    const user = req.kitchenUser;
+    const { termsAccepted, privacyAccepted } = req.body || {};
+    if (!termsAccepted || !privacyAccepted) {
+      return res.status(400).json({ ok: false, error: "Debes aceptar los Términos y la Política de Privacidad." });
+    }
+    const acceptedAt = new Date();
+    user.consentAcceptedAt = acceptedAt;
+    await user.save();
+    ConsentRecord.create({
+      userId: user._id,
+      termsAccepted: true,
+      termsVersion: "1.0",
+      privacyAccepted: true,
+      privacyVersion: "1.0",
+      acceptedAt,
+      ipAddress: req.ip || req.socket?.remoteAddress || null,
+      userAgent: req.headers?.["user-agent"] || null,
+      source: "gate"
+    }).catch((e) => console.error("[consent] Failed to create ConsentRecord (gate):", e.message));
+    const householdName = user.householdId
+      ? (await import("../models/Household.js").then((m) => m.Household.findById(user.householdId).select("name").lean()))?.name || null
+      : null;
+    return res.json({ ok: true, user: buildSafeUserResponse(user, householdName) });
+  } catch (error) {
+    console.error("[accept-consent] failed", error?.message);
+    return res.status(500).json({ ok: false, error: "No se pudo registrar tu consentimiento." });
+  }
+});
 
 export default router;
