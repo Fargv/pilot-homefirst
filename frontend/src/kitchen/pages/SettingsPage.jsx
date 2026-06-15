@@ -2568,6 +2568,60 @@ export default function SettingsPage() {
               </div>
             ) : null}
 
+            {/* ── Sección 6: Legal ──────────────────────────────── */}
+            <div className="settings-section">
+              <p className="settings-section-label">Legal</p>
+              <div className="settings-section-group">
+                <a
+                  href="/terminos"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="settings-nav-row"
+                  style={{ textDecoration: "none" }}
+                >
+                  <span className="settings-nav-row-icon" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                      <path d="M5 3h10a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <span className="settings-nav-row-main">
+                    <span className="settings-nav-row-title">Términos y Condiciones</span>
+                    <span className="settings-nav-row-sub">Versión 1.0</span>
+                  </span>
+                  <span className="settings-nav-row-end">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M4 12L12 4M8 4h4v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                </a>
+                <a
+                  href="/privacidad"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="settings-nav-row"
+                  style={{ textDecoration: "none" }}
+                >
+                  <span className="settings-nav-row-icon" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+                      <path d="M10 2L4 5v5c0 3.5 2.5 6.5 6 7.5C13.5 16.5 16 13.5 16 10V5l-6-3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <span className="settings-nav-row-main">
+                    <span className="settings-nav-row-title">Política de Privacidad</span>
+                    <span className="settings-nav-row-sub">Versión 1.0</span>
+                  </span>
+                  <span className="settings-nav-row-end">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M4 12L12 4M8 4h4v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                </a>
+              </div>
+              {user?.consentAcceptedAt ? (
+                <p className="settings-section-hint" style={{ marginTop: 8, fontSize: "0.8rem", color: "var(--text-muted, #9ca3af)", padding: "0 4px" }}>
+                  T&amp;C v1.0 · Privacidad v1.0 aceptadas el{" "}
+                  {new Date(user.consentAcceptedAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+              ) : null}
+            </div>
+
           </div>
         ) : null}
 
