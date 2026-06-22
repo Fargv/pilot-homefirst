@@ -46,27 +46,18 @@ const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 function HomeRoute() {
-  const { user, loading, onboardingRequired, clerkSignedIn } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
-
-  // Only redirect to onboarding when there is an active Clerk session that needs
-  // completing. Without the clerkSignedIn guard, a race condition (Clerk JWT expiry
-  // mid-flight) or a stale onboardingRequired flag can send a truly unauthenticated
-  // visitor to /onboarding/clerk, which then calls clerk.redirectToSignIn() and
-  // kicks them out of the app domain entirely.
-  const needsOnboarding = clerkSignedIn && onboardingRequired;
 
   useEffect(() => {
     if (loading) return;
-    if (needsOnboarding) {
-      navigate("/onboarding/clerk", { replace: true });
-      return;
-    }
     if (isUserAuthenticated(user)) {
       navigate("/kitchen/semana", { replace: true });
     }
-    // Unauthenticated: render landing page below — no redirect
-  }, [loading, navigate, needsOnboarding, user]);
+    // Every other state (unauthenticated, or Clerk-signed-in but pending onboarding)
+    // lands on the public landing page. RequireAuth handles the onboarding redirect
+    // when the user navigates to a protected route — not here.
+  }, [loading, navigate, user]);
 
   if (loading) {
     return (
@@ -77,8 +68,7 @@ function HomeRoute() {
     );
   }
 
-  // Navigating away (authenticated or onboarding): show loading while that resolves
-  if (needsOnboarding || isUserAuthenticated(user)) {
+  if (isUserAuthenticated(user)) {
     return (
       <AppLoadingScreen
         title="Cargando Lunchfy"
