@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
 import lunchfyLogo from "../../assets/brand/Lunchfy_logo1.png";
 import "../landing.css";
+
+const TUTORIAL_VIDEO_SRC = "/media/lunchfy-tutorial-9x16.mp4";
 
 // ── Static data ───────────────────────────────────────────────────────────────
 
@@ -269,22 +271,38 @@ function LandingPricing() {
 }
 
 function LandingVideo() {
+  const [videoUnavailable, setVideoUnavailable] = useState(false);
+
   return (
     <section className="lp-section">
       <div className="lp-section-inner">
         <h2 className="lp-section-title">¿Cómo funciona?</h2>
         <p className="lp-section-subtitle">Un recorrido por la app en menos de 2 minutos.</p>
-        <div className="lp-video-placeholder" aria-label="Sección de vídeo de demostración">
-          <div className="lp-video-inner">
-            <div className="lp-video-play" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" width="52" height="52">
-                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M10 8.5l6 3.5-6 3.5V8.5z" fill="currentColor" />
-              </svg>
+        <div className="lp-video-shell" aria-label="Vídeo tutorial de Lunchfy">
+          {!videoUnavailable ? (
+            <video
+              className="lp-video-player"
+              controls
+              playsInline
+              preload="metadata"
+              onError={() => setVideoUnavailable(true)}
+            >
+              <source src={TUTORIAL_VIDEO_SRC} type="video/mp4" />
+            </video>
+          ) : (
+            <div className="lp-video-placeholder" aria-label="Vídeo tutorial pendiente de subir">
+              <div className="lp-video-inner">
+                <div className="lp-video-play" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" width="52" height="52">
+                    <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="1.5" />
+                    <path d="M10 8.5l6 3.5-6 3.5V8.5z" fill="currentColor" />
+                  </svg>
+                </div>
+                <p className="lp-video-label">Vídeo tutorial</p>
+                <p className="lp-video-sublabel">Disponible muy pronto</p>
+              </div>
             </div>
-            <p className="lp-video-label">Vídeo de demostración</p>
-            <p className="lp-video-sublabel">Próximamente</p>
-          </div>
+          )}
         </div>
       </div>
     </section>

@@ -338,12 +338,28 @@
 
 /* ── Video placeholder ──────────────────────────────────────────────────── */
 
-.lp-video-placeholder {
-  aspect-ratio: 16 / 9;
-  max-width: 760px;
+.lp-video-shell {
+  aspect-ratio: 9 / 16;
+  width: min(100%, 430px);
   margin: 0 auto;
-  border-radius: 20px;
+  border-radius: 28px;
   overflow: hidden;
+  background: #0c0b0a;
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 22px 70px rgba(15, 23, 42, 0.22);
+}
+
+.lp-video-player {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #0c0b0a;
+}
+
+.lp-video-placeholder {
+  width: 100%;
+  height: 100%;
   background: var(--surface);
   border: 2px dashed var(--border-strong, var(--border-soft));
   display: flex;
@@ -355,7 +371,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 12px;
+  min-height: 100%;
   padding: 40px 24px;
   text-align: center;
 }
@@ -376,6 +394,7 @@
   font-size: 0.82rem;
   color: var(--text-muted);
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 /* ── News / updates ─────────────────────────────────────────────────────── */
