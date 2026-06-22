@@ -29,6 +29,7 @@ const AdminForgotPasswordPage = React.lazy(() => import("./kitchen/pages/AdminFo
 const AdminResetPasswordPage = React.lazy(() => import("./kitchen/pages/AdminResetPasswordPage.jsx"));
 const TermsPage = React.lazy(() => import("./kitchen/pages/LegalPage.jsx").then((m) => ({ default: m.TermsPage })));
 const PrivacyPage = React.lazy(() => import("./kitchen/pages/LegalPage.jsx").then((m) => ({ default: m.PrivacyPage })));
+const LandingPage = React.lazy(() => import("./kitchen/pages/LandingPage.jsx"));
 import DevEnvironmentBanner from "./components/DevEnvironmentBanner.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import PwaInstallPrompt from "./kitchen/components/PwaInstallPrompt.jsx";
@@ -44,22 +45,42 @@ import ConsentGate from "./kitchen/components/ConsentGate.jsx";
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-function HomeRedirect() {
+function HomeRoute() {
   const { user, loading, onboardingRequired } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (loading) return;
-    const destination = onboardingRequired ? "/onboarding/clerk" : isUserAuthenticated(user) ? "/kitchen/semana" : "/login";
-    navigate(destination, { replace: true });
+    if (onboardingRequired) {
+      navigate("/onboarding/clerk", { replace: true });
+      return;
+    }
+    if (isUserAuthenticated(user)) {
+      navigate("/kitchen/semana", { replace: true });
+    }
+    // Unauthenticated: render landing page below — no redirect
   }, [loading, navigate, onboardingRequired, user]);
 
-  return (
-    <AppLoadingScreen
-      title="Cargando Lunchfy"
-      subtitle="Estamos preparando tu acceso y recuperando tu programacion."
-    />
-  );
+  if (loading) {
+    return (
+      <AppLoadingScreen
+        title="Cargando Lunchfy"
+        subtitle="Estamos preparando tu acceso y recuperando tu programacion."
+      />
+    );
+  }
+
+  // Navigating away (authenticated or onboarding): show loading while that resolves
+  if (onboardingRequired || isUserAuthenticated(user)) {
+    return (
+      <AppLoadingScreen
+        title="Cargando Lunchfy"
+        subtitle="Estamos preparando tu acceso y recuperando tu programacion."
+      />
+    );
+  }
+
+  return <LandingPage />;
 }
 
 function BootstrapRedirect() {
@@ -104,7 +125,7 @@ function AppRoutes() {
       <BootstrapRedirect />
       <React.Suspense fallback={<PageSkeleton />}>
       <Routes>
-        <Route path="/" element={<HomeRedirect />} />
+        <Route path="/" element={<HomeRoute />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
         <Route path="/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} />
         <Route path="/login/*" element={<ClerkAuthPage mode="sign-in" />} />
@@ -221,7 +242,7 @@ function AppRoutes() {
             </RequireAuth>
           )}
         />
-        <Route path="*" element={<HomeRedirect />} />
+        <Route path="*" element={<HomeRoute />} />
       </Routes>
       </React.Suspense>
       </ConsentGate>
