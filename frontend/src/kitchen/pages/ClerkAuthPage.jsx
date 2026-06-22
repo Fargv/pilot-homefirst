@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { SignIn, SignUp, useAuth as useClerkAuth, useClerk } from "@clerk/react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { fetchInviteDetails } from "../api.js";
+import { resolvePostAuthRedirect } from "../authRedirect.js";
 import { CLERK_AFTER_SIGN_UP_PATH, CLERK_STORAGE_BETA_INVITE_KEY, CLERK_STORAGE_INVITE_CODE_KEY, CLERK_STORAGE_INVITE_TOKEN_KEY } from "../clerk-shared.js";
 import { useAuth } from "../auth";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
@@ -145,9 +146,19 @@ function ClerkAuthContent({ mode }) {
   }, [loginRoute, mode, navigate]);
 
   useEffect(() => {
-    if (location.pathname === "/sign-in" || location.pathname.startsWith("/auth/clerk/sign-in")) {
+    if (
+      location.pathname === "/sign-in"
+      || location.pathname.startsWith("/sign-in/")
+      || location.pathname === "/signin"
+      || location.pathname.startsWith("/signin/")
+      || location.pathname.startsWith("/auth/clerk/sign-in")
+    ) {
       navigate(loginRoute, { replace: true });
-    } else if (location.pathname.startsWith("/auth/clerk/sign-up")) {
+    } else if (
+      location.pathname === "/sign-up"
+      || location.pathname.startsWith("/sign-up/")
+      || location.pathname.startsWith("/auth/clerk/sign-up")
+    ) {
       navigate(signUpRoute, { replace: true });
     }
   }, [location.pathname, loginRoute, navigate, signUpRoute]);
@@ -200,9 +211,9 @@ function ClerkAuthContent({ mode }) {
 
     if (user?.id) {
       setFinalBootstrapError("");
-      navigate(clerkPostAuthPath, { replace: true });
+      navigate(resolvePostAuthRedirect(searchParams, clerkPostAuthPath), { replace: true });
     }
-  }, [isLoaded, isSignedIn, navigate, onboardingRequired, onboardingRoute, user]);
+  }, [isLoaded, isSignedIn, navigate, onboardingRequired, onboardingRoute, searchParams, user]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || loading || user?.id || onboardingRequired || !lastAuthError) return;

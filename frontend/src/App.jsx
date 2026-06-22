@@ -1,9 +1,11 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, ClerkEnabledAuthProvider, isUserAuthenticated, useAuth } from "./kitchen/auth";
+import { buildReturnTo, storePostAuthRedirect } from "./kitchen/authRedirect.js";
 import { buildApiUrl } from "./kitchen/api.js";
 import KitchenLayout from "./kitchen/Layout.jsx";
 import RequireAuth from "./kitchen/RequireAuth.jsx";
+import { isPublicRoutePath } from "./kitchen/publicRoutes.js";
 import AdminLoginPage from "./kitchen/pages/AdminLoginPage.jsx";
 import BootstrapPage from "./kitchen/pages/BootstrapPage.jsx";
 import ClerkAuthPage from "./kitchen/pages/ClerkAuthPage.jsx";
@@ -46,29 +48,36 @@ const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 function HomeRoute() {
-  const { user, loading } = useAuth();
+  const { user, loading, onboardingRequired, clerkSignedIn } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  const isAuthenticated = isUserAuthenticated(user);
+  const needsOnboarding = Boolean(onboardingRequired || user?.onboardingRequired);
 
   useEffect(() => {
     if (loading) return;
-    if (isUserAuthenticated(user)) {
-      navigate("/kitchen/semana", { replace: true });
+    if ((clerkSignedIn || isAuthenticated) && needsOnboarding) {
+      navigate("/onboarding/clerk", { replace: true });
+      return;
     }
-    // Every other state (unauthenticated, or Clerk-signed-in but pending onboarding)
-    // lands on the public landing page. RequireAuth handles the onboarding redirect
-    // when the user navigates to a protected route — not here.
-  }, [loading, navigate, user]);
+    if (isAuthenticated) {
+      navigate("/kitchen/semana", { replace: true });
+      return;
+    }
+    if (!isPublicRoutePath(location.pathname)) {
+      const next = buildReturnTo(location);
+      storePostAuthRedirect(next);
+      navigate(`/login?next=${encodeURIComponent(next)}`, { replace: true });
+    }
+    // Signed-out visitors stay on public routes. Unknown/protected paths go to login.
+  }, [clerkSignedIn, isAuthenticated, loading, location, navigate, needsOnboarding]);
 
-  if (loading) {
-    return (
-      <AppLoadingScreen
-        title="Cargando Lunchfy"
-        subtitle="Estamos preparando tu acceso y recuperando tu programacion."
-      />
-    );
-  }
-
-  if (isUserAuthenticated(user)) {
+  if (
+    loading
+    || isAuthenticated
+    || ((clerkSignedIn || isAuthenticated) && needsOnboarding)
+    || !isPublicRoutePath(location.pathname)
+  ) {
     return (
       <AppLoadingScreen
         title="Cargando Lunchfy"
@@ -125,16 +134,27 @@ function AppRoutes() {
         <Route path="/" element={<HomeRoute />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
         <Route path="/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} />
+        <Route path="/signin/*" element={<ClerkAuthPage mode="sign-in" />} />
         <Route path="/login/*" element={<ClerkAuthPage mode="sign-in" />} />
         <Route path="/signup/*" element={<ClerkAuthPage mode="sign-up" />} />
+        <Route path="/sign-up/*" element={<ClerkAuthPage mode="sign-up" />} />
         <Route path="/auth/clerk" element={<ClerkAuthPage mode="choice" />} />
         <Route path="/auth/clerk/sign-in/*" element={<ClerkAuthPage mode="sign-in" />} />
         <Route path="/auth/clerk/sign-up/*" element={<ClerkAuthPage mode="sign-up" />} />
         <Route path="/auth/clerk/reset-password/*" element={<ClerkAuthPage mode="reset-password" />} />
         <Route path="/auth/clerk/complete" element={<ClerkAuthPage mode="complete" />} />
-        <Route path="/onboarding/clerk" element={<ClerkOnboardingPage />} />
+        <Route
+          path="/onboarding/clerk"
+          element={(
+            <RequireAuth allowOnboarding onboardingOnly loginReturnTo="/kitchen/semana">
+              <ClerkOnboardingPage />
+            </RequireAuth>
+          )}
+        />
         <Route path="/terminos" element={<TermsPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacidad" element={<PrivacyPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/invite/:token" element={<InviteLandingPage />} />
         <Route
           path="/kitchen/semana"

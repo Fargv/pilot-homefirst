@@ -3,7 +3,7 @@ import { useClerk, useUser } from "@clerk/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Card from "../components/ui/Card";
 import { apiRequest, fetchInviteDetails } from "../api.js";
-import { CLERK_AFTER_SIGN_UP_PATH, CLERK_STORAGE_INVITE_CODE_KEY, CLERK_STORAGE_INVITE_TOKEN_KEY, CLERK_STORAGE_BETA_INVITE_KEY } from "../clerk-shared.js";
+import { CLERK_STORAGE_INVITE_CODE_KEY, CLERK_STORAGE_INVITE_TOKEN_KEY, CLERK_STORAGE_BETA_INVITE_KEY } from "../clerk-shared.js";
 import { useAuth } from "../auth";
 import { isUserLimitReachedError } from "../subscription.js";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
@@ -156,7 +156,7 @@ export default function ClerkOnboardingPage() {
   const [searchParams] = useSearchParams();
   const clerk = useClerk();
   const { user: clerkUser, isLoaded: clerkIsLoaded, isSignedIn } = useUser();
-  const { user, setUser, setOnboardingRequired, refreshUser } = useAuth();
+  const { user, setUser, setOnboardingRequired, refreshUser, clearSession } = useAuth();
 
   // ── Phase ────────────────────────────────────────────────────────────
   // Credentials and email verification are handled by Clerk externally.
@@ -190,6 +190,7 @@ export default function ClerkOnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [betaError, setBetaError] = useState("");
   const [betaInviteEmail, setBetaInviteEmail] = useState("");
+  const [loginRedirecting, setLoginRedirecting] = useState(false);
 
   // ── Invite details ────────────────────────────────────────────────────
   const [inviteDetails, setInviteDetails] = useState(null);
@@ -222,22 +223,13 @@ export default function ClerkOnboardingPage() {
     }
   }, [navigate, user]);
 
-  // If Clerk is loaded but no active session, redirect to sign-up or sign-in.
-  // Users arriving with a beta invite are new accounts → send to sign-up.
+  // Local fallback for direct mounts: signed-out visitors belong on login.
   useEffect(() => {
     if (!clerkIsLoaded) return;
     if (!isSignedIn) {
-      const hasBetaInvite = Boolean(
-        searchParams.get("betaInvite")
-        || window.sessionStorage.getItem(CLERK_STORAGE_BETA_INVITE_KEY)
-      );
-      if (hasBetaInvite) {
-        clerk.redirectToSignUp({ redirectUrl: CLERK_AFTER_SIGN_UP_PATH });
-      } else {
-        clerk.redirectToSignIn({ redirectUrl: CLERK_AFTER_SIGN_UP_PATH });
-      }
+      navigate(`${LOGIN_PATH}?next=%2Fkitchen%2Fsemana`, { replace: true });
     }
-  }, [clerkIsLoaded, isSignedIn, clerk, searchParams]);
+  }, [clerkIsLoaded, isSignedIn, navigate]);
 
   // One-time phase initialization: this page always lands on "household".
   useEffect(() => {
@@ -485,6 +477,22 @@ export default function ClerkOnboardingPage() {
   };
 
   const canGoBack = phase === "plan" || phase === "profile" || phase === "preferences";
+
+  const goToLogin = async () => {
+    if (loginRedirecting) return;
+    setLoginRedirecting(true);
+    setError("");
+    clearSession();
+    try {
+      if (clerkIsLoaded && isSignedIn) {
+        await clerk.signOut({ redirectUrl: LOGIN_PATH });
+        return;
+      }
+    } catch {
+      // Fall back to client navigation if Clerk sign-out cannot complete.
+    }
+    navigate(LOGIN_PATH, { replace: true });
+  };
 
   // ─── Loading / redirecting states ─────────────────────────────────────────
 
@@ -918,7 +926,8 @@ export default function ClerkOnboardingPage() {
             <button
               type="button"
               className="kitchen-login-link"
-              onClick={() => navigate(`${LOGIN_PATH}?next=%2Fkitchen%2Fsemana`)}
+              disabled={loginRedirecting}
+              onClick={goToLogin}
             >
               Ya tengo cuenta
             </button>

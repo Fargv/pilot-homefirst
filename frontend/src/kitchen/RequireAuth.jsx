@@ -53,7 +53,13 @@ function ClerkApiUnavailableScreen({ onRetry }) {
   );
 }
 
-export default function RequireAuth({ children, roles }) {
+export default function RequireAuth({
+  children,
+  roles,
+  allowOnboarding = false,
+  onboardingOnly = false,
+  loginReturnTo = "",
+}) {
   const { user, loading, onboardingRequired, clerkSignedIn, lastAuthError, refreshUser } = useAuth();
   const location = useLocation();
   const isAuthenticated = isUserAuthenticated(user);
@@ -85,18 +91,31 @@ export default function RequireAuth({ children, roles }) {
     );
   }
 
+  if (!isAuthenticated && !clerkSignedIn) {
+    const next = loginReturnTo || buildReturnTo(location);
+    storePostAuthRedirect(next);
+    return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />;
+  }
+
+  if (onboardingRequired) {
+    if (allowOnboarding) {
+      return children;
+    }
+    return <Navigate to="/onboarding/clerk" replace />;
+  }
+
   if (clerkSignedIn && !isAuthenticated && !onboardingRequired && lastAuthError) {
     return <Navigate to="/auth/clerk/complete" replace />;
   }
 
-  if (onboardingRequired) {
-    return <Navigate to="/onboarding/clerk" replace />;
-  }
-
   if (!isAuthenticated) {
-    const next = buildReturnTo(location);
+    const next = loginReturnTo || buildReturnTo(location);
     storePostAuthRedirect(next);
     return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />;
+  }
+
+  if (onboardingOnly) {
+    return <Navigate to="/kitchen/semana" replace />;
   }
 
   if (roles && !roles.includes(user.role)) {
