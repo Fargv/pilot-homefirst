@@ -1,5 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { countUp, glowPulse } from "../motion.js";
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M18 6L6 18M6 6l12 12" />
+    </svg>
+  );
+}
 import PageHeader from "../components/PageHeader.jsx";
 import { apiRequest, createCheckoutSession } from "../api.js";
 import { catalogQuery, createSyncedApi, fetchCached } from "../queryClient.js";
@@ -176,7 +185,7 @@ function CatalogBitesStore({ bundles, onClose, onBuyBundle }) {
   return (
     <div className="kitchen-modal-overlay" onClick={onClose}>
       <div className="kitchen-modal catalog-bites-store-modal" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="kitchen-modal-close" onClick={onClose} aria-label="Cerrar">×</button>
+        <button type="button" className="kitchen-modal-close" onClick={onClose} aria-label="Cerrar"><CloseIcon /></button>
         <h2 className="catalog-bites-store-title">
           <BitesIcon size={20} /> Comprar Bites
         </h2>
@@ -233,7 +242,7 @@ function InsufficientBitesModal({ pack, onClose, onBuyBites, onPayDirect }) {
   return (
     <div className="kitchen-modal-overlay" onClick={onClose}>
       <div className="kitchen-modal catalog-purchase-modal" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="kitchen-modal-close" onClick={onClose} aria-label="Cerrar">×</button>
+        <button type="button" className="kitchen-modal-close" onClick={onClose} aria-label="Cerrar"><CloseIcon /></button>
         <div className="catalog-purchase-modal-icon"><PackIcon /></div>
         <h2 className="catalog-purchase-modal-title">No tienes Bites suficientes</h2>
         <p className="catalog-purchase-modal-text">
@@ -561,7 +570,7 @@ function PackDetailModal({ pack, closing, onClose, onAction, onBuyBites, onUnins
               onError={() => setCoverFailed(true)}
             />
           ) : null}
-          <button type="button" className="pk2-modal-close" onClick={onClose} aria-label="Cerrar">✕</button>
+          <button type="button" className="pk2-modal-close" onClick={onClose} aria-label="Cerrar"><CloseIcon /></button>
           {chipLabel ? <span className="pk2-modal-price">{chipLabel}</span> : null}
         </div>
 
@@ -703,7 +712,7 @@ function Toast({ message, type, onClose }) {
   return (
     <div className={`kitchen-toast catalog-toast catalog-toast-${type}`}>
       <span>{message}</span>
-      <button type="button" onClick={onClose} aria-label="Cerrar">×</button>
+      <button type="button" onClick={onClose} aria-label="Cerrar"><CloseIcon /></button>
     </div>
   );
 }
@@ -731,7 +740,7 @@ function DietPackInstallModal({ pack, onUseAsDefault, onDecline }) {
   return (
     <div className="kitchen-modal-overlay" onClick={onDecline}>
       <div className="kitchen-modal catalog-purchase-modal" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="kitchen-modal-close" onClick={onDecline} aria-label="Cerrar">×</button>
+        <button type="button" className="kitchen-modal-close" onClick={onDecline} aria-label="Cerrar"><CloseIcon /></button>
         <div className="catalog-purchase-modal-icon">
           <PackIcon />
         </div>

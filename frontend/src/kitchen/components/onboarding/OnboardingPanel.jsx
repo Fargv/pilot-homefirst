@@ -2,6 +2,15 @@ import React, { useState } from "react";
 import { useOnboarding } from "../../contexts/OnboardingContext.jsx";
 import BitesIcon from "../BitesIcon.jsx";
 
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M18 6L6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
 const PHASE_COLORS = {
   1: { bg: "var(--info-bg, #eef2ff)", border: "var(--info-border, #c7d2fe)", accent: "var(--info-text, #4338ca)" },
   2: { bg: "var(--warning-bg, #fefce8)", border: "var(--warning-border, #fde68a)", accent: "var(--warning-text, #d97706)" },
@@ -153,7 +162,7 @@ export default function OnboardingPanel({ onClose }) {
               <p>Completa los retos para ganar Bites</p>
             </div>
             <button type="button" onClick={onClose} className="onboarding-panel-close" aria-label="Cerrar">
-              x
+              <CloseIcon />
             </button>
           </div>
 

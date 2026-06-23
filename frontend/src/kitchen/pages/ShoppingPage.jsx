@@ -1397,7 +1397,7 @@ export default function ShoppingPage() {
                                     onClick={(e) => setItemStatus(item, "purchased", e.currentTarget)}
                                     aria-label={`Marcar ${item.displayName} como comprado`}
                                   >
-                                    <span className="shopping-check-dot">✓</span>
+                                    <span className="shopping-check-dot"><Check size={12} aria-hidden="true" /></span>
                                   </button>
                                   <div className="shopping-item-name-col">
                                     <span className="shopping-item-text">{item.displayName}</span>
@@ -1475,8 +1475,8 @@ export default function ShoppingPage() {
                               onKeyDown={(e) => { if (e.key === "Escape") setEditingGroupSessionId(null); }}
                               autoFocus
                             />
-                            <button type="submit" className="shopping-trip-amount-save" aria-label="Guardar">✓</button>
-                            <button type="button" className="shopping-trip-amount-cancel" aria-label="Cancelar" onClick={() => setEditingGroupSessionId(null)}>✕</button>
+                            <button type="submit" className="shopping-trip-amount-save" aria-label="Guardar"><Check size={12} aria-hidden="true" /></button>
+                            <button type="button" className="shopping-trip-amount-cancel" aria-label="Cancelar" onClick={() => setEditingGroupSessionId(null)}><X size={12} aria-hidden="true" /></button>
                           </form>
                         ) : (
                           <button
@@ -1530,7 +1530,7 @@ export default function ShoppingPage() {
                       const key = itemKey(item);
                       return (
                         <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
-                          <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot">✓</span></button>
+                          <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot"><Check size={12} aria-hidden="true" /></span></button>
                           <span className="shopping-item-text">{item.displayName}</span>
                           {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
                           <button className="shopping-remove-item" type="button" onClick={() => removeItem(item)} aria-label={`Eliminar ${item.displayName}`} title="Eliminar">

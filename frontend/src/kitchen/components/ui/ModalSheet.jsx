@@ -1,5 +1,14 @@
 import React from "react";
 
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M18 6L6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
 export default function ModalSheet({ open, title, children, actions, onClose }) {
   if (!open) return null;
   return (
@@ -16,10 +25,10 @@ export default function ModalSheet({ open, title, children, actions, onClose }) 
             <button
               type="button"
               className="kitchen-ui-sheet-close"
-              aria-label="Cerrar modal"
+              aria-label="Cerrar"
               onClick={onClose}
             >
-              x
+              <CloseIcon />
             </button>
           ) : null}
         </div>

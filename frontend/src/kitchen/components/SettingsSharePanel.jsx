@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../api.js";
+
+function ChipRemoveIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M12 4L4 12M4 4l8 8" />
+    </svg>
+  );
+}
 import { buildClerkInviteCodeShareUrl, buildClerkInviteShareUrl, buildInviteShareUrl } from "../deepLinks.js";
 import ShareWhatsAppButton from "./ShareWhatsAppButton.jsx";
 import { isUserLimitReachedError } from "../subscription.js";
@@ -352,7 +361,7 @@ export default function SettingsSharePanel({
               {emails.map((email) => (
                 <span key={email} className="settings-email-chip">
                   {email}
-                  <button type="button" onClick={() => removeEmail(email)} aria-label={`Quitar ${email}`}>×</button>
+                  <button type="button" onClick={() => removeEmail(email)} aria-label={`Quitar ${email}`}><ChipRemoveIcon /></button>
                 </span>
               ))}
               <input
