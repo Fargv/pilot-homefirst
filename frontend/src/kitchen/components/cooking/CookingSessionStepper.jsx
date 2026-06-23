@@ -5,6 +5,90 @@ import RecipeStepCard from "./RecipeStepCard.jsx";
 import { formatDuration } from "../../utils/recipeStepParser.js";
 import { displayIngredientQuantity } from "../../utils/recipeScaling.js";
 
+// ─── Icons ───────────────────────────────────────────────────────────────────
+
+function ArrowLeftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+      <path d="M19 12H6M11 6l-6 6 6 6" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+      <path d="M5 12h13M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function MinimizeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" aria-hidden="true" style={{ display: "block" }}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" aria-hidden="true" style={{ display: "block" }}>
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
+function ChefHatIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+      strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+      <path d="M6 13.5a4 4 0 1 1 1.2-7.8 4.2 4.2 0 0 1 7.6 0A4 4 0 1 1 18 13.5" />
+      <path d="M7 13.5V19a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-5.5" />
+    </svg>
+  );
+}
+
+function ListIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+      strokeWidth="1.9" strokeLinecap="round" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+      <path d="M9 6h11M9 12h11M9 18h11M4.4 6h.02M4.4 12h.02M4.4 18h.02" />
+    </svg>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+      <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6M3 4.5V9h4.5" />
+    </svg>
+  );
+}
+
+function UsersIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+      <path d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M22 20v-2a4 4 0 0 0-3-3.87M16 4.13a3.5 3.5 0 0 1 0 6.74" />
+    </svg>
+  );
+}
+
 // ─── Completion screen ────────────────────────────────────────────────────────
 
 function CompletionScreen({ session, onCookAgain, onClose }) {
@@ -13,37 +97,46 @@ function CompletionScreen({ session, onCookAgain, onClose }) {
     : null;
 
   return (
-    <div className="cooking-completion">
-      <div className="cooking-completion-emoji" aria-hidden="true">🎉</div>
-      <h2 className="cooking-completion-title">¡Receta completada!</h2>
-      <p className="cooking-completion-recipe">{session.recipeName}</p>
+    <div className="cm-complete">
+      <div className="cm-complete-check" aria-hidden="true">
+        <div className="cm-complete-check-ring" />
+        <svg width="104" height="104" viewBox="0 0 104 104" style={{ position: "relative" }}>
+          <circle cx="52" cy="52" r="48" fill="var(--success-bg, #f0fdf4)" stroke="var(--success-border, #bbf7d0)" strokeWidth="2" />
+          <path d="M33 53l13 13 26-29" fill="none"
+            stroke="var(--success-text, #166534)" strokeWidth="6"
+            strokeLinecap="round" strokeLinejoin="round"
+            className="cm-complete-check-path" />
+        </svg>
+      </div>
 
-      <div className="cooking-completion-stats">
-        {elapsed ? (
-          <div className="cooking-completion-stat">
-            <span className="cooking-completion-stat-value">{formatDuration(elapsed)}</span>
-            <span className="cooking-completion-stat-label">Tiempo total</span>
-          </div>
-        ) : null}
-        <div className="cooking-completion-stat">
-          <span className="cooking-completion-stat-value">{session.selectedServings}</span>
-          <span className="cooking-completion-stat-label">
-            {session.selectedServings === 1 ? "persona" : "personas"}
-          </span>
+      <div className="cm-complete-eyebrow">Buen trabajo</div>
+      <h2 className="cm-complete-title">Receta completada</h2>
+      <p className="cm-complete-recipe">{session.recipeName}</p>
+
+      <div className="cm-complete-stats">
+        <div className="cm-complete-stat">
+          <UsersIcon />
+          <span>{session.selectedServings} {session.selectedServings === 1 ? "persona" : "personas"}</span>
         </div>
-        <div className="cooking-completion-stat">
-          <span className="cooking-completion-stat-value">{session.steps.length}</span>
-          <span className="cooking-completion-stat-label">
-            {session.steps.length === 1 ? "paso" : "pasos"}
-          </span>
+        {elapsed ? (
+          <>
+            <div className="cm-complete-stat-sep" aria-hidden="true" />
+            <div className="cm-complete-stat">
+              <span>{formatDuration(elapsed)}</span>
+            </div>
+          </>
+        ) : null}
+        <div className="cm-complete-stat-sep" aria-hidden="true" />
+        <div className="cm-complete-stat">
+          <span>{session.steps.length} {session.steps.length === 1 ? "paso" : "pasos"}</span>
         </div>
       </div>
 
-      <div className="cooking-completion-actions">
-        <button type="button" className="cooking-cta" onClick={onCookAgain}>
-          Cocinar de nuevo
+      <div className="cm-complete-actions">
+        <button type="button" className="cm-pill cm-pill--secondary cm-pill--full" onClick={onCookAgain}>
+          <RefreshIcon /> Cocinar de nuevo
         </button>
-        <button type="button" className="cooking-btn-secondary" onClick={onClose}>
+        <button type="button" className="cm-pill cm-pill--ghost cm-pill--full" onClick={onClose}>
           Cerrar
         </button>
       </div>
@@ -51,32 +144,39 @@ function CompletionScreen({ session, onCookAgain, onClose }) {
   );
 }
 
-// ─── Chevron icons ────────────────────────────────────────────────────────────
+// ─── Cancel sheet ─────────────────────────────────────────────────────────────
 
-function ChevronLeft() {
+function CancelSheet({ onKeep, onConfirm }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M15 18l-6-6 6-6" />
-    </svg>
-  );
-}
-
-function ChevronRight() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 18l6-6-6-6" />
-    </svg>
-  );
-}
-
-function ChevronDown() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <path d="M19 9l-7 7-7-7" />
-    </svg>
+    <div className="cm-cancel-backdrop" role="presentation" onClick={onKeep}>
+      <div
+        className="cm-cancel-sheet"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="cm-cancel-title"
+        aria-describedby="cm-cancel-body"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="cm-cancel-handle" aria-hidden="true" />
+        <div className="cm-cancel-header">
+          <div className="cm-cancel-icon-sq" aria-hidden="true">
+            <XIcon />
+          </div>
+          <h3 id="cm-cancel-title" className="cm-cancel-title">¿Cancelar la receta?</h3>
+        </div>
+        <p id="cm-cancel-body" className="cm-cancel-body">
+          Perderás el progreso de los pasos y los temporizadores en marcha.
+        </p>
+        <div className="cm-cancel-actions">
+          <button type="button" className="cm-pill cm-pill--primary cm-pill--full" onClick={onKeep}>
+            <ChefHatIcon /> Seguir cocinando
+          </button>
+          <button type="button" className="cm-pill cm-pill--danger cm-pill--full" onClick={onConfirm}>
+            Sí, cancelar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -168,93 +268,78 @@ export default function CookingSessionStepper() {
         />
       ) : (
         <>
-          {/* ── Header ── */}
-          <div className="cooking-stepper-header">
-            <div className="cooking-stepper-header-info">
-              <h2 className="cooking-stepper-recipe-name">{recipeName}</h2>
-              <p className="cooking-stepper-servings">
-                Para {selectedServings} {selectedServings === 1 ? "persona" : "personas"}
-              </p>
+          {/* ── Top bar ── */}
+          <div className="cm-topbar">
+            <div className="cm-topbar-left">
+              <span className="cm-topbar-label">
+                Paso {currentStepIndex + 1} de {steps.length}
+              </span>
+              <div className="cm-topbar-dots" aria-hidden="true">
+                {steps.map((_, k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    tabIndex={-1}
+                    className={[
+                      "cm-topbar-dot",
+                      k < currentStepIndex ? "is-done" : "",
+                      k === currentStepIndex ? "is-current" : "",
+                    ].filter(Boolean).join(" ")}
+                    onClick={() => goToStep(k)}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="cooking-stepper-header-right">
+            <div className="cm-topbar-right">
               {pausedTimerCount > 0 && (
-                <span className="cooking-stepper-paused-hint" aria-label={`${pausedTimerCount} temporizador${pausedTimerCount !== 1 ? "es" : ""} en pausa`}>
-                  ⏸ {pausedTimerCount} en pausa
+                <span className="cm-topbar-paused" aria-label={`${pausedTimerCount} temporizador${pausedTimerCount !== 1 ? "es" : ""} en pausa`}>
+                  ⏸ {pausedTimerCount}
                 </span>
               )}
-              {ingredients && ingredients.length > 0 ? (
+              {ingredients && ingredients.length > 0 && (
                 <button
                   type="button"
-                  className="cooking-stepper-ingredients-btn"
+                  className="cm-iconbtn"
                   onClick={() => setIngredientPanelOpen((v) => !v)}
                   aria-label="Ver ingredientes"
                   aria-expanded={ingredientPanelOpen}
                 >
-                  <svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 5h14M3 10h14M3 15h8" />
-                  </svg>
-                  Ver ingredientes
+                  <ListIcon />
                 </button>
-              ) : null}
+              )}
               <button
                 type="button"
-                className="cooking-stepper-cancel"
-                onClick={() => setCancelConfirmOpen(true)}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="cooking-stepper-minimize"
+                className="cm-iconbtn"
                 onClick={minimizeStepper}
                 aria-label="Minimizar modo cocina"
               >
-                <ChevronDown />
+                <MinimizeIcon />
+              </button>
+              <button
+                type="button"
+                className="cm-iconbtn cm-iconbtn--danger"
+                onClick={() => setCancelConfirmOpen(true)}
+                aria-label="Cancelar receta"
+              >
+                <XIcon />
               </button>
             </div>
           </div>
 
-          {/* ── Progress ── */}
-          <div
-            className="cooking-progress-row"
-            aria-label={`Paso ${currentStepIndex + 1} de ${steps.length}`}
-          >
-            <span className="cooking-progress-label">
-              Paso {currentStepIndex + 1} de {steps.length}
-            </span>
+          {/* ── Gradient progress bar ── */}
+          <div className="cm-progress" aria-hidden="true">
             <div
-              className="cooking-progress-bar"
+              className="cm-progress-fill"
+              style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
               role="progressbar"
               aria-valuenow={currentStepIndex + 1}
               aria-valuemin={1}
               aria-valuemax={steps.length}
-            >
-              <div
-                className="cooking-progress-fill"
-                style={{ width: `${Math.round(((currentStepIndex + 1) / steps.length) * 100)}%` }}
-              />
-            </div>
+            />
           </div>
 
-          {/* ── Step dots ── */}
-          <div className="cooking-step-dots" aria-hidden="true">
-            {steps.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                className={[
-                  "cooking-step-dot",
-                  i === currentStepIndex ? "is-current" : "",
-                  completedSteps.includes(i) ? "is-done" : "",
-                ].filter(Boolean).join(" ")}
-                onClick={() => goToStep(i)}
-                tabIndex={-1}
-              />
-            ))}
-          </div>
-
-          {/* ── Step area ── */}
-          <div className="cooking-step-area">
+          {/* ── Scrollable step content ── */}
+          <div className="cm-step-scroll">
             <RecipeStepCard
               step={currentStep}
               stepNumber={currentStepIndex + 1}
@@ -270,60 +355,47 @@ export default function CookingSessionStepper() {
           </div>
 
           {/* ── Navigation ── */}
-          <div className="cooking-nav">
+          <div className="cm-nav">
             <button
               type="button"
-              className="cooking-nav-btn cooking-nav-prev"
+              className="cm-pill cm-pill--ghost cm-nav-prev"
               onClick={handlePrev}
               disabled={isFirst}
               aria-label="Paso anterior"
             >
-              <ChevronLeft />
+              <ArrowLeftIcon />
               Anterior
             </button>
-            <button
-              type="button"
-              className="cooking-nav-btn cooking-nav-next"
-              onClick={handleNext}
-              aria-label={isLast ? "Finalizar receta" : "Siguiente paso"}
-            >
-              {isLast ? "Finalizar" : "Siguiente"}
-              {!isLast && <ChevronRight />}
-            </button>
+            {isLast ? (
+              <button
+                type="button"
+                className="cm-pill cm-pill--ok cm-nav-next"
+                onClick={handleNext}
+                aria-label="Finalizar receta"
+              >
+                Finalizar <CheckIcon />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="cm-pill cm-pill--primary cm-nav-next"
+                onClick={handleNext}
+                aria-label="Siguiente paso"
+              >
+                Siguiente <ArrowRightIcon />
+              </button>
+            )}
           </div>
 
+          {/* ── Cancel sheet ── */}
           {cancelConfirmOpen ? (
-            <div className="cooking-cancel-confirm-backdrop" role="presentation">
-              <div
-                className="cooking-cancel-confirm"
-                role="alertdialog"
-                aria-modal="true"
-                aria-labelledby="cooking-cancel-title"
-                aria-describedby="cooking-cancel-body"
-              >
-                <h3 id="cooking-cancel-title">¿Cancelar receta?</h3>
-                <p id="cooking-cancel-body">Se perderá el progreso de esta elaboración.</p>
-                <div className="cooking-cancel-confirm-actions">
-                  <button
-                    type="button"
-                    className="cooking-btn-secondary"
-                    onClick={() => setCancelConfirmOpen(false)}
-                  >
-                    Seguir cocinando
-                  </button>
-                  <button
-                    type="button"
-                    className="cooking-danger-btn"
-                    onClick={handleConfirmCancel}
-                  >
-                    Cancelar receta
-                  </button>
-                </div>
-              </div>
-            </div>
+            <CancelSheet
+              onKeep={() => setCancelConfirmOpen(false)}
+              onConfirm={handleConfirmCancel}
+            />
           ) : null}
 
-          {/* ── Ingredient sheet (fixed overlay; timers keep running behind it) ── */}
+          {/* ── Ingredient sheet (unchanged) ── */}
           {ingredientPanelOpen && ingredients && ingredients.length > 0 ? (
             <>
               <div

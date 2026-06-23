@@ -2,6 +2,16 @@ import React from "react";
 import RecipeTimer from "./RecipeTimer.jsx";
 import { displayIngredientQuantity } from "../../utils/recipeScaling.js";
 
+function BasketIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+      <path d="M3.2 9.5h17.6l-1.4 9A2.6 2.6 0 0 1 16.9 21H7.1a2.6 2.6 0 0 1-2.5-2.5l-1.4-9Z" />
+      <path d="M8 9.5l3.2-6M16 9.5l-3.2-6M9.2 13.5v3.5M14.8 13.5v3.5M12 13.5v3.5" />
+    </svg>
+  );
+}
+
 export default function RecipeStepCard({
   step,
   stepNumber,
@@ -17,54 +27,32 @@ export default function RecipeStepCard({
   const { text, html, detectedTimers, title, tips, stepIngredients } = step;
 
   return (
-    <div className={`cooking-step-card${isComplete ? " cooking-step-card--done" : ""}`}>
-      <div className="cooking-step-meta">
-        <div
-          className="cooking-step-number"
-          aria-label={`Paso ${stepNumber} de ${totalSteps}`}
-        >
+    <div className={`cm-step-card${isComplete ? " cm-step-card--done" : ""}`}>
+
+      {/* ── Headline ── */}
+      <div className="cm-step-headline">
+        <div className="cm-step-num" aria-label={`Paso ${stepNumber} de ${totalSteps}`}>
           {stepNumber}
+        </div>
+        <div className="cm-step-label-col">
+          <div className="cm-step-eyebrow">Paso {stepNumber}</div>
+          {title && <div className="cm-step-tag">{title}</div>}
         </div>
       </div>
 
-      <div className="cooking-step-text">
-        {title && <p className="cooking-step-title">{title}</p>}
+      {/* ── Body ── */}
+      <div className="cm-step-body">
         {html ? (
-          <div
-            className="cooking-step-html"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
+          <div className="cm-step-html" dangerouslySetInnerHTML={{ __html: html }} />
         ) : (
           <p>{text}</p>
         )}
-        {tips && (
-          <p className="cooking-step-tips">💡 {tips}</p>
-        )}
+        {tips && <p className="cm-step-tips">💡 {tips}</p>}
       </div>
 
-      {stepIngredients && stepIngredients.length > 0 ? (
-        <div className="cooking-step-ingredients">
-          <span className="cooking-step-ingredients-label">Ingredientes de este paso</span>
-          <ul className="cooking-step-ingredients-list">
-            {stepIngredients.map((ref, idx) => {
-              const fullIng = allIngredients.find((ing) =>
-                (ref.ingredientId && ing.ingredientId && String(ing.ingredientId) === String(ref.ingredientId)) ||
-                normalize(ing.name) === normalize(ref.name)
-              );
-              const qty = fullIng ? displayIngredientQuantity(fullIng, baseServings, selectedServings) : null;
-              return (
-                <li key={idx} className="cooking-step-ingredient-row">
-                  <span className="cooking-step-ingredient-name">{ref.name}</span>
-                  {qty ? <span className="cooking-step-ingredient-qty">{qty}</span> : null}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : null}
-
+      {/* ── Timer(s) ── */}
       {detectedTimers && detectedTimers.length > 0 ? (
-        <div className="cooking-step-timers">
+        <div className="cm-step-timers">
           {detectedTimers.map((dt, timerIdx) => {
             const key = `${step.index}_${timerIdx}`;
             return (
@@ -78,6 +66,31 @@ export default function RecipeStepCard({
               />
             );
           })}
+        </div>
+      ) : null}
+
+      {/* ── Per-step ingredients ── */}
+      {stepIngredients && stepIngredients.length > 0 ? (
+        <div className="cm-step-ing">
+          <div className="cm-step-ing-header">
+            <BasketIcon />
+            <span>Para este paso</span>
+          </div>
+          <div className="cm-step-ing-list">
+            {stepIngredients.map((ref, idx) => {
+              const fullIng = allIngredients.find((ing) =>
+                (ref.ingredientId && ing.ingredientId && String(ing.ingredientId) === String(ref.ingredientId)) ||
+                normalize(ing.name) === normalize(ref.name)
+              );
+              const qty = fullIng ? displayIngredientQuantity(fullIng, baseServings, selectedServings) : null;
+              return (
+                <div key={idx} className="cm-step-ing-row">
+                  <span className="cm-step-ing-name">{ref.name}</span>
+                  {qty ? <span className="cm-step-ing-qty">{qty}</span> : null}
+                </div>
+              );
+            })}
+          </div>
         </div>
       ) : null}
     </div>

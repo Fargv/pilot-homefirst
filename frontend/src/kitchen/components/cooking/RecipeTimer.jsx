@@ -5,7 +5,7 @@ import { useLiveCookingTimer } from "../../hooks/useLiveCookingTimer.js";
 
 function PlayIcon() {
   return (
-    <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
       <path d="M6.5 4.5l10 5.5-10 5.5V4.5z" />
     </svg>
   );
@@ -13,7 +13,7 @@ function PlayIcon() {
 
 function PauseIcon() {
   return (
-    <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
       <rect x="4" y="3.5" width="4" height="13" rx="1" />
       <rect x="12" y="3.5" width="4" height="13" rx="1" />
     </svg>
@@ -22,29 +22,28 @@ function PauseIcon() {
 
 function ResetIcon() {
   return (
-    <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block" }}>
       <path d="M4 4v4h4M4 8A8 8 0 1 1 5.3 13" />
     </svg>
   );
 }
 
-function CancelIcon() {
+function ClockIcon() {
   return (
-    <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor"
-      strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-      <path d="M15 5L5 15M5 5l10 10" />
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block" }}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.6V12l3 1.9" />
     </svg>
   );
 }
 
-function TimerDoneIcon() {
+function CheckIcon() {
   return (
-    <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="10" cy="11" r="7" />
-      <path d="M10 8v3l2 2" />
-      <path d="M8 2h4M10 2v2" />
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block" }}>
+      <path d="M20 6 9 17l-5-5" />
     </svg>
   );
 }
@@ -54,79 +53,109 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, onActi
   const isRunning = status === "running";
   const isPaused  = status === "paused";
   const isDone    = status === "done";
+  const isActive  = isRunning || isPaused;
 
-  // Live remaining time — ticks every second when running,
-  // uses timestamp math so it stays correct after refresh/sleep.
-  const remainingMs = useLiveCookingTimer(isRunning || isPaused ? timer : null);
-  const displayMs = isDone ? 0 : (isRunning || isPaused ? remainingMs : durationMs);
+  const remainingMs = useLiveCookingTimer(isActive ? timer : null);
+  const displayMs = isDone ? 0 : (isActive ? remainingMs : durationMs);
   const isUrgent = isRunning && remainingMs < 10_000;
+
+  const pct = durationMs > 0 ? Math.min(100, (1 - displayMs / durationMs) * 100) : 0;
+
+  const toneClass = isDone
+    ? "cm-timer--ok"
+    : isRunning
+    ? `cm-timer--warm${isUrgent ? " cm-timer--urgent" : ""}`
+    : isPaused
+    ? "cm-timer--paused"
+    : "cm-timer--idle";
 
   function handleStart() {
     primeAudio();
     onAction(timerKey, "start", durationMs);
   }
 
-  if (isDone) {
-    return (
-      <div className="recipe-timer recipe-timer--done" role="status">
-        <span className="recipe-timer-icon" aria-label="Tiempo terminado"><TimerDoneIcon /></span>
-        <span className="recipe-timer-label">¡Tiempo! {label}</span>
-        <button
-          type="button"
-          className="recipe-timer-cancel"
-          onClick={() => onAction(timerKey, "cancel")}
-          aria-label="Reiniciar temporizador"
-        >
-          <ResetIcon />
-        </button>
+  return (
+    <div
+      className={`cm-timer ${toneClass}`}
+      role="timer"
+      aria-label={`${label}: ${formatRemaining(displayMs)} restantes`}
+    >
+      <div className="cm-timer-header">
+        <div className="cm-timer-icon-sq">
+          {isDone ? <CheckIcon /> : <ClockIcon />}
+        </div>
+        <div className="cm-timer-meta">
+          <div className="cm-timer-eyebrow">
+            {isDone ? "Temporizador" : "Temporizador del paso"}
+          </div>
+          <div className="cm-timer-name">{label}</div>
+        </div>
+        {isRunning && (
+          <span className="cm-timer-badge cm-timer-badge--running">En marcha</span>
+        )}
+        {isDone && (
+          <span className="cm-timer-badge cm-timer-badge--done">Listo</span>
+        )}
       </div>
-    );
-  }
 
-  if (isRunning || isPaused) {
-    return (
-      <div
-        className={`recipe-timer recipe-timer--active${isUrgent ? " recipe-timer--urgent" : ""}`}
-        role="timer"
-        aria-live="polite"
-        aria-label={`${label}: ${formatRemaining(displayMs)} restantes`}
-      >
-        <span className="recipe-timer-countdown">{formatRemaining(displayMs)}</span>
-        {isRunning ? (
+      <div className="cm-timer-countdown-row">
+        <span className="cm-timer-countdown">{formatRemaining(displayMs)}</span>
+        <span className="cm-timer-countdown-sub">restante</span>
+      </div>
+
+      <div className="cm-timer-track">
+        <div className="cm-timer-fill" style={{ width: `${pct}%` }} />
+      </div>
+
+      <div className="cm-timer-actions">
+        {isDone ? (
           <button
             type="button"
-            className="recipe-timer-ctrl-btn"
+            className="cm-pill cm-pill--secondary cm-timer-cta"
+            onClick={() => onAction(timerKey, "cancel")}
+            aria-label="Reiniciar temporizador"
+          >
+            <ResetIcon /> Reiniciar
+          </button>
+        ) : isRunning ? (
+          <button
+            type="button"
+            className="cm-pill cm-pill--secondary cm-timer-cta"
             onClick={() => onAction(timerKey, "pause")}
             aria-label="Pausar temporizador"
           >
-            <PauseIcon />
+            <PauseIcon /> Pausar
+          </button>
+        ) : isPaused ? (
+          <button
+            type="button"
+            className="cm-pill cm-pill--primary cm-timer-cta"
+            onClick={() => { primeAudio(); onAction(timerKey, "resume"); }}
+            aria-label="Reanudar temporizador"
+          >
+            <PlayIcon /> Reanudar
           </button>
         ) : (
           <button
             type="button"
-            className="recipe-timer-ctrl-btn"
-            onClick={() => { primeAudio(); onAction(timerKey, "resume"); }}
-            aria-label="Reanudar temporizador"
+            className="cm-pill cm-pill--primary cm-timer-cta"
+            onClick={handleStart}
+            aria-label="Iniciar temporizador"
           >
-            <PlayIcon />
+            <PlayIcon /> Iniciar
           </button>
         )}
-        <button
-          type="button"
-          className="recipe-timer-cancel"
-          onClick={() => onAction(timerKey, "cancel")}
-          aria-label="Cancelar temporizador"
-        >
-          <CancelIcon />
-        </button>
+        {isActive && !isDone && (
+          <button
+            type="button"
+            className="cm-iconbtn cm-timer-reset"
+            onClick={() => onAction(timerKey, "cancel")}
+            aria-label="Reiniciar temporizador"
+          >
+            <ResetIcon />
+          </button>
+        )}
       </div>
-    );
-  }
-
-  return (
-    <button type="button" className="recipe-timer recipe-timer--idle" onClick={handleStart}>
-      <span className="recipe-timer-play" aria-hidden="true"><PlayIcon /></span>
-      <span className="recipe-timer-label">{label} · {formatRemaining(durationMs)}</span>
-    </button>
+    </div>
   );
 }
