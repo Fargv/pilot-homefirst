@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, BookOpen, Info, Pencil, Copy, Trash2, CalendarPlus } from "lucide-react";
+import { SlidersHorizontal, BookOpen, Info, Pencil, Copy, Trash2, CalendarPlus, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import { createSyncedApi, dishesQuery, fetchCached } from "../queryClient.js";
@@ -958,82 +958,83 @@ export default function DishesPage() {
         {/* ── Unified Explorer Panel ──────────────────────────────────── */}
         <PageHeader
           title={headerTitle}
+          subtitle={
+            !loading && !ingredientsLoading
+              ? isIngredientsTab
+                ? `${visibleIngredients.length} ${visibleIngredients.length === 1 ? "producto" : "productos"}`
+                : `${visibleDishes.length} ${visibleDishes.length === 1 ? "plato" : "platos"}`
+              : null
+          }
           primaryAction={
-            <button className="kitchen-button dishes-new-button" type="button" onClick={headerActionHandler}>
-              + {headerActionLabel}
-            </button>
+            <div className="phdr-seg-group" role="tablist" aria-label="Secciones de cocina">
+              <button
+                className={`phdr-seg${activeTab === "main" ? " is-active" : ""}`}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "main"}
+                onClick={() => setActiveTab("main")}
+              >
+                Platos
+              </button>
+              <button
+                className={`phdr-seg${activeTab === "ingredients" ? " is-active" : ""}`}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "ingredients"}
+                onClick={() => setActiveTab("ingredients")}
+              >
+                Productos
+              </button>
+            </div>
           }
           topRef={panelHeadingRef}
           className="dishes-explorer-panel"
         >
-          {/* ── FILA DE TABS ── */}
-          <div className="dishes-explorer-nav" role="tablist" aria-label="Secciones de cocina">
-            <button
-              className={`kitchen-tab-button ${activeTab === "main" ? "is-active" : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "main"}
-              onClick={() => setActiveTab("main")}
-            >
-              Platos
-            </button>
-            <button
-              className={`kitchen-tab-button ${activeTab === "ingredients" ? "is-active" : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "ingredients"}
-              onClick={() => setActiveTab("ingredients")}
-            >
-              Productos
-            </button>
-          </div>
-
-          {/* ── FILA DE FILTROS: toggles izquierda + contador derecha ── */}
-          <div className="dishes-controls-row">
-            <div className="dishes-filters-right">
-              <button
-                type="button"
-                className={`dishes-sliders-btn${filterPanelOpen ? " is-open" : ""}`}
-                onClick={() => setFilterPanelOpen((v) => !v)}
-                aria-label="Filtros avanzados"
-                aria-expanded={filterPanelOpen}
-              >
-                <SlidersHorizontal size={18} />
-                {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "") ? (
-                  <span className="dishes-sliders-dot" aria-hidden="true" />
-                ) : null}
-              </button>
-              {!isIngredientsTab ? (
-                <button
-                  type="button"
-                  className={`dishes-cenas-toggle${catalogOnly ? " is-on" : ""}`}
-                  onClick={() => {
-                    setCatalogOnly((v) => {
-                      if (!v) setMineOnly(false);
-                      return !v;
-                    });
-                  }}
-                  aria-label="Solo catálogo"
-                  aria-pressed={catalogOnly}
-                >
-                  <BookOpen size={14} aria-hidden="true" />
-                  <span>Solo catálogo</span>
-                  <span className={`dishes-cenas-track${catalogOnly ? " is-on" : ""}`} aria-hidden="true">
-                    <span className="dishes-cenas-thumb" />
-                  </span>
-                </button>
-              ) : null}
+          {/* ── SEARCH + FILTER + ADD ROW ── */}
+          <div className="phdr-search-row">
+            <div className="phdr-search-wrap">
+              <span className="phdr-search-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </span>
+              <input
+                className="phdr-search-input"
+                type="search"
+                placeholder={isIngredientsTab ? "Buscar producto…" : "Buscar por plato o producto…"}
+                value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
+                onChange={(event) =>
+                  isIngredientsTab
+                    ? setIngredientSearchTerm(event.target.value)
+                    : setDishSearchTerm(event.target.value)
+                }
+                aria-label={isIngredientsTab ? "Buscar producto" : "Buscar plato"}
+              />
             </div>
-            {!loading && !ingredientsLoading ? (
-              <p className="dishes-results-count">
-                {isIngredientsTab
-                  ? `${visibleIngredients.length} ${visibleIngredients.length === 1 ? "producto" : "productos"}`
-                  : `${visibleDishes.length} ${visibleDishes.length === 1 ? "plato" : "platos"}`}
-              </p>
-            ) : null}
+            <button
+              type="button"
+              className="phdr-icon-btn"
+              onClick={() => setFilterPanelOpen((v) => !v)}
+              aria-label="Filtros avanzados"
+              aria-expanded={filterPanelOpen}
+            >
+              <SlidersHorizontal size={18} />
+              {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "" || catalogOnly) ? (
+                <span className="phdr-filter-dot" aria-hidden="true" />
+              ) : null}
+            </button>
+            <button
+              type="button"
+              className="phdr-cta-btn"
+              onClick={headerActionHandler}
+              aria-label={headerActionLabel}
+            >
+              <Plus size={20} />
+            </button>
           </div>
 
-          {/* Dinner gate banner (outside panel) */}
+          {/* Dinner gate banner */}
           {!canUseDinners && dinnerGateOpen ? (
             <DinnerUpgradeBanner
               className="dinner-upgrade-banner-dishes"
@@ -1077,6 +1078,20 @@ export default function DishesPage() {
                         <span>Mis platos</span>
                       </label>
                     ) : null}
+                    <label className="dishes-filter-check-row">
+                      <input
+                        type="checkbox"
+                        className="dishes-filter-check"
+                        checked={catalogOnly}
+                        onChange={() => {
+                          setCatalogOnly((v) => {
+                            if (!v) setMineOnly(false);
+                            return !v;
+                          });
+                        }}
+                      />
+                      <span>Solo catálogo</span>
+                    </label>
                   </div>
                 </div>
               ) : null}
@@ -1182,23 +1197,6 @@ export default function DishesPage() {
             </div>
           ) : null}
 
-          {/* Buscador */}
-          <div className="hdr-search">
-            <svg className="hdr-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M16.5 16.5L21 21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            <input
-              className="kitchen-input dishes-search-input"
-              placeholder={isIngredientsTab ? "Buscar producto…" : "Buscar por plato o producto…"}
-              value={isIngredientsTab ? ingredientSearchTerm : dishSearchTerm}
-              onChange={(event) =>
-                isIngredientsTab
-                  ? setIngredientSearchTerm(event.target.value)
-                  : setDishSearchTerm(event.target.value)
-              }
-            />
-          </div>
         </PageHeader>
         {/* Onboarding suggestions (outside panel, above grid) */}
         {(isIngredientsTab ? filteredIngredientSuggestions : (activeTab === "main" ? filteredDishSuggestions : [])).length > 0 && (

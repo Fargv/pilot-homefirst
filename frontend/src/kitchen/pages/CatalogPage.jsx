@@ -1048,35 +1048,36 @@ export default function CatalogPage() {
               </button>
             ) : null
           }
-          secondaryLeft={
-            <button
-              type="button"
-              className={`catalog-filter-toggle${filterOpen ? " is-open" : ""}`}
-              onClick={() => setFilterOpen((v) => !v)}
-              aria-expanded={filterOpen}
-              aria-label="Mostrar filtros"
-            >
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                <path d="M1 3h13M3.5 7h8M6 11h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-              </svg>
-              Filtros
-              {hasActiveFilters && <span className="catalog-filter-dot" aria-hidden="true" />}
-            </button>
-          }
           footer={
-            <div className="hdr-search">
-              <svg className="hdr-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
-                <path d="M16.5 16.5L21 21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-              <input
-                type="search"
-                className="kitchen-input catalog-search-full"
-                placeholder="Buscar packs, platos o ingredientes..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                aria-label="Buscar packs"
-              />
+            <div className="phdr-search-row">
+              <div className="phdr-search-wrap">
+                <span className="phdr-search-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                </span>
+                <input
+                  type="search"
+                  className="phdr-search-input"
+                  placeholder="Buscar packs, platos o ingredientes..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  aria-label="Buscar packs"
+                />
+              </div>
+              <button
+                type="button"
+                className="phdr-icon-btn"
+                onClick={() => setFilterOpen((v) => !v)}
+                aria-expanded={filterOpen}
+                aria-label="Mostrar filtros"
+              >
+                <svg width="17" height="17" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                  <path d="M1 3h13M3.5 7h8M6 11h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                </svg>
+                {hasActiveFilters && <span className="phdr-filter-dot" aria-hidden="true" />}
+              </button>
             </div>
           }
         >

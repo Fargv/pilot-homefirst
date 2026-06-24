@@ -2344,7 +2344,58 @@ export default function WeekPage() {
             <PageHeader
               title="Planificación"
               primaryAction={
-                <>
+                canUseDinners ? (
+                  <div className="phdr-seg-group" role="group" aria-label="Tipo de comida">
+                    <button
+                      type="button"
+                      className={`phdr-seg${selectedMealType === "lunch" ? " is-active" : ""}`}
+                      aria-pressed={selectedMealType === "lunch"}
+                      onClick={() => setMealTab("lunch")}
+                    >
+                      Comidas
+                    </button>
+                    {dinnersEnabled ? (
+                      <button
+                        type="button"
+                        className={`phdr-seg${selectedMealType === "dinner" ? " is-active" : ""}`}
+                        aria-pressed={selectedMealType === "dinner"}
+                        onClick={() => setMealTab("dinner")}
+                      >
+                        Cenas
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="phdr-seg dinner-gate-tab dinner-gate-tab-settings"
+                        title="Activa las cenas en Configuración del hogar"
+                        onClick={() => navigate("/kitchen/configuracion?section=household-members")}
+                      >
+                        Cenas
+                      </button>
+                    )}
+                  </div>
+                ) : null
+              }
+              secondaryLeft={
+                <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                  {canUseDinners ? (
+                    <ShareWhatsAppButton
+                      iconOnly
+                      size={20}
+                      className="hdr-wa-btn"
+                      buttonLabel="Compartir semana por WhatsApp"
+                      title="Compartir en HomeFirst"
+                      items={[
+                        {
+                          id: "week",
+                          label: "Compartir esta semana",
+                          description: "Envia un enlace directo a esta semana. La otra persona tendra que iniciar sesion para verla.",
+                          url: buildWeekShareUrl(weekStart),
+                          message: `Take a look at this week in HomeFirst: ${buildWeekShareUrl(weekStart)}`
+                        }
+                      ]}
+                    />
+                  ) : null}
                   {canShowWeekRandomize ? (
                     canUseFullWeekRandomization ? (
                       <div className="kitchen-week-randomize-wrap" ref={weekRandomizeRef}>
@@ -2373,26 +2424,7 @@ export default function WeekPage() {
                       </ProGateButton>
                     )
                   ) : null}
-                  {/* Mobile-only discrete WhatsApp on line 1 (desktop keeps the one in the tabs row) */}
-                  {canUseDinners ? (
-                    <ShareWhatsAppButton
-                      iconOnly
-                      size={20}
-                      className="hdr-wa-btn hdr-wa-mobile"
-                      buttonLabel="Compartir semana por WhatsApp"
-                      title="Compartir en HomeFirst"
-                      items={[
-                        {
-                          id: "week",
-                          label: "Compartir esta semana",
-                          description: "Envia un enlace directo a esta semana. La otra persona tendra que iniciar sesion para verla.",
-                          url: buildWeekShareUrl(weekStart),
-                          message: `Take a look at this week in HomeFirst: ${buildWeekShareUrl(weekStart)}`
-                        }
-                      ]}
-                    />
-                  ) : null}
-                </>
+                </div>
               }
               secondaryRight={
                 <WeekDatePicker
@@ -2401,74 +2433,6 @@ export default function WeekPage() {
                   className="kitchen-week-header-navigator"
                 />
               }
-              secondaryLeft={(() => {
-                if (!canUseDinners) return null;
-                const hasFindeAction = false;
-                return (
-                  <div className="kitchen-week-header-tabs-row">
-                    {canUseDinners && (
-                      <div className="kitchen-meal-tabs" role="group" aria-label="Tipo de comida">
-                        <button
-                          type="button"
-                          className={`kitchen-meal-tab ${selectedMealType === "lunch" ? "is-active" : ""}`}
-                          aria-pressed={selectedMealType === "lunch"}
-                          onClick={() => setMealTab("lunch")}
-                        >
-                          Comidas
-                        </button>
-                        {dinnersEnabled ? (
-                          <button
-                            type="button"
-                            className={`kitchen-meal-tab ${selectedMealType === "dinner" ? "is-active" : ""}`}
-                            aria-pressed={selectedMealType === "dinner"}
-                            onClick={() => setMealTab("dinner")}
-                          >
-                            Cenas
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="kitchen-meal-tab dinner-gate-tab dinner-gate-tab-settings"
-                            title="Activa las cenas en Configuración del hogar"
-                            onClick={() => navigate("/kitchen/configuracion?section=household-members")}
-                          >
-                            Cenas
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {hasFindeAction && (
-                      <button
-                        type="button"
-                        className="kitchen-finde-chip"
-                        onClick={() => handleAddWeekendDays(weekendOptionState.availableDays)}
-                        disabled={weekendBusy}
-                        aria-label="Añadir fin de semana"
-                      >
-                        + Finde
-                      </button>
-                    )}
-                    {canUseDinners && (
-                      <ShareWhatsAppButton
-                        iconOnly
-                        size={22}
-                        className="kitchen-tab-share-button hdr-wa-desktop"
-                        buttonLabel="Compartir semana por WhatsApp"
-                        title="Compartir en HomeFirst"
-                        items={[
-                          {
-                            id: "week",
-                            label: "Compartir esta semana",
-                            description: "Envia un enlace directo a esta semana. La otra persona tendra que iniciar sesion para verla.",
-                            url: buildWeekShareUrl(weekStart),
-                            message: `Take a look at this week in HomeFirst: ${buildWeekShareUrl(weekStart)}`
-                          }
-                        ]}
-                      />
-                    )}
-                  </div>
-                );
-              })()}
               footer={
                 <WeekDayTabs
                   days={visibleDays}

@@ -24076,7 +24076,7 @@ td.recipe-qty-scaled {
 .page-header-title {
   margin: 0;
   font-size: var(--fs-2xl);
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary, #0f172a);
   line-height: var(--lh-2xl);
 }
@@ -24170,6 +24170,215 @@ td.recipe-qty-scaled {
 
 [data-theme="dark"] .page-header-subtitle {
   color: var(--hf-muted, rgba(255, 255, 255, 0.5));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STANDARD PAGE HEADER EXTENSIONS — pill tabs, search row, chips
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Segmented pill tab group — used in primaryAction slot */
+.phdr-seg-group {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-soft);
+  padding: 4px;
+  border-radius: 999px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.phdr-seg {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  color: var(--text-secondary, #64748b);
+  background: transparent;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.phdr-seg.is-active,
+.phdr-seg[aria-selected="true"] {
+  background: var(--button-primary-bg);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(98, 96, 255, 0.28);
+}
+
+.phdr-seg:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Count badge inside a seg tab */
+.phdr-seg-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.10);
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.phdr-seg.is-active .phdr-seg-badge,
+.phdr-seg[aria-selected="true"] .phdr-seg-badge {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Search + action row */
+.phdr-search-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.phdr-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.phdr-search-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted, #94a3b8);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.phdr-search-input {
+  width: 100%;
+  padding: 0 14px 0 40px;
+  height: 46px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.phdr-search-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.phdr-search-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(139, 137, 255, 0.18);
+}
+
+/* Icon-only square button (filter, etc.) */
+.phdr-icon-btn {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface, #fff);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background 0.15s, color 0.15s;
+}
+
+.phdr-icon-btn:hover {
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+.phdr-icon-btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Active-filter badge dot on filter button */
+.phdr-filter-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--button-primary-bg);
+  border: 2px solid var(--hf-surface, #fff);
+}
+
+/* Primary CTA button in search row (brand-colored, icon-only) */
+.phdr-cta-btn {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  border: none;
+  background: var(--button-primary-bg);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(98, 96, 255, 0.28);
+  transition: filter 0.15s;
+}
+
+.phdr-cta-btn:hover {
+  filter: brightness(1.08);
+}
+
+.phdr-cta-btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .phdr-seg-group {
+  background: var(--surface-muted);
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .phdr-seg {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .phdr-search-input {
+  background: var(--surface);
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .phdr-icon-btn {
+  background: var(--surface);
+  border-color: var(--border-soft);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .phdr-filter-dot {
+  border-color: var(--hf-surface);
 }
 
 /* ═══════════════════════════════════════════════════════════════

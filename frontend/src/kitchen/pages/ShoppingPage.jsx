@@ -1242,19 +1242,40 @@ export default function ShoppingPage() {
           />
         }
         secondaryLeft={
-          <div className="kitchen-dishes-tabs shopping-tabs-inline" role="tablist" aria-label="Estado de la compra">
-            <button className={`kitchen-tab-button has-count ${tab === "pending" ? "is-active" : ""}`} onClick={() => setTab("pending")}>
-              <span className="hdr-tab-count">{pendingCount === null ? "—" : pendingCount}</span>
-              <span>Pendiente</span>
+          <div className="phdr-seg-group" role="tablist" aria-label="Estado de la compra">
+            <button
+              className={`phdr-seg${tab === "pending" ? " is-active" : ""}`}
+              role="tab"
+              aria-selected={tab === "pending"}
+              onClick={() => setTab("pending")}
+            >
+              Pendiente
+              {pendingCount !== null && pendingCount > 0 ? (
+                <span className="phdr-seg-badge">{pendingCount}</span>
+              ) : null}
             </button>
-            <button className={`kitchen-tab-button has-count ${tab === "purchased" ? "is-active" : ""}`} onClick={() => setTab("purchased")}>
-              <span className="hdr-tab-count">{purchasedCount === null ? "—" : purchasedCount}</span>
-              <span>Comprado</span>
+            <button
+              className={`phdr-seg${tab === "purchased" ? " is-active" : ""}`}
+              role="tab"
+              aria-selected={tab === "purchased"}
+              onClick={() => setTab("purchased")}
+            >
+              Comprado
+              {purchasedCount !== null && purchasedCount > 0 ? (
+                <span className="phdr-seg-badge">{purchasedCount}</span>
+              ) : null}
             </button>
             {budgetFeatureEnabled ? (
-              <button className={`kitchen-tab-button has-count ${tab === "sessions" ? "is-active" : ""}`} onClick={() => setTab("sessions")}>
-                <span className="hdr-tab-count">{pendingPurchaseSessions.length}</span>
-                <span>Por confirmar</span>
+              <button
+                className={`phdr-seg${tab === "sessions" ? " is-active" : ""}`}
+                role="tab"
+                aria-selected={tab === "sessions"}
+                onClick={() => setTab("sessions")}
+              >
+                Confirmar
+                {pendingPurchaseSessions.length > 0 ? (
+                  <span className="phdr-seg-badge">{pendingPurchaseSessions.length}</span>
+                ) : null}
               </button>
             ) : null}
           </div>
