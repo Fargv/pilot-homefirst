@@ -1,214 +1,316 @@
 ---
 name: HomeFirst
-description: La app de menús semanales para familias — organizada, cálida, sin fricción.
-colors:
-  brand: "#4f46e5"
-  brand-dark: "#4338ca"
-  surface: "#ffffff"
-  surface-bg: "#f8fafc"
-  surface-soft: "#eef2ff"
-  surface-mint: "#f0fdf4"
-  surface-peach: "#fff7ed"
-  text: "#1e293b"
-  text-muted: "#667085"
-  border: "#e4e7ec"
-  danger: "#b42318"
-typography:
-  headline:
-    fontFamily: "Montserrat, \"Segoe UI\", system-ui, -apple-system, sans-serif"
-    fontSize: "22px"
-    fontWeight: 700
-    lineHeight: 1.2
-    letterSpacing: "normal"
-  title:
-    fontFamily: "Montserrat, \"Segoe UI\", system-ui, -apple-system, sans-serif"
-    fontSize: "18px"
-    fontWeight: 700
-    lineHeight: 1.3
-    letterSpacing: "normal"
-  body:
-    fontFamily: "Montserrat, \"Segoe UI\", system-ui, -apple-system, sans-serif"
-    fontSize: "14px"
-    fontWeight: 600
-    lineHeight: 1.5
-    letterSpacing: "normal"
-  label:
-    fontFamily: "Montserrat, \"Segoe UI\", system-ui, -apple-system, sans-serif"
-    fontSize: "12px"
-    fontWeight: 700
-    lineHeight: 1.2
-    letterSpacing: "0.04em"
-rounded:
-  pill: "999px"
-  lg: "24px"
-  md: "14px"
-  sm: "10px"
-  xs: "8px"
-spacing:
-  xs: "8px"
-  sm: "12px"
-  md: "16px"
-  lg: "24px"
-  xl: "32px"
-components:
-  button-primary:
-    backgroundColor: "{colors.brand}"
-    textColor: "{colors.surface}"
-    rounded: "{rounded.pill}"
-    padding: "12px 16px"
-  button-primary-hover:
-    backgroundColor: "{colors.brand-dark}"
-    textColor: "{colors.surface}"
-    rounded: "{rounded.pill}"
-    padding: "12px 16px"
-  button-secondary:
-    backgroundColor: "{colors.surface-soft}"
-    textColor: "{colors.text}"
-    rounded: "{rounded.pill}"
-    padding: "12px 16px"
-  button-ghost:
-    backgroundColor: "transparent"
-    textColor: "{colors.text}"
-    rounded: "{rounded.pill}"
-    padding: "12px 16px"
-  input:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text}"
-    rounded: "{rounded.lg}"
-    padding: "11px 12px"
-  card:
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.lg}"
-    padding: "{spacing.lg}"
+description: App de menús semanales para familias — organizada, cálida, sin fricción.
+default_theme: tomato-cream
+brand: "#C6533F"
+brand_dark: "#9F3F31"
+surface: "#FFFFFF"
+surface_bg: "#FAF6F1"
+surface_muted: "#F0E9E1"
+text: "#25211D"
+text_muted: "#706A63"
+border: "#E5DDD3"
+danger: "#b42318"
 ---
 
 # Design System: HomeFirst
 
-## 1. Overview
+## 1. Visual Positioning
 
-**Creative North Star: "La Cocina Organizada"**
+HomeFirst is a domestic tool — it helps families plan meals and shop without friction. It should feel like a well-designed kitchen notebook, not like a SaaS dashboard or a recipe blog.
 
-HomeFirst es la herramienta que hace desaparecer el caos doméstico del menú semanal. Su diseño sigue la misma lógica: cada elemento en su lugar, nada sobrando. Como una cocina bien organizada donde los utensilios están exactamente donde los esperas, la UI no sorprende — libera. El usuario llega, encuentra lo que necesita, actúa, y se va.
+The previous indigo/periwinkle palette looked generic. It is the default output of a prompt. Any product designer looking at it for three seconds would know it was AI-generated. That is not acceptable for a product used daily by real households.
 
-La paleta extrae su personalidad del delantal del chef: el índigo (`#4f46e5`) es preciso y confiable, nunca decorativo. Los fondos son claros casi hasta el blanco, con gradientes sutiles que dan profundidad sin llamar atención. Los bordes redondeados (24-32px en superficies mayores) aportan calidez doméstica sin caer en la infantilización. La sombra es ambiental y discreta — eleva sin teatralidad.
+The new identity is warm, editorial, and practical. The brand color is a muted tomato-red. The surfaces are cream and ivory. Typography stays Montserrat with strong weights. The result feels like something a real designer chose — because it was.
 
-Este sistema rechaza expresamente la formalidad institucional de las apps bancarias y corporativas: sin grises planos, sin tablas densas, sin botones rectangulares apagados. También rechaza el extremo opuesto: sin gradientes de arco iris, sin glassmorphismo agresivo, sin confeti de onboarding. La referencia es Calm (espacio en blanco que respira) cruzada con Airbnb (calidez controlada, jerarquía visual impecable).
+**What the product should feel like:**
+- A quality domestic tool, not a startup MVP
+- Warm and human, not sterile and corporate
+- Confident in its simplicity, not trying to look like more than it is
+- The visual equivalent of a well-organized recipe binder on a real kitchen counter
 
-**Key Characteristics:**
-- Índigo como único color de acción — raro, por eso importa
-- Superficies en blanco puro o muy cercano al blanco; los tintes de color van en las fichas y badges, no en los fondos de página
-- Tipografía Montserrat con pesos 600/700 — no hay texto normal, todo comunica con intención
-- Esquinas muy redondeadas (24px+) en contenedores, píldoras (999px) en controles pequeños
-- Sombra ambiental y funcional; nunca decorativa
+**References (direction, not copy):**
+- Calm (breathing space, restraint in color)
+- Airbnb (warm neutrals, hierarchical but approachable)
+- Monocle / Kinfolk (editorial warmth without preciousness)
 
-## 2. Colors: La Paleta del Orden
+**Anti-references — do not look like these:**
+- Any purple/indigo SaaS tool
+- Recipe blogging templates (amateur, image-heavy, no hierarchy)
+- AI productivity dashboards (sterile, gradient-heavy, dark-on-dark)
+- Fintech apps (navy, sharp corners, trust signaling overload)
+- Gamification apps aimed at children (toyish colors, confetti everywhere)
 
-Un sistema restringido donde el índigo es la única voz de acción.
+---
 
-### Primary
-- **Índigo Activo** (`#4f46e5`): El único color de acción de la app. Botones primarios, estados activos en navegación, elementos seleccionados, toggles activos, focus rings. Su rareza en el 90% del canvas es lo que lo hace funcionar.
-- **Índigo Profundo** (`#4338ca`): Hover y pressed sobre el Índigo Activo. Nunca aparece como estado de reposo; solo como respuesta a la interacción.
+## 2. Theme System
 
-### Neutral
-- **Blanco Superficie** (`#ffffff`): Cards, modales, inputs, panels. La superficie de trabajo.
-- **Blanco Página** (`#f8fafc`): El fondo general de la app — no puro blanco, sino levemente frío.
-- **Índigo Suave** (`#eef2ff`): Fondo de elementos activos en nav y chips de selección. El índigo en su forma más discreta.
-- **Verde Menta** (`#f0fdf4`): Superficie para estados positivos o de éxito ligero.
-- **Melocotón** (`#fff7ed`): Superficie para advertencias o estados de atención.
-- **Texto Principal** (`#1e293b`): Todo el texto primario — títulos, labels, contenido.
-- **Texto Atenuado** (`#667085`): Metadatos, subtítulos, copy secundario. Mínimo 4.5:1 sobre fondos claros.
-- **Borde** (`#e4e7ec`): Separadores, bordes de input y card. Casi invisible pero estructurante.
-- **Peligro** (`#b42318`): Errores, acciones destructivas, validación fallida.
+Themes are defined in `frontend/src/context/appThemes.js`. Each theme is a named token set injected onto `:root` at runtime via `ThemeContext.jsx`. The `:root` block in `kitchen.css` holds the Tomato Cream defaults — these are only visible before JS hydrates.
 
-### Named Rules
-**La Regla del Color Único.** El Índigo Activo (`#4f46e5`) se usa en estados de acción e interacción únicamente. Nunca como color decorativo, nunca en texto largo, nunca en más de un elemento por fila visual. Su escasez es el punto.
+### Default themes (Basic plan)
+| ID | Name | Mode | Character |
+|---|---|---|---|
+| `tomato-cream` | Tomato | Light | **Default.** Warm ivory ground, tomato brand, cream surfaces |
+| `soft-blue-kitchen` | Slate Kitchen | Light | Calm slate blue, linen surfaces, planning feel |
+| `periwinkle-lavender` | Classic Indigo | Light | Legacy indigo (kept for users who prefer it) |
+| `jet-whale` | Jet Stream | Dark | Default dark — teal on deep ocean |
 
-**La Regla del Gradiente de Página.** El fondo de la app usa un gradiente `linear-gradient(180deg, rgba(238,242,255,0.72) 0%, rgba(240,253,244,0.5) 42%, rgba(248,250,252,0.96) 100%)` — una transición de índigo suave a menta a blanco. Es invisible en uso pero da profundidad atmosférica. Prohibido en cards o superficies internas.
+### Premium themes
+| ID | Name | Mode |
+|---|---|---|
+| `blush-tomato` | Blush Tomato | Light |
+| `royal-pink` | Royal Blue | Light |
+| `sage-cream` | Sage | Light |
+| `peach-vanilla` | Peach Blossom | Light |
+| `lavender-mist` | Lavender Mist | Light |
+| `bright-stone` | Bright Sun | Dark |
+| `turquoise-black` | Turquoise | Dark |
+| `midnight-forest` | Midnight Forest | Dark |
+| `deep-ocean` | Deep Ocean | Dark |
+| `warm-ember` | Warm Ember | Dark |
+| `sulu-fir` | Sulu | Light |
 
-## 3. Typography
+### Theme rules
+- Never delete a theme that has been shipped. Users may have it stored.
+- Never hardcode brand colors directly in components. Always use `--hf-brand`, `--button-primary-bg`, `--nav-active-text`, etc.
+- When adding a new theme, define all 40+ tokens. A theme with missing tokens will partially inherit from the previous theme and look wrong.
+- `DEFAULT_THEME_ID` and `DEFAULT_DARK_THEME_ID` are the fallbacks for Basic users and OS-preference detection.
+- Premium themes fall back to the Basic default of the same mode when a user downgrades.
 
-**Display/Body Font:** Montserrat (con fallback `"Segoe UI"`, `system-ui`, `-apple-system`, `sans-serif`)
-**No hay fuente de display distinta** — Montserrat carga toda la jerarquía con peso y tamaño.
+### Token naming convention
+- `--app-bg`: page background
+- `--surface`: card/modal/panel background
+- `--surface-muted`: subtle element background (tags, highlights)
+- `--text-primary`, `--text-secondary`, `--text-muted`: text hierarchy
+- `--border-soft`, `--border-strong`, `--border-focus`: border states
+- `--button-primary-bg`, `--button-primary-text`: main CTA
+- `--hf-brand`: the semantic brand color (used throughout for brand accents)
+- `--hf-brand-dark`: hover/pressed state of brand
+- `--hf-brand-rgb`: brand as `R, G, B` values (for use in `rgba()`)
+- `--nav-active-bg`, `--nav-active-text`: active navigation state
+- `--chip-active-bg`, `--chip-active-text`: active filter/tab state
 
-**Character:** Geométrica y cálida al mismo tiempo. El peso 700 en títulos da autoridad sin frialdad; el 600 en body da consistencia sin monotonía. La escala tipográfica es compacta (ratio ~1.2) — esto es una herramienta, no una revista.
+---
 
-### Hierarchy
-- **Headline** (700, 22px, 1.2): Títulos de página y sección — `.kitchen-title`, headers de card. Primera cosa que lee el ojo.
-- **Title** (700, 18–20px, 1.3): Títulos de modal, nombres de platos en tarjetas. Un nivel por debajo sin perder autoridad.
-- **Body** (600, 14–15px, 1.5): Todo el contenido de acción: etiquetas de form, texto en cards, opciones de menú. El 600 (semi-bold) es intencionado — nunca texto normal aquí.
-- **Label** (700, 12px, 1.2, `letter-spacing: 0.04em`): Badges de estado, categorías uppercase, metadata auxiliar. Siempre acompañado de color de estado.
-- **Caption** (600, 11–13px, 1.4): Timestamps, contadores, subtítulos de dato. Siempre en `--hf-muted`.
+## 3. Default Palette: Tomato Cream
 
-### Named Rules
-**La Regla del Semi-Bold Mínimo.** Este sistema no usa `font-weight: 400` en ningún elemento visible. El mínimo es 600. La app es concisa, no laxa — el peso tipográfico lo refleja.
+The primary palette. Not decorative — functional. Every value has a job.
 
-## 4. Elevation
+| Token | Value | Use |
+|---|---|---|
+| `--hf-brand` | `#C6533F` | Primary actions, active states, focus rings |
+| `--hf-brand-dark` | `#9F3F31` | Hover and pressed on brand elements |
+| `--hf-brand-light` | `#E07860` | Accent, secondary highlights |
+| `--app-bg` | `#FAF6F1` | Page background |
+| `--surface` | `#FFFFFF` | Cards, modals, inputs |
+| `--surface-muted` | `#F0E9E1` | Tag backgrounds, row highlights |
+| `--text-primary` | `#25211D` | Primary content |
+| `--text-secondary` | `#4A3F38` | Supporting content |
+| `--text-muted` | `#706A63` | Metadata, captions |
+| `--border-soft` | `#E5DDD3` | Card and input borders at rest |
+| `--border-focus` | `#C6533F` | Focus state border |
+| `--hf-danger` | `#B42318` | Destructive actions, errors |
 
-El sistema usa sombras ambientales y estructurales — nunca decorativas. La profundidad no es espectáculo; es arquitectura visual.
+---
 
-### Shadow Vocabulary
-- **Ambient Surface** (`0 10px 25px -5px rgba(0, 0, 0, 0.05)`): Cards y panels en reposo. Suficiente para separar del fondo de página; insuficiente para llamar atención.
-- **Card Lift** (`0 10px 30px rgba(15, 23, 42, 0.08)`): Cards de platos y semana. Elevación ligera en reposo.
-- **Overlay Deep** (`0 24px 60px rgba(15, 23, 42, 0.20)`): Modales y drawers. El mayor valor del sistema — reservado para cosas que flotan sobre toda la UI.
-- **Focus Ring** (`outline: 2px solid color-mix(in srgb, var(--hf-brand) 40%, transparent); outline-offset: 2px`): Estado de foco para teclado. No es sombra sino contorno — coherente con WCAG AA.
+## 4. Typography
 
-### Named Rules
-**La Regla del Flat en Reposo.** Las superficies están planas en reposo. La sombra es una respuesta a estado (hover, elevación por z-index, superposición de modal), no una decoración aplicada a todo.
+**Font:** Montserrat — `"Montserrat", "Segoe UI", system-ui, -apple-system, sans-serif`
 
-## 5. Components
+No display font. No variable weight. No system fallback that looks different on Windows. Montserrat carries the whole hierarchy through weight and size.
+
+### Scale
+| Role | Size | Weight | Line height | Use |
+|---|---|---|---|---|
+| Headline | 22px | 800 | 1.2 | Page titles, header titles |
+| Title | 18–20px | 700 | 1.3 | Modal titles, card names |
+| Body | 14–15px | 600 | 1.5 | Form labels, card content, list items |
+| Label | 12px | 700 | 1.2 | Badges, uppercase metadata, status pills |
+| Caption | 11–13px | 600 | 1.4 | Timestamps, counts, helper text |
+
+**Rule: no font-weight below 600 in any visible element.** The product is concise and decisive. A regular weight here would look unfinished.
+
+**Rule: body line length ≤ 68ch.** Mobile is shorter. Don't let long paragraphs exist in the UI — if something needs more than 3 sentences, it belongs in an onboarding screen, not a card.
+
+---
+
+## 5. Elevation
+
+Shadows answer a single question: "is this floating above something else?" If the answer is no, there is no shadow.
+
+| Level | Value | Use |
+|---|---|---|
+| Flat | none | Inline elements, non-interactive list rows |
+| Card | `0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.07)` | Content cards at rest |
+| Lifted | `0 4px 6px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.10)` | Cards on hover, floating UI |
+| Overlay | `0 16px 48px rgba(0,0,0,0.16)` | Modals, drawers, bottom sheets |
+| Brand | `0 8px 22px rgba(198,83,63,0.26)` | Primary CTA buttons (theme-specific) |
+
+**Rule:** shadows are responses to elevation state, not decoration. A list item with a shadow and no hover state is wrong.
+
+---
+
+## 6. Components
 
 ### Buttons
-Los botones son píldoras — `border-radius: 999px`. Esta decisión es sistémica y no se rompe. Un botón rectangular aquí sería un error de vocabulario.
 
-- **Primary:** Fondo `--hf-brand` (`#4f46e5`), texto blanco, `padding: 12px 16px`, `font-weight: 700`. Hover: `--hf-brand-dark` (`#4338ca`). `min-height: 48px` en móvil.
-- **Secondary:** Fondo `--hf-surface-soft` (`#eef2ff`), texto `--hf-text`, borde `--hf-border`. Misma geometría que el primario.
-- **Ghost:** Fondo transparente, borde `--hf-border`, texto `--hf-text`. Para acciones terciarias — destruir, cancelar.
-- **Danger:** Fondo `#b42318`, texto blanco. Solo para acciones destructivas irreversibles.
-- **Focus:** `outline: 2px solid color-mix(in srgb, var(--hf-brand) 40%, transparent); outline-offset: 2px`. Siempre presente — WCAG AA no es opcional.
-- **Disabled:** `opacity: 0.65; cursor: not-allowed`. Sin cambio de forma.
+Pills: `border-radius: 999px`. This is not negotiable. A rectangular button in this system is a vocabulary error.
 
-### Cards / Containers
-- **Corner Style:** `border-radius: 24px` (--hf-radius-lg) para cards principales, modales, y panels. `border-radius: 14px` para cards secundarias (listas de platos, items de spesa).
-- **Background:** `--hf-surface` (#fff) siempre. Las cards nunca toman el color de fondo de página.
-- **Shadow:** Ambient Surface en reposo; Card Lift en cards de semana.
-- **Border:** Opcional — `1px solid --hf-border` en cards con fondo #f8fafc o sin sombra propia.
-- **Internal Padding:** 24px (`--spacing-lg`) estándar; 16–20px en cards compactas.
+| Variant | Background | Text | Use |
+|---|---|---|---|
+| Primary | `--button-primary-bg` | `--button-primary-text` | One per screen area. The main action. |
+| Secondary | `--button-secondary-bg` | `--button-secondary-text` | Supporting actions adjacent to primary |
+| Ghost | `transparent` + `--border-soft` border | `--text-primary` | Cancel, dismiss, tertiary |
+| Danger | `#B42318` | `#FFFFFF` | Irreversible destructive actions only |
 
-### Inputs / Fields
-- **Style:** Borde `1px solid --hf-border`, fondo blanco, `border-radius: 24px` (--hf-radius-lg).
-- **Font size:** 14px mínimo en móvil (evita zoom automático en iOS).
-- **Focus:** `outline: 2px solid color-mix(in srgb, var(--hf-brand) 35%, white); outline-offset: 1px`.
-- **Error:** Borde `--hf-danger`, mensaje inline en rojo debajo del campo.
-- **Disabled:** `opacity: 0.65`.
+- `min-height: 44px` on all mobile tap targets
+- `font-weight: 700` on button labels
+- Focus: `outline: 2px solid color-mix(in srgb, var(--hf-brand) 40%, transparent); outline-offset: 2px`
+- Disabled: `opacity: 0.55; cursor: not-allowed`
+- Hover on primary: lighten to `--hf-brand-dark`. Do not use a glow or scale transform.
 
-### Chips / Pills
-- **Filter chips:** `border-radius: 999px`, fondo `#f8fafc`, borde `--hf-border`. Activo: fondo `--hf-surface-soft`, borde `rgba(--hf-brand, 0.5)`.
-- **Status pills:** `border-radius: 999px`, 11–12px, `font-weight: 600`, color semántico por estado (success/warning/info/danger).
-- **Category chips:** Color de fondo y texto definidos por la paleta de categorías del usuario (personalizables).
+### Cards
+
+- `border-radius: 16–24px` on content cards (`--radius-lg`, `--radius-xl`)
+- Background: `--surface` (`#FFF`) always. Cards do not take the page background color.
+- Border: `1px solid var(--card-border)` when on a muted background; omit when a shadow is sufficient
+- Internal padding: 20–24px standard, 14–16px compact list items
+- Do not nest cards. If you're putting a card inside a card, rethink the layout.
+- Do not add a shadow to a card that has no hover state.
+
+### Modals
+
+- Background: `--modal-bg`
+- Border: `1px solid var(--modal-border)`
+- `border-radius: 20–24px`
+- Overlay: `rgba(0,0,0,0.44)` backdrop
+- Header: title (700, 17px) + optional subtitle, padding 20–24px
+- Footer: action buttons right-aligned; cancel on left if included
+- Destructive modals: body text must name the consequence clearly ("Se eliminará este plato permanentemente"). The danger button goes last.
+- Do not put raw forms inside modals without visual breathing room. 20px padding minimum.
+- Do not use a modal for something that can live inline or in a bottom sheet.
+
+### Inputs and Forms
+
+- `border-radius: 14px` (`--radius-md`)
+- Height: `44px` (`--input-height`)
+- Border: `1px solid var(--input-border)` at rest
+- Focus: border becomes `--input-focus-border` (the brand color), no outer glow
+- Placeholder: `--input-placeholder` color, `font-weight: 500` (lighter than input text)
+- Error: border becomes `--hf-danger`, inline error message below the field in `--danger-text`
+- Label: `font-weight: 700`, `font-size: 13px`, `margin-bottom: 6px`, always above the field
+- Disabled: `opacity: 0.55`
+- Select elements: styled consistently with inputs — no default OS chrome
+
+### Chips, Pills, Badges
+
+- Chips and filter pills: `border-radius: 999px`, `font-weight: 700`, `font-size: 12–13px`
+- Inactive: `--chip-bg` background, `--chip-text` text, `--chip-border` border
+- Active: `--chip-active-bg` background, `--chip-active-text` text, no border or brand border
+- Status badges: semantic colors only (success/warning/danger/info). Do not invent new badge colors.
+- Category chips: user-defined color. Use `--category-bg` and `--category-text` from context.
+- Do not use random colors for badges that do not represent a semantic state.
 
 ### Navigation
-- **Desktop (top bar):** Sticky, fondo blanco, `border-bottom: 1px solid --hf-border`. Links 14px/600, activo: fondo `--hf-surface-soft`, color `--hf-brand`.
-- **Mobile (bottom nav):** Fixed, `backdrop-filter: blur(12px)`, fondo `rgba(255,255,255,0.7)`. 4 tabs, iconos 22px stroke, labels 12px/600. Tab activa: fondo `--hf-surface-soft`, color `--hf-brand`.
 
-### Signature Component: Day Cards (WeekPage)
-Las tarjetas de día son el corazón visual de la app. Cada día tiene un color de fondo tenue y distinto (índigo pálido el lunes, cian el martes, amarillo el miércoles, etc.) — una paleta pastel para el reconocimiento rápido de día sin comprometer legibilidad. `border-radius: 16–24px`, padding generoso, `min-height: 288–310px`.
+- Top-level mobile nav: fixed bottom bar, `backdrop-filter: blur(14px)`, `--nav-bg` background
+- Active tab: `--nav-active-bg` fill on icon area, `--nav-active-text` color
+- Desktop top nav: sticky, `border-bottom: 1px solid var(--border-soft)`
+- Active link: brand color text + subtle background tint
+- Never use more than 5 items in bottom nav
 
-## 6. Do's and Don'ts
+### Page Headers (phdr-* system)
 
-### Do:
-- **Do** usar `--hf-brand` (`#4f46e5`) exclusivamente para acciones, estados activos y foco. Un elemento por fila visual como máximo.
-- **Do** mantener `border-radius: 999px` en todos los botones y controles pequeños (toggles, chips, pills). La píldora es el vocabulario de este sistema.
-- **Do** usar `font-weight: 600` o `700` en todo texto visible. Nunca 400 ni 500.
-- **Do** usar `min-height: 44px` en todos los targets táctiles en móvil — el sistema ya los cumple salvo `.kitchen-button.is-small` (revisar caso por caso).
-- **Do** usar `prefers-reduced-motion` — ya incluido al final de kitchen.css. Toda animación nueva debe respetar este media query.
-- **Do** comunicar estados con color + forma (nunca solo color) para cumplir con WCAG y daltónicos.
+The shared page header uses the `.phdr-*` component classes defined in `kitchen.css`. See the "STANDARD PAGE HEADER EXTENSIONS" section for the full class list.
 
-### Don't:
-- **Don't** usar apps bancarias, corporativas o de administración como referencia (Santander, BBVA, SAP). Prohibido el gris plano, las tablas densas sin respiración, los botones rectangulares apagados.
-- **Don't** añadir un segundo color de acción. El índigo es el único. Un segundo acento compite y rompe "La Regla del Color Único".
-- **Don't** usar `color: #98a2b3` ni ningún valor más claro que `#667085` para texto sobre fondo claro — falla WCAG AA (ratio mínimo 4.5:1).
-- **Don't** usar `font-weight: 400` en ningún texto del producto.
-- **Don't** añadir gradientes de texto (`background-clip: text`) — no están en el vocabulario de este sistema.
-- **Don't** usar glassmorphismo más allá del header/bottom-nav ya existente. El `backdrop-filter: blur(12px)` está justificado en esos dos elementos. Extenderlo a cards o modales sería sobreutilizarlo.
-- **Don't** aplicar el gradiente de fondo de página (`--hf-bg-gradient`) en superficies internas — solo en el canvas raíz de la app.
-- **Don't** usar `clamp()` para tipografía en pantallas de producto (dashboard, listados, formularios). Las pantallas tipo "landing" del login pueden usarlo; el core product no.
+- Pill segmented tabs: `.phdr-seg-group` / `.phdr-seg` / `.phdr-seg.is-active`
+- Search row: `.phdr-search-row` / `.phdr-search-input` / `.phdr-icon-btn`
+- Primary CTA: `.phdr-cta-btn`
+- Filter indicator dot: `.phdr-filter-dot`
+
+All tab active states use `--button-primary-bg`. All inputs use `--border-soft` / `--border-focus`. All icon buttons use `--surface` / `--border-soft`.
+
+---
+
+## 7. Landing Page
+
+The landing page inherits the app token system via `landing.css`. When the default theme changes, the landing page changes automatically.
+
+Rules:
+- Hero: use `--hf-bg-gradient` as background. No custom gradient.
+- Eyebrow labels: `--hf-brand` text, `--app-bg-soft` background
+- Hero title: 800 weight, `clamp(2rem, 5.5vw, 3.2rem)`
+- Section alt rows: `--surface-muted` background — not a new color
+- Feature cards: same card rules as above
+- Pricing: recommended plan gets `--hf-brand` border
+- CTAs: use `kitchen-button` classes, not custom button styles
+- No custom purple/indigo overrides in landing content
+
+---
+
+## 8. Gamification and Rewards
+
+Gamification should feel like a quality achievement — not like a children's app rewarding you for clicking a button.
+
+- XP/reward toasts: clean, brief, brand-color accent. No confetti animation by default.
+- Achievement banners: use card-like surface with brand accent. Keep it compact.
+- Challenge cards: structured like any other card. Color only for semantic states (active/complete/locked).
+- Progress indicators: thin, brand-colored. Not animated loops.
+- Avoid: star explosions, rainbow gradients, oversized animations, "level up!" text in comic sans energy.
+
+---
+
+## 9. Motion
+
+Motion must earn its place. If an animation can be removed and the user doesn't notice, it should be removed.
+
+| Role | Duration | Easing |
+|---|---|---|
+| Micro feedback (tap, press) | 80–120ms | ease-out |
+| Component transitions (expand, reveal) | 180–250ms | ease-out-quart |
+| Page/route transitions | 250–350ms | ease-out-quart |
+| Overlay in/out | 200–280ms | ease-out |
+
+- Easing: always ease-out for entries. Slightly faster ease-in for exits.
+- Never animate layout properties (`width`, `height`, `top`, `left`). Use `transform` and `opacity`.
+- Never bounce or spring on functional UI. Reserve spring curves for deliberate delight moments (reward, first-run).
+- Always respect `prefers-reduced-motion`. The media query block at the end of `kitchen.css` handles this globally — any new animation must work within it.
+
+---
+
+## 10. Accessibility
+
+- Color contrast: minimum 4.5:1 for text on backgrounds (WCAG AA). Check `--text-muted` on `--surface-muted` on each theme.
+- Focus states: visible on all interactive elements. `outline: 2px solid color-mix(in srgb, var(--hf-brand) 40%, transparent); outline-offset: 2px`
+- Color is never the only indicator of state. Pair color with shape, icon, or text.
+- Touch targets: `min-height: 44px` on all tappable elements.
+- Semantic HTML: buttons are `<button>`, links are `<a>`, form fields have `<label>`.
+- `aria-label` on icon-only buttons.
+
+---
+
+## 11. Do / Don't
+
+### Do
+- Use `--hf-brand` and the semantic tokens. Never hardcode brand hex values in components.
+- Keep primary actions at one per screen area. The brand color earns its emphasis from scarcity.
+- Use `font-weight: 600` minimum on all visible text.
+- Use `min-height: 44px` on all mobile touch targets.
+- Communicate state with color + shape/icon/text, never with color alone.
+- Use `prefers-reduced-motion` — already global in `kitchen.css`.
+- Make destructive action consequences explicit in writing before the confirm button.
+
+### Don't
+- Don't use purple or indigo as a primary brand color. The `periwinkle-lavender` theme is legacy, not the identity.
+- Don't use gradient text (`background-clip: text` + gradient). Not in this vocabulary.
+- Don't use glassmorphism on cards or modals. It is only justified on the sticky nav.
+- Don't add a colored border stripe to a card side (`border-left: 4px solid brand`). It is a design cliché.
+- Don't use color for status without a paired visual indicator.
+- Don't put raw form fields inside a modal without padding.
+- Don't nest cards.
+- Don't add shadows to elements that are not elevated.
+- Don't use `font-weight: 400` anywhere in product UI.
+- Don't use the hero gradient (`--hf-bg-gradient`) on internal surfaces.
+- Don't create new color values for elements that should use existing semantic tokens.
+- Don't use animations on layout properties.
+- Don't use confetti, star explosions, or oversized reward animations in gamification.

@@ -54,60 +54,60 @@ body {
     Keep hardcoded colors for intentional illustrations only; reusable surfaces,
     text, controls, cards, modals, badges and state feedback should use tokens.
   */
-  /* Periwinkle theme — page sits on soft lavender, cards stay white */
-  --app-bg: #f4f4ff;
-  --hf-bg-gradient: none;
-  --app-bg-soft: #e4e4ff;
+  /* Tomato Cream theme — warm ivory ground, cream surfaces, tomato brand */
+  --app-bg: #FAF6F1;
+  --hf-bg-gradient: linear-gradient(180deg, rgba(198, 83, 63, 0.09) 0%, rgba(250, 246, 241, 0.97) 48%, #FAF6F1 100%);
+  --app-bg-soft: #F5EDE5;
   --surface: #ffffff;
   --surface-elevated: #ffffff;
-  --surface-muted: #f8f8ff;
-  --surface-glass: rgba(255, 255, 255, 0.74);
+  --surface-muted: #F0E9E1;
+  --surface-glass: rgba(255, 255, 255, 0.85);
 
-  --text-primary: #1a1a2e;
-  --text-secondary: #4e4e6e;
-  --text-muted: #6b6b8a;
+  --text-primary: #25211D;
+  --text-secondary: #4A3F38;
+  --text-muted: #706A63;
   --text-inverse: #ffffff;
-  --text-disabled: #9b9bb8;
+  --text-disabled: #B5A89E;
 
-  --border-soft: #e0e0f0;
-  --border-strong: #c5c5e0;
-  --border-focus: #8b89ff;
+  --border-soft: #E5DDD3;
+  --border-strong: #CCB9AE;
+  --border-focus: #C6533F;
 
   --input-bg: #ffffff;
-  --input-border: #d8d8ee;
-  --input-text: #1a1a2e;
-  --input-placeholder: #8a8aa6;
+  --input-border: #DCCFC7;
+  --input-text: #25211D;
+  --input-placeholder: #9D8F87;
   --input-focus-bg: #ffffff;
-  --input-focus-border: #8b89ff;
+  --input-focus-border: #C6533F;
 
   --card-bg: #ffffff;
-  --card-border: #e0e0f0;
+  --card-border: #E5DDD3;
   --card-shadow: var(--shadow-md);
 
-  --button-primary-bg: #6260ff;
+  --button-primary-bg: #C6533F;
   --button-primary-text: #ffffff;
-  --button-secondary-bg: #e9e9ff;
-  --button-secondary-text: #1a1a2e;
+  --button-secondary-bg: #FBE8E3;
+  --button-secondary-text: #9F3F31;
   --button-ghost-bg: transparent;
-  --button-disabled-bg: #ededf7;
-  --button-disabled-text: #9b9bb8;
+  --button-disabled-bg: #F0E9E1;
+  --button-disabled-text: #B5A89E;
 
-  --nav-bg: rgba(255, 255, 255, 0.78);
-  --nav-active-bg: #e4e4ff;
-  --nav-active-text: #4b49cc;
-  --nav-muted-text: #6b6b8a;
+  --nav-bg: rgba(255, 255, 255, 0.86);
+  --nav-active-bg: #FBE8E3;
+  --nav-active-text: #9F3F31;
+  --nav-muted-text: #706A63;
 
-  --chip-bg: #f8f8ff;
-  --chip-text: #3a3a55;
-  --chip-active-bg: #e4e4ff;
-  --chip-active-text: #4b49cc;
-  --chip-border: #dcdcf2;
+  --chip-bg: #F5EDE5;
+  --chip-text: #5A3D35;
+  --chip-active-bg: #FBE8E3;
+  --chip-active-text: #9F3F31;
+  --chip-border: #E5DDD3;
 
   --modal-bg: #ffffff;
-  --modal-border: #e0e0f0;
+  --modal-border: #E5DDD3;
   --dropdown-bg: #ffffff;
-  --dropdown-hover-bg: #f4f4ff;
-  --dropdown-selected-bg: #e4e4ff;
+  --dropdown-hover-bg: #F5EDE5;
+  --dropdown-selected-bg: #FBE8E3;
 
   --success-bg: #f0fdf4;
   --success-text: #166534;
@@ -121,36 +121,36 @@ body {
   --info-bg: #eff6ff;
   --info-text: #1e40af;
   --info-border: #bfdbfe;
-  --premium-bg: #f5f3ff;
-  --premium-text: #5b21b6;
-  --premium-border: #ddd6fe;
+  --premium-bg: #E5F0F6;
+  --premium-text: #3E6F8E;
+  --premium-border: #BAD4E4;
 
   --hf-bg: var(--app-bg);
   --hf-surface: var(--surface);
   --hf-surface-soft: var(--app-bg-soft);
-  --hf-surface-mint: #f0fdf4;
-  --hf-surface-peach: #fff7ed;
+  --hf-surface-mint: #EAF4EA;
+  --hf-surface-peach: #FBE8E3;
   --hf-text: var(--text-primary);
   --hf-muted: var(--text-muted);
-  --hf-brand: #6260ff;
-  --hf-brand-dark: #4b49cc;
-  --hf-brand-darker: #3d3bb3;
-  --hf-brand-light: #8b89ff;
-  --hf-brand-strong: #4b49cc;
-  --hf-primary: #6260ff;
-  --hf-primary-strong: #4b49cc;
-  --hf-brand-soft-border: #c9c8ff;
-  --hf-brand-soft-hover: #dbdaff;
+  --hf-brand: #C6533F;
+  --hf-brand-dark: #9F3F31;
+  --hf-brand-darker: #7A2E22;
+  --hf-brand-light: #E07860;
+  --hf-brand-strong: #9F3F31;
+  --hf-primary: #C6533F;
+  --hf-primary-strong: #9F3F31;
+  --hf-brand-soft-border: #E8B9AE;
+  --hf-brand-soft-hover: #F5CEC6;
   --hf-border: var(--border-soft);
   --hf-danger: #b42318;
-  /* Spec aliases (Periwinkle system) */
+  /* Spec aliases (Tomato Cream system) */
   --color-primary: var(--hf-brand);
   --color-primary-dark: var(--hf-brand-dark);
   --color-primary-light: var(--app-bg-soft);
-  --color-primary-rgb: 98, 96, 255;
+  --color-primary-rgb: 198, 83, 63;
   --background-page: var(--app-bg);
   --background-card: var(--card-bg);
-  --background-card-empty: #f8f8ff;
+  --background-card-empty: #FAF6F1;
   --background-element: var(--surface-muted);
   --border-color: var(--border-soft);
   --border-subtle: var(--border-soft);
@@ -165,7 +165,7 @@ body {
   --hf-glass-border: rgba(255, 255, 255, 0.9);
 
   /* ── Unified component tokens ── */
-  --hf-brand-rgb: 98, 96, 255;
+  --hf-brand-rgb: 198, 83, 63;
   --btn-radius: 999px;
   --btn-shadow-primary: 0 4px 14px rgba(var(--hf-brand-rgb), 0.3);
   --filter-radius: 999px;
@@ -8834,7 +8834,7 @@ body {
   color: #78350f;
 }
 
-/* Info button with recipe attached — tinted indigo */
+/* Info button with recipe attached — tinted brand */
 .kitchen-icon-button.info.has-recipe {
   color: var(--hf-brand-dark);
   border-color: var(--hf-brand-soft-border);
@@ -18852,7 +18852,7 @@ td.recipe-qty-scaled {
   box-shadow: none;
 }
 
-/* Active tab button — clean indigo pill, no chunky ring */
+/* Active tab button — clean brand pill, no chunky ring */
 [data-theme="dark"] .kitchen-dishes-tabs .kitchen-tab-button.is-active,
 [data-theme="dark"] .dishes-explorer-nav .kitchen-tab-button.is-active,
 [data-theme="dark"] .shopping-tabs-inline .kitchen-tab-button.is-active {
@@ -18925,7 +18925,7 @@ td.recipe-qty-scaled {
 
 /* ── Selected / active chip ───────────────────────────────────── */
 /* Was rgba(248,249,255,0.98) — near-white. Replace with a clear  */
-/* but quiet indigo tint so the active day reads at a glance.     */
+/* but quiet brand tint so the active day reads at a glance.      */
 [data-theme="dark"] .kitchen-weekdays-item.is-selected {
   background: rgba(var(--hf-brand-rgb), 0.13);
   border-color: rgba(var(--hf-brand-rgb), 0.42);
