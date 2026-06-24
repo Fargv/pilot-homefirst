@@ -27132,7 +27132,8 @@ body,
 
 .settings-theme-card.is-selected {
   border-color: var(--hf-brand);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--hf-brand) 18%, transparent), var(--card-shadow);
+  background: color-mix(in srgb, var(--hf-brand) 5%, var(--card-bg));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--hf-brand) 20%, transparent), var(--card-shadow);
 }
 
 .settings-theme-card.is-locked {
@@ -27227,7 +27228,7 @@ body,
 
 @media (max-width: 520px) {
   .settings-theme-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .settings-theme-heading {

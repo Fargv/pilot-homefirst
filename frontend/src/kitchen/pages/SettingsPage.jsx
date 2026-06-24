@@ -850,7 +850,6 @@ export default function SettingsPage() {
       setTheme(previousThemeId);
       syncThemeFromUser(previousThemeId, { canUsePremiumThemes: canSelectPremiumThemes });
       setThemeFeedback("No se pudo guardar el tema");
-      setError(err.message || "No se pudo guardar el tema");
     } finally {
       setThemeSavingId("");
     }

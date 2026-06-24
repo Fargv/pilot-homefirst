@@ -1,16 +1,25 @@
-export const DEFAULT_THEME_ID = "periwinkle-lavender";
+export const DEFAULT_THEME_ID = "tomato-cream";
 export const DEFAULT_DARK_THEME_ID = "jet-whale";
 
 export const APP_THEME_IDS = [
+  // New professional default themes (Basic)
+  "tomato-cream",
+  "soft-blue-kitchen",
+  // New premium themes
+  "blush-tomato",
+  // Existing premium light themes
   "royal-pink",
   "sulu-fir",
-  "jet-whale",
-  "bright-stone",
-  "turquoise-black",
-  "periwinkle-lavender",
   "sage-cream",
   "peach-vanilla",
   "lavender-mist",
+  // Legacy basic light (kept for existing users)
+  "periwinkle-lavender",
+  // Basic dark
+  "jet-whale",
+  // Premium dark themes
+  "bright-stone",
+  "turquoise-black",
   "midnight-forest",
   "deep-ocean",
   "warm-ember"
@@ -19,18 +28,25 @@ export const APP_THEME_IDS = [
 const BASIC_ACCESS = new Set(["free", "basic", "pro", "premium"]);
 const PREMIUM_ACCESS = new Set(["pro", "premium"]);
 
-// Basic users reach Periwinkle (light) + Jet Stream (dark) via the toggle;
-// everything else is Pro/Premium.
 const THEME_PLAN_ACCESS = {
+  // New default themes — available to all plans
+  "tomato-cream": BASIC_ACCESS,
+  "soft-blue-kitchen": BASIC_ACCESS,
+  // New premium
+  "blush-tomato": PREMIUM_ACCESS,
+  // Existing premium light
   "royal-pink": PREMIUM_ACCESS,
   "sulu-fir": PREMIUM_ACCESS,
-  "jet-whale": BASIC_ACCESS,
-  "bright-stone": PREMIUM_ACCESS,
-  "turquoise-black": PREMIUM_ACCESS,
-  "periwinkle-lavender": BASIC_ACCESS,
   "sage-cream": PREMIUM_ACCESS,
   "peach-vanilla": PREMIUM_ACCESS,
   "lavender-mist": PREMIUM_ACCESS,
+  // Legacy basic light
+  "periwinkle-lavender": BASIC_ACCESS,
+  // Basic dark
+  "jet-whale": BASIC_ACCESS,
+  // Premium dark
+  "bright-stone": PREMIUM_ACCESS,
+  "turquoise-black": PREMIUM_ACCESS,
   "midnight-forest": PREMIUM_ACCESS,
   "deep-ocean": PREMIUM_ACCESS,
   "warm-ember": PREMIUM_ACCESS
