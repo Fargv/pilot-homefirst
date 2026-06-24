@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, BookOpen, Info, Pencil, Copy, Trash2, CalendarPlus, Plus } from "lucide-react";
+import { BookOpen, Pencil, Copy, Trash2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useCookingSession } from "../contexts/CookingSessionContext.jsx";
+import { getRecipeBaseServings } from "../utils/recipeScaling.js";
 import { apiRequest } from "../api.js";
 import { createSyncedApi, dishesQuery, fetchCached } from "../queryClient.js";
 
@@ -152,6 +154,8 @@ export default function DishesPage() {
   const [showStickyAction, setShowStickyAction] = useState(false);
   const [dinnerGateOpen, setDinnerGateOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [openDishMenuId, setOpenDishMenuId] = useState(null);
+  const [openIngMenuId, setOpenIngMenuId] = useState(null);
   const todayKey = new Date().toISOString().slice(0, 10);
   const currentWeekStart = useMemo(
     () => getMondayISO(new Date(`${todayKey}T00:00:00Z`)),
@@ -165,6 +169,15 @@ export default function DishesPage() {
   });
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const canUseDinners = isDiodGlobalMode || canUseDinnersFeature(user);
+  const { startSession } = useCookingSession() ?? {};
+
+  // Close any open kebab menu on outside click
+  useEffect(() => {
+    if (!openDishMenuId && !openIngMenuId) return undefined;
+    const close = () => { setOpenDishMenuId(null); setOpenIngMenuId(null); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [openDishMenuId, openIngMenuId]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
@@ -1019,7 +1032,7 @@ export default function DishesPage() {
               aria-label="Filtros avanzados"
               aria-expanded={filterPanelOpen}
             >
-              <SlidersHorizontal size={18} />
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
               {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "" || catalogOnly) ? (
                 <span className="phdr-filter-dot" aria-hidden="true" />
               ) : null}
@@ -1042,166 +1055,45 @@ export default function DishesPage() {
             />
           ) : null}
 
-          {/* ── PANEL DE FILTROS (colapsable) ── */}
-          {filterPanelOpen ? (
-            <div className="dishes-filter-panel">
-              {/* Sección Visibilidad: Solo cenas + Mis platos */}
-              {!isIngredientsTab ? (
-                <div className="dishes-filter-section">
-                  <span className="dishes-filter-section-title">Visibilidad</span>
-                  <div className="dishes-filter-panel-checks">
-                    <label className="dishes-filter-check-row">
-                      <input
-                        type="checkbox"
-                        className="dishes-filter-check"
-                        checked={dinnerOnly}
-                        onChange={() => {
-                          if (!canUseDinners) { setDinnerGateOpen((v) => !v); return; }
-                          setDinnerOnly((v) => !v);
-                        }}
-                      />
-                      <span>Solo cenas</span>
-                    </label>
-                    {!isDiodGlobalMode ? (
-                      <label className="dishes-filter-check-row">
-                        <input
-                          type="checkbox"
-                          className="dishes-filter-check"
-                          checked={mineOnly}
-                          onChange={() => {
-                            setMineOnly((v) => {
-                              if (!v) setCatalogOnly(false);
-                              return !v;
-                            });
-                          }}
-                        />
-                        <span>Mis platos</span>
-                      </label>
-                    ) : null}
-                    <label className="dishes-filter-check-row">
-                      <input
-                        type="checkbox"
-                        className="dishes-filter-check"
-                        checked={catalogOnly}
-                        onChange={() => {
-                          setCatalogOnly((v) => {
-                            if (!v) setMineOnly(false);
-                            return !v;
-                          });
-                        }}
-                      />
-                      <span>Solo catálogo</span>
-                    </label>
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Sección Ingrediente (dishes tab) */}
-              {!isIngredientsTab ? (
-                <div className="dishes-filter-section">
-                  <span className="dishes-filter-section-title">Ingrediente</span>
-                  <div className="dishes-filter-pills dishes-filter-pills--wrap">
-                    <button
-                      type="button"
-                      className={`kitchen-filter-chip${!selectedDishCategoryId ? " is-active is-all" : ""}`}
-                      onClick={() => setSelectedDishCategoryId("")}
-                    >
-                      Todos
-                    </button>
-                    {visibleDishCategoryChips.map((category) => {
-                      const categoryId = String(category?._id || "");
-                      const selected = String(selectedDishCategoryId || "") === categoryId;
-                      return (
-                        <button
-                          key={categoryId}
-                          type="button"
-                          className={`kitchen-filter-chip${selected ? " is-active" : ""}`}
-                          onClick={() => setSelectedDishCategoryId((prev) => (String(prev || "") === categoryId ? "" : categoryId))}
-                        >
-                          <span className="kitchen-filter-chip-dot" style={{ background: category.colorText || "#475467" }} />
-                          <span>{category.name}</span>
-                        </button>
-                      );
-                    })}
-                    {extraDishCategories.length > 0 ? (
-                      <button
-                        type="button"
-                        className="kitchen-filter-chip dishes-cat-more"
-                        onClick={() => setShowAllDishCategories((v) => !v)}
-                      >
-                        {showAllDishCategories ? "Menos" : `+${extraDishCategories.length} más`}
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Sección Categoría (ingredients tab) */}
-              {isIngredientsTab && !ingredientsLoading && ingredientCategories.length > 0 ? (
-                <div className="dishes-filter-section">
-                  <span className="dishes-filter-section-title">Categoría</span>
-                  <div className="dishes-filter-pills dishes-filter-pills--wrap">
-                    <button
-                      type="button"
-                      className={`kitchen-filter-chip${!selectedIngredientCategoryId ? " is-active is-all" : ""}`}
-                      onClick={() => setSelectedIngredientCategoryId("")}
-                    >
-                      Todos
-                    </button>
-                    {visibleIngredientCategoryChips.map((cat) => {
-                      const catId = String(cat._id || "");
-                      const selected = selectedIngredientCategoryId === catId;
-                      return (
-                        <button
-                          key={catId}
-                          type="button"
-                          className={`kitchen-filter-chip${selected ? " is-active" : ""}`}
-                          onClick={() => setSelectedIngredientCategoryId((prev) => (prev === catId ? "" : catId))}
-                        >
-                          {cat.colorText ? <span className="kitchen-filter-chip-dot" style={{ background: cat.colorText }} /> : null}
-                          {cat.name}
-                          <span className="dishes-cat-count">{ingredientCategoryCount[catId] || 0}</span>
-                        </button>
-                      );
-                    })}
-                    {extraIngredientCategories.length > 0 ? (
-                      <button
-                        type="button"
-                        className="kitchen-filter-chip dishes-cat-more"
-                        onClick={() => setShowAllIngredientCategories((v) => !v)}
-                      >
-                        {showAllIngredientCategories ? "Menos" : `+${extraIngredientCategories.length} más`}
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Limpiar filtros */}
-              {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "") ? (
-                <div className="dishes-filter-panel-footer">
-                  <button
-                    type="button"
-                    className="dishes-filter-clear-btn"
-                    onClick={() => {
-                      setMineOnly(false);
-                      setDinnerOnly(false);
-                      setSelectedDishCategoryId("");
-                      setSelectedIngredientCategoryId("");
-                    }}
-                  >
-                    Limpiar filtros
+          {/* ── Active filter chips ── */}
+          {(() => {
+            const chips = [];
+            if (!isIngredientsTab) {
+              if (mineOnly) chips.push({ key: "mine", label: "Mis platos", onRemove: () => setMineOnly(false) });
+              if (catalogOnly) chips.push({ key: "catalog", label: "Solo catálogo", onRemove: () => setCatalogOnly(false) });
+              if (dinnerOnly) chips.push({ key: "dinner", label: "Solo cenas", onRemove: () => setDinnerOnly(false) });
+              if (selectedDishCategoryId) {
+                const cat = dishCategoryMap.get(String(selectedDishCategoryId));
+                if (cat) chips.push({ key: "cat", label: cat.name, onRemove: () => setSelectedDishCategoryId("") });
+              }
+            } else if (selectedIngredientCategoryId) {
+              const cat = ingredientCategories.find((c) => String(c._id) === selectedIngredientCategoryId);
+              if (cat) chips.push({ key: "ingcat", label: cat.name, onRemove: () => setSelectedIngredientCategoryId("") });
+            }
+            if (chips.length === 0) return null;
+            return (
+              <div className="dfc-chips-row">
+                {chips.map((chip) => (
+                  <button key={chip.key} type="button" className="dfc-chip" onClick={chip.onRemove}>
+                    {chip.label}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
                   </button>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+                ))}
+                <button type="button" className="dfc-chip-clear-all" onClick={() => {
+                  setMineOnly(false); setCatalogOnly(false); setDinnerOnly(false);
+                  setSelectedDishCategoryId(""); setSelectedIngredientCategoryId("");
+                }}>
+                  Limpiar
+                </button>
+              </div>
+            );
+          })()}
 
         </PageHeader>
         {/* Onboarding suggestions (outside panel, above grid) */}
         {(isIngredientsTab ? filteredIngredientSuggestions : (activeTab === "main" ? filteredDishSuggestions : [])).length > 0 && (
           <div style={{ padding: "4px 4px 0" }}>
-            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "var(--hf-brand-darker)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "var(--hf-brand)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
               Sugerencias para ti
             </p>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -1212,8 +1104,8 @@ export default function DishesPage() {
                   onClick={() => isIngredientsTab ? openIngredientWithSuggestion(s.text) : openDishWithSuggestion(s.text)}
                   style={{
                     fontSize: 12, padding: "4px 12px", borderRadius: 999,
-                    background: "#eef2ff", border: "1.5px solid #c7d2fe",
-                    color: "#4338ca", cursor: "pointer", fontWeight: 600,
+                    background: "var(--chip-active-bg)", border: "1.5px solid var(--hf-brand)",
+                    color: "var(--chip-active-text)", cursor: "pointer", fontWeight: 600,
                     transition: "background 0.15s"
                   }}
                 >
@@ -1237,74 +1129,59 @@ export default function DishesPage() {
                 const categoryName = ingredient.categoryId?.name || "Sin categoría";
                 const isInfoOpen = ingredientInfoOpenId === ingredient._id && !isInfoMobile;
                 return (
-                  <article className="dk2-card" key={ingredient._id}>
-                    <div className="dk2-main">
-                      <h3 className="dk2-name">{ingredient.name}</h3>
-                      <div className="dk2-pills">
-                        <span className="dk2-pill">{categoryName}</span>
-                        {!ingredient.active ? <span className="dk2-pill dk2-pill-inactive">Inactivo</span> : null}
-                      </div>
+                  <article className="prd-card hf-anim-rise" key={ingredient._id} style={{ "--hf-anim-i": 0 }}>
+                    {/* icon square */}
+                    <div
+                      className="prd-icon"
+                      style={{
+                        background: ingredient.categoryId?.colorBg || "var(--surface-muted)",
+                        color: ingredient.categoryId?.colorText || "var(--text-muted)"
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="m5 11 4-7"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6L20.5 11"/>
+                      </svg>
                     </div>
-                    <div className="dk2-actions">
-                      <div className="kitchen-dish-info-wrap dk2-action-slot">
-                        <button
-                          ref={(node) => registerIngredientInfoButton(ingredient._id, node)}
-                          className="dk2-action"
-                          type="button"
-                          onClick={() => toggleIngredientInfo(ingredient._id)}
-                          aria-label={`Ver detalles de ${ingredient.name}`}
-                          aria-expanded={ingredientInfoOpenId === ingredient._id}
-                          aria-controls={`ingredient-info-${ingredient._id}`}
-                          title="Información"
-                        >
-                          <Info size={17} aria-hidden="true" />
-                        </button>
-                        {isInfoOpen ? (
-                          <div
-                            id={`ingredient-info-${ingredient._id}`}
-                            className="kitchen-dish-info-popover"
-                            role="dialog"
-                            aria-label={`Información de ${ingredient.name}`}
-                            ref={ingredientInfoPopoverRef}
-                          >
-                            <h4 className="kitchen-dish-info-heading">{ingredient.name}</h4>
-                            <p className="kitchen-dish-info-empty">{categoryName}</p>
-                            {!ingredient.active ? (
-                              <p className="kitchen-dish-info-empty">Estado: Inactivo</p>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </div>
-                      <span className="dk2-action-divider" aria-hidden="true" />
+                    {/* info */}
+                    <div className="prd-info">
+                      <h3 className="prd-name">{ingredient.name}</h3>
+                      <span className="prd-cat" style={{ color: ingredient.categoryId?.colorText || "var(--text-muted)" }}>
+                        <span className="prd-cat-dot" />
+                        {categoryName}
+                        {!ingredient.active ? " · Inactivo" : null}
+                      </span>
+                    </div>
+                    {/* kebab */}
+                    <div className="prd-actions" onPointerDown={(e) => e.stopPropagation()}>
                       <button
-                        className="dk2-action"
                         type="button"
-                        onClick={() => startIngredientEdit(ingredient)}
-                        aria-label={`Editar ${ingredient.name}`}
-                        title="Editar"
+                        className="dfc-kebab"
+                        aria-label={`Más acciones para ${ingredient.name}`}
+                        aria-haspopup="menu"
+                        aria-expanded={openIngMenuId === ingredient._id}
+                        onClick={(e) => { e.stopPropagation(); setOpenIngMenuId(openIngMenuId === ingredient._id ? null : ingredient._id); }}
                       >
-                        <Pencil size={16} aria-hidden="true" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/>
+                        </svg>
                       </button>
-                      <span className="dk2-action-divider" aria-hidden="true" />
-                      <button
-                        className="dk2-action"
-                        type="button"
-                        onClick={() => duplicateIngredient(ingredient)}
-                        aria-label={`Duplicar ${ingredient.name}`}
-                        title="Duplicar"
-                      >
-                        <Copy size={16} aria-hidden="true" />
-                      </button>
-                      <span className="dk2-action-divider" aria-hidden="true" />
-                      <button
-                        className="dk2-action is-danger"
-                        type="button"
-                        onClick={() => deleteIngredient(ingredient)}
-                        aria-label={`Eliminar ${ingredient.name}`}
-                        title="Eliminar"
-                      >
-                        <Trash2 size={16} aria-hidden="true" />
-                      </button>
+                      {openIngMenuId === ingredient._id ? (
+                        <div role="menu" className="prd-menu">
+                          <button role="menuitem" className="dfc-menuitem" onClick={() => { setOpenIngMenuId(null); startIngredientEdit(ingredient); }}>
+                            <Pencil size={16} aria-hidden="true" />
+                            Editar producto
+                          </button>
+                          <button role="menuitem" className="dfc-menuitem" onClick={() => { setOpenIngMenuId(null); duplicateIngredient(ingredient); }}>
+                            <Copy size={16} aria-hidden="true" />
+                            Duplicar
+                          </button>
+                          <div className="dfc-menu-sep" />
+                          <button role="menuitem" className="dfc-menuitem dfc-menuitem--danger" onClick={() => { setOpenIngMenuId(null); deleteIngredient(ingredient); }}>
+                            <Trash2 size={16} aria-hidden="true" />
+                            Eliminar producto
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   </article>
                 );
@@ -1336,36 +1213,52 @@ export default function DishesPage() {
               const canDeleteDish = user?.role === "admin" || user?.role === "owner" || user?.globalRole === "diod";
               return (
                 <article
-                  className="dk2-card hf-anim-rise"
+                  className="dfc-card hf-anim-rise"
                   key={dish._id}
-                  style={{ "--hf-anim-i": dishIndex, ...(packColor ? { "--dish-pack-color": packColor } : null) }}
+                  style={{ "--hf-anim-i": dishIndex }}
                 >
-                  <div className="dk2-main">
-                    <h3 className="dk2-name">
-                      {dish.name}
-                      {dish.special ? (
-                        <span
-                          className="dk2-special-star"
-                          title="Plato especial — excluido del plan automático"
-                          aria-label="Plato especial"
-                        >
-                          ★
+                  {/* header: name + badges */}
+                  <div className="dfc-hd">
+                    <h3 className="dfc-name">{dish.name}</h3>
+                    <div className="dfc-badges">
+                      {dish.isDinner ? (
+                        <span className="dfc-badge dfc-badge--dinner" title="Plato de cena">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                          Cena
                         </span>
                       ) : null}
-                    </h3>
-                    <div className="dk2-pills">
-                      <span className="dk2-pill">{dishCategory?.name || "Sin categoría"}</span>
-                      <span className={`dk2-pill dk2-pill-origin is-${dishOrigin.type}`}>{dishOrigin.label}</span>
+                      {dish.special ? (
+                        <span className="dfc-badge dfc-badge--special" title="Plato especial — excluido del plan automático">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 2.5l2.6 5.85 6.4.55-4.85 4.2 1.45 6.25L12 16.2 6.35 19.6l1.45-6.25L2.95 9.4l6.4-.55z"/></svg>
+                          Especial
+                        </span>
+                      ) : null}
                     </div>
+                  </div>
+
+                  {/* meta: category pill + catalog source */}
+                  <div className="dfc-meta">
+                    <span
+                      className="dfc-cat"
+                      style={{
+                        background: dishCategory?.colorBg || "var(--surface-muted)",
+                        color: dishCategory?.colorText || "var(--text-muted)"
+                      }}
+                    >
+                      <span className="dfc-cat-dot" />
+                      {dishCategory?.name || "Sin categoría"}
+                    </span>
                     {isCatalogDish && dish.sourcePackTitle ? (
-                      <div className="dk2-pack-line">
-                        <BookOpen size={11} aria-hidden="true" />
-                        <span>{dish.sourcePackTitle}</span>
-                      </div>
+                      <span className="dfc-catalog-src">
+                        <BookOpen size={13} aria-hidden="true" />
+                        {dish.sourcePackTitle}
+                      </span>
                     ) : null}
                   </div>
+
+                  {/* randomization toggle */}
                   <label
-                    className={`dk2-random${toggleDisabled ? " is-loading" : ""}${dish.special ? " is-special" : ""}`}
+                    className={`dfc-random${toggleDisabled ? " is-loading" : ""}${dish.special ? " is-special" : ""}`}
                     title={dish.special ? "Plato especial — excluido del plan automático" : (randomEnabled ? "Excluir de randomización" : "Incluir en randomización")}
                   >
                     <input
@@ -1376,82 +1269,71 @@ export default function DishesPage() {
                     />
                     <span>Incluir en randomización</span>
                   </label>
-                  <div className="dk2-actions">
-                    <div className="kitchen-dish-info-wrap dk2-action-slot">
+
+                  {/* footer: main actions + kebab */}
+                  <div className="dfc-footer">
+                    {!isDiodGlobalMode ? (
                       <button
-                        ref={(node) => registerInfoButton(dish._id, node)}
-                        className={`dk2-action${hasRecipe ? " is-accent" : ""}`}
                         type="button"
-                        onClick={() => {
-                          if (hasRecipe) { setRecipeModalDish(dish); }
-                          else { toggleDishInfo(dish._id); }
-                        }}
-                        aria-label={hasRecipe ? `Ver elaboración de ${dish.name}` : `Ver ingredientes de ${dish.name}`}
-                        aria-expanded={dishInfoOpenId === dish._id}
-                        aria-controls={`dish-info-${dish._id}`}
-                        title={hasRecipe ? "Ver elaboración" : "Ingredientes"}
+                        className="dfc-btn dfc-btn--schedule"
+                        onClick={() => openAssignModal(dish)}
+                        aria-label={`Programar ${dish.name}`}
                       >
-                        <Info size={17} aria-hidden="true" />
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Programar
                       </button>
-                      {isInfoOpen ? (
-                        <div
-                          id={`dish-info-${dish._id}`}
-                          className="kitchen-dish-info-popover"
-                          role="dialog"
-                          aria-label={`Ingredientes de ${dish.name}`}
-                          ref={infoPopoverRef}
-                        >
-                          <h4 className="kitchen-dish-info-heading">Ingredientes</h4>
-                          {ingredientNames.length > 0 ? (
-                            <ul className="kitchen-dish-info-list">
-                              {ingredientNames.map((name, index) => (
-                                <li key={`${dish._id}-ingredient-${index}`}>{name}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="kitchen-dish-info-empty">Sin ingredientes.</p>
-                          )}
+                    ) : null}
+                    <button
+                      type="button"
+                      className="dfc-btn dfc-btn--cook"
+                      onClick={() => startSession?.(dish, getRecipeBaseServings(dish.recipe) || 4)}
+                      aria-label={`Cocinar ${dish.name} ahora`}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                      Cocinar ahora
+                    </button>
+                    {/* kebab menu */}
+                    <div className="dfc-menu-wrap" onPointerDown={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        className="dfc-kebab"
+                        aria-label={`Más acciones para ${dish.name}`}
+                        aria-haspopup="menu"
+                        aria-expanded={openDishMenuId === dish._id}
+                        onClick={(e) => { e.stopPropagation(); setOpenDishMenuId(openDishMenuId === dish._id ? null : dish._id); }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/>
+                        </svg>
+                      </button>
+                      {openDishMenuId === dish._id ? (
+                        <div role="menu" className="dfc-menu">
+                          <button role="menuitem" className="dfc-menuitem" onClick={() => { setOpenDishMenuId(null); startEdit(dish); }}>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            Editar plato
+                          </button>
+                          <button role="menuitem" className="dfc-menuitem" onClick={() => { setOpenDishMenuId(null); toggleDishAllowRandom(dish, !randomEnabled); }}>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m18 2 4 4-4 4"/><path d="M2 6h4a8 8 0 0 1 8 8 8 8 0 0 0 8 8"/><path d="M2 18h4a8 8 0 0 0 6-3"/></svg>
+                            {randomEnabled ? "Excluir de randomización" : "Incluir en randomización"}
+                          </button>
+                          {dishOrigin.canRevert ? (
+                            <button role="menuitem" className="dfc-menuitem" onClick={() => { setOpenDishMenuId(null); askRevertDish(dish); }}>
+                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                              Restaurar original
+                            </button>
+                          ) : null}
+                          {canDeleteDish ? (
+                            <>
+                              <div className="dfc-menu-sep" />
+                              <button role="menuitem" className="dfc-menuitem dfc-menuitem--danger" onClick={() => { setOpenDishMenuId(null); askDeleteDish(dish); }}>
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                                Eliminar plato
+                              </button>
+                            </>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
-                    <span className="dk2-action-divider" aria-hidden="true" />
-                    <button
-                      className="dk2-action"
-                      type="button"
-                      onClick={() => startEdit(dish)}
-                      aria-label={`Editar ${dish.name}`}
-                      title="Editar"
-                    >
-                      <Pencil size={16} aria-hidden="true" />
-                    </button>
-                    {!isDiodGlobalMode ? (
-                      <>
-                        <span className="dk2-action-divider" aria-hidden="true" />
-                        <button
-                          className="dk2-action"
-                          type="button"
-                          onClick={() => openAssignModal(dish)}
-                          aria-label="Asignar"
-                          title="Asignar"
-                        >
-                          <CalendarPlus size={16} aria-hidden="true" />
-                        </button>
-                      </>
-                    ) : null}
-                    {canDeleteDish ? (
-                      <>
-                        <span className="dk2-action-divider" aria-hidden="true" />
-                        <button
-                          className="dk2-action is-danger"
-                          type="button"
-                          onClick={() => askDeleteDish(dish)}
-                          aria-label={`Eliminar ${dish.name}`}
-                          title="Eliminar"
-                        >
-                          <Trash2 size={16} aria-hidden="true" />
-                        </button>
-                      </>
-                    ) : null}
                   </div>
                 </article>
               );
@@ -1761,6 +1643,124 @@ export default function DishesPage() {
                 disabled={deleteDishModal.deleting}
               >
                 {deleteDishModal.deleting ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Filter sheet modal ── */}
+      {filterPanelOpen ? (
+        <div className="fsh-overlay" role="presentation" onClick={() => setFilterPanelOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filtros"
+            className="fsh-dialog"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* header */}
+            <div className="fsh-header">
+              <h2 className="fsh-title">Filtros</h2>
+              <button type="button" className="fsh-close" aria-label="Cerrar filtros" onClick={() => setFilterPanelOpen(false)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            {/* body */}
+            <div className="fsh-body">
+              {/* Origen (dishes only) */}
+              {!isIngredientsTab && !isDiodGlobalMode ? (
+                <div>
+                  <p className="fsh-section-label">Origen</p>
+                  <div className="fsh-pill-group">
+                    <button type="button" className={`fsh-pill${!mineOnly && !catalogOnly ? " is-active" : ""}`} onClick={() => { setMineOnly(false); setCatalogOnly(false); }}>Todos</button>
+                    <button type="button" className={`fsh-pill${mineOnly ? " is-active" : ""}`} onClick={() => { setMineOnly(true); setCatalogOnly(false); }}>Mis platos</button>
+                    <button type="button" className={`fsh-pill${catalogOnly ? " is-active" : ""}`} onClick={() => { setCatalogOnly(true); setMineOnly(false); }}>Solo catálogo</button>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Categoría — dishes */}
+              {!isIngredientsTab && filterChips.length > 0 ? (
+                <div>
+                  <p className="fsh-section-label">Categoría</p>
+                  <div className="fsh-pill-group">
+                    <button type="button" className={`fsh-pill${!selectedDishCategoryId ? " is-active" : ""}`} onClick={() => setSelectedDishCategoryId("")}>Todos</button>
+                    {filterChips.map((cat) => {
+                      const catId = String(cat._id || "");
+                      return (
+                        <button
+                          key={catId}
+                          type="button"
+                          className={`fsh-pill${String(selectedDishCategoryId) === catId ? " is-active" : ""}`}
+                          onClick={() => setSelectedDishCategoryId((p) => String(p || "") === catId ? "" : catId)}
+                        >
+                          {cat.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Categoría — ingredients */}
+              {isIngredientsTab && ingredientCategories.length > 0 ? (
+                <div>
+                  <p className="fsh-section-label">Categoría</p>
+                  <div className="fsh-pill-group">
+                    <button type="button" className={`fsh-pill${!selectedIngredientCategoryId ? " is-active" : ""}`} onClick={() => setSelectedIngredientCategoryId("")}>Todos</button>
+                    {sortedIngredientCategories.map((cat) => {
+                      const catId = String(cat._id || "");
+                      return (
+                        <button
+                          key={catId}
+                          type="button"
+                          className={`fsh-pill${selectedIngredientCategoryId === catId ? " is-active" : ""}`}
+                          onClick={() => setSelectedIngredientCategoryId((p) => p === catId ? "" : catId)}
+                        >
+                          {cat.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Propiedades (dishes only) */}
+              {!isIngredientsTab ? (
+                <div>
+                  <p className="fsh-section-label">Propiedades</p>
+                  <div className="fsh-toggles">
+                    <label className="fsh-toggle-row">
+                      <span className="fsh-toggle-label">Solo platos de cena</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        className="fsh-switch"
+                        aria-checked={dinnerOnly ? "true" : "false"}
+                        aria-label="Solo platos de cena"
+                        onClick={() => {
+                          if (!canUseDinners) { setDinnerGateOpen(true); return; }
+                          setDinnerOnly((v) => !v);
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* footer */}
+            <div className="fsh-footer">
+              <button type="button" className="fsh-footer-clear" onClick={() => {
+                setMineOnly(false); setCatalogOnly(false); setDinnerOnly(false);
+                setSelectedDishCategoryId(""); setSelectedIngredientCategoryId("");
+              }}>
+                Limpiar
+              </button>
+              <button type="button" className="fsh-footer-apply" onClick={() => setFilterPanelOpen(false)}>
+                Ver {isIngredientsTab ? visibleIngredients.length : visibleDishes.length} resultados
               </button>
             </div>
           </div>
