@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { BookOpen, Pencil, Copy, Trash2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
-import { createSyncedApi, dishesQuery, fetchCached } from "../queryClient.js";
+import { catalogQuery, createSyncedApi, dishesQuery, fetchCached } from "../queryClient.js";
 
 // Non-GET calls invalidate caches affected by dish edits
 const apiSync = createSyncedApi([["kitchen", "dishes"], ["planning"], ["shopping"]]);
@@ -11,6 +11,7 @@ import { useAuth } from "../auth";
 import DishModal from "../components/DishModal.jsx";
 import IngredientModal from "../components/IngredientModal.jsx";
 import RecipeModal from "../components/RecipeModal.jsx";
+import SearchableSelect from "../components/ui/SearchableSelect.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { getDishOrigin, isDishFromCatalog, isUserCreatedDish } from "../utils/dishOrigin.js";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
@@ -21,6 +22,13 @@ import PageHeader from "../components/PageHeader.jsx";
 import { DishGridSkeleton, DishesPageSkeleton } from "../components/ScreenSkeletons.jsx";
 
 const ASSIGN_DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
+
+function getCatalogPackId(dish) {
+  const value = dish?.sourcePackId;
+  if (!value) return "";
+  if (typeof value === "object" && value._id) return String(value._id);
+  return String(value);
+}
 
 function getMondayISO(date = new Date()) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -124,6 +132,9 @@ export default function DishesPage() {
   const [activeTab, setActiveTab] = useState("main");
   const [catalogOnly, setCatalogOnly] = useState(false);
   const [mineOnly, setMineOnly] = useState(false);
+  const [selectedCatalogPackId, setSelectedCatalogPackId] = useState("");
+  const [installedCatalogs, setInstalledCatalogs] = useState([]);
+  const [catalogsLoading, setCatalogsLoading] = useState(false);
   const [dinnerOnly, setDinnerOnly] = useState(false);
   const [ingredients, setIngredients] = useState([]);
   const [ingredientsLoading, setIngredientsLoading] = useState(false);
@@ -218,6 +229,28 @@ export default function DishesPage() {
   useEffect(() => {
     loadDishes();
   }, [isDiodGlobalMode, user?.activeHouseholdId, user?.id]);
+
+  const loadInstalledCatalogs = useCallback(async () => {
+    setCatalogsLoading(true);
+    try {
+      const data = await fetchCached(catalogQuery());
+      const packs = Array.isArray(data?.packs) ? data.packs : [];
+      setInstalledCatalogs(packs.filter((pack) => pack?.entitlement?.installed));
+    } catch {
+      setInstalledCatalogs([]);
+    } finally {
+      setCatalogsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isDiodGlobalMode) {
+      setInstalledCatalogs([]);
+      setSelectedCatalogPackId("");
+      return;
+    }
+    void loadInstalledCatalogs();
+  }, [isDiodGlobalMode, loadInstalledCatalogs, user?.activeHouseholdId, user?.id]);
 
   useEffect(() => {
     if (!dishSuccess) return undefined;
@@ -384,10 +417,14 @@ export default function DishesPage() {
     if (mineOnly) return categoryFilteredDishes.filter(isUserCreatedDish);
     return categoryFilteredDishes;
   }, [categoryFilteredDishes, catalogOnly, mineOnly]);
+  const catalogFilteredDishes = useMemo(() => {
+    if (!selectedCatalogPackId || mineOnly) return originFilteredDishes;
+    return originFilteredDishes.filter((dish) => getCatalogPackId(dish) === String(selectedCatalogPackId));
+  }, [mineOnly, originFilteredDishes, selectedCatalogPackId]);
 
   const visibleDishes = useMemo(() => {
-    if (!normalizedSearch) return originFilteredDishes;
-    return originFilteredDishes.filter((dish) => {
+    if (!normalizedSearch) return catalogFilteredDishes;
+    return catalogFilteredDishes.filter((dish) => {
       const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
       if (nameMatch) return true;
       return (dish.ingredients || []).some((item) => {
@@ -396,7 +433,7 @@ export default function DishesPage() {
         return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
       });
     });
-  }, [originFilteredDishes, normalizedSearch]);
+  }, [catalogFilteredDishes, normalizedSearch]);
   const dishMap = useMemo(() => {
     const map = new Map();
     dishes.forEach((dish) => {
@@ -411,6 +448,24 @@ export default function DishesPage() {
     });
     return map;
   }, [dishCategories]);
+  const catalogOptions = useMemo(
+    () => installedCatalogs.map((pack) => ({
+      value: String(pack.id || pack._id || ""),
+      label: pack.title || pack.subtitle || "Catálogo",
+      dotColor: pack.color || undefined
+    })).filter((option) => option.value),
+    [installedCatalogs]
+  );
+  const selectedCatalogOption = useMemo(
+    () => catalogOptions.find((option) => option.value === String(selectedCatalogPackId || "")) || null,
+    [catalogOptions, selectedCatalogPackId]
+  );
+  useEffect(() => {
+    if (!selectedCatalogPackId) return;
+    if (!catalogOptions.some((option) => option.value === String(selectedCatalogPackId))) {
+      setSelectedCatalogPackId("");
+    }
+  }, [catalogOptions, selectedCatalogPackId]);
   const filterChips = useMemo(() => {
     const inTabIds = new Set(
       mealFilteredDishes
@@ -462,6 +517,9 @@ export default function DishesPage() {
       if (catalogOnly) {
         return "No hay platos del catálogo con este filtro. Instala un pack desde Catálogo.";
       }
+      if (selectedCatalogPackId) {
+        return "No hay platos de este catálogo con los filtros actuales.";
+      }
       if (selectedDishCategoryId) {
         return "No hay platos en la categoría seleccionada.";
       }
@@ -471,7 +529,7 @@ export default function DishesPage() {
       return "No hay platos aún. Crea el primero.";
     }
     return "";
-  }, [catalogOnly, mineOnly, dinnerOnly, dishSearchTerm, dishes.length, selectedDishCategoryId, visibleDishes.length]);
+  }, [catalogOnly, mineOnly, dinnerOnly, dishSearchTerm, dishes.length, selectedCatalogPackId, selectedDishCategoryId, visibleDishes.length]);
 
   useEffect(() => {
     setSelectedDishCategoryId((previous) => {
@@ -484,6 +542,7 @@ export default function DishesPage() {
   useEffect(() => {
     if (activeTab === "ingredients") {
       setSelectedDishCategoryId("");
+      setSelectedCatalogPackId("");
       setCatalogOnly(false);
       setMineOnly(false);
       setDinnerOnly(false);
@@ -515,13 +574,14 @@ export default function DishesPage() {
   useEffect(() => {
     const onCatalogInvalidated = () => {
       void loadCategories();
+      void loadInstalledCatalogs();
       if (activeTab === "ingredients") {
         void loadIngredients(ingredientSearchTerm);
       }
     };
     window.addEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
     return () => window.removeEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
-  }, [activeTab, loadIngredients]);
+  }, [activeTab, loadIngredients, loadInstalledCatalogs]);
 
   const startIngredientCreate = () => {
     setActiveIngredient(null);
@@ -1030,7 +1090,7 @@ export default function DishesPage() {
               aria-expanded={filterPanelOpen}
             >
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
-              {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "" || catalogOnly) ? (
+              {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "" || catalogOnly || selectedCatalogPackId) ? (
                 <span className="phdr-filter-dot" aria-hidden="true" />
               ) : null}
             </button>
@@ -1058,6 +1118,7 @@ export default function DishesPage() {
             if (!isIngredientsTab) {
               if (mineOnly) chips.push({ key: "mine", label: "Mis platos", onRemove: () => setMineOnly(false) });
               if (catalogOnly) chips.push({ key: "catalog", label: "Solo catálogo", onRemove: () => setCatalogOnly(false) });
+              if (selectedCatalogOption) chips.push({ key: "catalog-pack", label: selectedCatalogOption.label, onRemove: () => setSelectedCatalogPackId("") });
               if (dinnerOnly) chips.push({ key: "dinner", label: "Solo cenas", onRemove: () => setDinnerOnly(false) });
               if (selectedDishCategoryId) {
                 const cat = dishCategoryMap.get(String(selectedDishCategoryId));
@@ -1078,7 +1139,7 @@ export default function DishesPage() {
                 ))}
                 <button type="button" className="dfc-chip-clear-all" onClick={() => {
                   setMineOnly(false); setCatalogOnly(false); setDinnerOnly(false);
-                  setSelectedDishCategoryId(""); setSelectedIngredientCategoryId("");
+                  setSelectedCatalogPackId(""); setSelectedDishCategoryId(""); setSelectedIngredientCategoryId("");
                 }}>
                   Limpiar
                 </button>
@@ -1672,13 +1733,35 @@ export default function DishesPage() {
                   <p className="fsh-section-label">Origen</p>
                   <div className="fsh-pill-group">
                     <button type="button" className={`fsh-pill${!mineOnly && !catalogOnly ? " is-active" : ""}`} onClick={() => { setMineOnly(false); setCatalogOnly(false); }}>Todos</button>
-                    <button type="button" className={`fsh-pill${mineOnly ? " is-active" : ""}`} onClick={() => { setMineOnly(true); setCatalogOnly(false); }}>Mis platos</button>
+                    <button type="button" className={`fsh-pill${mineOnly ? " is-active" : ""}`} onClick={() => { setMineOnly(true); setCatalogOnly(false); setSelectedCatalogPackId(""); }}>Mis platos</button>
                     <button type="button" className={`fsh-pill${catalogOnly ? " is-active" : ""}`} onClick={() => { setCatalogOnly(true); setMineOnly(false); }}>Solo catálogo</button>
                   </div>
                 </div>
               ) : null}
 
-              {/* Categoría — dishes */}
+              {/* Catálogo - dishes only */}
+              {!isIngredientsTab && !isDiodGlobalMode ? (
+                <div className="fsh-select-section">
+                  <p className="fsh-section-label">Catálogo</p>
+                  <SearchableSelect
+                    options={catalogOptions}
+                    value={mineOnly ? "" : selectedCatalogPackId}
+                    onChange={setSelectedCatalogPackId}
+                    emptyLabel="Todos los catálogos"
+                    placeholder="Buscar catálogo..."
+                    disabled={mineOnly || catalogsLoading || catalogOptions.length === 0}
+                  />
+                  {mineOnly ? (
+                    <p className="fsh-helper-text">No se aplica a Mis platos.</p>
+                  ) : catalogsLoading ? (
+                    <p className="fsh-helper-text">Cargando catálogos...</p>
+                  ) : catalogOptions.length === 0 ? (
+                    <p className="fsh-helper-text">No hay catálogos instalados.</p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {/* Categoria - dishes */}
               {!isIngredientsTab && filterChips.length > 0 ? (
                 <div>
                   <p className="fsh-section-label">Categoría</p>
@@ -1752,7 +1835,7 @@ export default function DishesPage() {
             <div className="fsh-footer">
               <button type="button" className="fsh-footer-clear" onClick={() => {
                 setMineOnly(false); setCatalogOnly(false); setDinnerOnly(false);
-                setSelectedDishCategoryId(""); setSelectedIngredientCategoryId("");
+                setSelectedCatalogPackId(""); setSelectedDishCategoryId(""); setSelectedIngredientCategoryId("");
               }}>
                 Limpiar
               </button>
