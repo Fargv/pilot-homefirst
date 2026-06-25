@@ -20892,6 +20892,144 @@ td.recipe-qty-scaled {
   overflow: visible;
 }
 
+/* ── Editing-mode: scoped input style ── */
+.kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-input {
+  border-radius: 12px;
+  border: 1.5px solid var(--hf-brand-light, #E9B7AF);
+  background: var(--surface-warm, #FFFBFA);
+}
+.kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--hf-brand-rgb), 0.06);
+}
+
+/* ── Editing-mode: section labels ── */
+.kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hf-text-soft, #B07A70);
+}
+
+/* ── "Añadir ingredientes" pill ── */
+.dc2-edit-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--hf-surface-soft, #FFF0EE);
+  border: 1px solid var(--hf-brand-border, #F5D5D0);
+  border-radius: 999px;
+  padding: 7px 14px;
+  color: var(--hf-brand, #C4382C);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 2px;
+  align-self: flex-start;
+}
+.dc2-edit-add-btn:hover {
+  background: #FFEAE7;
+}
+
+/* ── Edit toolbar: primary save + secondary row ── */
+.dc2-edit-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--surface-muted, #F4E6E2);
+}
+
+.dc2-edit-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 999px;
+  border: none;
+  background: var(--hf-brand, #C4382C);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(var(--hf-brand-rgb), 0.25);
+}
+.dc2-edit-save-btn:hover {
+  filter: brightness(1.06);
+}
+.dc2-edit-save-btn svg {
+  flex-shrink: 0;
+}
+
+.dc2-edit-secondary-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dc2-edit-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1.5px solid var(--card-border, #F2D8D4);
+  background: var(--surface, #ffffff);
+  color: var(--text-secondary, #7A6862);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dc2-edit-btn:hover {
+  border-color: var(--hf-brand-light, #E9B7AF);
+}
+.dc2-edit-btn.is-danger {
+  flex: 0 0 40px;
+  color: var(--hf-brand, #C4382C);
+  border-color: var(--hf-brand-border, #F3C9C4);
+  background: var(--hf-surface-soft, #FFF5F4);
+}
+.dc2-edit-btn.is-danger:hover {
+  background: #FFEAE7;
+}
+
+.dc2-edit-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--card-border, #F2D8D4);
+  flex-shrink: 0;
+}
+
+/* ── Assignee button: cook-colored pill ── */
+.kitchen-day-cook-block.is-editing .kitchen-assignee-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: auto;
+  min-height: unset;
+  padding: 5px 9px 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--dc2-badge-bg, #E5DDD3);
+  background: var(--dc2-badge-bg, var(--hf-surface-soft));
+  color: var(--dc2-badge-text, var(--hf-text));
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 0;
+  max-width: 140px;
+  justify-content: space-between;
+}
+.kitchen-day-cook-block.is-editing .kitchen-assignee-button:hover {
+  filter: brightness(0.95);
+}
+
 /* ── Header ── */
 .dc2-header {
   display: flex;

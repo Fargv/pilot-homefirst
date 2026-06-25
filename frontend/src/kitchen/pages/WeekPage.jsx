@@ -1577,6 +1577,7 @@ export default function WeekPage() {
         <span className="kitchen-assignee-name">
           {cookUser?.displayName || "Sin asignar"}
         </span>
+        <ChevronDownIcon width="11" height="11" />
       </button>
       {assigneeOpen[dayKey] ? (
         <div className="kitchen-suggestion-list is-scrollable kitchen-assignee-menu" role="listbox">
@@ -3043,10 +3044,11 @@ export default function WeekPage() {
                   {!addIngredientsOpen[dayKey] ? (
                     <button
                       type="button"
-                      className="kitchen-link-add-ingredient"
+                      className="dc2-edit-add-btn"
                       onClick={() => setAddIngredientsOpen((prev) => ({ ...prev, [dayKey]: true }))}
                     >
-                      + Añadir ingredientes
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Añadir ingredientes
                     </button>
                   ) : (
                     <div className="kitchen-field kitchen-day-ingredients">
@@ -3189,47 +3191,49 @@ export default function WeekPage() {
                     ) : null}
                   </div>
                   ) : null}
-                  <div className="kitchen-day-edit-toolbar">
+                  <div className="dc2-edit-toolbar">
                     <button
                       type="button"
-                      className="kitchen-day-icon-action"
+                      className="dc2-edit-save-btn"
                       onClick={() => stopEditingDay(dayKey)}
-                      aria-label="Guardar edición"
-                      title="Guardar"
+                      aria-label="Guardar"
                     >
-                      <SaveIcon />
+                      <SaveIcon /> <span>Guardar</span>
                     </button>
-                    <button
-                      type="button"
-                      className="kitchen-day-icon-action"
-                      onClick={() => stopEditingDay(dayKey)}
-                      aria-label="Cancelar edición"
-                      title="Cancelar"
-                    >
-                      <CloseIcon />
-                    </button>
-                    {isOwnerAdmin ? (
+                    <div className="dc2-edit-secondary-row">
                       <button
                         type="button"
-                        className="kitchen-day-icon-action"
-                        onClick={() => requestMoveDayAssignment(day)}
-                        aria-label="Mover a otro dÃ­a"
-                        title="Mover a otro dÃ­a"
+                        className="dc2-edit-btn"
+                        onClick={() => stopEditingDay(dayKey)}
+                        aria-label="Cancelar edición"
                       >
-                        <SwapIcon />
+                        <CloseIcon /> <span>Cancelar</span>
                       </button>
-                    ) : null}
-                    {canDeletePlanning ? (
-                      <button
-                        type="button"
-                        className="kitchen-day-icon-action is-danger"
-                        onClick={() => requestRemoveDayAssignment(day)}
-                        aria-label="Eliminar plato de la planificación"
-                        title="Eliminar plato de la planificación"
-                      >
-                        <TrashIcon />
-                      </button>
-                    ) : null}
+                      {isOwnerAdmin ? (
+                        <button
+                          type="button"
+                          className="dc2-edit-btn"
+                          onClick={() => requestMoveDayAssignment(day)}
+                          aria-label="Mover a otro día"
+                        >
+                          <SwapIcon /> <span>Cambiar</span>
+                        </button>
+                      ) : null}
+                      {canDeletePlanning ? (
+                        <>
+                          <div className="dc2-edit-divider" aria-hidden="true" />
+                          <button
+                            type="button"
+                            className="dc2-edit-btn is-danger"
+                            onClick={() => requestRemoveDayAssignment(day)}
+                            aria-label="Eliminar plato de la planificación"
+                            title="Eliminar plato de la planificación"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 </>
               )}
