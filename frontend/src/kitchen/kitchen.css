@@ -22738,6 +22738,16 @@ td.recipe-qty-scaled {
   .cm-timer-countdown {
     font-size: 32px;
   }
+
+  .cm-timer-round {
+    width: 42px;
+    height: 42px;
+  }
+
+  .cm-timer-reset {
+    width: 38px;
+    height: 38px;
+  }
 }
 
 /* ── Desktop: legacy guided cooking layout guards ─────────────────────────── */
@@ -23197,13 +23207,14 @@ td.recipe-qty-scaled {
 
 .cm-timer-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+  min-height: 40px;
 }
-.cm-timer-cta { flex: 1; height: 40px; font-size: 14px; }
-.cm-timer-reset {
+.cm-timer-round {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-full);
   border: 1.5px solid var(--border-soft);
   background: var(--surface);
   color: var(--text-secondary);
@@ -23213,9 +23224,30 @@ td.recipe-qty-scaled {
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;
-  transition: background var(--motion-fast);
+  transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast), transform var(--motion-fast);
+  -webkit-tap-highlight-color: transparent;
 }
-.cm-timer-reset:hover { background: var(--surface-muted); }
+.cm-timer-round:hover { background: var(--surface-muted); }
+.cm-timer-round:active { transform: scale(.96); }
+.cm-timer-round--primary {
+  background: color-mix(in srgb, var(--hf-brand) 9%, var(--surface));
+  border-color: color-mix(in srgb, var(--hf-brand) 24%, var(--border-soft));
+  color: var(--hf-brand);
+}
+.cm-timer-round--primary:hover {
+  background: color-mix(in srgb, var(--hf-brand) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--hf-brand) 34%, var(--border-soft));
+}
+.cm-timer-action-label {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+.cm-timer-reset {
+  width: 36px;
+  height: 36px;
+  margin-left: 2px;
+}
 
 @keyframes cm-ringpulse {
   0%, 100% { opacity: .5; }
@@ -23559,6 +23591,11 @@ td.recipe-qty-scaled {
 [data-theme="dark"] .cm-timer-countdown { color: #f1f5f9; }
 [data-theme="dark"] .cm-timer-countdown-sub { color: #475569; }
 [data-theme="dark"] .cm-timer-track { background: rgba(255, 255, 255, .06); }
+[data-theme="dark"] .cm-timer-round { background: #1e293b; border-color: #334155; color: #94a3b8; }
+[data-theme="dark"] .cm-timer-round:hover { background: #334155; }
+[data-theme="dark"] .cm-timer-round--primary { background: rgba(var(--hf-brand-rgb), .14); border-color: rgba(var(--hf-brand-rgb), .32); color: var(--hf-brand-light); }
+[data-theme="dark"] .cm-timer-round--primary:hover { background: rgba(var(--hf-brand-rgb), .22); border-color: rgba(var(--hf-brand-rgb), .42); }
+[data-theme="dark"] .cm-timer-action-label { color: #94a3b8; }
 [data-theme="dark"] .cm-timer-reset { background: #1e293b; border-color: #334155; color: #64748b; }
 [data-theme="dark"] .cm-timer-reset:hover { background: #334155; }
 [data-theme="dark"] .cm-nav { background: var(--modal-bg); border-color: var(--border-soft); }

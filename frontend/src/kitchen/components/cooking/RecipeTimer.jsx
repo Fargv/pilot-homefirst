@@ -74,6 +74,38 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, onActi
     onAction(timerKey, "start", durationMs);
   }
 
+  const mainAction = isDone
+    ? {
+        label: "Reiniciar",
+        icon: <ResetIcon />,
+        ariaLabel: "Reiniciar temporizador",
+        className: "cm-timer-round",
+        onClick: () => onAction(timerKey, "cancel")
+      }
+    : isRunning
+    ? {
+        label: "Pausar",
+        icon: <PauseIcon />,
+        ariaLabel: "Pausar temporizador",
+        className: "cm-timer-round",
+        onClick: () => onAction(timerKey, "pause")
+      }
+    : isPaused
+    ? {
+        label: "Reanudar",
+        icon: <PlayIcon />,
+        ariaLabel: "Reanudar temporizador",
+        className: "cm-timer-round cm-timer-round--primary",
+        onClick: () => { primeAudio(); onAction(timerKey, "resume"); }
+      }
+    : {
+        label: "Iniciar",
+        icon: <PlayIcon />,
+        ariaLabel: "Iniciar temporizador",
+        className: "cm-timer-round cm-timer-round--primary",
+        onClick: handleStart
+      };
+
   return (
     <div
       className={`cm-timer ${toneClass}`}
@@ -108,47 +140,19 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, onActi
       </div>
 
       <div className="cm-timer-actions">
-        {isDone ? (
-          <button
-            type="button"
-            className="cm-pill cm-pill--secondary cm-timer-cta"
-            onClick={() => onAction(timerKey, "cancel")}
-            aria-label="Reiniciar temporizador"
-          >
-            <ResetIcon /> Reiniciar
-          </button>
-        ) : isRunning ? (
-          <button
-            type="button"
-            className="cm-pill cm-pill--secondary cm-timer-cta"
-            onClick={() => onAction(timerKey, "pause")}
-            aria-label="Pausar temporizador"
-          >
-            <PauseIcon /> Pausar
-          </button>
-        ) : isPaused ? (
-          <button
-            type="button"
-            className="cm-pill cm-pill--primary cm-timer-cta"
-            onClick={() => { primeAudio(); onAction(timerKey, "resume"); }}
-            aria-label="Reanudar temporizador"
-          >
-            <PlayIcon /> Reanudar
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="cm-pill cm-pill--primary cm-timer-cta"
-            onClick={handleStart}
-            aria-label="Iniciar temporizador"
-          >
-            <PlayIcon /> Iniciar
-          </button>
-        )}
+        <button
+          type="button"
+          className={mainAction.className}
+          onClick={mainAction.onClick}
+          aria-label={mainAction.ariaLabel}
+        >
+          {mainAction.icon}
+        </button>
+        <span className="cm-timer-action-label">{mainAction.label}</span>
         {isActive && !isDone && (
           <button
             type="button"
-            className="cm-iconbtn cm-timer-reset"
+            className="cm-timer-round cm-timer-reset"
             onClick={() => onAction(timerKey, "cancel")}
             aria-label="Reiniciar temporizador"
           >
