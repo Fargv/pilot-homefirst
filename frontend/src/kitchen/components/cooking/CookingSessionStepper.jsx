@@ -185,6 +185,7 @@ function CancelSheet({ onKeep, onConfirm }) {
 export default function CookingSessionStepper() {
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [ingredientPanelOpen, setIngredientPanelOpen] = useState(false);
+  const [checkedStepIngredients, setCheckedStepIngredients] = useState({});
   const {
     session,
     isStepperOpen,
@@ -228,6 +229,10 @@ export default function CookingSessionStepper() {
     }
   }, [isStepperOpen, session]);
 
+  useEffect(() => {
+    setCheckedStepIngredients({});
+  }, [session?.recipeId, session?.startedAt]);
+
   if (!session || !isStepperOpen) return null;
 
   const { steps, currentStepIndex, completedSteps, timers, isComplete, recipeName, selectedServings, ingredients, baseServings } = session;
@@ -253,6 +258,22 @@ export default function CookingSessionStepper() {
     } else {
       goToStep(currentStepIndex + 1);
     }
+  };
+
+  const toggleStepIngredient = (stepIndex, ingredientKey) => {
+    setCheckedStepIngredients((prev) => {
+      const stepKey = String(stepIndex);
+      const current = new Set(prev[stepKey] || []);
+      if (current.has(ingredientKey)) {
+        current.delete(ingredientKey);
+      } else {
+        current.add(ingredientKey);
+      }
+      return {
+        ...prev,
+        [stepKey]: Array.from(current)
+      };
+    });
   };
 
   const stepper = (
@@ -358,6 +379,8 @@ export default function CookingSessionStepper() {
               allIngredients={ingredients || []}
               baseServings={baseServings || 4}
               selectedServings={selectedServings || 4}
+              checkedIngredients={checkedStepIngredients[String(currentStep.index ?? currentStepIndex)] || []}
+              onToggleIngredient={(ingredientKey) => toggleStepIngredient(currentStep.index ?? currentStepIndex, ingredientKey)}
             />
           </div>
 

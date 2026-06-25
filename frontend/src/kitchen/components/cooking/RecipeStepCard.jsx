@@ -23,8 +23,11 @@ export default function RecipeStepCard({
   allIngredients = [],
   baseServings = 4,
   selectedServings = 4,
+  checkedIngredients = [],
+  onToggleIngredient,
 }) {
   const { text, html, detectedTimers, title, tips, stepIngredients } = step;
+  const ingredientRefs = Array.isArray(stepIngredients) ? stepIngredients : [];
 
   return (
     <div className={`cm-step-card${isComplete ? " cm-step-card--done" : ""}`}>
@@ -70,29 +73,39 @@ export default function RecipeStepCard({
       ) : null}
 
       {/* ── Per-step ingredients ── */}
-      {stepIngredients && stepIngredients.length > 0 ? (
-        <div className="cm-step-ing">
-          <div className="cm-step-ing-header">
-            <BasketIcon />
-            <span>Para este paso</span>
-          </div>
+      <div className={`cm-step-ing${ingredientRefs.length === 0 ? " cm-step-ing--empty" : ""}`}>
+        <div className="cm-step-ing-header">
+          <BasketIcon />
+          <span>Ingredientes para este paso</span>
+        </div>
+        {ingredientRefs.length > 0 ? (
           <div className="cm-step-ing-list">
-            {stepIngredients.map((ref, idx) => {
+            {ingredientRefs.map((ref, idx) => {
               const fullIng = allIngredients.find((ing) =>
                 (ref.ingredientId && ing.ingredientId && String(ing.ingredientId) === String(ref.ingredientId)) ||
                 normalize(ing.name) === normalize(ref.name)
               );
               const qty = fullIng ? displayIngredientQuantity(fullIng, baseServings, selectedServings) : null;
+              const ingredientKey = `${ref.ingredientId || normalize(ref.name) || "ingredient"}-${idx}`;
+              const checked = checkedIngredients.includes(ingredientKey);
               return (
-                <div key={idx} className="cm-step-ing-row">
+                <label key={ingredientKey} className={`cm-step-ing-row${checked ? " is-checked" : ""}`}>
+                  <input
+                    type="checkbox"
+                    className="cm-step-ing-check"
+                    checked={checked}
+                    onChange={() => onToggleIngredient?.(ingredientKey)}
+                  />
                   <span className="cm-step-ing-name">{ref.name}</span>
                   {qty ? <span className="cm-step-ing-qty">{qty}</span> : null}
-                </div>
+                </label>
               );
             })}
           </div>
-        </div>
-      ) : null}
+        ) : (
+          <p className="cm-step-ing-empty">Este paso no tiene ingredientes vinculados.</p>
+        )}
+      </div>
     </div>
   );
 }
