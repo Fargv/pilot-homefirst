@@ -109,7 +109,7 @@ export default function DishModal({
     setError("");
     setRecipeError("");
     setRecipeSaved(false);
-    setActiveTab("datos");
+    setActiveTab(initialDish?._id ? "receta" : "datos");
     setRecipeEditing(false);
     const setup = async () => {
       if (initialDish?._id) {
@@ -296,12 +296,12 @@ export default function DishModal({
 
         {/* Tabs */}
         <div className="recipe-tabs">
-          <button type="button" className={activeTab === "datos" ? "is-active" : ""} onClick={() => setActiveTab("datos")}>
-            Datos
-          </button>
           <button type="button" className={activeTab === "receta" ? "is-active" : ""} onClick={() => setActiveTab("receta")}>
             Elaboración
             {hasExistingRecipe ? <span className="dish-modal-recipe-dot" aria-label="Tiene elaboración" /> : null}
+          </button>
+          <button type="button" className={activeTab === "datos" ? "is-active" : ""} onClick={() => setActiveTab("datos")}>
+            Datos e ingredientes
           </button>
         </div>
 
