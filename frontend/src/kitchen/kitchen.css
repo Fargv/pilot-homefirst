@@ -20892,11 +20892,26 @@ td.recipe-qty-scaled {
   overflow: visible;
 }
 
+.kitchen-card.kitchen-day-card.dc2.is-editing,
+.kitchen-card.kitchen-day-card.dc2.is-editing * {
+  box-sizing: border-box;
+}
+
+.kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-field,
+.kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-ingredient-search {
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* ── Editing-mode: scoped input style ── */
 .kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-input {
   border-radius: 12px;
   border: 1.5px solid var(--hf-brand-light, #E9B7AF);
   background: var(--surface-warm, #FFFBFA);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-input:focus {
   outline: none;
@@ -20927,9 +20942,16 @@ td.recipe-qty-scaled {
   cursor: pointer;
   margin-top: 2px;
   align-self: flex-start;
+  max-width: 100%;
 }
 .dc2-edit-add-btn:hover {
   background: #FFEAE7;
+}
+.dc2-edit-add-btn svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  display: block;
 }
 
 /* ── Edit toolbar: primary save + secondary row ── */
@@ -20937,6 +20959,8 @@ td.recipe-qty-scaled {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
+  min-width: 0;
   margin-top: 8px;
   padding-top: 16px;
   border-top: 1px solid var(--surface-muted, #F4E6E2);
@@ -20948,6 +20972,8 @@ td.recipe-qty-scaled {
   justify-content: center;
   gap: 7px;
   width: 100%;
+  min-width: 0;
+  min-height: 40px;
   padding: 11px 16px;
   border-radius: 999px;
   border: none;
@@ -20962,22 +20988,35 @@ td.recipe-qty-scaled {
   filter: brightness(1.06);
 }
 .dc2-edit-save-btn svg {
-  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  display: block;
+}
+.dc2-edit-save-btn span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dc2-edit-secondary-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
 .dc2-edit-btn {
   flex: 1;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   height: 40px;
+  padding: 0 14px;
   border-radius: 999px;
   border: 1.5px solid var(--card-border, #F2D8D4);
   background: var(--surface, #ffffff);
@@ -20987,11 +21026,25 @@ td.recipe-qty-scaled {
   cursor: pointer;
   white-space: nowrap;
 }
+.dc2-edit-btn svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  display: block;
+}
+.dc2-edit-btn span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .dc2-edit-btn:hover {
   border-color: var(--hf-brand-light, #E9B7AF);
 }
 .dc2-edit-btn.is-danger {
   flex: 0 0 40px;
+  width: 40px;
+  padding: 0;
   color: var(--hf-brand, #C4382C);
   border-color: var(--hf-brand-border, #F3C9C4);
   background: var(--hf-surface-soft, #FFF5F4);
@@ -21005,6 +21058,40 @@ td.recipe-qty-scaled {
   height: 24px;
   background: var(--card-border, #F2D8D4);
   flex-shrink: 0;
+}
+
+.kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-day-ingredient-pills {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-ingredient-pill {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-ingredient-pill span {
+  flex-shrink: 0;
+}
+
+@media (max-width: 520px) {
+  .dc2-edit-secondary-row {
+    gap: 6px;
+  }
+
+  .dc2-edit-btn {
+    padding: 0 12px;
+  }
+
+  .dc2-edit-btn.is-danger {
+    flex-basis: 40px;
+  }
+
+  .dc2-edit-divider {
+    display: none;
+  }
 }
 
 /* ── Assignee button: cook-colored pill ── */
