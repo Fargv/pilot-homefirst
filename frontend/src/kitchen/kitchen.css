@@ -20842,51 +20842,46 @@ td.recipe-qty-scaled {
 
 .kitchen-card.kitchen-day-card.dc2 {
   background: var(--surface, #ffffff);
-  border: 1.5px solid var(--dc2-accent, #e0e0f0);
-  border-radius: var(--radius-xl, 24px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07), 0 8px 24px rgba(0, 0, 0, 0.07);
+  border: 1px solid var(--card-border, #E5DDD3);
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(26, 26, 46, 0.05);
   overflow: hidden;
   padding: 0;
   gap: 0;
   color: var(--hf-text, #1e293b);
   transition: box-shadow 180ms ease, transform 180ms ease;
-  /* hf-anim-rise ships with fill-mode both; its final keyframe would
-     pin transform forever and fight the hover lift. backwards keeps
-     the card hidden during the stagger delay but releases the fill
-     once the mount animation ends. */
   animation-fill-mode: backwards;
 }
 
 .kitchen-card.kitchen-day-card.dc2.is-empty,
 .kitchen-card.kitchen-day-card.dc2.is-dinner-mode {
   background: var(--surface, #ffffff);
-  border: 1.5px solid var(--dc2-accent, #e0e0f0);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07), 0 8px 24px rgba(0, 0, 0, 0.07);
+  border: 1px solid var(--card-border, #E5DDD3);
+  box-shadow: 0 2px 10px rgba(26, 26, 46, 0.05);
 }
 
 .kitchen-card.kitchen-day-card.dc2.is-selected {
-  border-color: var(--dc2-accent, #d1d5db);
+  border-color: var(--hf-brand-soft-border);
 }
 
 .kitchen-card.kitchen-day-card.dc2.is-today {
-  outline: 2.5px solid var(--hf-brand-light);
-  outline-offset: 2px;
+  border-color: var(--hf-brand);
   box-shadow:
-    0 0 0 4px rgba(var(--hf-brand-rgb), 0.10),
-    0 2px 8px rgba(0, 0, 0, 0.07),
-    0 8px 24px rgba(0, 0, 0, 0.07);
+    0 0 0 3px rgba(var(--hf-brand-rgb), 0.12),
+    0 2px 10px rgba(26, 26, 46, 0.08);
 }
 
 @media (hover: hover) and (min-width: 768px) {
   .kitchen-card.kitchen-day-card.dc2:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.09), 0 14px 34px rgba(0, 0, 0, 0.10);
+    box-shadow: 0 10px 26px rgba(26, 26, 46, 0.10);
+    border-color: var(--border-strong);
   }
   .kitchen-card.kitchen-day-card.dc2.is-today:hover {
+    border-color: var(--hf-brand);
     box-shadow:
-      0 0 0 4px rgba(var(--hf-brand-rgb), 0.10),
-      0 4px 12px rgba(0, 0, 0, 0.09),
-      0 14px 34px rgba(0, 0, 0, 0.10);
+      0 0 0 3px rgba(var(--hf-brand-rgb), 0.12),
+      0 10px 26px rgba(26, 26, 46, 0.10);
   }
 }
 
@@ -20944,10 +20939,10 @@ td.recipe-qty-scaled {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: var(--hf-surface-soft);
-  color: var(--hf-brand-dark);
+  background: var(--hf-brand);
+  color: #ffffff;
   padding: 2px 7px;
-  border-radius: var(--radius-full);
+  border-radius: 5px;
   margin-left: 6px;
 }
 
@@ -21183,11 +21178,11 @@ td.recipe-qty-scaled {
   color: var(--text-secondary);
 }
 
-/* ── Empty state: quiet placeholder, never taller than a filled card ── */
+/* ── Empty state: dashed border, no background fill ── */
 .kitchen-card.kitchen-day-card.dc2.is-empty {
-  background: var(--background-card-empty, #f8f8ff);
-  border-left-color: color-mix(in srgb, var(--dc2-accent, #d1d5db) 55%, transparent);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04);
+  background: var(--surface-muted, #fafaf8);
+  border: 1.5px dashed var(--card-border, #E5DDD3);
+  box-shadow: none;
 }
 
 .dc2-empty {
@@ -21449,7 +21444,7 @@ td.recipe-qty-scaled {
 [data-theme="dark"] .kitchen-card.kitchen-day-card.dc2.is-dinner-mode {
   background: var(--surface-elevated, #1f2333);
   color: var(--hf-text, #e2e8f0);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32), 0 8px 24px rgba(0, 0, 0, 0.30);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
 }
 
 [data-theme="dark"] .dc2-header {
