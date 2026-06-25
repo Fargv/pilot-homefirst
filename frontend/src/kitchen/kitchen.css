@@ -23266,10 +23266,49 @@ td.recipe-qty-scaled {
 /* ── Desktop refinements ─────────────────────────────────────────────────────── */
 
 @media (min-width: 900px) {
-  .cm-topbar { padding: 16px 28px; }
-  .cm-step-scroll { padding: 26px 28px; max-width: 840px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-  .cm-nav { padding: 16px 28px calc(22px + env(safe-area-inset-bottom, 0px)); }
+  .cooking-stepper-overlay {
+    --cm-executor-max: 860px;
+  }
+
+  .cm-topbar,
+  .cm-progress,
+  .cm-step-scroll,
+  .cm-nav {
+    width: min(var(--cm-executor-max), calc(100vw - 64px));
+    max-width: var(--cm-executor-max);
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+  }
+
+  .cm-topbar {
+    padding: 16px 0 14px;
+    border-bottom: none;
+  }
+
+  .cm-progress {
+    height: 7px;
+    border-radius: var(--radius-full);
+  }
+
+  .cm-progress-fill {
+    border-radius: var(--radius-full);
+  }
+
+  .cm-step-scroll {
+    padding: 28px 0 24px;
+  }
+
+  .cm-nav {
+    padding: 16px 0 calc(22px + env(safe-area-inset-bottom, 0px));
+    border-top: none;
+  }
+
   .cm-nav-prev { padding: 0 24px; }
+  .cm-nav-next {
+    flex: 0 1 420px;
+    margin-left: auto;
+  }
   .cm-step-num { width: 60px; height: 60px; font-size: 28px; }
   .cm-step-tag { font-size: 22px; }
   .cm-step-body { font-size: 22px; }
