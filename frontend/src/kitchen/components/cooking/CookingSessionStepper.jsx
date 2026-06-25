@@ -209,7 +209,9 @@ export default function CookingSessionStepper() {
           goToStep(session.currentStepIndex - 1);
         }
       } else if (e.key === "Escape") {
-        if (ingredientPanelOpen) {
+        if (cancelConfirmOpen) {
+          setCancelConfirmOpen(false);
+        } else if (ingredientPanelOpen) {
           setIngredientPanelOpen(false);
         } else {
           minimizeStepper();
@@ -218,7 +220,7 @@ export default function CookingSessionStepper() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [isStepperOpen, session, goToStep, minimizeStepper, ingredientPanelOpen]);
+  }, [isStepperOpen, session, goToStep, minimizeStepper, ingredientPanelOpen, cancelConfirmOpen]);
 
   useEffect(() => {
     if (!isStepperOpen || !session) {
@@ -256,18 +258,23 @@ export default function CookingSessionStepper() {
   const stepper = (
     <div
       className="cooking-stepper-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Modo cocina: ${recipeName}`}
+      role="presentation"
     >
-      {isComplete ? (
-        <CompletionScreen
-          session={session}
-          onCookAgain={endSession}
-          onClose={endSession}
-        />
-      ) : (
-        <>
+      <div
+        className={`cm-dialog${isComplete ? " cm-dialog--complete" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Modo cocina: ${recipeName}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {isComplete ? (
+          <CompletionScreen
+            session={session}
+            onCookAgain={endSession}
+            onClose={endSession}
+          />
+        ) : (
+          <>
           {/* ── Top bar ── */}
           <div className="cm-topbar">
             <div className="cm-topbar-left">
@@ -442,8 +449,9 @@ export default function CookingSessionStepper() {
               </div>
             </>
           ) : null}
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 
