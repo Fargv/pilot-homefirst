@@ -316,6 +316,7 @@ export default function WeekPage() {
   const [addIngredientsOpen, setAddIngredientsOpen] = useState({});
   const [selectedDay, setSelectedDay] = useState("");
   const [editingDays, setEditingDays] = useState({});
+  const [assigningDayKey, setAssigningDayKey] = useState("");
   const [draftCookUserByDay, setDraftCookUserByDay] = useState({});
   const [persistedCookUserByDay, setPersistedCookUserByDay] = useState({});
   const [showCarouselControls, setShowCarouselControls] = useState(false);
@@ -1173,6 +1174,20 @@ export default function WeekPage() {
     });
   };
 
+  const closeDayAssignmentState = useCallback((dayKey) => {
+    if (!dayKey) return;
+    setEditingDays((prev) => {
+      if (!Object.prototype.hasOwnProperty.call(prev, dayKey)) return prev;
+      const next = { ...prev };
+      delete next[dayKey];
+      return next;
+    });
+    setAssigningDayKey((current) => (current === dayKey ? "" : current));
+    setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+    setAddIngredientsOpen((prev) => ({ ...prev, [dayKey]: false }));
+    clearCookDraftState(dayKey);
+  }, []);
+
   const persistFinalCookAssignment = async (dayKey, reason = "explicit-save") => {
     const day = visibleDaysRef.current.find((entry) => entry?.date?.slice(0, 10) === dayKey);
     if (!day) {
@@ -1393,10 +1408,14 @@ export default function WeekPage() {
     return { proceed: true, include: Boolean(choice) };
   }, [askDinnerShoppingChoice, dinnersIncludeInShopping, leftoversByDay]);
 
-  const applyMainDishSelection = useCallback(async (day, nextMainDishId, nextMainDishName = "") => {
+  const applyMainDishSelection = useCallback(async (day, nextMainDishId, nextMainDishName = "", options = {}) => {
+    const { closeOnSuccess = false, assignSelfIfUnassigned = false } = options;
     const dayKey = day?.date?.slice?.(0, 10);
     if (!dayKey) return null;
     const payload = buildMainDishUpdatePayload(day, nextMainDishId);
+    if (assignSelfIfUnassigned && !day?.cookUserId && userRef.current && nextMainDishId) {
+      payload.cookUserId = userRef.current?.id || userRef.current?._id || null;
+    }
     const currentMainDishId = day?.mainDishId ? String(day.mainDishId) : "";
     const nextMainDishKey = nextMainDishId ? String(nextMainDishId) : "";
     if (dayMealType(day) === "dinner") {
@@ -1414,8 +1433,13 @@ export default function WeekPage() {
         payload.includeMainIngredients = false;
       }
     }
-    return updateDay(day, payload);
-  }, [askDinnerInclusionIfNeeded, updateDay]);
+    const result = await updateDay(day, payload);
+    if (result && closeOnSuccess) {
+      setMainDishQueries((prev) => ({ ...prev, [dayKey]: nextMainDishName || "" }));
+      closeDayAssignmentState(dayKey);
+    }
+    return result;
+  }, [askDinnerInclusionIfNeeded, closeDayAssignmentState, updateDay]);
 
   const requestRemoveDayAssignment = (day) => {
     const dayKey = day?.date?.slice(0, 10);
@@ -1478,17 +1502,6 @@ export default function WeekPage() {
           scrollCarouselToDay(targetDate, "smooth");
         }
       });
-      const targetDay = data?.plan?.days?.find((entry) => {
-        const key = entry?.date?.slice?.(0, 10)
-          || (entry?.date ? new Date(entry.date).toISOString().slice(0, 10) : "");
-        return key === targetDate;
-      });
-      const targetCookId = targetDay?.cookUserId ? String(targetDay.cookUserId) : "";
-      const currentUserId = String(userRef.current?.id || userRef.current?._id || "");
-      const canEditTarget = isOwnerAdmin || (targetCookId && targetCookId === currentUserId);
-      if (targetDay && canEditTarget) {
-        startEditingDay(targetDay);
-      }
       return data.plan;
     } catch (err) {
       const message = err.message || "No se pudo mover la asignación del día.";
@@ -1653,6 +1666,7 @@ export default function WeekPage() {
     const saved = await persistFinalCookAssignment(dayKey, reason);
     if (!saved) return false;
     setEditingDays({});
+    setAssigningDayKey((current) => (current === dayKey ? "" : current));
     setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
     setAddIngredientsOpen((prev) => ({ ...prev, [dayKey]: false }));
     return true;
@@ -1679,15 +1693,18 @@ export default function WeekPage() {
         setActiveIndex(targetIndex);
       }
 
-      startEditingDay(targetDay);
-
       if (plateId) {
         const targetDish = dishes.find((dish) => dish._id === plateId);
         if (targetDish) {
           setMainDishQueries((prev) => ({ ...prev, [targetDate]: targetDish.name }));
-          applyMainDishSelection(targetDay, targetDish._id, targetDish.name);
-          focusMainDish(targetDate);
+          void applyMainDishSelection(targetDay, targetDish._id, targetDish.name, {
+            closeOnSuccess: true,
+            assignSelfIfUnassigned: true
+          });
         }
+      } else {
+        startEditingDay(targetDay);
+        focusMainDish(targetDate);
       }
 
       window.requestAnimationFrame(() => {
@@ -1704,8 +1721,8 @@ export default function WeekPage() {
       dishes,
       focusMainDish,
       scrollCarouselToDay,
-      visibleDays,
-      startEditingDay
+      startEditingDay,
+      visibleDays
     ]
   );
 
@@ -1819,28 +1836,13 @@ export default function WeekPage() {
 
   const handleAssignCta = async (day, canEdit, isAssigned) => {
     const dayKey = day.date.slice(0, 10);
-    if (canEdit) {
-      if (!isAssigned && user) {
-        const started = await startEditingDay(day, {
-          initialCookUserId: user?.id || user?._id || null
-        });
-        if (started) {
-          focusMainDish(dayKey);
-        }
-        return;
-      }
-      await startEditingDay(day);
-      focusMainDish(dayKey);
-      return;
-    }
-    if (!isAssigned && user) {
-      const started = await startEditingDay(day, {
-        initialCookUserId: user?.id || user?._id || null
-      });
-      if (started) {
-        focusMainDish(dayKey);
-      }
-    }
+    if (!canEdit && (isAssigned || !user)) return;
+    setSelectedDay(dayKey);
+    setEditingDays({});
+    setAssigningDayKey(dayKey);
+    setMainDishQueries((prev) => ({ ...prev, [dayKey]: day.mainDishId ? dishMap.get(day.mainDishId)?.name || "" : "" }));
+    setMainDishOpen((prev) => ({ ...prev, [dayKey]: true }));
+    focusMainDish(dayKey);
   };
 
   const handleRandomAssignCta = async (day, canEdit, isAssigned, options = {}) => {
@@ -1856,22 +1858,8 @@ export default function WeekPage() {
       return;
     }
 
-    const clickHouseholdId = getCurrentHouseholdId();
     const clickWeekStart = weekStartRef.current;
-    const usedIds = new Set(
-      (visibleDaysRef.current || [])
-        .map((entry) => entry?.mainDishId)
-        .filter(Boolean)
-        .map((value) => String(value))
-    );
-
-    let targetDay = day;
-    if (!isAssigned && userRef.current) {
-      const started = await startEditingDay(day, {
-        initialCookUserId: userRef.current?.id || userRef.current?._id || null
-      });
-      if (!started) return;
-    } else if (!canEdit) {
+    if (!canEdit && (isAssigned || !userRef.current)) {
       return;
     }
 
@@ -1913,10 +1901,13 @@ export default function WeekPage() {
 
     let randomDish = randomResponse.dish;
 
-    const firstUpdatePayload = buildMainDishUpdatePayload(targetDay, randomDish._id);
-    if (dayMealType(targetDay) === "dinner") {
+    const firstUpdatePayload = buildMainDishUpdatePayload(day, randomDish._id);
+    if (!day?.cookUserId && userRef.current) {
+      firstUpdatePayload.cookUserId = userRef.current?.id || userRef.current?._id || null;
+    }
+    if (dayMealType(day) === "dinner") {
       const shoppingChoice = await askDinnerInclusionIfNeeded({
-        day: targetDay,
+        day,
         dayKey,
         dishId: randomDish._id,
         dishName: randomDish.name,
@@ -1927,7 +1918,7 @@ export default function WeekPage() {
       firstUpdatePayload.includeMainIngredients = shoppingChoice.include ?? false;
     }
     let updateResult = await updateDay(
-      targetDay,
+      day,
       firstUpdatePayload,
       { weekStart: clickWeekStart, returnErrorObject: true }
     );
@@ -1946,10 +1937,13 @@ export default function WeekPage() {
         if (!retryDish?._id) {
           return;
         }
-        const retryPayload = buildMainDishUpdatePayload(targetDay, retryDish._id);
-        if (dayMealType(targetDay) === "dinner") {
+        const retryPayload = buildMainDishUpdatePayload(day, retryDish._id);
+        if (!day?.cookUserId && userRef.current) {
+          retryPayload.cookUserId = userRef.current?.id || userRef.current?._id || null;
+        }
+        if (dayMealType(day) === "dinner") {
           const shoppingChoice = await askDinnerInclusionIfNeeded({
-            day: targetDay,
+            day,
             dayKey,
             dishId: retryDish._id,
             dishName: retryDish.name,
@@ -1960,7 +1954,7 @@ export default function WeekPage() {
           retryPayload.includeMainIngredients = shoppingChoice.include ?? false;
         }
         updateResult = await updateDay(
-          targetDay,
+          day,
           retryPayload,
           { weekStart: clickWeekStart, returnErrorObject: true }
         );
@@ -1972,7 +1966,7 @@ export default function WeekPage() {
 
     if (updateResult?.plan) {
       setMainDishQueries((prev) => ({ ...prev, [dayKey]: randomDish.name }));
-      setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+      closeDayAssignmentState(dayKey);
     }
   };
 
@@ -2016,7 +2010,10 @@ export default function WeekPage() {
     if (dishModalDayKey) {
       const targetDay = visibleDays.find((day) => day.date?.slice(0, 10) === dishModalDayKey);
       if (targetDay) {
-        applyMainDishSelection(targetDay, dish._id, dish.name);
+        await applyMainDishSelection(targetDay, dish._id, dish.name, {
+          closeOnSuccess: true,
+          assignSelfIfUnassigned: assigningDayKey === dishModalDayKey
+        });
         setMainDishQueries((prev) => ({ ...prev, [dishModalDayKey]: dish.name }));
         setMainDishOpen((prev) => ({ ...prev, [dishModalDayKey]: false }));
       }
@@ -2129,13 +2126,7 @@ export default function WeekPage() {
         .map((dayName) => addDaysToISO(weekStart, OPTIONAL_WEEKEND_DAY_OFFSETS[dayName]))
         .find(Boolean);
       const targetDate = createdDates[0] || fallbackDate || "";
-      const targetDay = nextVisibleDays.find((day) => day?.date?.slice(0, 10) === targetDate);
       focusWeekendDay(targetDate, nextVisibleDays);
-      if (targetDay) {
-        window.requestAnimationFrame(() => {
-          startEditingDay(targetDay);
-        });
-      }
     } catch (err) {
       setLoadError(err.message || "No se pudo anadir el fin de semana.");
     } finally {
@@ -2156,6 +2147,9 @@ export default function WeekPage() {
     if (currentEditingDayKey && currentEditingDayKey !== dayKey) {
       const saved = await stopEditingDay(currentEditingDayKey, "day-change");
       if (!saved) return;
+    }
+    if (assigningDayKey && assigningDayKey !== dayKey) {
+      closeDayAssignmentState(assigningDayKey);
     }
     const targetIndex = dayKeys.indexOf(dayKey);
     setSelectedDay(dayKey);
@@ -2508,6 +2502,7 @@ export default function WeekPage() {
                 const formattedDayLabel = formatDateLabel(day.date);
                 const [dayTitlePrimary, dayTitleSecondary] = formattedDayLabel.split(", ");
                 const isEditing = Boolean(editingDays[dayKey]);
+                const isAssigning = assigningDayKey === dayKey;
                 const draftCookUserId = isEditing && Object.prototype.hasOwnProperty.call(draftCookUserByDay, dayKey)
                   ? normalizeCookUserId(draftCookUserByDay[dayKey])
                   : normalizeCookUserId(day.cookUserId);
@@ -2666,6 +2661,126 @@ export default function WeekPage() {
               {!isEditing ? (
                 isEmptyState ? (
                   <div className="dc2-empty">
+                    {isAssigning ? (
+                      <div className="dc2-assign-flow">
+                        <label className="kitchen-field dc2-assign-field">
+                          <span className="kitchen-label">Plato principal</span>
+                          <div className="kitchen-edit-main-dish-row">
+                            <div className="kitchen-ingredient-search">
+                              <input
+                                ref={(node) => {
+                                  if (!node) {
+                                    mainDishRefs.current.delete(dayKey);
+                                    return;
+                                  }
+                                  mainDishRefs.current.set(dayKey, node);
+                                }}
+                                className="kitchen-input"
+                                value={mainDishQuery}
+                                placeholder="Busca un plato..."
+                                onFocus={() => setMainDishOpen((prev) => ({ ...prev, [dayKey]: true }))}
+                                onBlur={() => {
+                                  const trimmed = mainDishQuery.trim();
+                                  const normalized = normalizeIngredientName(trimmed);
+                                  const match = dishes.find(
+                                    (dish) => normalizeIngredientName(dish.name || "") === normalized
+                                  );
+                                  if (match) {
+                                    applyMainDishSelection(day, match._id, match.name, {
+                                      closeOnSuccess: true,
+                                      assignSelfIfUnassigned: true
+                                    });
+                                    setMainDishQueries((prev) => ({ ...prev, [dayKey]: match.name }));
+                                  }
+                                  setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+                                }}
+                                onChange={(event) => {
+                                  const value = event.target.value;
+                                  setMainDishQueries((prev) => ({ ...prev, [dayKey]: value }));
+                                  setMainDishOpen((prev) => ({ ...prev, [dayKey]: true }));
+                                }}
+                              />
+                              {mainDishOpen[dayKey] ? (
+                                <div className="kitchen-suggestion-list is-scrollable">
+                                  {mainDishTokens.length ? (
+                                    <>
+                                      {limitedMainDishes.length ? (
+                                        limitedMainDishes.map((dish) => (
+                                          <button
+                                            className="kitchen-suggestion"
+                                            key={dish._id}
+                                            type="button"
+                                            onMouseDown={(event) => {
+                                              event.preventDefault();
+                                              applyMainDishSelection(day, dish._id, dish.name, {
+                                                closeOnSuccess: true,
+                                                assignSelfIfUnassigned: true
+                                              });
+                                              setMainDishQueries((prev) => ({ ...prev, [dayKey]: dish.name }));
+                                              setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+                                            }}
+                                          >
+                                            <span className="kitchen-suggestion-name">{dish.name}</span>
+                                          </button>
+                                        ))
+                                      ) : !hasExactMainDishMatch && trimmedMainDishQuery ? (
+                                        <button
+                                          className="kitchen-suggestion is-create"
+                                          type="button"
+                                          onMouseDown={(event) => {
+                                            event.preventDefault();
+                                            setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
+                                            openDishModal(dayKey, trimmedMainDishQuery);
+                                          }}
+                                        >
+                                          Crear nuevo plato "{trimmedMainDishQuery}"
+                                        </button>
+                                      ) : (
+                                        <div className="kitchen-muted kitchen-suggestion-empty">Sin coincidencias.</div>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <div className="kitchen-muted kitchen-suggestion-empty">
+                                      Escribe para buscar...
+                                    </div>
+                                  )}
+                                </div>
+                              ) : null}
+                            </div>
+                            <button
+                              type="button"
+                              className="dc2-empty-random"
+                              onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
+                              disabled={randomDisabled}
+                              aria-label="Randomizar dia"
+                              title={randomTitle}
+                            >
+                              <DiceIcon />
+                            </button>
+                            {canUseFullWeekRandomization ? (
+                              <button
+                                type="button"
+                                className="dc2-empty-random is-expand"
+                                onClick={() => openRandomizeMenu({ day, canEdit, isAssigned })}
+                                disabled={randomDisabled}
+                                aria-label="Opciones de randomizacion"
+                                title="Mas opciones"
+                              >
+                                <ChevronDownIcon width="14" height="14" />
+                              </button>
+                            ) : null}
+                          </div>
+                        </label>
+                        <button
+                          type="button"
+                          className="dc2-assign-cancel"
+                          onClick={() => closeDayAssignmentState(dayKey)}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <>
                     <div className="dc2-empty-zone" aria-hidden="true" />
                     {canShowAssignCta ? (
                       <div className="dc2-empty-actions">
@@ -2700,6 +2815,8 @@ export default function WeekPage() {
                         ) : null}
                       </div>
                     ) : null}
+                      </>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -2867,10 +2984,15 @@ export default function WeekPage() {
                             (dish) => normalizeIngredientName(dish.name || "") === normalized
                           );
                           if (!trimmed) {
-                            applyMainDishSelection(day, null, "");
+                            applyMainDishSelection(day, null, "", {
+                              closeOnSuccess: assigningDayKey === dayKey
+                            });
                             setMainDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
                           } else if (match) {
-                            applyMainDishSelection(day, match._id, match.name);
+                            applyMainDishSelection(day, match._id, match.name, {
+                              closeOnSuccess: assigningDayKey === dayKey,
+                              assignSelfIfUnassigned: assigningDayKey === dayKey
+                            });
                             setMainDishQueries((prev) => ({ ...prev, [dayKey]: match.name }));
                           } else {
                             setMainDishQueries((prev) => ({
@@ -2895,7 +3017,9 @@ export default function WeekPage() {
                                 type="button"
                                 onMouseDown={(event) => {
                                   event.preventDefault();
-                                  applyMainDishSelection(day, null, "");
+                                  applyMainDishSelection(day, null, "", {
+                                    closeOnSuccess: true
+                                  });
                                   setMainDishQueries((prev) => ({ ...prev, [dayKey]: "" }));
                                   setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
                                 }}
@@ -2910,7 +3034,10 @@ export default function WeekPage() {
                                     type="button"
                                     onMouseDown={(event) => {
                                       event.preventDefault();
-                                      applyMainDishSelection(day, dish._id, dish.name);
+                                      applyMainDishSelection(day, dish._id, dish.name, {
+                                        closeOnSuccess: true,
+                                        assignSelfIfUnassigned: assigningDayKey === dayKey
+                                      });
                                       setMainDishQueries((prev) => ({ ...prev, [dayKey]: dish.name }));
                                       setMainDishOpen((prev) => ({ ...prev, [dayKey]: false }));
                                     }}
