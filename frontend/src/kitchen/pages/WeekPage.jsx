@@ -312,6 +312,7 @@ export default function WeekPage() {
   const [weekNotice, setWeekNotice] = useState(null);
   const [dayStatus, setDayStatus] = useState({});
   const [dayErrors, setDayErrors] = useState({});
+  const [assignmentFeedbackByDay, setAssignmentFeedbackByDay] = useState({});
   const [extraIngredientsByDay, setExtraIngredientsByDay] = useState({});
   const [addIngredientsOpen, setAddIngredientsOpen] = useState({});
   const [selectedDay, setSelectedDay] = useState("");
@@ -414,6 +415,7 @@ export default function WeekPage() {
   const [installedPacksError, setInstalledPacksError] = useState("");
   const ingredientCache = useRef(new Map());
   const saveTimers = useRef({});
+  const assignmentFeedbackTimers = useRef({});
   const carouselRef = useRef(null);
   const weekRandomizeRef = useRef(null);
   const dayRefs = useRef(new Map());
@@ -765,6 +767,12 @@ export default function WeekPage() {
     }, 3200);
     return () => window.clearTimeout(timer);
   }, [weekNotice]);
+
+  useEffect(() => () => {
+    Object.values(assignmentFeedbackTimers.current).forEach((timer) => {
+      window.clearTimeout(timer);
+    });
+  }, []);
 
   useEffect(() => {
     if (!dinnersEnabled && mealTab !== "lunch") {
@@ -1174,6 +1182,26 @@ export default function WeekPage() {
     });
   };
 
+  const triggerAssignmentFeedback = useCallback((dayKey) => {
+    if (!dayKey) return;
+    if (assignmentFeedbackTimers.current[dayKey]) {
+      window.clearTimeout(assignmentFeedbackTimers.current[dayKey]);
+    }
+    setAssignmentFeedbackByDay((prev) => ({
+      ...prev,
+      [dayKey]: { token: `${Date.now()}-${Math.random().toString(36).slice(2)}` }
+    }));
+    assignmentFeedbackTimers.current[dayKey] = window.setTimeout(() => {
+      setAssignmentFeedbackByDay((prev) => {
+        if (!Object.prototype.hasOwnProperty.call(prev, dayKey)) return prev;
+        const next = { ...prev };
+        delete next[dayKey];
+        return next;
+      });
+      delete assignmentFeedbackTimers.current[dayKey];
+    }, 1800);
+  }, []);
+
   const closeDayAssignmentState = useCallback((dayKey) => {
     if (!dayKey) return;
     setEditingDays((prev) => {
@@ -1437,9 +1465,12 @@ export default function WeekPage() {
     if (result && closeOnSuccess) {
       setMainDishQueries((prev) => ({ ...prev, [dayKey]: nextMainDishName || "" }));
       closeDayAssignmentState(dayKey);
+      if (nextMainDishId) {
+        triggerAssignmentFeedback(dayKey);
+      }
     }
     return result;
-  }, [askDinnerInclusionIfNeeded, closeDayAssignmentState, updateDay]);
+  }, [askDinnerInclusionIfNeeded, closeDayAssignmentState, triggerAssignmentFeedback, updateDay]);
 
   const requestRemoveDayAssignment = (day) => {
     const dayKey = day?.date?.slice(0, 10);
@@ -1967,6 +1998,7 @@ export default function WeekPage() {
     if (updateResult?.plan) {
       setMainDishQueries((prev) => ({ ...prev, [dayKey]: randomDish.name }));
       closeDayAssignmentState(dayKey);
+      triggerAssignmentFeedback(dayKey);
     }
   };
 
@@ -2522,6 +2554,8 @@ export default function WeekPage() {
                 const randomTitle = randomDisabled
                   ? "Actualizando platos del hogar..."
                   : "Randomizar día";
+                const canRerandomizeInView = canEdit && Boolean(day.mainDishId) && !day.isLeftovers;
+                const assignmentFeedback = assignmentFeedbackByDay[dayKey] || null;
                 const dayVisual = DAY_CARD_STYLES[index % DAY_CARD_STYLES.length];
                 const cardColors = isPlanned
                   ? (isAssigned && cookUser
@@ -2609,7 +2643,7 @@ export default function WeekPage() {
                 "--dc2-badge-text": cookBadgeText,
                 "--hf-anim-i": index
               }}
-              className={`kitchen-card kitchen-day-card dc2 hf-anim-rise ${selectedDay === dayKey ? "is-selected" : ""} ${isToday ? "is-today" : ""} ${isEditing ? "is-editing" : ""} ${isEmptyState ? "is-empty" : ""} ${selectedMealType === "dinner" ? "is-dinner-mode" : ""}`}
+              className={`kitchen-card kitchen-day-card dc2 hf-anim-rise ${selectedDay === dayKey ? "is-selected" : ""} ${isToday ? "is-today" : ""} ${isEditing ? "is-editing" : ""} ${isEmptyState ? "is-empty" : ""} ${assignmentFeedback ? "is-assignment-feedback" : ""} ${selectedMealType === "dinner" ? "is-dinner-mode" : ""}`}
               tabIndex={-1}
               ref={(node) => {
                 if (!node) {
@@ -2827,6 +2861,17 @@ export default function WeekPage() {
                         ) : null}
                         {displayDishName || "Sin plato"}
                       </h4>
+                      {assignmentFeedback ? (
+                        <span
+                          key={assignmentFeedback.token}
+                          className="dc2-assignment-feedback"
+                          role="status"
+                          aria-live="polite"
+                        >
+                          <SaveIcon />
+                          <span>Plato asignado</span>
+                        </span>
+                      ) : null}
                       {dishCategory?.name || recipeMinutes > 0 || showOriginTag ? (
                         <div className="dc2-dish-tags">
                           {dishCategory?.name ? (
@@ -2860,6 +2905,18 @@ export default function WeekPage() {
                       >
                         <BookIcon /> <span>Ver receta</span>
                       </button>
+                      {canRerandomizeInView ? (
+                        <button
+                          type="button"
+                          className="dc2-btn dc2-btn-rerandom"
+                          onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
+                          disabled={randomDisabled}
+                          aria-label="Randomizar otra vez"
+                          title={randomTitle}
+                        >
+                          <DiceIcon /> <span>Otra vez</span>
+                        </button>
+                      ) : null}
                       {canEdit ? (
                         <button
                           type="button"

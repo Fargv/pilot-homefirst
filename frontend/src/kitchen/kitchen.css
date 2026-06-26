@@ -20871,6 +20871,47 @@ td.recipe-qty-scaled {
     0 2px 10px rgba(26, 26, 46, 0.08);
 }
 
+@keyframes dc2AssignmentPulse {
+  0% {
+    border-color: var(--success-border);
+    box-shadow:
+      0 0 0 0 color-mix(in srgb, var(--success-text) 18%, transparent),
+      0 2px 10px rgba(26, 26, 46, 0.05);
+  }
+  42% {
+    border-color: color-mix(in srgb, var(--success-text) 44%, var(--card-border));
+    box-shadow:
+      0 0 0 5px color-mix(in srgb, var(--success-text) 12%, transparent),
+      0 12px 28px color-mix(in srgb, var(--success-text) 10%, transparent);
+  }
+  100% {
+    border-color: var(--card-border);
+    box-shadow: 0 2px 10px rgba(26, 26, 46, 0.05);
+  }
+}
+
+@keyframes dc2AssignmentBadge {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  76% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.98);
+  }
+}
+
+.kitchen-card.kitchen-day-card.dc2.is-assignment-feedback {
+  animation: dc2AssignmentPulse 1500ms ease-out both;
+}
+
 @media (hover: hover) and (min-width: 768px) {
   .kitchen-card.kitchen-day-card.dc2:hover {
     transform: translateY(-2px);
@@ -21266,6 +21307,29 @@ td.recipe-qty-scaled {
   text-overflow: ellipsis;
 }
 
+.dc2-assignment-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  margin: -2px 0 8px;
+  padding: 3px 9px 3px 7px;
+  border: 1px solid var(--success-border);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--success-bg) 76%, var(--surface));
+  color: var(--success-text);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1;
+  animation: dc2AssignmentBadge 1800ms ease-out both;
+}
+
+.dc2-assignment-feedback svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+}
+
 .dc2-dish-tags {
   display: flex;
   gap: 6px;
@@ -21379,8 +21443,31 @@ td.recipe-qty-scaled {
   background: var(--surface-muted);
 }
 
+.dc2-btn-rerandom {
+  flex: 0 1 auto;
+  min-width: 44px;
+  padding: 0 13px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.dc2-btn-rerandom:hover:not(:disabled) {
+  background: var(--surface-muted);
+  border-color: var(--hf-brand-soft-border);
+  color: var(--hf-brand-dark);
+}
+
+.dc2-btn-rerandom:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .dc2-btn-recipe span,
-.dc2-btn-edit span {
+.dc2-btn-edit span,
+.dc2-btn-rerandom span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -21725,6 +21812,7 @@ td.recipe-qty-scaled {
 
 [data-theme="dark"] .dc2-attendees-edit,
 [data-theme="dark"] .dc2-btn-edit,
+[data-theme="dark"] .dc2-btn-rerandom,
 [data-theme="dark"] .dc2-btn-more,
 [data-theme="dark"] .dc2-empty-random {
   background: transparent;
@@ -21733,6 +21821,7 @@ td.recipe-qty-scaled {
 }
 
 [data-theme="dark"] .dc2-btn-edit:hover,
+[data-theme="dark"] .dc2-btn-rerandom:hover:not(:disabled),
 [data-theme="dark"] .dc2-btn-more:hover {
   background: rgba(148, 163, 184, 0.10);
 }
@@ -21858,9 +21947,39 @@ td.recipe-qty-scaled {
     height: 38px;
   }
 
+  .dc2-actions {
+    gap: 7px;
+  }
+
+  .dc2-btn-rerandom {
+    flex: 0 0 44px;
+    width: 44px;
+    padding: 0;
+  }
+
+  .dc2-btn-rerandom span {
+    display: none;
+  }
+
   .dc2-assign-field .kitchen-edit-main-dish-row {
     grid-template-columns: minmax(0, 1fr) 38px 34px;
     gap: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kitchen-card.kitchen-day-card.dc2.is-assignment-feedback {
+    animation: none;
+    border-color: var(--success-border);
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--success-text) 12%, transparent),
+      0 2px 10px rgba(26, 26, 46, 0.05);
+  }
+
+  .dc2-assignment-feedback {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
 
