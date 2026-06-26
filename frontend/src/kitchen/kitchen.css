@@ -21263,8 +21263,19 @@ td.recipe-qty-scaled {
   vertical-align: -2px;
 }
 
+.dc2-dish-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 8px;
+}
+
 .dc2-dish-name {
-  margin: 0 0 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
   font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
@@ -21274,6 +21285,44 @@ td.recipe-qty-scaled {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.dc2-title-rerandom {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  margin-top: -2px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-soft);
+  background: var(--surface, #ffffff);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 100ms ease;
+}
+
+.dc2-title-rerandom svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.dc2-title-rerandom:hover:not(:disabled) {
+  background: var(--surface-muted);
+  border-color: var(--hf-brand-soft-border);
+  color: var(--hf-brand-dark);
+}
+
+.dc2-title-rerandom:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.dc2-title-rerandom:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .dc2-dish-tags {
@@ -21389,31 +21438,8 @@ td.recipe-qty-scaled {
   background: var(--surface-muted);
 }
 
-.dc2-btn-rerandom {
-  flex: 0 1 auto;
-  min-width: 44px;
-  padding: 0 13px;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--border-soft);
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.dc2-btn-rerandom:hover:not(:disabled) {
-  background: var(--surface-muted);
-  border-color: var(--hf-brand-soft-border);
-  color: var(--hf-brand-dark);
-}
-
-.dc2-btn-rerandom:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
 .dc2-btn-recipe span,
-.dc2-btn-edit span,
-.dc2-btn-rerandom span {
+.dc2-btn-edit span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -21758,7 +21784,7 @@ td.recipe-qty-scaled {
 
 [data-theme="dark"] .dc2-attendees-edit,
 [data-theme="dark"] .dc2-btn-edit,
-[data-theme="dark"] .dc2-btn-rerandom,
+[data-theme="dark"] .dc2-title-rerandom,
 [data-theme="dark"] .dc2-btn-more,
 [data-theme="dark"] .dc2-empty-random {
   background: transparent;
@@ -21767,7 +21793,7 @@ td.recipe-qty-scaled {
 }
 
 [data-theme="dark"] .dc2-btn-edit:hover,
-[data-theme="dark"] .dc2-btn-rerandom:hover:not(:disabled),
+[data-theme="dark"] .dc2-title-rerandom:hover:not(:disabled),
 [data-theme="dark"] .dc2-btn-more:hover {
   background: rgba(148, 163, 184, 0.10);
 }
@@ -21893,18 +21919,11 @@ td.recipe-qty-scaled {
     height: 38px;
   }
 
-  .dc2-actions {
-    gap: 7px;
-  }
-
-  .dc2-btn-rerandom {
-    flex: 0 0 44px;
-    width: 44px;
-    padding: 0;
-  }
-
-  .dc2-btn-rerandom span {
-    display: none;
+  .dc2-title-rerandom {
+    flex-basis: 38px;
+    width: 38px;
+    height: 38px;
+    margin-top: -3px;
   }
 
   .dc2-assign-field .kitchen-edit-main-dish-row {

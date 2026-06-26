@@ -2860,12 +2860,26 @@ export default function WeekPage() {
                 ) : (
                   <>
                     <div className="dc2-dish">
-                      <h4 className="dc2-dish-name">
-                        {dishEmoji ? (
-                          <span className="dc2-dish-name-emoji" aria-hidden="true">{dishEmoji}</span>
+                      <div className="dc2-dish-title-row">
+                        <h4 className="dc2-dish-name">
+                          {dishEmoji ? (
+                            <span className="dc2-dish-name-emoji" aria-hidden="true">{dishEmoji}</span>
+                          ) : null}
+                          {displayDishName || "Sin plato"}
+                        </h4>
+                        {canRerandomizeInView ? (
+                          <button
+                            type="button"
+                            className="dc2-title-rerandom"
+                            onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
+                            disabled={randomDisabled}
+                            aria-label="Randomizar otra vez"
+                            title={randomTitle}
+                          >
+                            <DiceIcon />
+                          </button>
                         ) : null}
-                        {displayDishName || "Sin plato"}
-                      </h4>
+                      </div>
                       {assignmentFeedback ? (
                         <span
                           key={assignmentFeedback.token}
@@ -2909,18 +2923,6 @@ export default function WeekPage() {
                       >
                         <BookIcon /> <span>Ver receta</span>
                       </button>
-                      {canRerandomizeInView ? (
-                        <button
-                          type="button"
-                          className="dc2-btn dc2-btn-rerandom"
-                          onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
-                          disabled={randomDisabled}
-                          aria-label="Randomizar otra vez"
-                          title={randomTitle}
-                        >
-                          <DiceIcon /> <span>Otra vez</span>
-                        </button>
-                      ) : null}
                       {canEdit ? (
                         <button
                           type="button"
