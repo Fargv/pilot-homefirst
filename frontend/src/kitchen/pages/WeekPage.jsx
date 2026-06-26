@@ -545,7 +545,12 @@ export default function WeekPage() {
       } else if (hasWarnings) {
         setWeekNotice({ type: "error", message: warningMessages.join(" ") });
       } else {
-        setWeekNotice({ type: "success", message: "Semana randomizada" });
+        window.setTimeout(() => {
+          (data.plan?.days || []).forEach((day) => {
+            const dKey = day?.date?.slice(0, 10);
+            if (dKey) triggerAssignmentFeedback(dKey);
+          });
+        }, 60);
       }
     } catch (err) {
       if (isWeekRandomizationUnavailableError(err)) {
@@ -562,7 +567,7 @@ export default function WeekPage() {
     } finally {
       setWeekRandomizing(false);
     }
-  }, [canUseFullWeekRandomization, selectedMealType]);
+  }, [canUseFullWeekRandomization, selectedMealType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleConfirmWeekDelete = useCallback(async () => {
     if (weekDeleteBusy) return;
@@ -1199,7 +1204,7 @@ export default function WeekPage() {
         return next;
       });
       delete assignmentFeedbackTimers.current[dayKey];
-    }, 1800);
+    }, 550);
   }, []);
 
   const closeDayAssignmentState = useCallback((dayKey) => {
@@ -2864,12 +2869,11 @@ export default function WeekPage() {
                       {assignmentFeedback ? (
                         <span
                           key={assignmentFeedback.token}
-                          className="dc2-assignment-feedback"
                           role="status"
                           aria-live="polite"
+                          style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap" }}
                         >
-                          <SaveIcon />
-                          <span>Plato asignado</span>
+                          Plato asignado
                         </span>
                       ) : null}
                       {dishCategory?.name || recipeMinutes > 0 || showOriginTag ? (
