@@ -2343,6 +2343,7 @@ export default function WeekPage() {
           {isNavLoading ? <div className="kitchen-week-nav-progress" aria-hidden="true" /> : null}
           <section className="kitchen-week-header">
             <PageHeader
+              className="kitchen-week-page-header"
               title="Planificación"
               primaryAction={
                 canUseDinners ? (
@@ -2378,7 +2379,7 @@ export default function WeekPage() {
                 ) : null
               }
               secondaryLeft={
-                <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                <div className="kitchen-week-header-actions-row">
                   {canUseDinners ? (
                     <ShareWhatsAppButton
                       iconOnly
