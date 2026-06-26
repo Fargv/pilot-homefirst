@@ -21501,6 +21501,43 @@ td.recipe-qty-scaled {
   cursor: not-allowed;
 }
 
+.dc2-assign-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.dc2-assign-field {
+  gap: 7px;
+  min-width: 0;
+}
+
+.dc2-assign-field .kitchen-edit-main-dish-row {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 7px;
+}
+
+.dc2-assign-cancel {
+  align-self: flex-start;
+  height: 34px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--text-secondary);
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.dc2-assign-cancel:hover {
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
 /* ── "···" menu: mobile bottom sheet ── */
 @keyframes dc2OverlayIn {
   from { opacity: 0; }
@@ -21782,6 +21819,16 @@ td.recipe-qty-scaled {
   background: rgba(148, 163, 184, 0.06);
 }
 
+[data-theme="dark"] .dc2-assign-cancel {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .dc2-assign-cancel:hover {
+  background: rgba(148, 163, 184, 0.10);
+}
+
 /* Mobile: no hover lift; compact empty card (header + 40px zone + actions) */
 @media (max-width: 767px) {
   .kitchen-card.kitchen-day-card.dc2:hover {
@@ -21809,6 +21856,11 @@ td.recipe-qty-scaled {
   .dc2-empty-random {
     width: 38px;
     height: 38px;
+  }
+
+  .dc2-assign-field .kitchen-edit-main-dish-row {
+    grid-template-columns: minmax(0, 1fr) 38px 34px;
+    gap: 6px;
   }
 }
 
@@ -28742,4 +28794,408 @@ body,
 
 [data-theme="dark"] .consent-gate-card {
   background: var(--hf-surface, #1e293b);
+}
+
+/* Theme contrast hardening: keep form text, selected values and compact labels
+   tied to semantic tokens even when older screen CSS uses fixed light colors. */
+[data-app-theme] .kitchen-app :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea,
+  [contenteditable="true"]
+) {
+  color: var(--input-text);
+  caret-color: var(--input-text);
+  -webkit-text-fill-color: var(--input-text);
+}
+
+[data-app-theme] .kitchen-app :is(
+  .kitchen-input,
+  .kitchen-select,
+  .kitchen-textarea,
+  .kitchen-ui-input,
+  .shopping-store-select,
+  .shopping-store-select-compact,
+  .shopping-quick-add-input,
+  .shopping-trip-amount-input,
+  .shopping-add-input,
+  .shopping-modal-category-input,
+  .recipe-servings-input,
+  .recipe-ingredient-input,
+  .recipe-qty-amount,
+  .recipe-qty-unit,
+  .recipe-link-dialog-input,
+  .settings-email-input,
+  .guided-step-ing-add-input,
+  .guided-step-ing-add-select,
+  .basics-emoji-input,
+  .basics-name-input,
+  .basics-search-input,
+  .basics-create-name-input,
+  .basics-create-cat-select,
+  .basics-cat-input,
+  .phdr-search-input,
+  .catalog-search-input,
+  .dishes-search-input,
+  .ss-trigger,
+  .ss-search
+) {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+  -webkit-text-fill-color: var(--input-text);
+}
+
+[data-app-theme] .kitchen-app :is(
+  .kitchen-input,
+  .kitchen-select,
+  .kitchen-textarea,
+  .kitchen-ui-input,
+  .shopping-store-select,
+  .shopping-store-select-compact,
+  .shopping-quick-add-input,
+  .shopping-trip-amount-input,
+  .shopping-add-input,
+  .shopping-modal-category-input,
+  .recipe-servings-input,
+  .recipe-ingredient-input,
+  .recipe-qty-amount,
+  .recipe-qty-unit,
+  .recipe-link-dialog-input,
+  .settings-email-input,
+  .guided-step-ing-add-input,
+  .guided-step-ing-add-select,
+  .basics-emoji-input,
+  .basics-name-input,
+  .basics-search-input,
+  .basics-create-name-input,
+  .basics-create-cat-select,
+  .basics-cat-input,
+  .phdr-search-input,
+  .catalog-search-input,
+  .dishes-search-input,
+  .ss-search
+)::placeholder {
+  color: var(--input-placeholder);
+  opacity: 1;
+  -webkit-text-fill-color: var(--input-placeholder);
+}
+
+[data-app-theme] .kitchen-app :is(
+  .kitchen-input,
+  .kitchen-select,
+  .kitchen-textarea,
+  .kitchen-ui-input,
+  .shopping-store-select,
+  .shopping-store-select-compact,
+  .shopping-quick-add-input,
+  .shopping-trip-amount-input,
+  .shopping-add-input,
+  .shopping-modal-category-input,
+  .recipe-servings-input,
+  .recipe-ingredient-input,
+  .recipe-qty-amount,
+  .recipe-qty-unit,
+  .recipe-link-dialog-input,
+  .settings-email-input,
+  .guided-step-ing-add-input,
+  .guided-step-ing-add-select,
+  .basics-emoji-input,
+  .basics-name-input,
+  .basics-search-input,
+  .basics-create-name-input,
+  .basics-create-cat-select,
+  .basics-cat-input,
+  .phdr-search-input,
+  .catalog-search-input,
+  .dishes-search-input,
+  .ss-trigger
+):is(:focus, :focus-visible),
+[data-app-theme] .ss-container.is-open .ss-trigger {
+  background: var(--input-focus-bg);
+  border-color: var(--input-focus-border);
+  color: var(--input-text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--input-focus-border) 24%, transparent);
+  outline: none;
+}
+
+[data-app-theme] .kitchen-app :is(
+  .kitchen-input,
+  .kitchen-select,
+  .kitchen-textarea,
+  .kitchen-ui-input,
+  .shopping-store-select,
+  .shopping-store-select-compact,
+  .shopping-quick-add-input,
+  .shopping-trip-amount-input,
+  .shopping-add-input,
+  .shopping-modal-category-input,
+  .recipe-servings-input,
+  .recipe-ingredient-input,
+  .recipe-qty-amount,
+  .recipe-qty-unit,
+  .recipe-link-dialog-input,
+  .settings-email-input,
+  .guided-step-ing-add-input,
+  .guided-step-ing-add-select,
+  .basics-emoji-input,
+  .basics-name-input,
+  .basics-search-input,
+  .basics-create-name-input,
+  .basics-create-cat-select,
+  .basics-cat-input,
+  .phdr-search-input,
+  .catalog-search-input,
+  .dishes-search-input,
+  .ss-trigger
+):disabled {
+  background: var(--button-disabled-bg);
+  border-color: var(--border-soft);
+  color: var(--button-disabled-text);
+  -webkit-text-fill-color: var(--button-disabled-text);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+[data-app-theme] .kitchen-app :is(
+  .kitchen-ui-input.is-error,
+  .kitchen-input.is-error,
+  .kitchen-textarea.is-error
+) {
+  background: color-mix(in srgb, var(--danger-bg) 74%, var(--input-bg));
+  border-color: var(--danger-border);
+  color: var(--input-text);
+}
+
+[data-app-theme] .kitchen-app :is(
+  .kitchen-ui-input.is-valid,
+  .kitchen-input.is-valid,
+  .kitchen-textarea.is-valid
+) {
+  border-color: var(--success-border);
+}
+
+[data-app-theme] .kitchen-app select option {
+  background: var(--dropdown-bg);
+  color: var(--text-primary);
+}
+
+[data-app-theme] .ss-panel,
+[data-app-theme] .kitchen-suggestion-list,
+[data-app-theme] .shopping-quick-suggestions,
+[data-app-theme] .shopping-modal-category-menu,
+[data-app-theme] .recipe-ingredient-dropdown,
+[data-app-theme] .recipe-link-dialog,
+[data-app-theme] .recipe-color-picker,
+[data-app-theme] .basics-search-suggestions {
+  background: var(--dropdown-bg);
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+}
+
+[data-app-theme] .ss-search-wrapper {
+  background: var(--input-bg);
+  border-bottom-color: var(--border-soft);
+  color: var(--input-placeholder);
+}
+
+[data-app-theme] .ss-option,
+[data-app-theme] .kitchen-suggestion,
+[data-app-theme] .shopping-modal-category-option,
+[data-app-theme] .recipe-ingredient-dropdown-item,
+[data-app-theme] .basics-search-suggestion,
+[data-app-theme] .basics-search-create-btn {
+  color: var(--text-primary);
+  border-color: var(--border-soft);
+}
+
+[data-app-theme] :is(
+  .ss-option:hover,
+  .ss-option:focus-visible,
+  .kitchen-suggestion:hover,
+  .kitchen-suggestion:focus-visible,
+  .shopping-modal-category-option:hover,
+  .shopping-modal-category-option:focus-visible,
+  .recipe-ingredient-dropdown-item:hover,
+  .recipe-ingredient-dropdown-item:focus-visible,
+  .basics-search-suggestion:hover,
+  .basics-search-create-btn:hover
+) {
+  background: var(--dropdown-hover-bg);
+  color: var(--text-primary);
+}
+
+[data-app-theme] :is(
+  .ss-option-selected,
+  .shopping-modal-category-option.is-selected,
+  .recipe-ingredient-dropdown-item.is-selected,
+  .basics-cat-option.is-selected
+) {
+  background: var(--dropdown-selected-bg);
+  border-color: var(--border-focus);
+  color: var(--nav-active-text);
+}
+
+[data-app-theme] :is(
+  .kitchen-chip,
+  .kitchen-chip-action,
+  .kitchen-filter-chip,
+  .kitchen-pill,
+  .kitchen-status-pill,
+  .kitchen-ingredient-pill,
+  .recipe-ingredient-row--pill .recipe-ingredient-pill,
+  .guided-step-ing-chip,
+  .dc2-tag,
+  .pk2-tag,
+  .pk2-badge,
+  .catalog-pack-tag,
+  .catalog-badge,
+  .catalog-badge-bites,
+  .catalog-badge-included,
+  .catalog-bites-chip,
+  .dk2-pill,
+  .dfc-badge,
+  .fsh-pill,
+  .weekly-challenge-pill,
+  .settings-theme-card-status,
+  .settings-theme-card-lock,
+  .settings-header-plan-badge,
+  .settings-subscription-badge
+) {
+  background: var(--chip-bg);
+  border-color: var(--chip-border);
+  color: var(--chip-text);
+}
+
+[data-app-theme] :is(
+  .kitchen-chip.is-active,
+  .kitchen-filter-chip.is-active,
+  .kitchen-filter-chip.is-all,
+  .kitchen-meal-tab.is-active,
+  .kitchen-tab-button.is-active,
+  .shopping-tab.active,
+  .catalog-tab.active,
+  .recipe-tabs button.is-active,
+  .guided-step-ing-chip.is-selected,
+  .dc2-tag.is-brand,
+  .fsh-pill.is-active,
+  .dfc-chip,
+  .theme-selector-option.is-active
+) {
+  background: var(--chip-active-bg);
+  border-color: color-mix(in srgb, var(--chip-active-text) 22%, var(--chip-active-bg));
+  color: var(--chip-active-text);
+}
+
+[data-app-theme] :is(
+  .kitchen-chip.is-pending,
+  .settings-theme-feedback,
+  .settings-theme-card.is-selected .settings-theme-card-status,
+  .kitchen-dish-origin-badge.is-user,
+  .dk2-pill-origin.is-user,
+  .catalog-badge-installed,
+  .catalog-badge-owned,
+  .catalog-badge-free
+) {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+
+[data-app-theme] :is(
+  .catalog-toast-error,
+  .settings-theme-feedback.is-error,
+  .dc2-menu-item.is-danger .dc2-menu-item-icon
+) {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+[data-app-theme] .dc2-edit-save-btn,
+[data-app-theme] .dc2-empty-cta,
+[data-app-theme] .kitchen-ui-button-primary {
+  background: var(--button-primary-bg);
+  border-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+}
+
+[data-app-theme] :is(
+  .dc2-edit-btn,
+  .dc2-edit-add-btn,
+  .dc2-empty-random,
+  .kitchen-button.secondary,
+  .kitchen-button.ghost,
+  .kitchen-ui-button-secondary,
+  .kitchen-ui-button-ghost
+) {
+  background: var(--button-secondary-bg);
+  border-color: var(--border-soft);
+  color: var(--button-secondary-text);
+}
+
+[data-app-theme] :is(
+  .dc2-edit-btn:hover,
+  .dc2-edit-add-btn:hover,
+  .dc2-empty-random:hover:not(:disabled),
+  .kitchen-button.secondary:hover,
+  .kitchen-button.ghost:hover
+) {
+  background: color-mix(in srgb, var(--button-secondary-bg) 82%, var(--hf-brand) 10%);
+  color: var(--button-secondary-text);
+}
+
+[data-app-theme] .dc2-edit-btn.is-danger {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+[data-app-theme] .dc2-edit-btn.is-danger:hover {
+  background: color-mix(in srgb, var(--danger-bg) 82%, var(--danger-text) 12%);
+}
+
+[data-theme="dark"] .kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-input {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+  -webkit-text-fill-color: var(--input-text);
+}
+
+[data-theme="dark"] .kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-input:focus {
+  background: var(--input-focus-bg);
+  border-color: var(--input-focus-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--input-focus-border) 24%, transparent);
+}
+
+[data-theme="dark"] .kitchen-card.kitchen-day-card.dc2.is-editing .kitchen-label {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .kitchen-card.kitchen-day-card.dc2 .kitchen-day-feedback {
+  color: var(--success-text);
+}
+
+[data-app-theme] .kitchen-app :is(
+  button,
+  .kitchen-button,
+  .kitchen-ui-button,
+  .dc2-edit-save-btn,
+  .dc2-edit-btn,
+  .dc2-edit-add-btn,
+  .dc2-empty-cta,
+  .dc2-empty-random,
+  .catalog-pack-action,
+  .settings-savebar-save,
+  .settings-savebar-discard,
+  .ss-trigger
+):disabled,
+[data-app-theme] .catalog-pack-action.disabled {
+  background: var(--button-disabled-bg);
+  border-color: var(--border-soft);
+  color: var(--button-disabled-text);
+  -webkit-text-fill-color: var(--button-disabled-text);
+  cursor: not-allowed;
+  opacity: 1;
+  box-shadow: none;
 }
