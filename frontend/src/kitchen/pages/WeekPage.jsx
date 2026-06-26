@@ -2378,7 +2378,14 @@ export default function WeekPage() {
                 ) : null
               }
               secondaryLeft={
-                <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                <WeekDatePicker
+                  selectedWeek={weekStart}
+                  onWeekChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
+                  className="kitchen-week-header-navigator"
+                />
+              }
+              secondaryRight={
+                <div className="kitchen-week-hdr-actions">
                   {canUseDinners ? (
                     <ShareWhatsAppButton
                       iconOnly
@@ -2427,13 +2434,6 @@ export default function WeekPage() {
                   ) : null}
                 </div>
               }
-              secondaryRight={
-                <WeekDatePicker
-                  selectedWeek={weekStart}
-                  onWeekChange={(nextValue) => setWeekStart(normalizeWeekStart(nextValue))}
-                  className="kitchen-week-header-navigator"
-                />
-              }
               footer={
                 <WeekDayTabs
                   days={visibleDays}
@@ -2459,6 +2459,8 @@ export default function WeekPage() {
             </PageHeader>
           </section>
 
+          <div className="kitchen-week-body">
+          <div className="kitchen-week-main">
           <div className="kitchen-week-carousel" data-swipe-zone="carousel">
             {showCarouselControls ? (
               <button
@@ -3283,7 +3285,7 @@ export default function WeekPage() {
             <div className="kitchen-week-delete-row">
               <button
                 type="button"
-                className="kitchen-button secondary is-small kitchen-week-delete-button"
+                className="kitchen-week-delete-pill"
                 onClick={() => setWeekDeleteConfirmOpen(true)}
                 disabled={weekDeleteBusy}
                 title="Borrar la programacion visible de esta semana"
@@ -3292,6 +3294,41 @@ export default function WeekPage() {
               </button>
             </div>
           ) : null}
+          </div>{/* /kitchen-week-main */}
+
+          <aside className="kitchen-week-aside">
+            <div className="kitchen-week-summary-card">
+              <div className="kitchen-week-summary-title">Resumen de la semana</div>
+              <div className="kitchen-week-summary-row">
+                <span className="kitchen-week-summary-label">Días planificados</span>
+                <span className="kitchen-week-summary-value">
+                  {visibleDays.filter((d) => Boolean(d.mainDishId || d.isLeftovers)).length} / {visibleDays.length}
+                </span>
+              </div>
+              <div className="kitchen-week-summary-bar">
+                <div
+                  className="kitchen-week-summary-bar-fill"
+                  style={{ width: visibleDays.length > 0 ? `${Math.round(visibleDays.filter((d) => Boolean(d.mainDishId || d.isLeftovers)).length / visibleDays.length * 100)}%` : "0%" }}
+                />
+              </div>
+              <div className="kitchen-week-summary-row">
+                <span className="kitchen-week-summary-label">Comensales</span>
+                <span className="kitchen-week-summary-value is-accent">{users.length} {users.length === 1 ? "persona" : "personas"}</span>
+              </div>
+            </div>
+            {isOwnerAdmin ? (
+              <button
+                type="button"
+                className="kitchen-week-delete-pill"
+                onClick={() => setWeekDeleteConfirmOpen(true)}
+                disabled={weekDeleteBusy}
+                title="Borrar la programacion visible de esta semana"
+              >
+                <TrashIcon /> Borrar semana
+              </button>
+            ) : null}
+          </aside>
+          </div>{/* /kitchen-week-body */}
         </div>
       </div>
       {dayCardMenu ? (() => {
