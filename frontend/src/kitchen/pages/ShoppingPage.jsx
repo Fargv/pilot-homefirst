@@ -276,6 +276,8 @@ export default function ShoppingPage() {
   const [quickQuery, setQuickQuery] = useState("");
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [quickCategories, setQuickCategories] = useState([]);
+  const [quickCategoriesLoading, setQuickCategoriesLoading] = useState(false);
+  const [quickCategoriesError, setQuickCategoriesError] = useState("");
   const [quickCategoryId, setQuickCategoryId] = useState("");
   const [quickBusy, setQuickBusy] = useState(false);
   const [quickSearching, setQuickSearching] = useState(false);
@@ -350,6 +352,23 @@ export default function ShoppingPage() {
     if (!normalizedSearch) return quickCategories;
     return quickCategories.filter((category) => normalizeQuery(category.name).includes(normalizedSearch));
   }, [quickCategories, quickCategorySearch]);
+
+  const loadQuickCategories = useCallback(async () => {
+    setQuickCategoriesLoading(true);
+    setQuickCategoriesError("");
+    try {
+      const categoriesData = await apiSync("/api/categories");
+      const nextCategories = Array.isArray(categoriesData.categories) ? categoriesData.categories : [];
+      setQuickCategories(nextCategories);
+      return nextCategories;
+    } catch (err) {
+      setQuickCategories([]);
+      setQuickCategoriesError(err?.message || "No se pudieron cargar las categorías.");
+      return [];
+    } finally {
+      setQuickCategoriesLoading(false);
+    }
+  }, []);
 
   const updateVisibleWeek = useCallback((valueOrUpdater) => {
     const nextWeekValue = typeof valueOrUpdater === "function" ? valueOrUpdater(weekStart) : valueOrUpdater;
@@ -570,35 +589,16 @@ export default function ShoppingPage() {
   }, [hasOpenPurchase, location.pathname, navigationContext]);
 
   useEffect(() => {
-    let active = true;
-    const loadCategories = async () => {
-      try {
-        const categoriesData = await apiSync("/api/categories");
-        if (!active) return;
-        setQuickCategories(categoriesData.categories || []);
-      } catch {
-        if (!active) return;
-        setQuickCategories([]);
-      }
-    };
-    void loadCategories();
-    return () => {
-      active = false;
-    };
-  }, []);
+    void loadQuickCategories();
+  }, [loadQuickCategories]);
 
   useEffect(() => {
     const onCatalogInvalidated = async () => {
-      try {
-        const categoriesData = await apiSync("/api/categories");
-        setQuickCategories(categoriesData.categories || []);
-      } catch {
-        setQuickCategories([]);
-      }
+      await loadQuickCategories();
     };
     window.addEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
     return () => window.removeEventListener("kitchen:catalog-invalidated", onCatalogInvalidated);
-  }, []);
+  }, [loadQuickCategories]);
 
   useEffect(() => {
     if (!quickCreateOpen || !quickCategoryMenuOpen) return undefined;
@@ -796,10 +796,15 @@ export default function ShoppingPage() {
     const trimmedName = quickQuery.trim();
     if (!trimmedName || quickBusy) return;
     setQuickCreateName(trimmedName);
+    setQuickQuery("");
+    setQuickSuggestions([]);
     setQuickCategoryId("");
     setQuickCategorySearch("");
     setQuickCategoryMenuOpen(false);
     setQuickCreateOpen(true);
+    if (!quickCategories.length && !quickCategoriesLoading) {
+      void loadQuickCategories();
+    }
   };
 
   const closeQuickCreateModal = () => {
@@ -1349,7 +1354,7 @@ export default function ShoppingPage() {
                     onChange={(event) => setQuickQuery(event.target.value)}
                     placeholder="¿Qué necesitas comprar?"
                   />
-                  {quickQuery ? (
+                  {!quickCreateOpen && quickQuery ? (
                     <div className="shopping-quick-suggestions">
                       {quickSearching ? <div className="kitchen-muted">Buscando...</div> : null}
                       {!quickSearching ? quickSuggestions.slice(0, 8).map((item) => (
@@ -1787,13 +1792,23 @@ export default function ShoppingPage() {
                     setQuickCategorySearch(event.target.value);
                     setQuickCategoryMenuOpen(true);
                   }}
-                  onFocus={() => setQuickCategoryMenuOpen(true)}
+                  onFocus={() => {
+                    setQuickCategoryMenuOpen(true);
+                    if (!quickCategories.length && !quickCategoriesLoading) {
+                      void loadQuickCategories();
+                    }
+                  }}
                   placeholder={selectedQuickCategory ? selectedQuickCategory.name : "Buscar o seleccionar categoría"}
-                  disabled={quickBusy}
+                  disabled={quickBusy || quickCategoriesLoading}
                   aria-expanded={quickCategoryMenuOpen}
                   aria-haspopup="listbox"
                 />
               </div>
+              {quickCategoriesLoading ? (
+                <p className="kitchen-muted">Cargando categorías...</p>
+              ) : quickCategoriesError ? (
+                <p className="kitchen-inline-error">{quickCategoriesError}</p>
+              ) : null}
             </label>
             <div className="kitchen-modal-actions">
               <button
@@ -1808,7 +1823,7 @@ export default function ShoppingPage() {
                 type="button"
                 className="kitchen-button"
                 onClick={handleQuickCreate}
-                disabled={quickBusy || !quickCreateName.trim() || !quickCategoryId}
+                disabled={quickBusy || quickCategoriesLoading || !quickCreateName.trim() || !quickCategoryId}
               >
                 <ConfirmIcon /> {quickBusy ? "Guardando..." : "Crear"}
               </button>
@@ -1830,7 +1845,11 @@ export default function ShoppingPage() {
             maxHeight: quickCategoryMenuPosition.maxHeight
           }}
         >
-          {filteredQuickCategories.length ? filteredQuickCategories.map((category) => {
+          {quickCategoriesLoading ? (
+            <div className="shopping-modal-category-empty">Cargando categorías...</div>
+          ) : quickCategoriesError ? (
+            <div className="shopping-modal-category-empty is-error">{quickCategoriesError}</div>
+          ) : filteredQuickCategories.length ? filteredQuickCategories.map((category) => {
             const isSelected = category._id === quickCategoryId;
             return (
               <button

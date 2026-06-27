@@ -992,7 +992,7 @@ export default function DishesPage() {
   }, [nextChallengeKey, dishSuggestions, dishes]);
 
   const isIngredientsTab = activeTab === "ingredients";
-  const headerTitle = "Cocina";
+  const headerTitle = "Mi Cocina";
   const headerDescription = isIngredientsTab
     ? isDiodGlobalMode
       ? "Catálogo master de productos — visibles en todos los hogares."

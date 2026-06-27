@@ -9,7 +9,7 @@ import { normalizeSubscriptionPlan } from "./subscriptionService.js";
 const WELCOME_BITES = 20;
 
 // Screens required for explore_app challenge (in trigger-event format)
-const EXPLORE_REQUIRED = ["visit_week", "visit_dishes", "visit_shopping", "visit_catalog", "visit_settings"];
+const EXPLORE_REQUIRED = ["visit_week", "visit_shopping", "visit_dishes", "visit_catalog", "visit_settings"];
 
 // ─── Default challenge definitions ───────────────────────────────────────────
 // Total challenge reward: 85 bites. Welcome: +20. Grand total: 105.
@@ -20,7 +20,7 @@ const DEFAULT_CHALLENGES = [
     key: "explore_app",
     title: "Explora Lunchfy",
     description: "Antes de empezar a crear y planificar, dedica un minuto a conocer la app. Visita las 5 secciones principales desde la barra de navegación inferior.",
-    howTo: "Visita: Planificación · Cocina (y la pestaña Productos) · Lista de la compra · Catálogo · Ajustes.",
+    howTo: "Visita: Planificación · Lista · Mi Cocina (y la pestaña Productos) · Catálogo · Ajustes.",
     rewardBites: 5, order: 1, phase: 1, phaseLabel: "Conoce la app",
     triggerType: "explore_app", triggerCount: 5
   },
@@ -28,7 +28,7 @@ const DEFAULT_CHALLENGES = [
     key: "create_ingredient",
     title: "Crea tu primer producto",
     description: "Los productos son la base de todo. Cuando los añadas a un plato, Lunchfy los incluirá automáticamente en tu lista de la compra. Sin escribir nada a mano.",
-    howTo: "Ve a Cocina → pestaña Productos → toca + → escribe el nombre de un producto que usas habitualmente → guarda.",
+    howTo: "Ve a Mi Cocina → pestaña Productos → toca + → escribe el nombre de un producto que usas habitualmente → guarda.",
     rewardBites: 10, order: 2, phase: 2, phaseLabel: "Productos",
     triggerType: "create_ingredient", triggerCount: 1
   },
@@ -36,7 +36,7 @@ const DEFAULT_CHALLENGES = [
     key: "create_second_ingredient",
     title: "Añade un segundo producto",
     description: "Cuantos más productos tengas, más completa y útil será tu lista de la compra. Añade al menos un producto más para empezar a construir tu despensa.",
-    howTo: "Ve a Cocina → pestaña Productos → toca + → crea otro producto diferente.",
+    howTo: "Ve a Mi Cocina → pestaña Productos → toca + → crea otro producto diferente.",
     rewardBites: 5, order: 3, phase: 2, phaseLabel: "Productos",
     triggerType: "create_ingredient", triggerCount: 2
   },
@@ -44,7 +44,7 @@ const DEFAULT_CHALLENGES = [
     key: "create_dish",
     title: "Crea tu primer plato",
     description: "Un plato es una receta que asignarás a los días de tu semana. Los platos con ingredientes generan automáticamente tu lista de la compra.",
-    howTo: "Ve a Cocina → toca + → escribe el nombre de un plato que cocinas habitualmente → guarda.",
+    howTo: "Ve a Mi Cocina → toca + → escribe el nombre de un plato que cocinas habitualmente → guarda.",
     rewardBites: 10, order: 4, phase: 3, phaseLabel: "Platos",
     triggerType: "create_dish", triggerCount: 1
   },
@@ -60,7 +60,7 @@ const DEFAULT_CHALLENGES = [
     key: "customize_randomization",
     title: "Personaliza tu randomización",
     description: "Marca y desmarca algunos platos para indicar cuáles quieres que Lunchfy use al randomizar tu planificación. Así el plan automático siempre propone platos que te gustan.",
-    howTo: "En Cocina → Platos, activa el checkbox '☑ Incluir en randomización' en los platos que quieres que entren en la planificación automática.",
+    howTo: "En Mi Cocina → Platos, activa el checkbox '☑ Incluir en randomización' en los platos que quieres que entren en la planificación automática.",
     rewardBites: 5, order: 6, phase: 3, phaseLabel: "Platos",
     triggerType: "randomization_customized", triggerCount: 1
   },

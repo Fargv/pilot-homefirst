@@ -126,9 +126,9 @@ function OnboardingCompletionModal({ onDismiss }) {
           <p className="onboarding-completion-areas-label">Ya conoces lo esencial:</p>
           <ul className="onboarding-completion-areas-list">
             <li><span aria-hidden="true">📅</span> <strong>Planificación</strong> — organiza tu semana de comidas</li>
-            <li><span aria-hidden="true">🍳</span> <strong>Cocina</strong> — gestiona tus platos</li>
-            <li><span aria-hidden="true">🥕</span> <strong>Productos</strong> — tu despensa digital</li>
             <li><span aria-hidden="true">🛒</span> <strong>Lista</strong> — siempre al día y automática</li>
+            <li><span aria-hidden="true">🍳</span> <strong>Mi Cocina</strong> — gestiona tus platos</li>
+            <li><span aria-hidden="true">🥕</span> <strong>Productos</strong> — tu despensa digital</li>
             <li><span aria-hidden="true">📦</span> <strong>Básicos</strong> — lo que compras cada semana</li>
             <li><span aria-hidden="true">📚</span> <strong>Catálogo</strong> — platos listos para usar</li>
           </ul>

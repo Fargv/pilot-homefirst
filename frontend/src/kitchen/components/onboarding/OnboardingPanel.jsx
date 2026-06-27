@@ -23,8 +23,8 @@ const PHASE_COLORS = {
 
 const EXPLORE_SCREEN_LABELS = {
   visit_week: "Planificaci\u00f3n",
-  visit_dishes: "Cocina",
-  visit_shopping: "Lista de la compra",
+  visit_shopping: "Lista",
+  visit_dishes: "Mi Cocina",
   visit_catalog: "Cat\u00e1logo",
   visit_settings: "Ajustes"
 };

@@ -245,8 +245,8 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
   const navLinks = useMemo(
     () => [
       { to: "/kitchen/semana", label: "Planificación" },
-      { to: "/kitchen/platos", label: "Cocina" },
-      { to: "/kitchen/compra", label: "Lista de la compra" },
+      { to: "/kitchen/compra", label: "Lista" },
+      { to: "/kitchen/platos", label: "Mi Cocina" },
       { to: "/kitchen/catalogo", label: "Catálogo" }
     ],
     []
@@ -277,8 +277,8 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
   const bottomNavLinks = useMemo(
     () => [
       { to: "/kitchen/semana", label: "Planificación", icon: CalendarIcon },
-      { to: "/kitchen/platos", label: "Cocina", icon: UtensilsIcon },
       { to: "/kitchen/compra", label: "Lista", icon: ListIcon },
+      { to: "/kitchen/platos", label: "Mi Cocina", icon: UtensilsIcon },
       { to: "/kitchen/catalogo", label: "Catálogo", icon: CatalogIcon }
     ],
     []

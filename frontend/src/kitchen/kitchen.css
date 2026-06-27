@@ -5775,6 +5775,12 @@ body {
   font-size: var(--fs-sm);
 }
 
+.shopping-modal-category-empty.is-error {
+  color: var(--danger-text);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+}
+
 .shopping-ingredient-create-modal .kitchen-modal-actions .kitchen-button {
   display: inline-flex;
   align-items: center;
@@ -24485,7 +24491,7 @@ td.recipe-qty-scaled {
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  z-index: 150;
+  z-index: 30;
 }
 
 /* ── Dark-mode overrides ── */

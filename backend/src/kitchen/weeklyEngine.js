@@ -88,8 +88,8 @@ const BASIC_CURRICULUM_DEFS = [
   {
     key: "weekly_create_new_dish",
     title: "Crea un plato nuevo",
-    description: "Ve a la sección Cocina y añade un plato propio con sus productos.",
-    guidance: "Ve a la sección Cocina y añade un plato propio con sus productos.",
+    description: "Ve a la sección Mi Cocina y añade un plato propio con sus productos.",
+    guidance: "Ve a la sección Mi Cocina y añade un plato propio con sus productos.",
     rewardBites: 5,
     triggerType: "dish_created",
     triggerCount: 1,
@@ -411,8 +411,8 @@ const PRO_CURRICULUM_DEFS = [
   {
     key: "pro_w1_create_dish",
     title: "Crea un plato nuevo",
-    description: "Ve a la sección Cocina y añade un plato propio con sus productos.",
-    guidance: "Ve a la sección Cocina y añade un plato propio con sus productos.",
+    description: "Ve a la sección Mi Cocina y añade un plato propio con sus productos.",
+    guidance: "Ve a la sección Mi Cocina y añade un plato propio con sus productos.",
     rewardBites: 5,
     triggerType: "dish_created",
     triggerCount: 1,
@@ -492,8 +492,8 @@ const PRO_CURRICULUM_DEFS = [
   {
     key: "pro_w2_create_dish",
     title: "Crea un plato nuevo",
-    description: "Ve a la sección Cocina y añade un plato propio con sus productos.",
-    guidance: "Ve a la sección Cocina y añade un plato propio con sus productos.",
+    description: "Ve a la sección Mi Cocina y añade un plato propio con sus productos.",
+    guidance: "Ve a la sección Mi Cocina y añade un plato propio con sus productos.",
     rewardBites: 5,
     triggerType: "dish_created",
     triggerCount: 1,
