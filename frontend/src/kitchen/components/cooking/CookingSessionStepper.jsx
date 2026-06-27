@@ -144,7 +144,7 @@ function ActiveTimersPanel({ session, tick, onTimerAction, onGoToStep }) {
     <details
       className="cm-active-timers"
       open={entries.length <= 6}
-      style={{ "--cm-active-timers-list-height": `${visibleTimerRows * 34 + 8}px` }}
+      style={{ "--cm-active-timers-list-height": `${visibleTimerRows * 72 + 8}px` }}
     >
       <summary className="cm-active-timers-summary" aria-label={`Temporizadores activos, ${summaryText}`}>
         <span className="cm-active-timers-title">
