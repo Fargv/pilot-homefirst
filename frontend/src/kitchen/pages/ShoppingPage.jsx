@@ -23,6 +23,11 @@ import BasicsPopup from "../components/BasicsPopup.jsx";
 import { burstParticles, triggerMilestone } from "../hooks/useRewardAnimation.js";
 import { ShoppingPageSkeleton } from "../components/ScreenSkeletons.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
+import {
+  applyOptimisticShoppingStatusChange,
+  getShoppingItemKey,
+  reconcileShoppingPayloadWithPendingMutations
+} from "../shoppingOptimisticState.js";
 
 function RefreshIcon(props) {
   return (
@@ -193,7 +198,7 @@ function slugColor(slug = "") {
 }
 
 function itemKey(item) {
-  return item.itemId || `${item.ingredientId || "no-id"}-${item.canonicalName}`;
+  return getShoppingItemKey(item);
 }
 
 function normalizeQuery(value = "") {
@@ -338,6 +343,8 @@ export default function ShoppingPage() {
   const openPurchaseSessionRef = useRef(null);
   const pendingSortOrderRef = useRef(null);
   const pendingTabRef = useRef(null);
+  const pendingStatusMutationsRef = useRef(new Map());
+  const categoryInfoByIdRef = useRef(new Map());
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
   const isCurrentWeek = weekStart === getCurrentWeekStart();
   const openPurchaseSession = currentPurchaseSession || pendingPurchaseSessions[0] || null;
@@ -397,35 +404,44 @@ export default function ShoppingPage() {
   }, [budgetFeatureEnabled, navigate, weekStart]);
 
   const applyPayload = (data) => {
-    primeCache(shoppingQuery(weekStart), data);
-    const nextStores = Array.isArray(data?.stores) ? data.stores : [];
-    const nextBudgetFeatureEnabled = data?.featureAvailability?.budget !== false;
+    const reconciledData = reconcileShoppingPayloadWithPendingMutations(data, pendingStatusMutationsRef.current);
+    primeCache(shoppingQuery(weekStart), reconciledData);
+    const nextStores = Array.isArray(reconciledData?.stores) ? reconciledData.stores : [];
+    const nextBudgetFeatureEnabled = reconciledData?.featureAvailability?.budget !== false;
     const nextBudget = nextBudgetFeatureEnabled ? {
-      monthlyBudget: Number(data?.budget?.monthlyBudget) || 0,
-      cycleStartDay: Number(data?.budget?.cycleStartDay) || 1,
-      weeklyBudget: Number(data?.budget?.weeklyBudget) || 0,
-      spent: Number(data?.budget?.spent) || 0,
-      available: Number.isFinite(Number(data?.budget?.available)) ? Number(data.budget.available) : 0
+      monthlyBudget: Number(reconciledData?.budget?.monthlyBudget) || 0,
+      cycleStartDay: Number(reconciledData?.budget?.cycleStartDay) || 1,
+      weeklyBudget: Number(reconciledData?.budget?.weeklyBudget) || 0,
+      spent: Number(reconciledData?.budget?.spent) || 0,
+      available: Number.isFinite(Number(reconciledData?.budget?.available)) ? Number(reconciledData.budget.available) : 0
     } : null;
-    const normalizedPendingPurchaseSessions = Array.isArray(data?.pendingPurchaseSessions)
-      ? data.pendingPurchaseSessions.map((session) => ({
+    const normalizedPendingPurchaseSessions = Array.isArray(reconciledData?.pendingPurchaseSessions)
+      ? reconciledData.pendingPurchaseSessions.map((session) => ({
           ...session,
           itemCount: Number(session?.itemCount) || 0
         }))
       : [];
-    const nextCurrentPurchaseSession = nextBudgetFeatureEnabled && data?.currentPurchaseSession && typeof data.currentPurchaseSession === "object"
+    const nextCurrentPurchaseSession = nextBudgetFeatureEnabled && reconciledData?.currentPurchaseSession && typeof reconciledData.currentPurchaseSession === "object"
       ? {
-          ...data.currentPurchaseSession,
-          itemCount: Number(data.currentPurchaseSession.itemCount) || 0
+          ...reconciledData.currentPurchaseSession,
+          itemCount: Number(reconciledData.currentPurchaseSession.itemCount) || 0
         }
       : null;
     const nextOpenPurchaseSession = nextCurrentPurchaseSession || normalizedPendingPurchaseSessions[0] || null;
+    const nextPendingByCategory = Array.isArray(reconciledData?.pendingByCategory) ? reconciledData.pendingByCategory : [];
+    const nextPurchasedByStoreDay = Array.isArray(reconciledData?.purchasedByStoreDay) ? reconciledData.purchasedByStoreDay : [];
+
+    for (const group of nextPendingByCategory) {
+      if (group?.categoryId && group?.categoryInfo) {
+        categoryInfoByIdRef.current.set(String(group.categoryId), group.categoryInfo);
+      }
+    }
 
     setStores(nextStores);
     setBudgetFeatureEnabled(nextBudgetFeatureEnabled);
     setBudget(nextBudget);
-    setPendingByCategory(Array.isArray(data?.pendingByCategory) ? data.pendingByCategory : []);
-    setPurchasedByStoreDay(Array.isArray(data?.purchasedByStoreDay) ? data.purchasedByStoreDay : []);
+    setPendingByCategory(nextPendingByCategory);
+    setPurchasedByStoreDay(nextPurchasedByStoreDay);
     setPendingPurchaseSessions(nextBudgetFeatureEnabled ? normalizedPendingPurchaseSessions : []);
     setCurrentPurchaseSession(nextCurrentPurchaseSession);
     setHasRestorableOpenPurchase(Boolean(nextOpenPurchaseSession?.id && Number(nextOpenPurchaseSession?.itemCount || 0) > 0));
@@ -872,6 +888,22 @@ export default function ShoppingPage() {
   const setItemStatus = async (item, status, checkButtonEl) => {
     if (isDiodGlobalMode) return;
     const key = itemKey(item);
+    const queryKey = shoppingQuery(weekStart).queryKey;
+    const selectedStore = stores.find((store) => String(store._id) === String(selectedStoreRef.current || ""));
+    const fallbackCategoryInfo = item.categoryInfo || (item.categoryId ? categoryInfoByIdRef.current.get(String(item.categoryId)) : null);
+    const optimisticMutation = {
+      item,
+      status,
+      storeId: status === "purchased" ? selectedStoreRef.current || null : null,
+      storeName: selectedStore?.name || null,
+      purchasedAt: new Date().toISOString(),
+      fallbackCategoryInfo
+    };
+    const previousPending = pendingByCategory;
+    const previousPurchased = purchasedByStoreDay;
+    const previousCache = queryClient.getQueryData(queryKey);
+
+    pendingStatusMutationsRef.current.set(key, optimisticMutation);
     setTransitioningItemKey(key);
 
     // 🎯 Fire particle burst immediately (fire-and-forget, does not await)
@@ -879,27 +911,24 @@ export default function ShoppingPage() {
       burstParticles(checkButtonEl, { count: 5, radius: 38, duration: 560 });
     }
 
-    // Optimistic: once the 180ms leave animation finishes, drop the item from
-    // its current tab without waiting for the network. The server payload
-    // (applyPayload) remains canonical; on error both lists are restored.
-    const previousPending = pendingByCategory;
-    const previousPurchased = purchasedByStoreDay;
-    const dropItemFromGroups = (groups) =>
-      Array.isArray(groups)
-        ? groups
-            .map((group) => ({ ...group, items: (group.items || []).filter((entry) => itemKey(entry) !== key) }))
-            .filter((group) => (group.items || []).length > 0)
-        : groups;
-    const optimisticTimer = setTimeout(() => {
-      if (status === "purchased") {
-        setPendingByCategory(dropItemFromGroups);
-      } else {
-        setPurchasedByStoreDay(dropItemFromGroups);
-      }
-    }, 190);
-
+    // Optimistic state updates the grouped lists and cache before the request resolves.
     try {
-      const data = await apiSync(`/api/kitchen/shopping/${weekStart}/item`, {
+      await queryClient.cancelQueries({ queryKey });
+      const optimisticGroups = applyOptimisticShoppingStatusChange({
+        pendingByCategory: previousPending,
+        purchasedByStoreDay: previousPurchased
+      }, optimisticMutation);
+
+      setPendingByCategory(optimisticGroups.pendingByCategory);
+      setPurchasedByStoreDay(optimisticGroups.purchasedByStoreDay);
+      setRecentlyMovedItemKey(key);
+      queryClient.setQueryData(queryKey, (current) => ({
+        ...(current || previousCache || {}),
+        pendingByCategory: optimisticGroups.pendingByCategory,
+        purchasedByStoreDay: optimisticGroups.purchasedByStoreDay
+      }));
+
+      const data = await apiRequest(`/api/kitchen/shopping/${weekStart}/item`, {
         method: "PUT",
         body: JSON.stringify({
           canonicalName: item.canonicalName,
@@ -908,12 +937,13 @@ export default function ShoppingPage() {
           storeId: status === "purchased" ? selectedStoreRef.current || null : null
         })
       });
+      pendingStatusMutationsRef.current.delete(key);
       applyPayload(data);
       if (status === "purchased") {
         notifyOnboarding("mark_purchased");
         notifyWeekly("item_purchased", { itemKey: key });
-        const remaining = data.list?.pendingByCategory
-          ? Object.values(data.list.pendingByCategory).reduce((s, arr) => s + arr.length, 0)
+        const remaining = Array.isArray(data.pendingByCategory)
+          ? getPendingItemsCount(data.pendingByCategory)
           : null;
         if (remaining === 0) {
           notifyWeekly("shopping_list_completed");
@@ -929,15 +959,15 @@ export default function ShoppingPage() {
           setHasMarkedPurchaseInViewSession(true);
         }
       }
-      setRecentlyMovedItemKey(key);
     } catch (err) {
-      clearTimeout(optimisticTimer);
+      pendingStatusMutationsRef.current.delete(key);
+      queryClient.setQueryData(queryKey, previousCache);
       setPendingByCategory(previousPending);
       setPurchasedByStoreDay(previousPurchased);
       logShoppingApiError("setItemStatus", `/api/kitchen/shopping/${weekStart}/item`, err);
       pushToast({ type: "error", message: err.message || "No se pudo actualizar." });
     } finally {
-      setTransitioningItemKey(null);
+      setTransitioningItemKey((current) => current === key ? null : current);
     }
   };
 
@@ -1420,7 +1450,7 @@ export default function ShoppingPage() {
                                   <button
                                     className="shopping-check"
                                     type="button"
-                                    onClick={(e) => setItemStatus(item, "purchased", e.currentTarget)}
+                                    onClick={(e) => setItemStatus({ ...item, categoryInfo: group.categoryInfo }, "purchased", e.currentTarget)}
                                     aria-label={`Marcar ${item.displayName} como comprado`}
                                   >
                                     <span className="shopping-check-dot"><Check size={12} aria-hidden="true" /></span>
