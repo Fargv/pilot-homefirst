@@ -20891,21 +20891,26 @@ td.recipe-qty-scaled {
    ═══════════════════════════════════════════════════════════════ */
 
 .kitchen-card.kitchen-day-card.dc2 {
-  background: var(--surface, #ffffff);
+  background: var(--card-bg, #ffffff);
   border: 1px solid var(--card-border, #E5DDD3);
   border-radius: 20px;
   box-shadow: 0 2px 10px rgba(26, 26, 46, 0.05);
   overflow: hidden;
   padding: 0;
   gap: 0;
-  color: var(--hf-text, #1e293b);
+  color: var(--text-primary, #1e293b);
   transition: box-shadow 180ms ease, transform 180ms ease;
   animation-fill-mode: backwards;
 }
 
-.kitchen-card.kitchen-day-card.dc2.is-empty,
+.kitchen-card.kitchen-day-card.dc2.is-empty {
+  background: color-mix(in srgb, var(--surface-muted, #F0E9E1) 35%, var(--card-bg, #fff));
+  border: 1px dashed var(--card-border, #E5DDD3);
+  box-shadow: none;
+}
+
 .kitchen-card.kitchen-day-card.dc2.is-dinner-mode {
-  background: var(--surface, #ffffff);
+  background: var(--card-bg, #ffffff);
   border: 1px solid var(--card-border, #E5DDD3);
   box-shadow: 0 2px 10px rgba(26, 26, 46, 0.05);
 }
