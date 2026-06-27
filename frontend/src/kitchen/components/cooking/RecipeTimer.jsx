@@ -1,7 +1,6 @@
 import React from "react";
-import { formatRemaining } from "../../utils/timerService.js";
+import { formatRemaining, getRemainingMs, normalizeTimerStatus } from "../../utils/timerService.js";
 import { primeAudio } from "../../utils/notificationService.js";
-import { useLiveCookingTimer } from "../../hooks/useLiveCookingTimer.js";
 
 function PlayIcon() {
   return (
@@ -48,14 +47,15 @@ function CheckIcon() {
   );
 }
 
-export default function RecipeTimer({ timerKey, timer, durationMs, label, onAction }) {
-  const status = timer?.status || "idle";
+export default function RecipeTimer({ timerKey, timer, durationMs, label, timerMeta, tick, onAction }) {
+  void tick;
+  const status = normalizeTimerStatus(timer?.status);
   const isRunning = status === "running";
   const isPaused  = status === "paused";
-  const isDone    = status === "done";
+  const isDone    = status === "finished";
   const isActive  = isRunning || isPaused;
 
-  const remainingMs = useLiveCookingTimer(isActive ? timer : null);
+  const remainingMs = getRemainingMs(timer);
   const displayMs = isDone ? 0 : (isActive ? remainingMs : durationMs);
   const isUrgent = isRunning && remainingMs < 10_000;
 
@@ -71,7 +71,7 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, onActi
 
   function handleStart() {
     primeAudio();
-    onAction(timerKey, "start", durationMs);
+    onAction(timerKey, "start", durationMs, timerMeta);
   }
 
   const mainAction = isDone
@@ -80,7 +80,7 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, onActi
         icon: <ResetIcon />,
         ariaLabel: "Reiniciar temporizador",
         className: "cm-timer-round",
-        onClick: () => onAction(timerKey, "cancel")
+        onClick: handleStart
       }
     : isRunning
     ? {
@@ -96,7 +96,7 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, onActi
         icon: <PlayIcon />,
         ariaLabel: "Reanudar temporizador",
         className: "cm-timer-round cm-timer-round--primary",
-        onClick: () => { primeAudio(); onAction(timerKey, "resume"); }
+        onClick: () => { primeAudio(); onAction(timerKey, "resume", durationMs, timerMeta); }
       }
     : {
         label: "Iniciar",
@@ -111,6 +111,7 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, onActi
       className={`cm-timer ${toneClass}`}
       role="timer"
       aria-label={`${label}: ${formatRemaining(displayMs)} restantes`}
+      title={`${timerMeta?.stepTitle || ""} · ${label} · ${formatRemaining(displayMs)} restantes`}
     >
       <div className="cm-timer-header">
         <div className="cm-timer-icon-sq">
@@ -126,7 +127,7 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, onActi
           <span className="cm-timer-badge cm-timer-badge--running">En marcha</span>
         )}
         {isDone && (
-          <span className="cm-timer-badge cm-timer-badge--done">Listo</span>
+          <span className="cm-timer-badge cm-timer-badge--done">Finalizado</span>
         )}
       </div>
 

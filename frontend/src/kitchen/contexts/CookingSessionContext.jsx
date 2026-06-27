@@ -10,29 +10,30 @@ import {
   cancelTimer,
   markDoneTimer,
   getRemainingMs,
+  normalizeTimerStatus,
 } from "../utils/timerService.js";
-import { notifyTimerComplete, notifyTimerAutoPaused } from "../utils/notificationService.js";
+import { notifyTimerComplete } from "../utils/notificationService.js";
 
 const CookingSessionContext = createContext(null);
 const STEPPER_OPEN_KEY = "lunchfy:cooking_stepper_open";
+const createExecutionId = () => `exec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 export function useCookingSession() {
   return useContext(CookingSessionContext);
 }
 
 export function CookingSessionProvider({ children }) {
-  const [session, setSession] = useState(() => loadSession());
+  const [session, setSession] = useState(() => {
+    const saved = loadSession();
+    return saved ? { ...saved, executionId: saved.executionId || createExecutionId() } : null;
+  });
+  const [timerTick, setTimerTick] = useState(0);
   const [isStepperOpen, setIsStepperOpen] = useState(() => {
     const saved = loadSession();
     if (!saved) return false;
     try { return localStorage.getItem(STEPPER_OPEN_KEY) !== "false"; } catch { return true; }
   });
   const notifiedRef = useRef(new Set());
-  // Ref so timerAction can read current timers without a stale closure
-  const sessionRef = useRef(session);
-
-  // Keep sessionRef current so timerAction can read it without stale closures
-  useEffect(() => { sessionRef.current = session; }, [session]);
 
   // Persist to localStorage
   useEffect(() => {
@@ -42,7 +43,7 @@ export function CookingSessionProvider({ children }) {
 
   // Derive whether any timer is currently running
   const timerStatuses = session
-    ? Object.values(session.timers || {}).map((t) => t.status).join(",")
+    ? Object.values(session.timers || {}).map((t) => normalizeTimerStatus(t.status)).join(",")
     : "";
   const hasRunningTimer = timerStatuses.includes("running");
 
@@ -55,14 +56,14 @@ export function CookingSessionProvider({ children }) {
       const nextTimers = { ...prev.timers };
       for (const key of Object.keys(nextTimers)) {
         const t = nextTimers[key];
-        if (t.status === "running" && getRemainingMs(t) <= 0) {
+        if (normalizeTimerStatus(t.status) === "running" && getRemainingMs(t) <= 0) {
           nextTimers[key] = markDoneTimer(t);
           changed = true;
           if (!notifiedRef.current.has(key)) {
             notifiedRef.current.add(key);
-            const stepIdx = parseInt(key.split("_")[0], 10);
+            const stepIdx = Number.isFinite(t.stepIndex) ? t.stepIndex : parseInt(key.split("_")[0], 10);
             const step = prev.steps[stepIdx];
-            notifyTimerComplete(step?.text ?? "");
+            notifyTimerComplete(t.timerLabel || step?.text || "");
           }
         }
       }
@@ -70,11 +71,13 @@ export function CookingSessionProvider({ children }) {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Poll every 500ms while a timer is running to detect expiry.
-  // (Display ticking is handled locally inside RecipeTimer/Banner via useLiveCookingTimer.)
+  // One central timer loop drives display refreshes and expiry checks.
   useEffect(() => {
     if (!hasRunningTimer) return;
-    const id = setInterval(checkAndExpireTimers, 500);
+    const id = setInterval(() => {
+      setTimerTick((n) => n + 1);
+      checkAndExpireTimers();
+    }, 500);
     return () => clearInterval(id);
   }, [hasRunningTimer, checkAndExpireTimers]);
 
@@ -84,6 +87,7 @@ export function CookingSessionProvider({ children }) {
     if (!hasRunningTimer) return;
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
+        setTimerTick((n) => n + 1);
         checkAndExpireTimers();
       }
     };
@@ -103,6 +107,7 @@ export function CookingSessionProvider({ children }) {
     notifiedRef.current.clear();
     setSession({
       recipeId:        String(dish?._id || ""),
+      executionId:     createExecutionId(),
       recipeName:      dish?.name || "Receta",
       recipeServings:  recipe.servings ?? null,
       baseServings:    getRecipeBaseServings(recipe),
@@ -146,7 +151,7 @@ export function CookingSessionProvider({ children }) {
   }, []);
 
   const completeSession = useCallback(() => {
-    setSession((prev) => (prev ? { ...prev, isComplete: true } : prev));
+    setSession((prev) => (prev ? { ...prev, isComplete: true, timers: {} } : prev));
   }, []);
 
   const openStepper = useCallback(() => {
@@ -158,37 +163,27 @@ export function CookingSessionProvider({ children }) {
     try { localStorage.setItem(STEPPER_OPEN_KEY, "false"); } catch {}
   }, []);
 
-  const timerAction = useCallback((key, action, durationMs) => {
-    // Determine before the state update whether another timer will be auto-paused.
-    // We read from sessionRef (always current) to avoid adding session to deps.
-    const prevTimers = sessionRef.current?.timers || {};
-    const willAutoPause = (action === "start" || action === "resume") &&
-      Object.entries(prevTimers).some(([k, t]) => k !== key && t.status === "running");
-
+  const timerAction = useCallback((key, action, durationMs, timerMeta = {}) => {
     setSession((prev) => {
       if (!prev) return prev;
       const timers = { ...prev.timers };
       let t = timers[key];
 
       if (action === "start") {
-        // One-active-timer rule: pause any other running timer first
-        for (const [otherKey, otherTimer] of Object.entries(timers)) {
-          if (otherKey !== key && otherTimer.status === "running") {
-            timers[otherKey] = pauseTimer(otherTimer);
-          }
+        if (!t || ["finished", "cancelled"].includes(normalizeTimerStatus(t.status))) {
+          t = createTimer({
+            ...timerMeta,
+            id: key,
+            executionId: prev.executionId,
+            recipeId: prev.recipeId,
+            durationMs: durationMs || timerMeta.durationMs || 0,
+          });
         }
-        if (!t) t = createTimer(durationMs || 0);
         notifiedRef.current.delete(key);
         timers[key] = startTimer(t);
       } else if (action === "pause") {
         if (t) timers[key] = pauseTimer(t);
       } else if (action === "resume") {
-        // One-active-timer rule: pause any other running timer first
-        for (const [otherKey, otherTimer] of Object.entries(timers)) {
-          if (otherKey !== key && otherTimer.status === "running") {
-            timers[otherKey] = pauseTimer(otherTimer);
-          }
-        }
         if (t) {
           notifiedRef.current.delete(key);
           timers[key] = resumeTimer(t);
@@ -196,17 +191,13 @@ export function CookingSessionProvider({ children }) {
       } else if (action === "cancel") {
         if (t) {
           notifiedRef.current.delete(key);
-          timers[key] = cancelTimer(t);
+          const cancelled = cancelTimer(t);
+          if (cancelled) delete timers[key];
         }
       }
 
       return { ...prev, timers };
     });
-
-    // Show toast if we auto-paused another timer (checked before state update)
-    if (willAutoPause) {
-      notifyTimerAutoPaused();
-    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = {
@@ -220,6 +211,7 @@ export function CookingSessionProvider({ children }) {
     openStepper,
     minimizeStepper,
     timerAction,
+    timerTick,
   };
 
   return (

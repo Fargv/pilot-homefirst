@@ -4,6 +4,7 @@ import { useCookingSession } from "../../contexts/CookingSessionContext.jsx";
 import RecipeStepCard from "./RecipeStepCard.jsx";
 import { formatDuration } from "../../utils/recipeStepParser.js";
 import { displayIngredientQuantity } from "../../utils/recipeScaling.js";
+import { formatRemaining, getRemainingMs, normalizeTimerStatus } from "../../utils/timerService.js";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,112 @@ function ListIcon() {
       strokeWidth="1.9" strokeLinecap="round" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
       <path d="M9 6h11M9 12h11M9 18h11M4.4 6h.02M4.4 12h.02M4.4 18h.02" />
     </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block", flexShrink: 0 }}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.6V12l3 1.9" />
+    </svg>
+  );
+}
+
+function ActiveTimersPanel({ session, tick, onTimerAction, onGoToStep }) {
+  void tick;
+  const entries = Object.entries(session.timers || {})
+    .filter(([, timer]) => ["running", "paused", "finished"].includes(normalizeTimerStatus(timer.status)))
+    .sort(([, a], [, b]) => {
+      const aStatus = normalizeTimerStatus(a.status);
+      const bStatus = normalizeTimerStatus(b.status);
+      if (aStatus === "finished" && bStatus !== "finished") return -1;
+      if (aStatus !== "finished" && bStatus === "finished") return 1;
+      return getRemainingMs(a) - getRemainingMs(b);
+    });
+
+  if (entries.length === 0) return null;
+
+  const runningCount = entries.filter(([, timer]) => normalizeTimerStatus(timer.status) === "running").length;
+  const summaryText = `${entries.length} temporizador${entries.length === 1 ? "" : "es"} activo${entries.length === 1 ? "" : "s"}`;
+
+  return (
+    <details className="cm-active-timers" open={entries.length === 1}>
+      <summary className="cm-active-timers-summary" aria-label={`Temporizadores activos, ${summaryText}`}>
+        <span className="cm-active-timers-title">
+          <ClockIcon />
+          Temporizadores activos
+        </span>
+        <span className="cm-active-timers-count">{summaryText}</span>
+      </summary>
+
+      <div className="cm-active-timers-list" aria-live="polite">
+        {entries.map(([key, timer]) => {
+          const status = normalizeTimerStatus(timer.status);
+          const stepIndex = Number.isFinite(timer.stepIndex) ? timer.stepIndex : parseInt(String(key).split("_")[0], 10);
+          const step = session.steps[Number.isFinite(stepIndex) ? stepIndex : 0];
+          const stepTitle = timer.stepTitle || step?.title || `Paso ${(Number.isFinite(stepIndex) ? stepIndex : 0) + 1}`;
+          const timerLabel = timer.timerLabel || "Temporizador";
+          const remainingMs = getRemainingMs(timer);
+          const statusLabel = status === "running" ? "En marcha" : status === "paused" ? "Pausado" : "Finalizado";
+          const tooltip = `Paso ${(Number.isFinite(stepIndex) ? stepIndex : 0) + 1} · ${stepTitle} · ${timerLabel} · ${formatRemaining(remainingMs)} restantes`;
+          const durationMs = timer.originalDurationMs ?? timer.durationMs ?? 0;
+          const meta = {
+            stepId: timer.stepId,
+            stepIndex: Number.isFinite(stepIndex) ? stepIndex : 0,
+            stepTitle,
+            timerId: timer.timerId || "default",
+            timerLabel,
+            durationMs,
+            originalDurationMs: durationMs,
+          };
+
+          return (
+            <div key={key} className={`cm-active-timer-row is-${status}`} title={tooltip}>
+              <button
+                type="button"
+                className="cm-active-timer-info"
+                onClick={() => onGoToStep(Number.isFinite(stepIndex) ? stepIndex : 0)}
+                aria-label={tooltip}
+              >
+                <span className="cm-active-timer-step">Paso {(Number.isFinite(stepIndex) ? stepIndex : 0) + 1}</span>
+                <span className="cm-active-timer-copy">
+                  <span className="cm-active-timer-name">{stepTitle}</span>
+                  <span className="cm-active-timer-label">{timerLabel}</span>
+                </span>
+              </button>
+              <span className="cm-active-timer-time">{formatRemaining(remainingMs)}</span>
+              <span className={`cm-active-timer-badge is-${status}`}>{statusLabel}</span>
+              <div className="cm-active-timer-actions">
+                {status === "running" ? (
+                  <button type="button" onClick={() => onTimerAction(key, "pause", durationMs, meta)} aria-label={`Pausar ${tooltip}`}>
+                    Pausar
+                  </button>
+                ) : null}
+                {status === "paused" ? (
+                  <button type="button" onClick={() => onTimerAction(key, "resume", durationMs, meta)} aria-label={`Reanudar ${tooltip}`}>
+                    Reanudar
+                  </button>
+                ) : null}
+                <button type="button" onClick={() => onTimerAction(key, "cancel", durationMs, meta)} aria-label={`Cancelar ${tooltip}`}>
+                  Cancelar
+                </button>
+                <button type="button" onClick={() => onGoToStep(Number.isFinite(stepIndex) ? stepIndex : 0)} aria-label={`Ir al paso ${(Number.isFinite(stepIndex) ? stepIndex : 0) + 1}`}>
+                  Ir al paso
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {runningCount > 1 ? (
+        <div className="cm-active-timers-live" aria-live="polite">
+          {runningCount} temporizadores en marcha
+        </div>
+      ) : null}
+    </details>
   );
 }
 
@@ -195,6 +302,7 @@ export default function CookingSessionStepper() {
     completeSession,
     minimizeStepper,
     timerAction,
+    timerTick,
   } = useCookingSession();
 
   // Keyboard navigation
@@ -237,7 +345,7 @@ export default function CookingSessionStepper() {
 
   const { steps, currentStepIndex, completedSteps, timers, isComplete, recipeName, selectedServings, ingredients, baseServings } = session;
 
-  const pausedTimerCount = Object.values(timers || {}).filter((t) => t.status === "paused").length;
+  const pausedTimerCount = Object.values(timers || {}).filter((t) => normalizeTimerStatus(t.status) === "paused").length;
   const currentStep = steps[currentStepIndex];
   const isFirst = currentStepIndex === 0;
   const isLast  = currentStepIndex === steps.length - 1;
@@ -368,12 +476,21 @@ export default function CookingSessionStepper() {
 
           {/* ── Scrollable step content ── */}
           <div className="cm-step-scroll">
+            <ActiveTimersPanel
+              session={session}
+              tick={timerTick}
+              onTimerAction={timerAction}
+              onGoToStep={goToStep}
+            />
             <RecipeStepCard
               step={currentStep}
               stepNumber={currentStepIndex + 1}
               totalSteps={steps.length}
               isComplete={completedSteps.includes(currentStepIndex)}
               timers={timers}
+              executionId={session.executionId}
+              recipeId={session.recipeId}
+              timerTick={timerTick}
               onTimerAction={timerAction}
               onToggleComplete={() => toggleStepComplete(currentStepIndex)}
               allIngredients={ingredients || []}

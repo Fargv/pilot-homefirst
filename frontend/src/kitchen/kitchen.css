@@ -23052,6 +23052,38 @@ td.recipe-qty-scaled {
     width: 38px;
     height: 38px;
   }
+
+  .cm-active-timers-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cm-active-timers-count {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .cm-active-timer-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .cm-active-timer-badge {
+    grid-column: 1 / -1;
+    justify-self: flex-start;
+  }
+
+  .cm-active-timer-actions button {
+    flex: 1 1 auto;
+  }
+
+  .cm-banner {
+    gap: 10px;
+  }
+
+  .cm-banner-timer-count,
+  .cm-banner-timer-pill {
+    max-width: 100%;
+  }
 }
 
 /* ── Desktop: legacy guided cooking layout guards ─────────────────────────── */
@@ -23334,6 +23366,174 @@ td.recipe-qty-scaled {
   color: var(--text-muted);
 }
 .cm-step-timers { display: flex; flex-direction: column; gap: 12px; }
+
+.cm-active-timers {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  overflow: hidden;
+  animation: cm-fade .2s ease;
+}
+.cm-active-timers-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  list-style: none;
+  min-width: 0;
+}
+.cm-active-timers-summary::-webkit-details-marker { display: none; }
+.cm-active-timers-title,
+.cm-active-timers-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.cm-active-timers-title {
+  color: var(--text-primary);
+}
+.cm-active-timers-count {
+  color: var(--hf-brand-dark);
+  background: color-mix(in srgb, var(--hf-brand) 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 18%, var(--border-soft));
+  border-radius: var(--radius-full);
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+.cm-active-timers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+.cm-active-timer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--border-soft);
+  border-radius: 13px;
+  background: var(--surface-muted);
+  min-width: 0;
+}
+.cm-active-timer-row.is-finished {
+  background: var(--success-bg, #f0fdf4);
+  border-color: var(--success-border, #bbf7d0);
+}
+.cm-active-timer-info {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  min-width: 0;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+.cm-active-timer-info:focus-visible,
+.cm-active-timer-actions button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hf-brand) 45%, transparent);
+  outline-offset: 2px;
+}
+.cm-active-timer-step {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--hf-brand-dark);
+  background: color-mix(in srgb, var(--hf-brand) 8%, var(--surface));
+  border-radius: var(--radius-full);
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+.cm-active-timer-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.cm-active-timer-name,
+.cm-active-timer-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cm-active-timer-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.cm-active-timer-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.cm-active-timer-time {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.cm-active-timer-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+.cm-active-timer-badge.is-running {
+  color: var(--warning-text, #92400e);
+  background: var(--warning-bg, #fffbeb);
+  border: 1px solid var(--warning-border, #fde68a);
+}
+.cm-active-timer-badge.is-paused {
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+}
+.cm-active-timer-badge.is-finished {
+  color: var(--success-text, #166534);
+  background: var(--surface);
+  border: 1px solid var(--success-border, #bbf7d0);
+}
+.cm-active-timer-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.cm-active-timer-actions button {
+  min-height: 30px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cm-active-timer-actions button:hover {
+  border-color: color-mix(in srgb, var(--hf-brand) 24%, var(--border-soft));
+  color: var(--hf-brand-dark);
+}
+.cm-active-timers-live {
+  padding: 0 12px 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
 
 /* ── Per-step ingredient card ───────────────────────────────────────────────── */
 
@@ -23761,6 +23961,10 @@ td.recipe-qty-scaled {
   box-shadow: 0 20px 48px -10px rgba(30, 28, 80, .5);
   transform: translateY(-1px);
 }
+.cm-banner--finished {
+  border-color: var(--success-border, #bbf7d0);
+  box-shadow: 0 16px 40px -10px rgba(22, 101, 52, .35);
+}
 .cm-banner-flame {
   width: 44px;
   height: 44px;
@@ -23789,6 +23993,8 @@ td.recipe-qty-scaled {
   align-items: center;
   gap: 8px;
   margin-top: 2px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 .cm-banner-step {
   font-size: 12px;
@@ -23798,10 +24004,31 @@ td.recipe-qty-scaled {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.cm-banner-timer-count {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--hf-brand-dark);
+  background: color-mix(in srgb, var(--hf-brand) 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--hf-brand) 18%, var(--border-soft));
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+.cm-banner-next-row {
+  display: flex;
+  min-width: 0;
+  margin-top: 5px;
+}
 .cm-banner-timer-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
+  max-width: 100%;
   font-size: 12px;
   font-weight: 800;
   color: var(--warning-text, #92400e);
@@ -23810,6 +24037,49 @@ td.recipe-qty-scaled {
   padding: 2px 8px;
   border-radius: var(--radius-full);
   flex-shrink: 0;
+}
+.cm-banner-timer-pill span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cm-banner-timer-pill.is-finished {
+  color: var(--success-text, #166534);
+  background: var(--success-bg, #f0fdf4);
+  border-color: var(--success-border, #bbf7d0);
+}
+.cm-banner-timer-pill.is-paused {
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+  border-color: var(--border-soft);
+}
+.cm-banner-chip-row {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+  margin-top: 5px;
+  overflow: hidden;
+}
+.cm-banner-mini-chip {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-full);
+  padding: 1px 7px;
+}
+.cm-banner-mini-chip.is-running {
+  color: var(--warning-text, #92400e);
+  background: var(--warning-bg, #fffbeb);
+  border-color: var(--warning-border, #fde68a);
+}
+.cm-banner-mini-chip.is-finished {
+  color: var(--success-text, #166534);
+  background: var(--success-bg, #f0fdf4);
+  border-color: var(--success-border, #bbf7d0);
 }
 .cm-banner-chevron {
   color: var(--text-muted);
@@ -23885,6 +24155,30 @@ td.recipe-qty-scaled {
 [data-theme="dark"] .cm-step-ing-name { color: #f1f5f9; }
 [data-theme="dark"] .cm-step-ing-row.is-checked .cm-step-ing-name { color: #64748b; }
 [data-theme="dark"] .cm-step-ing-qty { color: var(--hf-brand-light); }
+[data-theme="dark"] .cm-active-timers { background: #0f172a; border-color: #334155; }
+[data-theme="dark"] .cm-active-timers-title { color: #f1f5f9; }
+[data-theme="dark"] .cm-active-timers-count,
+[data-theme="dark"] .cm-active-timer-step {
+  background: rgba(var(--hf-brand-rgb), .14);
+  border-color: rgba(var(--hf-brand-rgb), .28);
+  color: var(--hf-brand-light);
+}
+[data-theme="dark"] .cm-active-timer-row { background: #1e293b; border-color: #334155; }
+[data-theme="dark"] .cm-active-timer-row.is-finished { background: #0d2018; border-color: #166534; }
+[data-theme="dark"] .cm-active-timer-name,
+[data-theme="dark"] .cm-active-timer-time { color: #f1f5f9; }
+[data-theme="dark"] .cm-active-timer-label,
+[data-theme="dark"] .cm-active-timers-live { color: #94a3b8; }
+[data-theme="dark"] .cm-active-timer-badge.is-paused,
+[data-theme="dark"] .cm-active-timer-actions button {
+  background: #0f172a;
+  border-color: #334155;
+  color: #94a3b8;
+}
+[data-theme="dark"] .cm-active-timer-actions button:hover {
+  border-color: rgba(var(--hf-brand-rgb), .35);
+  color: var(--hf-brand-light);
+}
 [data-theme="dark"] .cm-timer { background: #1e293b; border-color: #334155; }
 [data-theme="dark"] .cm-timer--warm { --cm-tone-bg: #292117; --cm-tone-bd: #7c5a20; }
 [data-theme="dark"] .cm-timer--ok { --cm-tone-bg: #0d2018; --cm-tone-bd: #166534; }
@@ -23922,8 +24216,26 @@ td.recipe-qty-scaled {
 [data-theme="dark"] .cm-complete-stat-sep { background: #334155; }
 [data-theme="dark"] .cm-banner { background: #1e293b; border-color: #334155; box-shadow: 0 16px 40px rgba(0,0,0,.5); }
 [data-theme="dark"] .cm-banner:hover { box-shadow: 0 20px 48px rgba(0,0,0,.6); }
+[data-theme="dark"] .cm-banner--finished { border-color: #166534; }
 [data-theme="dark"] .cm-banner-title { color: #f1f5f9; }
 [data-theme="dark"] .cm-banner-step { color: #64748b; }
+[data-theme="dark"] .cm-banner-timer-count {
+  background: rgba(var(--hf-brand-rgb), .14);
+  border-color: rgba(var(--hf-brand-rgb), .28);
+  color: var(--hf-brand-light);
+}
+[data-theme="dark"] .cm-banner-timer-pill.is-paused,
+[data-theme="dark"] .cm-banner-mini-chip {
+  background: #0f172a;
+  border-color: #334155;
+  color: #94a3b8;
+}
+[data-theme="dark"] .cm-banner-mini-chip.is-finished,
+[data-theme="dark"] .cm-banner-timer-pill.is-finished {
+  background: #0d2018;
+  border-color: #166534;
+  color: #86efac;
+}
 [data-theme="dark"] .cm-banner-chevron { color: #475569; }
 
 /* =======================================================

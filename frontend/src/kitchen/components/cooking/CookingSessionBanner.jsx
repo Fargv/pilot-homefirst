@@ -1,7 +1,12 @@
 import React, { useEffect } from "react";
 import { useCookingSession } from "../../contexts/CookingSessionContext.jsx";
-import { formatRemaining } from "../../utils/timerService.js";
-import { useLiveCookingTimer } from "../../hooks/useLiveCookingTimer.js";
+import {
+  formatRemaining,
+  getNextActiveTimer,
+  getRemainingMs,
+  getVisibleTimers,
+  normalizeTimerStatus,
+} from "../../utils/timerService.js";
 
 function FlameIcon() {
   return (
@@ -31,18 +36,22 @@ function ChevronRightIcon() {
   );
 }
 
-function BannerTimer({ timer }) {
-  const remainingMs = useLiveCookingTimer(timer);
+function BannerTimer({ timer, tick }) {
+  void tick;
+  const remainingMs = getRemainingMs(timer);
+  const status = normalizeTimerStatus(timer?.status);
+  const label = timer?.timerLabel || timer?.stepTitle || "Temporizador";
+
   return (
-    <span className="cm-banner-timer-pill">
+    <span className={`cm-banner-timer-pill is-${status}`}>
       <ClockIcon />
-      <span>{formatRemaining(remainingMs)}</span>
+      <span>{status === "finished" ? `${label}: finalizado` : `Próximo: ${label} · ${formatRemaining(remainingMs)}`}</span>
     </span>
   );
 }
 
 export default function CookingSessionBanner() {
-  const { session, isStepperOpen, openStepper } = useCookingSession();
+  const { session, isStepperOpen, openStepper, timerTick } = useCookingSession();
 
   const bannerVisible = Boolean(session) && !isStepperOpen;
   useEffect(() => {
@@ -59,16 +68,17 @@ export default function CookingSessionBanner() {
   const { recipeName, currentStepIndex, steps, timers, isComplete } = session;
   const currentStep = steps[currentStepIndex];
   const stepTag = currentStep?.title || `Paso ${currentStepIndex + 1}`;
-
-  let runningTimer = null;
-  for (const timer of Object.values(timers || {})) {
-    if (timer.status === "running") { runningTimer = timer; break; }
-  }
+  const visibleTimers = getVisibleTimers(timers);
+  const nextTimer = getNextActiveTimer(timers);
+  const hasFinishedTimer = visibleTimers.some((timer) => normalizeTimerStatus(timer.status) === "finished");
+  const timerSummary = visibleTimers.length > 0
+    ? `${visibleTimers.length} temporizador${visibleTimers.length === 1 ? "" : "es"} activo${visibleTimers.length === 1 ? "" : "s"}`
+    : null;
 
   return (
     <button
       type="button"
-      className="cm-banner"
+      className={`cm-banner${hasFinishedTimer ? " cm-banner--finished" : ""}`}
       onClick={openStepper}
       aria-label={`Modo cocina: ${recipeName}, paso ${currentStepIndex + 1} de ${steps.length}. Pulsa para volver.`}
     >
@@ -82,8 +92,22 @@ export default function CookingSessionBanner() {
           <span className="cm-banner-step">
             {isComplete ? "Completada" : `Paso ${currentStepIndex + 1}/${steps.length} · ${stepTag}`}
           </span>
-          {runningTimer && <BannerTimer timer={runningTimer} />}
+          {timerSummary ? <span className="cm-banner-timer-count">{timerSummary}</span> : null}
         </div>
+        {nextTimer ? (
+          <div className="cm-banner-next-row">
+            <BannerTimer timer={nextTimer} tick={timerTick} />
+          </div>
+        ) : null}
+        {visibleTimers.length > 1 ? (
+          <div className="cm-banner-chip-row" aria-hidden="true">
+            {visibleTimers.slice(0, 3).map((timer) => (
+              <span key={timer.id || `${timer.stepIndex}-${timer.timerLabel}`} className={`cm-banner-mini-chip is-${normalizeTimerStatus(timer.status)}`}>
+                {formatRemaining(getRemainingMs(timer))}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="cm-banner-chevron" aria-hidden="true">

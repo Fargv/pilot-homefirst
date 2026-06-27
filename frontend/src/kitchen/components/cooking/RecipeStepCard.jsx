@@ -1,6 +1,7 @@
 import React from "react";
 import RecipeTimer from "./RecipeTimer.jsx";
 import { displayIngredientQuantity } from "../../utils/recipeScaling.js";
+import { buildTimerId } from "../../utils/timerService.js";
 
 function BasketIcon() {
   return (
@@ -18,6 +19,9 @@ export default function RecipeStepCard({
   totalSteps,
   isComplete,
   timers,
+  executionId,
+  recipeId,
+  timerTick,
   onTimerAction,
   onToggleComplete,
   allIngredients = [],
@@ -57,14 +61,30 @@ export default function RecipeStepCard({
       {detectedTimers && detectedTimers.length > 0 ? (
         <div className="cm-step-timers">
           {detectedTimers.map((dt, timerIdx) => {
-            const key = `${step.index}_${timerIdx}`;
+            const stepIndex = Number.isFinite(step.index) ? step.index : stepNumber - 1;
+            const stepId = String(step.id || step.stepId || `step-${stepIndex}`);
+            const timerId = String(dt.id || dt.timerId || (detectedTimers.length === 1 ? "default" : `timer-${timerIdx}`));
+            const key = buildTimerId({ executionId, stepId, timerId });
+            const legacyKey = `${step.index}_${timerIdx}`;
+            const activeKey = timers?.[key] ? key : (timers?.[legacyKey] ? legacyKey : key);
+            const timerMeta = {
+              stepId,
+              stepIndex,
+              stepTitle: title || `Paso ${stepNumber}`,
+              timerId,
+              timerLabel: dt.label,
+              durationMs: dt.durationSec * 1000,
+              originalDurationMs: dt.durationSec * 1000,
+            };
             return (
               <RecipeTimer
-                key={key}
-                timerKey={key}
-                timer={timers?.[key] || null}
+                key={activeKey}
+                timerKey={activeKey}
+                timer={timers?.[activeKey] || null}
                 durationMs={dt.durationSec * 1000}
                 label={dt.label}
+                timerMeta={timerMeta}
+                tick={timerTick}
                 onAction={onTimerAction}
               />
             );
