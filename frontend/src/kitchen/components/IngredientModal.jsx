@@ -13,6 +13,7 @@ export default function IngredientModal({
   categories = [],
   onCategoryCreated,
   initialIngredient = null,
+  initialName = "",
   scope = undefined
 }) {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -44,9 +45,14 @@ export default function IngredientModal({
         active: typeof initialIngredient.active === "boolean" ? initialIngredient.active : true
       });
     } else {
-      setForm(EMPTY_FORM);
+      const name = String(initialName || "").trim();
+      setForm({
+        ...EMPTY_FORM,
+        name,
+        canonicalName: name ? normalizeIngredientName(name) : ""
+      });
     }
-  }, [initialIngredient, isOpen]);
+  }, [initialIngredient, initialName, isOpen]);
 
   const categoryOptions = useMemo(
     () => categories.map((c) => {

@@ -308,7 +308,7 @@ export default function DishesPage() {
   const startCreate = () => {
     setActiveDish(null);
     setDishError("");
-    setDishSuggestionName("");
+    setDishSuggestionName(dishSearchTerm.trim());
     setIsModalOpen(true);
   };
 
@@ -605,7 +605,7 @@ export default function DishesPage() {
 
   const startIngredientCreate = () => {
     setActiveIngredient(null);
-    setIngredientSuggestionName("");
+    setIngredientSuggestionName(ingredientSearchTerm.trim());
     setIngredientsError("");
     setIsIngredientModalOpen(true);
   };
@@ -1485,7 +1485,8 @@ export default function DishesPage() {
         }}
         categories={categories}
         onCategoryCreated={onCategoryCreated}
-        initialIngredient={ingredientSuggestionName ? { name: ingredientSuggestionName } : activeIngredient}
+        initialIngredient={activeIngredient}
+        initialName={ingredientSuggestionName}
         scope={isDiodGlobalMode ? "master" : undefined}
       />
       {isInfoMobile && (activeInfoDish || activeInfoIngredient) ? (
