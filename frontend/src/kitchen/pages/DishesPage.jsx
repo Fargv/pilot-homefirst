@@ -30,6 +30,17 @@ function getCatalogPackId(dish) {
   return String(value);
 }
 
+function isDishIncludedInRandomization(dish) {
+  return Boolean(dish)
+    && dish.sidedish !== true
+    && dish.special !== true
+    && dish.allowRandom !== false
+    && dish.active === true
+    && dish.isArchived !== true
+    && dish.deletedAt == null
+    && typeof dish.isDinner === "boolean";
+}
+
 function getMondayISO(date = new Date()) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const day = d.getUTCDay();
@@ -136,6 +147,7 @@ export default function DishesPage() {
   const [installedCatalogs, setInstalledCatalogs] = useState([]);
   const [catalogsLoading, setCatalogsLoading] = useState(false);
   const [dinnerOnly, setDinnerOnly] = useState(false);
+  const [randomIncludedOnly, setRandomIncludedOnly] = useState(false);
   const [ingredients, setIngredients] = useState([]);
   const [ingredientsLoading, setIngredientsLoading] = useState(false);
   const [ingredientsError, setIngredientsError] = useState("");
@@ -421,10 +433,14 @@ export default function DishesPage() {
     if (!selectedCatalogPackId || mineOnly) return originFilteredDishes;
     return originFilteredDishes.filter((dish) => getCatalogPackId(dish) === String(selectedCatalogPackId));
   }, [mineOnly, originFilteredDishes, selectedCatalogPackId]);
+  const randomizationFilteredDishes = useMemo(() => {
+    if (!randomIncludedOnly) return catalogFilteredDishes;
+    return catalogFilteredDishes.filter(isDishIncludedInRandomization);
+  }, [catalogFilteredDishes, randomIncludedOnly]);
 
   const visibleDishes = useMemo(() => {
-    if (!normalizedSearch) return catalogFilteredDishes;
-    return catalogFilteredDishes.filter((dish) => {
+    if (!normalizedSearch) return randomizationFilteredDishes;
+    return randomizationFilteredDishes.filter((dish) => {
       const nameMatch = normalizeIngredientName(dish.name || "").includes(normalizedSearch);
       if (nameMatch) return true;
       return (dish.ingredients || []).some((item) => {
@@ -433,7 +449,7 @@ export default function DishesPage() {
         return displayName.includes(normalizedSearch) || canonicalName.includes(normalizedSearch);
       });
     });
-  }, [catalogFilteredDishes, normalizedSearch]);
+  }, [normalizedSearch, randomizationFilteredDishes]);
   const dishMap = useMemo(() => {
     const map = new Map();
     dishes.forEach((dish) => {
@@ -526,10 +542,13 @@ export default function DishesPage() {
       if (dinnerOnly) {
         return "No hay cenas disponibles con este filtro.";
       }
+      if (randomIncludedOnly) {
+        return "No hay platos incluidos en randomización con estos filtros.";
+      }
       return "No hay platos aún. Crea el primero.";
     }
     return "";
-  }, [catalogOnly, mineOnly, dinnerOnly, dishSearchTerm, dishes.length, selectedCatalogPackId, selectedDishCategoryId, visibleDishes.length]);
+  }, [catalogOnly, mineOnly, dinnerOnly, dishSearchTerm, dishes.length, randomIncludedOnly, selectedCatalogPackId, selectedDishCategoryId, visibleDishes.length]);
 
   useEffect(() => {
     setSelectedDishCategoryId((previous) => {
@@ -546,6 +565,7 @@ export default function DishesPage() {
       setCatalogOnly(false);
       setMineOnly(false);
       setDinnerOnly(false);
+      setRandomIncludedOnly(false);
       setShowAllDishCategories(false);
     } else {
       setSelectedIngredientCategoryId("");
@@ -1090,7 +1110,7 @@ export default function DishesPage() {
               aria-expanded={filterPanelOpen}
             >
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
-              {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || selectedDishCategoryId !== "" || catalogOnly || selectedCatalogPackId) ? (
+              {(isIngredientsTab ? selectedIngredientCategoryId !== "" : mineOnly || dinnerOnly || randomIncludedOnly || selectedDishCategoryId !== "" || catalogOnly || selectedCatalogPackId) ? (
                 <span className="phdr-filter-dot" aria-hidden="true" />
               ) : null}
             </button>
@@ -1120,6 +1140,7 @@ export default function DishesPage() {
               if (catalogOnly) chips.push({ key: "catalog", label: "Solo catálogo", onRemove: () => setCatalogOnly(false) });
               if (selectedCatalogOption) chips.push({ key: "catalog-pack", label: selectedCatalogOption.label, onRemove: () => setSelectedCatalogPackId("") });
               if (dinnerOnly) chips.push({ key: "dinner", label: "Solo cenas", onRemove: () => setDinnerOnly(false) });
+              if (randomIncludedOnly) chips.push({ key: "randomization", label: "Incluidos en randomización", onRemove: () => setRandomIncludedOnly(false) });
               if (selectedDishCategoryId) {
                 const cat = dishCategoryMap.get(String(selectedDishCategoryId));
                 if (cat) chips.push({ key: "cat", label: cat.name, onRemove: () => setSelectedDishCategoryId("") });
@@ -1138,7 +1159,7 @@ export default function DishesPage() {
                   </button>
                 ))}
                 <button type="button" className="dfc-chip-clear-all" onClick={() => {
-                  setMineOnly(false); setCatalogOnly(false); setDinnerOnly(false);
+                  setMineOnly(false); setCatalogOnly(false); setDinnerOnly(false); setRandomIncludedOnly(false);
                   setSelectedCatalogPackId(""); setSelectedDishCategoryId(""); setSelectedIngredientCategoryId("");
                 }}>
                   Limpiar
@@ -1826,6 +1847,18 @@ export default function DishesPage() {
                         }}
                       />
                     </label>
+                    <label className="fsh-toggle-row">
+                      <span className="fsh-toggle-label">Incluidos en randomización</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        className="fsh-switch"
+                        aria-checked={randomIncludedOnly ? "true" : "false"}
+                        aria-label="Incluidos en randomización"
+                        onClick={() => setRandomIncludedOnly((v) => !v)}
+                      />
+                    </label>
+                    <p className="fsh-helper-text">Muestra solo los platos que pueden salir al randomizar.</p>
                   </div>
                 </div>
               ) : null}
@@ -1834,7 +1867,7 @@ export default function DishesPage() {
             {/* footer */}
             <div className="fsh-footer">
               <button type="button" className="fsh-footer-clear" onClick={() => {
-                setMineOnly(false); setCatalogOnly(false); setDinnerOnly(false);
+                setMineOnly(false); setCatalogOnly(false); setDinnerOnly(false); setRandomIncludedOnly(false);
                 setSelectedCatalogPackId(""); setSelectedDishCategoryId(""); setSelectedIngredientCategoryId("");
               }}>
                 Limpiar
