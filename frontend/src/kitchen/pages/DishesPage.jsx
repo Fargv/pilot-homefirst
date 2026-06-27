@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { BookOpen, Pencil, Copy, Trash2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
-import { catalogQuery, createSyncedApi, dishesQuery, fetchCached } from "../queryClient.js";
+import { catalogQuery, createSyncedApi, dishesQuery, fetchCached, queryClient } from "../queryClient.js";
 
 // Non-GET calls invalidate caches affected by dish edits
 const apiSync = createSyncedApi([["kitchen", "dishes"], ["planning"], ["shopping"]]);
@@ -39,6 +39,14 @@ function isDishIncludedInRandomization(dish) {
     && dish.isArchived !== true
     && dish.deletedAt == null
     && typeof dish.isDinner === "boolean";
+}
+
+function upsertVisibleById(items, item) {
+  if (!item?._id) return items;
+  const itemId = String(item._id);
+  const withoutItem = items.filter((entry) => String(entry?._id || "") !== itemId);
+  const visible = item.active !== false && item.isArchived !== true && item.deletedAt == null;
+  return visible ? [item, ...withoutItem] : withoutItem;
 }
 
 function getMondayISO(date = new Date()) {
@@ -318,6 +326,14 @@ export default function DishesPage() {
     setDishSuggestionName(name);
     setIsModalOpen(true);
   };
+
+  const rememberSavedDish = useCallback((dish) => {
+    if (!dish?._id) return;
+    setDishes((prev) => upsertVisibleById(prev, dish));
+    queryClient.invalidateQueries({ queryKey: ["kitchen", "dishes"] });
+    queryClient.invalidateQueries({ queryKey: ["planning"] });
+    queryClient.invalidateQueries({ queryKey: ["shopping"] });
+  }, []);
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -617,6 +633,12 @@ export default function DishesPage() {
     setIsIngredientModalOpen(true);
   };
 
+  const rememberSavedIngredient = useCallback((ingredient) => {
+    if (!ingredient?._id) return;
+    setIngredients((prev) => upsertVisibleById(prev, ingredient));
+    queryClient.invalidateQueries({ queryKey: ["shopping"] });
+  }, []);
+
   const startIngredientEdit = (ingredient) => {
     setActiveIngredient(ingredient);
     setIngredientsError("");
@@ -627,14 +649,14 @@ export default function DishesPage() {
     if (!ingredient?._id) return;
     const sourceName = (ingredient.name || "Ingrediente").trim();
     const duplicateName = `${sourceName} (copia)`;
-    await apiSync("/api/kitchenIngredients", {
+    const data = await apiSync("/api/kitchenIngredients", {
       method: "POST",
       body: JSON.stringify({
         name: duplicateName,
         categoryId: ingredient.categoryId?._id || ingredient.categoryId || undefined
       })
     });
-    await loadIngredients();
+    rememberSavedIngredient(data?.ingredient);
   };
 
   const deleteIngredient = async (ingredient) => {
@@ -1450,8 +1472,8 @@ export default function DishesPage() {
       <DishModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        onSaved={async (savedDish) => {
-          await loadDishes();
+        onSaved={(savedDish) => {
+          rememberSavedDish(savedDish);
           if (!activeDish) {
             notifyOnboarding("create_dish");
             notifyWeekly("dish_created");
@@ -1461,10 +1483,11 @@ export default function DishesPage() {
           }
           setDishSuggestionName("");
         }}
-        onRecipeSaved={async () => { await loadDishes(); }}
+        onRecipeSaved={rememberSavedDish}
         categories={categories}
         dishCategories={dishCategories}
         onCategoryCreated={onCategoryCreated}
+        onIngredientCreated={rememberSavedIngredient}
         initialDish={activeDish}
         initialName={dishSuggestionName}
         initialIsDinner={Boolean(activeDish?.isDinner)}
@@ -1475,8 +1498,8 @@ export default function DishesPage() {
       <IngredientModal
         isOpen={isIngredientModalOpen}
         onClose={closeIngredientModal}
-        onSaved={async () => {
-          await loadIngredients(ingredientSearchTerm);
+        onSaved={(savedIngredient) => {
+          rememberSavedIngredient(savedIngredient);
           if (!activeIngredient) {
             notifyOnboarding("create_ingredient");
             notifyWeekly("ingredient_created");

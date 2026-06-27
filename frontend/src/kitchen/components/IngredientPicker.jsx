@@ -10,6 +10,7 @@ export default function IngredientPicker({
   onChange,
   categories = [],
   onCategoryCreated,
+  onIngredientCreated,
   onCreateStateChange,
   mode = "all",
   showChipList = true
@@ -187,6 +188,7 @@ export default function IngredientPicker({
       });
       const ingredient = data.ingredient;
       addIngredient(ingredient, createName.trim(), replaceItem);
+      onIngredientCreated?.(ingredient);
       setLastUsedCategory(selectedCategory);
       setQuery("");
       closeCreateFlow();

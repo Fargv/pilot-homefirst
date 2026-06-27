@@ -28,6 +28,7 @@ export default function DishModal({
   categories = [],
   dishCategories = [],
   onCategoryCreated,
+  onIngredientCreated,
   initialDish = null,
   initialName = "",
   initialIsDinner = false,
@@ -260,7 +261,7 @@ export default function DishModal({
       setRecipeSaved(true);
       setRecipeEditing(false);
       setTimeout(() => setRecipeSaved(false), 2500);
-      await onRecipeSaved?.();
+      await onRecipeSaved?.(result.dish);
     } catch (err) {
       setRecipeError(err.message || "No se pudo guardar la receta.");
     } finally {
@@ -461,6 +462,7 @@ export default function DishModal({
               onChange={(ingredients) => setForm((prev) => ({ ...prev, ingredients }))}
               categories={categories}
               onCategoryCreated={onCategoryCreated}
+              onIngredientCreated={onIngredientCreated}
               onCreateStateChange={setIsCreatingIngredient}
               mode="recipe"
             />
