@@ -140,7 +140,11 @@ function ActiveTimersPanel({ session, tick, onTimerAction, onGoToStep }) {
   const summaryText = `${entries.length} ${entries.length === 1 ? "activo" : "activos"}`;
 
   return (
-    <details className="cm-active-timers" open={entries.length <= 4}>
+    <details
+      className="cm-active-timers"
+      open={entries.length <= 6}
+      style={{ "--cm-active-timers-max-height": `${Math.min(entries.length * 34 + 8, 286)}px` }}
+    >
       <summary className="cm-active-timers-summary" aria-label={`Temporizadores activos, ${summaryText}`}>
         <span className="cm-active-timers-title">
           <ClockIcon />
@@ -157,7 +161,7 @@ function ActiveTimersPanel({ session, tick, onTimerAction, onGoToStep }) {
           const stepTitle = timer.stepTitle || step?.title || `Paso ${(Number.isFinite(stepIndex) ? stepIndex : 0) + 1}`;
           const timerLabel = timer.timerLabel || "Temporizador";
           const remainingMs = getRemainingMs(timer);
-          const statusLabel = status === "running" ? "En marcha" : status === "paused" ? "Pausado" : "Finalizado";
+          const statusLabel = status === "running" ? "En marcha" : status === "paused" ? "Pausado" : "Listo";
           const tooltip = `Paso ${(Number.isFinite(stepIndex) ? stepIndex : 0) + 1} · ${stepTitle} · ${timerLabel} · ${formatRemaining(remainingMs)} restantes`;
           const durationMs = timer.originalDurationMs ?? timer.durationMs ?? 0;
           const meta = {
