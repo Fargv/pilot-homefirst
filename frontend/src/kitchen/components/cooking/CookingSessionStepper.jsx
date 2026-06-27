@@ -144,7 +144,7 @@ function ActiveTimersPanel({ session, tick, onTimerAction, onGoToStep }) {
     <details
       className="cm-active-timers"
       open={entries.length <= 6}
-      style={{ "--cm-active-timers-list-height": `${visibleTimerRows * 72 + 8}px` }}
+      style={{ "--cm-active-timers-list-height": `${visibleTimerRows * 34 + 8}px` }}
     >
       <summary className="cm-active-timers-summary" aria-label={`Temporizadores activos, ${summaryText}`}>
         <span className="cm-active-timers-title">
@@ -185,8 +185,7 @@ function ActiveTimersPanel({ session, tick, onTimerAction, onGoToStep }) {
               >
                 <span className="cm-active-timer-step">P{(Number.isFinite(stepIndex) ? stepIndex : 0) + 1}</span>
                 <span className="cm-active-timer-copy">
-                  <span className="cm-active-timer-name">{stepTitle}</span>
-                  <span className="cm-active-timer-label">{timerLabel}</span>
+                  <span className="cm-active-timer-name">{timerLabel}</span>
                 </span>
               </button>
               <span className="cm-active-timer-time">{formatRemaining(remainingMs)}</span>

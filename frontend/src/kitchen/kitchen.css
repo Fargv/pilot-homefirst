@@ -23627,8 +23627,8 @@ td.recipe-qty-scaled {
 }
 .cm-active-timer-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
-  grid-template-areas: "info time status actions";
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "info time actions";
   gap: 6px;
   align-items: center;
   min-height: 30px;
@@ -23671,15 +23671,14 @@ td.recipe-qty-scaled {
   font-size: 11px;
   line-height: 1.1;
   max-width: 100%;
-  white-space: normal;
+  white-space: nowrap;
   overflow-wrap: anywhere;
   word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .cm-active-timer-label {
-  display: block;
+  display: none;
   font-size: 10.5px;
   line-height: 1.15;
   max-width: 100%;
@@ -23700,7 +23699,7 @@ td.recipe-qty-scaled {
 .cm-active-timer-badge {
   grid-area: status;
   justify-self: flex-start;
-  display: inline-flex;
+  display: none;
   align-items: center;
   gap: 3px;
   padding: 0;
@@ -23768,23 +23767,10 @@ td.recipe-qty-scaled {
   }
 
   .cm-active-timer-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "info time"
-      "status actions";
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "info time actions";
     min-width: 0;
-    align-items: start;
-  }
-
-  .cm-active-timer-badge {
-    max-width: 100%;
-    justify-self: start;
-    align-self: center;
-    margin-left: 30px;
-  }
-
-  .cm-active-timer-actions {
-    align-self: center;
+    align-items: center;
   }
 
   .cm-step-ing-row {
