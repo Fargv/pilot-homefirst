@@ -20,6 +20,50 @@ const EMPTY_FORM = {
   isArchived: false
 };
 
+function getDishIngredientName(item) {
+  return String(item?.displayName || item?.name || item?.canonicalName || "").trim();
+}
+
+function getIngredientKeys(item) {
+  const keys = [];
+  if (item?.ingredientId) keys.push(`id:${String(item.ingredientId)}`);
+  const normalizedName = normalizeIngredientName(getDishIngredientName(item));
+  if (normalizedName) keys.push(`name:${normalizedName}`);
+  return keys;
+}
+
+function dishIngredientsToRecipeIngredients(ingredients = []) {
+  return (ingredients || [])
+    .map((item) => ({
+      name: getDishIngredientName(item),
+      quantity: "",
+      ingredientId: item?.ingredientId || null
+    }))
+    .filter((item) => item.name);
+}
+
+function mergeDishIngredientsIntoRecipe(recipeIngredients = [], dishIngredients = []) {
+  const existing = new Set();
+  (recipeIngredients || []).forEach((item) => {
+    getIngredientKeys(item).forEach((key) => existing.add(key));
+  });
+  const additions = dishIngredientsToRecipeIngredients(dishIngredients).filter((item) => {
+    const keys = getIngredientKeys(item);
+    if (!keys.length || keys.some((key) => existing.has(key))) return false;
+    keys.forEach((key) => existing.add(key));
+    return true;
+  });
+  return additions.length ? [...recipeIngredients, ...additions] : recipeIngredients;
+}
+
+function hasRecipeContent(recipe = {}) {
+  const hasSteps = Boolean(recipe?.steps);
+  const hasIngredients = (recipe?.ingredients || []).some((item) => (
+    String(item?.name || "").trim() || item?.quantity
+  ));
+  return hasSteps || hasIngredients || recipe?.servings != null || recipe?.prepMinutes != null || recipe?.cookMinutes != null;
+}
+
 export default function DishModal({
   isOpen,
   onClose,
@@ -49,15 +93,16 @@ export default function DishModal({
   const [recipeError, setRecipeError] = useState("");
   const [recipeSaved, setRecipeSaved] = useState(false);
   const [recipeEditing, setRecipeEditing] = useState(false);
+  const [recipeDirty, setRecipeDirty] = useState(false);
+  const [persistedRecipeHasContent, setPersistedRecipeHasContent] = useState(false);
   const ingredientCache = useRef(new Map());
 
   const isDiod = user?.globalRole === "diod";
   const isPro = isDiod || canRandomizeFullWeek(user);
   const canDinnerDishes = isDiod || canUseDinnersFeature(user);
 
-  const hasExistingRecipe = Boolean(
-    recipe.steps || (recipe.ingredients || []).some((i) => i.name || i.quantity)
-  );
+  const hasExistingRecipe = hasRecipeContent(recipe);
+  const shouldEditRecipe = isPro && (recipeEditing || !persistedRecipeHasContent);
 
   const dishIngredientNames = useMemo(
     () => (form.ingredients || []).map((ing) => (ing.displayName || ing.canonicalName || "").toLowerCase().trim()),
@@ -112,6 +157,7 @@ export default function DishModal({
     setRecipeSaved(false);
     setActiveTab(initialDish?._id ? "receta" : "datos");
     setRecipeEditing(false);
+    setRecipeDirty(false);
     const setup = async () => {
       if (initialDish?._id) {
         const ingredients = await resolveIngredients(initialDish.ingredients || []);
@@ -127,7 +173,9 @@ export default function DishModal({
           isArchived: Boolean(initialDish.isArchived)
         });
         setEditingId(initialDish._id);
-        const existingRecipeIngredients = initialDish.recipe?.ingredients || [];
+        const initialRecipe = initialDish.recipe || {};
+        const initialRecipeHasContent = hasRecipeContent(initialRecipe);
+        const existingRecipeIngredients = initialRecipe.ingredients || [];
         const recipeIngredients = existingRecipeIngredients.length > 0
           ? existingRecipeIngredients
           : (initialDish.ingredients || []).map((ing) => ({
@@ -137,10 +185,14 @@ export default function DishModal({
             })).filter((ing) => ing.name);
         setRecipe({
           ingredients: recipeIngredients,
-          steps: initialDish.recipe?.steps || null,
-          baseServings: initialDish.recipe?.baseServings || initialDish.recipe?.servings || null,
-          servings: initialDish.recipe?.baseServings || initialDish.recipe?.servings || null
+          steps: initialRecipe.steps || null,
+          baseServings: initialRecipe.baseServings || initialRecipe.servings || null,
+          servings: initialRecipe.baseServings || initialRecipe.servings || null,
+          prepMinutes: initialRecipe.prepMinutes || null,
+          cookMinutes: initialRecipe.cookMinutes || null
         });
+        setPersistedRecipeHasContent(initialRecipeHasContent);
+        setRecipeEditing(!initialRecipeHasContent);
       } else {
         setForm({
           name: initialName || "",
@@ -154,6 +206,8 @@ export default function DishModal({
         });
         setEditingId(null);
         setRecipe({ ingredients: [], steps: null, baseServings: null, servings: null });
+        setPersistedRecipeHasContent(false);
+        setRecipeEditing(true);
       }
     };
     setup();
@@ -175,44 +229,119 @@ export default function DishModal({
     setRecipe({ ingredients: [], steps: null, baseServings: null, servings: null });
     setIsCreatingIngredient(false);
     setRecipeEditing(false);
+    setRecipeDirty(false);
+    setPersistedRecipeHasContent(false);
     onClose?.();
+  };
+
+  const updateRecipe = useCallback((updater) => {
+    setRecipe((prev) => (typeof updater === "function" ? updater(prev) : updater));
+    setRecipeDirty(true);
+  }, []);
+
+  useEffect(() => {
+    const dishIngredients = form.ingredients || [];
+    if (!dishIngredients.length) return;
+    setRecipe((prev) => {
+      const nextIngredients = mergeDishIngredientsIntoRecipe(prev.ingredients || [], dishIngredients);
+      if (nextIngredients === (prev.ingredients || [])) return prev;
+      return { ...prev, ingredients: nextIngredients };
+    });
+  }, [form.ingredients]);
+
+  const buildDishPayload = () => ({
+    name: form.name,
+    scope: scope || initialDish?.scope || "household",
+    active: Boolean(form.active),
+    isArchived: Boolean(form.isArchived),
+    dishCategoryId: form.dishCategoryId || null,
+    isDinner: form.isDinner,
+    special: form.special,
+    allowRandom: form.allowRandom,
+    ingredients: (form.ingredients || []).map((item) => ({
+      ingredientId: item.ingredientId,
+      displayName: item.displayName,
+      canonicalName: item.canonicalName || normalizeIngredientName(item.displayName)
+    }))
+  });
+
+  const saveDishOnly = async () => {
+    const payload = buildDishPayload();
+    let dish = null;
+    if (editingId) {
+      const data = await apiRequest(`/api/kitchen/dishes/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
+      dish = data.dish;
+    } else {
+      const data = await apiRequest("/api/kitchen/dishes", { method: "POST", body: JSON.stringify(payload) });
+      dish = data.dish;
+    }
+    if (dish?._id) {
+      setEditingId(String(dish._id));
+      await onSaved?.(dish);
+    }
+    return dish;
+  };
+
+  const saveRecipeForDish = async (dishId, baseDish = null) => {
+    const result = await apiRequest(`/api/kitchen/dishes/${dishId}/recipe`, {
+      method: "PUT",
+      body: JSON.stringify({
+        ingredients: recipe.ingredients || [],
+        steps: recipe.steps || null,
+        baseServings: recipe.servings || recipe.baseServings || null,
+        servings: recipe.servings || null,
+        prepMinutes: recipe.prepMinutes || null,
+        cookMinutes: recipe.cookMinutes || null
+      })
+    });
+    const resultDish = result.dish || {};
+    const nextId = resultDish._id || resultDish.id || baseDish?._id || dishId;
+    const mergedDish = {
+      ...(initialDish || {}),
+      ...(baseDish || {}),
+      _id: String(nextId),
+      recipe: resultDish.recipe || recipe
+    };
+    if (result.overridden && nextId) setEditingId(String(nextId));
+    setRecipe(mergedDish.recipe || recipe);
+    setPersistedRecipeHasContent(hasRecipeContent(mergedDish.recipe || recipe));
+    setRecipeDirty(false);
+    setRecipeEditing(false);
+    await onRecipeSaved?.(mergedDish);
+    return mergedDish;
+  };
+
+  const saveDishAndRecipe = async ({ closeAfterSave = false, requireRecipeSave = false } = {}) => {
+    setError("");
+    setRecipeError("");
+    setRecipeSaved(false);
+    setSaving(true);
+    setRecipeSaving(true);
+    try {
+      if (!String(form.name || "").trim()) {
+        throw new Error("El nombre del plato es obligatorio.");
+      }
+      const dish = await saveDishOnly();
+      const dishId = dish?._id || editingId;
+      if (isPro && dishId && (requireRecipeSave || recipeDirty)) {
+        await saveRecipeForDish(String(dishId), dish);
+        setRecipeSaved(true);
+        setTimeout(() => setRecipeSaved(false), 2500);
+      }
+      if (closeAfterSave) resetAndClose();
+    } catch (err) {
+      const message = err.message || "No se pudo guardar el plato.";
+      setError(message);
+      setRecipeError(message);
+    } finally {
+      setSaving(false);
+      setRecipeSaving(false);
+    }
   };
 
   const onSave = async (event) => {
     event.preventDefault();
-    setError("");
-    setSaving(true);
-    try {
-      const payload = {
-        name: form.name,
-        scope: scope || initialDish?.scope || "household",
-        active: Boolean(form.active),
-        isArchived: Boolean(form.isArchived),
-        dishCategoryId: form.dishCategoryId || null,
-        isDinner: form.isDinner,
-        special: form.special,
-        allowRandom: form.allowRandom,
-        ingredients: (form.ingredients || []).map((item) => ({
-          ingredientId: item.ingredientId,
-          displayName: item.displayName,
-          canonicalName: item.canonicalName || normalizeIngredientName(item.displayName)
-        }))
-      };
-      let dish = null;
-      if (editingId) {
-        const data = await apiRequest(`/api/kitchen/dishes/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
-        dish = data.dish;
-      } else {
-        const data = await apiRequest("/api/kitchen/dishes", { method: "POST", body: JSON.stringify(payload) });
-        dish = data.dish;
-      }
-      if (dish) await onSaved?.(dish);
-      resetAndClose();
-    } catch (err) {
-      setError(err.message || "No se pudo guardar el plato.");
-    } finally {
-      setSaving(false);
-    }
+    await saveDishAndRecipe({ closeAfterSave: true });
   };
 
   const handleAddIngredientToDish = async (ingredientName) => {
@@ -243,30 +372,7 @@ export default function DishModal({
   };
 
   const saveRecipe = async () => {
-    if (!editingId) return;
-    setRecipeError("");
-    setRecipeSaved(false);
-    setRecipeSaving(true);
-    try {
-      const result = await apiRequest(`/api/kitchen/dishes/${editingId}/recipe`, {
-        method: "PUT",
-        body: JSON.stringify({
-          ingredients: recipe.ingredients || [],
-          steps: recipe.steps || null,
-          baseServings: recipe.servings || recipe.baseServings || null,
-          servings: recipe.servings || null
-        })
-      });
-      if (result.overridden && result.dish?.id) setEditingId(result.dish.id);
-      setRecipeSaved(true);
-      setRecipeEditing(false);
-      setTimeout(() => setRecipeSaved(false), 2500);
-      await onRecipeSaved?.(result.dish);
-    } catch (err) {
-      setRecipeError(err.message || "No se pudo guardar la receta.");
-    } finally {
-      setRecipeSaving(false);
-    }
+    await saveDishAndRecipe({ requireRecipeSave: true });
   };
 
   if (!isOpen) return null;
@@ -320,7 +426,7 @@ export default function DishModal({
           <div className="recipe-tab-content">
             {hasExistingRecipe ? (
               <>
-                {recipeEditing && isPro ? (
+                {shouldEditRecipe ? (
                   /* Pro — editing mode */
                   <>
                     <RecipeEditor
@@ -328,26 +434,24 @@ export default function DishModal({
                       recipeSteps={recipe.steps}
                       recipeServings={recipe.servings}
                       recipeBaseServings={recipe.baseServings}
+                      recipePrepMinutes={recipe.prepMinutes}
+                      recipeCookMinutes={recipe.cookMinutes}
                       dishIngredientNames={dishIngredientNames}
                       onAddIngredientToDish={editingId ? handleAddIngredientToDish : undefined}
-                      onChange={setRecipe}
+                      onChange={updateRecipe}
                       readOnly={false}
                     />
                     {recipeError ? <div className="kitchen-alert error" style={{ marginTop: 8 }}>{recipeError}</div> : null}
                     {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Elaboración guardada.</div> : null}
                     <div className="recipe-save-bar">
-                      {editingId ? (
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <button type="button" className="kitchen-button" onClick={saveRecipe} disabled={recipeSaving}>
-                            {recipeSaving ? "Guardando..." : "Guardar elaboración"}
+                      <div style={{ display: "flex", gap: 8 }}>
+                          <button type="button" className="kitchen-button" onClick={saveRecipe} disabled={recipeSaving || saving}>
+                            {recipeSaving || saving ? "Guardando..." : editingId ? "Guardar elaboración" : "Guardar plato y elaboración"}
                           </button>
-                          <button type="button" className="kitchen-button ghost" onClick={() => setRecipeEditing(false)}>
+                          <button type="button" className="kitchen-button ghost" onClick={() => setRecipeEditing(false)} disabled={!persistedRecipeHasContent}>
                             Cancelar
                           </button>
                         </div>
-                      ) : (
-                        <p className="kitchen-muted">Guarda el plato primero para poder añadir su elaboración.</p>
-                      )}
                     </div>
                   </>
                 ) : (
@@ -358,8 +462,9 @@ export default function DishModal({
                       recipeSteps={recipe.steps}
                       recipeServings={recipe.servings}
                       recipeBaseServings={recipe.baseServings}
+                      recipePrepMinutes={recipe.prepMinutes}
+                      recipeCookMinutes={recipe.cookMinutes}
                       dishIngredientNames={dishIngredientNames}
-                      onChange={setRecipe}
                       readOnly
                     />
                     {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Elaboración guardada.</div> : null}
@@ -394,21 +499,19 @@ export default function DishModal({
                   recipeSteps={recipe.steps}
                   recipeServings={recipe.servings}
                   recipeBaseServings={recipe.baseServings}
+                  recipePrepMinutes={recipe.prepMinutes}
+                  recipeCookMinutes={recipe.cookMinutes}
                   dishIngredientNames={dishIngredientNames}
                   onAddIngredientToDish={editingId ? handleAddIngredientToDish : undefined}
-                  onChange={setRecipe}
+                  onChange={updateRecipe}
                   readOnly={false}
                 />
                 {recipeError ? <div className="kitchen-alert error" style={{ marginTop: 8 }}>{recipeError}</div> : null}
                 {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Elaboración guardada.</div> : null}
                 <div className="recipe-save-bar">
-                  {editingId ? (
-                    <button type="button" className="kitchen-button" onClick={saveRecipe} disabled={recipeSaving}>
-                      {recipeSaving ? "Guardando..." : "Guardar elaboración"}
+                    <button type="button" className="kitchen-button" onClick={saveRecipe} disabled={recipeSaving || saving}>
+                      {recipeSaving || saving ? "Guardando..." : editingId ? "Guardar elaboración" : "Guardar plato y elaboración"}
                     </button>
-                  ) : (
-                    <p className="kitchen-muted">Guarda el plato primero para poder añadir su elaboración.</p>
-                  )}
                 </div>
               </>
             ) : (
