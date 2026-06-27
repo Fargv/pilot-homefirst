@@ -82,25 +82,65 @@ function ClockIcon() {
   );
 }
 
+function SmallPlayIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="13" height="13" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
+      <path d="M6.5 4.5l9 5.5-9 5.5v-11z" />
+    </svg>
+  );
+}
+
+function SmallPauseIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="13" height="13" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
+      <rect x="5" y="4" width="3.5" height="12" rx="1" />
+      <rect x="11.5" y="4" width="3.5" height="12" rx="1" />
+    </svg>
+  );
+}
+
+function SmallXIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor"
+      strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ display: "block" }}>
+      <path d="M15 5 5 15M5 5l10 10" />
+    </svg>
+  );
+}
+
+function SmallJumpIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor"
+      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block" }}>
+      <path d="M5 10h9M10 6l4 4-4 4" />
+    </svg>
+  );
+}
+
+function sortTimerEntries(entries) {
+  const rank = { finished: 0, running: 1, paused: 2 };
+  return entries.sort(([, a], [, b]) => {
+    const aStatus = normalizeTimerStatus(a.status);
+    const bStatus = normalizeTimerStatus(b.status);
+    const statusDiff = (rank[aStatus] ?? 9) - (rank[bStatus] ?? 9);
+    if (statusDiff !== 0) return statusDiff;
+    return getRemainingMs(a) - getRemainingMs(b);
+  });
+}
+
 function ActiveTimersPanel({ session, tick, onTimerAction, onGoToStep }) {
   void tick;
-  const entries = Object.entries(session.timers || {})
+  const entries = sortTimerEntries(Object.entries(session.timers || {})
     .filter(([, timer]) => ["running", "paused", "finished"].includes(normalizeTimerStatus(timer.status)))
-    .sort(([, a], [, b]) => {
-      const aStatus = normalizeTimerStatus(a.status);
-      const bStatus = normalizeTimerStatus(b.status);
-      if (aStatus === "finished" && bStatus !== "finished") return -1;
-      if (aStatus !== "finished" && bStatus === "finished") return 1;
-      return getRemainingMs(a) - getRemainingMs(b);
-    });
+  );
 
   if (entries.length === 0) return null;
 
   const runningCount = entries.filter(([, timer]) => normalizeTimerStatus(timer.status) === "running").length;
-  const summaryText = `${entries.length} temporizador${entries.length === 1 ? "" : "es"} activo${entries.length === 1 ? "" : "s"}`;
+  const summaryText = `${entries.length} ${entries.length === 1 ? "activo" : "activos"}`;
 
   return (
-    <details className="cm-active-timers" open={entries.length === 1}>
+    <details className="cm-active-timers" open={entries.length <= 4}>
       <summary className="cm-active-timers-summary" aria-label={`Temporizadores activos, ${summaryText}`}>
         <span className="cm-active-timers-title">
           <ClockIcon />
@@ -138,7 +178,7 @@ function ActiveTimersPanel({ session, tick, onTimerAction, onGoToStep }) {
                 onClick={() => onGoToStep(Number.isFinite(stepIndex) ? stepIndex : 0)}
                 aria-label={tooltip}
               >
-                <span className="cm-active-timer-step">Paso {(Number.isFinite(stepIndex) ? stepIndex : 0) + 1}</span>
+                <span className="cm-active-timer-step">P{(Number.isFinite(stepIndex) ? stepIndex : 0) + 1}</span>
                 <span className="cm-active-timer-copy">
                   <span className="cm-active-timer-name">{stepTitle}</span>
                   <span className="cm-active-timer-label">{timerLabel}</span>
@@ -148,20 +188,44 @@ function ActiveTimersPanel({ session, tick, onTimerAction, onGoToStep }) {
               <span className={`cm-active-timer-badge is-${status}`}>{statusLabel}</span>
               <div className="cm-active-timer-actions">
                 {status === "running" ? (
-                  <button type="button" onClick={() => onTimerAction(key, "pause", durationMs, meta)} aria-label={`Pausar ${tooltip}`}>
-                    Pausar
+                  <button
+                    type="button"
+                    className="cm-active-timer-iconbtn"
+                    onClick={() => onTimerAction(key, "pause", durationMs, meta)}
+                    aria-label={`Pausar ${tooltip}`}
+                    title={`Pausar ${tooltip}`}
+                  >
+                    <SmallPauseIcon />
                   </button>
                 ) : null}
                 {status === "paused" ? (
-                  <button type="button" onClick={() => onTimerAction(key, "resume", durationMs, meta)} aria-label={`Reanudar ${tooltip}`}>
-                    Reanudar
+                  <button
+                    type="button"
+                    className="cm-active-timer-iconbtn"
+                    onClick={() => onTimerAction(key, "resume", durationMs, meta)}
+                    aria-label={`Reanudar ${tooltip}`}
+                    title={`Reanudar ${tooltip}`}
+                  >
+                    <SmallPlayIcon />
                   </button>
                 ) : null}
-                <button type="button" onClick={() => onTimerAction(key, "cancel", durationMs, meta)} aria-label={`Cancelar ${tooltip}`}>
-                  Cancelar
+                <button
+                  type="button"
+                  className="cm-active-timer-iconbtn"
+                  onClick={() => onTimerAction(key, "cancel", durationMs, meta)}
+                  aria-label={`Cancelar ${tooltip}`}
+                  title={`Cancelar ${tooltip}`}
+                >
+                  <SmallXIcon />
                 </button>
-                <button type="button" onClick={() => onGoToStep(Number.isFinite(stepIndex) ? stepIndex : 0)} aria-label={`Ir al paso ${(Number.isFinite(stepIndex) ? stepIndex : 0) + 1}`}>
-                  Ir al paso
+                <button
+                  type="button"
+                  className="cm-active-timer-iconbtn"
+                  onClick={() => onGoToStep(Number.isFinite(stepIndex) ? stepIndex : 0)}
+                  aria-label={`Ir al paso ${(Number.isFinite(stepIndex) ? stepIndex : 0) + 1}`}
+                  title={`Ir al paso ${(Number.isFinite(stepIndex) ? stepIndex : 0) + 1}`}
+                >
+                  <SmallJumpIcon />
                 </button>
               </div>
             </div>
