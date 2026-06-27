@@ -138,12 +138,13 @@ function ActiveTimersPanel({ session, tick, onTimerAction, onGoToStep }) {
 
   const runningCount = entries.filter(([, timer]) => normalizeTimerStatus(timer.status) === "running").length;
   const summaryText = `${entries.length} ${entries.length === 1 ? "activo" : "activos"}`;
+  const visibleTimerRows = Math.min(entries.length, 4);
 
   return (
     <details
       className="cm-active-timers"
       open={entries.length <= 6}
-      style={{ "--cm-active-timers-max-height": `${Math.min(entries.length * 34 + 8, 286)}px` }}
+      style={{ "--cm-active-timers-list-height": `${visibleTimerRows * 34 + 8}px` }}
     >
       <summary className="cm-active-timers-summary" aria-label={`Temporizadores activos, ${summaryText}`}>
         <span className="cm-active-timers-title">

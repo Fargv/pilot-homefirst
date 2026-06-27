@@ -23537,6 +23537,7 @@ td.recipe-qty-scaled {
 
 .cm-active-timers {
   border-radius: 14px;
+  overflow: visible;
 }
 .cm-active-timers-summary {
   padding: 8px 10px 6px;
@@ -23549,10 +23550,21 @@ td.recipe-qty-scaled {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: var(--cm-active-timers-max-height, 178px);
+  height: var(--cm-active-timers-list-height, auto);
+  max-height: 178px;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 0 8px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--hf-brand) 32%, transparent) transparent;
+}
+.cm-active-timers-list::-webkit-scrollbar { width: 6px; }
+.cm-active-timers-list::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--hf-brand) 28%, transparent);
+  border-radius: var(--radius-full);
 }
 .cm-active-timer-row {
   display: grid;
@@ -23670,7 +23682,7 @@ td.recipe-qty-scaled {
   }
 
   .cm-active-timers-list {
-    max-height: min(var(--cm-active-timers-max-height, 178px), 238px);
+    max-height: 144px;
   }
 
   .cm-active-timer-row {
