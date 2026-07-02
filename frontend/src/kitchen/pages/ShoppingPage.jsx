@@ -17,6 +17,7 @@ import { canUseBasicsFeature, isBudgetFeatureUnavailableError } from "../subscri
 import { useActiveWeek } from "../weekContext.jsx";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../components/tour/guidedOnboardingEvents.js";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import BasicsPopup from "../components/BasicsPopup.jsx";
@@ -255,6 +256,7 @@ export default function ShoppingPage() {
   const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { notifyOnboarding("visit_shopping"); }, []);
+
   const navigationContext = React.useContext(NavigationContext);
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [tab, setTab] = useState("pending");
@@ -942,6 +944,7 @@ export default function ShoppingPage() {
       if (status === "purchased") {
         notifyOnboarding("mark_purchased");
         notifyWeekly("item_purchased", { itemKey: key });
+        emitOnboardingEvent(ONBOARDING_EVENTS.ITEM_MARKED_BOUGHT);
         const remaining = Array.isArray(data.pendingByCategory)
           ? getPendingItemsCount(data.pendingByCategory)
           : null;

@@ -4,7 +4,7 @@ export default function RecipeServingsControl({ servings, baseServings, onChange
   const isScaled = baseServings > 0 && servings !== baseServings;
 
   return (
-    <div className="recipe-servings-ctrl">
+    <div className="recipe-servings-ctrl" data-tour-id="recipe-servings">
       <div className="recipe-servings-ctrl-row">
         <button
           type="button"

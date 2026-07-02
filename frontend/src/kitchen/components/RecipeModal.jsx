@@ -3,6 +3,7 @@ import RecipeEditor from "./RecipeEditor.jsx";
 import { useCookingSession } from "../contexts/CookingSessionContext.jsx";
 import { getInitialServings, getRecipeBaseServings, displayIngredientQuantity } from "../utils/recipeScaling.js";
 import { estimateTotalDuration, formatDuration, parseRecipeSteps } from "../utils/recipeStepParser.js";
+import { emitOnboardingEvent, ONBOARDING_EVENTS } from "./tour/guidedOnboardingEvents.js";
 
 export default function RecipeModal({ dish, targetServings = null, onClose }) {
   const { startSession } = useCookingSession();
@@ -14,6 +15,15 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
   useEffect(() => {
     setSelectedServings(initialServings);
   }, [dish?._id, initialServings]);
+
+  useEffect(() => {
+    if (dish?._id) emitOnboardingEvent(ONBOARDING_EVENTS.RECIPE_OPENED, { dishId: String(dish._id) });
+  }, [dish?._id]);
+
+  const handleServingsChange = (value) => {
+    setSelectedServings(value);
+    emitOnboardingEvent(ONBOARDING_EVENTS.SERVINGS_CHANGED);
+  };
 
   if (!dish) return null;
 
@@ -38,6 +48,7 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
 
   const handleExecuteRecipe = () => {
     startSession(dish, selectedServings);
+    emitOnboardingEvent(ONBOARDING_EVENTS.EXECUTOR_STARTED, { dishId: String(dish._id || "") });
     onClose?.();
   };
 
@@ -67,6 +78,7 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
         <button
           type="button"
           className="cooking-cta recipe-modal-execute-btn"
+          data-tour-id="recipe-cook"
           onClick={handleExecuteRecipe}
         >
           <span aria-hidden="true">🍳</span>
@@ -124,7 +136,7 @@ export default function RecipeModal({ dish, targetServings = null, onClose }) {
                 recipeServings={recipe.servings ?? null}
                 recipeBaseServings={baseServings}
                 targetServings={selectedServings}
-                onTargetServingsChange={setSelectedServings}
+                onTargetServingsChange={handleServingsChange}
                 actionAfterIngredients={executeAction}
                 readOnly
               />

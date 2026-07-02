@@ -1,6 +1,7 @@
 import React from "react";
 import { formatRemaining, getRemainingMs, normalizeTimerStatus } from "../../utils/timerService.js";
 import { primeAudio } from "../../utils/notificationService.js";
+import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../tour/guidedOnboardingEvents.js";
 
 function PlayIcon() {
   return (
@@ -72,6 +73,7 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, timerM
   function handleStart() {
     primeAudio();
     onAction(timerKey, "start", durationMs, timerMeta);
+    emitOnboardingEvent(ONBOARDING_EVENTS.TIMER_STARTED);
   }
 
   const mainAction = isDone
@@ -109,6 +111,7 @@ export default function RecipeTimer({ timerKey, timer, durationMs, label, timerM
   return (
     <div
       className={`cm-timer ${toneClass}`}
+      data-tour-id="recipe-timer"
       role="timer"
       aria-label={`${label}: ${formatRemaining(displayMs)} restantes`}
       title={`${timerMeta?.stepTitle || ""} · ${label} · ${formatRemaining(displayMs)} restantes`}

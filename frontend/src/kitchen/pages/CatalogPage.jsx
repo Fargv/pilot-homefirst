@@ -24,6 +24,7 @@ import { canUseDietRandomization } from "../subscription.js";
 import { resolvePackCoverImageUrl } from "../utils/packImages.js";
 import BitesIcon from "../components/BitesIcon.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../components/tour/guidedOnboardingEvents.js";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { CatalogPageSkeleton } from "../components/ScreenSkeletons.jsx";
 
@@ -767,7 +768,10 @@ export default function CatalogPage() {
   const { notify: notifyOnboarding } = useOnboarding();
   const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { notifyOnboarding("visit_catalog"); }, []);
+  useEffect(() => {
+    notifyOnboarding("visit_catalog");
+    emitOnboardingEvent(ONBOARDING_EVENTS.CATALOG_OPENED);
+  }, []);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [packs, setPacks] = useState([]);

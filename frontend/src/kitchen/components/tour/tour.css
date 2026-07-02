@@ -1,4 +1,4 @@
-/* ── Guided tour overlay ─────────────────────────────────────────────────────
+/* ── Guided onboarding overlay ───────────────────────────────────────────────
    Sits above every app surface (app modals top out at z 10001).
    Uses theme tokens throughout → light/dark themes work automatically. */
 
@@ -9,7 +9,8 @@
   pointer-events: none; /* children opt back in */
 }
 
-/* Transparent click-catcher for focused (non-interactive) steps. */
+/* Transparent click-catcher — only rendered on info/welcome/finish steps.
+   Action steps never block: the user must operate the real UI. */
 .gt-blocker {
   position: fixed;
   inset: 0;
@@ -21,7 +22,7 @@
 .gt-spotlight {
   position: fixed;
   border-radius: var(--radius-md, 14px);
-  box-shadow: 0 0 0 200vmax rgba(12, 12, 34, 0.55);
+  box-shadow: 0 0 0 200vmax rgba(12, 12, 34, 0.5);
   pointer-events: none;
   transition:
     top 320ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
@@ -40,8 +41,14 @@
   animation: gtRingPulse 1.8s ease-in-out infinite;
 }
 
+.gt-spotlight--done::after {
+  border-color: var(--success-text, #16a34a);
+  animation: none;
+  opacity: 1;
+}
+
 [data-theme="dark"] .gt-spotlight {
-  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.65);
+  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.62);
 }
 
 .gt-dim-full {
@@ -55,7 +62,44 @@
   background: rgba(0, 0, 0, 0.65);
 }
 
-/* ── Card ── */
+/* ── Coach bubble (anchored) ── */
+
+.gt-bubble {
+  position: fixed;
+  pointer-events: auto;
+  background: var(--background-card, #ffffff);
+  color: var(--color-text, #1a1a2e);
+  border-radius: var(--radius-lg, 18px);
+  box-shadow: var(--shadow-overlay, 0 14px 40px rgba(20, 20, 60, 0.3));
+  padding: var(--space-4, 16px);
+  width: min(calc(100vw - 24px), 312px);
+  box-sizing: border-box;
+  animation: gtCardIn 260ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  transition:
+    top 260ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    left 260ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.gt-bubble--done {
+  box-shadow: 0 0 0 2px var(--success-text, #16a34a), var(--shadow-overlay, 0 14px 40px rgba(20, 20, 60, 0.3));
+}
+
+/* Arrow: rotated square on the edge facing the target. */
+.gt-bubble-arrow {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--background-card, #ffffff);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.gt-bubble-arrow--top { top: -7px; margin-left: -7px; box-shadow: -2px -2px 4px rgba(20, 20, 60, 0.06); }
+.gt-bubble-arrow--bottom { bottom: -7px; margin-left: -7px; box-shadow: 2px 2px 4px rgba(20, 20, 60, 0.06); }
+.gt-bubble-arrow--left { left: -7px; margin-top: -7px; box-shadow: -2px 2px 4px rgba(20, 20, 60, 0.06); }
+.gt-bubble-arrow--right { right: -7px; margin-top: -7px; box-shadow: 2px -2px 4px rgba(20, 20, 60, 0.06); }
+
+/* ── Centered cards (welcome / finish) + floating mini-panel ── */
 
 .gt-card {
   position: fixed;
@@ -65,27 +109,28 @@
   border-radius: var(--radius-xl, 24px);
   box-shadow: var(--shadow-overlay, 0 18px 50px rgba(20, 20, 60, 0.35));
   padding: var(--space-5, 20px);
-  max-width: min(92vw, 400px);
+  max-width: min(92vw, 380px);
   box-sizing: border-box;
-  animation: gtCardIn 320ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
 }
 
 .gt-card-centered {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: min(92vw, 400px);
+  width: min(92vw, 380px);
   text-align: center;
+  animation: gtCardInCentered 320ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
 }
 
-/* Mobile anchored steps: bottom sheet above the bottom nav. */
-.gt-mobile .gt-card-sheet {
-  left: var(--space-3, 12px);
-  right: var(--space-3, 12px);
-  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-  top: auto;
-  width: auto;
-  max-width: none;
+/* Fallback mini-panel: upper third, small — never a wall, never bottom-pinned. */
+.gt-card-mini {
+  left: 50%;
+  top: 18%;
+  transform: translateX(-50%);
+  width: min(92vw, 330px);
+  padding: var(--space-4, 16px);
+  border-radius: var(--radius-lg, 18px);
+  animation: gtCardIn 260ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
 }
 
 .gt-card-top {
@@ -112,17 +157,35 @@
 }
 
 .gt-title {
-  margin: 0 0 var(--space-2, 8px);
-  font-size: var(--fs-xl, 18px);
+  margin: 0 0 var(--space-1, 4px);
+  font-size: var(--fs-lg, 16px);
   font-weight: 700;
   line-height: 1.25;
 }
 
 .gt-body {
-  margin: 0 0 var(--space-3, 12px);
-  font-size: var(--fs-md, 14px);
+  margin: 0 0 var(--space-2, 8px);
+  font-size: var(--fs-base, 13px);
   line-height: 1.5;
   color: var(--color-text-secondary, #4e4e6e);
+}
+
+/* The action line — what the user must DO now. */
+.gt-hint {
+  margin: 0 0 var(--space-2, 8px);
+  font-size: var(--fs-base, 13px);
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--hf-brand, #6260ff);
+  background: var(--app-bg-soft, #e4e4ff);
+  border-radius: var(--radius-sm, 10px);
+  padding: 8px 12px;
+}
+
+.gt-hint--done {
+  color: var(--success-text, #16a34a);
+  background: var(--success-bg, #f0fdf4);
+  animation: gtPopIn 260ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
 }
 
 .gt-bullets {
@@ -149,14 +212,36 @@
 .gt-reward-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: var(--fs-sm, 12px);
+  gap: 5px;
+  font-size: var(--fs-xs, 11px);
   font-weight: 700;
   color: var(--hf-brand, #6260ff);
-  background: var(--app-bg-soft, #e4e4ff);
+  border: 1px dashed var(--hf-brand, #6260ff);
   border-radius: var(--radius-full, 999px);
-  padding: 4px 12px;
-  margin-bottom: var(--space-3, 12px);
+  padding: 3px 10px;
+  margin-bottom: var(--space-2, 8px);
+  opacity: 0.85;
+}
+
+.gt-why {
+  margin-bottom: var(--space-2, 8px);
+}
+
+.gt-why-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--fs-xs, 11px);
+  font-weight: 600;
+  color: var(--color-text-tertiary, #6b6b8a);
+  cursor: pointer;
+}
+
+.gt-why-text {
+  margin: 4px 0 0;
+  font-size: var(--fs-sm, 12px);
+  line-height: 1.45;
+  color: var(--color-text-secondary, #4e4e6e);
 }
 
 .gt-finish-bites {
@@ -176,7 +261,7 @@
 .gt-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: var(--space-3, 12px);
   margin-top: var(--space-2, 8px);
 }
@@ -187,7 +272,7 @@
 }
 
 .gt-primary {
-  min-height: 42px;
+  min-height: 40px;
   font-weight: 600;
 }
 
@@ -196,8 +281,8 @@
   border: 1px solid var(--border-color, #e0e0f0);
   color: var(--color-text-secondary, #4e4e6e);
   border-radius: var(--radius-full, 999px);
-  padding: 9px 18px;
-  font-size: var(--fs-base, 13px);
+  padding: 7px 14px;
+  font-size: var(--fs-sm, 12px);
   font-weight: 600;
   cursor: pointer;
 }
@@ -221,8 +306,18 @@
   color: var(--color-text, #1a1a2e);
 }
 
+.gt-text-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .gt-skip {
   margin-right: -8px;
+}
+
+.gt-skip-step {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ── Floating bites indicator ── */
@@ -256,6 +351,12 @@
 .gt-bites-label {
   color: var(--color-text-tertiary, #6b6b8a);
   font-weight: 600;
+}
+
+.gt-bites-session {
+  color: var(--success-text, #16a34a);
+  font-weight: 700;
+  font-size: var(--fs-xs, 11px);
 }
 
 .gt-bites-float {
@@ -293,17 +394,23 @@
 /* ── Keyframes ── */
 
 @keyframes gtCardIn {
-  from { opacity: 0; transform: translateY(10px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.gt-card-centered {
-  animation-name: gtCardInCentered;
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes gtCardInCentered {
   from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
   to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* The mini-panel keeps its own translateX centering while animating. */
+.gt-card-mini {
+  animation-name: gtCardInMini;
+}
+
+@keyframes gtCardInMini {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 @keyframes gtFadeIn {
@@ -314,6 +421,11 @@
 @keyframes gtRingPulse {
   0%, 100% { opacity: 0.85; transform: scale(1); }
   50% { opacity: 0.35; transform: scale(1.015); }
+}
+
+@keyframes gtPopIn {
+  from { transform: scale(0.92); }
+  to { transform: scale(1); }
 }
 
 @keyframes gtFloatUp {
@@ -329,6 +441,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .gt-spotlight,
+  .gt-bubble,
   .gt-card,
   .gt-dim-full,
   .gt-bites-pill {
@@ -337,7 +450,8 @@
   }
   .gt-spotlight::after,
   .gt-waiting span,
-  .gt-bites-float {
+  .gt-bites-float,
+  .gt-hint--done {
     animation: none;
   }
 }

@@ -2,17 +2,22 @@ import { HouseholdOnboarding } from "./models/HouseholdOnboarding.js";
 import { GuidedTourConfig } from "./models/GuidedTourConfig.js";
 import { grantOnboardingBites } from "./onboardingEngine.js";
 
-// Server-side whitelist of tour steps that grant bites. The client sends a
-// stepId; anything outside this map grants nothing. Each key is rewarded at
-// most once per household EVER (rewardedSteps persists across admin resends),
-// so replaying the tour cannot farm bites.
+// Server-side whitelist of guided-onboarding ACTIONS that grant bites. Keys
+// are action-based on purpose: the client only sends a stepId after the user
+// actually performed the action (dish assigned, item purchased, timer
+// started…) — never for reading an explanation or pressing "Siguiente".
+// Anything outside this map grants nothing. Each key is rewarded at most once
+// per household EVER (rewardedSteps persists across admin resends), so
+// replaying the tour cannot farm bites; testMode resends grant nothing.
 export const TOUR_STEP_REWARDS = {
-  planning: { bites: 5, label: "Has aprendido a planificar tu semana" },
-  shopping: { bites: 5, label: "Has aprendido a usar la lista de la compra" },
-  kitchen: { bites: 5, label: "Has descubierto Mi Cocina" },
-  recipe: { bites: 5, label: "Has aprendido a ejecutar recetas" },
-  catalog: { bites: 5, label: "Has descubierto el catálogo y los Bites" },
-  finish: { bites: 5, label: "Tour de bienvenida completado" }
+  plan_dish: { bites: 5, label: "Has planificado un plato" },
+  randomize_day: { bites: 5, label: "Has randomizado un día" },
+  mark_bought: { bites: 5, label: "Has marcado un producto como comprado" },
+  create_dish_opened: { bites: 5, label: "Has abierto la creación de platos" },
+  recipe_servings: { bites: 5, label: "Has ajustado los comensales de una receta" },
+  recipe_execution: { bites: 5, label: "Has iniciado el modo cocina" },
+  recipe_timer: { bites: 5, label: "Has usado un temporizador de receta" },
+  finish: { bites: 10, label: "Onboarding guiado completado" }
 };
 
 // ─── Global config ────────────────────────────────────────────────────────────
@@ -145,9 +150,26 @@ export async function progressGuidedTour(householdId, { stepIndex, stepId } = {}
   return { tour: normalizeGuidedTour(tour), awarded, amount, label };
 }
 
+// Minimum rewarded ACTIONS required before the completion bonus pays out.
+// Blocks skipping every step and still collecting the finish reward, while
+// tolerating degraded environments (no recipe with timers, empty list…).
+const FINISH_REWARD_MIN_ACTIONS = 3;
+
 export async function completeGuidedTour(householdId) {
-  // Award the finish step through the same one-time guard, then close.
-  const { awarded, amount } = await progressGuidedTour(householdId, { stepId: "finish" });
+  const existing = await getRecord(householdId);
+  const actionCount = (existing?.guidedTour?.rewardedSteps || [])
+    .filter((s) => s !== "finish").length;
+
+  // Award the finish bonus through the same one-time guard — only when the
+  // user actually performed enough guided actions during onboarding.
+  let awarded = false;
+  let amount = 0;
+  if (actionCount >= FINISH_REWARD_MIN_ACTIONS) {
+    const result = await progressGuidedTour(householdId, { stepId: "finish" });
+    awarded = result.awarded;
+    amount = result.amount;
+  }
+
   const record = await getRecord(householdId);
   if (record?.guidedTour && ["pending", "active"].includes(record.guidedTour.status)) {
     record.guidedTour.status = "completed";

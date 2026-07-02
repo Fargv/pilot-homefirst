@@ -41,6 +41,9 @@ export default function TourBitesIndicator() {
       <BitesIcon size={16} decorative />
       <span className="gt-bites-count" ref={countRef}>{total ?? sessionBites}</span>
       <span className="gt-bites-label">Bites</span>
+      {sessionBites > 0 ? (
+        <span className="gt-bites-session">+{sessionBites} en el tour</span>
+      ) : null}
       {floatingAward ? (
         <span key={floatingAward.at} className="gt-bites-float" aria-hidden="true">
           +{floatingAward.amount}

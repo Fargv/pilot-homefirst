@@ -30,6 +30,7 @@ import { getColorPalette, getUserColorById, getUserColorPreference, setUserColor
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 import { ProBadge } from "../components/ui/ProBadge.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../components/tour/guidedOnboardingEvents.js";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { IngredientSearchAdd } from "../components/BasicsPopup.jsx";
 import PageHeader from "../components/PageHeader.jsx";
@@ -204,7 +205,10 @@ export default function SettingsPage() {
   const { notify: notifyOnboarding } = useOnboarding();
   const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { notifyOnboarding("visit_settings"); }, []);
+  useEffect(() => {
+    notifyOnboarding("visit_settings");
+    emitOnboardingEvent(ONBOARDING_EVENTS.SETTINGS_OPENED);
+  }, []);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const palette = getColorPalette();

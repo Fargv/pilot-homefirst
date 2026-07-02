@@ -5,6 +5,7 @@ import RecipeStepCard from "./RecipeStepCard.jsx";
 import { formatDuration } from "../../utils/recipeStepParser.js";
 import { displayIngredientQuantity } from "../../utils/recipeScaling.js";
 import { formatRemaining, getRemainingMs, normalizeTimerStatus } from "../../utils/timerService.js";
+import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../tour/guidedOnboardingEvents.js";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -429,6 +430,7 @@ export default function CookingSessionStepper() {
     if (!completedSteps.includes(currentStepIndex)) {
       toggleStepComplete(currentStepIndex);
     }
+    emitOnboardingEvent(ONBOARDING_EVENTS.STEP_NEXT);
     if (isLast) {
       completeSession();
     } else {
@@ -514,7 +516,11 @@ export default function CookingSessionStepper() {
               <button
                 type="button"
                 className="cm-iconbtn"
-                onClick={minimizeStepper}
+                data-tour-id="recipe-minimize"
+                onClick={() => {
+                  minimizeStepper();
+                  emitOnboardingEvent(ONBOARDING_EVENTS.EXECUTOR_MINIMIZED);
+                }}
                 aria-label="Minimizar modo cocina"
               >
                 <MinimizeIcon />
@@ -594,6 +600,7 @@ export default function CookingSessionStepper() {
               <button
                 type="button"
                 className="cm-pill cm-pill--primary cm-nav-next"
+                data-tour-id="recipe-step-next"
                 onClick={handleNext}
                 aria-label="Siguiente paso"
               >

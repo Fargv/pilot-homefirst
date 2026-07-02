@@ -27,6 +27,7 @@ import { ProGateButton } from "../components/ui/ProBadge.jsx";
 import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../components/tour/guidedOnboardingEvents.js";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 
 const CATEGORY_EMOJI_BY_CODE = {
@@ -527,6 +528,7 @@ export default function WeekPage() {
       });
       setPlan(data.plan || null);
       notifyWeekly("week_randomized", { randomizedWeekStart: weekStartRef.current });
+      emitOnboardingEvent(ONBOARDING_EVENTS.DAY_RANDOMIZED);
       const warningMessages = Array.isArray(data.warnings)
         ? data.warnings.filter((item) => String(item || "").trim())
         : [];
@@ -1134,6 +1136,13 @@ export default function WeekPage() {
       saveTimers.current[dayKey] = window.setTimeout(() => {
         setDayStatus((prev) => ({ ...prev, [dayKey]: "" }));
       }, 2000);
+      // Guided onboarding: real assignment success — distinguishes manual pick
+      // from randomize via options.source so each tour step gets its own event.
+      if ("mainDishId" in requestUpdates && requestUpdates.mainDishId) {
+        emitOnboardingEvent(options.source === "random"
+          ? ONBOARDING_EVENTS.DAY_RANDOMIZED
+          : ONBOARDING_EVENTS.DISH_SELECTED);
+      }
       // Onboarding: trigger plan_meal when a lunch dish is assigned (meals only, not dinners)
       if ("mainDishId" in requestUpdates && requestUpdates.mainDishId && mealType === "lunch") {
         notifyOnboarding("plan_meal");
@@ -1956,7 +1965,7 @@ export default function WeekPage() {
     let updateResult = await updateDay(
       day,
       firstUpdatePayload,
-      { weekStart: clickWeekStart, returnErrorObject: true }
+      { weekStart: clickWeekStart, returnErrorObject: true, source: "random" }
     );
 
     const shouldRetry =
@@ -1992,7 +2001,7 @@ export default function WeekPage() {
         updateResult = await updateDay(
           day,
           retryPayload,
-          { weekStart: clickWeekStart, returnErrorObject: true }
+          { weekStart: clickWeekStart, returnErrorObject: true, source: "random" }
         );
         randomDish = retryDish;
       } catch (_err) {

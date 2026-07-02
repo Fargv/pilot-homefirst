@@ -15,6 +15,7 @@ import SearchableSelect from "../components/ui/SearchableSelect.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { getDishOrigin, isDishFromCatalog, isUserCreatedDish } from "../utils/dishOrigin.js";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
+import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../components/tour/guidedOnboardingEvents.js";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { canUseDinnersFeature } from "../subscription.js";
 import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
@@ -318,6 +319,7 @@ export default function DishesPage() {
     setDishError("");
     setDishSuggestionName(dishSearchTerm.trim());
     setIsModalOpen(true);
+    emitOnboardingEvent(ONBOARDING_EVENTS.CREATE_DISH_OPENED);
   };
 
   const openDishWithSuggestion = (name) => {
@@ -624,6 +626,7 @@ export default function DishesPage() {
     setIngredientSuggestionName(ingredientSearchTerm.trim());
     setIngredientsError("");
     setIsIngredientModalOpen(true);
+    emitOnboardingEvent(ONBOARDING_EVENTS.CREATE_DISH_OPENED);
   };
 
   const openIngredientWithSuggestion = (name) => {
@@ -1317,6 +1320,7 @@ export default function DishesPage() {
                 <article
                   className="dfc-card hf-anim-rise"
                   key={dish._id}
+                  data-dish-id={dish._id}
                   style={{ "--hf-anim-i": dishIndex }}
                 >
                   {/* header: name + badges */}

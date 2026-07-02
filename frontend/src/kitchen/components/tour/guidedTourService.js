@@ -51,24 +51,29 @@ export async function fetchWalletApi() {
   }
 }
 
-// Picks a demo-worthy recipe for the "recipe" step: structured steps, a timer
-// and ingredients. Returns the dish or null (the step copy degrades gracefully).
+// Picks a demo-worthy recipe for the interactive recipe steps. Prefers a dish
+// with structured steps + a timer + ingredients; falls back to one without a
+// timer (the timer step is then skipped). Returns { dish, hasTimer } or null —
+// the recipe block degrades to a short explanation when nothing qualifies.
 export async function findDemoRecipeApi() {
   try {
     const data = await apiRequest("/api/kitchen/dishes");
     const dishes = data?.dishes || data || [];
     if (!Array.isArray(dishes)) return null;
-    return (
-      dishes.find((d) => {
-        const steps = d?.recipe?.steps;
-        if (!Array.isArray(steps) || steps.length < 2) return false;
-        const hasTimer = steps.some((s) => s?.hasTimer || Number(s?.durationSeconds) > 0);
-        const hasIngredients =
-          (Array.isArray(d?.ingredients) && d.ingredients.length > 0) ||
-          (Array.isArray(d?.recipe?.ingredients) && d.recipe.ingredients.length > 0);
-        return hasTimer && hasIngredients;
-      }) ?? null
-    );
+
+    const describe = (d) => {
+      const steps = d?.recipe?.steps;
+      if (!Array.isArray(steps) || steps.length < 2) return null;
+      const hasIngredients =
+        (Array.isArray(d?.ingredients) && d.ingredients.length > 0) ||
+        (Array.isArray(d?.recipe?.ingredients) && d.recipe.ingredients.length > 0);
+      if (!hasIngredients) return null;
+      const hasTimer = steps.some((s) => s?.hasTimer || Number(s?.durationSeconds) > 0);
+      return { dish: d, hasTimer };
+    };
+
+    const candidates = dishes.map(describe).filter(Boolean);
+    return candidates.find((c) => c.hasTimer) ?? candidates[0] ?? null;
   } catch {
     return null;
   }
