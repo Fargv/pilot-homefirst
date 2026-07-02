@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -17,6 +17,7 @@ import {
   Shield,
   Workflow,
 } from "lucide-react";
+import { hasLegacyToken } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import "./InterfaceMapPage.css";
 
@@ -222,11 +223,11 @@ const routes = [
   },
   {
     path: "/admin/interface-map",
-    access: "Authenticated + globalRole diod inside page",
+    access: "Page-level admin auth + globalRole diod",
     page: "InterfaceMapPage",
     purpose: "This fullscreen interface map for AI-agent context and product architecture review.",
     backend: ["No runtime API calls"],
-    notes: "Static curated documentation generated from Graphify output plus current code inspection.",
+    notes: "Uses admin-login redirect and legacy-token retry instead of the generic app RequireAuth guard.",
   },
 ];
 
@@ -670,8 +671,10 @@ function UnauthorizedAdminMap({ user }) {
 }
 
 export default function InterfaceMapPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const adminLegacyRetryRef = useRef(false);
   const [query, setQuery] = useState("");
   const [copiedId, setCopiedId] = useState("");
 
@@ -700,6 +703,19 @@ export default function InterfaceMapPage() {
     }
   };
 
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      const next = `${location.pathname}${location.search || ""}`;
+      navigate(`/admin/login?next=${encodeURIComponent(next)}`, { replace: true });
+      return;
+    }
+    if (user.globalRole !== "diod" && !adminLegacyRetryRef.current && hasLegacyToken()) {
+      adminLegacyRetryRef.current = true;
+      refreshUser({ authMode: "auto" });
+    }
+  }, [loading, location.pathname, location.search, navigate, refreshUser, user]);
+
   if (loading) {
     return (
       <main className="imap-auth-screen">
@@ -711,6 +727,8 @@ export default function InterfaceMapPage() {
       </main>
     );
   }
+
+  if (!user) return null;
 
   if (user?.globalRole !== "diod") {
     return <UnauthorizedAdminMap user={user} />;

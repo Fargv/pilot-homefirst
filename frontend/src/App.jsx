@@ -250,11 +250,7 @@ function AppRoutes() {
         <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
         <Route
           path="/admin/interface-map"
-          element={(
-            <RequireAuth>
-              <InterfaceMapPage />
-            </RequireAuth>
-          )}
+          element={<InterfaceMapPage />}
         />
         <Route path="/admin" element={<AdminPanelPage />} />
         <Route path="/admin/architecture" element={<AdminPanelPage />} />
