@@ -6,6 +6,7 @@ import { useAuth } from "../../auth.jsx";
 import { canUseDinnersFeature } from "../../subscription.js";
 import OnboardingPanel from "./OnboardingPanel.jsx";
 import BitesIcon from "../BitesIcon.jsx";
+import { useGuidedTour } from "../tour/GuidedTourProvider.jsx";
 
 const COLLAPSED_KEY = "lunchfy_onboarding_banner_collapsed";
 
@@ -165,6 +166,7 @@ function OnboardingCompletionModal({ onDismiss }) {
 export default function OnboardingBanner({ suppressEvents = false, closeOnRouteChange = false } = {}) {
   const { state, rewardEvent, dismissReward, completionEvent, dismissCompletionEvent } = useOnboarding();
   const { state: weeklyState } = useWeeklyChallenge();
+  const { isTourActive } = useGuidedTour();
   const location = useLocation();
   const [panelOpen, setPanelOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
@@ -216,6 +218,9 @@ export default function OnboardingBanner({ suppressEvents = false, closeOnRouteC
     };
   }, [collapsed]);
 
+  // One guide at a time: while the interactive tour runs, the challenge banner
+  // yields the screen (the tour hands off to it in its finish copy).
+  if (isTourActive) return null;
   if (!state || state.status === "disabled") return null;
   if (state.status === "completed") {
     return (

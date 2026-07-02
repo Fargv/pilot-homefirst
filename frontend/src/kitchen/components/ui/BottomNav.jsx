@@ -35,6 +35,7 @@ export default function BottomNav({ links = [], onNavigate, onPrefetch }) {
             <NavLink
               key={link.to}
               to={link.to}
+              data-tour-id={`nav-${link.to.split("/").pop()}`}
               ref={(node) => {
                 itemRefs.current[index] = node;
               }}

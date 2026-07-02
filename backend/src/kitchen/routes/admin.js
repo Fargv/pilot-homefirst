@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { requireAuth, requireDiod } from "../middleware.js";
+import { normalizeGuidedTour } from "../guidedTourService.js";
 import { Household } from "../models/Household.js";
 import { PurchaseAttempt } from "../models/PurchaseAttempt.js";
 import { PackEntitlement } from "../models/PackEntitlement.js";
@@ -307,9 +308,10 @@ router.get("/households/:householdId/control-center", requireAuth, requireDiod, 
           welcomeBitesGranted: Boolean(onboarding.welcomeBitesGranted),
           startedAt: onboarding.startedAt || null,
           completedAt: onboarding.completedAt || null,
-          resetHistory: onboarding.resetHistory || []
+          resetHistory: onboarding.resetHistory || [],
+          guidedTour: normalizeGuidedTour(onboarding.guidedTour)
         }
-        : { status: "not_started", completedChallenges: [], completedCount: 0, pendingCount: 5 },
+        : { status: "not_started", completedChallenges: [], completedCount: 0, pendingCount: 5, guidedTour: normalizeGuidedTour(null) },
       weekly: {
         cycleState: cycleStateResult,
         progress: weeklyProgress.map((progress) => ({

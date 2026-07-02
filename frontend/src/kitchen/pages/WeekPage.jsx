@@ -2370,7 +2370,7 @@ export default function WeekPage() {
   return (
     <KitchenLayout containerClassName={`kitchen-week-canvas ${selectedMealType === "dinner" ? "kitchen-dinner-canvas" : ""}`}>
       <div className={["kitchen-week-controls", contentSlideClass, isNavLoading ? "is-nav-loading" : ""].filter(Boolean).join(" ")}>
-        <div className="kitchen-week-mobile-frame">
+        <div className="kitchen-week-mobile-frame" data-tour-id="planning-week">
           {isNavLoading ? <div className="kitchen-week-nav-progress" aria-hidden="true" /> : null}
           <section className="kitchen-week-header">
             <PageHeader
@@ -2826,6 +2826,7 @@ export default function WeekPage() {
                         <button
                           type="button"
                           className="dc2-empty-cta"
+                          data-tour-id="planning-add-dish"
                           onClick={() => handleAssignCta(day, canEdit, isAssigned)}
                         >
                           + Añadir plato
@@ -2833,6 +2834,7 @@ export default function WeekPage() {
                         <button
                           type="button"
                           className="dc2-empty-random"
+                          data-tour-id="planning-randomize"
                           onClick={() => handleRandomAssignCta(day, canEdit, isAssigned)}
                           disabled={randomDisabled}
                           aria-label="Randomizar día"

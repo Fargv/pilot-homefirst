@@ -43,6 +43,7 @@ import { queryClient } from "./kitchen/queryClient.js";
 import { ActiveWeekProvider } from "./kitchen/weekContext.jsx";
 import { OnboardingProvider } from "./kitchen/contexts/OnboardingContext.jsx";
 import { WeeklyChallengeProvider } from "./kitchen/contexts/WeeklyChallengeContext.jsx";
+import { GuidedTourProvider } from "./kitchen/components/tour/GuidedTourProvider.jsx";
 import ConsentGate from "./kitchen/components/ConsentGate.jsx";
 
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
@@ -126,6 +127,7 @@ function AppRoutes() {
     <ActiveWeekProvider>
       <OnboardingProvider>
       <WeeklyChallengeProvider>
+      <GuidedTourProvider>
       <ConsentGate>
       <DevEnvironmentBanner />
       <PwaInstallPrompt />
@@ -268,6 +270,7 @@ function AppRoutes() {
       </Routes>
       </React.Suspense>
       </ConsentGate>
+      </GuidedTourProvider>
       </WeeklyChallengeProvider>
       </OnboardingProvider>
     </ActiveWeekProvider>

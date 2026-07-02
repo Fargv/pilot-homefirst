@@ -90,6 +90,23 @@ function formatDateTime(value) {
   }
 }
 
+// Guided tour status → Spanish label + pill tone (used across admin cards).
+const GUIDED_TOUR_STATUS_LABELS = {
+  none: "Sin tour",
+  pending: "Pendiente",
+  active: "En curso",
+  completed: "Completado",
+  skipped: "Saltado"
+};
+
+const GUIDED_TOUR_STATUS_TONES = {
+  none: "slate",
+  pending: "amber",
+  active: "indigo",
+  completed: "green",
+  skipped: "red"
+};
+
 function AdminPill({ children, tone = "slate" }) {
   const tones = {
     slate: ["#f8fafc", "#cbd5e1", "#475569"],
@@ -504,6 +521,12 @@ function HouseholdControlCenter({ household, onClose, onNavigate, onRefresh }) {
         if (!window.confirm("Desactivar onboarding para este hogar?")) return;
         await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/status`, { method: "POST", body: JSON.stringify({ status: "disabled" }) });
         setMsg("Onboarding desactivado.");
+      } else if (type === "resend-tour") {
+        const data = await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/guided-tour/resend`, {
+          method: "POST",
+          body: JSON.stringify({ testMode: Boolean(extra.testMode) })
+        });
+        setMsg(data.warning ? `Tour reenviado. ${data.warning}` : `Tour reenviado${extra.testMode ? " en modo test (sin recompensas)" : ""}. Se mostrará en la próxima carga.`);
       } else if (type === "reset-weekly") {
         if (!window.confirm("Resetear el progreso semanal actual?")) return;
         await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/reset`, { method: "POST" });
@@ -609,6 +632,30 @@ function HouseholdControlCenter({ household, onClose, onNavigate, onRefresh }) {
                   <button type="button" style={ABT.edit} disabled={saving} onClick={() => runAction("enable-onboarding")}>Activar</button>
                   <button type="button" style={ABT.del} disabled={saving} onClick={() => runAction("disable-onboarding")}>Desactivar</button>
                   <button type="button" style={ABT.edit} onClick={() => onNavigate("onboarding", h)}>Abrir tools</button>
+                </div>
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed #e2e8f0" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Tour guiado</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                    <AdminPill tone={GUIDED_TOUR_STATUS_TONES[detail?.onboarding?.guidedTour?.status] || "slate"}>
+                      {GUIDED_TOUR_STATUS_LABELS[detail?.onboarding?.guidedTour?.status] || "Sin tour"}
+                    </AdminPill>
+                    {detail?.onboarding?.guidedTour?.testMode ? <AdminPill tone="amber">Modo test</AdminPill> : null}
+                    {detail?.onboarding?.guidedTour?.totalTourBites > 0 ? (
+                      <AdminPill>{detail.onboarding.guidedTour.totalTourBites} bites del tour</AdminPill>
+                    ) : null}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+                    {detail?.onboarding?.guidedTour?.lastSentAt ? <>Enviado: {formatDateTime(detail.onboarding.guidedTour.lastSentAt)} · </> : null}
+                    {detail?.onboarding?.guidedTour?.completedAt ? <>Completado: {formatDateTime(detail.onboarding.guidedTour.completedAt)}</> : null}
+                    {detail?.onboarding?.guidedTour?.skippedAt ? <>Saltado: {formatDateTime(detail.onboarding.guidedTour.skippedAt)}</> : null}
+                  </div>
+                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                    <button type="button" style={ABT.green} disabled={saving} onClick={() => runAction("resend-tour")}>Reenviar tour</button>
+                    <button type="button" style={ABT.edit} disabled={saving} title="El tour se muestra pero no concede Bites" onClick={() => runAction("resend-tour", { testMode: true })}>Reenviar (test)</button>
+                  </div>
+                  <p style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 0" }}>
+                    Las recompensas de pasos solo se conceden una vez por hogar, aunque se reenvíe.
+                  </p>
                 </div>
               </Card>
 
@@ -5289,25 +5336,61 @@ function OnboardingSection({ householdContext, onClearHouseholdContext }) {
   const [suggTab, setSuggTab] = useState("ingredient");
   const [newSuggText, setNewSuggText] = useState("");
   const [addingSugg, setAddingSugg] = useState(false);
+  const [tourConfig, setTourConfig] = useState(null);
+  const [tourConfigSaving, setTourConfigSaving] = useState(false);
+  const [tourMsg, setTourMsg] = useState("");
 
   const load = async () => {
     setLoading(true);
     try {
-      const [cData, hData, aData, sData] = await Promise.all([
+      const [cData, hData, aData, sData, tData] = await Promise.all([
         apiRequest("/api/kitchen/onboarding/admin/challenges"),
         apiRequest("/api/kitchen/onboarding/admin/households"),
         apiRequest("/api/kitchen/onboarding/admin/analytics"),
-        apiRequest("/api/kitchen/onboarding/admin/suggestions")
+        apiRequest("/api/kitchen/onboarding/admin/suggestions"),
+        apiRequest("/api/kitchen/onboarding/admin/guided-tour/config")
       ]);
       setChallenges(cData.challenges || []);
       setHouseholds(hData.records || []);
       setAnalytics(aData.analytics || null);
       setSuggestions(sData.suggestions || []);
+      setTourConfig(tData.config || null);
     } catch (e) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleTourEnabled = async () => {
+    if (!tourConfig || tourConfigSaving) return;
+    setTourConfigSaving(true);
+    setTourMsg("");
+    try {
+      const data = await apiRequest("/api/kitchen/onboarding/admin/guided-tour/config", {
+        method: "PUT",
+        body: JSON.stringify({ enabled: !tourConfig.enabled })
+      });
+      setTourConfig(data.config);
+      setTourMsg(data.config.enabled
+        ? "Tour guiado activado: los nuevos hogares lo verán automáticamente."
+        : "Tour guiado desactivado globalmente: no se lanzará para ningún usuario.");
+    } catch (e) { setError(e.message); }
+    finally { setTourConfigSaving(false); }
+  };
+
+  const resendTour = async (householdId, testMode = false) => {
+    setTourMsg("");
+    try {
+      const data = await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/guided-tour/resend`, {
+        method: "POST",
+        body: JSON.stringify({ testMode })
+      });
+      setTourMsg(data.warning
+        ? `Tour reenviado. ${data.warning}`
+        : `Tour reenviado${testMode ? " en modo test (sin recompensas)" : ""}.`);
+      await load();
+    } catch (e) { setError(e.message); }
   };
 
   useEffect(() => { load(); }, []);
@@ -5428,6 +5511,39 @@ function OnboardingSection({ householdContext, onClearHouseholdContext }) {
             El pack de bienvenida cuesta 80 bites → usuario debe quedar con 25 bites al finalizar.
           </div>
         )}
+      </Card>
+
+      {/* Guided tour global config */}
+      <Card style={{ marginBottom: 20, padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h4 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Tour guiado</h4>
+            <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
+              Tour interactivo de bienvenida para usuarios nuevos. Si se desactiva, no se lanza para nadie (ni nuevos hogares).
+            </p>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <AdminPill tone={tourConfig?.enabled ? "green" : "red"}>
+              {tourConfig?.enabled ? "Activado" : "Desactivado"}
+            </AdminPill>
+            <button
+              type="button"
+              style={tourConfig?.enabled ? ABT.del : ABT.green}
+              disabled={tourConfigSaving || !tourConfig}
+              onClick={toggleTourEnabled}
+            >
+              {tourConfigSaving ? "..." : tourConfig?.enabled ? "Desactivar para todos" : "Activar para todos"}
+            </button>
+          </div>
+        </div>
+        {tourMsg && (
+          <div style={{ marginTop: 10, padding: "8px 12px", background: "#eef2ff", borderRadius: 7, fontSize: 12, color: "#4338ca" }}>
+            {tourMsg}
+          </div>
+        )}
+        <p style={{ margin: "10px 0 0", fontSize: 11, color: "#94a3b8" }}>
+          Reenvío por hogar: columna «Tour» abajo, o desde el control center del hogar. Las recompensas de pasos (+5 Bites) se conceden una sola vez por hogar aunque se reenvíe.
+        </p>
       </Card>
 
       {/* Analytics */}
@@ -5583,7 +5699,7 @@ function OnboardingSection({ householdContext, onClearHouseholdContext }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                {["Household ID", "Estado", "Completados", "Bites", "Iniciado", "Acciones"].map((h) => <th key={h} style={th}>{h}</th>)}
+                {["Household ID", "Estado", "Tour", "Completados", "Bites", "Iniciado", "Acciones"].map((h) => <th key={h} style={th}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -5599,6 +5715,12 @@ function OnboardingSection({ householdContext, onClearHouseholdContext }) {
                       {h.status}
                     </span>
                   </td>
+                  <td style={td}>
+                    <AdminPill tone={GUIDED_TOUR_STATUS_TONES[h.guidedTour?.status || "none"]}>
+                      {GUIDED_TOUR_STATUS_LABELS[h.guidedTour?.status || "none"]}
+                    </AdminPill>
+                    {h.guidedTour?.testMode ? <span style={{ marginLeft: 4, fontSize: 10, color: "#92400e" }}>test</span> : null}
+                  </td>
                   <td style={td}>{(h.completedChallenges || []).length}</td>
                   <td style={td}>{h.totalBitesEarned || 0}</td>
                   <td style={td}>{h.startedAt ? new Date(h.startedAt).toLocaleDateString("es-ES") : "—"}</td>
@@ -5609,12 +5731,14 @@ function OnboardingSection({ householdContext, onClearHouseholdContext }) {
                       {h.status !== "completed" && <button type="button" style={ABT.green} onClick={() => householdAction(h.householdId, "complete")}>Completar</button>}
                       {h.status !== "active" && <button type="button" style={ABT.edit} onClick={() => householdAction(h.householdId, "enable")}>Activar</button>}
                       {h.status !== "disabled" && <button type="button" style={ABT.del} onClick={() => householdAction(h.householdId, "disable")}>Desactivar</button>}
+                      <button type="button" style={ABT.green} title="Reenviar tour guiado" onClick={() => resendTour(h.householdId)}>Tour</button>
+                      <button type="button" style={ABT.edit} title="Reenviar tour en modo test (sin recompensas)" onClick={() => resendTour(h.householdId, true)}>Tour test</button>
                     </div>
                   </td>
                 </tr>
               ))}
               {filteredHouseholds.length === 0 && (
-                <tr><td colSpan={6} style={{ ...td, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>Sin registros.</td></tr>
+                <tr><td colSpan={7} style={{ ...td, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>Sin registros.</td></tr>
               )}
             </tbody>
           </table>

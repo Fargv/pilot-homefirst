@@ -1,0 +1,343 @@
+/* ── Guided tour overlay ─────────────────────────────────────────────────────
+   Sits above every app surface (app modals top out at z 10001).
+   Uses theme tokens throughout → light/dark themes work automatically. */
+
+.gt-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10500;
+  pointer-events: none; /* children opt back in */
+}
+
+/* Transparent click-catcher for focused (non-interactive) steps. */
+.gt-blocker {
+  position: fixed;
+  inset: 0;
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* Spotlight hole: the giant shadow dims everything around the target. */
+.gt-spotlight {
+  position: fixed;
+  border-radius: var(--radius-md, 14px);
+  box-shadow: 0 0 0 200vmax rgba(12, 12, 34, 0.55);
+  pointer-events: none;
+  transition:
+    top 320ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    left 320ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    width 320ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    height 320ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.gt-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 2px solid var(--hf-brand, #6260ff);
+  opacity: 0.85;
+  animation: gtRingPulse 1.8s ease-in-out infinite;
+}
+
+[data-theme="dark"] .gt-spotlight {
+  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.65);
+}
+
+.gt-dim-full {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 12, 34, 0.55);
+  animation: gtFadeIn 240ms ease-out both;
+}
+
+[data-theme="dark"] .gt-dim-full {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+/* ── Card ── */
+
+.gt-card {
+  position: fixed;
+  pointer-events: auto;
+  background: var(--background-card, #ffffff);
+  color: var(--color-text, #1a1a2e);
+  border-radius: var(--radius-xl, 24px);
+  box-shadow: var(--shadow-overlay, 0 18px 50px rgba(20, 20, 60, 0.35));
+  padding: var(--space-5, 20px);
+  max-width: min(92vw, 400px);
+  box-sizing: border-box;
+  animation: gtCardIn 320ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+
+.gt-card-centered {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 400px);
+  text-align: center;
+}
+
+/* Mobile anchored steps: bottom sheet above the bottom nav. */
+.gt-mobile .gt-card-sheet {
+  left: var(--space-3, 12px);
+  right: var(--space-3, 12px);
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  top: auto;
+  width: auto;
+  max-width: none;
+}
+
+.gt-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2, 8px);
+}
+
+.gt-progress {
+  font-size: var(--fs-xs, 11px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--hf-brand, #6260ff);
+  background: var(--app-bg-soft, #e4e4ff);
+  border-radius: var(--radius-full, 999px);
+  padding: 3px 10px;
+}
+
+.gt-hero {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: var(--space-3, 12px);
+}
+
+.gt-title {
+  margin: 0 0 var(--space-2, 8px);
+  font-size: var(--fs-xl, 18px);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.gt-body {
+  margin: 0 0 var(--space-3, 12px);
+  font-size: var(--fs-md, 14px);
+  line-height: 1.5;
+  color: var(--color-text-secondary, #4e4e6e);
+}
+
+.gt-bullets {
+  list-style: none;
+  margin: 0 0 var(--space-4, 16px);
+  padding: 0;
+  text-align: left;
+  display: grid;
+  gap: var(--space-2, 8px);
+}
+
+.gt-bullets li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  font-size: var(--fs-md, 14px);
+  font-weight: 600;
+}
+
+.gt-bullets li span {
+  font-size: 18px;
+}
+
+.gt-reward-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm, 12px);
+  font-weight: 700;
+  color: var(--hf-brand, #6260ff);
+  background: var(--app-bg-soft, #e4e4ff);
+  border-radius: var(--radius-full, 999px);
+  padding: 4px 12px;
+  margin-bottom: var(--space-3, 12px);
+}
+
+.gt-finish-bites {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2, 8px);
+  font-size: var(--fs-md, 14px);
+  background: var(--app-bg-soft, #e4e4ff);
+  border-radius: var(--radius-md, 14px);
+  padding: var(--space-3, 12px);
+  margin-bottom: var(--space-3, 12px);
+}
+
+/* ── Actions ── */
+
+.gt-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3, 12px);
+  margin-top: var(--space-2, 8px);
+}
+
+.gt-actions-column {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.gt-primary {
+  min-height: 42px;
+  font-weight: 600;
+}
+
+.gt-secondary-btn {
+  background: transparent;
+  border: 1px solid var(--border-color, #e0e0f0);
+  color: var(--color-text-secondary, #4e4e6e);
+  border-radius: var(--radius-full, 999px);
+  padding: 9px 18px;
+  font-size: var(--fs-base, 13px);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gt-secondary-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.gt-text-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary, #6b6b8a);
+  font-size: var(--fs-sm, 12px);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 8px;
+}
+
+.gt-text-btn:hover {
+  color: var(--color-text, #1a1a2e);
+}
+
+.gt-skip {
+  margin-right: -8px;
+}
+
+/* ── Floating bites indicator ── */
+
+.gt-bites-pill {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 66px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10650;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--background-card, #ffffff);
+  color: var(--color-text, #1a1a2e);
+  border: 1px solid var(--border-color, #e0e0f0);
+  border-radius: var(--radius-full, 999px);
+  box-shadow: var(--shadow-md, 0 6px 18px rgba(20, 20, 60, 0.16));
+  padding: 6px 14px;
+  font-size: var(--fs-sm, 12px);
+  font-weight: 700;
+  animation: gtCardIn 320ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+
+.gt-bites-count {
+  font-size: var(--fs-md, 14px);
+  font-variant-numeric: tabular-nums;
+}
+
+.gt-bites-label {
+  color: var(--color-text-tertiary, #6b6b8a);
+  font-weight: 600;
+}
+
+.gt-bites-float {
+  position: absolute;
+  right: 4px;
+  top: -6px;
+  color: var(--hf-brand, #6260ff);
+  font-size: var(--fs-md, 14px);
+  font-weight: 800;
+  animation: gtFloatUp 1.3s ease-out both;
+}
+
+/* ── Waiting dots (target not resolved yet) ── */
+
+.gt-waiting {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 6px;
+}
+
+.gt-waiting span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hf-brand, #6260ff);
+  animation: gtDotPulse 1s ease-in-out infinite;
+}
+
+.gt-waiting span:nth-child(2) { animation-delay: 0.15s; }
+.gt-waiting span:nth-child(3) { animation-delay: 0.3s; }
+
+/* ── Keyframes ── */
+
+@keyframes gtCardIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.gt-card-centered {
+  animation-name: gtCardInCentered;
+}
+
+@keyframes gtCardInCentered {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes gtFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gtRingPulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(1.015); }
+}
+
+@keyframes gtFloatUp {
+  0% { opacity: 0; transform: translateY(6px); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-18px); }
+}
+
+@keyframes gtDotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-spotlight,
+  .gt-card,
+  .gt-dim-full,
+  .gt-bites-pill {
+    transition: none;
+    animation: none;
+  }
+  .gt-spotlight::after,
+  .gt-waiting span,
+  .gt-bites-float {
+    animation: none;
+  }
+}

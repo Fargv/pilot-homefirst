@@ -461,6 +461,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
             <button
               className="kitchen-user-chip"
               type="button"
+              data-tour-id="user-menu"
               onClick={() => setUserMenuOpen((open) => !open)}
               aria-expanded={userMenuOpen}
               aria-haspopup="menu"

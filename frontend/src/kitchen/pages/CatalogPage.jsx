@@ -146,7 +146,7 @@ function CatalogBitesWallet({ wallet, plan, bitesConfig, onBuyBites }) {
   if (purchasedBitesBalance > 0) breakdownParts.push(`${purchasedBitesBalance} comprados`);
 
   return (
-    <div className="catalog-bites-wallet">
+    <div className="catalog-bites-wallet" data-tour-id="catalog-wallet">
       <div className="catalog-bites-wallet-top">
         <span className="catalog-bites-wallet-eyebrow">Bites disponibles</span>
       </div>

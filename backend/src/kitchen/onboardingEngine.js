@@ -5,6 +5,9 @@ import { Household } from "./models/Household.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { normalizeSubscriptionPlan } from "./subscriptionService.js";
+// Circular-safe: guidedTourService only calls back into grantOnboardingBites at
+// runtime (hoisted function declaration), never during module init.
+import { getGuidedTourConfig, isGuidedTourEnabled, normalizeGuidedTour } from "./guidedTourService.js";
 
 const WELCOME_BITES = 20;
 
@@ -190,6 +193,12 @@ export async function seedOnboardingSuggestions() {
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
+// Exported for guidedTourService — tour rewards must go through the exact same
+// balance/transaction path as challenge rewards.
+export async function grantOnboardingBites(householdId, amount, reason, metadata = { source: "onboarding" }) {
+  return _grantBites(householdId, amount, reason, metadata);
+}
+
 async function _grantBites(householdId, amount, reason, metadata = { source: "onboarding" }) {
   const household = await Household.findById(householdId).lean();
   if (!household) return;
@@ -218,10 +227,22 @@ export async function initOnboarding(householdId) {
   const existing = await HouseholdOnboarding.findOne({ householdId });
   if (existing) return existing;
 
+  // New households get the guided tour queued only while the global switch is on.
+  let guidedTour = null;
+  try {
+    const tourConfig = await getGuidedTourConfig();
+    if (tourConfig.enabled) {
+      guidedTour = { status: "pending", version: tourConfig.version, lastSentAt: new Date() };
+    }
+  } catch (err) {
+    console.error("[onboarding] Failed to read guided tour config:", err.message);
+  }
+
   const onboarding = await HouseholdOnboarding.create({
     householdId,
     status: "active",
-    startedAt: new Date()
+    startedAt: new Date(),
+    ...(guidedTour ? { guidedTour } : {})
   });
 
   try {
@@ -292,7 +313,9 @@ export async function getOnboardingState(householdId) {
     challenges: enriched,
     nextChallenge,
     startedAt: onboarding.startedAt,
-    completedAt: onboarding.completedAt
+    completedAt: onboarding.completedAt,
+    guidedTour: normalizeGuidedTour(onboarding.guidedTour),
+    guidedTourEnabled: await isGuidedTourEnabled()
   };
 }
 

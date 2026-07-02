@@ -19,6 +19,30 @@ const ResetHistorySchema = new mongoose.Schema(
   { _id: false }
 );
 
+// Guided interactive tour (spotlight walkthrough) — separate from the challenge
+// list. `rewardedSteps` persists across resends so bites can never be farmed by
+// replaying the tour: each step key is rewarded at most once per household.
+const GuidedTourSchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      enum: ["none", "pending", "active", "completed", "skipped"],
+      default: "none"
+    },
+    version: { type: Number, default: 1 },
+    currentStepIndex: { type: Number, default: 0 },
+    rewardedSteps: { type: [String], default: [] },
+    totalTourBites: { type: Number, default: 0 },
+    lastSentAt: { type: Date, default: null },
+    startedAt: { type: Date, default: null },
+    completedAt: { type: Date, default: null },
+    skippedAt: { type: Date, default: null },
+    // Admin resend can flag test mode: tour runs but never grants bites.
+    testMode: { type: Boolean, default: false }
+  },
+  { _id: false }
+);
+
 const HouseholdOnboardingSchema = new mongoose.Schema(
   {
     householdId: {
@@ -43,7 +67,9 @@ const HouseholdOnboardingSchema = new mongoose.Schema(
     welcomeBitesGranted: { type: Boolean, default: false },
     startedAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
-    resetHistory: { type: [ResetHistorySchema], default: [] }
+    resetHistory: { type: [ResetHistorySchema], default: [] },
+    // Legacy docs won't have this path; treat missing as { status: "none" }.
+    guidedTour: { type: GuidedTourSchema, default: null }
   },
   { timestamps: true }
 );

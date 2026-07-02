@@ -1366,7 +1366,7 @@ export default function ShoppingPage() {
           </div>
         ) : null}
       </PageHeader>
-      <div className="shopping-page-shell">
+      <div className="shopping-page-shell" data-tour-id="shopping-list">
         <div className="kitchen-card shopping-main-card">
           <div
             className={`shopping-week-content ${contentSlideClass}`}
@@ -1450,6 +1450,7 @@ export default function ShoppingPage() {
                                   <button
                                     className="shopping-check"
                                     type="button"
+                                    data-tour-id="shopping-item"
                                     onClick={(e) => setItemStatus({ ...item, categoryInfo: group.categoryInfo }, "purchased", e.currentTarget)}
                                     aria-label={`Marcar ${item.displayName} como comprado`}
                                   >

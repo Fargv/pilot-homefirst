@@ -1139,6 +1139,7 @@ export default function DishesPage() {
             <button
               type="button"
               className="phdr-cta-btn"
+              data-tour-id="kitchen-create"
               onClick={headerActionHandler}
               aria-label={headerActionLabel}
             >

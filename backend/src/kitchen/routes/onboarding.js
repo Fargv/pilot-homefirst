@@ -15,6 +15,16 @@ import {
   initOnboarding
 } from "../onboardingEngine.js";
 import { checkAndGrantBetaPro } from "../betaProService.js";
+import {
+  getGuidedTourConfig,
+  updateGuidedTourConfig,
+  normalizeGuidedTour,
+  startGuidedTour,
+  progressGuidedTour,
+  completeGuidedTour,
+  skipGuidedTour,
+  resendGuidedTour
+} from "../guidedTourService.js";
 
 const router = express.Router();
 
@@ -50,6 +60,103 @@ router.post("/trigger", requireAuth, async (req, res) => {
     }
 
     return res.json({ ok: true, event: result, onboarding: state });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── User: guided tour ────────────────────────────────────────────────────────
+// Tour state travels inside GET /state (guidedTour + guidedTourEnabled); these
+// endpoints only persist transitions. Step rewards are whitelisted server-side
+// in guidedTourService.TOUR_STEP_REWARDS and granted at most once per household.
+
+router.post("/guided-tour/start", requireAuth, async (req, res) => {
+  try {
+    const householdId = getEffectiveHouseholdId(req.user);
+    const tour = await startGuidedTour(householdId);
+    return res.json({ ok: true, tour });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+router.post("/guided-tour/progress", requireAuth, async (req, res) => {
+  try {
+    const householdId = getEffectiveHouseholdId(req.user);
+    const { stepIndex, stepId } = req.body || {};
+    const result = await progressGuidedTour(householdId, { stepIndex, stepId });
+    return res.json({ ok: true, ...result });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+router.post("/guided-tour/complete", requireAuth, async (req, res) => {
+  try {
+    const householdId = getEffectiveHouseholdId(req.user);
+    const result = await completeGuidedTour(householdId);
+    return res.json({ ok: true, ...result });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+router.post("/guided-tour/skip", requireAuth, async (req, res) => {
+  try {
+    const householdId = getEffectiveHouseholdId(req.user);
+    const tour = await skipGuidedTour(householdId);
+    return res.json({ ok: true, tour });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── Admin: guided tour ───────────────────────────────────────────────────────
+
+router.get("/admin/guided-tour/config", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const config = await getGuidedTourConfig();
+    return res.json({ ok: true, config });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+router.put("/admin/guided-tour/config", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const { enabled, version } = req.body || {};
+    const config = await updateGuidedTourConfig({ enabled, version }, req.kitchenUser?._id);
+    return res.json({ ok: true, config });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+router.get("/admin/households/:householdId/guided-tour", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.householdId)) {
+      return res.status(400).json({ ok: false, error: "householdId inválido." });
+    }
+    const record = await HouseholdOnboarding.findOne({ householdId: req.params.householdId })
+      .select("guidedTour").lean();
+    return res.json({ ok: true, tour: normalizeGuidedTour(record?.guidedTour) });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+router.post("/admin/households/:householdId/guided-tour/resend", requireAuth, requireDiod, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.householdId)) {
+      return res.status(400).json({ ok: false, error: "householdId inválido." });
+    }
+    const { testMode } = req.body || {};
+    const result = await resendGuidedTour(req.params.householdId, { testMode: Boolean(testMode) });
+    return res.json({
+      ok: true,
+      ...result,
+      warning: result.enabled ? null : "El tour está desactivado globalmente: no se lanzará hasta activarlo."
+    });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
   }
