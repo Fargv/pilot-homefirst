@@ -7300,6 +7300,10 @@ export default function AdminPanelPage() {
 
   const handleTabChange = (nextTab) => {
     setTab(nextTab);
+    if (nextTab === "interface_map") {
+      if (location.pathname !== "/admin/interface-map") navigate("/admin/interface-map");
+      return;
+    }
     if (nextTab === "arquitectura") {
       if (location.pathname !== "/admin/architecture") navigate("/admin/architecture");
       return;
@@ -7368,6 +7372,7 @@ export default function AdminPanelPage() {
             { key: "beta",         label: "Beta Invites" },
             { key: "insights",     label: "Beta Insights" },
             { key: "cuenta_admin", label: "🔐 Cuenta" },
+            { key: "interface_map", label: "Interface Map" },
             { key: "arquitectura",  label: "🗺 Arquitectura" }
           ];
           return (

@@ -27,6 +27,7 @@ const PaymentSuccessPage = React.lazy(() => import("./kitchen/pages/PaymentSucce
 const PaymentCancelledPage = React.lazy(() => import("./kitchen/pages/PaymentCancelledPage.jsx"));
 const AdminUsersPage = React.lazy(() => import("./kitchen/pages/AdminUsersPage.jsx"));
 const AdminPanelPage = React.lazy(() => import("./kitchen/pages/AdminPanelPage.jsx"));
+const InterfaceMapPage = React.lazy(() => import("./kitchen/pages/InterfaceMapPage.jsx"));
 const AdminForgotPasswordPage = React.lazy(() => import("./kitchen/pages/AdminForgotPasswordPage.jsx"));
 const AdminResetPasswordPage = React.lazy(() => import("./kitchen/pages/AdminResetPasswordPage.jsx"));
 const TermsPage = React.lazy(() => import("./kitchen/pages/LegalPage.jsx").then((m) => ({ default: m.TermsPage })));
@@ -247,6 +248,14 @@ function AppRoutes() {
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
         <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
+        <Route
+          path="/admin/interface-map"
+          element={(
+            <RequireAuth>
+              <InterfaceMapPage />
+            </RequireAuth>
+          )}
+        />
         <Route path="/admin" element={<AdminPanelPage />} />
         <Route path="/admin/architecture" element={<AdminPanelPage />} />
         <Route
